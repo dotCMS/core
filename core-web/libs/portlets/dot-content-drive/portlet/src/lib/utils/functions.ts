@@ -1,13 +1,36 @@
+import { format } from 'date-fns';
 import { forkJoin, Observable } from 'rxjs';
 
 import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveFolder, DotContentDriveItem, DotFolder } from '@dotcms/dotcms-models';
+import {
+    createLoadMoreTreeNode,
+    DotCMSContentTypeField,
+    DotContentDriveDateRange,
+    DotContentDriveFolder,
+    DotContentDriveItem,
+    DotContentDriveUserSearchableValue,
+    DotFolder,
+    DotSite,
+    FolderSearchView,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/dotcms-models';
+import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
+import {
+    FIELD_FILTER_CHECKBOX_TYPE,
+    FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_KEY_VALUE_TYPE,
+    FIELD_FILTER_MULTI_VALUE_TYPES,
+    FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+    FOLDER_TREE_PAGE_SIZE,
+    USER_SEARCHABLE_PREFIX,
+    USER_SEARCHABLE_VALUE_SEPARATOR
+} from '../shared/constants';
 import {
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
@@ -141,18 +164,34 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
-        const decodeFunction = decodeByFilterKey[key];
-
-        if (decodeFunction) {
-            // Use decode function for known keys
-            acc[key] = decodeFunction(value);
-        } else {
-            // Use default functions for unknown keys
-            acc[key] = value.includes(',') ? multiSelector(value) : singleSelector(value);
-        }
+        // key stays `string` for assignment so the open index signature applies;
+        // narrowing happens only inside decodeFilterValue for the known-key lookup.
+        acc[key] = decodeFilterValue(key, value);
 
         return acc;
     }, {} as DotContentDriveFilters);
+}
+
+function isKnownFilterKey(key: string): key is keyof DotKnownContentDriveFilters {
+    return Object.hasOwn(decodeByFilterKey, key);
+}
+
+/**
+ * Decodes a single filter value. Known keys use {@link decodeByFilterKey};
+ * user-searchable field filters stay raw; unknown keys sniff for commas.
+ */
+function decodeFilterValue(key: string, value: string): string | string[] {
+    // Field-filter (user-searchable) values are stored raw: the field type — not comma
+    // sniffing — decides their shape downstream, so never split/trim them here.
+    if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
+        return singleSelector(value);
+    }
+
+    if (isKnownFilterKey(key)) {
+        return decodeByFilterKey[key](value);
+    }
+
+    return value.includes(',') ? multiSelector(value) : singleSelector(value);
 }
 
 /**
@@ -202,59 +241,245 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
 }
 
 /**
- * Fetches all parent folders from a given path using parallel API calls
+ * Adapts a `FolderSearchView` (returned by `GET /api/v1/folder/search`) into the `DotFolder`
+ * shape the tree builder consumes.
  *
- * Example: '/main/sub-folder/inner-folder/child-folder' will make calls to:
- * - /main/sub-folder/inner-folder/child-folder
- * - /main/sub-folder/inner-folder
- * - /main/sub-folder
- * - /main
- * - /
+ * The search view exposes the folder's own `name` and its parent `path` separately and omits the
+ * hostname (the search is already scoped by site), so the folder's own full path is recomposed as
+ * `<parentPath><name>/` and the current site hostname is injected.
  *
- * @param {string} path - The full path to generate parent paths from
+ * @param {FolderSearchView} view - The folder search result item
+ * @param {string} hostName - Hostname of the site being browsed
+ * @returns {DotFolder} The adapted folder
+ */
+export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: string): DotFolder {
+    // Normalize the parent path to a trailing slash before composing the folder's own path, so the
+    // result is always `.../<name>/`. `buildTreeFolderNodes` compares this against
+    // `generateAllParentPaths` (always trailing-slashed); a missing slash would break target-path
+    // matching. Mirrors the guard in dot-browsing.service.ts.
+    const parentPath = view.path.endsWith('/') ? view.path : `${view.path}/`;
+
+    return {
+        id: view.id,
+        inode: view.inode,
+        hostName,
+        path: `${parentPath}${view.name}/`,
+        addChildrenAllowed: view.addChildrenAllowed,
+        hasChildren: view.hasChildren,
+        defaultBaseType: view.defaultBaseType
+    };
+}
+
+/**
+ * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
+ * `path` is the parent path that was queried; `folders` are its direct children (first page).
+ */
+export type FolderTreeHierarchyLevel = {
+    path: string;
+    folders: DotFolder[];
+    totalEntries: number;
+};
+
+/**
+ * Fetches the folders for every level of a target path using parallel search calls, so the sidebar
+ * tree can be rendered expanded down to that path (deep-link restore).
+ *
+ * One `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the site root
+ * (`'/'`) and descending through each parent path. Uses {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}
+ * (large, page 1 only) so ancestors past the interactive page of 40 still resolve without a
+ * sequential page-until-found waterfall. Interactive expand/load-more use
+ * {@link getFolderNodesByPath} with {@link FOLDER_TREE_PAGE_SIZE}. Callers should append load-more
+ * via {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds the returned page.
+ *
+ * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
+ * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<DotFolder[][]>} Observable that emits an array of folder arrays (one for each path level)
+ * @returns {Observable<FolderTreeHierarchyLevel[]>} one level descriptor per path
  */
 export function getFolderHierarchyByPath(
-    path: string,
+    folderPath: string,
+    site: DotSite,
     dotFolderService: DotFolderService
-): Observable<DotFolder[][]> {
-    const paths = generateAllParentPaths(path);
+): Observable<FolderTreeHierarchyLevel[]> {
+    // The root level (`'/'`) is always fetched first; deeper levels come from the target path.
+    const paths = ['/', ...generateAllParentPaths(folderPath)];
 
-    // Handle empty paths case - forkJoin doesn't emit for empty array
-    if (paths.length === 0) {
-        return new Observable((observer) => {
-            observer.next([]);
-            observer.complete();
-        });
-    }
-
-    const folderRequests = paths.map((path) => dotFolderService.getFolders(path));
+    const folderRequests = paths.map((path) =>
+        dotFolderService
+            .searchFolders({
+                siteId: site.identifier,
+                path,
+                recursive: false,
+                orderby: 'name',
+                direction: 'ASC',
+                page: 1,
+                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
+            })
+            .pipe(
+                map(({ folders, pagination }) => ({
+                    path,
+                    folders: folders.map((view) =>
+                        folderSearchViewToDotFolder(view, site.hostname)
+                    ),
+                    totalEntries: pagination?.totalEntries ?? folders.length
+                }))
+            )
+    );
 
     return forkJoin(folderRequests);
 }
 
 /**
- * Fetches folders and transforms them into tree nodes
+ * Fetches one page of the direct child folders of a path and transforms them into tree nodes.
+ * Used to lazily load a node's children when it is expanded, and to load subsequent pages when the
+ * "Load more" node is clicked.
  *
- * @param {string} path - The path to fetch folders from
+ * @param {string} folderPath - The folder path (without hostname) whose children to fetch
+ * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }>}
+ * @param {number} [page=1] - 1-based page to request
+ * @returns {Observable<{ folders: DotFolderTreeNodeItem[]; totalEntries: number }>} the page of
+ * child nodes plus the total number of children in the level (to decide whether more remain)
  */
 export function getFolderNodesByPath(
-    path: string,
-    dotFolderService: DotFolderService
-): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> {
-    return dotFolderService.getFolders(path).pipe(
-        map((folders) => {
-            const [parent, ...childFolders] = folders;
-
-            return {
-                parent,
-                folders: childFolders.map((folder) => createTreeNode(folder))
-            };
+    folderPath: string,
+    site: DotSite,
+    dotFolderService: DotFolderService,
+    page = 1
+): Observable<{ folders: DotFolderTreeNodeItem[]; totalEntries: number }> {
+    return dotFolderService
+        .searchFolders({
+            siteId: site.identifier,
+            path: folderPath,
+            recursive: false,
+            orderby: 'name',
+            direction: 'ASC',
+            page,
+            per_page: FOLDER_TREE_PAGE_SIZE
         })
+        .pipe(
+            map(({ folders, pagination }) => ({
+                folders: folders.map((view) =>
+                    createTreeNode(folderSearchViewToDotFolder(view, site.hostname))
+                ),
+                totalEntries: pagination?.totalEntries ?? folders.length
+            }))
+        );
+}
+
+/**
+ * Builds the synthetic "Load more" node appended to the end of a paginated folder level. It is not
+ * a real folder: it is not selectable and carries the paging cursor (`nextPage`) and how many
+ * folders still remain, so clicking it can fetch and append the next page.
+ *
+ * @param {string} parentPath - Full path of the parent folder whose children are paginated
+ * @param {string} hostName - Hostname of the site
+ * @param {number} nextPage - The next 1-based page to request
+ * @param {number} remaining - How many folders remain to be loaded in the level
+ * @returns {DotFolderTreeNodeItem} the load-more node
+ */
+export function buildLoadMoreNode(
+    parentPath: string,
+    hostName: string,
+    nextPage: number,
+    remaining: number
+): DotFolderTreeNodeItem {
+    // Leave `label` empty so DotFolderTree uses the shared loadMoreLabelKey
+    // (same (+) Load more chrome as Host Folder Field / Browser Selector).
+    return createLoadMoreTreeNode({
+        levelKey: parentPath,
+        nextPage,
+        remaining,
+        path: parentPath,
+        hostname: hostName
+    }) as DotFolderTreeNodeItem;
+}
+
+/**
+ * Appends a "Load more" sentinel when more folders remain beyond the loaded page.
+ */
+export function appendLoadMoreNodes(
+    children: DotFolderTreeNodeItem[],
+    totalEntries: number,
+    path: string,
+    hostname: string,
+    nextPage: number
+): DotFolderTreeNodeItem[] {
+    if (children.length >= totalEntries) {
+        return [...children];
+    }
+
+    return [
+        ...children,
+        buildLoadMoreNode(path, hostname, nextPage, totalEntries - children.length)
+    ];
+}
+
+/**
+ * Applies load-more sentinels to each level of a freshly built hierarchy.
+ * Root-level sentinels sit as siblings of root folders; nested ones go under the parent node.
+ *
+ * Hierarchy always fetches page 1 (with {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}), so the next
+ * interactive page is always `2` when `totalEntries` exceeds the returned folders.
+ */
+export function applyLoadMoreToHierarchy(
+    rootNodes: DotFolderTreeNodeItem[],
+    levels: FolderTreeHierarchyLevel[],
+    hostname: string
+): DotFolderTreeNodeItem[] {
+    if (!levels.length) {
+        return rootNodes;
+    }
+
+    const nextPageAfterHierarchy = 2;
+
+    const roots = appendLoadMoreNodes(
+        rootNodes,
+        levels[0].totalEntries,
+        levels[0].path,
+        hostname,
+        nextPageAfterHierarchy
     );
+
+    for (let i = 1; i < levels.length; i++) {
+        const level = levels[i];
+        const parent = findFolderNodeByPath(level.path, roots);
+
+        if (!parent) {
+            continue;
+        }
+
+        parent.children = appendLoadMoreNodes(
+            (parent.children as DotFolderTreeNodeItem[] | undefined) ?? [],
+            level.totalEntries,
+            level.path,
+            hostname,
+            nextPageAfterHierarchy
+        );
+    }
+
+    return roots;
+}
+
+function findFolderNodeByPath(
+    path: string,
+    nodes: DotFolderTreeNodeItem[]
+): DotFolderTreeNodeItem | undefined {
+    for (const node of nodes) {
+        if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data?.path === path) {
+            return node;
+        }
+
+        const found = node.children
+            ? findFolderNodeByPath(path, node.children as DotFolderTreeNodeItem[])
+            : undefined;
+
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
 }
 
 /**
@@ -265,4 +490,281 @@ export function getFolderNodesByPath(
  */
 export function isFolder(item: DotContentDriveItem): item is DotContentDriveFolder {
     return item != null && 'type' in item && item.type === 'folder';
+}
+
+/** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */
+export function isDateFieldFilterType(fieldType: string): boolean {
+    return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
+}
+
+/** True when the field type stores a list of values (Multi-Select / Checkbox / Tag / …). */
+export function isMultiValueFieldFilterType(fieldType: string): boolean {
+    return FIELD_FILTER_MULTI_VALUE_TYPES.includes(fieldType);
+}
+
+/**
+ * The field variables that have a `us.*` field-filter entry in the bag, in insertion order.
+ * Parsed at the same layer as {@link decodeFilters} so the store just stores the result.
+ *
+ * @param {DotContentDriveFilters} filters
+ * @return {*}  {string[]}
+ */
+export function getUserSearchableActive(filters: DotContentDriveFilters): string[] {
+    return Object.keys(filters ?? {})
+        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
+        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length));
+}
+
+/**
+ * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
+ * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
+ */
+export function isBinaryCheckboxField(field: DotCMSContentTypeField): boolean {
+    return (
+        field.fieldType === FIELD_FILTER_CHECKBOX_TYPE &&
+        getSingleSelectableFieldOptions(field.values ?? '', field.dataType).length <= 1
+    );
+}
+
+/**
+ * Reshapes a raw stored field-filter string into the payload value for its field type:
+ * date → `{ from, to }`, multi-select → `string[]`, everything else → the raw string.
+ * Returns `undefined` when the value is effectively empty (so callers can skip it).
+ *
+ * @param {string} raw - The raw value stored in the filter bag.
+ * @param {string} fieldType - The content-type field type (e.g. `Text`, `Date`, `Multi-Select`).
+ * @return {*}  {(DotContentDriveUserSearchableValue | undefined)}
+ */
+export function parseUserSearchableValue(
+    raw: string,
+    fieldType: string
+): DotContentDriveUserSearchableValue | undefined {
+    if (!raw) {
+        return undefined;
+    }
+
+    if (isDateFieldFilterType(fieldType)) {
+        const [from = '', to = ''] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
+
+        return from || to ? { from, to } : undefined;
+    }
+
+    if (isMultiValueFieldFilterType(fieldType)) {
+        const values = parseMultiValue(raw);
+
+        return values.length ? values : undefined;
+    }
+
+    if (fieldType === FIELD_FILTER_KEY_VALUE_TYPE) {
+        return toKeyValueTerm(raw);
+    }
+
+    return raw;
+}
+
+/**
+ * Translates a Key/Value filter input into the term the backend contains-matches against the
+ * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`).
+ *
+ * The term is lowercased to match the indexed `.key_value` sub-field, which dotCMS stores as
+ * `(key + "_" + value).toLowerCase()` — so `Color:Red` matches the same content as `color:red`.
+ *
+ * Shorthand rules (the **first** colon is the key/value separator — everything after it is the
+ * value, so a value may itself contain colons):
+ * - `key:value`         → `key_value`           (exact-pair match; e.g. `Deploy:HTTPS://x` → `deploy_https://x`)
+ * - `key:` / `:value`   → `key` / `value`       (only the filled side)
+ * - bare term (no `:`)  → the term              (loose match on a key OR a value)
+ *
+ * ⚠️ Greedy shorthand: because *any* colon is treated as the separator, a **bare** value that
+ * happens to contain a colon (a URL like `https://x`, a time like `12:30`, a ratio like `16:9`) is
+ * read as `key:value` (`https_//x`, `12_30`, `16_9`) and will likely match nothing. To search a
+ * colon-bearing value, prefix it with its key (`myKey:12:30`) so the intended value is preserved.
+ * A raw colon is never sent to the backend — that path is metadata-only and wouldn't match a
+ * regular Key/Value field anyway.
+ *
+ * @param {string} raw - The literal value the user typed (also what's kept in the URL/chip).
+ * @return {*}  {(string | undefined)} Returns `undefined` when the input is empty.
+ */
+function toKeyValueTerm(raw: string): string | undefined {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+
+    // Split on the FIRST colon only, so a value may contain further colons (e.g. `key:12:30`).
+    const separator = trimmed.indexOf(':');
+    // The index stores `.key_value` as `(key + "_" + value).toLowerCase()`, so the term is
+    // lowercased to match regardless of the case the user typed (e.g. `Color:Red` → `color_red`).
+    if (separator === -1) {
+        return trimmed.toLowerCase();
+    }
+
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+
+    if (key && value) {
+        return `${key}_${value}`.toLowerCase();
+    }
+
+    // Only one side of the `key:value` was filled — match on whichever is present.
+    return (key || value).toLowerCase() || undefined;
+}
+
+/** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
+const safeDecode = (value: string): string => {
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+};
+
+/**
+ * Splits a stored multi-value string back into its values. Each value is percent-encoded on
+ * serialize (see {@link serializeMultiValue}) so a value containing the separator — e.g. a tag
+ * label like `"News, Press"` — round-trips intact.
+ *
+ * @param {string} raw
+ * @return {*}  {string[]}
+ */
+export function parseMultiValue(raw: string): string[] {
+    if (!raw) {
+        return [];
+    }
+
+    return raw
+        .split(USER_SEARCHABLE_VALUE_SEPARATOR)
+        .map((value) => safeDecode(value.trim()))
+        .filter(Boolean);
+}
+
+/**
+ * Joins multi-value entries into the stored string, percent-encoding each value so it can safely
+ * contain the separator. Inverse of {@link parseMultiValue}.
+ *
+ * @param {string[]} values
+ * @return {*}  {string}
+ */
+export function serializeMultiValue(values: string[]): string {
+    return values.map(encodeURIComponent).join(USER_SEARCHABLE_VALUE_SEPARATOR);
+}
+
+/**
+ * Serializes a shaped field-filter value back into the raw string stored in the filter bag,
+ * inverse of {@link parseUserSearchableValue}. Empty values serialize to `''` so the URL encoder
+ * (which drops empty entries) leaves no dangling criterion.
+ *
+ * @param {(DotContentDriveUserSearchableValue | null | undefined)} value
+ * @param {string} fieldType
+ * @return {*}  {string}
+ */
+/** Narrows a user-searchable value to a `{ from, to }` date range (object, not array). */
+function isDateRange(value: DotContentDriveUserSearchableValue): value is DotContentDriveDateRange {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Formats a Date as a timezone-naive local wall-clock ISO string (`yyyy-MM-ddTHH:mm:ss`, no `Z` or
+ * offset) — i.e. the exact date/time the user sees in the picker.
+ *
+ * Date/Date-and-Time/Time filters must send the wall-clock, not a UTC instant: `toISOString()`
+ * shifts by the browser's offset (a UTC-3 user's 10:00 becomes `13:00Z`), and the backend then
+ * parses that `Z` value as an instant and reformats it in the SERVER zone — so the bound no longer
+ * matches what the user picked. A no-offset value instead round-trips as identity: the backend
+ * parses it in the server zone and formats it back in the server zone (see
+ * `BrowserAPIImpl#parseFlexibleDate` → `LocalDateTime.parse(...)` and `normalizeDateBound`). On the
+ * FE, `new Date('…T10:00:00')` (no offset) also parses as local, so the picker round-trips too.
+ *
+ * Returns `''` for an invalid/absent Date: the typeable Time picker (`[keepInvalid]="true"`) can
+ * emit an `Invalid Date` mid-typing, and `date-fns` `format` throws `RangeError` on one — so a
+ * partial time simply clears that bound instead of blowing up `#applyRange`.
+ */
+export function toLocalIsoString(date: Date): string {
+    if (!date || Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    // `date-fns` formats by the Date's LOCAL components, so this is the wall-clock with no offset/Z.
+    return format(date, "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+export function serializeUserSearchableValue(
+    value: DotContentDriveUserSearchableValue | null | undefined,
+    fieldType: string
+): string {
+    if (value == null) {
+        return '';
+    }
+
+    if (isDateFieldFilterType(fieldType)) {
+        // Guard the shape rather than blindly casting: a mismatched fieldType/value pair yields ''
+        // (not filtering) instead of a misleading partial range.
+        if (!isDateRange(value)) {
+            return '';
+        }
+
+        if (!value.from && !value.to) {
+            return '';
+        }
+
+        return `${value.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${value.to ?? ''}`;
+    }
+
+    if (isMultiValueFieldFilterType(fieldType)) {
+        return serializeMultiValue(Array.isArray(value) ? value : []);
+    }
+
+    return String(value);
+}
+
+/**
+ * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
+ * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. A binary
+ * checkbox emits its boolean value when set (`true`/`false`); every field type is included only
+ * when its value is non-empty. Returns `undefined` when there are no active field filters.
+ *
+ * @param {DotContentDriveFilters} filters - The full filter bag.
+ * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.
+ * @return {*}  {(Record<string, DotContentDriveUserSearchableValue> | undefined)}
+ */
+export function buildUserSearchablePayload(
+    filters: DotContentDriveFilters,
+    fields: DotCMSContentTypeField[]
+): Record<string, DotContentDriveUserSearchableValue> | undefined {
+    const fieldByVariable = new Map(fields.map((field) => [field.variable, field]));
+    const payload: Record<string, DotContentDriveUserSearchableValue> = {};
+
+    for (const [key, raw] of Object.entries(filters ?? {})) {
+        if (!key.startsWith(USER_SEARCHABLE_PREFIX)) {
+            continue;
+        }
+
+        const variable = key.slice(USER_SEARCHABLE_PREFIX.length);
+        const field = fieldByVariable.get(variable);
+        if (!field) {
+            continue;
+        }
+
+        const rawValue = Array.isArray(raw)
+            ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR)
+            : (raw ?? '');
+
+        // A binary checkbox filters for the chosen boolean; empty means not filtering.
+        if (isBinaryCheckboxField(field)) {
+            if (rawValue === 'true' || rawValue === 'false') {
+                payload[variable] = rawValue === 'true';
+            }
+
+            continue;
+        }
+
+        const value = parseUserSearchableValue(rawValue, field.fieldType);
+        if (value === undefined) {
+            continue;
+        }
+
+        payload[variable] = value;
+    }
+
+    return Object.keys(payload).length ? payload : undefined;
 }

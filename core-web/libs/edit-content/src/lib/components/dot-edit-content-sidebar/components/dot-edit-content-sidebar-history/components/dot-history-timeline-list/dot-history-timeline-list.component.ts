@@ -3,6 +3,7 @@ import {
     afterNextRender,
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     input,
     OnDestroy,
@@ -12,6 +13,23 @@ import {
 } from '@angular/core';
 
 import { TimelineModule } from 'primeng/timeline';
+
+/** Stable identity for timeline items: versions use inode, push publish uses bundleId. */
+function getTimelineItemKey(item: unknown): string {
+    if (item !== null && typeof item === 'object') {
+        const record = item as Record<string, unknown>;
+        if (typeof record.inode === 'string') {
+            return record.inode;
+        }
+        if (typeof record.bundleId === 'string') {
+            return record.bundleId;
+        }
+        if (typeof record.id === 'string') {
+            return record.id;
+        }
+    }
+    return String(item);
+}
 
 /**
  * Shared wrapper around PrimeNG's `<p-timeline>` used by both the Versions and
@@ -31,6 +49,16 @@ import { TimelineModule } from 'primeng/timeline';
 export class DotHistoryTimelineListComponent<T> implements OnDestroy {
     /** Items rendered along the timeline. */
     readonly $items = input.required<T[]>({ alias: 'items' });
+
+    /** Spread copy so PrimeNG Timeline re-renders when items change (OnPush + ngFor). */
+    readonly $timelineValue = computed(() => [...this.$items()]);
+
+    /** Forces p-timeline recreation when the item set changes. */
+    readonly $timelineKey = computed(() =>
+        this.$items()
+            .map((item) => getTimelineItemKey(item))
+            .join('|')
+    );
 
     /** Template projected for each marker. Receives the item via `$implicit`. */
     readonly markerTemplate = input.required<TemplateRef<{ $implicit: T }>>();

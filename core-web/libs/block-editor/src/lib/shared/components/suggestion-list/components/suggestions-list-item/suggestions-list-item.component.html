@@ -3,13 +3,9 @@
         <i class="material-symbols-outlined">{{ url }}</i>
     } @else {
         @if (data?.contentlet) {
-            <dot-contentlet-thumbnail
-                [contentlet]="data.contentlet"
-                [width]="42"
-                [height]="42"
-                [iconSize]="'42px'" />
+            <dot-content-thumbnail [contentlet]="data.contentlet" iconSize="42px" />
         } @else {
-            <img [src]="url" alt="" />
+            <img [src]="safeUrl" alt="" />
         }
     }
 </div>

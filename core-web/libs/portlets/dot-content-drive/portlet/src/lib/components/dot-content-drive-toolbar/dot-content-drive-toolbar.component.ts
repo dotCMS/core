@@ -16,10 +16,17 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
+import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
+import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
@@ -28,6 +35,7 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { excludeFolders } from '../../utils/action-center';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -106,7 +114,9 @@ interface ToolbarAnimationState {
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
         DotContentDriveWorkflowActionsComponent,
-        DotContentDriveWorkflowFilterComponent
+        DotContentDriveWorkflowFilterComponent,
+        DotContentDriveFieldFilterComponent,
+        DotContentDriveFieldFilterMenuComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,6 +141,38 @@ interface ToolbarAnimationState {
                 opacity: 0;
                 transition: opacity 100ms ease-in;
             }
+            .field-filter-enter {
+                overflow: hidden;
+                animation: field-filter-in 180ms ease-out;
+            }
+            @keyframes field-filter-in {
+                from {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+                to {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+            }
+            .field-filter-leave {
+                overflow: hidden;
+                animation: field-filter-out 150ms ease-in forwards;
+            }
+            @keyframes field-filter-out {
+                from {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+                to {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+            }
         `
     ]
 })
@@ -138,7 +180,28 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $upload = output<void>({ alias: 'upload' });
+    // Emits the click event so the shell can anchor the upload-type popover to the button.
+    $upload = output<MouseEvent>({ alias: 'upload' });
+
+    /**
+     * Upload button label, folder-aware: when the current folder pins uploads to a base type
+     * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
+     */
+    protected readonly $uploadLabelKey = computed(() => {
+        const data = this.#store.selectedNode()?.data;
+        const defaultBaseType =
+            data && data.type !== LOAD_MORE_NODE_TYPE
+                ? (data as DotFolderTreeNodeContentData).defaultBaseType
+                : undefined;
+        switch (defaultBaseType?.toUpperCase()) {
+            case DotCMSBaseTypesContentTypes.DOTASSET:
+                return 'content-drive.upload-asset';
+            case DotCMSBaseTypesContentTypes.FILEASSET:
+                return 'content-drive.upload-file';
+            default:
+                return 'content-drive.upload';
+        }
+    });
 
     readonly $items = signal<MenuItem[]>([
         {
@@ -182,6 +245,22 @@ export class DotContentDriveToolbarComponent {
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
 
+    /**
+     * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
+     * in add order). Each variable is resolved to its field metadata, so chips render only once the
+     * content type's fields have loaded — which also covers URL restore.
+     */
+    readonly $activeFieldFilters = computed(() => {
+        const fieldByVariable = new Map(
+            this.#store.userSearchableFields().map((field) => [field.variable, field])
+        );
+
+        return this.#store
+            .userSearchableActive()
+            .map((variable) => fieldByVariable.get(variable))
+            .filter((field): field is DotCMSContentTypeField => field !== undefined);
+    });
+
     onClearAll(): void {
         this.#store.clearFilters();
     }
@@ -204,6 +283,29 @@ export class DotContentDriveToolbarComponent {
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
+
+    /**
+     * The "Action Center" button is offered from the first selected contentlet, *alongside* the flat
+     * action buttons rather than instead of them. The flat buttons cover the common per-item
+     * actions; the dialog adds what they cannot express — per-action eligibility counts and the
+     * workflow actions grouped by scheme — and that is just as useful for one item as for many.
+     *
+     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
+     * folders, so a folder-only selection offers no Action Center.
+     */
+    readonly $displayActionCenter = computed(
+        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
+    );
+
+    /**
+     * Opens the Action Center dialog for the current selection.
+     */
+    protected onOpenActionCenter(): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.ACTION_CENTER,
+            header: this.#dotMessageService.get('content-drive.action-center.header')
+        });
+    }
 
     readonly $togglerStyles = computed(() => ({
         opacity: this.$treeExpanded() ? '0' : '1',

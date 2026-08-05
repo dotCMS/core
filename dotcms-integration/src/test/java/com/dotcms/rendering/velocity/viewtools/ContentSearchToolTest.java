@@ -283,6 +283,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             """;
 
     /**
+     * A field-sorted {@code $estool.search(...)} whose per-hit {@code sort} values the template reads
+     * via {@code $hit.sortValues} (property → {@code getSortValues()}) and
+     * {@code $hit.getSortValues().get(0)}. Guards the Velocity-facing side of
+     * <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>: the neutral {@link SearchHit}
+     * now carries the sort values and exposes them under a bean-style {@code get}-accessor, so VTL
+     * templates that read the per-hit sort value (e.g. the {@code moddate} sort key, or a
+     * {@code _geo_distance} distance) resolve it instead of silently getting {@code null}.
+     */
+    private static final String SEARCH_SORT_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}},"sort":[{"moddate":"desc"}]}')
+            #set($results = $estool.search($esQuery))
+            #foreach($hit in $results.hits.hits)
+              hit id: $!{hit.id}
+              sortValues: $!{hit.sortValues}
+              firstSort: $!{hit.getSortValues().get(0)}
+            #end
+            """;
+
+    /**
      * Locks the same non-aggregation accessor surface for {@code $estool.raw(...)} —
      * {@link ContentSearchResponse}. Because {@code raw()} returns a <i>record</i>, its top-level
      * accessors need explicit method syntax ({@code $results.tookMillis()}, {@code $results.hits()},
@@ -323,6 +342,50 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #foreach($group in $results.aggregations.content_types.buckets)
               legacy key: $!{group.getKeyAsString()}
               legacy docCount: $!{group.getDocCount()}
+            #end
+            """;
+
+    /**
+     * The customer's <b>other</b> idiom (issue #36435): instead of navigating the Velocity object
+     * directly (the path {@link #verbatimCustomerVtl_rendersAfterFix()} covers), the template first
+     * round-trips the raw response through {@code $json.generate($rawResults.response)} and then walks
+     * the resulting {@code JSONObject}: {@code $results.aggregations.<name>.buckets}.
+     *
+     * <p>{@code $rawResults.response} is the {@link ContentSearchResponse} exposed by
+     * {@link ContentSearchResults#getResponse()}. {@code $json.generate(Object)} is literally
+     * {@code new com.dotmarketing.util.json.JSONObject(response)} — a reflection/bean serializer that
+     * only sees {@code getX()} accessors and honours {@code @JsonIgnore}. Before the fix,
+     * {@code getAggregations()} carried {@code @JsonIgnore}, so the aggregations vanished from the
+     * generated JSON and this loop iterated zero times (silent empty sitemap). The fix moves that
+     * suppression to a class-level {@code @JsonIgnoreProperties} that only Jackson honours, so the
+     * reflection serializer keeps {@code aggregations} — this loop must now emit buckets.</p>
+     *
+     * <p>Note: the legacy {@code .get("asMap")} hop the customer used only ever existed because the
+     * pre-migration object was an ES {@code Aggregations} (which had {@code getAsMap()}); the neutral
+     * tree is flatter, so the correct navigation is {@code aggregations.<name>.buckets} directly.</p>
+     */
+    private static final String JSON_GENERATE_VTL = """
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contentType", "size": 5 }
+                    }
+                },
+                "size": 0,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
+
+            ## The #36435 idiom: JSON-ify the raw response FIRST, then navigate the JSONObject.
+            #set($rawResults = $estool.search($esQuery))
+            #set($results = $json.generate($rawResults.response))
+            aggregations: $!{results.aggregations}
+            #foreach($group in $results.aggregations.content_types.buckets)
+              json key: $!{group.key}
+              json docCount: $!{group.docCount}
             #end
             """;
 
@@ -378,11 +441,17 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         return tool;
     }
 
-    /** Builds a Velocity context with the live {@code $estool} and a mock {@code $response} bound. */
+    /**
+     * Builds a Velocity context with the live {@code $estool}, a mock {@code $response} and the
+     * {@code $json} tool bound. {@link JSONTool} needs no real init ({@code init(Object)} is a no-op
+     * and {@code generate(Object)} is stateless), so a plain instance mirrors what the Velocity
+     * toolbox binds as {@code $json}.
+     */
     private Context velocityContext() {
         final Context ctx = new VelocityContext();
         ctx.put("estool", liveContentTool());
         ctx.put("response", mock(HttpServletResponse.class));
+        ctx.put("json", new JSONTool());
         return ctx;
     }
 
@@ -405,6 +474,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 Pattern.compile("docCount:\\s*\\d+").matcher(output).find());
         assertTrue("FIX (#36026): nested top_hits must be reachable, emitting 'hit id:' lines",
                 output.contains("hit id:"));
+    }
+
+    /**
+     * End-to-end regression for <a href="https://github.com/dotCMS/core/issues/36435">#36435</a>:
+     * drives the customer's {@code $json.generate($rawResults.response)}-then-navigate idiom through
+     * the real dotCMS Velocity engine and asserts the aggregation buckets survive the JSON round-trip
+     * (the {@code json key:} / {@code json docCount:} loop must execute). This is the path #36026/#36027
+     * did NOT cover — those navigate the Velocity object directly; this one serializes first.
+     */
+    @Test
+    public void jsonGenerateThenNavigateVtl_emitsBuckets() throws Exception {
+        final String output = VelocityUtil.eval(JSON_GENERATE_VTL, velocityContext());
+        Logger.info(this, "\n===== $json.generate VTL output =====\n" + output + "\n================================");
+
+        assertTrue("FIX (#36435): $json.generate($rawResults.response) must keep the aggregations, so "
+                        + "the bucket loop executes and emits 'json key:' lines",
+                output.contains("json key:"));
+        assertTrue("FIX (#36435): bucket doc counts must render with real numbers after the JSON round-trip",
+                Pattern.compile("json docCount:\\s*\\d+").matcher(output).find());
     }
 
     /**
@@ -564,6 +652,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         assertTrue("search() hit sourceAsMap ($hit.sourceAsMap -> getSourceAsMap()) must render the "
                         + "_source (identifier/inode) map",
                 output.contains("inode"));
+    }
+
+    /**
+     * Velocity-facing regression for <a href="https://github.com/dotCMS/core/issues/36581">#36581</a>:
+     * a field-sorted {@code $estool.search(...)} must expose the per-hit sort value in VTL. Asserts
+     * {@code $hit.sortValues} renders a non-empty array and {@code $hit.getSortValues().get(0)} renders
+     * the sort key (the {@code moddate} epoch here) — proving the neutral {@link SearchHit} both carries
+     * the value and exposes it under a bean {@code get}-accessor that Velocity resolves.
+     */
+    @Test
+    public void searchVtl_rendersPerHitSortValues() throws Exception {
+        final String output = VelocityUtil.eval(SEARCH_SORT_VTL, velocityContext());
+        Logger.info(this, "\n===== search sort VTL output =====\n" + output + "\n================================");
+
+        assertTrue("a field-sorted search() must expose a non-empty per-hit sort array via "
+                        + "$hit.sortValues (getSortValues())",
+                Pattern.compile("sortValues:\\s*\\[[^\\]]+\\]").matcher(output).find());
+        assertTrue("$hit.getSortValues().get(0) must render the moddate sort key as a number",
+                Pattern.compile("firstSort:\\s*\\d+").matcher(output).find());
     }
 
     /**

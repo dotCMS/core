@@ -67,7 +67,7 @@ export class DotIframeDialogComponent implements OnChanges {
         this.keyWasDown.emit($event);
 
         if ($event.key === 'Escape') {
-            this.show = false;
+            this.onDialogHide();
         }
     }
 

@@ -1,4 +1,4 @@
-import { test as base, type Page } from '@playwright/test';
+import { test as base } from './base.fixture';
 
 import {
     type ContentType,
@@ -7,7 +7,7 @@ import {
     deleteContentType
 } from '../requests/contentType';
 import { createFolders } from '../requests/folders';
-import { getSites, type Site } from '../requests/sites';
+import { getCurrentSite, getDefaultSite, type Site } from '../requests/sites';
 import {
     createFakePayloadHostFolderField,
     createFakePayloadTextField
@@ -36,41 +36,35 @@ function hostFolderContentTypePayload(suffix: string): CreateContentTypePayload 
 
 // ─── Fixture ─────────────────────────────────────────────────────
 
+function buildFolderPaths(prefix: string, count: number, parentPath = ''): string[] {
+    const basePath = parentPath ? `${parentPath}/` : '/';
+
+    return Array.from({ length: count }, (_, index) => `${basePath}${prefix}-${index + 1}`);
+}
+
 export const test = base.extend<{
-    adminPage: Page;
-    testSuffix: string;
     apiHelpers: {
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
-        createFolders: (siteName: string, paths: string[]) => Promise<void>;
+        createFolders: (siteName: string, paths: string[]) => ReturnType<typeof createFolders>;
+        buildFolderPaths: (prefix: string, count: number, parentPath?: string) => string[];
         getDefaultSite: () => Promise<Site>;
+        getCurrentSite: () => Promise<Site>;
         hostFolderPayload: (suffix: string) => CreateContentTypePayload;
     };
 }>({
-    adminPage: async ({ page }, use) => {
-        await use(page);
-    },
-
-    testSuffix: async ({}, use) => {
-        await use(crypto.randomUUID().slice(0, 8));
-    },
-
     apiHelpers: async ({ request }, use) => {
         await use({
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createFolders: (siteName, paths) => createFolders(request, siteName, paths),
-            getDefaultSite: async () => {
-                const sites = await getSites(request);
-                const site = sites.find((s) => s.default);
-                if (!site) {
-                    throw new Error('No default site found');
-                }
-                return site;
-            },
+            buildFolderPaths: (prefix, count, parentPath) =>
+                buildFolderPaths(prefix, count, parentPath),
+            getDefaultSite: () => getDefaultSite(request),
+            getCurrentSite: () => getCurrentSite(request),
             hostFolderPayload: (suffix: string) => hostFolderContentTypePayload(suffix)
         });
     }
 });
 
-export { expect } from '@playwright/test';
+export { expect } from './base.fixture';

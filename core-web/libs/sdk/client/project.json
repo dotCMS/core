@@ -6,24 +6,15 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "format": ["esm", "cjs"],
-                "compiler": "tsc",
-                "additionalEntryPoints": ["libs/sdk/client/src/internal.ts"],
-                "generateExportsField": true,
-                "outputPath": "dist/libs/sdk/client",
-                "assets": [
-                    {
-                        "input": "libs/sdk/client",
-                        "output": ".",
-                        "glob": "*.md"
-                    }
-                ],
-                "main": "libs/sdk/client/src/index.ts",
-                "tsConfig": "libs/sdk/client/tsconfig.lib.json"
-            }
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
         },
         "build:js": {
             "executor": "@nx/esbuild:esbuild",

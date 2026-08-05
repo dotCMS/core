@@ -1,13 +1,17 @@
 package com.dotcms;
 
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.ai.util.ContentToStringUtilTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.business.PublisherQueueJobTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.MetricTimeoutTest;
@@ -67,12 +71,16 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
+        ContentDriveKeywordSearchTest.class,
+        ContentDriveWorkflowArchiveStepTest.class,
         ContentDriveWorkflowFilterTest.class,
         AppsAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
+        com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategyMatchingTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest.class,
@@ -89,6 +97,7 @@ import org.junit.runners.Suite;
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
         PublisherQueueJobTest.class,
+        ContentToStringUtilTest.class,
 })
 
 public class MainSuite3a {

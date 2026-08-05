@@ -8,6 +8,7 @@ import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -85,6 +86,7 @@ public class PublishingResourceIntegrationTest {
     private static List<String> createdBundleIds;
     private static List<String> createdEnvironmentIds;
     private static List<String> createdFilterKeys;
+    private static List<User> createdUsers;
     private static PublishingResource publishingResource;
     private static HttpServletResponse response;
 
@@ -101,6 +103,7 @@ public class PublishingResourceIntegrationTest {
         createdBundleIds = new ArrayList<>();
         createdEnvironmentIds = new ArrayList<>();
         createdFilterKeys = new ArrayList<>();
+        createdUsers = new ArrayList<>();
         publishingResource = new PublishingResource();
         response = new MockHttpResponse();
     }
@@ -130,6 +133,13 @@ public class PublishingResourceIntegrationTest {
                 } catch (Exception e) {
                     // Ignore cleanup errors
                 }
+            }
+        }
+
+        // Cleanup users created by tests
+        if (createdUsers != null) {
+            for (final User user : createdUsers) {
+                UserDataGen.remove(user, Boolean.TRUE);
             }
         }
 
@@ -1192,6 +1202,10 @@ public class PublishingResourceIntegrationTest {
     }
 
     private HttpServletRequest mockAuthenticatedRequest() {
+        return mockAuthenticatedRequest(adminUser);
+    }
+
+    private HttpServletRequest mockAuthenticatedRequest(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
@@ -1200,7 +1214,7 @@ public class PublishingResourceIntegrationTest {
                                 .request())
                         .request());
 
-        request.setAttribute(WebKeys.USER, adminUser);
+        request.setAttribute(WebKeys.USER, user);
         return request;
     }
 
@@ -1446,6 +1460,61 @@ public class PublishingResourceIntegrationTest {
         assertEquals("BundleId should match", bundleId, bundleResult.bundleId());
         assertNotNull("Message should not be null", bundleResult.message());
         assertEquals("DeliveryStrategy should match", DeliveryStrategy.ALL_ENDPOINTS, bundleResult.deliveryStrategy());
+    }
+
+    /**
+     * Reproduces the authorization gap in issue #36414.
+     *
+     * <p>Retry re-sends a bundle to every environment it targets. Before the fix, the endpoint
+     * only required a backend user, so a user with no USE permission on the bundle's environment
+     * could still re-fire the push. Push already guards this via
+     * {@code PublishingJobsHelper#validateEnvironmentPermissions}; retry did not.</p>
+     *
+     * Given: a retryable bundle linked to an environment the caller cannot USE
+     * When:  a non-admin backend user (no USE permission) retries it
+     * Then:  the bundle result is a failure that names the permission denial (no push occurs)
+     */
+    @Test
+    public void test_retryBundles_userWithoutEnvironmentUsePermission_isRejected() throws Exception {
+        // Environment with no USE permission granted to our limited user
+        final Environment environment = createEnvironmentWithPermission("retry-authz-env");
+
+        // A retryable bundle linked to that environment
+        final Bundle bundle = PublisherTestUtil.createBundle(
+                "retry-authz-bundle_" + System.currentTimeMillis(), adminUser, environment);
+        final String bundleId = bundle.getId();
+        createdBundleIds.add(bundleId);
+
+        final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+        auditStatus.setStatus(Status.FAILED_TO_PUBLISH);
+        auditStatus.setStatusUpdated(new Date());
+        final PublishAuditHistory history = new PublishAuditHistory();
+        auditStatus.setStatusPojo(history);
+        publishAuditAPI.insertPublishAuditStatus(auditStatus);
+        publishAuditAPI.updatePublishAuditStatus(bundleId, Status.FAILED_TO_PUBLISH, history);
+
+        // A non-admin backend user with no permission on the environment
+        final User limitedUser = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        createdUsers.add(limitedUser);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(limitedUser), response, form);
+
+        assertEquals("Should have one result", 1, result.getEntity().size());
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Retry must be rejected for a user lacking USE permission on the environment",
+                bundleResult.success());
+        assertNotNull("Failure message should not be null", bundleResult.message());
+        assertTrue("Failure message should cite the permission denial, was: " + bundleResult.message(),
+                bundleResult.message().toLowerCase().contains("does not have permission"));
     }
 
     /**

@@ -14,11 +14,11 @@
                     <p-button
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
-                        [label]="'content-drive.upload' | dm"
+                        [label]="$uploadLabelKey() | dm"
                         icon="pi pi-upload"
                         [outlined]="true"
                         data-testid="upload-asset-button"
-                        (click)="$upload.emit()" />
+                        (click)="$upload.emit($event)" />
 
                     <p-button
                         animate.enter="toolbar-enter"
@@ -32,10 +32,22 @@
                 }
 
                 @if ($displayActions()) {
+                    <!-- Workflow actions stay first in the row and remain visible for any
+                         selection; the Action Center is offered alongside them, not instead, from
+                         the first selected contentlet. -->
                     <dot-content-drive-workflow-actions
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
                         data-testid="workflow-actions" />
+
+                    @if ($displayActionCenter()) {
+                        <p-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            [label]="'content-drive.action-center.header' | dm"
+                            data-testid="action-center-button"
+                            (click)="onOpenActionCenter()" />
+                    }
                 }
             </div>
         </div>
@@ -44,6 +56,15 @@
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
+
+            @for (field of $activeFieldFilters(); track field.variable) {
+                <dot-content-drive-field-filter
+                    animate.enter="field-filter-enter"
+                    animate.leave="field-filter-leave"
+                    [field]="field" />
+            }
+
+            <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
 
             @if ($hasFilters()) {
                 <p-button

@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent, ngMocks } from 'ng-mocks';
 
 import { computed, signal } from '@angular/core';

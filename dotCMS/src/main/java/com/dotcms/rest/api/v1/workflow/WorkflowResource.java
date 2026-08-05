@@ -227,16 +227,52 @@ public class WorkflowResource {
             "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
             "leave the default.";
 
-    private static final String BLOCK_EDITOR_FIELD_NOTE =
-            "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown** string — " +
+    /**
+     * OpenAPI note describing how Story Block fields accept Markdown/HTML — including the
+     * {@code dotcms-*} rich-node vocabulary (#36658 fences, #36659 elements). Public so every
+     * endpoint that funnels through the same populator seam (e.g.
+     * {@code ContentResource#saveDraft}) documents the identical contract from one source.
+     */
+    public static final String BLOCK_EDITOR_FIELD_NOTE =
+            "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — " +
             "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
             "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
             "back as structured content with no editor round-trip required. A value that is already a " +
-            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended " +
-            "for plain content: if the field already holds rich blocks that Markdown cannot represent " +
-            "(embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing " +
-            "document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. " +
-            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`.";
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`." +
+            "\n\n**Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as " +
+            "fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON " +
+            "object. Example — embed a contentlet:" +
+            "\n\n```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n```" +
+            "\n\nSupported labels and payload fields (**bold** = required):" +
+            "\n- `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). " +
+            "The server rebuilds the full embed data from the identifier on every read." +
+            "\n- `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional " +
+            "`alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external " +
+            "images need no fence — standard `![alt](url \"title\")` works." +
+            "\n- `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, " +
+            "`height`, `languageId`." +
+            "\n- `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`." +
+            "\n- `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON " +
+            "(`{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[n,n]},\"content\":[…two gridColumn nodes…]}`)." +
+            "\n- `dotcms-node` → any other node type verbatim (`{\"type\": \"<nodeType>\", …}`) — the " +
+            "fallback for custom blocks." +
+            "\n\n**Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar " +
+            "payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, " +
+            "so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): " +
+            "`<dotcms-content identifier=\"<contentlet-id>\" language-id=\"1\"></dotcms-content>`. " +
+            "`dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's " +
+            "text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an " +
+            "explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would " +
+            "swallow the content after it. Both carriers produce identical stored documents." +
+            "\n\nBlock styling (e.g. text alignment) is set by an HTML comment on its own line " +
+            "immediately before the block it decorates, in Markdown and HTML alike: " +
+            "`<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
+            "\n\nA Markdown/HTML write **fully replaces** the stored document; when stored rich blocks " +
+            "are not carried over in the submitted value, the save still succeeds and an advisory warning " +
+            "listing the replaced blocks is returned in the response `messages` field — carry the blocks " +
+            "over as fences or elements to preserve them. An invalid payload degrades to an ordinary " +
+            "code block (or is dropped when it carries no text to keep), never an error.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
@@ -3083,13 +3119,34 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
-        final List<MessageEntity> messages = ignoredSystemFieldsMessages(ignoredSystemFields);
+        // Advisory warnings only — the save itself succeeded with 200. Story Block conversion
+        // warnings (e.g. rich blocks replaced by a Markdown write, see #36658) are popped off
+        // the contentlets BEFORE the entity map is built so the transient key never leaks.
+        final List<MessageEntity> messages = mergeMessages(
+                ignoredSystemFieldsMessages(ignoredSystemFields),
+                MapToContentletPopulator.popStoryBlockConversionMessages(
+                        contentlet, basicContentlet, hydratedContentlet));
         final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
                 null != messages
                         ? new ResponseEntityView<>(entity, messages)
                         : new ResponseEntityView<>(entity)
         ).build(); // 200
+    }
+
+    /** Null-tolerant concat: returns {@code null} when both lists are null/empty. */
+    private static List<MessageEntity> mergeMessages(final List<MessageEntity> first,
+                                                     final List<MessageEntity> second) {
+        if (null == first || first.isEmpty()) {
+            return (null == second || second.isEmpty()) ? null : second;
+        }
+        if (null == second || second.isEmpty()) {
+            return first;
+        }
+        final List<MessageEntity> merged = new ArrayList<>(first.size() + second.size());
+        merged.addAll(first);
+        merged.addAll(second);
+        return merged;
     }
 
     /**

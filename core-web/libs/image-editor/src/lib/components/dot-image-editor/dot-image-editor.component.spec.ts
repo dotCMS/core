@@ -1,11 +1,11 @@
+import { Dispatcher } from '@ngrx/signals/events';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { Dispatcher } from '@ngrx/signals/events';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { signal } from '@angular/core';

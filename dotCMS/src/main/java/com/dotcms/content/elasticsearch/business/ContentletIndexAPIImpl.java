@@ -24,7 +24,10 @@ import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.content.index.opensearch.IndexStartupValidator;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.VersionedIndices;
@@ -78,6 +81,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -174,6 +178,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private final PhaseRouter<ContentletIndexOperations> router;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+
+    /**
+     * Max seconds a single reindex-journal entry may spend loading/mapping its contentlets
+     * before it is marked failed and the queue moves on — guards against hung filesystem I/O
+     * on network-backed storage (issue #36498). {@code 0} disables the guard.
+     */
+    public static final String REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS =
+            "REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS";
+
+    private static final Lazy<ReindexMappingRunner> mappingRunner = Lazy.of(() ->
+            new ReindexMappingRunner(
+                    () -> Config.getIntProperty(REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS, 120),
+                    Config.getIntProperty("REINDEX_CONTENTLET_MAPPING_MAX_THREADS", 8),
+                    DbConnectionFactory::closeSilently));
 
     public ContentletIndexAPIImpl() {
         this(new ContentletIndexOperationsES(),
@@ -830,11 +848,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());
-        bootstrapAndPoint(ts, esNeeded, osNeeded);
+        final boolean osPointed = bootstrapAndPoint(ts, esNeeded, osNeeded);
 
+        // The OS suffix is reported only when the OS bootstrap actually registered its indices:
+        // advertising a suffix after an absorbed failure would break the documented invariant that
+        // a non-empty suffix names an existing index (issue #36222).
         return ImmutableIndexStartResult.builder()
                 .indexSuffixES(esNeeded ? ts : "")
-                .indexSuffixOS(osNeeded ? ts : "")
+                .indexSuffixOS(osPointed ? ts : "")
                 .build();
     }
 
@@ -850,12 +871,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *
      * <p>Applies to all phases.</p>
      *
+     * <p>ES is bootstrapped first so that a shadow-phase OS failure — which is absorbed by
+     * {@link #handleOsBootstrapFailure} — can never leave ES without indices (issue #36222).</p>
+     *
      * @param ts       timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
      * @param needsES  {@code true} when ES working/live indices must be created
      * @param needsOS  {@code true} when OS working/live indices must be created
      * @throws DotDataException on persistence or creation failure
      */
-    private void bootstrapAndPoint(final String ts,
+    @VisibleForTesting
+    boolean bootstrapAndPoint(final String ts,
                                    final boolean needsES,
                                    final boolean needsOS) throws DotDataException {
 
@@ -865,8 +890,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             bootstrapAndPointES(workingName, liveName);
         }
         if(needsOS) {
-            bootstrapAndPointOS(workingName, liveName);
+            return bootstrapAndPointOS(workingName, liveName);
         }
+        return false;
     }
 
 
@@ -902,13 +928,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .orElse(workingLogical);
             Logger.info(this, "OS recovery: recreating missing OS cluster index — working="
                     + workingLogical + ", live=" + liveLogical);
-            bootstrapAndPointOS(workingLogical, liveLogical);
+            final boolean osPointed = bootstrapAndPointOS(workingLogical, liveLogical);
             // indexSuffixOS is a pure timestamp — strip the .os tag locally before parsing it out.
             final String workingBase = IndexTag.strip(workingLogical);
             final int lastUnder = workingBase.lastIndexOf('_');
             final String suffix = lastUnder >= 0 ? workingBase.substring(lastUnder + 1) : "";
             return ImmutableIndexStartResult.builder()
-                    .indexSuffixES("").indexSuffixOS(suffix).build();
+                    .indexSuffixES("").indexSuffixOS(osPointed ? suffix : "").build();
         }
 
         // Case 2: OS DB empty — mirror ES names (migration catchup, Phases 1/2).
@@ -919,11 +945,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     ? stripClusterPrefix(esInfo.getLive()) : workingLogical;
             Logger.info(this, "OS catchup: mirroring ES names — working=" + workingLogical
                     + ", live=" + liveLogical);
-            bootstrapAndPointOS(workingLogical, liveLogical);
+            final boolean osPointed = bootstrapAndPointOS(workingLogical, liveLogical);
             final int lastUnder = workingLogical.lastIndexOf('_');
             final String suffix = lastUnder >= 0 ? workingLogical.substring(lastUnder + 1) : "";
             return ImmutableIndexStartResult.builder()
-                    .indexSuffixES("").indexSuffixOS(suffix).build();
+                    .indexSuffixES("").indexSuffixOS(osPointed ? suffix : "").build();
         }
 
         // Case 3: no record in either store — fresh install or data-loss scenario.
@@ -931,10 +957,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 + " bootstrapping OS with fresh timestamp");
         final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
                 .format(LocalDateTime.now());
-        bootstrapAndPointOS(IndexType.WORKING.getPrefix() + "_" + ts,
-                            IndexType.LIVE.getPrefix()    + "_" + ts);
+        final boolean osPointed = bootstrapAndPointOS(
+                IndexType.WORKING.getPrefix() + "_" + ts,
+                IndexType.LIVE.getPrefix()    + "_" + ts);
         return ImmutableIndexStartResult.builder()
-                .indexSuffixES("").indexSuffixOS(ts).build();
+                .indexSuffixES("").indexSuffixOS(osPointed ? ts : "").build();
     }
 
     /**
@@ -998,15 +1025,22 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * not yet initialised.</p>
      *
      * <p>If either {@link #createContentIndex} call returns {@code false} (soft failure),
-     * the error is logged but execution continues and {@link #pointOS} is still called.
-     * A hard failure propagates as {@link DotDataException}.</p>
+     * the error is logged but execution continues and {@link #pointOS} is still called.</p>
+     *
+     * <p><b>Hard failures are phase-aware</b> (issue #36222): in a dual-write phase the failure is
+     * absorbed by {@link #handleOsBootstrapFailure} — the migration is halted (ES-only) and
+     * {@link #pointOS} is skipped — so an OS-side problem never aborts index initialisation for ES.
+     * In Phase 3 (OS is the primary store) it propagates as {@link DotDataException}.</p>
      *
      * @param workingName logical working index name (no cluster prefix, no vendor tag)
      * @param liveName    logical live index name (no cluster prefix, no vendor tag)
-     * @throws DotDataException if index creation throws {@link IOException} or the OS
-     *                          store cannot be updated
+     * @return {@code true} when the OS indices were registered in the OS index store; {@code false}
+     *         when the bootstrap was skipped or absorbed, so callers do not advertise an OS index
+     *         that does not exist
+     * @throws DotDataException if index creation fails in Phase 3, or the OS store cannot be updated
      */
-    private void bootstrapAndPointOS(final String workingName, final String liveName)
+    @VisibleForTesting
+    boolean bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
 
         // Separation gate (issue #36419): OS must be a SEPARATE cluster from ES. Config-only,
@@ -1024,7 +1058,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     + " (see the preceding error for the cause — e.g. ES/OS endpoint overlap or"
                     + " an unresolved OS config). Migration halted (now ES-only).");
             haltMigration();
-            return;
+            return false;
         }
 
         // Connection gate (issue #36244): verify OS reachability BEFORE creating OS indices.
@@ -1046,7 +1080,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     + ", live=" + liveName + "): OS was unreachable and the migration was halted"
                     + " (now ES-only). OS indices will be created on a later restart once OS is"
                     + " reachable and the migration phase is re-enabled.");
-            return;
+            return false;
         }
 
         boolean result;
@@ -1054,7 +1088,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // Targeted: executed directly against this provider only. No phase fan-out here.
             result = createContentIndex(workingName, 1, IndexTag.OS);
             result &= createContentIndex(liveName, 1, IndexTag.OS);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            // Exception (not IOException): the OS client also reports rejections as unchecked
+            // DotStateException — e.g. the HTTP 403 raised when the OS user's role does not cover
+            // the dotCMS index-name prefix (issue #36222). Catching only IOException let those
+            // escape uncaught, aborting the whole index bootstrap (ES included).
+            if (handleOsBootstrapFailure(workingName, liveName, e)) {
+                return false;
+            }
             throw new DotDataException(String.format(
                     "Error creating content indices for indices[ %s ,%s ] with message: %s",
                     workingName, liveName, e.getMessage()), e);
@@ -1066,6 +1107,91 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         pointOS(operationsOS.toPhysicalName(workingName),
                 operationsOS.toPhysicalName(liveName), null, null);
+        return true;
+    }
+
+    /**
+     * Phase-aware handling of a hard OpenSearch index-creation failure — working/live bootstrap
+     * ({@link #bootstrapAndPointOS}) and reindex slots ({@link #initAndPointReindex}) share this
+     * policy (issue #36222).
+     *
+     * <p>Mirrors the outcome policy of the OS connection gate
+     * ({@code OSIndexAPIImpl.waitUtilIndexReady()}): a shadow-phase OS problem must never take
+     * down an installation whose authoritative store is still ES. The gate only probes
+     * {@code GET /}, which a restricted OS user is allowed to call, so an authorization failure
+     * scoped to <em>index names</em> — the classic case being a role that grants
+     * {@code cluster_&lt;customer&gt;*} while {@code DOT_DOTCMS_CLUSTER_ID} yields a different prefix —
+     * passes the gate and only surfaces here, on the create request.</p>
+     *
+     * <ul>
+     *   <li><strong>Phase 1 / 2 (shadow)</strong> — log an actionable ERROR naming the physical
+     *       index names and the likely cause, halt the migration (ES-only) and return {@code true}
+     *       so the caller skips {@link #pointOS} and completes normally.</li>
+     *   <li><strong>Phase 3 (OS only)</strong> — return {@code false}: OS is the primary store and
+     *       there is no ES to fall back to, so the caller must propagate the failure.</li>
+     * </ul>
+     *
+     * @param workingName logical working index name (no cluster prefix, no vendor tag)
+     * @param liveName    logical live index name (no cluster prefix, no vendor tag)
+     * @param e           the failure raised by the OS provider
+     * @return {@code true} when the failure was absorbed and the migration halted (ES-only);
+     *         {@code false} when the caller must propagate it (Phase 3)
+     */
+    @VisibleForTesting
+    boolean handleOsBootstrapFailure(final String workingName, final String liveName,
+            final Exception e) {
+
+        final MigrationPhase phase = MigrationPhase.current();
+        if (phase.isMigrationComplete()) {
+            // Phase 3: OS is the primary store and ES is decommissioned — no fallback is possible.
+            Logger.fatal(this.getClass(), "OpenSearch index creation failed in " + phase.name()
+                    + " (working=" + workingName + ", live=" + liveName + "): OS is the primary"
+                    + " store, so the failure cannot be degraded to ES. Cause: " + e.getMessage(), e);
+            return false;
+        }
+
+        final ConnectionFailureKind kind = OSIndexAPIImpl.classifyConnectionError(e);
+        final StringBuilder detail = new StringBuilder()
+                .append("OpenSearch index creation failed — working=")
+                .append(operationsOS.toPhysicalName(workingName))
+                .append(", live=").append(operationsOS.toPhysicalName(liveName))
+                .append(", likelyCause=").append(kind.name())
+                .append(" (").append(kind.remediation()).append(")")
+                .append(", error=").append(e.getMessage());
+
+        if (kind == ConnectionFailureKind.AUTH_FORBIDDEN) {
+            // Name the index-prefix mismatch explicitly: it is the permission problem that passes
+            // the connection gate and only fails on create, and its fix is a config change.
+            detail.append(". The OS user reached the cluster but is not allowed to operate on these")
+                  .append(" index names — verify that its role's index pattern covers them, i.e.")
+                  .append(" that DOT_DOTCMS_CLUSTER_ID starts with the customer name the OS role")
+                  .append(" was provisioned for (a role scoped to 'cluster_acme*' rejects an index")
+                  .append(" named 'cluster_other.working_….os')");
+        }
+
+        Logger.error(this.getClass(), detail
+                + " — OS is a shadow store in " + phase.name() + "; falling back to ES-only"
+                + " (resetting FEATURE_FLAG_OPEN_SEARCH_PHASE to 0 via haltMigration)."
+                + " Any OS index created before the failure is left in the cluster and is reused or"
+                + " repaired by the next bootstrap; it is never registered in the OS index store."
+                + " Fix the cause above and re-enable the migration phase when ready.", e);
+        haltMigration();
+
+        // haltMigration() writes the phase through Config, which the DB-backed ConfigSystemTable
+        // shadows: when FEATURE_FLAG_OPEN_SEARCH_PHASE comes from that source the reset is a no-op
+        // (see MigrationPhase.reset()). Reporting "absorbed" then would leave the worst state —
+        // still dual-write, but with no OS pointer — so say so loudly instead of hiding it.
+        if (!MigrationPhase.current().isMigrationNotStarted()) {
+            Logger.fatal(this.getClass(),
+                    "The OpenSearch migration could NOT be halted: FEATURE_FLAG_OPEN_SEARCH_PHASE is"
+                    + " still " + MigrationPhase.current().name() + " after the reset, which means it"
+                    + " is set through the DB-backed config (system table), where the runtime reset"
+                    + " does not apply. dotCMS keeps serving from Elasticsearch and no OpenSearch"
+                    + " index pointer was registered, but the phase must be set to 0 through the"
+                    + " dotCMS config API (or the cause above fixed) before OpenSearch reads are"
+                    + " enabled — in Phase 2 an empty OpenSearch index store fails reads.");
+        }
+        return true;
     }
 
     /**
@@ -1252,38 +1378,75 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *
      * <p>Applies to all phases; OS store is skipped in phase 0.</p>
      *
+     * <p><b>Each store is only pointed at slots that were actually created</b> (issue #36222).
+     * Creation is targeted per provider rather than fanned out, because the fan-out
+     * ({@link #createContentIndex(String, int)}) reports only the primary provider's result: an OS
+     * rejection was logged and discarded, and the OS store was then pointed at reindex indices that
+     * do not exist — the reindex writes would make OpenSearch auto-create a dynamically-mapped twin
+     * that {@link #fullReindexSwitchover(boolean)} later promotes to active. An OS failure in a
+     * dual-write phase is absorbed by {@link #handleOsBootstrapFailure} (ES reindex proceeds); in
+     * Phase 3 it propagates.</p>
+     *
      * @param ts timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
      * @throws DotDataException on persistence or creation failure
      */
-    private void initAndPointReindex(final String ts) throws DotDataException {
+    @VisibleForTesting
+    void initAndPointReindex(final String ts) throws DotDataException {
         final String reindexWorkingName = IndexType.REINDEX_WORKING.getPrefix() + "_" + ts;
         final String reindexLiveName    = IndexType.REINDEX_LIVE.getPrefix()    + "_" + ts;
 
-        // Physical index creation — router fan-out applies name transformation per provider
-        try {
-            createContentIndex(reindexWorkingName, 0);
-            createContentIndex(reindexLiveName, 0);
-        } catch (IOException e) {
-            throw new DotDataException(
-                    "Error creating reindex indices for ts=" + ts + ": " + e.getMessage(), e);
-        }
         // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
         // Persist reindex slots to the legacy ES store, preserving existing working/live pointers.
         // Skipped in Phase 3: ES is decommissioned, so writing ES reindex pointers here would only
         // create orphan NULL-version rows that the OS-only switchover never cleans up (#36077).
         if (!isMigrationComplete()) {
+            try {
+                createContentIndex(reindexWorkingName, 0, IndexTag.ES);
+                createContentIndex(reindexLiveName, 0, IndexTag.ES);
+            } catch (Exception e) {
+                throw new DotDataException(
+                        "Error creating ES reindex indices for ts=" + ts + ": " + e.getMessage(), e);
+            }
             pointES(null, null,
                     operationsES.toPhysicalName(reindexWorkingName),
                     operationsES.toPhysicalName(reindexLiveName));
         }
         // ── END LEGACY ES ─────────────────────────────────────────────────────
 
-        // Persist OS reindex slots, preserving existing working/live pointers.
-        if (isMigrationStarted()) {
-            pointOS(null, null,
-                    operationsOS.toPhysicalName(reindexWorkingName),
-                    operationsOS.toPhysicalName(reindexLiveName));
+        if (!isMigrationStarted()) {
+            return;
         }
+
+        final boolean osCreated;
+        try {
+            // Single & (not &&): the live slot must be attempted even if the working one failed, so
+            // the outcome reflects both — mirrors bootstrapAndPointOS.
+            osCreated = createContentIndex(reindexWorkingName, 0, IndexTag.OS)
+                    & createContentIndex(reindexLiveName, 0, IndexTag.OS);
+        } catch (Exception e) {
+            if (handleOsBootstrapFailure(reindexWorkingName, reindexLiveName, e)) {
+                return; // migration halted (ES-only): leave the OS store untouched
+            }
+            throw new DotDataException(
+                    "Error creating OS reindex indices for ts=" + ts + ": " + e.getMessage(), e);
+        }
+        if (!osCreated) {
+            if (isMigrationComplete()) {
+                throw new DotDataException("Could not create the OpenSearch reindex indices for ts="
+                        + ts + " and OpenSearch is the only store in "
+                        + MigrationPhase.current().name() + "; aborting the reindex.");
+            }
+            Logger.error(this.getClass(), "Could not create the OpenSearch reindex indices for ts="
+                    + ts + "; leaving the OS reindex slots unset rather than pointing them at"
+                    + " indices that do not exist. The Elasticsearch reindex proceeds normally and"
+                    + " OpenSearch catches up on the next successful reindex.");
+            return;
+        }
+
+        // Persist OS reindex slots, preserving existing working/live pointers.
+        pointOS(null, null,
+                operationsOS.toPhysicalName(reindexWorkingName),
+                operationsOS.toPhysicalName(reindexLiveName));
     }
 
     @CloseDBIfOpened
@@ -1424,6 +1587,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not mirror reindex switchover to OS store", osEx);
                 }
+            } else {
+                // Phase 0 with OS reindex slots present = the phase flag was rolled back while
+                // a dual-write full reindex was in flight (#36471). The OS pair is partial and
+                // must never survive as adoptable state.
+                abortStrandedOsReindex();
             }
 
             // Async: merge index segments and expand replicas on the newly active indices,
@@ -1521,6 +1689,65 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         notifyAdminsOfFailedReindex();
         return true;
+    }
+
+    /**
+     * Aborts a stranded OS reindex left behind by a Phase-0 rollback during an in-flight
+     * dual-write full reindex (#36471). When the phase flag is rolled back mid-journal-drain,
+     * the OS reindex pair stops receiving writes and stays partial; the OS store still holds
+     * the reindex slots pointing at it. Left alone, those slots make {@code isInFullReindex()}
+     * report true again on a later flip to Phase 2 (triggering a switchover over null ES
+     * pointers), and the partial indices are the exact {@code .os} twins of the promoted ES
+     * names — what a boot catchup would mirror-adopt as active, silently serving a fraction
+     * of the content.
+     *
+     * <p>Clears the slots first (the safety-critical part — active working/live pointers are
+     * preserved), then deletes the partial physical indices best-effort. Never throws: this
+     * runs inside the ES switchover/abort, which must not be undone by OS housekeeping.</p>
+     */
+    private void abortStrandedOsReindex() {
+        try {
+            final Optional<VersionedIndices> osExisting =
+                    versionedIndicesAPI.loadDefaultVersionedIndices();
+            final Optional<String> reindexWorking =
+                    osExisting.flatMap(VersionedIndices::reindexWorking);
+            final Optional<String> reindexLive =
+                    osExisting.flatMap(VersionedIndices::reindexLive);
+            if (reindexWorking.isEmpty() && reindexLive.isEmpty()) {
+                return;
+            }
+            Logger.warn(this, "Migration phase was rolled back to 0 during a full reindex:"
+                    + " aborting the OS reindex — clearing the OS reindex slots and deleting the"
+                    + " partial indices [" + reindexWorking.orElse("none") + ", "
+                    + reindexLive.orElse("none") + "] so they can never be adopted as active"
+                    + " (#36471)");
+
+            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
+            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
+            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+            osExisting.flatMap(VersionedIndices::siteSearch).ifPresent(osBuilder::siteSearch);
+            // reindexWorking / reindexLive intentionally omitted → cleared
+            final VersionedIndices rebuilt = osBuilder.build();
+            if (rebuilt.hasAnyIndex()) {
+                versionedIndicesAPI.saveIndices(rebuilt);
+            } else {
+                // The reindex slots were the only OS pointers (e.g. the active OS pair was
+                // deleted via the index-management flow mid-reindex). saveIndices contractually
+                // rejects an empty record — remove the version row instead, same as
+                // clearOsStorePointer (#35640), so the physical deletes below still run.
+                versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
+            }
+
+            for (final Optional<String> name : List.of(reindexWorking, reindexLive)) {
+                name.ifPresent(idx -> Try.run(() -> operationsOS.indexAPI().delete(idx))
+                        .onFailure(e -> Logger.warn(this,
+                                "Could not delete partial OS reindex index " + idx
+                                        + " — delete it manually", e)));
+            }
+        } catch (Exception osEx) {
+            Logger.warn(this, "Could not abort the stranded OS reindex (#36471) — the OS store"
+                    + " may still hold reindex slots pointing at partial indices", osEx);
+        }
     }
 
     /**
@@ -1789,6 +2016,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // never left half-deleted. Broadcast the LOGICAL (untagged) name to every write provider
         // so each re-derives its OWN physical name (ES → bare, OS → .os). Track the read
         // provider's result as the primary (issue #35640).
+        // Divergent names are normal after a migration catchup, so the shadow leg skips names its
+        // engine does not hold instead of ERROR-logging an expected miss, and real shadow failures
+        // follow the shadow-write log policy (fire-and-forget) (issue #36423). Primary failures
+        // are logged at ERROR and re-thrown after every provider has been called, matching the
+        // PhaseRouter.writeBoolean contract — pre-migration these propagated to the caller, and
+        // swallowing them lets the REST layer report success for a failed delete (#36430).
         final ContentletIndexOperations primary = router.readProvider();
         final List<ContentletIndexOperations> targets = router.writeProviders();
         final String nameForTargets = IndexTag.OS.untag(indexName);
@@ -1797,6 +2030,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String logicalName = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
 
         boolean primaryResult = false;
+        RuntimeException primaryEx = null;
         for (final ContentletIndexOperations ops : targets) {
             // Resolve the per-provider physical name (ES → bare, OS → .os tag) via
             // ops.toPhysicalName so the delete targets the REAL index. Routing a bare
@@ -1806,16 +2040,42 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // (1) Delete the cluster index. A failure here must NOT abort the operation —
             // keep going so the remaining engine and the DB pointers are still handled.
             try {
-                final boolean r = ops.indexAPI().delete(physicalName);
-                if (ops == primary) {
-                    primaryResult = r;
+                if (ops != primary && !ops.indexAPI().indexExists(physicalName)) {
+                    // Expected divergent-name miss on the shadow leg — log via the shadow-write
+                    // policy instead of an ERROR stack trace (issue #36423). Fall through so the
+                    // DB pointer for this engine is still cleared in step (2) below.
+                    logShadowWriteFailure(this.getClass(),
+                            "Skipping shadow delete of " + physicalName
+                            + ": index does not exist in the shadow provider (divergent names"
+                            + " are expected during migration catchup)", null);
+                } else {
+                    final boolean r = ops.indexAPI().delete(physicalName);
+                    if (ops == primary) {
+                        primaryResult = r;
+                    }
                 }
             } catch (final Exception e) {
-                Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
-                if (ops == primary) {
-                    primaryResult = false;
+                if (ops == primary && isIndexNotFound(e)) {
+                    // The index is already gone — the delete goal (index absent) is met, so this
+                    // is an idempotent no-op, NOT a failure to propagate. Covers cleaning up a
+                    // dangling DB pointer whose cluster index no longer exists and the divergent
+                    // case where only the shadow engine held the index (issue #35640 lastOsSlot;
+                    // reconciles #36430's primary-failure propagation with that cleanup path).
+                    Logger.debug(this.getClass(),
+                            "Delete of " + physicalName + " hit a missing index; treating as a no-op");
+                    primaryResult = true;
+                } else if (ops == primary) {
+                    // Genuine primary failure (engine down, auth, ...) — surface at ERROR and
+                    // re-throw to the caller so the REST layer does not report success (#36430).
+                    Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
+                    primaryEx = e instanceof RuntimeException
+                            ? (RuntimeException) e : new DotRuntimeException(e);
+                } else {
+                    // Shadow failures are fire-and-forget in dual-write phases (#36423).
+                    logShadowWriteFailure(this.getClass(),
+                            "Shadow delete failed (fire-and-forget in dual-write phase): "
+                            + physicalName + ": " + e.getMessage(), e);
                 }
-                // shadow failures are fire-and-forget in dual-write phases
             }
             // (2) Always remove the indicies-table pointer for this engine, even if the cluster
             // delete above failed, so no DB row is left dangling at a deleted index.
@@ -1825,6 +2085,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 Logger.warn(this.getClass(),
                         "Could not clear the indicies DB pointer for " + physicalName, e);
             }
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
         }
         return primaryResult;
     }
@@ -1842,6 +2105,28 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else {
             clearEsStorePointer(logicalName);
         }
+    }
+
+    /**
+     * True when {@code t} (or any of its causes) reports a missing index. Deleting an index that
+     * is already gone meets the delete goal, so it is treated as an idempotent no-op rather than a
+     * failure that must propagate (see {@link #delete(String)}). Kept vendor-neutral: both the ES
+     * and OpenSearch clients surface the same {@code index_not_found_exception} / "no such index"
+     * marker, so this matches the wire text instead of importing a vendor exception type.
+     */
+    private static boolean isIndexNotFound(final Throwable t) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+            if (cause.getClass().getSimpleName().contains("IndexNotFound")) {
+                return true;
+            }
+            final String message = cause.getMessage();
+            if (message != null
+                    && (message.contains("index_not_found_exception")
+                        || message.contains("no such index"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -2254,14 +2539,40 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
         try {
-            for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
-                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
-                        contentlet.getInode(), idx.getPriority()));
-                contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
-            }
+            // Bounded timeout: loading and mapping touch binary files, and a hung stat on
+            // network-backed storage must fail this entry instead of wedging the reindex
+            // thread forever (issue #36498).
+            mappingRunner().run(() -> {
+                mapEntryForProcessor(proc, idx);
+                return null;
+            }, "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+        }
+    }
+
+    /**
+     * The shared timeout guard for per-entry mapping work. Seam for tests, which override it
+     * to supply a runner with a test-controlled timeout and no DB cleanup.
+     */
+    @VisibleForTesting
+    ReindexMappingRunner mappingRunner() {
+        return mappingRunner.get();
+    }
+
+    /**
+     * Loads all versions of the entry's contentlet and appends their index operations to the
+     * processor. Runs on a {@link ReindexMappingRunner} worker thread when the mapping timeout
+     * guard is enabled, so it must not rely on caller-thread state.
+     */
+    @VisibleForTesting
+    void mapEntryForProcessor(final IndexBulkProcessor proc, final ReindexEntry idx)
+            throws Exception {
+        for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+            Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                    contentlet.getInode(), idx.getPriority()));
+            contentlet.setIndexPolicy(IndexPolicy.DEFER);
+            addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
         }
     }
 
@@ -2899,6 +3210,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not clear OS reindex slots during abort", osEx);
                 }
+            } else {
+                // Same mid-reindex rollback state as the switchover path (#36471), reached when
+                // the operator aborts instead of letting the journal drain.
+                abortStrandedOsReindex();
             }
 
         } catch (Exception e) {
@@ -3059,25 +3374,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void deactivateIndex(String indexName) throws DotDataException, IOException {
         if (isMigrationComplete()) {
             // ── Phase 3: OS only ─────────────────────────────────────────────
-            // Copy all existing OS slots, skipping the one being deactivated.
-            // An unset slot defaults to Optional.empty() in VersionedIndicesImpl.
-            // Failure is fatal: this is the primary store, not a shadow copy.
-            final Optional<VersionedIndices> osExisting =
-                    versionedIndicesAPI.loadDefaultVersionedIndices();
-            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-            if (!IndexType.WORKING.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-            }
-            if (!IndexType.LIVE.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-            }
-            if (!IndexType.REINDEX_WORKING.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-            }
-            if (!IndexType.REINDEX_LIVE.is(indexName)) {
-                osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-            }
-            versionedIndicesAPI.saveIndices(osBuilder.build());
+            // Rebuild the OS store without the deactivated slot. Failure is fatal:
+            // this is the primary store, not a shadow copy, so it propagates.
+            mirrorDeactivateToOsStore(indexName);
             return;
         }
 
@@ -3096,30 +3395,51 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         legacyIndiciesAPI.point(builder.build());
 
         // ── OS mirror (Phases 1 and 2, best-effort) ──────────────────────────
-        // Copy all existing OS slots, skipping the slot that matches the deactivated index type.
-        // Failure is non-fatal: OS is a shadow copy during these phases.
+        // Rebuild the OS store without the deactivated slot. Failure is non-fatal:
+        // OS is a shadow copy during these phases, so it is logged and swallowed.
         if (isMigrationStarted()) {
             try {
-                final Optional<VersionedIndices> osExisting =
-                        versionedIndicesAPI.loadDefaultVersionedIndices();
-                final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                if (!IndexType.WORKING.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                }
-                if (!IndexType.LIVE.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                }
-                if (!IndexType.REINDEX_WORKING.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-                }
-                if (!IndexType.REINDEX_LIVE.is(indexName)) {
-                    osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-                }
-                versionedIndicesAPI.saveIndices(osBuilder.build());
+                mirrorDeactivateToOsStore(indexName);
             } catch (Exception e) {
                 Logger.warn(this, "Could not mirror index deactivation to OS store for index: "
                         + indexName, e);
             }
+        }
+    }
+
+    /**
+     * Rebuilds the OS {@link VersionedIndices} store, keeping every slot except the one that
+     * matches {@code indexName}, and persists the result.
+     *
+     * <p>When the deactivated slot was the last populated one the rebuilt record is empty, and
+     * {@link com.dotcms.content.index.VersionedIndicesAPI#saveIndices} rejects it by contract
+     * ("At least one index must be specified"). Persisting it naively would either throw
+     * (phase 3, primary store) or — worse — leave a dangling/stale store row that
+     * {@code initOSCatchup} would treat as authoritative on the next restart. So an empty
+     * rebuild removes the version row instead. This mirrors the guard in
+     * {@link #clearOsStorePointer(String)} (issue #35640).</p>
+     */
+    private void mirrorDeactivateToOsStore(final String indexName) throws DotDataException {
+        final Optional<VersionedIndices> osExisting =
+                versionedIndicesAPI.loadDefaultVersionedIndices();
+        final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
+        if (!IndexType.WORKING.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
+        }
+        if (!IndexType.LIVE.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+        }
+        if (!IndexType.REINDEX_WORKING.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
+        }
+        if (!IndexType.REINDEX_LIVE.is(indexName)) {
+            osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
+        }
+        final VersionedIndices osRebuilt = osBuilder.build();
+        if (osRebuilt.hasAnyIndex()) {
+            versionedIndicesAPI.saveIndices(osRebuilt);
+        } else {
+            versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
         }
     }
 
@@ -3132,8 +3452,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @Override
     public long getIndexDocumentCount(final String indexName) {
-        return router.readProvider().getIndexDocumentCount(
-                indexAPI.getNameWithClusterIDPrefix(indexName));
+        // Resolve the physical name through the read provider's own toPhysicalName so the OS read
+        // path (phases 2/3) receives the .os-tagged name. getNameWithClusterIDPrefix adds only the
+        // cluster prefix (no .os tag), so under OS reads the index was reported as not found.
+        final ContentletIndexOperations readProvider = router.readProvider();
+        return readProvider.getIndexDocumentCount(readProvider.toPhysicalName(indexName));
     }
 
     /**

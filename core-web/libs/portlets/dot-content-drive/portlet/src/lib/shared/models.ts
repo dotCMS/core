@@ -1,4 +1,5 @@
 import {
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotFolder,
@@ -81,9 +82,24 @@ export interface DotContentDriveInit {
  * @interface DotContentDriveContextMenu
  */
 export interface DotContentDriveContextMenu {
-    triggeredEvent: Event;
-    contentlet: DotContentDriveItem;
+    triggeredEvent: Event | null;
+    contentlet: DotContentDriveItem | null;
     showAddToBundle: boolean;
+}
+
+/**
+ * Header override for a dialog that has drilled into a sub-screen.
+ *
+ * The shared dialog's header lives in the shell, but a dialog body can navigate within itself — the
+ * Workflow Center drilling from its action list into an action's preview. Rather than the body
+ * rendering a second title (which reads as a duplicated header), it publishes the replacement here
+ * and the shell's one header renders it.
+ */
+export interface DotContentDriveDialogDrillDown {
+    /** Replaces the dialog title. Already-resolved text, not an i18n key. */
+    header: string;
+    /** Number of items the sub-screen is about to act on; rendered as the header's sub-line. */
+    itemCount: number;
 }
 
 export interface DotContentDriveDialog {
@@ -146,6 +162,31 @@ export interface DotContentDriveState extends DotContentDriveInit {
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
     pages: DotContentDrivePage[];
+    /**
+     * Eligible searchable fields of the currently-selected single content type. Populated by the
+     * field-filter menu after fetching the content type; empty when 0 or >1 content types are
+     * selected. Used to render field-filter chips and to reshape the `us.*` filter values into the
+     * `userSearchable` payload.
+     */
+    userSearchableFields: DotCMSContentTypeField[];
+    /**
+     * Field variables the user has added as chips, in add order. Kept separate from `filters` so
+     * adding an (empty) chip doesn't mutate the search request and re-trigger a reload; a `us.*`
+     * entry only lands in `filters` once the chip has a value.
+     */
+    userSearchableActive: string[];
+    /**
+     * Whether the field metadata for the active content type has been resolved (even to an empty
+     * set). Distinguishes "not fetched yet" from "fetched, none eligible" so a cold URL restore can
+     * hold the first search until fields load, instead of firing one that drops the `us.*` values.
+     */
+    userSearchableFieldsLoaded: boolean;
+    /**
+     * "Show In List" fields (`field.listed`) of the currently-selected single content type.
+     * Populated from the same content-type fetch as {@link userSearchableFields}; empty when 0 or
+     * >1 content types are selected. Consumed by the results table as extra columns.
+     */
+    showInListFields: DotCMSContentTypeField[];
 }
 
 /**

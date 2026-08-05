@@ -159,10 +159,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
         </dependency>
         <dependency>
@@ -402,6 +398,10 @@
         <dependency>
             <groupId>org.commonmark</groupId>
             <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>

@@ -3,7 +3,7 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { Subject } from 'rxjs';
 
 import { DotRouterService } from '@dotcms/data-access';

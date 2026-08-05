@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -112,6 +113,21 @@ public abstract class FolderFactory {
 	}
 	protected List<Folder> findFoldersByHost(Host host) {
 		return null;
+	}
+
+	/**
+	 * Returns all direct child folders whose {@code identifier.parent_path} matches any of the
+	 * given paths. Fetched in a single SQL query; permission filtering is the caller's
+	 * responsibility.
+	 *
+	 * @param hostInode  site identifier
+	 * @param parentPaths set of full folder paths (e.g. {@code "/content/blog/"}) to check
+	 * @return direct child folders — may be empty, never {@code null}
+	 * @throws DotDataException on database error
+	 */
+	protected List<Folder> findDirectChildFolders(final String hostInode,
+			final Collection<String> parentPaths) throws DotDataException {
+		return List.of();
 	}
 
 	/**

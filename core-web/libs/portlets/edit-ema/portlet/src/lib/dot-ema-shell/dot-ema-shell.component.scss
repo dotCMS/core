@@ -1,9 +1,16 @@
 :host {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: 100%;
+    display: flex;
+    flex-direction: column;
     height: 100%;
     background-color: var(--color-white);
+}
+
+.dot-ema-shell__body {
+    display: grid;
+    flex: 1 1 auto;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 100%;
+    min-height: 0;
 
     router-outlet {
         display: none;

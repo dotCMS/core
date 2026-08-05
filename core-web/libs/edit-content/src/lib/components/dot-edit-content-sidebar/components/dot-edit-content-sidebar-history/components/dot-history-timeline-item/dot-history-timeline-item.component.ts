@@ -16,16 +16,10 @@ import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotGravatarDirective,
-    DotMessagePipe,
-    DotRelativeDatePipe
-} from '@dotcms/ui';
+import { DotCopyButtonComponent, DotGravatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     DotHistoryTimelineItemAction,
@@ -50,19 +44,15 @@ import {
         ButtonModule,
         TagModule,
         MenuModule,
-        TooltipModule,
         DotCopyButtonComponent,
         DotGravatarDirective,
         DotMessagePipe,
-        DotRelativeDatePipe,
         DatePipe
     ],
-    providers: [DatePipe],
     templateUrl: './dot-history-timeline-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotHistoryTimelineItemComponent implements OnDestroy {
-    private readonly datePipe = inject(DatePipe);
     private readonly dotMessageService = inject(DotMessageService);
 
     private static readonly MENU_HIDE_DELAY_MS = 200;
@@ -88,6 +78,13 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      * @readonly
      */
     $isActive = input<boolean>(false, { alias: 'isActive' });
+
+    /**
+     * Whether this item's version is currently being fetched (after a
+     * view/compare click), shown as an inline spinner
+     * @readonly
+     */
+    $isLoadingVersion = input<boolean>(false, { alias: 'isLoadingVersion' });
 
     /**
      * Event emitted when an action is triggered on the timeline item

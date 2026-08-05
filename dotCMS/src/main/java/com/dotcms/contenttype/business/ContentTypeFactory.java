@@ -125,6 +125,26 @@ public interface ContentTypeFactory {
 	List<ContentType> search(final List<String> sites, final String search, final int type, final String orderBy, final int limit, final int offset) throws DotDataException;
 
 	/**
+	 * Returns a list of Content Types living in the specified list of Sites, optionally excluding
+	 * system Content Types.
+	 *
+	 * @param sites              The list of one or more Site IDs to search for Content Types.
+	 * @param search             Allows you to add more conditions to the query via SQL code.
+	 * @param type               The Base Content Type to search for.
+	 * @param orderBy            The order-by clause, which is internally sanitized by this Factory.
+	 * @param limit              The maximum number of returned items in the result set.
+	 * @param offset             The requested page number of the result set.
+	 * @param includeSystemTypes When {@code false}, excludes system Content Types via a dedicated
+	 *                           {@code and structure.system = false} predicate. When {@code true},
+	 *                           behavior is unchanged.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	List<ContentType> search(final List<String> sites, final String search, final int type, final String orderBy, final int limit, final int offset, final boolean includeSystemTypes) throws DotDataException;
+
+	/**
 	 * Returns a list of Content Types matching multiple base types in a single efficient query.
 	 * This method uses a UNION query at the database level to combine results from multiple
 	 * base types, sort them, and paginate efficiently.
@@ -150,6 +170,31 @@ public interface ContentTypeFactory {
 	List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
 										   final String orderBy, final int limit, final int offset,
 										   final String siteId, final List<String> requestedContentTypes)
+			throws DotDataException;
+
+	/**
+	 * Returns a list of Content Types matching multiple base types in a single efficient query,
+	 * optionally excluding system Content Types.
+	 *
+	 * @param search             Allows you to add more conditions to the query via SQL code.
+	 * @param types              The collection of Base Content Types to search for (must not be empty).
+	 * @param orderBy            The order-by clause, which is internally sanitized by this Factory.
+	 * @param limit              The maximum number of returned items in the result set. Use -1 for no limit.
+	 * @param offset             The requested page number of the result set.
+	 * @param siteId             The ID of the Site that the Content Types live in. Can be null or empty for all sites.
+	 * @param requestedContentTypes Optional list of specific content type variables to ensure are included.
+	 * @param includeSystemTypes When {@code false}, excludes system Content Types via a dedicated
+	 *                           {@code and structure.system = false} predicate. When {@code true},
+	 *                           behavior is unchanged.
+	 *
+	 * @return The list of {@link ContentType} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
+										   final String orderBy, final int limit, final int offset,
+										   final String siteId, final List<String> requestedContentTypes,
+										   final boolean includeSystemTypes)
 			throws DotDataException;
 
 	int searchCount(String search, BaseContentType baseType) throws DotDataException;

@@ -37,9 +37,20 @@ export const DotExperimentsProvider = ({
         if (!insideEditor) {
             const dotExperimentsInstance = DotExperiments.getInstance(config);
 
-            dotExperimentsInstance.ready().then(() => {
-                setInstance(dotExperimentsInstance);
-            });
+            dotExperimentsInstance
+                .ready()
+                .catch((error) => {
+                    if (config.debug) {
+                        console.error(
+                            'DotExperimentsProvider: failed to initialize DotExperiments instance.',
+                            error
+                        );
+                    }
+                })
+                .finally(() => {
+                    // Expose the instance even on failure, so consumers stop waiting and render.
+                    setInstance(dotExperimentsInstance);
+                });
         } else {
             if (config.debug) {
                 console.warn(

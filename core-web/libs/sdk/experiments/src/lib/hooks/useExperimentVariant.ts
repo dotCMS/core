@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 
 import DotExperimentsContext from '../contexts/DotExperimentsContext';
@@ -29,7 +29,8 @@ export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVari
     const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);
 
     useEffect(() => {
-        const isInsideEditor = getUVEState()?.mode === UVE_MODE.EDIT;
+        // Any UVE mode counts as "inside the editor" - must match DotExperimentsProvider's check.
+        const isInsideEditor = !!getUVEState()?.mode;
 
         if (isInsideEditor || !runningExperimentId) {
             setShouldWaitForVariant(false);

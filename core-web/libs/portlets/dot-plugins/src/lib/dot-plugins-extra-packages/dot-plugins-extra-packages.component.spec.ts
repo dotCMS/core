@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { Observable, of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';

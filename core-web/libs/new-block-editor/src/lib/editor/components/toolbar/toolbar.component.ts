@@ -105,7 +105,7 @@ export class ToolbarComponent implements OnDestroy {
 
     /**
      * Per-PrimeNG-Tooltip delay before any toolbar tooltip appears. Centralized here so
-     * the 44 toolbar buttons stay in sync — change the timing in one place.
+     * the toolbar buttons stay in sync — change the timing in one place.
      */
     protected readonly TOOLTIP_SHOW_DELAY = 350;
 
@@ -218,6 +218,7 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('link') ||
             this.store.isAllowed('image') ||
             this.store.isAllowed('video') ||
+            this.store.isAllowed('audio') ||
             this.store.isAllowed('table') ||
             this.store.isAllowed('emoji') ||
             this.showAssetByUrl()
@@ -338,6 +339,10 @@ export class ToolbarComponent implements OnDestroy {
 
     protected toggleItalic(): void {
         this.editor().chain().focus().toggleItalic().run();
+    }
+
+    protected toggleUnderline(): void {
+        this.editor().chain().focus().toggleUnderline().run();
     }
 
     protected toggleStrike(): void {
@@ -477,6 +482,12 @@ export class ToolbarComponent implements OnDestroy {
         event.preventDefault();
         event.stopPropagation();
         this.editorModal.openVideoPicker(this.editor());
+    }
+
+    protected openAudioDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        this.editorModal.openAudioPicker(this.editor());
     }
 
     protected openTableDialog(event: MouseEvent): void {

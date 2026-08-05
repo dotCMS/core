@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { Subject } from 'rxjs';
 
 import { MenuItem } from 'primeng/api';

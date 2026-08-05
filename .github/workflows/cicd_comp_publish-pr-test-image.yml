@@ -1,0 +1,164 @@
+# Reusable: promote an already-built docker-image artifact to dotcms/dotcms-test.
+#
+# Does NOT build. The PR build (core-cicd/maven-job) already builds
+# dotcms/dotcms-test:<version> and uploads it as the `docker-image` artifact;
+# this loads that artifact, retags it for the PR, and pushes it to Docker Hub.
+#
+# Callers:
+#   cicd_1-pr.yml          — needs: build, passes artifact_run_id = github.run_id
+#   cicd_publish-pr-test-image.yml (pull_request_target labeled) — omits
+#     artifact_run_id, so this workflow discovers the newest docker-image
+#     artifact for the head SHA.
+#
+# Tag scheme — branch feat/x on PR #1234 ->
+#   dotcms/dotcms-test:pr-1234-feat-x        (mutable)
+#   dotcms/dotcms-test:pr-1234-feat-x_<sha7> (immutable)
+
+name: 'Publish PR Test Image (reusable)'
+
+on:
+  workflow_call:
+    inputs:
+      pr:
+        required: true
+        type: string
+      sha:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      artifact_run_id:
+        description: 'Run id holding the docker-image artifact; empty = discover by SHA'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Promote to Docker Hub
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Resolve artifact run and tag
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ inputs.sha }}
+          BRANCH: ${{ inputs.branch }}
+          PR: ${{ inputs.pr }}
+          RUN_ID_IN: ${{ inputs.artifact_run_id }}
+        run: |
+          set -euo pipefail
+          run_id="${RUN_ID_IN}"
+          # Label path has no run id — find the newest run with a non-expired
+          # docker-image artifact for this exact commit.
+          if [ -z "${run_id}" ]; then
+            for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=50" \
+                          --jq '.workflow_runs[].id'); do
+              [ "${rid}" = "${GITHUB_RUN_ID}" ] && continue
+              if gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
+                   --jq '.artifacts[] | select(.expired==false) | .name' \
+                 | grep -qx 'docker-image'; then
+                run_id="${rid}"; break
+              fi
+            done
+          fi
+          if [ -z "${run_id}" ]; then
+            echo "No docker-image artifact for ${SHA}; nothing to publish yet."
+            echo "found=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          norm=$(printf '%s' "${BRANCH}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | tr -c 'a-z0-9._-' '-' \
+            | sed -E 's/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
+            | cut -c1-100)
+          {
+            echo "found=true"
+            echo "run_id=${run_id}"
+            echo "tag=pr-${PR}-${norm}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Publishing pr-${PR}-${norm} from run ${run_id}"
+
+      - name: Download prebuilt image
+        if: steps.resolve.outputs.found == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/prebuilt
+          run-id: ${{ steps.resolve.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load, retag and push
+        id: push
+        if: steps.resolve.outputs.found == 'true'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          DEST='dotcms/dotcms-test'
+          SHA7="${SHA:0:7}"
+
+          loaded=$(docker load -i /tmp/prebuilt/image.tar | sed -n 's/.*Loaded image: //p' | head -1)
+          if [ -z "${loaded}" ]; then
+            echo "::error::No image found in artifact"; exit 1
+          fi
+          echo "Loaded ${loaded}"
+
+          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+
+          pushed=""
+          for t in "${TAG}" "${TAG}_${SHA7}"; do
+            docker tag "${loaded}" "${DEST}:${t}"
+            docker push "${DEST}:${t}"
+            pushed="${pushed} ${DEST}:${t}"
+          done
+          echo "tags=$(echo ${pushed} | xargs)" >> "$GITHUB_OUTPUT"
+
+      - name: Sticky comment with image tags
+        if: steps.resolve.outputs.found == 'true' && steps.push.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ inputs.pr }}
+          SHA: ${{ inputs.sha }}
+          TAGS: ${{ steps.push.outputs.tags }}
+        run: |
+          MARKER='<!-- pr-docker-image-sticky -->'
+          {
+            echo "${MARKER}"
+            echo "### 🐳 PR Docker test image"
+            echo ""
+            echo "Latest build for commit \`${SHA:0:7}\` pushed to \`dotcms/dotcms-test\`:"
+            echo ""
+            echo '```bash'
+            for t in ${TAGS}; do echo "docker pull ${t}"; done
+            echo '```'
+          } > body.md
+
+          id=$(gh api -X GET "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
+                --jq "map(select(.body | contains(\"${MARKER}\"))) | .[0].id // empty")
+          # gh api has no @file syntax for fields — build the JSON body with jq.
+          payload=$(jq -nc --rawfile b body.md '{body: $b}')
+          if [ -n "${id}" ]; then
+            printf '%s' "${payload}" | gh api -X PATCH "repos/${REPO}/issues/comments/${id}" --input - >/dev/null
+            echo "Updated sticky comment ${id}"
+          else
+            printf '%s' "${payload}" | gh api -X POST "repos/${REPO}/issues/${PR}/comments" --input - >/dev/null
+            echo "Created sticky comment"
+          fi

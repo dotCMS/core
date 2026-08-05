@@ -13,27 +13,15 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "main": "libs/sdk/types/src/index.ts",
-                "additionalEntryPoints": ["libs/sdk/types/src/internal.ts"],
-                "generateExportsField": true,
-                "outputPath": "dist/libs/sdk/types",
-                "tsConfig": "libs/sdk/types/tsconfig.lib.json",
-                "project": "libs/sdk/types/package.json",
-                "entryFile": "libs/sdk/types/src/index.ts",
-                "compiler": "babel",
-                "format": ["esm", "cjs"],
-                "extractCss": false,
-                "assets": [
-                    {
-                        "input": "libs/sdk/types",
-                        "output": ".",
-                        "glob": "*.md"
-                    }
-                ]
-            }
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
         },
         "nx-release-publish": {
             "options": {

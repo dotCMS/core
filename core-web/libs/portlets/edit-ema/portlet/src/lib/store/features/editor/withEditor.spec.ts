@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -30,6 +30,7 @@ import {
     ACTION_PAYLOAD_MOCK,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
+    mockCurrentUser,
     MOCK_CONTENTLET_AREA,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
@@ -121,6 +122,83 @@ describe('withEditor', () => {
     // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
 
     describe('withComputed', () => {
+        describe('editorHasAccessToEditMode', () => {
+            const lockedByAnotherUser = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: 'another-user',
+                    lockedByName: 'Another User'
+                }
+            };
+
+            const lockedByCurrentUser = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: mockCurrentUser.userId,
+                    lockedByName: mockCurrentUser.givenName
+                }
+            };
+
+            it('should return false when the user lacks edit permission', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                    }
+                });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return true when the page is not locked', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return true when the page is locked by the current user', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: lockedByCurrentUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return false when the page is locked by another user', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return false when locked by another user even with the toggle-lock feature flag enabled', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true }
+                });
+                store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return true when locked by the current user with the toggle-lock feature flag enabled', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true }
+                });
+                store.setPageAsset({ pageAsset: lockedByCurrentUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+        });
+
         describe('$areaContentType', () => {
             it('should return empty string when contentArea is null', () => {
                 patchStoreState(store, {

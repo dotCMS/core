@@ -1,4 +1,4 @@
-import { SpectatorHttp, createHttpFactory } from '@ngneat/spectator/jest';
+import { SpectatorHttp, createHttpFactory } from '@openng/spectator/jest';
 
 import { ESSearchResponse } from '@dotcms/dotcms-models';
 

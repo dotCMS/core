@@ -53,7 +53,7 @@ services:
 
             'CMS_HEAP_SIZE': '1g'
 
-            # "CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260629/starter-20260629.zip'
+            # "CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260630/starter-20260630.zip'
         depends_on:
             db:
                 condition: service_healthy

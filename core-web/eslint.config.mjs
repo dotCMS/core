@@ -32,7 +32,7 @@ export default [
         }
     },
     {
-        files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+        files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.vue'],
         rules: {
             '@nx/enforce-module-boundaries': [
                 'error',
@@ -268,10 +268,11 @@ export default [
             '/**/node_modules/*',
             '**/*vite.config*.timestamp*',
             '**/*vitest.config*.timestamp*',
-            // Generated / build output — never linted (mirrors .gitignore)
             '**/.xmcp/**',
             '**/src/generated/**',
-            '**/dist/**'
+            '**/dist/**',
+            '**/vite.config.*.timestamp*',
+            '**/vitest.config.*.timestamp*'
         ]
     }
 ];

@@ -37,11 +37,15 @@ export const createTreeNode = (
         label: folder.path,
         data: {
             id: folder.id,
+            inode: folder.inode,
             hostname: folder.hostName,
             path: folder.path,
-            type: 'folder'
+            type: 'folder',
+            defaultBaseType: folder.defaultBaseType
         },
-        leaf: false
+        // Hide the expand toggle for folders the search endpoint reports as having no visible
+        // children. When `hasChildren` is undefined (legacy source) the folder stays expandable.
+        leaf: folder.hasChildren === false
     };
 
     if (parent) {
@@ -78,17 +82,17 @@ export const buildTreeFolderNodes = ({
     /**
      * Checks if a folder node belongs to the active target path
      */
-    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) =>
-        expectedPaths[levelIndex] === node.data.path;
+    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) => {
+        const data = node.data;
+        return !!data && data.type !== 'load-more' && expectedPaths[levelIndex] === data.path;
+    };
 
     /**
      * Checks if a folder node is a leaf
      */
     const isLeaf = (levelIndex: number) => folderHierarchyLevels.length >= levelIndex + 1;
 
-    folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
-        // Each level starts with a placeholder parent we don't render
-        const [, ...folders] = levelFolders;
+    folderHierarchyLevels.forEach((folders, levelIndex) => {
         const parentNode = activeParents[levelIndex];
 
         folders.forEach((folder) => {

@@ -58,11 +58,13 @@ public class EventAnalyticsProxyHelper {
     /** Relative paths allowed by the catch-all proxy. Each entry matches as an exact
      *  segment or as a prefix followed by {@code "/"}. The dot-ca-event-manager exposes
      *  more than just event endpoints — analytics dashboards also fetch from
-     *  {@code conversion/*}, {@code session/*}, and {@code health}. Anything outside this
-     *  list — including upstream admin endpoints like {@code admin/token} or
-     *  {@code tenants/*} — is rejected with 400. */
+     *  {@code conversion/*}, {@code session/*}, and {@code health}, plus the newer
+     *  domain-driven query resources {@code events}, {@code sessions}, and {@code content}
+     *  (dotCMS/core#36628) that are replacing the per-metric {@code event/*}/{@code session/*}/
+     *  {@code conversion*} endpoints. Anything outside this list — including upstream admin
+     *  endpoints like {@code admin/token} or {@code tenants/*} — is rejected with 400. */
     private static final List<String> ALLOWED_PATH_PREFIXES =
-            List.of("event", "conversion", "session", "health");
+            List.of("event", "conversion", "session", "health", "events", "sessions", "content");
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances

@@ -1,8 +1,11 @@
 package com.dotcms;
 
+import com.dotcms.content.elasticsearch.business.DeactivateIndexEmptyStoreIT;
 import com.dotcms.content.elasticsearch.business.MigrationPhaseStoreBootstrapIT;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseSwitchIntegrationTest;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMidReindexRollbackIT;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigrationIntegrationTest;
+import com.dotcms.content.elasticsearch.business.OsBootstrapForbiddenIndexTest;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.OSCreateContentIndexIntegrationTest;
@@ -49,7 +52,10 @@ import org.junit.runners.Suite.SuiteClasses;
         OSClientConfigTest.class,
         ContentletIndexAPIImplMigrationIntegrationTest.class,
         ContentletIndexAPIImplPhaseSwitchIntegrationTest.class,
+        ContentletIndexAPIImplMidReindexRollbackIT.class,
         MigrationPhaseStoreBootstrapIT.class,
+        DeactivateIndexEmptyStoreIT.class,
+        OsBootstrapForbiddenIndexTest.class,
         OSSearchAPIImplIntegrationTest.class,
         OSSiteSearchAPIIntegrationTest.class,
         SiteSearchDualWriteRouterIT.class

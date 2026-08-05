@@ -3,7 +3,7 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, zip } from 'rxjs';
 
 import { Title } from '@angular/platform-browser';

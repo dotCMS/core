@@ -10,6 +10,7 @@ import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -384,6 +385,106 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
                 workingHits.getHits().isEmpty());
     }
 
+    /**
+     * Given scenario: Three documents with strictly different relevance to the query are indexed,
+     * arranged so that the most-relevant document is the <em>oldest</em> (lowest {@code moddate}) and
+     * the least-relevant is the <em>newest</em>. The query is issued with {@code sort=score}.
+     *
+     * <p>Expected: Results come back in {@code _score} descending order (A, B, C), <strong>not</strong>
+     * in the default {@code moddate} descending order (C, B, A). This is the regression guard for
+     * issue #36494 — before the fix, the {@code score} branch of {@code addSorting} added only the
+     * secondary {@code moddate} sort and silently dropped the primary {@code _score} sort, so a
+     * relevance-sorted query returned default ordering in Phases 2/3.</p>
+     */
+    @Test
+    public void test_searchHits_sortByScore_shouldOrderByRelevanceNotModdate() throws Exception {
+        osIndexAPI.createIndex(IDX_WORKING, 1);
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+
+        // Most-relevant doc (3 matching terms) is the OLDEST; least-relevant (1 term) is the NEWEST.
+        // moddate-desc ordering would yield C, B, A — the exact reverse of relevance ordering.
+        final String inodeA = "test-cfops-score-" + RUN_ID + "-a";
+        final String inodeB = "test-cfops-score-" + RUN_ID + "-b";
+        final String inodeC = "test-cfops-score-" + RUN_ID + "-c";
+        final IndexBulkRequest req = contentletOps.createBulkRequest();
+        contentletOps.addIndexOp(req, fullWorking, inodeA + "_1_default",
+                scoringDocJson(inodeA, "snow winter storm", 1000001));
+        contentletOps.addIndexOp(req, fullWorking, inodeB + "_1_default",
+                scoringDocJson(inodeB, "snow winter", 1000002));
+        contentletOps.addIndexOp(req, fullWorking, inodeC + "_1_default",
+                scoringDocJson(inodeC, "snow", 1000003));
+        contentletOps.putToIndex(req);
+        refreshTestIndex(fullWorking);
+
+        final ControllableOps ops = new ControllableOps(fullWorking, fullWorking);
+        final SearchHits hits = ops.searchHits(
+                "+contenttype:" + CONTENT_TYPE + " +title:snow title:winter title:storm",
+                10, 0, "score");
+
+        assertNotNull("searchHits must not return null", hits);
+        assertEquals("All 3 documents must match", 3, hits.getHits().size());
+
+        // Primary sort is _score desc: scores must be non-increasing across the result page.
+        float previousScore = Float.MAX_VALUE;
+        for (final var hit : hits.getHits()) {
+            assertTrue("Scores must be in descending order (primary _score sort applied); "
+                            + "got " + hit.getScore() + " after " + previousScore,
+                    hit.getScore() <= previousScore);
+            previousScore = hit.getScore();
+        }
+
+        // Relevance order (A, B, C), NOT moddate-desc order (C, B, A).
+        final List<String> orderedIds = hits.getHits().stream().map(SearchHit::getId).toList();
+        assertEquals("sort=score must order by relevance: most-relevant (A) first",
+                inodeA + "_1_default", orderedIds.get(0));
+        assertEquals("sort=score must order by relevance: least-relevant (C) last",
+                inodeC + "_1_default", orderedIds.get(2));
+    }
+
+    /**
+     * Given scenario: Three equally-relevant documents (identical single-term title, so identical
+     * {@code _score}) are indexed with distinct {@code moddate} values. The query is issued with the
+     * secondary-sort override {@code sort=score moddate asc}.
+     *
+     * <p>Expected: With {@code _score} tied, the caller-specified secondary sort ({@code moddate asc})
+     * breaks the tie — documents come back oldest-first. Confirms acceptance criterion 3 of #36494:
+     * {@code sort=score <field> <dir>} variants apply the secondary sort after the primary
+     * {@code _score} sort.</p>
+     */
+    @Test
+    public void test_searchHits_sortByScore_secondaryOverride_shouldApplySecondarySort() throws Exception {
+        osIndexAPI.createIndex(IDX_WORKING, 1);
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+
+        // Identical title → identical _score; only moddate differs.
+        final String inode1 = "test-cfops-sec-" + RUN_ID + "-1";
+        final String inode2 = "test-cfops-sec-" + RUN_ID + "-2";
+        final String inode3 = "test-cfops-sec-" + RUN_ID + "-3";
+        final IndexBulkRequest req = contentletOps.createBulkRequest();
+        contentletOps.addIndexOp(req, fullWorking, inode1 + "_1_default",
+                scoringDocJson(inode1, "snow", 3000000));
+        contentletOps.addIndexOp(req, fullWorking, inode2 + "_1_default",
+                scoringDocJson(inode2, "snow", 1000000));
+        contentletOps.addIndexOp(req, fullWorking, inode3 + "_1_default",
+                scoringDocJson(inode3, "snow", 2000000));
+        contentletOps.putToIndex(req);
+        refreshTestIndex(fullWorking);
+
+        final ControllableOps ops = new ControllableOps(fullWorking, fullWorking);
+        final SearchHits hits = ops.searchHits(
+                "+contenttype:" + CONTENT_TYPE + " +title:snow", 10, 0, "score moddate asc");
+
+        assertNotNull("searchHits must not return null", hits);
+        assertEquals("All 3 documents must match", 3, hits.getHits().size());
+
+        // Equal score → moddate asc decides: oldest (inode2) first, newest (inode1) last.
+        final List<String> orderedIds = hits.getHits().stream().map(SearchHit::getId).toList();
+        assertEquals("Tied score → secondary moddate asc: oldest first",
+                inode2 + "_1_default", orderedIds.get(0));
+        assertEquals("Tied score → secondary moddate asc: newest last",
+                inode1 + "_1_default", orderedIds.get(2));
+    }
+
     // =========================================================================
     // Tests – search (returns list of inodes)
     // =========================================================================
@@ -725,6 +826,21 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         }
         contentletOps.putToIndex(req);
         refreshTestIndex(fullIndexName);
+    }
+
+    /**
+     * Builds a minimal indexable JSON document with a caller-controlled {@code title} (drives the
+     * relevance {@code _score}) and {@code moddate} (drives the default secondary sort). Used by the
+     * {@code sort=score} ordering tests where relevance order must be pitted against moddate order.
+     */
+    private String scoringDocJson(final String inode, final String title, final long moddate) {
+        return "{\"identifier\":\"" + inode + "-id\","
+                + "\"inode\":\"" + inode + "\","
+                + "\"title\":\"" + title + "\","
+                + "\"language_id\":1,"
+                + "\"live\":true,"
+                + "\"moddate\":" + moddate + ","
+                + "\"contenttype\":\"" + CONTENT_TYPE + "\"}";
     }
 
     /**

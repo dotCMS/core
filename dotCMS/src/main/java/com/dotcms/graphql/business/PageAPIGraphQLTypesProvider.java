@@ -333,6 +333,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<Geolocation>("subdivision")));
         geoFields.put("subdivisionCode", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Geolocation>("subdivisionCode")));
+        geoFields.put("postal", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<Geolocation>("postal")));
         geoFields.put("ipAddress", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Geolocation>("ipAddress")));
 

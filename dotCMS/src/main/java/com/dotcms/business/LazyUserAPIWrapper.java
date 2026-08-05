@@ -94,6 +94,12 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
+    public long getCountUsersByName(final String filter, final List<Role> roles,
+                                    final UserAPI.FilteringParams filteringParams) throws DotDataException {
+        return getUserAPI().getCountUsersByName(filter, roles, filteringParams);
+    }
+
+    @Override
     public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
         return this.getUserAPI().createUser(userId, email);
     }

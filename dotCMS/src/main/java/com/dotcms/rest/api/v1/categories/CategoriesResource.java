@@ -784,6 +784,13 @@ public class CategoriesResource {
         if (UtilMethods.isSet(categoryForm.getParent())) {
             parentCategory = this.categoryAPI.find(categoryForm.getParent(), user,
                     pageMode.respectAnonPerms);
+            // A supplied parent that does not resolve must be reported, not silently ignored —
+            // otherwise a re-parent request to an unknown inode returns 200 OK without moving the
+            // category (issue #33989).
+            if (null == parentCategory) {
+                throw new DoesNotExistException(
+                        "Parent category with inode: " + categoryForm.getParent() + " does not exist");
+            }
         }
 
         BeanUtils.copyProperties(updatedCategory, oldCategory);

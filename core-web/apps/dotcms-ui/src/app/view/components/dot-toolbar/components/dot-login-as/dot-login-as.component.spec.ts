@@ -7,7 +7,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import {
     from as observableFrom,
     of as observableOf,

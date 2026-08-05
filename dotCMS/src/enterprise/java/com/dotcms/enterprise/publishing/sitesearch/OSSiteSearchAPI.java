@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.sitesearch;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
@@ -93,14 +94,16 @@ import org.quartz.SchedulerException;
  * — routing through the neutral {@code IndexAPI} router here would dual-write a second time.</p>
  *
  * <h2>Index naming</h2>
- * <p>Site-search index names are handled as plain logical names (e.g. {@code sitesearch_1718000000000}),
- * exactly as in {@link ESSiteSearchAPI}: the cluster-id prefix is added only when a name reaches the
- * OpenSearch client (via {@link IndexAPI#getNameWithClusterIDPrefix(String)}). The {@code .os}
- * {@link com.dotcms.content.index.IndexTag} is intentionally not applied to site-search indices —
- * production ES and OS run on separate clusters, and the site-search pointer lives in its own
- * {@code siteSearch} slot, so there is no shared-name collision to disambiguate.
- * TODO OS: revisit if single-cluster dual-write of site-search is ever required (then tag with
- * {@code IndexTag.OS}).</p>
+ * <p>Site-search index names flow through this class as plain <em>logical</em> names
+ * (e.g. {@code sitesearch_1718000000000}) — that is what {@link #listIndices()}, the search/alias
+ * parameters, and the {@code siteSearch} pointer expose, so the ES∪OS merge in the router keeps
+ * deduplicating and nothing user-facing ever shows a {@code .os} suffix. The {@code .os}
+ * {@link com.dotcms.content.index.IndexTag} is applied at the <strong>physical boundary only</strong>
+ * (see {@link #physicalName(String)} / {@link #osTagged(String)}), so the actual OpenSearch index is
+ * {@code cluster_<id>.sitesearch_….os} — consistent with every other migrated index and with the
+ * {@code .os}-tagged pointer persisted by {@link VersionedIndicesAPI}. Tagging the physical index also
+ * removes the single-cluster ({@code esSameAsOs()}) name-collision hazard the previous bare naming
+ * carried (issue #36672).</p>
  *
  * @author Fabrizio Araya
  * @see ESSiteSearchAPI
@@ -148,14 +151,125 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             return Collections.emptyList();
         }
+        // The physical OS indices are .os-tagged; strip back to logical names so the ES∪OS merge in
+        // SiteSearchAPIImpl.listIndices() deduplicates and no .os leaks to the portlet (issue #36672).
         final List<String> indices = indexApi.listIndices().stream()
                 .filter(IndexType.SITE_SEARCH::is)
+                .map(IndexTag::strip)
+                .distinct()
                 .collect(Collectors.toList());
 
         Collections.sort(indices);
         Collections.reverse(indices);
         setDefaultToSpecificPosition(indices, 0);
         return indices;
+    }
+
+    /**
+     * Single-engine leaf: whether this OpenSearch cluster holds the index. The physical OS index is
+     * {@code .os}-tagged, so the tag is (re)applied at this physical boundary before the existence
+     * check — matching {@link #physicalName(String)} / create / search. The router aggregates this
+     * across all write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(osTagged(indexName));
+    }
+
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this OpenSearch {@code .os} twin. Sends a
+     * {@code size:0} match-all with {@code track_total_hits:true} so the total is not capped at 10,000
+     * like a default search, which would hide content drift above 10k docs in the mirror parity gate
+     * (issue #36360). Returns {@code 0} when the twin is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!existsOnAllWriteEngines(indexName)) {
+            return 0L;
+        }
+        try {
+            final JSONObject body = new JSONObject();
+            body.put("size", 0);
+            body.put("track_total_hits", true);
+            body.put("query", new JSONObject().put("match_all", new JSONObject()));
+            final ContentSearchResponse response = rawSearch(physicalName(indexName), body);
+            return response.hits().getTotalHits().value();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for OS index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
+    }
+
+    /**
+     * OpenSearch adapter for the vendor-neutral alias handle: <em>re-tag before lookup, strip on
+     * return</em>.
+     *
+     * <p><strong>Why the round-trip.</strong> {@link #listIndices()} exposes logical
+     * ({@code .os}-stripped) names because that is the handle the rest of the site-search subsystem
+     * works in. But the physical OpenSearch indices are {@code .os}-tagged, so the underlying
+     * {@code IndexAPI} lookup only finds them when the names carry {@code .os}. This method therefore
+     * re-applies the tag ({@code osTagged}) to the query, then strips it from the resolved index
+     * values so the returned map stays purely logical — no {@code .os} leaks past the site-search
+     * boundary, and the values line up with {@link #listIndices()} for the caller. This mirrors the
+     * re-tag-before-lookup pattern in {@code resolveIndexOrAlias}; skipping the re-tag is exactly the
+     * Phase&nbsp;2/3 miss fixed in issue #36360. Alias keys are already tag-free (aliases are never
+     * {@code .os}-tagged), so only the index values are stripped.</p>
+     *
+     * <p><strong>Multi-index guard.</strong> The reverse (index&rarr;alias &rarr; alias&rarr;index) is
+     * built here from the raw {@code getIndexAlias} map rather than delegated to
+     * {@code getAliasToIndexMap}, so a stale/duplicate alias that resolves to two OpenSearch indices
+     * is <em>detected</em> instead of silently dropped last-wins. That state should not arise once
+     * {@code createAlias}'s existence check is honored (issue #36360); if it does, a {@code WARN} is
+     * logged and the newest index (highest {@code sitesearch_<timestamp>}) is kept deterministically
+     * so the result never depends on map-iteration order.</p>
+     */
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        // Query the .os-tagged physical names; getIndexAlias returns index(.os) -> alias. The pure
+        // reverse + multi-index detection lives in reverseAliasToIndexMap so it is unit-testable.
+        return reverseAliasToIndexMap(indexApi.getIndexAlias(
+                listIndices().stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList())));
+    }
+
+    /**
+     * Reverses a raw {@code index(.os) -> alias} map into a logical {@code alias -> index} map:
+     * strips the {@code .os} tag off the index values and defensively resolves multi-index aliases.
+     * Package-private and {@code static} (no cluster state) so it can be unit-tested directly.
+     *
+     * <p>If two distinct OpenSearch indices share one alias — a stale/duplicate alias that should not
+     * exist once {@code createAlias}'s existence check is honored (issue #36360) — a {@code WARN} is
+     * logged and the <strong>newest</strong> index is kept ({@code sitesearch_<timestamp>} sorts
+     * chronologically), so the result is deterministic and never depends on map-iteration order.</p>
+     *
+     * @param indexToAlias raw physical-index-name → alias-name map (as returned by
+     *                     {@code IndexAPI#getIndexAlias}); index keys may carry the {@code .os} tag
+     * @return logical alias → index map (index values stripped of {@code .os})
+     */
+    static Map<String, String> reverseAliasToIndexMap(final Map<String, String> indexToAlias) {
+        final Map<String, String> aliasToIndex = new HashMap<>();
+        for (final Map.Entry<String, String> entry : indexToAlias.entrySet()) {
+            final String logicalIndex = IndexTag.strip(entry.getKey()); // .os -> logical
+            final String alias = entry.getValue();                      // aliases carry no .os
+            final String previous = aliasToIndex.put(alias, logicalIndex);
+            if (previous != null && !previous.equals(logicalIndex)) {
+                // Two distinct OS indices share one alias — keep the newest deterministically
+                // (chronological name order) instead of a non-deterministic last-wins, and surface it.
+                final String kept = previous.compareTo(logicalIndex) >= 0 ? previous : logicalIndex;
+                Logger.warn(OSSiteSearchAPI.class, String.format(
+                        "Multi-index Site Search alias '%s' resolves to multiple OpenSearch indices "
+                                + "('%s' and '%s'); keeping '%s'. Reconcile the OS aliases (issue #36360).",
+                        alias, previous, logicalIndex, kept));
+                aliasToIndex.put(alias, kept);
+            }
+        }
+        return aliasToIndex;
     }
 
     /**
@@ -188,7 +302,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         }
         for (final String indexName : indexApi.getClosedIndexes()) {
             if (IndexType.SITE_SEARCH.is(indexName)) {
-                indices.add(indexName);
+                indices.add(IndexTag.strip(indexName)); // logical form — see listIndices (issue #36672)
             }
         }
         Collections.sort(indices);
@@ -387,6 +501,33 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             api.removeVersion(rebuilt.version());
         }
         api.clearCache();
+
+        // I-5 fallback invalidation. defaultSiteSearchIndex() falls back to the legacy IndiciesAPI
+        // pointer when the versioned slot is empty. In phases where ES is NOT a write provider
+        // (Phase 3), the router does not fan this deactivation out to ESSiteSearchAPI, so the legacy
+        // pointer would survive and the fallback would keep reporting this index as the active
+        // default — permanently blocking its deletion. Clear the legacy pointer here when it still
+        // points at the index being deactivated. In dual-write phases ESSiteSearchAPI also clears it
+        // via the fan-out, so this is idempotent (issue #36360 review).
+        clearLegacyPointerIfDefault(indexName);
+    }
+
+    /**
+     * Clears the legacy {@link com.dotmarketing.business.IndiciesAPI} site-search pointer when it
+     * still points at {@code indexName}. Complements the I-5 read-fallback in
+     * {@link #defaultSiteSearchIndex()} so a deactivated Phase-0 default is not resurrected by that
+     * fallback in phases where ES is not part of the write fan-out (e.g. Phase 3). Matches on the
+     * exact name so deactivating one index never clears a different index's legacy pointer.
+     */
+    private void clearLegacyPointerIfDefault(final String indexName) throws DotDataException {
+        final String legacyDefault = legacyDefaultSiteSearchIndex().orElse(null);
+        if (legacyDefault == null || !legacyDefault.equals(indexName)) {
+            return;
+        }
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        builder.setSiteSearch(null);
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     // =========================================================================
@@ -419,13 +560,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         final String mapping = readResource(classLoader, "os-sitesearch-mapping.json");
 
         try {
-            indexApi.createIndex(indexName, settings, shards);
+            // Create the .os-tagged physical index (osTagged), matching physicalName()/putMapping()
+            // so create, mapping, writes and searches all hit the same index (issue #36672).
+            indexApi.createIndex(osTagged(indexName), settings, shards);
         } catch (final Exception e) {
             throw new DotSearchException("Error creating OpenSearch site search index: " + e.getMessage(), e);
         }
 
         if (UtilMethods.isSet(alias)) {
-            indexApi.createAlias(indexName, alias);
+            indexApi.createAlias(osTagged(indexName), alias);
         }
 
         putMapping(indexName, mapping);
@@ -492,7 +635,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                     " either one or both params aren't set. index: `%s`, alias: `%s` ", indexName, alias));
         }
         indexName = indexName.toLowerCase();
-        indexApi.createAlias(indexName, alias);
+        indexApi.createAlias(osTagged(indexName), alias); // alias points at the .os index (issue #36672)
         // createAlias is void and throws on failure, so reaching here means the alias was created.
         // (Legacy ESSiteSearchAPI returns false here, but its only caller — ESSiteSearchPublisher —
         // ignores the result, so the divergence is benign; reporting success honestly is correct.)
@@ -511,10 +654,20 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         if (!IndexType.SITE_SEARCH.is(indexName)) {
             throw new DotDataException("Index '" + indexName + "' is not a site-search index");
         }
-        // Deletes only from THIS engine (indexApi is the direct OSIndexAPIImpl, not the router).
-        // Site-search OS indices are plain-named (no .os tag). Active-index protection is enforced
-        // by the SiteSearchAPIImpl router before dispatch.
-        indexApi.deleteMultiple(new String[]{indexName});
+        // Deletes only from THIS engine (indexApi is the direct OSIndexAPIImpl, not the router). The
+        // physical OS index is .os-tagged (osTagged), matching create/search. Active-index protection
+        // is enforced by the SiteSearchAPIImpl router before dispatch.
+        // Idempotent per engine: during migration a site-search index can exist on only one engine
+        // (e.g. a Phase-0 ES-only index has no OpenSearch twin), so skip when it is absent here
+        // rather than letting deleteMultiple throw index_not_found and crash the fan-out — which
+        // would otherwise abort the Site Search build mid-switch (issue #36360, I-7).
+        final String osIndexName = osTagged(indexName);
+        if (!indexApi.indexExists(osIndexName)) {
+            Logger.info(this.getClass(),
+                    "Site-search index '" + indexName + "' is absent on this engine; nothing to delete.");
+            return;
+        }
+        indexApi.deleteMultiple(new String[]{osIndexName});
     }
 
     @Override
@@ -524,9 +677,12 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         // Keep the default (active) site-search index.
         defaultSiteSearchIndex().ifPresent(indicesToRemove::remove);
 
-        // Keep any index that backs an alias.
-        final List<String> indicesWithAlias =
-                new ArrayList<>(indexApi.getIndexAlias(indicesToRemove).keySet());
+        // Keep any index that backs an alias. indicesToRemove holds logical names; the alias lookup
+        // runs against the .os-tagged physical names, and the returned keys are stripped back to
+        // logical so the removeAll matches (issue #36672).
+        final List<String> indicesWithAlias = indexApi.getIndexAlias(
+                        indicesToRemove.stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList()))
+                .keySet().stream().map(IndexTag::strip).collect(Collectors.toList());
         indicesToRemove.removeAll(indicesWithAlias);
 
         // Keep indices created within the last 24 hours.
@@ -551,7 +707,8 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         if (!indicesToRemove.isEmpty()) {
             Logger.info(this.getClass(),
                     "The following indices will be deleted: " + String.join(",", indicesToRemove));
-            indexApi.deleteMultiple(indicesToRemove.toArray(new String[0]));
+            indexApi.deleteMultiple(
+                    indicesToRemove.stream().map(OSSiteSearchAPI::osTagged).toArray(String[]::new));
         }
     }
 
@@ -786,12 +943,24 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     // =========================================================================
 
     /**
-     * The physical index name to use against the OpenSearch client: the cluster-id prefix is applied,
-     * matching how {@link OSIndexAPIImpl} builds its requests. No {@code .os} tag is added (see the
-     * class-level "Index naming" note).
+     * The physical index name to use against the OpenSearch client: the {@code .os} tag is applied
+     * (so Site Search follows the same naming pattern as every other migrated index) and then the
+     * cluster-id prefix, matching how {@link OSIndexAPIImpl} builds its requests. Callers pass logical
+     * (untagged) names; the tag is added only here, at the physical boundary (issue #36672).
      */
     private String physicalName(final String indexName) {
-        return indexApi.getNameWithClusterIDPrefix(indexName);
+        return indexApi.getNameWithClusterIDPrefix(osTagged(indexName));
+    }
+
+    /**
+     * Adds the {@code .os} tag to a logical Site Search index name for calls into the OpenSearch
+     * {@link IndexAPI} provider, which adds only the cluster prefix — not the tag. Idempotent
+     * ({@link IndexTag#tag(String)} leaves an already-tagged name unchanged), so it is safe on any
+     * form. Keeps the physical OpenSearch index in lock-step with the {@code .os}-tagged pointer
+     * stored in {@link VersionedIndicesAPI}.
+     */
+    private static String osTagged(final String logicalName) {
+        return IndexTag.OS.tag(logicalName);
     }
 
     /** Characters OpenSearch forbids in an index name (plus the space). */
@@ -827,9 +996,12 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         if (indexName == null) {
             indexName = defaultSiteSearchIndex().orElse(null);
         }
-        if (indexName != null && !indexApi.indexExists(indexName)) {
-            // try using it as an alias
-            indexName = indexApi.getAliasToIndexMap(listIndices()).get(indexName);
+        if (indexName != null && !indexApi.indexExists(osTagged(indexName))) {
+            // try using it as an alias: resolve against the .os-tagged physical names, then strip the
+            // matched index back to its logical form (issue #36672).
+            indexName = IndexTag.strip(indexApi.getAliasToIndexMap(
+                    listIndices().stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList()))
+                    .get(indexName));
         }
         return indexName;
     }
@@ -839,12 +1011,34 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      * (untagged) name.
      *
      * <p>{@link VersionedIndicesAPI} canonicalises stored names to the {@code .os}-tagged form, so the
-     * raw value carries the tag. Site-search indices are handled in logical space everywhere else
-     * (the physical OpenSearch index itself is created without the tag — see the class "Index naming"
-     * note), so the tag is stripped here to keep comparisons and list lookups consistent.</p>
+     * raw value carries the tag. This class works in logical (untagged) space on its API surface — the
+     * tag is (re)applied at the physical boundary by {@link #physicalName(String)} / {@link #osTagged}
+     * — so the tag is stripped here, at the DB→logical boundary, to keep comparisons and list lookups
+     * consistent (see the class "Index naming" note).</p>
      */
     private Optional<String> defaultSiteSearchIndex() {
-        return loadDefaultIndices().flatMap(VersionedIndices::siteSearch).map(IndexTag::strip);
+        final Optional<String> versioned =
+                loadDefaultIndices().flatMap(VersionedIndices::siteSearch).map(IndexTag::strip);
+        if (versioned.isPresent()) {
+            return versioned;
+        }
+        // Fallback to the legacy pointer. A default activated before the migration started lives only
+        // in the legacy IndiciesAPI store — Phase 0 never populates VersionedIndices (the versioned
+        // site-search slot is written only when an index is activated in a dual-write phase). Without
+        // this fallback, switching reads to OpenSearch (Phase 2/3) leaves $sitesearch.search with no
+        // resolvable default until the operator manually re-activates one (issue #36360, I-5).
+        return legacyDefaultSiteSearchIndex();
+    }
+
+    /**
+     * The active site-search index name from the legacy {@link com.dotmarketing.business.IndiciesAPI}
+     * store, used as a fallback when the OpenSearch versioned store has no site-search pointer yet
+     * (e.g. a default carried over from Phase 0). Returns empty on any error or a blank pointer.
+     */
+    private Optional<String> legacyDefaultSiteSearchIndex() {
+        return Try.of(() -> APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())
+                .toJavaOptional()
+                .filter(UtilMethods::isSet);
     }
 
     private Optional<VersionedIndices> loadDefaultIndices() {

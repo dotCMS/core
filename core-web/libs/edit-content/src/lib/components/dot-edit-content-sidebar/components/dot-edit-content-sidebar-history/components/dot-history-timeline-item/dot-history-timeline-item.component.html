@@ -6,47 +6,22 @@
         [class.border-transparent]="!$isActive()"
         [class.hover:bg-gray-100]="!$isActive()"
         [class.bg-primary-50]="$isActive()"
-        [class.border-primary-200]="$isActive()"
-        [pTooltip]="tooltipContent"
-        tooltipPosition="bottom"
-        [tooltipOptions]="{
-            showDelay: 100,
-            hideDelay: 100,
-            escape: false,
-            positionStyle: 'absolute',
-            appendTo: 'body'
-        }">
-        <ng-template #tooltipContent>
-            <div class="max-w-72 min-w-0 py-1">
-                <h4 data-testid="overlay-title" class="mb-2 text-sm leading-snug font-semibold">
-                    {{ $item().title }}
-                </h4>
-                <ul class="m-0 list-none space-y-1 pl-0 text-xs">
-                    <li>{{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}</li>
-                    <li>{{ $item().languageFlag }}</li>
-                    @if ($item().experimentVariant) {
-                        <li>
-                            {{ 'edit.content.sidebar.history.variant' | dm }}:
-                            {{ $item().experimentVariant }}
-                        </li>
-                    }
-                </ul>
-            </div>
-        </ng-template>
-
+        [class.border-primary-200]="$isActive()">
         <!-- Row 1: title (left) | chips + 3-dot (right) -->
         <div class="flex items-center justify-between gap-2">
             <span
                 data-testid="time-display"
                 class="min-w-0 truncate text-sm leading-tight font-bold text-gray-900">
-                @if ($item().working) {
-                    {{ 'edit.content.sidebar.history.menu.current' | dm }}
-                } @else {
-                    {{ $item().modDate | dotRelativeDate }}
-                }
+                {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
             </span>
 
             <div class="flex shrink-0 items-center gap-2">
+                @if ($isLoadingVersion()) {
+                    <i
+                        class="pi pi-spinner pi-spin text-sm text-primary"
+                        data-testid="version-loading-spinner"
+                        aria-hidden="true"></i>
+                }
                 @if ($item().live) {
                     <p-tag
                         severity="success"

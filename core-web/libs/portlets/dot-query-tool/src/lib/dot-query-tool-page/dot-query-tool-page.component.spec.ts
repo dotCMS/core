@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -50,9 +50,12 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
     limitWasCapped: jest.fn().mockReturnValue(false),
-    emptyStateConfig: jest
-        .fn()
-        .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
+    emptyStateConfig: jest.fn().mockReturnValue({
+        title: 'Empty',
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded',
+        subtitle: ''
+    }),
     setQuery: jest.fn(),
     setSort: jest.fn(),
     setOffset: jest.fn(),

@@ -36,6 +36,8 @@ export * from './lib/dot-iframe/dot-iframe.service';
 export * from './lib/dot-languages/dot-languages.service';
 export * from './lib/dot-license/dot-license.service';
 export * from './lib/dot-localstorage/dot-localstorage.service';
+export * from './lib/dot-localstorage/dot-persisted-query.utils';
+export * from './lib/dot-localstorage/with-persisted-query.feature';
 export * from './lib/dot-message-display/dot-message-display.service';
 export * from './lib/dot-messages/dot-messages.service';
 export * from './lib/dot-osgi/bundle-map.model';
@@ -50,6 +52,7 @@ export * from './lib/dot-page-workflows-actions/dot-page-workflows-actions.servi
 export * from './lib/dot-personalize/dot-personalize.service';
 export * from './lib/dot-personas/dot-personas.service';
 export * from './lib/dot-properties/dot-properties.service';
+export * from './lib/dot-publishing-queue/dot-publishing-queue.service';
 export * from './lib/dot-push-publish-filters/dot-push-publish-filters.service';
 export * from './lib/dot-resource-links/dot-resource-links.service';
 export * from './lib/dot-roles/dot-roles.service';

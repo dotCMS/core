@@ -60,6 +60,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
@@ -106,18 +108,64 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return Collections.EMPTY_LIST;
 
-        final List<String> indices = new ArrayList<>();
-
-        indices.addAll(
-            indexApi.listIndices().stream()
-                    .filter(IndexType.SITE_SEARCH::is)
-                    .collect(Collectors.toList())
-        );
+        final List<String> indices = new ArrayList<>(indexApi.listIndices().stream()
+                .filter(IndexType.SITE_SEARCH::is)
+                .toList());
 
         Collections.sort(indices);
         Collections.reverse(indices);
         setDefaultToSpecificPosition(indices, 0);
         return indices;
+    }
+
+    /**
+     * Single-engine leaf: whether this Elasticsearch cluster holds the index. ES physical names carry
+     * no {@code .os} tag, so the logical name is used verbatim. The router aggregates this across all
+     * write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(indexName);
+    }
+
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this Elasticsearch index (plain name, no {@code .os}).
+     * Uses a dedicated {@code _count} request so the total is not capped at 10,000 like a default search,
+     * which would hide content drift above 10k docs in the mirror parity gate (issue #36360). Returns
+     * {@code 0} when the index is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!indexApi.indexExists(indexName)) {
+            return 0L;
+        }
+        try {
+            final CountRequest countRequest =
+                    new CountRequest(indexApi.getNameWithClusterIDPrefix(indexName));
+            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient()
+                    .count(countRequest, RequestOptions.DEFAULT);
+            return response.getCount();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for ES index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
+    }
+
+    /**
+     * Elasticsearch adapter for the vendor-neutral alias handle. ES physical names never carry the
+     * {@code .os} tag, so the logical index list resolves directly — no re-tag/strip round-trip is
+     * needed (contrast {@code OSSiteSearchAPI#getAliasToIndexMap}, which must apply {@code .os}).
+     */
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        return indexApi.getAliasToIndexMap(listIndices());
     }
 
     /**
@@ -720,6 +768,15 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         // Deletes only from THIS engine (indexApi is the direct ESIndexAPI, not the router) —
         // the SiteSearchAPIImpl router is the single fan-out point. Site-search names are plain
         // (no .os tag). Active-index protection is enforced by the router before dispatch.
+        // Idempotent per engine: during migration a site-search index can exist on only one engine
+        // (e.g. a Phase-0 ES-only index has no OpenSearch twin), so skip when it is absent here
+        // rather than letting deleteMultiple throw index_not_found and crash the fan-out — which
+        // would otherwise abort the Site Search build mid-switch (issue #36360, I-7).
+        if (!indexApi.indexExists(indexName)) {
+            Logger.info(this.getClass(),
+                    "Site-search index '" + indexName + "' is absent on this engine; nothing to delete.");
+            return;
+        }
         indexApi.deleteMultiple(new String[]{indexName});
     }
 

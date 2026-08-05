@@ -1,12 +1,12 @@
 import { describe, expect } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import {
     SpyObject,
     createComponentFactory,
     Spectator,
     byTestId,
     mockProvider
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Subject, of } from 'rxjs';
 
@@ -1308,6 +1308,141 @@ describe('DotEmaShellComponent', () => {
         it('should still render the navigation bar, toast, and seo tools', () => {
             expect(spectator.query(EditEmaNavigationBarComponent)).toBeTruthy();
             expect(spectator.query(DotPageToolsSeoComponent)).toBeTruthy();
+        });
+    });
+
+    describe('Lock banner', () => {
+        /** Mocks the page load response as locked, defaulting to "locked by another user". */
+        const mockLockedPage = (overrides: Record<string, unknown> = {}) => {
+            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'other-user-id',
+                        lockedByName: 'Another User',
+                        canLock: true,
+                        ...overrides
+                    }
+                })
+            );
+        };
+
+        /** Flushes the async page-load chain so the banner (and its content-projected template) fully renders. */
+        const detectChangesAndFlush = async () => {
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+        };
+
+        it('should not render the banner when the page is not locked', async () => {
+            await detectChangesAndFlush();
+
+            expect(spectator.query(byTestId('message'))).toBeNull();
+        });
+
+        it('should not render the banner when the page is locked by the current user', async () => {
+            mockLockedPage({
+                lockedBy: CurrentUserDataMock.userId,
+                lockedByName: CurrentUserDataMock.givenName
+            });
+            await detectChangesAndFlush();
+
+            expect(spectator.query(byTestId('message'))).toBeNull();
+        });
+
+        it('should not render the banner when the user lacks read permission, even if the page is locked', async () => {
+            mockLockedPage({ canRead: false });
+            await detectChangesAndFlush();
+
+            expect(spectator.query(byTestId('message'))).toBeNull();
+        });
+
+        it('should render the banner with projected content when the page is locked by another user', async () => {
+            mockLockedPage();
+            await detectChangesAndFlush();
+
+            // Regression guard: PrimeNG 21 only projects <p-message> content when
+            // it is a direct child (or via a "container"-named template) — the
+            // deprecated "content" template name is silently never instantiated,
+            // and the banner renders as an empty colored box with nothing inside.
+            expect(spectator.query(byTestId('message'))).not.toBeNull();
+
+            const content = spectator.query(byTestId('message-content'));
+            expect(content).not.toBeNull();
+            expect(content.querySelector('button')).not.toBeNull();
+
+            expect(spectator.query(byTestId('close-message'))).not.toBeNull();
+        });
+
+        it('should render an inline unlock action when the current user can lock/unlock', async () => {
+            mockLockedPage({ canLock: true });
+            await detectChangesAndFlush();
+
+            const content = spectator.query(byTestId('message-content'));
+            expect(content.querySelector('button')).not.toBeNull();
+        });
+
+        it('should not render an inline unlock action when the current user cannot lock/unlock', async () => {
+            mockLockedPage({ canLock: false });
+            await detectChangesAndFlush();
+
+            const content = spectator.query(byTestId('message-content'));
+            expect(content.querySelector('button')).toBeNull();
+        });
+
+        it('should hide the banner when the close button is clicked, without affecting the rest of the layout', async () => {
+            mockLockedPage();
+            await detectChangesAndFlush();
+            expect(spectator.query(byTestId('message'))).not.toBeNull();
+
+            spectator.click(byTestId('close-message'));
+
+            expect(spectator.query(byTestId('message'))).toBeNull();
+            expect(spectator.query(byTestId('ema-nav-bar'))).not.toBeNull();
+        });
+    });
+
+    describe('Layout structure', () => {
+        it('should render the navigation bar inside the two-column body wrapper', async () => {
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            const body = spectator.query('.dot-ema-shell__body');
+            expect(body).not.toBeNull();
+            expect(body.querySelector('[data-testid="ema-nav-bar"]')).not.toBeNull();
+        });
+
+        it('should render the lock banner outside the body wrapper, so it does not get squeezed into the content grid column', async () => {
+            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'other-user-id',
+                        lockedByName: 'Another User',
+                        canLock: true
+                    }
+                })
+            );
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            const message = spectator.query(byTestId('message'));
+            const body = spectator.query('.dot-ema-shell__body');
+
+            expect(message).not.toBeNull();
+            expect(body).not.toBeNull();
+            expect(body.contains(message)).toBe(false);
+
+            // The banner must precede the body wrapper in DOM order (rendered
+            // above it), not be nested inside its two-column grid.
+            const position = message.compareDocumentPosition(body);
+            expect(Boolean(position & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
         });
     });
 

@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
 import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';

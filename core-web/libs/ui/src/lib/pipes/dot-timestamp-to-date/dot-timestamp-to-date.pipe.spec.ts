@@ -1,4 +1,4 @@
-import { createPipeFactory, mockProvider, SpectatorPipe } from '@ngneat/spectator/jest';
+import { createPipeFactory, mockProvider, SpectatorPipe } from '@openng/spectator/jest';
 
 import { DotFormatDateService } from '@dotcms/data-access';
 

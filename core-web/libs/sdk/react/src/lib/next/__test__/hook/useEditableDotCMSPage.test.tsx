@@ -79,6 +79,35 @@ describe('useEditableDotCMSPage', () => {
         expect(mockUnsubscribe).toHaveBeenCalled();
     });
 
+    test('should sync to a new pageResponse prop outside UVE (e.g. after client-side navigation)', () => {
+        getUVEStateMock.mockReturnValue(undefined);
+
+        const { result, rerender } = renderHook(
+            ({ pageResponse }) => useEditableDotCMSPage(pageResponse),
+            { initialProps: { pageResponse: mockPageResponse } }
+        );
+
+        expect(result.current).toEqual(mockPageResponse);
+
+        const navigatedPageResponse = {
+            pageAsset: {
+                page: {
+                    pageURI: '/test-page',
+                    title: 'Test Page',
+                    metadata: {}
+                }
+            },
+            content: {
+                testContent: [{ title: 'Navigated Item' }]
+            },
+            graphql: {}
+        } as DotCMSPageResponse;
+
+        rerender({ pageResponse: navigatedPageResponse });
+
+        expect(result.current).toEqual(navigatedPageResponse);
+    });
+
     test('should update editable page when content changes are received', () => {
         getUVEStateMock.mockReturnValue({ mode: 'EDIT' });
 

@@ -1,4 +1,5 @@
 @let historicalVersionInode = $historicalVersionInode();
+@let loadingVersionInode = $loadingVersionInode();
 
 <section
     class="flex h-full min-h-0 flex-col overflow-y-auto px-4"
@@ -8,12 +9,12 @@
     <dot-edit-content-sidebar-section
         [title]="'edit.content.sidebar.history.versions' | dm"
         key="history.versions">
-        @if ($isLoading()) {
-            <!-- Loading state -->
+        @if ($isLoading() && !$hasHistoryItems()) {
+            <!-- Loading state (initial load only — reloads keep the previous list visible) -->
             <div data-testid="loading-state">
-                @for (item of [1, 2, 3, 4]; track $index) {
-                    <div>
-                        <p-skeleton width="100%" height="80px" />
+                @for (item of [1, 2, 3]; track $index) {
+                    <div class="pb-2">
+                        <p-skeleton width="100%" height="60px" borderRadius="6px" />
                     </div>
                 }
             </div>
@@ -39,6 +40,7 @@
                             ? historicalVersionInode === item.inode
                             : item.working
                     "
+                    [isLoadingVersion]="loadingVersionInode === item.inode"
                     (click)="
                         timelineItemAction.emit({
                             type: 'view',
@@ -74,12 +76,12 @@
                 <p-menu #ppMenu appendTo="body" [model]="$menuItems()" [popup]="true" />
             }
         </ng-template>
-        @if ($isLoading()) {
-            <!-- Loading state for push publish -->
+        @if ($isPushPublishLoading() && !$hasPushPublishHistoryItems()) {
+            <!-- Loading state for push publish (initial load only) -->
             <div data-testid="push-publish-loading-state">
-                @for (item of [1, 2, 3, 4]; track $index) {
-                    <div>
-                        <p-skeleton width="100%" height="80px" />
+                @for (item of [1, 2, 3]; track $index) {
+                    <div class="pb-2">
+                        <p-skeleton width="100%" height="60px" borderRadius="6px" />
                     </div>
                 }
             </div>

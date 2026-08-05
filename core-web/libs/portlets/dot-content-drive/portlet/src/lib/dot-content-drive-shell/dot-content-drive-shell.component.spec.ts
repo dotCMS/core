@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -26,12 +32,12 @@ import {
     DotLanguagesService,
     DotFolderService,
     DotUploadFileService,
-    DotLocalstorageService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
@@ -45,11 +51,13 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
+import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_STYLE,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
     WARNING_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
@@ -64,6 +72,7 @@ import {
 } from '../shared/mocks';
 import {
     DotContentDriveDialog,
+    DotContentDriveDialogDrillDown,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -75,7 +84,6 @@ describe('DotContentDriveShellComponent', () => {
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
-    let localStorageService: SpyObject<DotLocalstorageService>;
     let messageService: SpyObject<MessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
@@ -83,6 +91,10 @@ describe('DotContentDriveShellComponent', () => {
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
     // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    // Header override published by a dialog body that has drilled into a sub-screen.
+    let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
+    // Reactive so the shell's $extraColumns computed recomputes when the fields change.
+    let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -135,6 +147,8 @@ describe('DotContentDriveShellComponent', () => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
+        dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
+        showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
 
         spectator = createComponent({
             providers: [
@@ -165,7 +179,10 @@ describe('DotContentDriveShellComponent', () => {
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
+                    dialogDrillDown: dialogDrillDownSignal,
                     setDialog: jest.fn(),
+                    setDialogDrillDown: jest.fn(),
+                    clearDialogDrillDown: jest.fn(),
                     loadFolders: jest.fn(),
                     loadChildFolders: jest.fn(),
                     updateFolders: jest.fn(),
@@ -181,13 +198,30 @@ describe('DotContentDriveShellComponent', () => {
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: jest.fn(),
                     setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn()
+                    setShowAddToBundle: jest.fn(),
+                    userSearchableFields: jest.fn().mockReturnValue([]),
+                    userSearchableActive: jest.fn().mockReturnValue([]),
+                    showInListFields: showInListFieldsSignal,
+                    setUserSearchableFields: jest.fn(),
+                    setShowInListFields: jest.fn(),
+                    addUserSearchableField: jest.fn(),
+                    clearUserSearchableFilters: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(
-                        (_commands: unknown[], opts: { queryParams?: Record<string, string> }) => ({
-                            toString: () =>
-                                '?' + new URLSearchParams(opts?.queryParams ?? {}).toString()
+                        (
+                            _commands: unknown[],
+                            opts: { queryParams?: Record<string, string | null> }
+                        ) => ({
+                            toString: () => {
+                                const params = Object.fromEntries(
+                                    Object.entries(opts?.queryParams ?? {}).filter(
+                                        ([, value]) => value != null
+                                    )
+                                ) as Record<string, string>;
+
+                                return '?' + new URLSearchParams(params).toString();
+                            }
                         })
                     )
                 }),
@@ -208,7 +242,11 @@ describe('DotContentDriveShellComponent', () => {
                         })
                     )
                 }),
-                mockProvider(DotWorkflowsActionsService),
+                // The Action Center child looks up bulk actions on init, which happens as soon as a
+                // selection is present in these tests.
+                mockProvider(DotWorkflowsActionsService, {
+                    getBulkActions: jest.fn().mockReturnValue(of({ schemes: [] }))
+                }),
                 mockProvider(DotWorkflowActionsFireService, {
                     bulkFire: jest
                         .fn()
@@ -219,17 +257,12 @@ describe('DotContentDriveShellComponent', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
-                mockProvider(DotLocalstorageService, {
-                    getItem: jest.fn().mockReturnValue(undefined),
-                    setItem: jest.fn()
-                })
+                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);
-        localStorageService = spectator.inject(DotLocalstorageService);
         messageService = spectator.inject(MessageService);
         uploadService = spectator.inject(DotUploadFileService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
@@ -291,6 +324,48 @@ describe('DotContentDriveShellComponent', () => {
                 },
                 queryParamsHandling: 'merge'
             });
+        });
+    });
+
+    describe('setPathEffect (cold-load selection)', () => {
+        it('should not clear the URL-restored path while the sidebar is still loading', () => {
+            // Cold load: path restored from the URL, but the tree hasn't resolved yet so
+            // selectedNode is still the default root node (empty path). Syncing here would
+            // clobber the restored path back to root.
+            store.sidebarLoading.mockReturnValue(true);
+            store.selectedNode.mockReturnValue({ data: { path: '' } } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
+        });
+
+        it('should sync the path from the resolved node once the sidebar finishes loading', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).toHaveBeenCalledWith('/about-us/');
+        });
+
+        it('should not sync when the resolved node path already matches the current path', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(store.setPath).not.toHaveBeenCalled();
         });
     });
 
@@ -362,6 +437,107 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
+        it('should render the Action Center inside the shared dialog', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+
+            // One dialog, one visibility path — the Action Center is a case in its content switch.
+            expect(dialogComponent.visible).toBe(true);
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
+        });
+
+        it('should make the Action Center content box the only scroll container', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.$dialogContentStyle()).toEqual(
+                ACTION_CENTER_DIALOG_CONTENT_STYLE
+            );
+            expect(spectator.component.$dialogStyle()).toEqual(ACTION_CENTER_DIALOG_STYLE);
+        });
+
+        it('should render a sub-header with the selected contentlet count', () => {
+            // `selectedItems` is mocked as a plain jest.fn here, so it must be set before the
+            // computed is first read — it has no signal dependency to invalidate its cache.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeTruthy();
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
+        });
+
+        it('should exclude folders from the sub-header count', () => {
+            store.selectedItems.mockReturnValue([
+                MOCK_ITEMS[0],
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+        });
+
+        it('should retitle the header to the drilled-into action', () => {
+            // The Action Center body publishes this when it opens an action's preview, so the one
+            // dialog header names the action instead of the body rendering a second header.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
+                'Send for Review'
+            );
+            // The count follows the drill-down, not the full selection of 2.
+            expect(spectator.component.$actionCenterCount()).toBe(1);
+        });
+
+        it('should restore the dialog title when the drill-down is cleared', () => {
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            dialogDrillDownSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
+                'Workflow Center'
+            );
+            expect(spectator.component.$actionCenterCount()).toBe(2);
+        });
+
+        it('should not render the sub-header for other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            // The header template is shared, so the default branch must still render the plain title.
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeNull();
+            expect(spectator.query('.p-dialog-title')?.textContent?.trim()).toBe('Folder');
+        });
+
+        it('should not apply the Action Center sizing to other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
+            expect(spectator.component.$dialogStyle()).toBeUndefined();
+            expect(spectator.component.$dialogContentStyle()).toBeUndefined();
+            expect(spectator.component.$dialogHeaderClass()).toBe('');
+        });
+
         it('should configure the dialog as closable and closeOnEscape', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
             spectator.flushEffects();
@@ -404,24 +580,41 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$totalItems()).toBe(40);
         });
 
-        it('should return exact total when hasMoreContent is false', () => {
+        it('should return exact total when neither content nor folders have more', () => {
             store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
-            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: false }
+            ]);
             store.items.mockReturnValue(MOCK_ITEMS);
             spectator.detectChanges();
 
-            // hasMoreContent = false, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
+            // no more of either, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
             expect(spectator.component.$totalItems()).toBe(MOCK_ITEMS.length);
         });
 
-        it('should account for previous pages when hasMoreContent is false on page 2', () => {
+        it('should account for previous pages when nothing has more on page 2', () => {
             store.pagination.mockReturnValue({ page: 2, limit: 20, offset: 20 });
-            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: false }
+            ]);
             store.items.mockReturnValue(MOCK_ITEMS);
             spectator.detectChanges();
 
-            // hasMoreContent = false, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
+            // no more of either, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
             expect(spectator.component.$totalItems()).toBe(20 + MOCK_ITEMS.length);
+        });
+
+        it('should offer a next page when only folders have more (hasMoreFolders true, hasMoreContent false)', () => {
+            // A folder holding only sub-folders: no more content, but more folders to page through.
+            store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: true }
+            ]);
+            store.items.mockReturnValue(MOCK_ITEMS);
+            spectator.detectChanges();
+
+            // hasMoreFolders = true → one page beyond current: 20 * (1 + 1) = 40
+            expect(spectator.component.$totalItems()).toBe(40);
         });
     });
 
@@ -602,14 +795,11 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageContent).toBeTruthy();
         });
 
-        it('should set $showMessage to false when close button is clicked', () => {
+        it('should always render the banner (no dismiss control)', () => {
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
+            expect(spectator.query('[data-testid="message"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="close-message"]')).toBeNull();
         });
 
         it('should have a learn more link', () => {
@@ -617,33 +807,6 @@ describe('DotContentDriveShellComponent', () => {
 
             const learnMoreLink = spectator.query('[data-testid="learn-more-link"]');
             expect(learnMoreLink).toBeTruthy();
-        });
-
-        it('should return true if the hide message banner key is not set', () => {
-            localStorageService.getItem.mockReturnValue(undefined);
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(true);
-        });
-
-        it('should return false if the hide message banner key is set', () => {
-            localStorageService.getItem.mockReturnValue('true');
-            spectator.detectComponentChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
-        });
-
-        it('should call the localStorage service to set the hide message banner key', () => {
-            spectator.detectChanges();
-
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(localStorageService.setItem).toHaveBeenCalledWith(
-                HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
-                true
-            );
         });
     });
 
@@ -664,24 +827,43 @@ describe('DotContentDriveShellComponent', () => {
             item: (index: number) => files[index] ?? null
         }) as unknown as FileList;
 
-    // Opens the upload selector with the given context and emits the user's choice back to the
-    // shell, mirroring the dialog's (selectUploadType) output.
+    // Opens the upload menu (via the button flow when no files are given, or the drag-and-drop
+    // flow when they are) and emits the user's choice back to the shell, mirroring the selector's
+    // (selectUploadType) output.
     const selectUploadType = (selection: {
         targetFolder?: DotFolderTreeNodeData;
-        contentType: string;
+        baseType: string;
         files?: FileList;
     }) => {
-        dialogSignal.set({
-            type: DIALOG_TYPE.UPLOAD_SELECTOR,
-            header: 'Upload',
-            payload: { targetFolder: selection.targetFolder, files: selection.files }
-        });
+        // Drag-and-drop prompts with a modal; the Upload button uses a popover — both funnel
+        // through the same code path and render the selector under the same testid.
+        if (selection.files) {
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files: selection.files,
+                targetFolder: selection.targetFolder
+            });
+        } else {
+            store.selectedNode.mockReturnValue({
+                data: selection.targetFolder
+            } as DotFolderTreeNodeItem);
+            const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: jest.fn()
+            });
+        }
+
         spectator.detectChanges();
 
-        const dialog = spectator.debugElement.query(
+        const selector = spectator.debugElement.query(
             By.css('[data-testId="dialog-upload-selector"]')
         );
-        spectator.triggerEventHandler(dialog, 'selectUploadType', selection);
+        spectator.triggerEventHandler(selector, 'selectUploadType', {
+            targetFolder: selection.targetFolder,
+            baseType: selection.baseType,
+            files: selection.files
+        });
     };
 
     describe('upload type selector — opening', () => {
@@ -689,23 +871,26 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should open the upload selector with the selected folder when the upload button is clicked', () => {
-            store.selectedNode.mockReturnValue({
-                data: TARGET_FOLDER_DATA
-            } as DotFolderTreeNodeItem);
-
+        const openViaButton = (targetFolder?: DotFolderTreeNodeData) => {
+            store.selectedNode.mockReturnValue({ data: targetFolder } as DotFolderTreeNodeItem);
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
-            spectator.triggerEventHandler(toolbar, 'upload', undefined);
-
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: expect.any(String),
-                payload: { targetFolder: TARGET_FOLDER_DATA }
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: jest.fn()
             });
+            spectator.detectChanges();
+        };
+
+        it('should open the upload menu with the selected folder when the upload button is clicked', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
-        it('should open the upload selector carrying the files when the dropzone emits uploadFiles', () => {
+        it('should open the upload menu carrying the files when the dropzone emits uploadFiles', () => {
             const files = createFileList([createFile()]);
 
             const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
@@ -713,16 +898,16 @@ describe('DotContentDriveShellComponent', () => {
                 files,
                 targetFolder: TARGET_FOLDER_DATA
             });
+            spectator.detectChanges();
 
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: expect.any(String),
-                payload: { targetFolder: TARGET_FOLDER_DATA, files }
-            });
+            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$files()).toBe(files);
+            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
-        it('should open the upload selector carrying the files when the sidebar emits uploadFiles', () => {
+        it('should open the upload menu carrying the files when the sidebar emits uploadFiles', () => {
             const files = createFileList([createFile()]);
 
             const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
@@ -730,24 +915,83 @@ describe('DotContentDriveShellComponent', () => {
                 files,
                 targetFolder: TARGET_FOLDER_DATA
             });
+            spectator.detectChanges();
 
-            expect(store.setDialog).toHaveBeenCalledWith({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: expect.any(String),
-                payload: { targetFolder: TARGET_FOLDER_DATA, files }
-            });
+            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$files()).toBe(files);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
-        it('should render the upload selector dialog body when the dialog type is UPLOAD_SELECTOR', () => {
-            dialogSignal.set({
-                type: DIALOG_TYPE.UPLOAD_SELECTOR,
-                header: 'Upload',
-                payload: { targetFolder: TARGET_FOLDER_DATA }
-            });
+        it('should render both option menu items when opened', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            // The popover overlay is appended to the document body, so query from the root.
+            expect(
+                spectator.query(byTestId('upload-selector-option-DOTASSET'), { root: true })
+            ).toBeTruthy();
+            expect(
+                spectator.query(byTestId('upload-selector-option-FILEASSET'), { root: true })
+            ).toBeTruthy();
+        });
+
+        it('should clear the selector payload when the popover is dismissed without a selection', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+
+            const popover = spectator.debugElement.query(
+                By.css('[data-testId="upload-selector-popover"]')
+            );
+            spectator.triggerEventHandler(popover, 'onHide', {});
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testId="dialog-upload-selector"]')).toBeTruthy();
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+        });
+
+        const dropFiles = () =>
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                { files: createFileList([createFile()]), targetFolder: TARGET_FOLDER_DATA }
+            );
+
+        it('should close the drag-and-drop modal when the Upload button opens the popover', () => {
+            dropFiles();
+            spectator.detectChanges();
+            expect(spectator.component.$uploadModalVisible()).toBe(true);
+
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.component.$uploadModalVisible()).toBe(false);
+        });
+
+        it('should hide the button popover when a drag-and-drop opens the modal', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+            const hideSpy = jest.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
+
+            dropFiles();
+            spectator.detectChanges();
+
+            expect(hideSpy).toHaveBeenCalled();
+            expect(spectator.component.$uploadModalVisible()).toBe(true);
+        });
+
+        it('should keep the shared payload (modal content) when the popover hides during handoff', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            dropFiles();
+            spectator.detectChanges();
+
+            // The popover's onHide must NOT clear the shared payload — the modal just opened with it.
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testId="upload-selector-popover"]')),
+                'onHide',
+                {}
+            );
+            spectator.detectChanges();
+
+            expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
         });
     });
 
@@ -1002,6 +1246,76 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('upload — folder default preference (prompt skipped)', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        const upload = () =>
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="toolbar"]')),
+                'upload',
+                { currentTarget: document.createElement('button'), stopPropagation: jest.fn() }
+            );
+
+        it('should skip the prompt and open the file picker when the folder pins a base type', () => {
+            store.selectedNode.mockReturnValue({
+                data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
+            } as DotFolderTreeNodeItem);
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            const clickSpy = jest.spyOn(fileInput, 'click');
+
+            upload();
+            spectator.detectChanges();
+
+            expect(clickSpy).toHaveBeenCalled();
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+        });
+
+        it('should upload with the folder base type after the picker returns (button flow)', () => {
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            store.selectedNode.mockReturnValue({
+                data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
+            } as DotFolderTreeNodeItem);
+            const file = createFile();
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            upload();
+            Object.defineProperty(fileInput, 'files', {
+                value: [file],
+                writable: true,
+                configurable: true
+            });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
+        });
+
+        it('should upload dropped files directly when the folder pins a base type (drag-and-drop)', () => {
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                {
+                    files: createFileList([file]),
+                    targetFolder: { ...TARGET_FOLDER_DATA, defaultBaseType: 'FILEASSET' }
+                }
+            );
+            spectator.detectChanges();
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
         });
     });
 
@@ -1806,7 +2120,8 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'folder',
                 path: '/documents/',
-                identifier: 'folder-123'
+                identifier: 'folder-123',
+                inode: 'folder-inode-123'
             };
 
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
@@ -1824,12 +2139,41 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/documents/',
                     hostname: MOCK_SITES[0].hostname,
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     fromTable: true
                 },
                 key: 'folder-123',
                 label: '/documents/',
                 leaf: false
             });
+        });
+
+        it('should carry the folder defaultBaseType into the selected node', () => {
+            spectator.detectChanges();
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/app/',
+                identifier: 'app',
+                inode: 'app-inode',
+                defaultBaseType: 'DOTASSET'
+            };
+
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.setSelectedNode.mockClear();
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'doubleClick', folderItem);
+
+            expect(store.setSelectedNode).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: 'DOTASSET' })
+                })
+            );
         });
 
         it('should call navigationService.editContent when double clicking a content item', () => {
@@ -1907,7 +2251,7 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('onUpload', () => {
-        it('should open the upload selector dialog instead of the file picker directly', () => {
+        it('should open the upload menu instead of the file picker directly', () => {
             spectator.detectChanges();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
@@ -1915,11 +2259,13 @@ describe('DotContentDriveShellComponent', () => {
 
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
 
-            spectator.triggerEventHandler(toolbar, 'upload', undefined);
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: jest.fn()
+            });
+            spectator.detectChanges();
 
-            expect(store.setDialog).toHaveBeenCalledWith(
-                expect.objectContaining({ type: DIALOG_TYPE.UPLOAD_SELECTOR })
-            );
+            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
             expect(clickSpy).not.toHaveBeenCalled();
         });
     });
@@ -1937,6 +2283,78 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'scroll', new Event('scroll'));
 
             expect(store.resetContextMenu).toHaveBeenCalled();
+        });
+    });
+
+    describe('extra columns (Show In List)', () => {
+        beforeEach(() => spectator.detectChanges());
+
+        it('should map Show In List fields to typed table columns by data/field type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'summary', name: 'Summary', dataType: 'TEXT', fieldType: 'Text' },
+                { variable: 'count', name: 'Count', dataType: 'INTEGER', fieldType: 'Text' },
+                { variable: 'active', name: 'Active', dataType: 'BOOL', fieldType: 'Checkbox' },
+                { variable: 'pub', name: 'Published', dataType: 'DATE', fieldType: 'Date' },
+                { variable: 'evt', name: 'Event', dataType: 'DATE', fieldType: 'Date-and-Time' },
+                { variable: 'clock', name: 'Clock', dataType: 'DATE', fieldType: 'Time' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'summary', header: 'Summary', type: 'text' }),
+                expect.objectContaining({ field: 'count', type: 'number' }),
+                expect.objectContaining({ field: 'active', type: 'boolean' }),
+                expect.objectContaining({ field: 'pub', type: 'date' }),
+                expect.objectContaining({ field: 'evt', type: 'datetime' }),
+                expect.objectContaining({ field: 'clock', type: 'time' })
+            ]);
+        });
+
+        it('should expose no extra columns when there are no Show In List fields', () => {
+            showInListFieldsSignal.set([]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([]);
+        });
+
+        it('should mark a column sortable only when the field is indexed', () => {
+            showInListFieldsSignal.set([
+                {
+                    variable: 'idx',
+                    name: 'Indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: true
+                },
+                {
+                    variable: 'noidx',
+                    name: 'Not indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: false
+                }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'idx', sortable: true }),
+                expect.objectContaining({ field: 'noidx', sortable: false })
+            ]);
+        });
+
+        it('should map Image/Binary/File fields to the image (thumbnail) column type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'photo', name: 'Photo', dataType: 'SYSTEM', fieldType: 'Image' },
+                { variable: 'doc', name: 'Doc', dataType: 'SYSTEM', fieldType: 'Binary' },
+                { variable: 'attach', name: 'Attach', dataType: 'SYSTEM', fieldType: 'File' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'photo', type: 'image' }),
+                expect.objectContaining({ field: 'doc', type: 'image' }),
+                expect.objectContaining({ field: 'attach', type: 'image' })
+            ]);
         });
     });
 });

@@ -1,36 +1,23 @@
 <div class="col-span-3 row-start-1 w-full">
-    @if ($showMessage()) {
-        <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
-            <div class="flex w-full items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-info-circle"></i>
-                    <span data-testid="message-content">
-                        {{ 'content-drive.feature.state' | dm }}
-                        <b>{{ 'development' | dm }}</b>
-                    </span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a
-                        href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
-                        target="_blank"
-                        data-testid="learn-more-link">
-                        {{ 'content-drive.feature.learn-more' | dm }}
-                    </a>
-                    <p-button
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        type="button"
-                        icon="pi pi-times"
-                        data-testid="close-message"
-                        (click)="onCloseMessage()" />
-                </div>
-            </div>
-        </p-message>
-    }
+    <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
+        <div class="flex w-full items-center gap-2">
+            <i class="pi pi-info-circle"></i>
+            <span data-testid="message-content">
+                {{ 'content-drive.feature.state' | dm }}
+                <b>{{ 'development' | dm }}</b>
+            </span>
+            <a
+                class="ml-auto"
+                href="https://community.dotcms.com/t/check-out-an-early-version-of-our-content-drive/242?u=marcboutillette"
+                target="_blank"
+                data-testid="learn-more-link">
+                {{ 'content-drive.feature.learn-more' | dm }}
+            </a>
+        </div>
+    </p-message>
 </div>
 
-<dot-content-drive-toolbar (upload)="onUpload()" data-testid="toolbar" />
+<dot-content-drive-toolbar (upload)="onUpload($event)" data-testid="toolbar" />
 
 <div
     class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
@@ -50,6 +37,7 @@
         [items]="$items()"
         [loading]="$loading()"
         [totalItems]="$totalItems()"
+        [extraColumns]="$extraColumns()"
         [offset]="$offset()"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
@@ -98,9 +86,46 @@
     [closeOnEscape]="true"
     appendTo="body"
     data-testId="dialog"
-    [pt]="{ content: { class: $dialogContentClass() } }"
+    [style]="$dialogStyle()"
+    [contentStyle]="$dialogContentStyle()"
+    [pt]="{
+        content: { class: $dialogContentClass() },
+        header: { class: $dialogHeaderClass() }
+    }"
     (visibleChange)="onVisibleChange($event)"
     (onHide)="onDialogHidden()">
+    <!--
+        A single header template, switched by dialog type. PrimeNG finds `#header` with a
+        `descendants: false` ContentChild query, so it has to be a direct child of `p-dialog` and
+        cannot live inside the @switch below. Providing it also suppresses PrimeNG's own title span,
+        which is why the default branch renders the title itself.
+    -->
+    <ng-template #header>
+        @switch ($activeDialog()?.type) {
+            @case (DIALOG_TYPE.ACTION_CENTER) {
+                <!-- Title and count both come from computeds that prefer the drilled-into screen's
+                     values, so selecting an action retitles this one header instead of the body
+                     rendering a second one. -->
+                <div class="flex flex-col gap-1">
+                    <span class="p-dialog-title" data-testId="dialog-header">
+                        {{ $actionCenterHeader() }}
+                    </span>
+                    <span
+                        class="text-sm font-medium text-surface-500"
+                        data-testId="dialog-subheader">
+                        {{
+                            'content-drive.action-center.items-selected'
+                                | dm: [$actionCenterCount().toString()]
+                        }}
+                    </span>
+                </div>
+            }
+            @default {
+                <span class="p-dialog-title">{{ $activeDialog()?.header }}</span>
+            }
+        }
+    </ng-template>
+
     @switch ($activeDialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <dot-content-drive-dialog-folder
@@ -114,16 +139,47 @@
                     [listType]="listType" />
             }
         }
-        @case (DIALOG_TYPE.UPLOAD_SELECTOR) {
-            @if ($uploadSelectorPayload(); as payload) {
-                <dot-content-drive-dialog-upload-selector
-                    data-testId="dialog-upload-selector"
-                    [targetFolder]="payload.targetFolder"
-                    [files]="payload.files"
-                    (selectUploadType)="onUploadTypeSelected($event)" />
-            }
+        @case (DIALOG_TYPE.ACTION_CENTER) {
+            <dot-content-drive-action-center data-testId="dialog-action-center" />
         }
     }
+</p-dialog>
+
+<!-- The Asset/File selector is defined once here (one event binding, one handler) and rendered
+     into whichever presentation is active: a popover for the Upload button, a modal for drag-drop. -->
+<ng-template #uploadSelectorTpl>
+    @if ($uploadSelectorPayload(); as payload) {
+        <dot-content-drive-dialog-upload-selector
+            class="block"
+            data-testId="dialog-upload-selector"
+            [targetFolder]="payload.targetFolder"
+            [files]="payload.files"
+            (selectUploadType)="onUploadTypeSelected($event)" />
+    }
+</ng-template>
+
+<p-popover
+    #uploadSelectorPopover
+    data-testId="upload-selector-popover"
+    [pt]="{ content: { class: 'w-96 max-w-[92vw] p-0!' } }"
+    (onHide)="onUploadSelectorPopoverHide()">
+    <ng-container [ngTemplateOutlet]="uploadSelectorTpl" />
+</p-popover>
+
+<p-dialog
+    [visible]="$uploadModalVisible()"
+    [header]="'content-drive.dialog.upload-selector.header' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
+    appendTo="body"
+    data-testId="upload-selector-modal"
+    [style]="{ width: '26rem' }"
+    [pt]="{ content: { class: 'p-0!' } }"
+    (visibleChange)="onUploadModalVisibleChange($event)">
+    <ng-container [ngTemplateOutlet]="uploadSelectorTpl" />
 </p-dialog>
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->

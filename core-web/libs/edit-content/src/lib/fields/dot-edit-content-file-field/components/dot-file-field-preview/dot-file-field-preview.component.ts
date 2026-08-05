@@ -1,7 +1,6 @@
 import { of } from 'rxjs';
 
 import {
-    CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -27,10 +26,14 @@ import {
     DotFileMetadata
 } from '@dotcms/dotcms-models';
 import {
-    DotTempFileThumbnailComponent,
+    DotContentThumbnail,
+    DotContentThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotCopyButtonComponent
+    DotCopyButtonComponent,
+    buildFallbackTempFileMetadata,
+    contentletToThumbnailModel,
+    tempFileToThumbnailModel
 } from '@dotcms/ui';
 import { getFileMetadata } from '@dotcms/utils';
 
@@ -47,6 +50,8 @@ type FileInfo = UploadedFile & {
     downloadLink: string | null;
     content: string | null;
     metadata: DotFileMetadata;
+    /** Resolved model for the thumbnail viewer, built from either origin. */
+    thumbnail: DotContentThumbnail;
 };
 
 const buildTempDownloadLink = (referenceUrl: string): string => {
@@ -58,7 +63,7 @@ const buildTempDownloadLink = (referenceUrl: string): string => {
 @Component({
     selector: 'dot-file-field-preview',
     imports: [
-        DotTempFileThumbnailComponent,
+        DotContentThumbnailComponent,
         DotFileSizeFormatPipe,
         DotMessagePipe,
         ButtonModule,
@@ -70,8 +75,7 @@ const buildTempDownloadLink = (referenceUrl: string): string => {
     providers: [ConfirmationService],
     templateUrl: './dot-file-field-preview.component.html',
     styleUrls: ['./dot-file-field-preview.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldPreviewComponent implements OnInit {
     readonly #dotResourceLinksService = inject(DotResourceLinksService);
@@ -149,7 +153,10 @@ export class DotFileFieldPreviewComponent implements OnInit {
                 contentType,
                 fieldVariable,
                 downloadLink: `/contentAsset/raw-data/${file.inode}/${fieldVariable}?byInode=true&force_download=true`,
-                metadata: getFileMetadata(file)
+                metadata: getFileMetadata(file),
+                // Videos preview as a static first frame (no player controls), like
+                // every other surface
+                thumbnail: contentletToThumbnailModel(file, { fieldVariable })
             };
         }
 
@@ -162,7 +169,9 @@ export class DotFileFieldPreviewComponent implements OnInit {
             contentType: DEFAULT_CONTENT_TYPE,
             fieldVariable: DEFAULT_CONTENT_TYPE,
             downloadLink: file.referenceUrl ? buildTempDownloadLink(file.referenceUrl) : null,
-            metadata: file.metadata
+            // Temp files fresh from the image editor may lack the metadata block
+            metadata: file.metadata ?? buildFallbackTempFileMetadata(file),
+            thumbnail: tempFileToThumbnailModel(file)
         };
     });
 

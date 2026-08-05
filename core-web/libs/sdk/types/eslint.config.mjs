@@ -21,7 +21,14 @@ export default [
     {
         files: ['**/*.json'],
         rules: {
-            '@nx/dependency-checks': 'error'
+            // Ignore build-tool config files (e.g. the inferred rollup config)
+            // so @nx/rollup isn't flagged as a missing runtime dependency.
+            '@nx/dependency-checks': [
+                'error',
+                {
+                    ignoredFiles: ['{projectRoot}/rollup.config.cjs']
+                }
+            ]
         },
         languageOptions: {
             parser: jsoncEslintParser

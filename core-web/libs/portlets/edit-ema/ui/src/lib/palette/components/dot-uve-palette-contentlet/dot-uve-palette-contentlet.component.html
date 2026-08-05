@@ -5,16 +5,14 @@
     class="flex h-full w-20 shrink-0 items-center justify-center overflow-hidden"
     [class]="
         $isIconThumbnail()
-            ? 'bg-gray-100 group-hover:bg-(--color-palette-primary-200) group-hover:[--gray-700:var(--color-palette-primary-600)]'
+            ? 'bg-gray-100 group-hover:bg-(--color-palette-primary-200) group-hover:[--dot-content-thumbnail-icon-color:var(--color-palette-primary-600)]'
             : ''
     ">
-    <!-- group-hover:[--gray-700:...] overrides the CSS variable used internally by
-         dot-contentlet-thumbnail > dot-contentlet-icon (shadow DOM) for icon color -->
-    <dot-contentlet-thumbnail
+    <dot-content-thumbnail
         data-testid="contentlet-thumbnail"
-        class="pointer-events-none size-full *:size-full [&_img]:size-full [&_img]:object-cover"
-        [contentlet]="contentlet"
-        [iconSize]="'32px'" />
+        class="pointer-events-none"
+        iconSize="32px"
+        [thumbnail]="$thumbnail()" />
 </div>
 
 <!-- Title -->

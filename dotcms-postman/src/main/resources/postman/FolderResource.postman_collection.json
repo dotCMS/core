@@ -1010,6 +1010,50 @@
           "response": []
         },
         {
+          "name": "Create child folder inside images for hasChildren test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"images/thumbnails\"]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/createfolders/{{byNameSiteName}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "createfolders",
+                "{{byNameSiteName}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Find folders matching partial name",
           "event": [
             {
@@ -1040,6 +1084,7 @@
                   "        pm.expect(folder.path).to.be.a('string').and.not.eql('');",
                   "        pm.expect(folder.name).to.be.a('string').and.not.eql('');",
                   "        pm.expect(folder.addChildrenAllowed).to.be.a('boolean');",
+                  "        pm.expect(folder.hasChildren).to.be.a('boolean');",
                   "    });",
                   "});"
                 ],
@@ -1335,6 +1380,126 @@
                 "v1",
                 "folder",
                 "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find folders — hasChildren is true for folder with subfolders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"The 'images' folder reports hasChildren true\", function () {",
+                  "    const imagesFolder = entity.find(function(f) { return f.name === 'images'; });",
+                  "    pm.expect(imagesFolder, \"'images' folder not found in results\").to.exist;",
+                  "    pm.expect(imagesFolder.hasChildren).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"The 'my-images' leaf folder reports hasChildren false\", function () {",
+                  "    const myImages = entity.find(function(f) { return f.name === 'my-images'; });",
+                  "    pm.expect(myImages, \"'my-images' folder not found in results\").to.exist;",
+                  "    pm.expect(myImages.hasChildren).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=false",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "images"
+                },
+                {
+                  "key": "siteId",
+                  "value": "{{byNameSiteId}}"
+                },
+                {
+                  "key": "recursive",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find folders — verify hasChildren field is present",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "const entity = jsonData.entity;",
+                  "",
+                  "pm.test(\"hasChildren field is present and boolean on every result\", function () {",
+                  "    entity.forEach(function(folder) {",
+                  "        pm.expect(folder).to.have.property('hasChildren');",
+                  "        pm.expect(folder.hasChildren).to.be.a('boolean');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "images"
+                },
+                {
+                  "key": "siteId",
+                  "value": "{{byNameSiteId}}"
+                },
+                {
+                  "key": "recursive",
+                  "value": "true"
+                }
               ]
             }
           },

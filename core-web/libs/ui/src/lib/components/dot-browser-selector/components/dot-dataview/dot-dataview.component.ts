@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    CUSTOM_ELEMENTS_SCHEMA,
     ElementRef,
     input,
     model,
@@ -22,6 +21,7 @@ import { TableModule } from 'primeng/table';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
+import { DotContentThumbnailComponent } from '../../../dot-content-thumbnail/dot-content-thumbnail.component';
 
 @Component({
     selector: 'dot-dataview',
@@ -34,12 +34,12 @@ import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
         MessageModule,
         SkeletonModule,
         DatePipe,
-        DotMessagePipe
+        DotMessagePipe,
+        DotContentThumbnailComponent
     ],
     templateUrl: './dot-dataview.component.html',
     styleUrls: ['./dot-dataview.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDataViewComponent {
     /**

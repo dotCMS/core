@@ -1,19 +1,13 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    CUSTOM_ELEMENTS_SCHEMA,
-    input
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { contentletToThumbnailModel, DotContentThumbnailComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-uve-palette-contentlet',
-    imports: [TooltipModule],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    imports: [TooltipModule, DotContentThumbnailComponent],
     templateUrl: './dot-uve-palette-contentlet.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -26,17 +20,9 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 export class DotUvePaletteContentletComponent {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-    readonly $isIconThumbnail = computed(() => {
-        const c = this.$contentlet();
-        const mime = c?.mimeType ?? '';
-        const renderImage =
-            !!c?.['hasTitleImage'] ||
-            mime === 'application/pdf' ||
-            !!c?.['image'] ||
-            mime.includes('video');
+    readonly $thumbnail = computed(() => contentletToThumbnailModel(this.$contentlet()));
 
-        return !renderImage;
-    });
+    readonly $isIconThumbnail = computed(() => this.$thumbnail().type === 'icon');
 
     readonly $hostClass =
         'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +

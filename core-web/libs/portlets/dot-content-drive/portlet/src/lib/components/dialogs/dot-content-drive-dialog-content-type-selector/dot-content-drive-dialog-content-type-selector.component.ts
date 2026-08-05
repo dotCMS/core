@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { ButtonModule } from 'primeng/button';
 
 import { DotESContentService } from '@dotcms/data-access';
+import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 import {
     DOT_PALETTE_PERSIST_PREFERENCES,
     DotPaletteListStore,
@@ -59,7 +60,28 @@ export class DotContentDriveDialogContentTypeSelectorComponent {
         }
 
         this.#store.closeDialog();
-        this.#navigationService.createContent(variable);
+        this.#navigationService.createContent(variable, this.#getCurrentFolder());
+    }
+
+    /**
+     * Resolves the folder the user is currently browsing so the new content lands there.
+     * - `folderPath` (`hostname/path`) pre-selects the Host/Folder field in the new editor.
+     * - `folderInode` pre-selects the target folder in the legacy editor.
+     * At the site root both fall back to the current site (empty path / no inode).
+     */
+    #getCurrentFolder(): { folderPath?: string; folderInode?: string } {
+        const hostname = this.#store.currentSite()?.hostname;
+        const path = this.#store.path();
+        const data = this.#store.selectedNode()?.data;
+        const inode =
+            data?.type === 'folder' || data?.type === 'site'
+                ? (data as DotFolderTreeNodeContentData).inode
+                : undefined;
+
+        return {
+            folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,
+            folderInode: inode || undefined
+        };
     }
 
     protected onCancel(): void {

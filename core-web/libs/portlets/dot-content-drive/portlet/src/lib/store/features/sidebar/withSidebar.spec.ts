@@ -1,11 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
+import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
-import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
+import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
 
@@ -18,23 +19,22 @@ import {
 
 const mockSite = createFakeSite();
 
-const mockFolders = [
-    createFakeFolder({
-        id: 'parent-folder',
-        path: '/documents/',
-        hostName: 'demo.dotcms.com',
-        addChildrenAllowed: true
-    }),
-    createFakeFolder({
+const EMPTY_PAGINATION = {} as DotPagination;
+
+const searchResult = (folders: FolderSearchView[]) => of({ folders, pagination: EMPTY_PAGINATION });
+
+// Direct children of /documents/ as returned by the search endpoint (parent path + own name).
+const mockChildViews: FolderSearchView[] = [
+    createFakeFolderSearchView({
         id: 'child-folder-1',
-        path: '/documents/images/',
-        hostName: 'demo.dotcms.com',
+        name: 'images',
+        path: '/documents/',
         addChildrenAllowed: true
     }),
-    createFakeFolder({
+    createFakeFolderSearchView({
         id: 'child-folder-2',
-        path: '/documents/videos/',
-        hostName: 'demo.dotcms.com',
+        name: 'videos',
+        path: '/documents/',
         addChildrenAllowed: true
     })
 ];
@@ -101,7 +101,7 @@ describe('withSidebar', () => {
         service: sidebarStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValueOnce(of([])).mockReturnValue(of(mockFolders))
+                searchFolders: jest.fn().mockReturnValue(searchResult([]))
             })
         ]
     });
@@ -129,7 +129,9 @@ describe('withSidebar', () => {
 
                 // Wait for async operations to complete
                 setTimeout(() => {
-                    expect(folderService.getFolders).toHaveBeenCalled();
+                    expect(folderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ siteId: mockSite.identifier })
+                    );
                     expect(store.sidebarLoading()).toBe(false);
                     expect(store.folders()).toContainEqual({
                         ...realAllFolder
@@ -139,7 +141,7 @@ describe('withSidebar', () => {
             });
 
             it('should handle empty folder response', (done) => {
-                folderService.getFolders.mockReturnValue(of([]));
+                folderService.searchFolders.mockReturnValue(searchResult([]));
 
                 store.loadFolders();
 
@@ -158,12 +160,17 @@ describe('withSidebar', () => {
                 const testPath = '/documents/images/';
                 const host = 'demo.dotcms.com';
 
-                folderService.getFolders.mockReturnValue(of(mockFolders));
+                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
                 store.loadChildFolders(testPath, host).subscribe((result) => {
-                    expect(result.parent).toEqual(mockFolders[0]);
                     expect(result.folders).toHaveLength(2);
-                    expect(folderService.getFolders).toHaveBeenCalledWith(`${host}${testPath}`);
+                    expect(folderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            siteId: mockSite.identifier,
+                            path: testPath,
+                            recursive: false
+                        })
+                    );
                     done();
                 });
             });
@@ -171,12 +178,25 @@ describe('withSidebar', () => {
             it('should transform folders into tree nodes correctly', (done) => {
                 const testPath = '/documents/';
 
+                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+
                 store.loadChildFolders(testPath).subscribe((result) => {
                     expect(result.folders).toHaveLength(2);
                     expect(result.folders[0]).toHaveProperty('key');
                     expect(result.folders[0]).toHaveProperty('label');
                     expect(result.folders[0]).toHaveProperty('data');
                     expect(result.folders[0].data.type).toBe('folder');
+                    done();
+                });
+            });
+
+            it('should thread the requested page through to the search endpoint', (done) => {
+                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+
+                store.loadChildFolders('/documents/', 'demo.dotcms.com', 3).subscribe(() => {
+                    expect(folderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ path: '/documents/', page: 3 })
+                    );
                     done();
                 });
             });
@@ -198,7 +218,7 @@ describe('withSidebar', () => {
                 };
 
                 // Reset the mock to count calls
-                folderService.getFolders.mockClear();
+                folderService.searchFolders.mockClear();
 
                 // Simulate component logic: check if node has children before calling loadChildFolders
                 const shouldLoadChildren =
@@ -207,14 +227,14 @@ describe('withSidebar', () => {
                 if (!shouldLoadChildren) {
                     // Don't call loadChildFolders if node already has children
                     expect(nodeWithChildren.children.length).toBeGreaterThan(0);
-                    expect(folderService.getFolders).not.toHaveBeenCalled();
+                    expect(folderService.searchFolders).not.toHaveBeenCalled();
                 } else {
                     // Only call loadChildFolders if node doesn't have children
                     store.loadChildFolders(nodeWithChildren.data.path);
                 }
 
                 // Verify the service was not called since node has children
-                expect(folderService.getFolders).not.toHaveBeenCalled();
+                expect(folderService.searchFolders).not.toHaveBeenCalled();
             });
         });
 
@@ -263,10 +283,10 @@ describe('withSidebar', () => {
     describe('integration scenarios', () => {
         it('should handle child folder expansion workflow', () => {
             // Reset mock for this specific test with proper folder hierarchy
-            folderService.getFolders.mockReturnValue(of(mockFolders));
+            folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
             const parentPath = '/documents/';
-            let loadedResult: { parent: unknown; folders: DotFolderTreeNodeItem[] } | null = null;
+            let loadedResult: { folders: DotFolderTreeNodeItem[] } | null = null;
 
             // Load child folders synchronously since of() emits synchronously
             store.loadChildFolders(parentPath).subscribe((result) => {
@@ -308,7 +328,7 @@ describe('withSidebar - null site scenarios', () => {
         service: nullSiteStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                searchFolders: jest.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -323,7 +343,7 @@ describe('withSidebar - null site scenarios', () => {
         it('should not load folders when currentSite is null', () => {
             store.loadFolders();
 
-            expect(folderService.getFolders).not.toHaveBeenCalled();
+            expect(folderService.searchFolders).not.toHaveBeenCalled();
         });
     });
 });
@@ -345,7 +365,7 @@ describe('withSidebar - system host scenarios', () => {
         service: systemHostStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                searchFolders: jest.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -360,7 +380,7 @@ describe('withSidebar - system host scenarios', () => {
         it('should not load folders when currentSite is null', () => {
             store.loadFolders();
 
-            expect(folderService.getFolders).not.toHaveBeenCalled();
+            expect(folderService.searchFolders).not.toHaveBeenCalled();
         });
     });
 });
@@ -382,7 +402,7 @@ describe('withSidebar - undefined path scenarios', () => {
         service: undefinedPathStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                searchFolders: jest.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -398,7 +418,7 @@ describe('withSidebar - undefined path scenarios', () => {
             store.loadFolders();
 
             setTimeout(() => {
-                expect(folderService.getFolders).toHaveBeenCalled();
+                expect(folderService.searchFolders).toHaveBeenCalled();
                 expect(store.sidebarLoading()).toBe(false);
                 done();
             }, 0);
