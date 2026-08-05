@@ -3,7 +3,10 @@ package com.dotcms.content.index.domain;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -93,10 +96,31 @@ public class SearchHitTest {
 
         final SearchHit hit = SearchHit.from(osHit);
 
+        assertTrue("a highlighted hit must take the highlight-bearing shape",
+                hit instanceof SiteSearchHit);
         final List<String> fragments = hit.highlightsFor("content");
         assertEquals("both fragments must survive the conversion", 2, fragments.size());
         assertTrue(fragments.get(0).contains("<em>argue</em>"));
         assertTrue(fragments.get(1).contains("<em>argues</em>"));
+    }
+
+    /**
+     * Method to test: {@link SearchHit#from(Hit)}
+     * Given scenario: a hit from a query that never asked for highlighting — i.e. every content search.
+     * Expected result: the lean {@link ContentSearchHit} shape, which carries no highlight state at
+     *          all. This is the invariant that keeps the content path from paying for a Site Search
+     *          concern, so it is asserted rather than assumed.
+     */
+    @Test
+    public void from_openSearchHit_noHighlight_yieldsLeanContentShape() {
+        final Hit<Object> osHit = Hit.of(builder -> builder.index("idx").id("1"));
+
+        final SearchHit hit = SearchHit.from(osHit);
+
+        assertTrue("an un-highlighted hit must take the lean shape",
+                hit instanceof ContentSearchHit);
+        assertTrue("the builder default must behave the same",
+                SearchHit.builder().id("1").build() instanceof ContentSearchHit);
     }
 
     /**
@@ -111,11 +135,80 @@ public class SearchHitTest {
 
         final SearchHit hit = SearchHit.from(osHit);
 
-        assertTrue("a hit without highlighting must expose an empty map",
-                hit.getHighlights().isEmpty());
         assertTrue("an un-highlighted field must yield an empty list, not null",
                 hit.highlightsFor("content").isEmpty());
         assertTrue("the builder default must behave the same",
                 SearchHit.builder().id("1").build().highlightsFor("content").isEmpty());
+    }
+
+    /**
+     * Method to test: {@link SearchHit#highlightsFor(String)}
+     * Given scenario: the highlight map carries the field as an explicit {@code null} value rather than
+     *          omitting it. Both unvalidated inputs can produce this — the OpenSearch adapter passes
+     *          {@code Hit.highlight()} through as-is, and a {@code "highlights": {"content": null}}
+     *          payload survives deserialization.
+     * Expected result: an empty list, not {@code null}. {@code getOrDefault} would have returned the
+     *          {@code null} (it only substitutes when the key is absent) and NPE'd at the caller's
+     *          {@code toArray}.
+     */
+    @Test
+    public void highlightsFor_fieldMappedToNull_yieldsEmptyList() {
+        final Map<String, List<String>> withNullValue = new HashMap<>();
+        withNullValue.put("content", null);
+        withNullValue.put("title", List.of("a <em>fragment</em>"));
+
+        final SearchHit hit = SearchHit.builder().id("1").highlights(withNullValue).build();
+
+        assertTrue("precondition: a non-empty map must still pick the highlight-bearing shape",
+                hit instanceof SiteSearchHit);
+        assertTrue("a field explicitly mapped to null must yield an empty list, not null",
+                hit.highlightsFor("content").isEmpty());
+        assertEquals("a sibling field with real fragments must still resolve",
+                1, hit.highlightsFor("title").size());
+    }
+
+    /**
+     * Method to test: {@link SearchHit#fromJson}
+     * Given scenario: a Site Search hit carrying highlight fragments is serialized and read back
+     *          through the {@link SearchHit} interface.
+     * Expected result: it returns as the highlight-bearing shape with its fragments intact. Pinning
+     *          deserialization to one implementation would drop them silently instead — the whole
+     *          reason the creator rebuilds through the builder.
+     */
+    @Test
+    public void jacksonRoundTrip_highlightedHit_keepsFragments() throws Exception {
+        final ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
+        final SearchHit hit = SearchHit.builder()
+                .id("abc123")
+                .index("sitesearch_1")
+                .highlights(Map.of("content", List.of("an <em>argue</em>ment")))
+                .build();
+        assertTrue("precondition: the builder must pick the highlight-bearing shape",
+                hit instanceof SiteSearchHit);
+
+        final SearchHit back = mapper.readValue(mapper.writeValueAsString(hit), SearchHit.class);
+
+        assertTrue("a highlighted hit must come back as the highlight-bearing shape",
+                back instanceof SiteSearchHit);
+        assertEquals("the fragments must survive the round-trip",
+                List.of("an <em>argue</em>ment"), back.highlightsFor("content"));
+        assertEquals("abc123", back.getId());
+    }
+
+    /**
+     * Method to test: {@link SearchHit#fromJson}
+     * Given scenario: a content hit — no highlight key in the JSON — read back through the interface.
+     * Expected result: the lean shape, so the round-trip does not quietly widen every cached hit into
+     *          the Site Search one.
+     */
+    @Test
+    public void jacksonRoundTrip_contentHit_staysLean() throws Exception {
+        final ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
+        final SearchHit hit = SearchHit.builder().id("abc123").index("live_1").build();
+
+        final SearchHit back = mapper.readValue(mapper.writeValueAsString(hit), SearchHit.class);
+
+        assertTrue("an un-highlighted hit must come back lean", back instanceof ContentSearchHit);
+        assertEquals("abc123", back.getId());
     }
 }
