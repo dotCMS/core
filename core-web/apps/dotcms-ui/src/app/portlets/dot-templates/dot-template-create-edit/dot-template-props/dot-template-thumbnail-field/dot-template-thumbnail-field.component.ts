@@ -107,7 +107,14 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
         // do nothing
     };
 
-    writeValue(id: string): void {
+    writeValue(id: string | null): void {
+        if (!id) {
+            this.asset = null;
+            this.loading = false;
+
+            return;
+        }
+
         this.loading = true;
 
         this.dotCrudService

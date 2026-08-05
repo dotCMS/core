@@ -9,11 +9,12 @@ import {
     signal
 } from '@angular/core';
 
+import type { TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletService } from '@dotcms/data-access';
-import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { ContentByFolderParams, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
@@ -135,5 +136,9 @@ export class DotBrowserSelectorComponent implements OnInit {
 
     onNodeExpand(event: TreeNodeSelectItem): void {
         this.store.loadChildren(event);
+    }
+
+    onLoadMore(node: TreeNode): void {
+        this.store.loadMore(node as TreeNodeItem);
     }
 }

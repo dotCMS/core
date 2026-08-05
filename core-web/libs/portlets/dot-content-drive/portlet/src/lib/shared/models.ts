@@ -87,6 +87,21 @@ export interface DotContentDriveContextMenu {
     showAddToBundle: boolean;
 }
 
+/**
+ * Header override for a dialog that has drilled into a sub-screen.
+ *
+ * The shared dialog's header lives in the shell, but a dialog body can navigate within itself — the
+ * Workflow Center drilling from its action list into an action's preview. Rather than the body
+ * rendering a second title (which reads as a duplicated header), it publishes the replacement here
+ * and the shell's one header renders it.
+ */
+export interface DotContentDriveDialogDrillDown {
+    /** Replaces the dialog title. Already-resolved text, not an i18n key. */
+    header: string;
+    /** Number of items the sub-screen is about to act on; rendered as the header's sub-line. */
+    itemCount: number;
+}
+
 export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;

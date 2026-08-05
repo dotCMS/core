@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { ButtonModule } from 'primeng/button';
 
 import { DotESContentService } from '@dotcms/data-access';
+import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 import {
     DOT_PALETTE_PERSIST_PREFERENCES,
     DotPaletteListStore,
@@ -71,7 +72,11 @@ export class DotContentDriveDialogContentTypeSelectorComponent {
     #getCurrentFolder(): { folderPath?: string; folderInode?: string } {
         const hostname = this.#store.currentSite()?.hostname;
         const path = this.#store.path();
-        const inode = this.#store.selectedNode()?.data?.inode;
+        const data = this.#store.selectedNode()?.data;
+        const inode =
+            data?.type === 'folder' || data?.type === 'site'
+                ? (data as DotFolderTreeNodeContentData).inode
+                : undefined;
 
         return {
             folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,

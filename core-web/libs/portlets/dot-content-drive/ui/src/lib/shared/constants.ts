@@ -1,4 +1,8 @@
+import { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';
+
 import { DotFolderListViewColumn, DotFolderTreeNodeItem } from './models';
+
+export { LOAD_MORE_NODE_TYPE };
 
 export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
     { field: 'title', header: 'name', width: '32%', order: 1, sortable: true },
@@ -11,9 +15,6 @@ export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
 ].sort((a, b) => a.order - b.order); // Sort the columns by order, so the columns are in the correct order in the UI
 
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
-
-/** `data.type` value identifying the synthetic "Load more" node appended to a paginated level. */
-export const LOAD_MORE_NODE_TYPE = 'load-more' as const;
 
 /** i18n key for the "Load more" node label. */
 export const LOAD_MORE_LABEL_KEY = 'content-drive.tree.load-more';
@@ -40,6 +41,7 @@ export const ALL_FOLDER: DotFolderTreeNodeItem = {
         id: '',
         inode: ''
     },
+    icon: 'pi pi-folder',
     leaf: false,
     expanded: true
 };

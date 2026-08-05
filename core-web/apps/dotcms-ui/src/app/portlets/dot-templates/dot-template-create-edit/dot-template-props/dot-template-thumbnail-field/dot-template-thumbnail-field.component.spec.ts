@@ -106,6 +106,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             expect(field.attributes).toEqual(
                 expect.objectContaining({
                     accept: 'image/*',
+                    name: 'thumbnail',
                     style: 'height: 3.35rem;'
                 })
             );
@@ -113,6 +114,22 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             expect(field.nativeNode.previewImageUrl).toBeFalsy();
             expect(field.nativeNode.previewImageName).toBeFalsy();
             expect(field.nativeNode.placeholder).toBe('Drop or paste image or image url');
+            expect(field.nativeNode.disabled).toBeFalsy();
+        });
+
+        it('should not fetch or disable when writeValue receives an empty id', () => {
+            dotCrudService = TestBed.inject(DotCrudService);
+            jest.spyOn(dotCrudService, 'getDataById');
+
+            component.writeValue('');
+            fixture.detectChanges();
+
+            const field = de.query(By.css('dot-binary-file'));
+
+            expect(dotCrudService.getDataById).not.toHaveBeenCalled();
+            expect(component.loading).toBe(false);
+            expect(component.asset).toBeNull();
+            expect(field.nativeNode.disabled).toBeFalsy();
         });
 
         it('should have fillted attr', () => {
@@ -344,6 +361,16 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 assetVersion: 'path/to/something.png',
                 name: 'Something'
             });
+        });
+
+        it('should not call getDataById when form control value is empty', () => {
+            jest.spyOn(dotCrudService, 'getDataById');
+
+            field.writeValue('');
+
+            expect(dotCrudService.getDataById).not.toHaveBeenCalled();
+            expect(field.loading).toBe(false);
+            expect(field.asset).toBeNull();
         });
     });
 });

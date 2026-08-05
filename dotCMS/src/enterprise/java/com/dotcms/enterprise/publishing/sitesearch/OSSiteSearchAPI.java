@@ -175,6 +175,48 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     }
 
     /**
+     * Single-engine leaf: whether this OpenSearch cluster holds the index. The physical OS index is
+     * {@code .os}-tagged, so the tag is (re)applied at this physical boundary before the existence
+     * check — matching {@link #physicalName(String)} / create / search. The router aggregates this
+     * across all write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(osTagged(indexName));
+    }
+
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this OpenSearch {@code .os} twin. Sends a
+     * {@code size:0} match-all with {@code track_total_hits:true} so the total is not capped at 10,000
+     * like a default search, which would hide content drift above 10k docs in the mirror parity gate
+     * (issue #36360). Returns {@code 0} when the twin is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!existsOnAllWriteEngines(indexName)) {
+            return 0L;
+        }
+        try {
+            final JSONObject body = new JSONObject();
+            body.put("size", 0);
+            body.put("track_total_hits", true);
+            body.put("query", new JSONObject().put("match_all", new JSONObject()));
+            final ContentSearchResponse response = rawSearch(physicalName(indexName), body);
+            return response.hits().getTotalHits().value();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for OS index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
+    }
+
+    /**
      * OpenSearch adapter for the vendor-neutral alias handle: <em>re-tag before lookup, strip on
      * return</em>.
      *
