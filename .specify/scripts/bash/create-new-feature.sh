@@ -113,6 +113,43 @@ get_highest_from_specs() {
     echo "$highest"
 }
 
+# Function to get highest number from existing branch names (local + remote).
+# specs/ directories only exist on the branch that created them, so two unmerged
+# feature branches would otherwise both compute the same next number. Branch names
+# are visible across branches, so scanning them closes that race. Best-effort:
+# queries origin when reachable, falls back to local/remote-tracking refs offline.
+get_highest_from_branches() {
+    local highest=0
+    local refs=""
+
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        # Remote refs (authoritative, needs network); never prompt for credentials
+        refs=$(GIT_TERMINAL_PROMPT=0 git ls-remote --heads origin 2>/dev/null | awk '{print $2}' | sed 's|^refs/heads/||')
+        # Always include local + remote-tracking refs as offline fallback
+        refs="$refs
+$(git for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>/dev/null | sed 's|^[^/]*/||')"
+    fi
+
+    local name number
+    while IFS= read -r name; do
+        [ -n "$name" ] || continue
+        # Match ONLY spec-kit's exact zero-padded 3-digit prefix (e.g. 005-foo).
+        # Longer numeric prefixes are legacy issue-numbered branches (e.g.
+        # 16227-test-branch) and must not inflate the feature counter.
+        if echo "$name" | grep -Eq '^[0-9]{3}-'; then
+            number=$(echo "$name" | grep -Eo '^[0-9]+')
+            number=$((10#$number))
+            if [ "$number" -gt "$highest" ]; then
+                highest=$number
+            fi
+        fi
+    done <<EOF
+$refs
+EOF
+
+    echo "$highest"
+}
+
 # Function to clean and format a branch name
 clean_branch_name() {
     local name="$1"
@@ -202,9 +239,12 @@ if [ "$USE_TIMESTAMP" = true ]; then
     FEATURE_NUM=$(date +%Y%m%d-%H%M%S)
     BRANCH_NAME="${FEATURE_NUM}-${BRANCH_SUFFIX}"
 else
-    # Determine branch number from existing feature directories
+    # Determine branch number from existing feature directories AND existing
+    # branches — specs/ dirs alone miss features on unmerged sibling branches
     if [ -z "$BRANCH_NUMBER" ]; then
-        HIGHEST=$(get_highest_from_specs "$SPECS_DIR")
+        HIGHEST_SPECS=$(get_highest_from_specs "$SPECS_DIR")
+        HIGHEST_BRANCHES=$(get_highest_from_branches)
+        HIGHEST=$(( HIGHEST_SPECS > HIGHEST_BRANCHES ? HIGHEST_SPECS : HIGHEST_BRANCHES ))
         BRANCH_NUMBER=$((HIGHEST + 1))
     fi
 

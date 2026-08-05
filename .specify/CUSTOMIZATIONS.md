@@ -112,6 +112,19 @@ templates:
   `/speckit-specify` = new features, `/speckit-specify-fix` = issue/bug resolution. Its output
   flows into `/speckit-plan`, so ADR + legacy gates apply to fixes too.
 
+### 5. Branch-aware feature numbering — EDITS A SHIPPED SCRIPT
+
+**`.specify/scripts/bash/create-new-feature.sh`** — stock Spec-Kit derives the next
+sequential feature number only from `specs/*` directories, which exist **only on the branch
+that created them**. Two unmerged feature branches would therefore both claim the same next
+number. Our patch adds `get_highest_from_branches()` — a best-effort scan of branch names
+(`git ls-remote --heads origin` when reachable, local + remote-tracking refs offline) — and
+takes the max of both sources. The scan matches **only** Spec-Kit's exact zero-padded
+3-digit prefix (`^[0-9]{3}-`) so legacy issue-numbered branches (e.g. `16227-test-branch`)
+never inflate the counter. Collisions remain possible only if two devs create features
+simultaneously before either pushes — rerun with `--number` to resolve, or use
+`--timestamp` numbering which is collision-free by construction.
+
 ## Guardrail: Spec-Kit must never create ADRs
 
 Enforced in the constitution, the `adr-context.sh` output, the `speckit-adr-context` and
@@ -131,10 +144,11 @@ customizations are split so that most survive automatically:
 | `.specify/extensions.yml` | ✅ Yes (net-new; not shipped) | Verify hook still matches skill name |
 | `.specify/scripts/bash/adr-context.sh` | ✅ Yes (net-new name) | None |
 | `.claude/skills/speckit-adr-context/`, `.claude/skills/speckit-specify-fix/` | ✅ Yes (net-new skills) | Confirm not clobbered |
+| `.specify/scripts/bash/create-new-feature.sh` | ❌ No (shipped script, patched in-place) | Re-apply the branch-aware numbering patch (#5): `get_highest_from_branches()` + the max() at the `BRANCH_NUMBER` computation |
 
-We intentionally **did not edit** any shipped `/speckit-*` skill or core template, so there is
-no manual patch to re-apply. If a future Spec-Kit version changes the `before_plan` hook
-contract or `resolve_template` precedence, re-verify items #2 and #3 above.
+Apart from the numbering patch (#5), we did **not edit** any shipped `/speckit-*` skill or
+core template. If a future Spec-Kit version changes the `before_plan` hook contract or
+`resolve_template` precedence, re-verify items #2 and #3 above.
 
 ## Alternative considered: the native `bug` extension
 

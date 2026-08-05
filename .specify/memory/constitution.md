@@ -64,8 +64,10 @@ implementation, and `/speckit-implement` MUST honor that order and halt at each 
 
 Operational notes:
 
-- Never run the full integration suite; target specific classes/methods
-  (`-Dit.test=Class#method`). Postman via `-Dpostman.collections=`.
+- Prefer running targeted tests — specific classes/methods
+  (`-Dit.test=Class#method`), Postman via `-Dpostman.collections=`. Broader (or full)
+  suite runs are acceptable when the change is large enough to warrant them — just be
+  aware the full integration suite takes 60+ minutes.
 - Prefer reusing existing utilities (`UtilMethods`, `APILocator`, batch
   `permissionAPI.filterCollection`) over new bespoke helpers, in both tests and code.
 
