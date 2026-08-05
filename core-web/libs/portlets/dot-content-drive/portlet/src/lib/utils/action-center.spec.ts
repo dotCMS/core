@@ -1,11 +1,19 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import {
+    DotActionCenterWorkflowAction,
+    DotBulkActionView,
+    DotCMSContentlet,
+    DotContentDriveItem
+} from '@dotcms/dotcms-models';
 
 import {
     ADD_TO_BUNDLE_ACTION_ID,
+    eligibleContentlets,
     excludeFolders,
     getQuickActions,
+    groupByContentType,
+    mergeActionCenterSchemes,
     toActionCenterSchemes,
     toContentletInodes
 } from './action-center';
@@ -353,6 +361,184 @@ describe('action-center utils', () => {
             } as unknown as DotBulkActionView;
 
             expect(toActionCenterSchemes(view)).toEqual([]);
+        });
+
+        it('should leave content types unresolved for an ungrouped lookup', () => {
+            // Only `mergeActionCenterSchemes` knows which content type a response came from.
+            const view = bulkActionView('System Workflow', [
+                [1, [{ id: 'a1', name: 'Publish', count: 1 }]]
+            ]);
+
+            expect(toActionCenterSchemes(view)[0].actions[0].contentTypes).toEqual([]);
+        });
+    });
+
+    describe('groupByContentType', () => {
+        it('should return one entry per distinct content type', () => {
+            const items = [
+                contentlet({ inode: 'a', contentType: 'Blog' }),
+                contentlet({ inode: 'b', contentType: 'VtlInclude' }),
+                contentlet({ inode: 'c', contentType: 'Blog' })
+            ] as DotCMSContentlet[];
+
+            expect(groupByContentType(items)).toEqual([
+                { contentType: 'Blog', contentlets: [items[0], items[2]] },
+                { contentType: 'VtlInclude', contentlets: [items[1]] }
+            ]);
+        });
+
+        it('should return nothing for an empty selection', () => {
+            expect(groupByContentType([])).toEqual([]);
+        });
+    });
+
+    describe('mergeActionCenterSchemes', () => {
+        it('should stamp each action with the content type it came from', () => {
+            const merged = mergeActionCenterSchemes([
+                {
+                    contentType: 'Blog',
+                    view: bulkActionView('Blogs', [[1, [{ id: 'copy', name: 'Copy', count: 1 }]]])
+                }
+            ]);
+
+            expect(merged[0].actions[0].contentTypes).toEqual(['Blog']);
+        });
+
+        it('should keep schemes from different content types side by side', () => {
+            const merged = mergeActionCenterSchemes([
+                {
+                    contentType: 'Blog',
+                    view: bulkActionView('Blogs', [[1, [{ id: 'copy', name: 'Copy', count: 1 }]]])
+                },
+                {
+                    contentType: 'VtlInclude',
+                    view: bulkActionView('Vtl', [[1, [{ id: 'reset', name: 'Reset', count: 1 }]]])
+                }
+            ]);
+
+            expect(merged.map((scheme) => scheme.name)).toEqual(['Blogs', 'Vtl']);
+        });
+
+        it('should sum counts and union content types for a shared action', () => {
+            // Two content types on the same scheme: each group counted its own contentlets, so the
+            // totals add up to what one combined lookup would have reported.
+            const merged = mergeActionCenterSchemes([
+                {
+                    contentType: 'Blog',
+                    view: bulkActionView('System Workflow', [
+                        [2, [{ id: 'publish', name: 'Publish', count: 2 }]]
+                    ])
+                },
+                {
+                    contentType: 'News',
+                    view: bulkActionView('System Workflow', [
+                        [3, [{ id: 'publish', name: 'Publish', count: 3 }]]
+                    ])
+                }
+            ]);
+
+            expect(merged).toHaveLength(1);
+            expect(merged[0].count).toBe(5);
+            expect(merged[0].actions).toHaveLength(1);
+            expect(merged[0].actions[0].count).toBe(5);
+            expect(merged[0].actions[0].contentTypes).toEqual(['Blog', 'News']);
+        });
+
+        it('should keep an action approximate when any group could not evaluate its condition', () => {
+            const merged = mergeActionCenterSchemes([
+                {
+                    contentType: 'Blog',
+                    view: bulkActionView('Editorial', [
+                        [1, [{ id: 'tr', name: 'Translate', count: 1 }]]
+                    ])
+                },
+                {
+                    contentType: 'News',
+                    view: bulkActionView('Editorial', [
+                        [
+                            1,
+                            [
+                                {
+                                    id: 'tr',
+                                    name: 'Translate',
+                                    count: 1,
+                                    flags: { conditionPresent: true }
+                                }
+                            ]
+                        ]
+                    ])
+                }
+            ]);
+
+            expect(merged[0].actions[0].approximateCount).toBe(true);
+        });
+
+        it('should merge actions unique to one content type into the shared scheme', () => {
+            const merged = mergeActionCenterSchemes([
+                {
+                    contentType: 'Blog',
+                    view: bulkActionView('System Workflow', [
+                        [1, [{ id: 'publish', name: 'Publish', count: 1 }]]
+                    ])
+                },
+                {
+                    contentType: 'News',
+                    view: bulkActionView('System Workflow', [
+                        [1, [{ id: 'archive', name: 'Archive', count: 1 }]]
+                    ])
+                }
+            ]);
+
+            expect(merged[0].actions.map((action) => action.id)).toEqual(['archive', 'publish']);
+            expect(merged[0].actions.map((action) => action.contentTypes)).toEqual([
+                ['News'],
+                ['Blog']
+            ]);
+        });
+
+        it('should return nothing for no groups', () => {
+            expect(mergeActionCenterSchemes([])).toEqual([]);
+        });
+    });
+
+    describe('eligibleContentlets', () => {
+        const items = [
+            contentlet({ inode: 'blog', contentType: 'Blog' }),
+            contentlet({ inode: 'vtl', contentType: 'VtlInclude' })
+        ] as DotCMSContentlet[];
+
+        const action = (contentTypes: string[]): DotActionCenterWorkflowAction => ({
+            id: 'a1',
+            name: 'Copy',
+            count: 1,
+            requiresInput: false,
+            approximateCount: false,
+            contentTypes
+        });
+
+        it('should keep only contentlets of the action content types', () => {
+            expect(eligibleContentlets(action(['Blog']), items).map((item) => item.inode)).toEqual([
+                'blog'
+            ]);
+        });
+
+        it('should keep every matching content type', () => {
+            expect(
+                eligibleContentlets(action(['Blog', 'VtlInclude']), items).map((item) => item.inode)
+            ).toEqual(['blog', 'vtl']);
+        });
+
+        it('should fall back to the whole selection when content types are unresolved', () => {
+            // Showing too many rows is recoverable; showing none would look like a broken dialog.
+            expect(eligibleContentlets(action([]), items)).toEqual(items);
+        });
+
+        it('should fall back to the whole selection when there is no action', () => {
+            expect(eligibleContentlets(undefined, items)).toEqual(items);
+        });
+
+        it('should return nothing when no contentlet matches', () => {
+            expect(eligibleContentlets(action(['Unrelated']), items)).toEqual([]);
         });
     });
 });
