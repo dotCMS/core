@@ -41,6 +41,7 @@ export const ALL_FOLDER: DotFolderTreeNodeItem = {
         id: '',
         inode: ''
     },
+    icon: 'pi pi-folder',
     leaf: false,
     expanded: true
 };

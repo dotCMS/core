@@ -97,18 +97,14 @@ describe('DotFolderTreeComponent', () => {
             expect(component.$selection()).toEqual([mockSelectedNode]);
         });
 
-        it('should apply chevron-only class by default', () => {
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('chevron-only')).toBe(true);
+        it('should apply host layout classes and keep PrimeNG p-tree class', () => {
+            expect(spectator.element.classList.contains('block')).toBe(true);
+            expect(spectator.query('p-tree')?.classList.contains('p-tree')).toBe(true);
         });
 
-        it('should apply first-only class when showFolderIconOnFirstOnly is true', () => {
-            spectator.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-            expect(treeElement.classList.contains('chevron-only')).toBe(false);
+        it('should render chevron toggler icons only', () => {
+            expect(spectator.query('.pi-chevron-right, .pi-chevron-down')).toBeTruthy();
+            expect(spectator.query('.toggler-first')).toBeNull();
         });
 
         it('should accept pt options input', () => {

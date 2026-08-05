@@ -7,8 +7,7 @@ import {
     inject,
     input,
     output,
-    signal,
-    InputSignal
+    signal
 } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
@@ -42,13 +41,6 @@ export class DotTreeFolderComponent {
     $loading = input.required<boolean>({ alias: 'loading' });
 
     $selectedNode = input<TreeNode | null>(null, { alias: 'selectedNode' });
-
-    /**
-     * Controls whether the folder icon should be shown only on the first root node's toggler.
-     */
-    $showFolderIconOnFirstOnly: InputSignal<boolean> = input<boolean>(false, {
-        alias: 'showFolderIconOnFirstOnly'
-    });
 
     onNodeExpand = output<TreeNodeExpandEvent>();
     onNodeSelect = output<TreeNodeExpandEvent>();

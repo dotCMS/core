@@ -255,8 +255,8 @@ describe('DotHostFolderFieldComponent', () => {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder'
+            expandedIcon: 'pi pi-globe',
+            collapsedIcon: 'pi pi-globe'
         });
 
         const queryInOverlay = (testId: string): Element | null =>

@@ -119,7 +119,6 @@ describe('DotTreeFolderComponent', () => {
         spectator.fixture.componentRef.setInput('folders', mockFolders);
         spectator.fixture.componentRef.setInput('loading', false);
         spectator.fixture.componentRef.setInput('selectedNode', mockSelectedNode);
-        spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
 
         spectator.detectChanges();
     });
@@ -133,7 +132,6 @@ describe('DotTreeFolderComponent', () => {
             expect(component.$folders()).toEqual(mockFolders);
             expect(component.$loading()).toBe(false);
             expect(component.$selectedNode()).toEqual(mockSelectedNode);
-            expect(component.$showFolderIconOnFirstOnly()).toBe(false);
         });
     });
 
@@ -166,35 +164,6 @@ describe('DotTreeFolderComponent', () => {
 
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
-        });
-
-        it('should have chevron-only class when showFolderIconOnFirstOnly is false', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('chevron-only')).toBe(true);
-        });
-
-        it('should have first-only class when showFolderIconOnFirstOnly is true', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-        });
-    });
-
-    describe('showFolderIconOnFirstOnly Input', () => {
-        it('should update p-tree class when showFolderIconOnFirstOnly changes', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-            expect(treeElement.classList.contains('chevron-only')).toBe(false);
-
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            expect(treeElement.classList.contains('chevron-only')).toBe(true);
-            expect(treeElement.classList.contains('first-only')).toBe(false);
         });
     });
 

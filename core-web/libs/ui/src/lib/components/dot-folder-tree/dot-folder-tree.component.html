@@ -4,7 +4,6 @@
     [loading]="$loading()"
     [selectionMode]="$selectionMode()"
     loadingMode="icon"
-    [class]="treeStyleClasses()"
     [selection]="$selection()"
     [scrollHeight]="$scrollHeight() ?? undefined"
     [metaKeySelection]="$metaKeySelection()"
@@ -50,16 +49,9 @@
                 class="pi pi-spin pi-spinner text-sm text-surface-400"
                 data-testid="tree-toggler-loading"></i>
         } @else {
-            <span class="toggler-regular">
-                <i
-                    class="pi text-sm text-gray-600"
-                    [class]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-            </span>
-            <span class="toggler-first">
-                <i
-                    class="pi text-(--color-palette-gray-800)"
-                    [class]="expanded ? 'pi-folder-open' : 'pi-folder'"></i>
-            </span>
+            <i
+                class="pi text-sm text-gray-600"
+                [class]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
         }
     </ng-template>
 </p-tree>

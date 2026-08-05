@@ -172,11 +172,6 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(treeComponent?.$selectedNode()).toEqual(selectedNode);
         });
 
-        it('should pass showFolderIconOnFirstOnly as true to dot-tree-folder', () => {
-            const treeComponent = spectator.query(DotTreeFolderComponent);
-            expect(treeComponent?.$showFolderIconOnFirstOnly()).toBe(true);
-        });
-
         it('should update dot-tree-folder inputs when signals change', () => {
             const newTreeNodes: DotFolderTreeNodeItem[] = [
                 {

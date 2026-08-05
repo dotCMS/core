@@ -34,7 +34,7 @@ import { DotFolderNamePipe } from '../../pipes/dot-folder-name/dot-folder-name.p
     templateUrl: './dot-folder-tree.component.html',
     styleUrls: ['./dot-folder-tree.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block min-h-0 h-full w-full' }
+    host: { '[class]': 'hostClasses()' }
 })
 export class DotFolderTreeComponent {
     /**
@@ -67,12 +67,6 @@ export class DotFolderTreeComponent {
      * Whether meta-key is required for multi-selection.
      */
     $metaKeySelection = input(false, { alias: 'metaKeySelection' });
-
-    /**
-     * When true, folder icon only on the first root toggler (`first-only`).
-     * When false, chevron-only togglers (Browser Selector / Host Folder).
-     */
-    $showFolderIconOnFirstOnly = input(false, { alias: 'showFolderIconOnFirstOnly' });
 
     /**
      * PrimeNG pass-through options for tree layout/styling.
@@ -108,7 +102,7 @@ export class DotFolderTreeComponent {
     $loadMoreTestId = input('tree-load-more', { alias: 'loadMoreTestId' });
 
     /**
-     * Extra CSS classes applied to `p-tree` in addition to toggler mode classes.
+     * Extra CSS classes applied to the host for sizing/layout.
      */
     $styleClass = input('w-full h-full', { alias: 'styleClass' });
 
@@ -144,11 +138,11 @@ export class DotFolderTreeComponent {
         return Array.isArray(selected) ? (selected[0] ?? null) : selected;
     });
 
-    readonly treeStyleClasses = computed(() => {
-        const modeClass = this.$showFolderIconOnFirstOnly() ? 'first-only' : 'chevron-only';
-
-        return `${this.$styleClass()} ${modeClass}`;
-    });
+    /**
+     * Host layout classes (consumer `styleClass` + defaults).
+     * Node icons come from TreeNode.icon / expandedIcon / collapsedIcon — not the toggler.
+     */
+    readonly hostClasses = computed(() => `block min-h-0 h-full w-full ${this.$styleClass()}`);
 
     protected onLoadMoreClick(event: Event, node: TreeNode): void {
         event.stopPropagation();

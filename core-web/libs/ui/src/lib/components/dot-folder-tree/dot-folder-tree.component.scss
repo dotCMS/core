@@ -1,31 +1,6 @@
-:host ::ng-deep {
-    .p-tree {
-        /* Chevron-only: hide folder icon togglers (Browser Selector / Host Folder) */
-        &.chevron-only {
-            .toggler-first {
-                display: none;
-            }
-
-            .toggler-regular {
-                display: block;
-            }
-        }
-
-        /* First-only mode: show folder icon only on first root node (Content Drive) */
-        &.first-only {
-            .toggler-first {
-                display: none;
-            }
-
-            .p-tree-root-children > p-treenode:first-of-type {
-                .toggler-first {
-                    display: block;
-                }
-
-                .toggler-regular {
-                    display: none;
-                }
-            }
-        }
-    }
+:host {
+    display: block;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
 }
