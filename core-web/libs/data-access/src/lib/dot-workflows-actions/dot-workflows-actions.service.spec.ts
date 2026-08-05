@@ -111,4 +111,50 @@ describe('DotWorkflowsActionsService', () => {
                 entity: null
             });
     });
+
+    describe('getBulkActions', () => {
+        const BULK_ACTIONS_URL = '/api/v1/workflow/contentlet/actions/bulk';
+
+        it('should post the contentlet inodes and unwrap the entity', (done) => {
+            const view = {
+                schemes: [
+                    {
+                        scheme: { id: 'scheme-1', name: 'Editorial Workflow' },
+                        steps: []
+                    }
+                ]
+            };
+
+            spectator.service.getBulkActions({ contentletIds: ['inode-1'] }).subscribe((res) => {
+                expect(res).toEqual(view);
+                done();
+            });
+
+            const req = spectator.expectOne(BULK_ACTIONS_URL, HttpMethod.POST);
+
+            expect(req.request.body).toEqual({ contentletIds: ['inode-1'] });
+            req.flush({ entity: view });
+        });
+
+        it('should support the query variant for selections spanning pages', (done) => {
+            spectator.service
+                .getBulkActions({ query: '+contentType:Blog' })
+                .subscribe(() => done());
+
+            const req = spectator.expectOne(BULK_ACTIONS_URL, HttpMethod.POST);
+
+            expect(req.request.body).toEqual({ query: '+contentType:Blog' });
+            req.flush({ entity: { schemes: [] } });
+        });
+
+        it('should fall back to an empty scheme list when the entity is missing', (done) => {
+            // Keeps callers from having to null-check before mapping over `schemes`.
+            spectator.service.getBulkActions({ contentletIds: ['inode-1'] }).subscribe((res) => {
+                expect(res).toEqual({ schemes: [] });
+                done();
+            });
+
+            spectator.expectOne(BULK_ACTIONS_URL, HttpMethod.POST).flush({ entity: null });
+        });
+    });
 });

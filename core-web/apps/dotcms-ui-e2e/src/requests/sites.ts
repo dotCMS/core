@@ -69,3 +69,17 @@ export async function getCurrentSite(request: APIRequestContext) {
     const responseData = await response.json();
     return responseData.entity as Site;
 }
+
+/**
+ * Returns the default site from the site catalog, or throws if none is marked default.
+ */
+export async function getDefaultSite(request: APIRequestContext): Promise<Site> {
+    const sites = await getSites(request);
+    const site = sites.find((s) => s.default);
+
+    if (!site) {
+        throw new Error('No default site found');
+    }
+
+    return site;
+}

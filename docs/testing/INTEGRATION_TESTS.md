@@ -30,6 +30,18 @@ dotcms-integration/
 - **`DataProviderRunner`**: Test data generation
 - **`APITestCase`**: REST API testing base
 
+### Naming: use the `Test` suffix, not `IT` ⚠️
+
+Integration test classes in this module are named `FooTest` or `FooIntegrationTest` — **not**
+`FooIT`. The standard Maven Failsafe `*IT` convention does **not** apply here: failsafe in
+`dotcms-integration/pom.xml` includes **only the aggregator suites**
+(`**/MainSuite1*.java`, `**/MainSuite2*.java`, `**/MainSuite3*.java`, `**/Junit5Suite*.java`,
+plus `**/QuickSuite.java` and `**/OpenSearchUpgradeSuite.java` in their profiles), so discovery
+is driven entirely by suite registration and never by the class-name suffix. Surefire is skipped
+in this module, so a `*Test` name here can't be mistaken for a unit test either.
+
+Match the siblings already in your package — the module is ~654 `*Test.java` to ~12 `*IT.java`.
+
 ### Registering Tests in a MainSuite (CI gate) ⚠️
 
 CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites
@@ -309,9 +321,12 @@ public class CacheIntegrationTest extends IntegrationTestBase {
     <artifactId>maven-failsafe-plugin</artifactId>
     <configuration>
         <skipTests>${coreit.test.skip}</skipTests>
+        <!-- Discovery is by SUITE, not by class-name suffix — see "Naming" above -->
         <includes>
-            <include>**/*Test.java</include>
-            <include>**/*IT.java</include>
+            <include>**/MainSuite1*.java</include>
+            <include>**/MainSuite2*.java</include>
+            <include>**/MainSuite3*.java</include>
+            <include>**/Junit5Suite*.java</include>
         </includes>
         <systemPropertyVariables>
             <test.environment>${test.environment}</test.environment>

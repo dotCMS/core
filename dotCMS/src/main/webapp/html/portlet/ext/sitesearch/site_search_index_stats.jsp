@@ -1,5 +1,7 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.index.IndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexTag"%>
+<%@page import="com.dotcms.content.index.IndexConfigHelper"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -44,7 +46,13 @@ List<String> indices=ssapi.listIndices();
 List<String> closedIndices=ssapi.listClosedIndices();
 
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
-Map<String, String> alias = esapi.getIndexAlias(indexInfo.keySet().toArray(new String[indexInfo.size()]));
+// Site-search .os-aware alias resolution (issue #36360): resolve through the site-search API and
+// reverse (alias->index) into index->alias for per-row display. The content-index router (esapi)
+// misses site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
+Map<String, String> alias = new java.util.HashMap<>();
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMap().entrySet()) {
+	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
+}
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
@@ -107,8 +115,18 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		</tr>
 	</thead>
 	<%for(String x : indices){%>
-		<%ClusterIndexHealth health = map.get(x); %>
-		<%IndexStats status = indexInfo.get(x); %>
+		<%-- Migration illusion (issue #36360): regular users must never learn a migration is running,
+		     so the index name shown is the habitual (logical) one in Phases 0/1/2 — for everyone, no
+		     role exception. Only in Phase 3 (migration complete, OpenSearch is the sole store) does the
+		     name show the physical .os. x itself stays logical everywhere (row id, onclick, actions,
+		     alias join, default check). Support/QA get migration details from a dedicated internal
+		     endpoint, not from this portlet. --%>
+		<% String displayName = (IndexConfigHelper.isMigrationComplete() && indexInfo.containsKey(IndexTag.OS.tag(x)))
+		        ? IndexTag.OS.tag(x) : x; %>
+		<%-- Stats/health key OS entries by the .os tag; fall back to it so Count/Shards/Replicas/Size/
+		     Health still populate when OpenSearch serves the read (Phases 2/3). --%>
+		<% ClusterIndexHealth health = map.get(x);       if (health == null) { health = map.get(IndexTag.OS.tag(x)); } %>
+		<% IndexStats status         = indexInfo.get(x); if (status == null) { status = indexInfo.get(IndexTag.OS.tag(x)); } %>
 
 		<%boolean active =x.equals(info.getSiteSearch());%>
 		<%	Date d = null;
@@ -130,7 +148,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<%= LanguageUtil.get(pageContext,"default") %>
 				<%}%>
 			</td>
-			<td  class="showPointer" ><%=x %></td>
+			<td  class="showPointer" ><%= displayName %></td>
 			<td><%= alias.get(x) == null ? "": alias.get(x)%></td>
 			<td><%=UtilMethods.webifyString(myDate) %></td>
 

@@ -120,7 +120,8 @@ export class DotPublishingQueueTableComponent {
     }));
 
     readonly bundlesEmpty: PrincipalConfiguration = {
-        icon: 'pi-inbox',
+        icon: 'inbox',
+        iconStyle: 'material-symbols-rounded',
         title: this.#dotMessageService.get('publishing-queue.empty.bundles.title'),
         subtitle: this.#dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };

@@ -3,7 +3,6 @@
   - Row 1: each of the 3 metrics col-span-4 (3 × 4 = 12).
   - Row 2: conversion trend col-span-6 + traffic vs conversions col-span-6.
   - Row 3: content conversions table col-span-12.
-  - Row 4: conversions overview table col-span-12.
   Below md: grid-cols-1, stacked.
 -->
 <div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
@@ -45,17 +44,6 @@
             <dot-analytics-content-conversions-table
                 [data]="$contentConversionsData()"
                 [status]="$contentConversionsStatus()" />
-        </p-card>
-    </div>
-
-    <div class="min-w-0 md:col-span-12">
-        <p-card>
-            <ng-template #title>
-                {{ 'analytics.table.conversions-overview.title' | dm }}
-            </ng-template>
-            <dot-analytics-conversions-overview-table
-                [data]="$conversionsOverviewData()"
-                [status]="$conversionsOverviewStatus()" />
         </p-card>
     </div>
 </div>

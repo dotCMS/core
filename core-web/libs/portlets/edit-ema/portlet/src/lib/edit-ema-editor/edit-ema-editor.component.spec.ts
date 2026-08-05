@@ -898,9 +898,29 @@ describe('EditEmaEditorComponent', () => {
                         expect(spectator.component.$showLockOverlay()).toBe(true);
                     });
 
-                    it('should hide overlay when page is locked', () => {
+                    it('should show overlay when page is locked by another user', () => {
                         patchState(store, {
                             pageAssetResponse: { pageAsset: lockedByAnotherUser }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(true);
+                    });
+
+                    it('should hide overlay when page is locked by the current user', () => {
+                        patchState(store, {
+                            uveCurrentUser: mockCurrentUser,
+                            pageAssetResponse: {
+                                pageAsset: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId,
+                                        lockedByName: mockCurrentUser.givenName,
+                                        canLock: true
+                                    }
+                                }
+                            }
                         });
 
                         expect(spectator.component.$showLockOverlay()).toBe(false);
@@ -2198,7 +2218,13 @@ describe('EditEmaEditorComponent', () => {
                     expect(confirmSpy).not.toHaveBeenCalled();
                 });
 
-                it('should navigate to a translated language when the user rejects creating a new translation', () => {
+                /**
+                 * Reject the translation dialog raised by the effect and return the
+                 * reject callback's side effects. Loads an untranslated language
+                 * (language_id=2), flushes the effect that opens the dialog, then invokes
+                 * its `reject` handler to simulate the user clicking "No".
+                 */
+                const triggerTranslationReject = () => {
                     const confirmationService = spectator.inject(ConfirmationService, true);
                     // Set up the spy BEFORE loading so we capture the confirm call made by the effect
                     const confirmSpy = jest.spyOn(confirmationService, 'confirm');
@@ -2217,36 +2243,112 @@ describe('EditEmaEditorComponent', () => {
                     // The effect should have shown the dialog because currentLanguage.translated=false
                     expect(confirmSpy).toHaveBeenCalled();
 
-                    // Spy on pageLoad AFTER the initial load to track only the reject navigation
+                    // Track navigation triggered only by the reject callback
+                    const dotRouterService = spectator.inject(DotRouterService, true);
+                    const router = spectator.inject(Router);
+                    const navigateByUrlSpy = jest
+                        .spyOn(router, 'navigateByUrl')
+                        .mockResolvedValue(true);
+                    const gotoPortletSpy = jest
+                        .spyOn(dotRouterService, 'gotoPortlet')
+                        .mockResolvedValue(true);
                     const pageLoadSpy = jest.spyOn(store, 'pageLoad');
 
-                    // Simulate user clicking "No"
-                    const rejectCallback = (confirmSpy.mock.calls[0][0] as Confirmation).reject;
-                    rejectCallback?.();
+                    const reject = () => (confirmSpy.mock.calls[0][0] as Confirmation).reject?.();
 
-                    // Must navigate to language id=1 (the only translated language in mockLanguageArray),
-                    // NOT to id=2 (which would cause an infinite loop)
-                    expect(pageLoadSpy).toHaveBeenCalledWith({ language_id: '1' });
+                    return {
+                        dotRouterService,
+                        navigateByUrlSpy,
+                        gotoPortletSpy,
+                        pageLoadSpy,
+                        reject
+                    };
+                };
+
+                /**
+                 * Stub the DotRouterService `previousUrl` getter (it is a mock provider, so
+                 * the getter is not present by default) and its `isPublicUrl` guard.
+                 */
+                const stubPreviousUrl = (
+                    dotRouterService: DotRouterService,
+                    previousUrl: string,
+                    isPublicUrl = false
+                ) => {
+                    Object.defineProperty(dotRouterService, 'previousUrl', {
+                        get: () => previousUrl,
+                        configurable: true
+                    });
+                    jest.spyOn(dotRouterService, 'isPublicUrl').mockReturnValue(isPublicUrl);
+                };
+
+                it('should redirect to the previous dotCMS URL when the user rejects creating a new translation', () => {
+                    const {
+                        dotRouterService,
+                        navigateByUrlSpy,
+                        gotoPortletSpy,
+                        pageLoadSpy,
+                        reject
+                    } = triggerTranslationReject();
+
+                    stubPreviousUrl(dotRouterService, '/pages/import');
+
+                    reject();
+
+                    // Redirect to the last different dotCMS URL, NOT a reload of the same
+                    // untranslated page (which would re-open the dialog — #36661 loop).
+                    expect(navigateByUrlSpy).toHaveBeenCalledWith('/pages/import');
+                    expect(gotoPortletSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
                 });
 
-                it('should NOT call pageLoad when no translated language exists and user rejects', () => {
-                    const confirmationService = spectator.inject(ConfirmationService, true);
-                    const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+                it('should redirect to the Pages portlet when there is no usable previous URL', () => {
+                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
+                        triggerTranslationReject();
 
-                    store.pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '2',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
+                    // No history (user opened the editor directly)
+                    stubPreviousUrl(dotRouterService, '');
 
-                    spectator.flushEffects();
-                    spectator.detectChanges();
+                    reject();
 
-                    expect(confirmSpy).toHaveBeenCalled();
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
+                });
 
-                    // Patch pageLanguages to only contain untranslated languages — no safe fallback.
-                    // #goBackToCurrentLanguage() must bail (no-op) to avoid looping.
+                it('should redirect to the Pages portlet when the previous URL is another edit-page route', () => {
+                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
+                        triggerTranslationReject();
+
+                    // A previous /edit-page URL could resolve to the same untranslated page
+                    // and re-open the dialog, so it must be skipped in favor of /pages.
+                    stubPreviousUrl(
+                        dotRouterService,
+                        '/edit-page/content?url=/index&language_id=2'
+                    );
+
+                    reject();
+
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
+                });
+
+                it('should redirect to the Pages portlet when the previous URL is a public route', () => {
+                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
+                        triggerTranslationReject();
+
+                    stubPreviousUrl(dotRouterService, '/public/login', true);
+
+                    reject();
+
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
+                });
+
+                it('should redirect away (no dead-end) even when the page has no translated language', () => {
+                    const { dotRouterService, gotoPortletSpy, pageLoadSpy, reject } =
+                        triggerTranslationReject();
+
+                    // Only untranslated languages exist — the old behavior bailed and left
+                    // the user stuck. The user must still be navigated away.
                     // protectedState:false on the root store makes patchState available in tests.
                     patchState(store, {
                         pageLanguages: [
@@ -2261,12 +2363,11 @@ describe('EditEmaEditorComponent', () => {
                         ]
                     });
 
-                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                    stubPreviousUrl(dotRouterService, '');
 
-                    const rejectCallback = (confirmSpy.mock.calls[0][0] as Confirmation).reject;
-                    rejectCallback?.();
+                    reject();
 
-                    // No translated language → bail without reloading to avoid any loop
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                 });
             });

@@ -39,6 +39,7 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     public static final String ASSET_INODE_PARAM = "assetinode";
     public static final String PERMISSION_PARAM = "permission";
     public static final String ROLES_PARAM = "roles";
+    public static final String ROLE_KEY_PARAM = "roleKey";
     public static final String REMOVE_CURRENT_USER_PARAM = "removeCurrentUser";
     public static final String REQUEST_PASSWORD_PARAM = "requestPassword";
 
@@ -53,14 +54,16 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     }
 
     /**
-     * Return the total of users with name equals to nameFilter.
+     * Return the total of users with name equals to nameFilter, applying the same filtering
+     * params as the item query so the count stays consistent with the returned page.
      * @param nameFilter
      * @return
      *
      */
-    private long getTotalRecords(final String nameFilter, final List<Role> roles) {
+    private long getTotalRecords(final String nameFilter, final List<Role> roles,
+                                 final UserAPI.FilteringParams filteringParams) {
         try {
-            return userAPI.getCountUsersByName(nameFilter, roles);
+            return userAPI.getCountUsersByName(nameFilter, roles, filteringParams);
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
@@ -71,13 +74,13 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
                                                     final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
         try {
             final List<Role> roles = (List<Role>) extraParams.get(ROLES_PARAM);
+            final UserAPI.FilteringParams filteringParams = new UserAPI.FilteringParams.Builder().build(extraParams);
             final List<Map<String, Object>> usersMap;
             if (UtilMethods.isSet(extraParams.get(ASSET_INODE_PARAM)) && UtilMethods.isSet(extraParams.get(PERMISSION_PARAM))) {
                 final List<User> userList = helper.getUsersByAssetAndPermissionType(filter, offset, limit,
                         extraParams.get(ASSET_INODE_PARAM).toString(), extraParams.get(PERMISSION_PARAM).toString());
                 usersMap = userList.stream().map(this::userToMap).collect(Collectors.toList());
             } else {
-                final UserAPI.FilteringParams filteringParams = new UserAPI.FilteringParams.Builder().build(extraParams);
                 final List<User> users = userAPI.getUsersByName(filter, roles, offset, limit, filteringParams);
                 if ((boolean) CollectionsUtils.getMapValue(extraParams, REMOVE_CURRENT_USER_PARAM, false)) {
                     // Removes user making the request from the list
@@ -90,7 +93,7 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
             }
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             result.addAll(usersMap);
-            result.setTotalResults(this.getTotalRecords(filter, roles));
+            result.setTotalResults(this.getTotalRecords(filter, roles, filteringParams));
             return result;
         } catch (final Exception e) {
             throw new DotRuntimeException(e);

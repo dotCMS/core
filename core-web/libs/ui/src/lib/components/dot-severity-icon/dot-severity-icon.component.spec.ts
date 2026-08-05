@@ -14,83 +14,83 @@ describe('DotSeverityIconComponent', () => {
     });
 
     describe('Icon rendering based on severity', () => {
-        it('should render InfoCircleIcon by default (info severity)', () => {
+        it('should render pi-info-circle by default (info severity)', () => {
             spectator.detectChanges();
-            const icon = spectator.query('InfoCircleIcon');
+            const icon = spectator.query('.pi-info-circle');
 
             expect(icon).toBeTruthy();
         });
 
-        it('should render CheckIcon for success severity', () => {
+        it('should render pi-check for success severity', () => {
             spectator.setInput('severity', 'success');
             spectator.detectChanges();
-            const icon = spectator.query('CheckIcon');
+            const icon = spectator.query('.pi-check');
 
             expect(icon).toBeTruthy();
         });
 
-        it('should render InfoCircleIcon for info severity', () => {
+        it('should render pi-info-circle for info severity', () => {
             spectator.setInput('severity', 'info');
             spectator.detectChanges();
-            const icon = spectator.query('InfoCircleIcon');
+            const icon = spectator.query('.pi-info-circle');
 
             expect(icon).toBeTruthy();
         });
 
-        it('should render TimesCircleIcon for error severity', () => {
+        it('should render pi-times-circle for error severity', () => {
             spectator.setInput('severity', 'error');
             spectator.detectChanges();
-            const icon = spectator.query('TimesCircleIcon');
+            const icon = spectator.query('.pi-times-circle');
 
             expect(icon).toBeTruthy();
         });
 
-        it('should render ExclamationTriangleIcon for warn severity', () => {
+        it('should render pi-exclamation-triangle for warn severity', () => {
             spectator.setInput('severity', 'warn');
             spectator.detectChanges();
-            const icon = spectator.query('ExclamationTriangleIcon');
+            const icon = spectator.query('.pi-exclamation-triangle');
 
             expect(icon).toBeTruthy();
         });
     });
 
     describe('Icon attributes', () => {
-        it('should apply aria-hidden="true" attribute to CheckIcon', () => {
+        it('should apply aria-hidden="true" attribute to pi-check', () => {
             spectator.setInput('severity', 'success');
             spectator.detectChanges();
-            const icon = spectator.query('CheckIcon');
+            const icon = spectator.query('.pi-check');
 
             expect(icon?.getAttribute('aria-hidden')).toBe('true');
         });
 
-        it('should apply data-pc-section="icon" attribute to CheckIcon', () => {
+        it('should apply data-pc-section="icon" attribute to pi-check', () => {
             spectator.setInput('severity', 'success');
             spectator.detectChanges();
-            const icon = spectator.query('CheckIcon');
+            const icon = spectator.query('.pi-check');
 
             expect(icon?.getAttribute('data-pc-section')).toBe('icon');
         });
 
-        it('should apply aria-hidden="true" attribute to InfoCircleIcon', () => {
+        it('should apply aria-hidden="true" attribute to pi-info-circle', () => {
             spectator.setInput('severity', 'info');
             spectator.detectChanges();
-            const icon = spectator.query('InfoCircleIcon');
+            const icon = spectator.query('.pi-info-circle');
 
             expect(icon?.getAttribute('aria-hidden')).toBe('true');
         });
 
-        it('should apply aria-hidden="true" attribute to TimesCircleIcon', () => {
+        it('should apply aria-hidden="true" attribute to pi-times-circle', () => {
             spectator.setInput('severity', 'error');
             spectator.detectChanges();
-            const icon = spectator.query('TimesCircleIcon');
+            const icon = spectator.query('.pi-times-circle');
 
             expect(icon?.getAttribute('aria-hidden')).toBe('true');
         });
 
-        it('should apply aria-hidden="true" attribute to ExclamationTriangleIcon', () => {
+        it('should apply aria-hidden="true" attribute to pi-exclamation-triangle', () => {
             spectator.setInput('severity', 'warn');
             spectator.detectChanges();
-            const icon = spectator.query('ExclamationTriangleIcon');
+            const icon = spectator.query('.pi-exclamation-triangle');
 
             expect(icon?.getAttribute('aria-hidden')).toBe('true');
         });
@@ -100,13 +100,13 @@ describe('DotSeverityIconComponent', () => {
         it('should switch icons when severity input changes', () => {
             spectator.setInput('severity', 'success');
             spectator.detectChanges();
-            expect(spectator.query('CheckIcon')).toBeTruthy();
-            expect(spectator.query('InfoCircleIcon')).toBeFalsy();
+            expect(spectator.query('.pi-check')).toBeTruthy();
+            expect(spectator.query('.pi-info-circle')).toBeFalsy();
 
             spectator.setInput('severity', 'error');
             spectator.detectChanges();
-            expect(spectator.query('CheckIcon')).toBeFalsy();
-            expect(spectator.query('TimesCircleIcon')).toBeTruthy();
+            expect(spectator.query('.pi-check')).toBeFalsy();
+            expect(spectator.query('.pi-times-circle')).toBeTruthy();
         });
     });
 });
