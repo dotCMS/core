@@ -102,4 +102,16 @@ export interface DotActionCenterWorkflowAction {
     requiresInput: boolean;
     /** True when `count` is an upper bound because a Velocity condition was not evaluated. */
     approximateCount: boolean;
+    /**
+     * Content type variable names whose contentlets can run this action.
+     *
+     * The bulk endpoint reports counts but never says *which* contentlets an action matches, so this
+     * is reconstructed client-side by asking it once per content type in the selection. Workflow
+     * schemes are assigned per content type, which makes the mapping exact at scheme level — enough
+     * to keep a Blog action from listing a VtlInclude.
+     *
+     * Empty means "not resolved" (a single ungrouped lookup), and callers should fall back to the
+     * whole selection rather than filtering everything out.
+     */
+    contentTypes: string[];
 }
