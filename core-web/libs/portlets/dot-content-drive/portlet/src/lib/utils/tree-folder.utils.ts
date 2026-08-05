@@ -82,8 +82,10 @@ export const buildTreeFolderNodes = ({
     /**
      * Checks if a folder node belongs to the active target path
      */
-    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) =>
-        expectedPaths[levelIndex] === node.data.path;
+    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) => {
+        const data = node.data;
+        return !!data && data.type !== 'load-more' && expectedPaths[levelIndex] === data.path;
+    };
 
     /**
      * Checks if a folder node is a leaf
