@@ -207,18 +207,20 @@ get_feature_paths() {
         current_branch="${feature_dir_trimmed##*/}"
     fi
 
-    # Use printf '%q' to safely quote values, preventing shell injection
-    # via crafted branch names or paths containing special characters
-    printf 'REPO_ROOT=%q\n' "$repo_root"
-    printf 'CURRENT_BRANCH=%q\n' "$current_branch"
-    printf 'FEATURE_DIR=%q\n' "$feature_dir"
-    printf 'FEATURE_SPEC=%q\n' "$feature_dir/spec.md"
-    printf 'IMPL_PLAN=%q\n' "$feature_dir/plan.md"
-    printf 'TASKS=%q\n' "$feature_dir/tasks.md"
-    printf 'RESEARCH=%q\n' "$feature_dir/research.md"
-    printf 'DATA_MODEL=%q\n' "$feature_dir/data-model.md"
-    printf 'QUICKSTART=%q\n' "$feature_dir/quickstart.md"
-    printf 'CONTRACTS_DIR=%q\n' "$feature_dir/contracts"
+    # Assign directly into the caller's shell instead of printing %q-quoted
+    # KEY=value lines for the caller to eval. Every consumer sources this file,
+    # so plain assignment propagates fine, no string ever gets re-parsed as
+    # code, and the eval-based injection surface Semgrep flags is gone.
+    REPO_ROOT="$repo_root"
+    CURRENT_BRANCH="$current_branch"
+    FEATURE_DIR="$feature_dir"
+    FEATURE_SPEC="$feature_dir/spec.md"
+    IMPL_PLAN="$feature_dir/plan.md"
+    TASKS="$feature_dir/tasks.md"
+    RESEARCH="$feature_dir/research.md"
+    DATA_MODEL="$feature_dir/data-model.md"
+    QUICKSTART="$feature_dir/quickstart.md"
+    CONTRACTS_DIR="$feature_dir/contracts"
 }
 
 # Check if jq is available for safe JSON construction

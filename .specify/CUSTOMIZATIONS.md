@@ -125,6 +125,17 @@ never inflate the counter. Collisions remain possible only if two devs create fe
 simultaneously before either pushes — rerun with `--number` to resolve, or use
 `--timestamp` numbering which is collision-free by construction.
 
+### 6. eval-free feature-path resolution — EDITS SHIPPED SCRIPTS
+
+Stock Spec-Kit resolves feature paths by having `get_feature_paths()` (in `common.sh`)
+print `%q`-quoted `KEY=value` lines that callers capture and `eval`. Semgrep flags that
+`eval` as a blocking command-injection risk. Since every consumer sources `common.sh`
+anyway, our patch has `get_feature_paths()` assign `REPO_ROOT`, `CURRENT_BRANCH`,
+`FEATURE_DIR`, `FEATURE_SPEC`, `IMPL_PLAN`, `TASKS`, `RESEARCH`, `DATA_MODEL`,
+`QUICKSTART`, and `CONTRACTS_DIR` directly in the caller's shell, and the three call
+sites (`setup-plan.sh`, `setup-tasks.sh`, `check-prerequisites.sh`) call it plainly —
+no output string is ever re-parsed as code.
+
 ## Guardrail: Spec-Kit must never create ADRs
 
 Enforced in the constitution, the `adr-context.sh` output, the `speckit-adr-context` and
@@ -145,9 +156,10 @@ customizations are split so that most survive automatically:
 | `.specify/scripts/bash/adr-context.sh` | ✅ Yes (net-new name) | None |
 | `.claude/skills/speckit-adr-context/`, `.claude/skills/speckit-specify-fix/` | ✅ Yes (net-new skills) | Confirm not clobbered |
 | `.specify/scripts/bash/create-new-feature.sh` | ❌ No (shipped script, patched in-place) | Re-apply the branch-aware numbering patch (#5): `get_highest_from_branches()` + the max() at the `BRANCH_NUMBER` computation |
+| `.specify/scripts/bash/common.sh`, `setup-plan.sh`, `setup-tasks.sh`, `check-prerequisites.sh` | ❌ No (shipped scripts, patched in-place) | Re-apply the eval-free path resolution patch (#6): direct assignment in `get_feature_paths()` + plain calls at the three call sites |
 
-Apart from the numbering patch (#5), we did **not edit** any shipped `/speckit-*` skill or
-core template. If a future Spec-Kit version changes the `before_plan` hook contract or
+Apart from the script patches (#5, #6), we did **not edit** any shipped `/speckit-*` skill
+or core template. If a future Spec-Kit version changes the `before_plan` hook contract or
 `resolve_template` precedence, re-verify items #2 and #3 above.
 
 ## Alternative considered: the native `bug` extension
