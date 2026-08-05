@@ -93,10 +93,31 @@ public class SearchHitTest {
 
         final SearchHit hit = SearchHit.from(osHit);
 
+        assertTrue("a highlighted hit must take the highlight-bearing shape",
+                hit instanceof SiteSearchHit);
         final List<String> fragments = hit.highlightsFor("content");
         assertEquals("both fragments must survive the conversion", 2, fragments.size());
         assertTrue(fragments.get(0).contains("<em>argue</em>"));
         assertTrue(fragments.get(1).contains("<em>argues</em>"));
+    }
+
+    /**
+     * Method to test: {@link SearchHit#from(Hit)}
+     * Given scenario: a hit from a query that never asked for highlighting — i.e. every content search.
+     * Expected result: the lean {@link ContentSearchHit} shape, which carries no highlight state at
+     *          all. This is the invariant that keeps the content path from paying for a Site Search
+     *          concern, so it is asserted rather than assumed.
+     */
+    @Test
+    public void from_openSearchHit_noHighlight_yieldsLeanContentShape() {
+        final Hit<Object> osHit = Hit.of(builder -> builder.index("idx").id("1"));
+
+        final SearchHit hit = SearchHit.from(osHit);
+
+        assertTrue("an un-highlighted hit must take the lean shape",
+                hit instanceof ContentSearchHit);
+        assertTrue("the builder default must behave the same",
+                SearchHit.builder().id("1").build() instanceof ContentSearchHit);
     }
 
     /**
@@ -111,8 +132,6 @@ public class SearchHitTest {
 
         final SearchHit hit = SearchHit.from(osHit);
 
-        assertTrue("a hit without highlighting must expose an empty map",
-                hit.getHighlights().isEmpty());
         assertTrue("an un-highlighted field must yield an empty list, not null",
                 hit.highlightsFor("content").isEmpty());
         assertTrue("the builder default must behave the same",

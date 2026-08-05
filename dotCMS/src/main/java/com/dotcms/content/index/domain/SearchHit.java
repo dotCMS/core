@@ -1,6 +1,6 @@
 package com.dotcms.content.index.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -10,14 +10,36 @@ import java.util.stream.Collectors;
 /**
  * Immutable domain representation of a single search result hit from any search engine.
  *
- * <p>This record provides a unified abstraction layer for individual search results,
- * allowing the application to work with search hits without depending on specific
- * search engine libraries (Elasticsearch, OpenSearch, etc.).</p>
+ * <p>This type provides a unified abstraction layer for individual search results, allowing the
+ * application to work with search hits without depending on specific search engine libraries
+ * (Elasticsearch, OpenSearch, etc.).</p>
+ *
+ * <p><strong>Two shapes, one contract.</strong> Content search results are the hot path — they must
+ * stay as small as possible — while Site Search results carry an extra concern nothing else asks
+ * for: the per-field highlight fragments used to render result snippets. Rather than widening every
+ * hit with a field only one caller reads, this is a sealed interface over two records:</p>
+ * <ul>
+ *   <li>{@link ContentSearchHit} — the lean shape: six components, no highlight state at all.</li>
+ *   <li>{@link SiteSearchHit} — the same six plus the highlight fragments.</li>
+ * </ul>
+ *
+ * <p>Callers never choose: {@link Builder#build()} picks the shape from the data, returning the lean
+ * record unless the engine actually returned highlight fragments. Since the only queries that request
+ * highlighting are the Site Search ones ({@code ESSiteSearchAPI} / {@code OSSiteSearchAPI}), a content
+ * hit is always a {@link ContentSearchHit} and pays nothing — not even a null reference — for a
+ * concern it does not use. If a content query ever requests highlighting, it would get the
+ * highlight-bearing shape and the names here would be worth revisiting.</p>
+ *
+ * <p>Highlights are read through {@link #highlightsFor(String)}, which defaults to an empty list, so
+ * a caller holding a plain {@code SearchHit} never has to know or ask which shape it got.</p>
  *
  * <p>Accessors are bean-style ({@code getId()}, {@code getSourceAsMap()}, …) so the type works
- * directly from Velocity templates (e.g. {@code $hit.id}) without any extra alias methods.
- * The record components are named accordingly and the {@link JsonProperty} annotations keep the
- * JSON contract clean ({@code id}, {@code index}, …) for the caches/REST paths backed by this type.</p>
+ * directly from Velocity templates (e.g. {@code $hit.id}) without any extra alias methods. The record
+ * components are named accordingly and the {@code JsonProperty} annotations keep the JSON contract
+ * clean ({@code id}, {@code index}, …) for the caches/REST paths backed by this type. Deserialization
+ * of the interface targets {@link ContentSearchHit}: nothing serializes a Site Search hit today, and
+ * the alternative (polymorphic {@code JsonTypeInfo}) would add a type discriminator to a JSON shape
+ * those caches depend on.</p>
  *
  * <p><strong>Usage Examples:</strong></p>
  * <pre>
@@ -31,55 +53,64 @@ import java.util.stream.Collectors;
  * String docId = hit.getId();
  * Map&lt;String, Object&gt; content = hit.getSourceAsMap();
  * float relevanceScore = hit.getScore();
+ *
+ * // Site Search snippets — empty for every hit that was not highlighted
+ * List&lt;String&gt; fragments = hit.highlightsFor("content");
  * </pre>
  *
- * @param getId          the unique identifier of this search hit (the document ID)
- * @param getIndex       the index name where this search hit was found, or {@code null} if not available
- * @param getSourceAsMap the source document as a map of field names to values
- * @param getScore       the search relevance score for this hit
- * @param getFields      the document fields retrieved by the search query (additional fields beyond
- *                       the source document that were explicitly requested), empty if none were requested
- * @param getSortValues  the per-hit sort values the engine returns when the query sorts by a field
- *                       (e.g. the computed distance for a {@code _geo_distance} sort), in the order the
- *                       {@code sort} clause declared; empty for relevance-only (unsorted) queries
- * @param getHighlights  the per-field highlight fragments the engine returns when the query asks for
- *                       highlighting, keyed by field name (e.g. {@code content} for Site Search), each
- *                       value holding that field's fragments in engine order; empty when the query did
- *                       not request highlighting or the field produced no match fragment
  * @author Fabrizio Araya
+ * @see ContentSearchHit
+ * @see SiteSearchHit
  * @see SearchHits
  * @see com.dotcms.content.index.ContentFactoryIndexOperations
  */
-public record SearchHit(
-        @JsonProperty("id") String getId,
-        @JsonProperty("index") String getIndex,
-        @JsonProperty("sourceAsMap") Map<String, Object> getSourceAsMap,
-        @JsonProperty("score") float getScore,
-        @JsonProperty("fields") Map<String, Object> getFields,
-        @JsonProperty("sortValues") List<Object> getSortValues,
-        @JsonProperty("highlights") Map<String, List<String>> getHighlights) {
+@JsonDeserialize(as = ContentSearchHit.class)
+public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
 
     /**
-     * Canonical constructor. Collection components default to an empty map/list when {@code null} so
-     * the accessors never return {@code null} (mirrors the previous Immutables collection defaults).
+     * @return the unique identifier of this search hit (the document ID)
      */
-    public SearchHit {
-        getSourceAsMap = getSourceAsMap == null ? Map.of() : getSourceAsMap;
-        getFields = getFields == null ? Map.of() : getFields;
-        getSortValues = getSortValues == null ? List.of() : getSortValues;
-        getHighlights = getHighlights == null ? Map.of() : getHighlights;
-    }
+    String getId();
 
     /**
-     * The highlight fragments for a single field, in engine order, or an empty list when the field
-     * carries none. Saves every caller the {@code getOrDefault} dance — Site Search only ever asks
-     * for one field ({@code content}), and Velocity can reach it as {@code $hit.highlights.content}.
+     * @return the index name where this search hit was found, or {@code null} if not available
+     */
+    String getIndex();
+
+    /**
+     * @return the source document as a map of field names to values, never {@code null}
+     */
+    Map<String, Object> getSourceAsMap();
+
+    /**
+     * @return the search relevance score for this hit, or {@code NaN} when the engine omitted it
+     *         (field-sorted, non-relevance-scored queries)
+     */
+    float getScore();
+
+    /**
+     * @return the document fields retrieved by the search query (additional fields beyond the source
+     *         document that were explicitly requested), empty if none were requested
+     */
+    Map<String, Object> getFields();
+
+    /**
+     * @return the per-hit sort values the engine returns when the query sorts by a field (e.g. the
+     *         computed distance for a {@code _geo_distance} sort), in the order the {@code sort}
+     *         clause declared; empty for relevance-only (unsorted) queries
+     */
+    List<Object> getSortValues();
+
+    /**
+     * The highlight fragments for a single field, in engine order. Only {@link SiteSearchHit} carries
+     * any: a hit from a query that did not request highlighting yields an empty list here, which is
+     * why callers can turn the result straight into an array without a null check.
      *
      * @param fieldName the field the highlight was requested for
      * @return that field's fragments, never {@code null}
      */
-    public List<String> highlightsFor(final String fieldName) {
-        return getHighlights.getOrDefault(fieldName, List.of());
+    default List<String> highlightsFor(final String fieldName) {
+        return List.of();
     }
 
     /**
@@ -87,7 +118,7 @@ public record SearchHit(
      *
      * @return a new builder instance
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -97,7 +128,7 @@ public record SearchHit(
      * @param esSearchHit the Elasticsearch SearchHit to wrap
      * @return a new SearchHit instance
      */
-    public static SearchHit from(org.elasticsearch.search.SearchHit esSearchHit) {
+    static SearchHit from(final org.elasticsearch.search.SearchHit esSearchHit) {
         final Object[] esSortValues = esSearchHit.getSortValues();
         return builder()
                 .id(esSearchHit.getId())
@@ -142,7 +173,7 @@ public record SearchHit(
      * @return a new SearchHit instance
      */
     @SuppressWarnings("unchecked")
-    public static SearchHit from(org.opensearch.client.opensearch.core.search.Hit<?> osHit) {
+    static SearchHit from(final org.opensearch.client.opensearch.core.search.Hit<?> osHit) {
         // Extract source as Map - OpenSearch Hit.source() returns the typed source object
         Map<String, Object> sourceMap;
         Object source = osHit.source();
@@ -193,8 +224,15 @@ public record SearchHit(
      * Fluent builder for {@link SearchHit}. Unset collection attributes default to an empty map and
      * an unset score defaults to {@code 0.0f}, preserving the lenient behaviour of the former
      * Immutables builder.
+     *
+     * <p>{@link #build()} is where the two shapes are chosen: a hit whose engine response carried no
+     * highlight fragments becomes a {@link ContentSearchHit}, which has no highlight state to carry.
+     * That keeps the decision in one place instead of threading a "do I want highlights" flag down
+     * through {@code rawSearch} → {@code ContentSearchResponse.from} → {@code SearchHits.from}, which
+     * would be needed otherwise: Site Search and content search reach the neutral layer through the
+     * very same factory.</p>
      */
-    public static final class Builder {
+    final class Builder {
 
         private String id;
         private String index;
@@ -241,8 +279,15 @@ public record SearchHit(
             return this;
         }
 
+        /**
+         * @return a {@link SiteSearchHit} when highlight fragments are present, otherwise the lean
+         *         {@link ContentSearchHit}
+         */
         public SearchHit build() {
-            return new SearchHit(id, index, sourceAsMap, score, fields, sortValues, highlights);
+            if (highlights.isEmpty()) {
+                return new ContentSearchHit(id, index, sourceAsMap, score, fields, sortValues);
+            }
+            return new SiteSearchHit(id, index, sourceAsMap, score, fields, sortValues, highlights);
         }
     }
 }
