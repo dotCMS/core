@@ -1,5 +1,7 @@
 import type { TreeNode } from 'primeng/api';
 
+import type { TreeNodeContentData, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
+
 /**
  * @export
  * @interface DotContentDriveUploadFiles
@@ -18,15 +20,9 @@ export interface DotContentDriveUploadFiles {
 export type DotContentDriveMoveItems = Omit<DotContentDriveUploadFiles, 'files'>;
 
 /**
- * @export
- * @interface DotFolderTreeNodeData
- * @description Tree node data
+ * Content Drive site/folder node data — shared content fields plus drive-specific extras.
  */
-export type DotFolderTreeNodeData = {
-    type: 'site' | 'folder' | 'load-more';
-    path: string;
-    hostname: string;
-    id: string;
+export type DotFolderTreeNodeContentData = TreeNodeContentData & {
     /** Folder inode — carried so the legacy content editor can pre-select this folder when creating content. */
     inode?: string;
     /**
@@ -35,11 +31,14 @@ export type DotFolderTreeNodeData = {
      */
     defaultBaseType?: string | null;
     fromTable?: boolean;
-    /** For a `load-more` node: the next 1-based page to request when it is clicked. */
-    nextPage?: number;
-    /** For a `load-more` node: how many folders remain to be loaded in the level. */
-    remaining?: number;
 };
+
+/**
+ * @export
+ * @interface DotFolderTreeNodeData
+ * @description Discriminated tree node data (content vs load-more).
+ */
+export type DotFolderTreeNodeData = DotFolderTreeNodeContentData | TreeNodeLoadMoreData;
 
 /**
  * @export

@@ -1,9 +1,10 @@
+import { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';
+
 import { DotFolderTreeNodeItem } from './models';
 
-export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
+export { LOAD_MORE_NODE_TYPE };
 
-/** `data.type` value identifying the synthetic "Load more" node appended to a paginated level. */
-export const LOAD_MORE_NODE_TYPE = 'load-more' as const;
+export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
 /** i18n key for the "Load more" node label. */
 export const LOAD_MORE_LABEL_KEY = 'content-drive.tree.load-more';
@@ -24,6 +25,7 @@ export const ALL_FOLDER: DotFolderTreeNodeItem = {
         id: '',
         inode: ''
     },
+    icon: 'pi pi-folder',
     leaf: false,
     expanded: true
 };

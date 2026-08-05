@@ -1,6 +1,8 @@
-import { type APIRequestContext, test as base, expect, type Page } from '@playwright/test';
+import { type APIRequestContext, expect } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
+
+import { test as base } from './base.fixture';
 
 import {
     type ContentType,
@@ -262,8 +264,6 @@ export interface RelationshipTestData {
 // ─── Fixture ─────────────────────────────────────────────────────
 
 export const test = base.extend<{
-    adminPage: Page;
-    testSuffix: string;
     apiHelpers: {
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
@@ -298,14 +298,6 @@ export const test = base.extend<{
         CARDINALITY: typeof CARDINALITY;
     };
 }>({
-    adminPage: async ({ page }, use) => {
-        await use(page);
-    },
-
-    testSuffix: async ({}, use) => {
-        await use(crypto.randomUUID().slice(0, 8));
-    },
-
     apiHelpers: async ({ request }, use) => {
         await use({
             createContentType: (payload) => createFakeContentType(request, payload),
@@ -332,5 +324,5 @@ export const test = base.extend<{
     }
 });
 
-export { expect } from '@playwright/test';
 export { SYSTEM_WORKFLOW_ID } from '../requests/contentType';
+export { expect } from './base.fixture';
