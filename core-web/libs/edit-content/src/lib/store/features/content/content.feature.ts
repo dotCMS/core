@@ -286,11 +286,11 @@ export function withContent() {
                                 //
                                 // Reference pages + activities are reset to LOADING so that,
                                 // during an in-place reload, `isFullyLoaded` stays false until
-                                // the sidebar re-fetches them for the new content (the sidebar's
-                                // identifier effect refires when the contentlet swaps). Without
-                                // this, their stale LOADED status from the previous content would
-                                // make `isFullyLoaded` briefly true and drop the reload overlay
-                                // before the sidebar actually reloaded.
+                                // they are re-fetched for the new content (the store-level
+                                // effects in `withInformation`/`withActivities` refire when the
+                                // contentlet swaps). Without this, their stale LOADED status
+                                // from the previous content would make `isFullyLoaded` briefly
+                                // true and drop the reload overlay before they actually reloaded.
                                 information: {
                                     status: ComponentStatus.LOADING,
                                     error: null,
