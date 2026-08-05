@@ -46,7 +46,9 @@ import {
     DotContentDriveUploadFiles,
     DotFolderListViewColumn,
     DotFolderTreeNodeData,
-    DotContentDriveMoveItems
+    DotFolderTreeNodeContentData,
+    DotContentDriveMoveItems,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
@@ -394,9 +396,14 @@ export class DotContentDriveShellComponent {
 
         // Read current path without tracking it to avoid circular dependencies
         const currentPath = untracked(() => this.#store.path()) ?? '';
+        const data = selectedNode.data;
 
-        if (selectedNode.data.path != currentPath) {
-            this.#store.setPath(selectedNode.data.path);
+        if (!data || data.type === 'load-more') {
+            return;
+        }
+
+        if (data.path != currentPath) {
+            this.#store.setPath(data.path);
         }
     });
 
@@ -494,7 +501,11 @@ export class DotContentDriveShellComponent {
      */
     protected onUpload(event: MouseEvent) {
         const targetFolder = this.#store.selectedNode()?.data;
-        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+        const contentData =
+            targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
+                ? (targetFolder as DotFolderTreeNodeContentData)
+                : undefined;
+        const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
             this.$activeSelection.set({ targetFolder, baseType });
@@ -512,7 +523,11 @@ export class DotContentDriveShellComponent {
      * and carry the files into the payload to upload right after the user picks.
      */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
-        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+        const contentData =
+            targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
+                ? (targetFolder as DotFolderTreeNodeContentData)
+                : undefined;
+        const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
             this.resolveFilesUpload({ files, targetFolder, baseType });
