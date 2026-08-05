@@ -1225,12 +1225,21 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
         field = this.checkContentTypeFields(contentTypeToSave, field);
         if (varNamesMatchedByVariable.containsKey(field.variable())) {
-          // Incoming id differs from the stored id (cross-version seed change).
-          // Preserve the stored id so no delete+reinsert cycle is triggered; all other
-          // incoming properties are applied normally through the save.
           final Field storedField = varNamesMatchedByVariable.get(field.variable());
-          field = FieldBuilder.builder(field).id(storedField.id()).build();
-          fieldAPI.save(field, APILocator.systemUser(), false);
+          if (storedField.dataType() == field.dataType()) {
+            // Same dataType → same DB column. Preserve the stored id to avoid triggering
+            // CleanUpFieldReferencesJob on a column the replacement will immediately reuse,
+            // which would wipe live content data. All other incoming properties — name,
+            // sortOrder, hint, defaultValue, required, indexed, etc. — are applied normally
+            // by the save below.
+            field = FieldBuilder.builder(field).id(storedField.id()).build();
+            fieldAPI.save(field, APILocator.systemUser(), false);
+          } else {
+            // Different dataType → different DB column. Delete the stale field so
+            // CleanUpFieldReferencesJob cleans the old column, then insert the new one.
+            fieldAPI.delete(storedField);
+            fieldAPI.save(field, APILocator.systemUser(), false);
+          }
         } else if (!varNamesCantDelete.containsKey(field.variable())) {
           fieldAPI.save(field, APILocator.systemUser(), false);
         } else {
