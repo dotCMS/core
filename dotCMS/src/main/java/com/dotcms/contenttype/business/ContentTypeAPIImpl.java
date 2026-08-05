@@ -1193,10 +1193,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     if (newFields != null) {
 
       Map<String, Field> varNamesCantDelete = new HashMap<>();
+      // Holds old fields whose id is absent from the incoming list but whose variable IS present.
+      // This happens in cross-version push-publish when the deterministic seed changed between
+      // builds, giving the same logical field a different id on sender and receiver. We treat it
+      // as an in-place update rather than a delete+insert to avoid triggering
+      // CleanUpFieldReferencesJob on a column the replacement field will immediately reuse.
+      Map<String, Field> varNamesMatchedByVariable = new HashMap<>();
 
       for (Field oldField : oldFields) {
         if (!newFields.stream().anyMatch(f -> oldField.id().equals(f.id()))) {
-          if (!oldField.fixed() && !oldField.readOnly()) {
+          final boolean sameVariableIncoming = newFields.stream()
+              .anyMatch(f -> oldField.variable().equalsIgnoreCase(f.variable()));
+          if (sameVariableIncoming && !oldField.fixed() && !oldField.readOnly()) {
+            varNamesMatchedByVariable.put(oldField.variable(), oldField);
+          } else if (!oldField.fixed() && !oldField.readOnly()) {
             Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
                 + ", from Content Type: " + contentTypeToSave.name());
 
@@ -1214,7 +1224,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       for (Field field : newFields) {
 
         field = this.checkContentTypeFields(contentTypeToSave, field);
-        if (!varNamesCantDelete.containsKey(field.variable())) {
+        if (varNamesMatchedByVariable.containsKey(field.variable())) {
+          // Incoming id differs from the stored id (cross-version seed change).
+          // Preserve the stored id so no delete+reinsert cycle is triggered; all other
+          // incoming properties are applied normally through the save.
+          final Field storedField = varNamesMatchedByVariable.get(field.variable());
+          field = FieldBuilder.builder(field).id(storedField.id()).build();
+          fieldAPI.save(field, APILocator.systemUser(), false);
+        } else if (!varNamesCantDelete.containsKey(field.variable())) {
           fieldAPI.save(field, APILocator.systemUser(), false);
         } else {
           // We replace the newField-ID with the oldField-ID in order to be able to update the

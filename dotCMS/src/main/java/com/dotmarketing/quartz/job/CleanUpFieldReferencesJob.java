@@ -6,7 +6,6 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -75,23 +74,6 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
         try {
             final ContentType type = contentTypeAPI.find(field.contentTypeId());
-
-            // If the deleted field's db column was immediately recycled by a field with the
-            // same variable (e.g. a push-publish receiver replaced the field under a new
-            // seed-generated id while keeping the same variable and dataType), running cleanField
-            // would erase the replacement field's stored content. A different variable reusing
-            // the column is a legitimate new field — that case must still be cleaned.
-            final String deletedColumn = field.dbColumn();
-            if (deletedColumn != null
-                    && !DataTypes.SYSTEM.value.equals(deletedColumn)
-                    && type.fields().stream().anyMatch(f ->
-                            deletedColumn.equalsIgnoreCase(f.dbColumn())
-                            && field.variable().equalsIgnoreCase(f.variable()))) {
-                Logger.info(CleanUpFieldReferencesJob.class, String.format(
-                        "Skipping cleanup for field '%s' — dbColumn '%s' was recycled by the same variable",
-                        field.variable(), deletedColumn));
-                return;
-            }
 
             final Structure structure = new StructureTransformer(type).asStructure();
 

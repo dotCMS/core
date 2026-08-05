@@ -939,23 +939,24 @@ public class DeterministicIdentifierAPITest {
      * Given Scenario: The receiver holds two TEXT fields — {@code myField} with a legacy id
      * (generated before dataType was added to the seed, simulated by disabling deterministic
      * generation) and {@code genuineField} with its own legacy id. A push-publish bundle
-     * arrives that replaces {@code myField} with a new-recipe id (same variable, same dataType)
-     * but carries no entry for {@code genuineField}, making it a genuine delete. Both fields
-     * originally mapped to the same db column set (text1, text2). After the save,
-     * the incoming {@code myField} is assigned text1 (recycled from the deleted legacy field).
-     * CleanUpFieldReferencesJob is then run manually for each deleted field.
+     * arrives carrying a new-recipe id for {@code myField} (same variable, same dataType) but
+     * no entry for {@code genuineField}, making that a genuine delete.
+     * <p>
+     * {@code transactionalSave} detects the same-variable match for {@code myField} and treats
+     * it as an in-place update rather than a delete+insert, preserving the stored id and never
+     * triggering {@code CleanUpFieldReferencesJob}. {@code genuineField} has no matching
+     * variable in the incoming list and is deleted normally.
      * <p>
      * Two assertions together prove correctness:
      * <ol>
-     *   <li>The job skips text1 for {@code myField} because the same-variable guard fires
-     *       — column recycled by the same variable means the replacement field's content must
-     *       be preserved.</li>
-     *   <li>The job clears text2 for {@code genuineField} — the guard does NOT fire for a
-     *       different variable, proving the job actually ran (no vacuous pass).</li>
+     *   <li>{@code myField} stored id is preserved (the legacy id, not the new-recipe id) and
+     *       contentlet data is intact — no delete was triggered.</li>
+     *   <li>{@code genuineField} column is cleared after {@code CleanUpFieldReferencesJob} runs
+     *       manually — proves the genuine delete path still works (no vacuous pass).</li>
      * </ol>
      */
     @Test
-    public void Test_CleanUpFieldJob_SkipsCleanup_WhenColumnRecycledBySameVariable() throws Exception {
+    public void Test_TransactionalSave_PreservesContent_WhenVariableMatchesUnderDifferentId() throws Exception {
         prepareIfNecessary();
         final boolean generateConsistentIdentifiers = Config
                 .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
@@ -963,20 +964,19 @@ public class DeterministicIdentifierAPITest {
             final User systemUser = APILocator.systemUser();
             final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
             final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
-            final String myFieldVar     = "myField"      + System.currentTimeMillis();
+            final String myFieldVar      = "myField"      + System.currentTimeMillis();
             final String genuineFieldVar = "genuineField" + System.currentTimeMillis();
-            final String myFieldContent      = "hello world "    + System.currentTimeMillis();
-            final String genuineFieldContent = "genuine content " + System.currentTimeMillis();
+            final String myFieldContent      = "hello world "     + System.currentTimeMillis();
+            final String genuineFieldContent = "genuine content "  + System.currentTimeMillis();
 
-            // Create both fields with deterministic id OFF to get legacy (random) ids,
-            // simulating fields created before dataType was added to the seed.
+            // Create both fields with deterministic id OFF to simulate legacy ids
+            // (created before dataType was added to the seed).
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, false);
             final ContentType contentType = new ContentTypeDataGen()
                     .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
                     .baseContentType(BaseContentType.CONTENT)
                     .nextPersisted();
             try {
-                // myField lands on text1 (first TEXT column), genuineField on text2.
                 final Field legacyField = fieldAPI.save(
                         FieldBuilder.builder(TextField.class)
                                 .name(myFieldVar).variable(myFieldVar)
@@ -1007,52 +1007,42 @@ public class DeterministicIdentifierAPITest {
                 final Field incomingField = FieldBuilder.builder(incomingTemplate)
                         .id(newRecipeId).build();
 
-                assertNotEquals("Legacy and new-recipe ids must differ to trigger the replace flow",
+                assertNotEquals("Legacy and new-recipe ids must differ to exercise the variable-match path",
                         legacyField.id(), incomingField.id());
 
-                // Simulate the push: only incomingField arrives.
-                // legacyField (text1) and genuineField (text2) are both deleted; incomingField
-                // is inserted and nextAvailableColumn recycles text1.
+                // Simulate push: only incomingField arrives — myField by same variable, genuineField absent.
                 contentTypeAPI.save(contentType, List.of(incomingField));
 
-                // Confirm text1 was recycled by incomingField — key precondition.
-                final Field savedIncoming = fieldAPI.byContentTypeIdAndVar(contentType.id(), myFieldVar);
+                // transactionalSave must have matched myField by variable and preserved the legacy id.
+                final Field savedField = fieldAPI.byContentTypeIdAndVar(contentType.id(), myFieldVar);
                 assertEquals(
-                        "incomingField must land on the same column as the deleted legacyField",
-                        legacyField.dbColumn(), savedIncoming.dbColumn());
+                        "transactionalSave must preserve the stored id when variable matches under a different incoming id",
+                        legacyField.id(), savedField.id());
 
-                final Date futureDate = new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000);
-                final CleanUpFieldReferencesJob job = new CleanUpFieldReferencesJob();
-
-                // Run job for legacyField: same-variable guard must fire and skip text1.
-                Map<String, Object> props = new HashMap<>();
-                props.put(EXECUTION_DATA, ImmutableMap.of(
-                        "field", legacyField, "deletionDate", futureDate, "user", systemUser));
-                TestJobExecutor.execute(job, props);
-
-                // Run job for genuineField: different variable, no guard — text2 must be cleared.
-                props = new HashMap<>();
-                props.put(EXECUTION_DATA, ImmutableMap.of(
-                        "field", genuineField, "deletionDate", futureDate, "user", systemUser));
-                TestJobExecutor.execute(job, props);
-
-                // text1 (myField / incomingField) must be preserved — same-variable guard fired.
+                // Content must be intact — no delete was triggered, no CleanUpFieldReferencesJob ran.
                 final Contentlet refreshed = APILocator.getContentletAPI()
                         .find(contentlet.getInode(), systemUser, false);
                 assertEquals(
-                        "Column recycled by the same variable must not be cleared",
+                        "Contentlet data must survive a same-variable push with a different id",
                         myFieldContent, refreshed.get(myFieldVar));
 
-                // text2 (genuineField) must be cleared — proves the job ran AND that the guard
-                // correctly left the genuine delete path unprotected.
+                // Run CleanUpFieldReferencesJob manually for genuineField (genuine delete — no
+                // matching variable in the incoming list). This proves the normal delete path
+                // still works and the result is not a vacuous pass.
+                final CleanUpFieldReferencesJob job = new CleanUpFieldReferencesJob();
+                final Map<String, Object> props = new HashMap<>();
+                props.put(EXECUTION_DATA, ImmutableMap.of(
+                        "field", genuineField,
+                        "deletionDate", new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000),
+                        "user", systemUser));
+                TestJobExecutor.execute(job, props);
+
                 final DotConnect dc = new DotConnect();
                 dc.setSQL("SELECT " + genuineField.dbColumn() + " FROM contentlet WHERE inode = ?");
                 dc.addParam(contentlet.getInode());
-                final Object genuineColumnValue = dc.loadObjectResults()
-                        .getFirst().get(genuineField.dbColumn());
                 assertNull(
-                        "Job must have cleared the genuine field column, confirming it ran",
-                        genuineColumnValue);
+                        "Job must have cleared the genuine field column, confirming delete path is intact",
+                        dc.loadObjectResults().getFirst().get(genuineField.dbColumn()));
 
             } finally {
                 ContentTypeDataGen.remove(contentType);
