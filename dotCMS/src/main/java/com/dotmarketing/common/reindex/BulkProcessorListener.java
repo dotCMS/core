@@ -128,7 +128,7 @@ public class BulkProcessorListener implements IndexBulkListener {
             // line per failed item buried the log — a real reindex emits hundreds of thousands of
             // identical entries, hiding every other line including the actionable one below
             // (observed on issue #36222, TC-056: ~900 identical WARNs in one minute).
-            logShadowBatchFailures(results);
+            reportShadowBatchFailures(results);
             return;
         }
         Logger.debug(this.getClass(), "Bulk process completed");
@@ -177,6 +177,38 @@ public class BulkProcessorListener implements IndexBulkListener {
         }
         Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
         workingRecords.values().forEach(idx -> handleFailure(idx, msg));
+    }
+
+    /**
+     * Runs {@link #logShadowBatchFailures(List)} without ever letting it fail the callback.
+     *
+     * <p>Reporting a shadow failure must never become a failure itself. {@code flush()} of the
+     * OpenSearch adapter invokes this callback inside its own {@code try}, so a throw from here
+     * is re-entered as {@code afterBulk(executionId, throwable)} and logged as <em>"Bulk process
+     * failed entirely"</em> — a defect in the reporting would masquerade as the very condition
+     * this reporting exists to detect, on the signal an operator uses to decide whether the
+     * shadow store may be promoted.</p>
+     *
+     * <p>{@link Throwable}, not {@link Exception}, on purpose: the escalation path reaches
+     * {@code OSIndexAPIImpl} through {@link IndexConfigHelper#systemicFailureRemediation(String)},
+     * so a broken static initialiser in the OpenSearch adapter surfaces as an
+     * {@code ExceptionInInitializerError} / {@code NoClassDefFoundError}. Those are the failures
+     * worth containing here: nothing below catches them either
+     * ({@code CompositeBulkProcessor.close()} catches {@code Exception}, so its shadow-isolation
+     * branch is skipped) and they would reach {@code ReindexThread} as an opaque
+     * "ReindexThread Exception" naming neither OpenSearch nor the shadow store.</p>
+     *
+     * @param results every item result of the completed batch, successful ones included
+     */
+    private void reportShadowBatchFailures(final List<IndexBulkItemResult> results) {
+        try {
+            logShadowBatchFailures(results);
+        } catch (final Throwable t) { // NOSONAR - see javadoc: LinkageError is the case to contain
+            // Deliberately a plain warn: the recovery path must not re-enter the classifier that
+            // may have just failed, and a shadow-write reporting problem is not a reindex problem.
+            Logger.warn(this.getClass(), "[" + provider.name() + "] Unable to report shadow bulk"
+                    + " failures — indexing itself is unaffected: " + t, t);
+        }
     }
 
     /**

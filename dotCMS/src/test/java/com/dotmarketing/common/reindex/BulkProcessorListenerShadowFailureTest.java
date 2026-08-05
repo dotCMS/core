@@ -182,4 +182,38 @@ public class BulkProcessorListenerShadowFailureTest {
         assertFalse(BulkProcessorListener.systemicFailureEscalation(
                 IndexTag.OS, 0, Map.of()).isPresent());
     }
+
+    // ---- containment of the reporting itself -----------------------------------------------------
+
+    @Test
+    public void aFailureWhileReportingIsContained_andNeverReachesTheCaller() {
+        // Reporting a shadow failure must not become a failure. The OpenSearch adapter calls this
+        // callback inside its own try, so a throw here comes back as afterBulk(Throwable) and is
+        // logged as "Bulk process failed entirely" — a reporting defect would then look exactly like
+        // the shadow store having stopped accepting writes, the signal used to decide whether the
+        // store may be promoted.
+        //
+        // Error, not Exception, on purpose: the escalation path initialises OSIndexAPIImpl, so the
+        // realistic failure is a LinkageError, which neither the adapter's catch(Exception) nor
+        // CompositeBulkProcessor.close()'s shadow-isolation branch would contain.
+        final IndexBulkItemResult poisoned = new IndexBulkItemResult() {
+            @Override
+            public String id() {
+                return "boom";
+            }
+
+            @Override
+            public boolean failed() {
+                throw new NoClassDefFoundError("simulated broken static initialiser");
+            }
+
+            @Override
+            public String failureMessage() {
+                return null;
+            }
+        };
+
+        BulkProcessorListener.forShadowProvider(IndexTag.OS).afterBulk(1L, List.of(poisoned));
+        // Reaching this line is the assertion: the callback returned instead of propagating.
+    }
 }
