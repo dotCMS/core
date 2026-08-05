@@ -12,7 +12,9 @@ import {
     output,
     Renderer2,
     signal,
-    viewChild
+    viewChild,
+    AfterViewInit,
+    OnDestroy
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
@@ -30,16 +32,19 @@ import {
     DotContentDrivePaginateEvent,
     DotLanguage
 } from '@dotcms/dotcms-models';
-import {
-    DotContentletStatusBadgeComponent,
-    DotContentThumbnailComponent,
-    DotLocaleTagPipe,
-    DotMessagePipe,
-    DotRelativeDatePipe
-} from '@dotcms/ui';
 
-import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
-import { DOT_FOLDER_LIST_VIEW_COLUMN_TYPE, DotFolderListViewColumn } from '../shared/models';
+import { DOT_DRAG_ITEM, HEADER_COLUMNS } from './constants';
+import {
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
+    DotFolderListViewColumn,
+    DotFolderListViewSelectionMode
+} from './models';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotLocaleTagPipe } from '../../pipes/dot-locale-tag/dot-locale-tag.pipe';
+import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
+import { DotContentThumbnailComponent } from '../dot-content-thumbnail/dot-content-thumbnail.component';
+import { DotContentletStatusBadgeComponent } from '../dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 
 @Component({
     selector: 'dot-folder-list-view',
@@ -61,7 +66,7 @@ import { DOT_FOLDER_LIST_VIEW_COLUMN_TYPE, DotFolderListViewColumn } from '../sh
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'w-full h-full min-h-0 block' }
 })
-export class DotFolderListViewComponent implements OnInit {
+export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly renderer = inject(Renderer2);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
@@ -107,6 +112,14 @@ export class DotFolderListViewComponent implements OnInit {
      * @alias extraColumns
      */
     $extraColumns = input<DotFolderListViewColumn[]>([], { alias: 'extraColumns' });
+
+    /**
+     * Table selection mode. Defaults to `multiple` so Content Drive behavior is unchanged.
+     * AssetPicker passes `single`.
+     *
+     * @alias selectionMode
+     */
+    $selectionMode = input<DotFolderListViewSelectionMode>('multiple', { alias: 'selectionMode' });
 
     /**
      * An output that emits the selected items.
@@ -181,12 +194,9 @@ export class DotFolderListViewComponent implements OnInit {
     scroll = output<Event>();
 
     /**
-     * An array of selected items.
-     *
-     * @type {DotContentDriveItem[]}
-     * @alias selectedItems
+     * PrimeNG selection binding. Array in `multiple` mode; single item or null in `single` mode.
      */
-    selectedItems = [];
+    selectedItems: DotContentDriveItem | DotContentDriveItem[] | null = [];
 
     readonly MIN_ROWS_PER_PAGE = 20;
     protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
@@ -262,7 +272,7 @@ export class DotFolderListViewComponent implements OnInit {
         return columns;
     });
 
-    /** Total column count including the leading checkbox column — drives colspan/skeleton span. */
+    /** Total column count including the leading checkbox/radio column — drives colspan/skeleton span. */
     protected readonly $columnSpan = computed(() => this.$columns().length + 1);
 
     protected readonly $showPagination = computed(
@@ -307,13 +317,26 @@ export class DotFolderListViewComponent implements OnInit {
      */
     protected readonly $cleanSelectedItems = effect(() => {
         this.$items();
-        this.selectedItems = [];
+        this.selectedItems = this.$selectionMode() === 'multiple' ? [] : null;
     });
 
     /**
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
      */
     private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
+    /**
+     * Normalizes PrimeNG selection (array in multiple mode, object/null in single) to an array.
+     */
+    #asSelectedArray(
+        selection: DotContentDriveItem | DotContentDriveItem[] | null | undefined
+    ): DotContentDriveItem[] {
+        if (!selection) {
+            return [];
+        }
+
+        return Array.isArray(selection) ? selection : [selection];
+    }
 
     /**
      * Resolves an extra column's width. Explicit width wins; otherwise text/number columns size to
@@ -429,10 +452,12 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
-     * Handles selection changes in the table and emits selected items
+     * Handles selection changes in the table and emits selected items as an array
+     * (including single mode, which PrimeNG binds as a single object).
      */
-    onSelectionChange() {
-        this.selectionChange.emit(this.selectedItems);
+    onSelectionChange(selection: DotContentDriveItem | DotContentDriveItem[] | null) {
+        this.selectedItems = selection;
+        this.selectionChange.emit(this.#asSelectedArray(selection));
     }
 
     /**
@@ -465,7 +490,7 @@ export class DotFolderListViewComponent implements OnInit {
         patchState(this.state, { isDragging: true });
 
         // Check if the dragged item is in the current selection
-        const selected = this.selectedItems;
+        const selected = this.#asSelectedArray(this.selectedItems);
         const isDraggingSelectedItem = selected.some(
             (item) => item.identifier === contentlet.identifier
         );

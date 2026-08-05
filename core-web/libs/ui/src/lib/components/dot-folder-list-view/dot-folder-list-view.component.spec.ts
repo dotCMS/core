@@ -12,10 +12,9 @@ import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
 import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DOT_DRAG_ITEM, HEADER_COLUMNS } from './constants';
 import { DotFolderListViewComponent } from './dot-folder-list-view.component';
-
-import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
-import { mockItems } from '../shared/mocks';
+import { mockItems } from './mocks';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
@@ -744,7 +743,7 @@ describe('DotFolderListViewComponent', () => {
 
             // Set some selected items
             spectator.component.selectedItems = [firstItem, secondItem];
-            expect(spectator.component.selectedItems.length).toBe(2);
+            expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
 
             // Change items input
             const newItems = [mockItems[2], mockItems[3]];
@@ -763,7 +762,7 @@ describe('DotFolderListViewComponent', () => {
 
             // Set some selected items
             spectator.component.selectedItems = [firstItem];
-            expect(spectator.component.selectedItems.length).toBe(1);
+            expect(spectator.component.selectedItems).toEqual([firstItem]);
 
             // Change to empty items
             spectator.setInput('items', []);
@@ -771,6 +770,50 @@ describe('DotFolderListViewComponent', () => {
 
             // Selected items should be cleared
             expect(spectator.component.selectedItems).toEqual([]);
+        });
+    });
+
+    describe('selectionMode', () => {
+        it('should default to multiple and show header checkbox', () => {
+            expect(spectator.component.$selectionMode()).toBe('multiple');
+            expect(spectator.query(byTestId('header-checkbox'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-radio'))).toBeFalsy();
+        });
+
+        it('should hide header checkbox and show radios in single mode', () => {
+            spectator.setInput('selectionMode', 'single');
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('header-checkbox'))).toBeFalsy();
+            expect(spectator.queryAll(byTestId('item-radio')).length).toBeGreaterThan(0);
+        });
+
+        it('should emit a one-item array when selection changes in single mode', () => {
+            spectator.setInput('selectionMode', 'single');
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
+
+            spectator.triggerEventHandler(table, 'selectionChange', mockItems[0]);
+
+            expect(selectionChangeSpy).toHaveBeenCalledWith([mockItems[0]]);
+            expect(spectator.component.selectedItems).toEqual(mockItems[0]);
+        });
+
+        it('should clear selection to null when items change in single mode', () => {
+            spectator.setInput('selectionMode', 'single');
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            spectator.component.selectedItems = mockItems[0];
+            spectator.setInput('items', [mockItems[1]]);
+            spectator.detectChanges();
+
+            expect(spectator.component.selectedItems).toBeNull();
         });
     });
 

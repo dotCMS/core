@@ -32,6 +32,10 @@ export * from './lib/components/dot-content-thumbnail/dot-content-thumbnail.comp
 export * from './lib/components/dot-content-thumbnail/models/dot-content-thumbnail.model';
 export * from './lib/components/dot-content-thumbnail/utils/dot-content-thumbnail.utils';
 export * from './lib/components/dot-content-type/dot-content-type.component';
+export * from './lib/components/dot-folder-list-view/dot-folder-list-view.component';
+export * from './lib/components/dot-folder-list-view/models';
+export * from './lib/components/dot-folder-list-view/constants';
+
 export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';

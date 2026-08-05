@@ -42,12 +42,12 @@ import {
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
-    DotFolderListViewComponent,
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { DotFolderListViewComponent } from '@dotcms/ui';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 

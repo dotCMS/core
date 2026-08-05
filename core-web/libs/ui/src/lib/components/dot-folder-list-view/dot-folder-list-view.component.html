@@ -12,15 +12,15 @@
     [lazy]="true"
     [lazyLoadOnInit]="true"
     [scrollable]="true"
-    [(selection)]="selectedItems"
-    (selectionChange)="onSelectionChange()"
+    [selection]="selectedItems"
+    (selectionChange)="onSelectionChange($event)"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
     [first]="$offset()"
     (firstChange)="onFirstChange()"
     dataKey="identifier"
     sortMode="single"
-    selectionMode="multiple"
+    [selectionMode]="$selectionMode()"
     sortField="modDate"
     [sortOrder]="-1"
     data-testId="table"
@@ -30,7 +30,9 @@
     <ng-template #header>
         <tr data-testId="header-row">
             <th [style.width]="'3rem'">
-                <p-tableHeaderCheckbox data-testId="header-checkbox" />
+                @if ($selectionMode() === 'multiple') {
+                    <p-tableHeaderCheckbox data-testId="header-checkbox" />
+                }
             </th>
             @for (column of $columns(); track column.field) {
                 @if (column.sortable) {
@@ -72,7 +74,11 @@
                 (dragover)="onDragOver($event, item)"
                 (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
-                    <p-tableCheckbox [value]="item" />
+                    @if ($selectionMode() === 'multiple') {
+                        <p-tableCheckbox [value]="item" />
+                    } @else {
+                        <p-tableRadioButton [value]="item" data-testId="item-radio" />
+                    }
                 </td>
                 <td
                     class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
