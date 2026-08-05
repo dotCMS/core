@@ -25,7 +25,7 @@ public class HtmlMinifier {
     /**
      * Tags whose text content must be preserved byte-for-byte.
      */
-    private static final String[] PRESERVE_TAGS = {"pre", "textarea", "script", "style"};
+    private static final Set<String> PRESERVE_TAGS = Set.of("pre", "textarea", "script", "style");
 
     /**
      * Elements that participate in inline layout, where whitespace between tags is rendered and is
@@ -85,21 +85,25 @@ public class HtmlMinifier {
         // Tracks whether the last character emitted was a collapsed whitespace run, so that
         // whitespace spanning a tag boundary does not produce two spaces.
         boolean pendingSpace = false;
+        // Name of the tag emitted last, or null when text was emitted last. Tracked as we go rather
+        // than recovered by scanning the output backwards, so that a literal '>' in text content is
+        // never mistaken for the end of a tag.
+        String lastTag = null;
 
         while (index < length) {
 
             final char current = html.charAt(index);
 
-            if (Character.isWhitespace(current)) {
+            if (isHtmlWhitespace(current)) {
                 // Collapse the run, deferring the write: the space is only emitted if the content
                 // that follows turns out to need it, so trailing whitespace and whitespace around
                 // block-level tags is dropped entirely.
                 int lookahead = index;
-                while (lookahead < length && Character.isWhitespace(html.charAt(lookahead))) {
+                while (lookahead < length && isHtmlWhitespace(html.charAt(lookahead))) {
                     lookahead++;
                 }
                 pendingSpace = out.length() > 0
-                        && isSignificantBefore(out)
+                        && isSignificantBefore(lastTag)
                         && isSignificantAfter(html, lookahead);
                 index = lookahead;
                 continue;
@@ -109,9 +113,12 @@ public class HtmlMinifier {
                 // Drop comments entirely, but keep conditional comments, which are markup.
                 final int end = html.indexOf("-->", index);
                 final int commentEnd = end < 0 ? length : end + 3;
-                if (html.startsWith("<!--[if", index) || html.startsWith("<![endif]", index)) {
+                if (html.startsWith("<!--[if", index)) {
                     out.append(html, index, commentEnd);
                     pendingSpace = false;
+                    // Treated as text so that whitespace around it is kept, which is the safe
+                    // reading: what the conditional comment wraps is unknown at this point.
+                    lastTag = null;
                 }
                 index = commentEnd;
                 continue;
@@ -127,6 +134,19 @@ public class HtmlMinifier {
                 pendingSpace = false;
                 out.append(html, index, end);
                 index = end;
+                lastTag = preserveTag;
+                continue;
+            }
+
+            if (isMarkupStart(html, index)) {
+                // Copy the tag as a unit: whitespace inside a quoted attribute value is part of the
+                // value and must survive, so it can not go through the text path above.
+                if (pendingSpace) {
+                    out.append(' ');
+                    pendingSpace = false;
+                }
+                lastTag = tagNameAt(html, index);
+                index = appendTag(html, index, out);
                 continue;
             }
 
@@ -136,31 +156,86 @@ public class HtmlMinifier {
             }
             out.append(current);
             index++;
+            lastTag = null;
         }
 
         return out.toString();
     }
 
     /**
+     * Copies a tag verbatim from {@code index} (which must point at the opening {@code <}) through
+     * its closing {@code >}, collapsing only the whitespace that separates attributes.
+     * <p>
+     * Quoting is tracked so that whitespace <i>inside</i> an attribute value is copied byte-for-byte
+     * -- collapsing it would silently rewrite form values, JSON data attributes and {@code alt}
+     * text -- and so that a {@code >} inside a quoted value does not end the tag early.
+     *
+     * @return the index just past the tag, or the end of the document when the tag is unterminated
+     */
+    private static int appendTag(final String html, final int index, final StringBuilder out) {
+
+        final int length = html.length();
+        int cursor = index;
+        char openQuote = 0;
+
+        while (cursor < length) {
+
+            final char current = html.charAt(cursor);
+
+            if (openQuote != 0) {
+                // Inside an attribute value: everything, whitespace included, is content.
+                out.append(current);
+                if (current == openQuote) {
+                    openQuote = 0;
+                }
+                cursor++;
+                continue;
+            }
+
+            if (current == '"' || current == '\'') {
+                openQuote = current;
+                out.append(current);
+                cursor++;
+                continue;
+            }
+
+            if (current == '>') {
+                out.append(current);
+                return cursor + 1;
+            }
+
+            if (isHtmlWhitespace(current)) {
+                int lookahead = cursor;
+                while (lookahead < length && isHtmlWhitespace(html.charAt(lookahead))) {
+                    lookahead++;
+                }
+                // One space is always enough to separate attributes, and none is needed when the
+                // tag ends right after, as in {@code <div class="a" >}. The space before a self
+                // closing '/' is kept, since dropping it would append the slash to an unquoted
+                // attribute value.
+                if (lookahead < length && html.charAt(lookahead) != '>') {
+                    out.append(' ');
+                }
+                cursor = lookahead;
+                continue;
+            }
+
+            out.append(current);
+            cursor++;
+        }
+
+        return length;
+    }
+
+    /**
      * Decides whether whitespace is significant given what precedes it. It is significant when the
      * preceding content is text, or the closing/opening tag of an inline element.
      *
+     * @param lastTag the name of the tag emitted last, or {@code null} when text was emitted last
      * @return {@code true} when a separating space must be kept
      */
-    private static boolean isSignificantBefore(final StringBuilder out) {
-
-        final int lastChar = out.length() - 1;
-        if (out.charAt(lastChar) != '>') {
-            // Preceded by text content.
-            return true;
-        }
-
-        final int tagStart = out.lastIndexOf("<");
-        if (tagStart < 0) {
-            return true;
-        }
-
-        return isInlineTag(out.substring(tagStart, out.length()));
+    private static boolean isSignificantBefore(final String lastTag) {
+        return null == lastTag || isInlineTag(lastTag);
     }
 
     /**
@@ -176,8 +251,8 @@ public class HtmlMinifier {
             return false;
         }
 
-        if (html.charAt(index) != '<') {
-            // Followed by text content.
+        if (!isMarkupStart(html, index)) {
+            // Followed by text content, which includes a bare '<' such as in `a < b`.
             return true;
         }
 
@@ -186,28 +261,52 @@ public class HtmlMinifier {
             return html.startsWith("<!--[if", index);
         }
 
-        final int tagEnd = html.indexOf('>', index);
-
-        return isInlineTag(tagEnd < 0 ? html.substring(index) : html.substring(index, tagEnd + 1));
+        return isInlineTag(tagNameAt(html, index));
     }
 
     /**
-     * @param tag a full tag such as {@code <span class="x">} or {@code </div>}
+     * @param tagName a lower cased tag name, may be {@code null} for degenerate markup like
+     * {@code </>}
      * @return {@code true} when the tag denotes an inline element
      */
-    private static boolean isInlineTag(final String tag) {
+    private static boolean isInlineTag(final String tagName) {
+        return null != tagName && INLINE_TAGS.contains(tagName);
+    }
 
-        int start = 1;
-        if (start < tag.length() && tag.charAt(start) == '/') {
+    /**
+     * A {@code <} only opens markup when a tag name, {@code /}, {@code !} or {@code ?} follows it;
+     * anywhere else it is literal text, as in {@code 3 < 4}.
+     *
+     * @return {@code true} when {@code index} points at the start of a tag, comment or declaration
+     */
+    private static boolean isMarkupStart(final String html, final int index) {
+
+        if (html.charAt(index) != '<' || index + 1 >= html.length()) {
+            return false;
+        }
+
+        final char next = html.charAt(index + 1);
+
+        return Character.isLetter(next) || next == '/' || next == '!' || next == '?';
+    }
+
+    /**
+     * @param index the position of the opening {@code <}
+     * @return the lower cased tag name at {@code index}, or {@code null} when there is none
+     */
+    private static String tagNameAt(final String html, final int index) {
+
+        int start = index + 1;
+        if (start < html.length() && html.charAt(start) == '/') {
             start++;
         }
 
         int end = start;
-        while (end < tag.length() && !isTagNameBoundary(tag.charAt(end))) {
+        while (end < html.length() && !isTagNameBoundary(html.charAt(end))) {
             end++;
         }
 
-        return end > start && INLINE_TAGS.contains(tag.substring(start, end).toLowerCase());
+        return end > start ? html.substring(start, end).toLowerCase() : null;
     }
 
     /**
@@ -215,28 +314,36 @@ public class HtmlMinifier {
      */
     private static String matchPreserveTag(final String html, final int index) {
 
-        if (html.charAt(index) != '<') {
+        if (!isMarkupStart(html, index) || html.charAt(index + 1) == '/') {
             return null;
         }
 
-        for (final String tag : PRESERVE_TAGS) {
-            final int nameEnd = index + 1 + tag.length();
-            if (nameEnd <= html.length()
-                    && html.regionMatches(true, index + 1, tag, 0, tag.length())
-                    // Ensure it is the whole tag name, not a prefix such as <scriptural>.
-                    && (nameEnd == html.length() || isTagNameBoundary(html.charAt(nameEnd)))) {
-                return tag;
-            }
-        }
+        // Matched on the whole name, so a prefix such as <scriptural> is not treated as <script>.
+        final String name = tagNameAt(html, index);
 
-        return null;
+        return null != name && PRESERVE_TAGS.contains(name) ? name : null;
     }
 
     /**
      * @return {@code true} when the character terminates a tag name
      */
     private static boolean isTagNameBoundary(final char character) {
-        return character == '>' || character == '/' || Character.isWhitespace(character);
+        return character == '>' || character == '/' || isHtmlWhitespace(character);
+    }
+
+    /**
+     * Whether the character is one of the five that HTML treats as collapsible whitespace.
+     * <p>
+     * {@link Character#isWhitespace(char)} is deliberately <b>not</b> used: it also matches
+     * characters that HTML renders rather than collapses, such as the ideographic space
+     * ({@code U+3000}) common in CJK copy and the thin space ({@code U+2009}). Collapsing those
+     * would silently alter page content.
+     *
+     * @return {@code true} when the character is insignificant whitespace in HTML
+     */
+    private static boolean isHtmlWhitespace(final char character) {
+        return character == ' ' || character == '\t' || character == '\n' || character == '\r'
+                || character == '\f';
     }
 
     /**
@@ -247,22 +354,14 @@ public class HtmlMinifier {
      */
     private static int findPreserveTagEnd(final String html, final int index, final String tag) {
 
-        final String closeTag = "</" + tag;
-        int cursor = index + 1;
-
-        while (cursor < html.length()) {
-            final int candidate = indexOfIgnoreCase(html, closeTag, cursor);
-            if (candidate < 0) {
-                return html.length();
-            }
-            final int end = html.indexOf('>', candidate);
-            if (end < 0) {
-                return html.length();
-            }
-            return end + 1;
+        final int closeTagStart = indexOfIgnoreCase(html, "</" + tag, index + 1);
+        if (closeTagStart < 0) {
+            return html.length();
         }
 
-        return html.length();
+        final int end = html.indexOf('>', closeTagStart);
+
+        return end < 0 ? html.length() : end + 1;
     }
 
     /**

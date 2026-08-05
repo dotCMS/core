@@ -1,7 +1,12 @@
 package com.dotcms.rendering.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotmarketing.util.Config;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -14,6 +19,11 @@ import org.junit.Test;
  * @author Freddy Montes
  */
 public class HtmlMinifierTest {
+
+    @BeforeClass
+    public static void prepare() {
+        Config.initializeConfig();
+    }
 
     /**
      * Given: markup indented with newlines between block elements.
@@ -142,6 +152,66 @@ public class HtmlMinifierTest {
     }
 
     /**
+     * Given: whitespace inside a quoted attribute value, which is part of the value rather than
+     * markup formatting.
+     * Expected: it survives byte for byte. Collapsing it would silently rewrite submitted form
+     * values, JSON data attributes and accessible text.
+     */
+    @Test
+    public void test_minify_preserves_whitespace_inside_attribute_values() {
+        assertEquals("<input value=\"a    b\">",
+                HtmlMinifier.minify("<input value=\"a    b\">"));
+        assertEquals("<div data-config='{\"key\": \"a   b\"}'>x</div>",
+                HtmlMinifier.minify("<div data-config='{\"key\": \"a   b\"}'>x</div>"));
+        assertEquals("<img alt=\"a\nb\">", HtmlMinifier.minify("<img alt=\"a\nb\">"));
+        // A '>' inside a quoted value must not be taken for the end of the tag.
+        assertEquals("<div title=\"a > b\">x</div>",
+                HtmlMinifier.minify("<div title=\"a > b\">x</div>"));
+        // Whitespace *between* attributes is still collapsed.
+        assertEquals("<input type=\"text\" value=\"a   b\">",
+                HtmlMinifier.minify("<input  type=\"text\"   value=\"a   b\">"));
+    }
+
+    /**
+     * Given: {@code <} and {@code >} used as literal text, which is legal in HTML.
+     * Expected: they are treated as text, so the whitespace around them is left alone instead of
+     * being judged against whatever tag happens to precede them.
+     */
+    @Test
+    public void test_minify_keeps_literal_angle_brackets_in_text() {
+        assertEquals("<p>Home > About</p>", HtmlMinifier.minify("<p>Home > About</p>"));
+        assertEquals("<p>3 < 4</p>", HtmlMinifier.minify("<p>3 < 4</p>"));
+        assertEquals("<p>a > b > c</p>", HtmlMinifier.minify("<p>a > b > c</p>"));
+    }
+
+    /**
+     * Given: Unicode spaces that HTML renders rather than collapses, such as the ideographic space
+     * used in CJK copy.
+     * Expected: they are left untouched, while the ASCII whitespace around them still collapses.
+     */
+    @Test
+    public void test_minify_preserves_unicode_whitespace_that_html_renders() {
+        // U+3000, the ideographic space common in CJK copy.
+        assertEquals("<p>a\u3000b</p>", HtmlMinifier.minify("<p>a\u3000b</p>"));
+        // U+2009, a thin space used for typographic spacing.
+        assertEquals("<p>a\u2009b</p>", HtmlMinifier.minify("<p>a\u2009b</p>"));
+        assertEquals("<div>\u3000</div>", HtmlMinifier.minify("<div>\u3000</div>"));
+        assertEquals("<p>a \u3000 b</p>", HtmlMinifier.minify("<p>a  \u3000  b</p>"));
+    }
+
+    /**
+     * Given: tags a browser tolerates but a naive parser trips on.
+     * Expected: they round trip without throwing.
+     */
+    @Test
+    public void test_minify_handles_edge_case_tags() {
+        // The space before a self closing '/' is kept on purpose: dropping it would append the
+        // slash to an unquoted attribute value.
+        assertEquals("<div><br /></div>", HtmlMinifier.minify("<div>\n<br />\n</div>"));
+        assertEquals("<div></></div>", HtmlMinifier.minify("<div>\n</>\n</div>"));
+    }
+
+    /**
      * Given: null or empty input.
      * Expected: it is returned untouched rather than throwing.
      */
@@ -149,5 +219,29 @@ public class HtmlMinifierTest {
     public void test_minifyIfEnabled_handles_null_and_empty() {
         assertEquals(null, HtmlMinifier.minifyIfEnabled(null));
         assertEquals("", HtmlMinifier.minifyIfEnabled(""));
+    }
+
+    /**
+     * Given: the feature flag toggled off and then on.
+     * Expected: {@code minifyIfEnabled} is a no-op when off and minifies when on. This covers the
+     * wiring the production call sites depend on -- the flag name and the {@link Config} lookup.
+     */
+    @Test
+    public void test_minifyIfEnabled_respects_the_feature_flag() {
+
+        final String html = "<div>\n  <p>a</p>\n</div>";
+        final boolean original =
+                Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_MINIFY_HTML, false);
+        try {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_MINIFY_HTML, false);
+            assertFalse(HtmlMinifier.isEnabled());
+            assertEquals(html, HtmlMinifier.minifyIfEnabled(html));
+
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_MINIFY_HTML, true);
+            assertTrue(HtmlMinifier.isEnabled());
+            assertEquals("<div><p>a</p></div>", HtmlMinifier.minifyIfEnabled(html));
+        } finally {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_MINIFY_HTML, original);
+        }
     }
 }
