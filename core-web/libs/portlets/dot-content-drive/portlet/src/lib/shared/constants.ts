@@ -1,4 +1,8 @@
-import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
+import {
+    DOT_FOLDER_TREE_PAGE_SIZE,
+    DotCMSBaseTypesContentTypes,
+    DotSite
+} from '@dotcms/dotcms-models';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
@@ -18,18 +22,18 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
 };
 
 /**
- * Page size used when loading the initial folder hierarchy (deep-link restore) via
- * `GET /api/v1/folder/search`. Each ancestor level of the target path is fetched in full so the
- * selected folder is always present and the tree can expand to it. Matches the backend's
- * `SUB_FOLDER_UNLIMITED_SAFETY_CAP` (10000) — the ceiling the server itself enforces.
+ * Page size for interactive folder-tree expand and load-more.
+ * Re-exports the shared limit used by Host Folder Field so both stay in sync.
  */
-export const FOLDER_TREE_SEARCH_PAGE_SIZE = 10000;
+export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
 
 /**
- * Page size used when a user expands a folder node. Children load one page at a time; if more
- * remain, a "Load more" node is appended so the DOM stays bounded on large levels.
+ * Page size for the deep-link / initial hierarchy fetch only.
+ * One request per ancestor level (parallel); large enough that path segments past
+ * the interactive page of 40 still appear so {@link buildTreeFolderNodes} can select them.
+ * Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
  */
-export const FOLDER_TREE_PAGE_SIZE = 50;
+export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 10000;
 
 export const DEFAULT_SORT = {
     field: 'modDate',

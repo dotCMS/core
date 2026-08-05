@@ -1,28 +1,42 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    input,
-    model,
-    output,
-    signal
-} from '@angular/core';
+import { signalMethod } from '@ngrx/signals';
+
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
+import { Tooltip } from 'primeng/tooltip';
+import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
-import { DotTruncatePathPipe } from '../../../../pipes/dot-truncate-path/dot-truncate-path.pipe';
+import { DotFolderNamePipe } from '../../../../pipes/dot-folder-name/dot-folder-name.pipe';
+import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
 import { SYSTEM_HOST_ID } from '../../store/browser.store';
 
 @Component({
     selector: 'dot-sidebar',
-    imports: [TreeModule, DotTruncatePathPipe, SkeletonModule],
+    imports: [DotFolderTreeComponent, DotFolderNamePipe, SkeletonModule, Tooltip],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSideBarComponent {
+    /**
+     * Match Host Folder site tooltips: keep long hostnames on one line in the overlay.
+     */
+    protected readonly nodeTooltipPt = {
+        root: { style: { maxWidth: 'none' } },
+        text: { style: { whiteSpace: 'nowrap', wordBreak: 'normal' } }
+    };
+
+    /**
+     * Constrain tree node layout so label `truncate` can ellipsis instead of wrapping.
+     */
+    protected readonly treePt = {
+        root: { class: 'w-full h-full min-w-0 overflow-x-hidden' },
+        wrapper: { class: 'min-w-0 overflow-x-hidden' },
+        nodeContent: { class: 'min-w-0' },
+        nodeLabel: { class: 'min-w-0 overflow-hidden' }
+    };
+
     /**
      * An observable that emits an array of TreeNode objects representing the folders.
      *
@@ -47,11 +61,6 @@ export class DotSideBarComponent {
     $fakeColumns = signal<string[]>(Array.from({ length: 50 }).map((_) => this.getPercentage()));
 
     /**
-     * Reactive model representing the currently selected file.
-     */
-    $selectedFile = model<TreeNode | null>(null);
-
-    /**
      * Event emitter for when a tree node is expanded.
      *
      * This event is triggered when a user expands a node in the tree structure.
@@ -63,26 +72,58 @@ export class DotSideBarComponent {
      * Event emitter for when a node is selected in the tree.
      *
      * @event onNodeSelect
-     * @type {TreeNodeExpandEvent}
+     * @type {TreeNodeSelectEvent}
      */
-    onNodeSelect = output<TreeNodeExpandEvent>();
+    onNodeSelect = output<TreeNodeSelectEvent>();
 
     /**
-     * Computed property representing the component's state.
-     *
-     * @returns An object containing:
-     * - `folders`: An array of folders obtained from `$folders()`.
-     * - `selectedFile`: A signal of the selected file, initialized to the file whose `data.identifier` matches `SYSTEM_HOST_ID`.
+     * Emitted when the synthetic "Load more" node is clicked.
      */
-    $state = computed(() => {
-        const folders = this.$folders();
-        const selectedFile = folders.find((f) => f.data.id === SYSTEM_HOST_ID);
+    loadMore = output<TreeNode>();
 
-        return {
-            folders,
-            selectedFile: signal(selectedFile)
-        };
+    readonly #userSelected = signal<TreeNode | null>(null);
+
+    /**
+     * Selected node for the shared tree. Defaults to SYSTEM_HOST when present and
+     * the user has not selected another node yet.
+     */
+    readonly $selectedNode = computed(() => {
+        return (
+            this.#userSelected() ??
+            this.$folders().find((folder) => folder.data?.id === SYSTEM_HOST_ID) ??
+            null
+        );
     });
+
+    /**
+     * When folders reload, clear a stale user selection that is no longer in the tree.
+     * `signalMethod` only tracks its input (`$folders`), so `#userSelected` reads/writes
+     * inside the processor stay untracked — no manual `untracked()` needed.
+     * @see https://ngrx.io/guide/signals/signal-method
+     */
+    readonly #clearStaleSelection = signalMethod<TreeNode[]>((folders) => {
+        const selected = this.#userSelected();
+
+        if (!selected) {
+            return;
+        }
+
+        if (!this.#nodeExists(folders, selected.key)) {
+            this.#userSelected.set(null);
+        }
+    });
+
+    constructor() {
+        this.#clearStaleSelection(this.$folders);
+    }
+
+    /**
+     * Forwards selection to the parent and tracks it for tree highlight.
+     */
+    handleNodeSelect(event: TreeNodeSelectEvent): void {
+        this.#userSelected.set(event.node);
+        this.onNodeSelect.emit(event);
+    }
 
     /**
      * Generates a random percentage string between 75% and 100%.
@@ -93,5 +134,23 @@ export class DotSideBarComponent {
         const number = Math.floor(Math.random() * (100 - 75 + 1)) + 75;
 
         return `${number}%`;
+    }
+
+    #nodeExists(nodes: TreeNode[], key: string | undefined): boolean {
+        if (!key) {
+            return false;
+        }
+
+        for (const node of nodes) {
+            if (node.key === key) {
+                return true;
+            }
+
+            if (node.children?.length && this.#nodeExists(node.children, key)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

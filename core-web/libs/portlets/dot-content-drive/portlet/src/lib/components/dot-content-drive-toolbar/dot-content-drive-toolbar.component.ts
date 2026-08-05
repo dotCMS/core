@@ -17,6 +17,10 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -184,7 +188,12 @@ export class DotContentDriveToolbarComponent {
      * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
      */
     protected readonly $uploadLabelKey = computed(() => {
-        switch (this.#store.selectedNode()?.data?.defaultBaseType?.toUpperCase()) {
+        const data = this.#store.selectedNode()?.data;
+        const defaultBaseType =
+            data && data.type !== LOAD_MORE_NODE_TYPE
+                ? (data as DotFolderTreeNodeContentData).defaultBaseType
+                : undefined;
+        switch (defaultBaseType?.toUpperCase()) {
             case DotCMSBaseTypesContentTypes.DOTASSET:
                 return 'content-drive.upload-asset';
             case DotCMSBaseTypesContentTypes.FILEASSET:
