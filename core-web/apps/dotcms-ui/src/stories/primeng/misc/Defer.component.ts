@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -12,6 +12,7 @@ export interface Car {
 }
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-p-defer',
     imports: [ToastModule, TableModule],
     template: `

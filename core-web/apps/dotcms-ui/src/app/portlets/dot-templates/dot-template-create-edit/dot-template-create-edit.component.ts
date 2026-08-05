@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     UntypedFormBuilder,
     UntypedFormGroup,
@@ -33,6 +33,7 @@ import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet
     host: {
         class: 'flex flex-col h-full'
     },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
         DotApiLinkComponent,

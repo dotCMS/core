@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -14,6 +14,7 @@ import { DotContentTypesPortletComponent } from '../shared/dot-content-types-lis
     selector: 'dot-form-builder',
     templateUrl: './dot-form-builder.component.html',
     styleUrls: ['./dot-form-builder.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [AsyncPipe, DotContentTypesPortletComponent, DotNotLicenseComponent]
 })
 export class DotFormBuilderComponent implements OnInit {

@@ -1,7 +1,15 @@
 import { Observable, from, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, effect, inject, input, output, signal } from '@angular/core';
+import {
+    Component,
+    effect,
+    inject,
+    input,
+    output,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -50,6 +58,7 @@ export interface DeleteConditionEvent {
         DotServersideConditionComponent,
         DotVisitorsLocationContainerComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'flex flex-1 items-center gap-3'
     }
