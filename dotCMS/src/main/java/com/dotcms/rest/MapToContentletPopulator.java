@@ -320,11 +320,18 @@ public class MapToContentletPopulator  {
         if (trimmed.isEmpty() || trimmed.charAt(0) == '{') {
             return value;
         }
-        // A leading dotcms:attrs decoration comment is Markdown vocabulary (#36658 §2.4), not an
-        // HTML fragment — without this carve-out the '<!--' start would route the whole value to
-        // the HTML converter, which drops comments (and would shred dotcms-* fences).
-        final boolean html = looksLikeHtml(trimmed)
-                && !TiptapMarkdown.startsWithDotcmsAttrsComment(trimmed);
+        // Route on what follows any leading dotcms:attrs decoration comments — the comment is
+        // shared vocabulary (#36658 §2.4, #36659): before a Markdown block it must reach the
+        // Markdown converter (the '<!--' start would otherwise match the HTML regex and shred
+        // the dotcms-* fences), before an HTML block it must reach the HTML converter, which
+        // now honors it too. A leading <dotcms-*> element is the HTML rich-node vocabulary; the
+        // HTML_START regex only matches spec-simple tag names, so without its own carve-out a
+        // hyphenated custom element would misroute to Markdown and store as literal text.
+        final String probe = skipLeadingDotcmsAttrsComments(trimmed);
+        // The re-check keeps an UNTERMINATED dotcms:attrs comment (no '-->', so it cannot be
+        // skipped) on the Markdown route, exactly as #36658 shipped it.
+        final boolean html = !TiptapMarkdown.startsWithDotcmsAttrsComment(probe)
+                && (looksLikeHtml(probe) || TiptapHtml.startsWithDotcmsElement(probe));
         final String sourceName = html ? "HTML" : "Markdown";
         final String existing = contentlet.getStringProperty(field.getVelocityVarName());
 
@@ -446,6 +453,24 @@ public class MapToContentletPopulator  {
      */
     private static boolean looksLikeHtml(final String trimmed) {
         return HTML_START.matcher(trimmed).find();
+    }
+
+    /**
+     * Skips past any leading {@code <!-- dotcms:attrs ... -->} decoration comments so the
+     * HTML-vs-Markdown routing decision is made on the first piece of real content. The
+     * comment itself is understood by both converters (#36658 §2.4 for Markdown, #36659 for
+     * HTML), so it must not decide the route.
+     */
+    private static String skipLeadingDotcmsAttrsComments(final String trimmed) {
+        String probe = trimmed;
+        while (TiptapMarkdown.startsWithDotcmsAttrsComment(probe)) {
+            final int end = probe.indexOf("-->");
+            if (end < 0) {
+                break;
+            }
+            probe = probe.substring(end + "-->".length()).stripLeading();
+        }
+        return probe;
     }
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,

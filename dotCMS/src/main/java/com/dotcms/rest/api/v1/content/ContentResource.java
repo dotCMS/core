@@ -211,7 +211,8 @@ public class ContentResource {
             operationId = "saveDraft",
             summary = "Saves a content draft",
             description = "Creates or updates a draft version of a contentlet without triggering workflow. " +
-                    "Drafts allow content editors to save work in progress without publishing.",
+                    "Drafts allow content editors to save work in progress without publishing." +
+                    com.dotcms.rest.api.v1.workflow.WorkflowResource.BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Draft saved successfully",
