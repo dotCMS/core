@@ -1,7 +1,13 @@
 import { throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, forwardRef, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    forwardRef,
+    inject
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { finalize, switchMap, take } from 'rxjs/operators';
@@ -35,6 +41,7 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor {
+    private readonly cdr = inject(ChangeDetectorRef);
     private dotTempFileUploadService = inject(DotTempFileUploadService);
     private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private dotCrudService = inject(DotCrudService);
@@ -79,27 +86,31 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
                     take(1),
                     finalize(() => {
                         this.loading = false;
+                        // DynamicDialog (appendTo="body"): force CD after async upload.
+                        this.cdr.detectChanges();
                     })
                 )
-                .subscribe(
-                    (asset: DotCMSTemplateThumbnail) => {
+                .subscribe({
+                    next: (asset: DotCMSTemplateThumbnail) => {
                         this.asset = asset;
                         this.propagateChange(this.asset.identifier);
                     },
-                    (err: HttpErrorResponse | string) => {
+                    error: (err: HttpErrorResponse | string) => {
                         const defaultError = this.dotMessageService.get(
                             'templates.properties.form.thumbnail.error'
                         );
                         this.error = typeof err === 'string' ? err : defaultError;
                     }
-                );
+                });
         } else if (this.asset) {
             this.asset = null;
             this.propagateChange('');
+            this.cdr.detectChanges();
         } else {
             this.error = this.dotMessageService.get(
                 'templates.properties.form.thumbnail.error.invalid.image'
             );
+            this.cdr.detectChanges();
         }
     }
 
@@ -122,17 +133,20 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
             .pipe(
                 finalize(() => {
                     this.loading = false;
+                    // DynamicDialog (appendTo="body"): async asset load must force CD or
+                    // preview bindings stay empty after Angular 21+/22.
+                    this.cdr.detectChanges();
                 }),
                 take(1)
             )
-            .subscribe(
-                ([contentlet]: DotCMSTemplateThumbnail[]) => {
+            .subscribe({
+                next: ([contentlet]: DotCMSTemplateThumbnail[]) => {
                     this.asset = contentlet;
                 },
-                () => {
+                error: () => {
                     // do nothing, failing silently like any html input select that get pass an invalid value
                 }
-            );
+            });
     }
 
     registerOnChange(fn): void {

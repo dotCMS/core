@@ -54,6 +54,27 @@ export class DotCustomEventHandlerService {
     private handlers: Record<string, ($event: CustomEvent) => void>;
 
     constructor() {
+        // Register handlers synchronously so iframe events (e.g. push-publish) are never
+        // dropped while waiting for feature-flag resolution.
+        this.handlers = {
+            'edit-page': this.goToEditPage.bind(this),
+            'edit-contentlet': this.editContentletLegacy.bind(this),
+            'edit-task': this.editTaskLegacy.bind(this),
+            'create-contentlet': this.createContentletLegacy.bind(this),
+            'create-contentlet-from-edit-page': this.createContentletLegacy.bind(this),
+            'company-info-updated': this.setPersonalization.bind(this),
+            'push-publish': this.pushPublishDialog.bind(this),
+            'download-bundle': this.downloadBundleDialog.bind(this),
+            'workflow-wizard': this.executeWorkflowWizard.bind(this),
+            'generate-secure-password': this.generateSecurePassword.bind(this),
+            'compare-contentlet': this.openCompareDialog.bind(this),
+            'license-changed': this.updateLicense.bind(this),
+
+            // THIS NEEDS TESTING
+            'edit-host': this.editContentletLegacy.bind(this),
+            'create-host': this.createContentletLegacy.bind(this)
+        };
+
         this.dotPropertiesService
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {
@@ -62,29 +83,9 @@ export class DotCustomEventHandlerService {
                 const val = response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
                 const contentEditorFeatureFlag = val === true || val === 'true';
 
-                if (!this.handlers) {
-                    this.handlers = {
-                        'edit-page': this.goToEditPage.bind(this),
-                        'edit-contentlet': contentEditorFeatureFlag
-                            ? this.editContentlet.bind(this)
-                            : this.editContentletLegacy.bind(this),
-                        'edit-task': this.editTaskLegacy.bind(this),
-                        'create-contentlet': contentEditorFeatureFlag
-                            ? this.createContentlet.bind(this)
-                            : this.createContentletLegacy.bind(this),
-                        'create-contentlet-from-edit-page': this.createContentletLegacy.bind(this),
-                        'company-info-updated': this.setPersonalization.bind(this),
-                        'push-publish': this.pushPublishDialog.bind(this),
-                        'download-bundle': this.downloadBundleDialog.bind(this),
-                        'workflow-wizard': this.executeWorkflowWizard.bind(this),
-                        'generate-secure-password': this.generateSecurePassword.bind(this),
-                        'compare-contentlet': this.openCompareDialog.bind(this),
-                        'license-changed': this.updateLicense.bind(this),
-
-                        // THIS NEEDS TESTING
-                        'edit-host': this.editContentletLegacy.bind(this),
-                        'create-host': this.createContentletLegacy.bind(this)
-                    };
+                if (contentEditorFeatureFlag) {
+                    this.handlers['edit-contentlet'] = this.editContentlet.bind(this);
+                    this.handlers['create-contentlet'] = this.createContentlet.bind(this);
                 }
             });
     }

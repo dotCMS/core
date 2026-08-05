@@ -1,6 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -56,6 +56,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
     private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
+    private cdr = inject(ChangeDetectorRef);
 
     downloadOptions: SelectItem[];
     filterOptions: SelectItem[];
@@ -97,6 +98,17 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
      */
     close(): void {
         this.showDialog = false;
+    }
+
+    /**
+     * Sync dialog visibility from PrimeNG; only tear down when closing.
+     * @param {boolean} visible
+     * @memberof DotDownloadBundleDialogComponent
+     */
+    onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.close();
+        }
     }
 
     /**
@@ -146,6 +158,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         });
         this.listenForChanges();
         this.showDialog = true;
+        this.cdr.detectChanges();
     }
 
     private loadFilters(): Observable<SelectItem[]> {

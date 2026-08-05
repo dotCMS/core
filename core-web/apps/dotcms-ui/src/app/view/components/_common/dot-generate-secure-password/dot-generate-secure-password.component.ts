@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -22,6 +22,7 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     private dotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService = inject(DotMessageService);
     private dotGenerateSecurePassword = inject(DotGenerateSecurePasswordService);
+    private cdr = inject(ChangeDetectorRef);
 
     copyBtnLabel: string;
     dialogActions: DotDialogActions;
@@ -40,6 +41,7 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
             .subscribe(({ password }) => {
                 this.value = password;
                 this.dialogShow = true;
+                this.cdr.detectChanges();
             });
     }
 
@@ -57,6 +59,17 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
         this.typeInput = 'password';
         this.revealBtnLabel = this.dotMessageService.get('generate.secure.password.reveal');
         this.value = '';
+    }
+
+    /**
+     * Sync dialog visibility from PrimeNG; only tear down when closing.
+     * @param {boolean} visible
+     * @memberof DotGenerateSecurePasswordComponent
+     */
+    onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.close();
+        }
     }
 
     /**

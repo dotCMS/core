@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { DialogModule } from 'primeng/dialog';
 
@@ -23,6 +23,7 @@ const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 })
 export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
     private dotEventsService = inject(DotEventsService);
+    private cdr = inject(ChangeDetectorRef);
 
     show = false;
     data$: Observable<DotContentCompareEvent>;
@@ -35,6 +36,7 @@ export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
             map((data: DotContentCompareEvent) => data),
             tap(() => {
                 this.show = true;
+                this.cdr.detectChanges();
             })
         );
     }
@@ -46,5 +48,15 @@ export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
 
     close(): void {
         this.show = false;
+    }
+
+    /**
+     * Sync dialog visibility from PrimeNG; only tear down when closing.
+     * @param {boolean} visible
+     */
+    onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.close();
+        }
     }
 }
