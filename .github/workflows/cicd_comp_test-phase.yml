@@ -172,9 +172,15 @@ jobs:
                   // For integration/karate tests with test_class
                   testEntry.maven_args = `${testEntry.base_maven_args} -Dit.test=${testEntry.test_class}`;
                 } else if (testEntry.collection) {
-                  // For postman tests with collection
+                  // For postman tests with collection. extra_maven_args lets the same collection run
+                  // twice under different server config (see the HTML-minified Page entry); when it
+                  // does, stage_name_suffix keeps the two stage names -- and therefore the
+                  // build-reports-<stage_name> artifacts -- from colliding.
                   testEntry.maven_args = `${testEntry.base_maven_args} -Dpostman.collections=${testEntry.collection}`;
-                  testEntry.stage_name = `Postman ${testEntry.collection}`;
+                  if (testEntry.extra_maven_args) {
+                    testEntry.maven_args = `${testEntry.maven_args} ${testEntry.extra_maven_args}`;
+                  }
+                  testEntry.stage_name = `Postman ${testEntry.collection}${testEntry.stage_name_suffix || ''}`;
                 } else if (testEntry.maven_args && testEntry.base_maven_args) {
                   // Combine base_maven_args first, then suite-specific maven_args
                   testEntry.maven_args = `${testEntry.base_maven_args} ${testEntry.maven_args}`;
@@ -187,6 +193,8 @@ jobs:
                 delete testEntry.base_maven_args;
                 delete testEntry.test_class;
                 delete testEntry.collection;
+                delete testEntry.extra_maven_args;
+                delete testEntry.stage_name_suffix;
 
                 // ES->OS migration phase fan-out: run the integration battery under each
                 // requested phase. Only for integration suites, and never for the OpenSearch
