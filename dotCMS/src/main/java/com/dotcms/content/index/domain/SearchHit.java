@@ -1,6 +1,7 @@
 package com.dotcms.content.index.domain;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -36,10 +37,11 @@ import java.util.stream.Collectors;
  * <p>Accessors are bean-style ({@code getId()}, {@code getSourceAsMap()}, …) so the type works
  * directly from Velocity templates (e.g. {@code $hit.id}) without any extra alias methods. The record
  * components are named accordingly and the {@code JsonProperty} annotations keep the JSON contract
- * clean ({@code id}, {@code index}, …) for the caches/REST paths backed by this type. Deserialization
- * of the interface targets {@link ContentSearchHit}: nothing serializes a Site Search hit today, and
- * the alternative (polymorphic {@code JsonTypeInfo}) would add a type discriminator to a JSON shape
- * those caches depend on.</p>
+ * clean ({@code id}, {@code index}, …) for the caches/REST paths backed by this type. Deserializing the
+ * interface goes through {@link #fromJson}, which reads the same {@code highlights} key the serialized
+ * form already carries and rebuilds the matching shape — so a round-trip preserves the fragments
+ * instead of silently dropping them, and no polymorphic type discriminator has to be added to a JSON
+ * shape those caches depend on.</p>
  *
  * <p><strong>Usage Examples:</strong></p>
  * <pre>
@@ -64,7 +66,6 @@ import java.util.stream.Collectors;
  * @see SearchHits
  * @see com.dotcms.content.index.ContentFactoryIndexOperations
  */
-@JsonDeserialize(as = ContentSearchHit.class)
 public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
 
     /**
@@ -120,6 +121,38 @@ public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
      */
     static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Jackson entry point for the interface, which is not instantiable on its own.
+     *
+     * <p>It deliberately re-uses {@link Builder#build()} rather than pinning one implementation: the
+     * serialized form already carries the {@code highlights} key when there were fragments, so the same
+     * rule that picks the shape on the way in from the engine picks it on the way in from JSON. Pinning
+     * {@code ContentSearchHit} instead would make a serialized {@link SiteSearchHit} come back without
+     * its fragments and without an error — a silent loss, which is the failure mode this codebase has
+     * already paid for elsewhere.</p>
+     *
+     * @return the shape matching the deserialized data
+     */
+    @JsonCreator
+    static SearchHit fromJson(
+            @JsonProperty("id") final String id,
+            @JsonProperty("index") final String index,
+            @JsonProperty("sourceAsMap") final Map<String, Object> sourceAsMap,
+            @JsonProperty("score") final float score,
+            @JsonProperty("fields") final Map<String, Object> fields,
+            @JsonProperty("sortValues") final List<Object> sortValues,
+            @JsonProperty("highlights") final Map<String, List<String>> highlights) {
+        return builder()
+                .id(id)
+                .index(index)
+                .sourceAsMap(sourceAsMap)
+                .score(score)
+                .fields(fields)
+                .sortValues(sortValues)
+                .highlights(highlights)
+                .build();
     }
 
     /**

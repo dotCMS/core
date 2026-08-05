@@ -3,6 +3,8 @@ package com.dotcms.content.index.domain;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -136,5 +138,50 @@ public class SearchHitTest {
                 hit.highlightsFor("content").isEmpty());
         assertTrue("the builder default must behave the same",
                 SearchHit.builder().id("1").build().highlightsFor("content").isEmpty());
+    }
+
+    /**
+     * Method to test: {@link SearchHit#fromJson}
+     * Given scenario: a Site Search hit carrying highlight fragments is serialized and read back
+     *          through the {@link SearchHit} interface.
+     * Expected result: it returns as the highlight-bearing shape with its fragments intact. Pinning
+     *          deserialization to one implementation would drop them silently instead — the whole
+     *          reason the creator rebuilds through the builder.
+     */
+    @Test
+    public void jacksonRoundTrip_highlightedHit_keepsFragments() throws Exception {
+        final ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
+        final SearchHit hit = SearchHit.builder()
+                .id("abc123")
+                .index("sitesearch_1")
+                .highlights(Map.of("content", List.of("an <em>argue</em>ment")))
+                .build();
+        assertTrue("precondition: the builder must pick the highlight-bearing shape",
+                hit instanceof SiteSearchHit);
+
+        final SearchHit back = mapper.readValue(mapper.writeValueAsString(hit), SearchHit.class);
+
+        assertTrue("a highlighted hit must come back as the highlight-bearing shape",
+                back instanceof SiteSearchHit);
+        assertEquals("the fragments must survive the round-trip",
+                List.of("an <em>argue</em>ment"), back.highlightsFor("content"));
+        assertEquals("abc123", back.getId());
+    }
+
+    /**
+     * Method to test: {@link SearchHit#fromJson}
+     * Given scenario: a content hit — no highlight key in the JSON — read back through the interface.
+     * Expected result: the lean shape, so the round-trip does not quietly widen every cached hit into
+     *          the Site Search one.
+     */
+    @Test
+    public void jacksonRoundTrip_contentHit_staysLean() throws Exception {
+        final ObjectMapper mapper = new ObjectMapper().registerModule(new GuavaModule());
+        final SearchHit hit = SearchHit.builder().id("abc123").index("live_1").build();
+
+        final SearchHit back = mapper.readValue(mapper.writeValueAsString(hit), SearchHit.class);
+
+        assertTrue("an un-highlighted hit must come back lean", back instanceof ContentSearchHit);
+        assertEquals("abc123", back.getId());
     }
 }
