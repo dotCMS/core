@@ -2,7 +2,13 @@ import { AgentMessage, AgentMessagePresenter } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
 import { AgentRunStep } from '@dotcms/dotcms-models';
 
-import { FixReport, FixResult, StudioStepPhase } from './accessibility-studio.models';
+import {
+    FixReport,
+    FixResult,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID,
+    StudioStepPhase
+} from './accessibility-studio.models';
 
 /** Icon for each live agent step phase (SSE `step` events). */
 const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
@@ -13,13 +19,6 @@ const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
     rescan: 'pi pi-verified'
 };
 
-/** Fix statuses that are surfaced as "reported" (not auto-fixed) in the log. */
-const REPORTED_STATUSES: ReadonlyArray<FixResult['status']> = [
-    'reported',
-    'skipped',
-    'regressed',
-    'failed'
-];
 
 /**
  * Strips a leading role label (e.g. `Agent:`, `Assistant:`) that the model
@@ -60,8 +59,10 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
      * the before/after counts.
      */
     resultMessages(report: FixReport): AgentMessage[] {
-        const fixed = report.results.filter((r) => r.status === 'fixed-to-working');
-        const reported = report.results.filter((r) => REPORTED_STATUSES.includes(r.status));
+        const fixed = report.results.filter(
+            (r) => r.status === 'fixed-to-working' && r.ruleId !== RESEARCH_RULE_ID
+        );
+        const reported = report.results.filter((r) => NEEDS_ATTENTION_STATUSES.includes(r.status));
 
         return [
             {

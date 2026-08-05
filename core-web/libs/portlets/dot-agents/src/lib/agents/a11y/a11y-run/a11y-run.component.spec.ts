@@ -14,7 +14,13 @@ import { DotA11yRunComponent } from './a11y-run.component';
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11yGroup } from '../models/a11y-groups';
-import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
+import {
+    FixReport,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID,
+    StudioPageRow,
+    StudioPhase
+} from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
@@ -160,12 +166,17 @@ describe('DotA11yRunComponent', () => {
         }),
         issueTypeRows: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'error') : []),
         reviewGroups: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'warning') : []),
-        fixedResults: () => report?.results.filter((r) => r.status === 'fixed-to-working') ?? [],
-        reportedResults: () => report?.results.filter((r) => r.status !== 'fixed-to-working') ?? [],
+        fixedResults: () =>
+            report?.results.filter(
+                (r) => r.status === 'fixed-to-working' && r.ruleId !== RESEARCH_RULE_ID
+            ) ?? [],
+        reportedResults: () =>
+            report?.results.filter((r) => NEEDS_ATTENTION_STATUSES.includes(r.status)) ?? [],
+        // Both counts come from the before/after rescan, not from row statuses — the
+        // rows only log the deterministic pass. See the real store's computeds.
         fixedCount: () =>
-            report?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0,
-        reportedCount: () =>
-            report?.results.filter((r) => r.status !== 'fixed-to-working').length ?? 0,
+            report ? Math.max(0, report.scan.before.violations - report.scan.after.violations) : 0,
+        reportedCount: () => report?.scan.after.violations ?? 0,
         rehydrateStatus: () => rehydrateStatus,
         previewRevision: () => previewRevision,
         runScan,
@@ -629,8 +640,10 @@ describe('DotA11yRunComponent', () => {
         });
 
         it('renders an activity step per result plus scan/locate/rescan framing', () => {
-            // 7 fixed + 5 reported + 3 framing steps (scan, locate, rescan)
-            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(15);
+            // 7 fixed + 2 skipped + 3 framing steps (scan, locate, rescan). The mock's 3
+            // `reported` rows are deferrals to the agentic pass, not unresolved work, so
+            // they get no bubble.
+            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(12);
         });
 
         it('shows the after-count in the ring', () => {

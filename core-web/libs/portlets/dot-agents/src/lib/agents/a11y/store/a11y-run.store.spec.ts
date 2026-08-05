@@ -1,3 +1,4 @@
+import { patchState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { NEVER, of, throwError } from 'rxjs';
 
@@ -10,7 +11,13 @@ import { GlobalStore } from '@dotcms/store';
 
 import { A11yRunStore } from './a11y-run.store';
 
-import { A11yAgentStreamEvent, StudioPageRow } from '../models/accessibility-studio.models';
+import {
+    A11yAgentStreamEvent,
+    FixResult,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID,
+    StudioPageRow
+} from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
@@ -551,9 +558,71 @@ describe('A11yRunStore', () => {
             store.runScan();
             store.startFix();
             expect(store.fixedResults().every((r) => r.status === 'fixed-to-working')).toBe(true);
-            expect(store.reportedResults().every((r) => r.status !== 'fixed-to-working')).toBe(
-                true
-            );
+            expect(
+                store.reportedResults().every((r) => NEEDS_ATTENTION_STATUSES.includes(r.status))
+            ).toBe(true);
+        });
+
+        it('keeps `reported` deferrals out of the needs-attention bucket', () => {
+            store.runScan();
+            store.startFix();
+            // A `reported` row means the deterministic pass handed the violation to the
+            // agentic pass — an intermediate marker, so it must never be counted as
+            // unresolved work.
+            expect(store.reportedResults().some((r) => r.status === 'reported')).toBe(false);
+        });
+
+        it('derives both counts from the before/after rescan, not row counts', () => {
+            store.runScan();
+            store.startFix();
+            const report = store.report();
+            const before = report?.scan.before.violations ?? 0;
+            const after = report?.scan.after.violations ?? 0;
+
+            expect(store.fixedCount()).toBe(before - after);
+            expect(store.reportedCount()).toBe(after);
+        });
+
+        it('counts violations cleared by the agentic pass, which emits no fix rows', () => {
+            // 20 → 2 means 18 cleared, but only one row logs a deterministic fix. Counting
+            // rows would report "1 fixed"; the rescan is what knows the real number.
+            patchState(store, {
+                report: {
+                    ...MOCK_FIX_REPORT,
+                    scan: { before: { violations: 20 }, after: { violations: 2 } },
+                    results: [{ ruleId: 'color-contrast', status: 'fixed-to-working' }]
+                }
+            });
+
+            expect(store.fixedCount()).toBe(18);
+            expect(store.reportedCount()).toBe(2);
+        });
+
+        it('dedupes fixed rows emitted once per violating element', () => {
+            const duplicated: FixResult[] = [
+                {
+                    ruleId: 'color-contrast',
+                    status: 'fixed-to-working',
+                    file: '/style.css',
+                    diff: '- a\n+ b'
+                },
+                {
+                    ruleId: 'color-contrast',
+                    status: 'fixed-to-working',
+                    file: '/style.css',
+                    diff: '- a\n+ b'
+                },
+                { ruleId: RESEARCH_RULE_ID, status: 'fixed-to-working', file: '/t.vtl' }
+            ];
+            patchState(store, {
+                report: {
+                    ...MOCK_FIX_REPORT,
+                    results: duplicated
+                }
+            });
+
+            // One distinct edit survives; the research row is not a fix.
+            expect(store.fixedResults().length).toBe(1);
         });
     });
 

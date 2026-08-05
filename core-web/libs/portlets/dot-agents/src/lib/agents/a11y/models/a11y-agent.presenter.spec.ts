@@ -1,6 +1,11 @@
 import { DotMessageService } from '@dotcms/data-access';
 
 import { A11yAgentPresenter } from './a11y-agent.presenter';
+import {
+    FixReport,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID
+} from './accessibility-studio.models';
 import { MOCK_FIX_REPORT } from './mock-fix-report';
 
 describe('A11yAgentPresenter', () => {
@@ -43,14 +48,41 @@ describe('A11yAgentPresenter', () => {
             const expectedFixed = MOCK_FIX_REPORT.results.filter(
                 (r) => r.status === 'fixed-to-working'
             ).length;
+            // `reported` is excluded on purpose: it marks a violation the deterministic
+            // pass handed to the agentic pass, not one left unresolved.
             const expectedReported = MOCK_FIX_REPORT.results.filter((r) =>
-                ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
+                NEEDS_ATTENTION_STATUSES.includes(r.status)
             ).length;
 
             expect(fixed.length).toBe(expectedFixed);
             expect(reported.length).toBe(expectedReported);
             expect(fixed.every((m) => m.tone === 'success')).toBe(true);
             expect(reported.every((m) => m.tone === 'warning')).toBe(true);
+        });
+
+        it('does not surface `reported` rows as needing attention', () => {
+            const messages = presenter.resultMessages(MOCK_FIX_REPORT);
+            const reported = messages.filter((m) => String(m.id).startsWith('reported-'));
+
+            // The mock carries 3 `reported` + 2 `skipped`; only the skipped ones are
+            // unresolved, so a `reported` row must never produce a warning bubble.
+            expect(reported.length).toBe(2);
+        });
+
+        it('keeps the research pass out of the fixed rows', () => {
+            const report: FixReport = {
+                ...MOCK_FIX_REPORT,
+                results: [
+                    { ruleId: RESEARCH_RULE_ID, status: 'fixed-to-working', file: '/a.vtl' },
+                    { ruleId: 'color-contrast', status: 'fixed-to-working', file: '/b.css' }
+                ]
+            };
+            const fixed = presenter
+                .resultMessages(report)
+                .filter((m) => String(m.id).startsWith('fixed-'));
+
+            expect(fixed.length).toBe(1);
+            expect(fixed[0].sub).toContain('color-contrast');
         });
 
         it('builds the rule · file sub-line', () => {

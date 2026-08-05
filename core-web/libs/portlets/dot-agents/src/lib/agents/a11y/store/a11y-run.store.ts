@@ -26,6 +26,8 @@ import {
     AgentFixRequest,
     FixReport,
     FixResult,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID,
     StudioPageRow,
     StudioPhase
 } from '../models/accessibility-studio.models';
@@ -224,16 +226,33 @@ export const A11yRunStore = signalStore(
             }),
             /** Violations remaining after the fix pass. */
             afterCount: computed(() => store.report()?.scan.after.violations ?? 0),
-            fixedResults: computed<FixResult[]>(
-                () => store.report()?.results.filter((r) => r.status === 'fixed-to-working') ?? []
-            ),
+            /**
+             * The applied fixes, one row per distinct edit. The agent emits a
+             * `fixed-to-working` row per violating ELEMENT, so a single CSS edit matching 5
+             * elements arrives 5 times — deduped here on rule + file + diff (the diff text
+             * already carries its own "[5 instances]" note, so nothing is lost). Research
+             * rows are excluded: they're a step, not a fix.
+             */
+            fixedResults: computed<FixResult[]>(() => {
+                const rows =
+                    store
+                        .report()
+                        ?.results.filter(
+                            (r) =>
+                                r.status === 'fixed-to-working' && r.ruleId !== RESEARCH_RULE_ID
+                        ) ?? [];
+
+                return [
+                    ...new Map(
+                        rows.map((r) => [`${r.ruleId}|${r.file ?? ''}|${r.diff ?? ''}`, r])
+                    ).values()
+                ];
+            }),
             reportedResults: computed<FixResult[]>(
                 () =>
                     store
                         .report()
-                        ?.results.filter((r) =>
-                            ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
-                        ) ?? []
+                        ?.results.filter((r) => NEEDS_ATTENTION_STATUSES.includes(r.status)) ?? []
             ),
             latestStep: computed<AgentRunStep | null>(() => {
                 const steps = store.steps();
@@ -272,29 +291,36 @@ export const A11yRunStore = signalStore(
                 return elementCount(errorGroups());
             }),
             /**
-             * How many issues have been fixed so far. While fixing it's the agent's live
-             * `progress.cleared`; once the run completes it's the report's authoritative
-             * count of `fixed-to-working` results. Drives the "N fixed to working so far"
-             * footer, which now ticks up live during the run.
+             * How many violations have been cleared. While fixing it's the agent's live
+             * `progress.cleared`; once the run completes it's derived from the report's
+             * before/after rescan (`before - after`).
+             *
+             * Deliberately NOT a count of `fixed-to-working` rows: a run makes two passes
+             * (deterministic, then agentic), and the rows only log the deterministic pass —
+             * one row per violating element, so a single CSS edit fanning out to 5 elements
+             * emits 5 rows. Fixes the agentic pass lands have no row at all. The rescan is
+             * the only number that reflects both passes.
              */
             fixedCount: computed<number>(() => {
                 const report = store.report();
                 if (report) {
-                    return report.results.filter((r) => r.status === 'fixed-to-working').length;
+                    return Math.max(
+                        0,
+                        report.scan.before.violations - report.scan.after.violations
+                    );
                 }
                 if (store.phase() === 'fixing') {
                     return Math.max(0, store.progress()?.cleared ?? 0);
                 }
                 return 0;
             }),
-            reportedCount: computed<number>(
-                () =>
-                    store
-                        .report()
-                        ?.results.filter((r) =>
-                            ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
-                        ).length ?? 0
-            )
+            /**
+             * How many violations still need attention — the rescan's after-count, not a
+             * row count. `reported` rows are a pass-1 handoff marker ("the agentic pass will
+             * take this"), not an outcome, so counting them reported work the agent then went
+             * on to fix. Only the post-both-passes rescan knows what actually survived.
+             */
+            reportedCount: computed<number>(() => store.report()?.scan.after.violations ?? 0)
         };
     }),
     withMethods((store) => {

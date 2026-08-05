@@ -4,6 +4,28 @@ import { AgentChangedFile, AgentStreamEvent } from '@dotcms/dotcms-models';
 
 export type FixStatus = 'fixed-to-working' | 'reported' | 'skipped' | 'regressed' | 'failed';
 
+/**
+ * Statuses that mean a violation was genuinely left unresolved.
+ *
+ * `reported` is NOT one of them: a run makes two passes (deterministic, then agentic),
+ * and `reported` marks a violation the first pass handed to the second — an
+ * intermediate handoff, not an outcome. The agentic pass usually goes on to fix it.
+ * Counting `reported` as unresolved reported work that was actually done.
+ */
+export const NEEDS_ATTENTION_STATUSES: ReadonlyArray<FixStatus> = [
+    'skipped',
+    'regressed',
+    'failed'
+];
+
+/**
+ * Rule id the agent uses for its research pass. Not a fix — it's the step where the
+ * agent worked out how to fix something (or why it couldn't), so it carries a `reason`
+ * narrative and no `diff`. Kept out of the fixed list; the files it touched appear in
+ * the diff view via the report's `changedFiles`.
+ */
+export const RESEARCH_RULE_ID = 'agentic-research';
+
 export type BlastRadius = 'element-scoped' | 'shared-rule' | 'token';
 
 export interface ScanCount {
