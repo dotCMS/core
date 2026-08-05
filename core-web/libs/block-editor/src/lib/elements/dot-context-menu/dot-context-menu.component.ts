@@ -1,7 +1,14 @@
 import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 
-import { Component, computed, input, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    computed,
+    input,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { ContextMenu } from 'primeng/contextmenu';
 import { Ripple } from 'primeng/ripple';
@@ -43,6 +50,7 @@ const CONTEXT_MENU_PT: ContextMenuPassThroughOptions = {
 @Component({
     selector: 'dot-editor-context-menu',
     templateUrl: './dot-context-menu.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ContextMenu, Ripple, DotMessagePipe]
 })
 export class DotContextMenuComponent {

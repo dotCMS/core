@@ -1,7 +1,14 @@
 import { Observable, Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { DialogModule } from 'primeng/dialog';
 
@@ -19,6 +26,7 @@ const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
     selector: 'dot-content-compare-dialog',
     templateUrl: './dot-content-compare-dialog.component.html',
     styleUrls: ['./dot-content-compare-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DialogModule, DotContentCompareComponent, DotMessagePipe, AsyncPipe]
 })
 export class DotContentCompareDialogComponent implements OnInit, OnDestroy {

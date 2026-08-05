@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/data-access';
@@ -12,6 +12,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
     providers: [DotWorkflowTaskDetailService],
     template:
         '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)" />',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotWorkflowTaskDetailComponent]
 })
 export class DotWorkflowTaskComponent implements OnInit {

@@ -1,7 +1,7 @@
 import { ChartOptions } from 'chart.js';
 import { Observable } from 'rxjs';
 
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
@@ -16,6 +16,7 @@ import { DotCDNStore } from './dotcdn.component.store';
     selector: 'dotcms-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AppComponent implements OnInit {

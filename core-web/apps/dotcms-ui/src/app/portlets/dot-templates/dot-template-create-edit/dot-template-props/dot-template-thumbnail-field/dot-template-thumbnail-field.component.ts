@@ -6,7 +6,8 @@ import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
     forwardRef,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -38,6 +39,7 @@ export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
             useExisting: forwardRef(() => DotTemplateThumbnailFieldComponent)
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor {

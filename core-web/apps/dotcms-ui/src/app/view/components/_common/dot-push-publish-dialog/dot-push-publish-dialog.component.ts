@@ -1,6 +1,14 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject, output } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -39,6 +47,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
         ButtonModule,
         DotPushPublishFormComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotPushPublishFiltersService]
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {

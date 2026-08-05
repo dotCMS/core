@@ -9,6 +9,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
 @Component({
     selector: 'dotcms-no-component-provided',
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         <div data-testid="no-component-provided" [style]="style">
             <strong style="color: #c05621">Dev Warning</strong>

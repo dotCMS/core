@@ -1,6 +1,13 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -49,6 +56,7 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
         DotFieldRequiredDirective,
         DotMessagePipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotPushPublishFiltersService]
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {

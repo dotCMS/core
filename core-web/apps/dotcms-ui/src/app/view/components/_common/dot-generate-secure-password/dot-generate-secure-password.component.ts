@@ -1,6 +1,13 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -16,6 +23,7 @@ import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-generate-secure-password.component.html',
     styleUrls: ['./dot-generate-secure-password.component.scss'],
     imports: [ButtonModule, DialogModule, DotMessagePipe],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotClipboardUtil]
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
