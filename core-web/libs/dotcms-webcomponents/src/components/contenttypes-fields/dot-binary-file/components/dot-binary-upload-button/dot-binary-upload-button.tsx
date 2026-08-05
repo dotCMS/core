@@ -67,11 +67,11 @@ export class DotBinaryUploadButtonComponent {
     }
 
     private getFileInput(): HTMLInputElement | null {
-        return this.el.querySelector('input[type="file"]');
+        return this.el.querySelector<HTMLInputElement>('input[type="file"]');
     }
 
     private fileChangeHandler(event: Event): void {
-        const file = this.getFileInput()?.files[0];
+        const file = (event.target as HTMLInputElement).files?.[0];
         if (!file) {
             return;
         }
