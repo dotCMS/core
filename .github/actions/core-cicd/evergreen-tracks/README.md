@@ -29,6 +29,20 @@ tags plus `<version>_tainted` / `<track>_hold` markers).
   the drift check. Only `apply` takes the shared registry-mutation lock, so a pending
   approval on the manual path never blocks the release from moving `latest`.
 
+### Notifications
+
+The workflow posts to **#dot-releases**, deliberately only when there's something to say:
+
+| Outcome | Posts |
+|---|---|
+| `plan` or `apply` failed | 🚨 yes — the tags did **not** move (unchanged, not half-moved) |
+| A track advanced | 🌲 yes — with what moved where |
+| Nothing to do (most days) | nothing |
+
+A rejected break-glass approval leaves `apply` *skipped* rather than failed, so declining a
+plan never pages the channel. Notification failures are `continue-on-error` — Slack being
+down never fails a promotion.
+
 ### Why unattended daily promotion is safe
 
 Moving a floating tag deploys nothing. Every customer manifest in

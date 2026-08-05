@@ -147,6 +147,11 @@ jobs:
     concurrency:
       group: evergreen-tracks-registry
       cancel-in-progress: false
+    outputs:
+      # Whether any tag actually moved, and a one-line summary — drives the
+      # Slack notice so quiet days stay quiet.
+      moved: ${{ steps.apply.outputs.moved }}
+      summary: ${{ steps.apply.outputs.summary }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -157,6 +162,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Apply track moves
+        id: apply
         working-directory: .github/actions/core-cicd/evergreen-tracks
         env:
           # Same fallbacks as the plan job — no inputs exist on the schedule path.
@@ -193,3 +199,58 @@ jobs:
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" \
             --apply
+
+          # Summarize what moved, for the Slack notice. Most days this is empty
+          # (the planner is age-gated), and an empty summary posts nothing.
+          MOVES=$(printf '%s\n' "$CURRENT_PLAN" \
+            | grep -E '^(standard|trailing) -> ' \
+            | sed 's/ (sha256:.*//' || true)
+          if [ -n "$MOVES" ]; then
+            echo "moved=true" >> "$GITHUB_OUTPUT"
+            # paste -d takes a cycling CHAR LIST, not a string — join on ';' then
+            # space it out, so two moves read "a -> x; b -> y".
+            echo "summary=$(printf '%s' "$MOVES" | paste -sd ';' - | sed 's/;/; /g')" >> "$GITHUB_OUTPUT"
+          else
+            echo "moved=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Slack notice to #dot-releases. The cron is unattended, so a silent failure
+  # would mean tracks quietly stop advancing — this is the only thing that would
+  # tell anyone. Deliberately quiet on the common case:
+  #   * failure  -> post (plan or apply actually errored)
+  #   * moved    -> post (a track advanced; newsworthy in a releases channel)
+  #   * no moves -> post NOTHING (most days — the planner is age-gated)
+  # A rejected break-glass approval leaves `apply` SKIPPED, not failed, so a
+  # deliberate "no" never pages the channel.
+  notify:
+    needs: [ plan, gate, apply ]
+    if: always()
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify failure
+        if: needs.plan.result == 'failure' || needs.apply.result == 'failure'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: 'CE1TBQU00'  # #dot-releases
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :rotating_light: *Evergreen track promotion FAILED*
+            (`${{ github.event.inputs.repo || 'dotcms/dotcms' }}`, trigger `${{ github.event_name }}`).
+            The `standard`/`trailing` tags did NOT move — they are unchanged, not half-moved.
+            Customer environments are unaffected until the next in-cluster reconciler window.
+            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
+
+      - name: Notify moves
+        if: needs.apply.result == 'success' && needs.apply.outputs.moved == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: 'CE1TBQU00'  # #dot-releases
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :evergreen_tree: *Evergreen tracks advanced* on `${{ github.event.inputs.repo || 'dotcms/dotcms' }}`
+            — ${{ needs.apply.outputs.summary }}.
+            Environments on these tracks pick this up at their next reconciler maintenance window,
+            not immediately. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
