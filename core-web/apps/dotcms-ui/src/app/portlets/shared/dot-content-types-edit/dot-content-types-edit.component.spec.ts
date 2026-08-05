@@ -278,6 +278,18 @@ describe('DotContentTypesEditComponent', () => {
             expect(comp.templateInfo.header).toEqual('Create Content');
         });
 
+        it('should disable the dialog focusOnShow while leaving focus trap and closable alone', () => {
+            // PrimeNG focuses the first focusable element in DOM order once the open transition
+            // ends, which would steal focus from the Name input. See dialogFocusOnShow.
+            // The real focus outcome is asserted in
+            // content-types-form-dialog-focus.integration.spec.ts.
+            expect(dialog.componentInstance.focusOnShow).toBe(false);
+            expect(dialog.componentInstance.closable).toBe(false);
+            // focusTrap is never bound by us -- this asserts PrimeNG's default as a tripwire, so
+            // disabling focusOnShow can never be mistaken for disabling the trap too.
+            expect(dialog.componentInstance.focusTrap).toBe(true);
+        });
+
         describe('create', () => {
             let mockContentType: DotCMSContentType;
             let contentTypeForm: DebugElement;
@@ -588,6 +600,17 @@ describe('DotContentTypesEditComponent', () => {
 
             expect(dialog).not.toBeNull();
             expect(comp.show()).toBeTruthy();
+        });
+
+        it('should disable the dialog focusOnShow while leaving focus trap and closable alone', () => {
+            clickEditButton();
+
+            // Same reason as create mode: PrimeNG would steal focus from the Name input after the
+            // open transition. focusTrap is an independent input and stays enabled.
+            expect(dialog.componentInstance.focusOnShow).toBe(false);
+            expect(dialog.componentInstance.closable).toBe(true);
+            // See the create-mode counterpart: asserting PrimeNG's own focusTrap default.
+            expect(dialog.componentInstance.focusTrap).toBe(true);
         });
 
         it('should send notifications to add rows & tab divider', () => {
@@ -1042,6 +1065,8 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
 
                 expect(comp.startFormDialog).toHaveBeenCalled();
+                // Opening via query param gets the same focus handling as every other trigger.
+                expect(comp.dialogFocusOnShow).toBe(false);
             }));
 
             it('should not open form dialog when open-config is false', (done) => {

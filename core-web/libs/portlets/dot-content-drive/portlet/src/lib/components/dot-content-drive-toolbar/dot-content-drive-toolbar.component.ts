@@ -31,6 +31,7 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { excludeFolders } from '../../utils/action-center';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -273,6 +274,29 @@ export class DotContentDriveToolbarComponent {
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
+
+    /**
+     * The "Action Center" button is offered from the first selected contentlet, *alongside* the flat
+     * action buttons rather than instead of them. The flat buttons cover the common per-item
+     * actions; the dialog adds what they cannot express — per-action eligibility counts and the
+     * workflow actions grouped by scheme — and that is just as useful for one item as for many.
+     *
+     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
+     * folders, so a folder-only selection offers no Action Center.
+     */
+    readonly $displayActionCenter = computed(
+        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
+    );
+
+    /**
+     * Opens the Action Center dialog for the current selection.
+     */
+    protected onOpenActionCenter(): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.ACTION_CENTER,
+            header: this.#dotMessageService.get('content-drive.action-center.header')
+        });
+    }
 
     readonly $togglerStyles = computed(() => ({
         opacity: this.$treeExpanded() ? '0' : '1',

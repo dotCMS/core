@@ -15,7 +15,13 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    readJson,
+    removeKey,
+    withPersistedQuery,
+    writeJson
+} from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
@@ -25,11 +31,8 @@ import {
     HISTORY_STORAGE_KEY,
     isValidHistory,
     isValidRatio,
-    readJson,
-    removeKey,
     SPLITTER_STORAGE_KEY,
-    WRAP_STORAGE_KEY,
-    writeJson
+    WRAP_STORAGE_KEY
 } from '../../dot-velocity-playground.utils';
 import {
     DotVelocityPlaygroundResponse,
@@ -66,6 +69,7 @@ const initialState: VelocityPlaygroundState = {
 
 export const DotVelocityPlaygroundStore = signalStore(
     withState<VelocityPlaygroundState>(initialState),
+    withPersistedQuery({ portletKey: 'velocity-playground', field: 'code' }),
     withComputed((store) => ({
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasOutput: computed(
@@ -174,8 +178,7 @@ export const DotVelocityPlaygroundStore = signalStore(
             patchState(store, {
                 history: sanitizedHistory,
                 splitterRatio: sanitizedRatio,
-                wrapCode: typeof wrapCode === 'boolean' ? wrapCode : true,
-                code: sanitizedHistory[0] ?? ''
+                wrapCode: typeof wrapCode === 'boolean' ? wrapCode : true
             });
         }
     })

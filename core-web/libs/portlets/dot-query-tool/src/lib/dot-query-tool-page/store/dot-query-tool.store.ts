@@ -18,7 +18,8 @@ import { catchError, switchMap, take } from 'rxjs/operators';
 import {
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    withPersistedQuery
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
@@ -71,6 +72,7 @@ const initialState: QueryToolState = {
 
 export const DotQueryToolStore = signalStore(
     withState<QueryToolState>(initialState),
+    withPersistedQuery({ portletKey: 'query-tool', field: 'query' }),
     withComputed((store) => ({
         contentlets: computed<DotCMSContentlet[]>(
             () => store.response()?.jsonObjectView.contentlets ?? []

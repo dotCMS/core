@@ -35,7 +35,7 @@ public class SerializationHelperTest {
             Logger.debug(SerializationHelperTest.class,"Loaded src/main/webapp/WEB-INF/portlet.xml:"+portletList.toString());
             Logger.info(SerializationHelperTest.class, "Loaded portlet.xml: found: " + portletList.getPortlets().size() + " portlets");
             assertNotNull("Deserialized PortletList should not be null", portletList);
-            assertEquals("PortletList should contain exactly 55 portlets", 55, portletList.getPortlets().size());
+            assertEquals("PortletList should contain exactly 56 portlets", 56, portletList.getPortlets().size());
 
             // Check for specific portlets
             assertTrue("PortletList should contain 'categories' portlet",
@@ -62,6 +62,10 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue")));
             assertTrue("PortletList should contain 'publishing-queue-beta' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue-beta")));
+            assertTrue("PortletList should contain 'users' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users")));
+            assertTrue("PortletList should contain 'users-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users-beta")));
 
             // Check the Angular categories portlet
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()
