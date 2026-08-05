@@ -3,7 +3,7 @@
 
 Auto-generated inventory of dotCMS skills. **Check here before creating a new skill** — if something close exists, extend it or mark yours `related`, don't fork. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-_7 first-party · 6 external (symlinked)._
+_19 first-party · 6 external (symlinked)._
 
 ## First-party skills (`dot-*`)
 
@@ -16,6 +16,18 @@ _7 first-party · 6 external (symlinked)._
 | `dot-sdk-analytics` | active | @dotcms/falcon | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
 | `dot-ui-vtl-migration` | active | @dotcms/falcon | Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. Use this skill whenever… | — |
 | `skill-doctor` | _legacy_ | — | Use when a repo skill fails, produces errors, gives wrong instructions, or references stale information. Also use when a command from a skill returns "not foun… | — |
+| `speckit-adr-context` | _legacy_ | — | Consult dotCMS/platform-adrs for Architecture Decision Records relevant to the current feature/fix, so planning treats existing decisions as binding input. Run… | — |
+| `speckit-analyze` | _legacy_ | — | Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation. | — |
+| `speckit-checklist` | _legacy_ | — | Generate a custom checklist for the current feature based on user requirements. | — |
+| `speckit-clarify` | _legacy_ | — | Identify underspecified areas in the current feature spec by asking up to 5 highly targeted clarification questions and encoding answers back into the spec. | — |
+| `speckit-constitution` | _legacy_ | — | Create or update the project constitution from interactive or provided principle inputs, ensuring all dependent templates stay in sync. | — |
+| `speckit-converge` | _legacy_ | — | Assess the current codebase against the feature's spec, plan, and tasks, then append any remaining unbuilt work as new tasks to tasks.md so implement can compl… | — |
+| `speckit-implement` | _legacy_ | — | Execute the implementation plan by processing and executing all tasks defined in tasks.md | — |
+| `speckit-plan` | _legacy_ | — | Execute the implementation planning workflow using the plan template to generate design artifacts. | — |
+| `speckit-specify` | _legacy_ | — | Create or update the feature specification from a natural language feature description. | — |
+| `speckit-specify-fix` | _legacy_ | — | Create an issue/bug-resolution specification (defect-framed) from a bug report or issue description. dotCMS variant of /speckit-specify for fixes. | — |
+| `speckit-tasks` | _legacy_ | — | Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts. | — |
+| `speckit-taskstoissues` | _legacy_ | — | Convert existing tasks into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts. | — |
 
 ## External skills (symlinked, not governed here)
 

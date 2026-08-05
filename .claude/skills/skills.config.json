@@ -4,7 +4,19 @@
   "validStatuses": ["experimental", "active", "superseded", "deprecated"],
   "requiredFields": ["name", "description", "owner", "status"],
   "grandfathered": [
-    "skill-doctor"
+    "skill-doctor",
+    "speckit-adr-context",
+    "speckit-analyze",
+    "speckit-checklist",
+    "speckit-clarify",
+    "speckit-constitution",
+    "speckit-converge",
+    "speckit-implement",
+    "speckit-plan",
+    "speckit-specify",
+    "speckit-specify-fix",
+    "speckit-tasks",
+    "speckit-taskstoissues"
   ],
-  "_note": "Single source of truth for skill governance. 'grandfathered' skills are exempt from naming + owner/status checks (their lint issues are warnings). skill-doctor is a vendored/generic skill, intentionally not dot- prefixed. See CONTRIBUTING.md."
+  "_note": "Single source of truth for skill governance. 'grandfathered' skills are exempt from naming + owner/status checks (their lint issues are warnings). skill-doctor and the speckit-* skills (GitHub Spec-Kit, installed by #36416) are vendored third-party skills, intentionally not dot- prefixed. See CONTRIBUTING.md."
 }
