@@ -212,6 +212,55 @@ public class HtmlMinifierTest {
     }
 
     /**
+     * Given: markup where a comment token is only a comment because of the whitespace in it, or
+     * only *not* a comment because of it.
+     * Expected: the whitespace survives, so minification can never forge or destroy a
+     * {@code <!--} / {@code -->} boundary. Whitespace between two pieces of text is always
+     * collapsed to a single space rather than removed, which is what guarantees this.
+     */
+    @Test
+    public void test_minify_does_not_forge_comment_boundaries() {
+        // '< !--' is not a comment opener. Joining the two would turn the rest into a comment and
+        // silently delete it.
+        assertEquals("<div>< !-- not a comment --></div>",
+                HtmlMinifier.minify("<div>< !-- not a comment --></div>"));
+        assertEquals("<div><! -- x --></div>", HtmlMinifier.minify("<div><! -- x --></div>"));
+        // Joining '--' and '>' would forge a terminator.
+        assertEquals("<div>a -- > b</div>", HtmlMinifier.minify("<div>a -- > b</div>"));
+    }
+
+    /**
+     * Given: tags that appear inside a comment rather than as real markup.
+     * Expected: they are never treated as markup. Comments are resolved before preserved-tag
+     * matching, so a commented-out {@code <pre>} does not start a preserved region, and a
+     * commented-out {@code </body>} is removed rather than left for a downstream
+     * {@code lastIndexOf("</body>")} to match on.
+     */
+    @Test
+    public void test_minify_ignores_tags_inside_comments() {
+        assertEquals("<div><p>real</p></div>",
+                HtmlMinifier.minify("<div>\n  <!-- <pre>x\n  y</pre> -->\n  <p>real</p>\n</div>"));
+        assertEquals("<div><p>real</p></div>",
+                HtmlMinifier.minify("<div>\n  <!-- <script>var a=1</script> -->\n  <p>real</p>\n</div>"));
+        assertEquals("<body><p>x</p></body></html>",
+                HtmlMinifier.minify("<body>\n  <p>x</p>\n</body>\n<!-- </body> -->\n</html>"));
+        // A comment inside a script is content, not a comment, so it is left alone.
+        assertEquals("<script>\n// <!-- legacy hide\nvar a=1;\n// -->\n</script>",
+                HtmlMinifier.minify("<script>\n// <!-- legacy hide\nvar a=1;\n// -->\n</script>"));
+    }
+
+    /**
+     * Given: a retained downlevel conditional comment with indented content.
+     * Expected: it is copied verbatim. Its content is markup for the browsers that read it, and the
+     * whitespace in the {@code <!--[if ...]>} token itself is load bearing.
+     */
+    @Test
+    public void test_minify_leaves_conditional_comment_content_verbatim() {
+        assertEquals("<!--[if IE]>\n  <link href=\"ie.css\">\n<![endif]-->",
+                HtmlMinifier.minify("<!--[if IE]>\n  <link href=\"ie.css\">\n<![endif]-->"));
+    }
+
+    /**
      * Given: null or empty input.
      * Expected: it is returned untouched rather than throwing.
      */
