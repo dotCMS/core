@@ -69,8 +69,6 @@ export class DotCustomEventHandlerService {
             'generate-secure-password': this.generateSecurePassword.bind(this),
             'compare-contentlet': this.openCompareDialog.bind(this),
             'license-changed': this.updateLicense.bind(this),
-
-            // THIS NEEDS TESTING
             'edit-host': this.editContentletLegacy.bind(this),
             'create-host': this.createContentletLegacy.bind(this)
         };
