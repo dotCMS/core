@@ -1,6 +1,6 @@
 ---
 name: dot-release-backport-lts
-owner: "@dotcms/platform"
+owner: "@dotcms/maintenance-engineers"
 status: active
 description: Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying pending LTS patches to the release branch.
 ---
