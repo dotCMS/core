@@ -107,8 +107,9 @@ export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
 ): DotCMSComposedPageResponse<T> | undefined => {
     const pageData = pageResponse && 'pageAsset' in pageResponse ? pageResponse : undefined;
 
-    const [updatedPageResponse, setUpdatedPageResponse] =
-        useState<DotCMSComposedPageResponse<T> | undefined>(pageData);
+    const [updatedPageResponse, setUpdatedPageResponse] = useState<
+        DotCMSComposedPageResponse<T> | undefined
+    >(pageData);
 
     useEffect(() => {
         if (!getUVEState()) {
