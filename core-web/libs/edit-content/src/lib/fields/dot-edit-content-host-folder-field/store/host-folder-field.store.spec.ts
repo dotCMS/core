@@ -60,8 +60,8 @@ function createSiteList(count: number, prefix = 'site'): TreeNodeItem[] {
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder'
+        expandedIcon: 'pi pi-globe',
+        collapsedIcon: 'pi pi-globe'
     }));
 }
 
@@ -1549,8 +1549,8 @@ describe('HostFolderFiledStore', () => {
             key: label,
             label,
             data: { id: label, hostname: label, path: '', type: 'site' },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder'
+            expandedIcon: 'pi pi-globe',
+            collapsedIcon: 'pi pi-globe'
         });
 
         it('should be false when total site count equals SITE_SEARCH_THRESHOLD', fakeAsync(() => {
