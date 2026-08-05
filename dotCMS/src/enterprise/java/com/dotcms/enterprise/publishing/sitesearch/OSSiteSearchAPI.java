@@ -166,6 +166,113 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     }
 
     /**
+     * Single-engine leaf: whether this OpenSearch cluster holds the index. The physical OS index is
+     * {@code .os}-tagged, so the tag is (re)applied at this physical boundary before the existence
+     * check — matching {@link #physicalName(String)} / create / search. The router aggregates this
+     * across all write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(osTagged(indexName));
+    }
+
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this OpenSearch {@code .os} twin. Sends a
+     * {@code size:0} match-all with {@code track_total_hits:true} so the total is not capped at 10,000
+     * like a default search, which would hide content drift above 10k docs in the mirror parity gate
+     * (issue #36360). Returns {@code 0} when the twin is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!existsOnAllWriteEngines(indexName)) {
+            return 0L;
+        }
+        try {
+            final JSONObject body = new JSONObject();
+            body.put("size", 0);
+            body.put("track_total_hits", true);
+            body.put("query", new JSONObject().put("match_all", new JSONObject()));
+            final ContentSearchResponse response = rawSearch(physicalName(indexName), body);
+            return response.hits().getTotalHits().value();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for OS index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
+    }
+
+    /**
+     * OpenSearch adapter for the vendor-neutral alias handle: <em>re-tag before lookup, strip on
+     * return</em>.
+     *
+     * <p><strong>Why the round-trip.</strong> {@link #listIndices()} exposes logical
+     * ({@code .os}-stripped) names because that is the handle the rest of the site-search subsystem
+     * works in. But the physical OpenSearch indices are {@code .os}-tagged, so the underlying
+     * {@code IndexAPI} lookup only finds them when the names carry {@code .os}. This method therefore
+     * re-applies the tag ({@code osTagged}) to the query, then strips it from the resolved index
+     * values so the returned map stays purely logical — no {@code .os} leaks past the site-search
+     * boundary, and the values line up with {@link #listIndices()} for the caller. This mirrors the
+     * re-tag-before-lookup pattern in {@code resolveIndexOrAlias}; skipping the re-tag is exactly the
+     * Phase&nbsp;2/3 miss fixed in issue #36360. Alias keys are already tag-free (aliases are never
+     * {@code .os}-tagged), so only the index values are stripped.</p>
+     *
+     * <p><strong>Multi-index guard.</strong> The reverse (index&rarr;alias &rarr; alias&rarr;index) is
+     * built here from the raw {@code getIndexAlias} map rather than delegated to
+     * {@code getAliasToIndexMap}, so a stale/duplicate alias that resolves to two OpenSearch indices
+     * is <em>detected</em> instead of silently dropped last-wins. That state should not arise once
+     * {@code createAlias}'s existence check is honored (issue #36360); if it does, a {@code WARN} is
+     * logged and the newest index (highest {@code sitesearch_<timestamp>}) is kept deterministically
+     * so the result never depends on map-iteration order.</p>
+     */
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        // Query the .os-tagged physical names; getIndexAlias returns index(.os) -> alias. The pure
+        // reverse + multi-index detection lives in reverseAliasToIndexMap so it is unit-testable.
+        return reverseAliasToIndexMap(indexApi.getIndexAlias(
+                listIndices().stream().map(OSSiteSearchAPI::osTagged).collect(Collectors.toList())));
+    }
+
+    /**
+     * Reverses a raw {@code index(.os) -> alias} map into a logical {@code alias -> index} map:
+     * strips the {@code .os} tag off the index values and defensively resolves multi-index aliases.
+     * Package-private and {@code static} (no cluster state) so it can be unit-tested directly.
+     *
+     * <p>If two distinct OpenSearch indices share one alias — a stale/duplicate alias that should not
+     * exist once {@code createAlias}'s existence check is honored (issue #36360) — a {@code WARN} is
+     * logged and the <strong>newest</strong> index is kept ({@code sitesearch_<timestamp>} sorts
+     * chronologically), so the result is deterministic and never depends on map-iteration order.</p>
+     *
+     * @param indexToAlias raw physical-index-name → alias-name map (as returned by
+     *                     {@code IndexAPI#getIndexAlias}); index keys may carry the {@code .os} tag
+     * @return logical alias → index map (index values stripped of {@code .os})
+     */
+    static Map<String, String> reverseAliasToIndexMap(final Map<String, String> indexToAlias) {
+        final Map<String, String> aliasToIndex = new HashMap<>();
+        for (final Map.Entry<String, String> entry : indexToAlias.entrySet()) {
+            final String logicalIndex = IndexTag.strip(entry.getKey()); // .os -> logical
+            final String alias = entry.getValue();                      // aliases carry no .os
+            final String previous = aliasToIndex.put(alias, logicalIndex);
+            if (previous != null && !previous.equals(logicalIndex)) {
+                // Two distinct OS indices share one alias — keep the newest deterministically
+                // (chronological name order) instead of a non-deterministic last-wins, and surface it.
+                final String kept = previous.compareTo(logicalIndex) >= 0 ? previous : logicalIndex;
+                Logger.warn(OSSiteSearchAPI.class, String.format(
+                        "Multi-index Site Search alias '%s' resolves to multiple OpenSearch indices "
+                                + "('%s' and '%s'); keeping '%s'. Reconcile the OS aliases (issue #36360).",
+                        alias, previous, logicalIndex, kept));
+                aliasToIndex.put(alias, kept);
+            }
+        }
+        return aliasToIndex;
+    }
+
+    /**
      * Moves the active (default) site-search index to {@code indexPosition} of the list, mirroring
      * {@link ESSiteSearchAPI} but resolving the default from {@link VersionedIndicesAPI}.
      */

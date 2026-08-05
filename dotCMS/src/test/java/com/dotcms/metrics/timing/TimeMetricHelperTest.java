@@ -4,14 +4,23 @@ import com.dotcms.UnitTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import static graphql.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the {@link TimeMetricHelper} class.
  *
+ * <p>The duration is stubbed rather than produced by a {@code Thread.sleep()}. Asserting on a
+ * slept-through duration made these tests depend on sleep precision: the default {@code %.4f} mask
+ * only tolerated a ~10ms overshoot, which fails on any loaded machine.</p>
+ *
  * @author vico
  */
 public class TimeMetricHelperTest extends UnitTestBase {
+
+    private static final long DURATION_MS = 1500L;
+    private static final float DURATION_SECONDS = 1.5f;
 
     private TimeMetricHelper timeMetricHelper;
 
@@ -24,24 +33,24 @@ public class TimeMetricHelperTest extends UnitTestBase {
      * Test the {@link TimeMetricHelper#formatDuration(TimeMetric, String)} method with a custom mask.
      */
     @Test
-    public void testFormatSecondsWithCustomMask() throws InterruptedException {
-        final TimeMetric timeMetric = TimeMetric.mark("some-time-metric");
-        Thread.sleep(100);
-        timeMetric.stop();
-        final String formatted = timeMetricHelper.formatDuration(timeMetric, "%.2f");
-        assertTrue(formatted.startsWith("0.1"));
+    public void testFormatSecondsWithCustomMask() {
+        final TimeMetric timeMetric = mock(TimeMetric.class);
+        when(timeMetric.getDuration()).thenReturn(DURATION_MS);
+
+        assertEquals(String.format("%.2f", DURATION_SECONDS),
+                timeMetricHelper.formatDuration(timeMetric, "%.2f"));
     }
 
     /**
      * Test the {@link TimeMetricHelper#formatDuration(TimeMetric)} method with the default mask.
      */
     @Test
-    public void testFormatSecondsWithDefaultMask() throws InterruptedException {
-        final TimeMetric timeMetric = TimeMetric.mark("some-time-metric");
-        Thread.sleep(100);
-        timeMetric.stop();
-        final String formatted = timeMetricHelper.formatDuration(timeMetric);
-        assertTrue(formatted.startsWith("0.10"));
+    public void testFormatSecondsWithDefaultMask() {
+        final TimeMetric timeMetric = mock(TimeMetric.class);
+        when(timeMetric.getDuration()).thenReturn(DURATION_MS);
+
+        assertEquals(String.format("%.4f", DURATION_SECONDS),
+                timeMetricHelper.formatDuration(timeMetric));
     }
 
 }

@@ -4,7 +4,6 @@ import { isFolder } from './functions';
 
 export const WORKFLOW_ACTION_ID = {
     NEW: 'NEW',
-    SAVE_AS_DRAFT: 'EDIT',
     GOT_TO_EDIT_CONTENTLET: 'GOT_TO_EDIT_CONTENTLET',
     GOT_TO_EDIT_PAGE: 'GOT_TO_EDIT_PAGE',
     PUBLISH: 'PUBLISH',
@@ -56,12 +55,6 @@ export interface ContentDriveWorkflowAction {
     name: string;
     id: WORKFLOW_ACTION_ID;
     showWhen?: ActionShowConditions;
-    /**
-     * Optional confirmation message key to display before executing the action.
-     * When present, the user will be prompted to confirm before the action is executed.
-     * The value should be a message key that will be translated via DotMessageService.
-     */
-    confirmationMessage?: string;
 }
 
 const GOT_TO_EDIT_CONTENTLET_ACTION: ContentDriveWorkflowAction = {
@@ -86,64 +79,14 @@ const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
-const SAVE_AS_DRAFT_ACTION: ContentDriveWorkflowAction = {
-    name: 'content.drive.worflow.action.save-draft',
-    id: WORKFLOW_ACTION_ID.SAVE_AS_DRAFT,
-    showWhen: {
-        noneArchived: true,
-        noneFolder: true
-    }
-};
-
-const PUBLISH_ACTION: ContentDriveWorkflowAction = {
-    name: 'Default-Action-Publish',
-    id: WORKFLOW_ACTION_ID.PUBLISH,
-    showWhen: {
-        noneArchived: true,
-        noneLive: true,
-        noneFolder: true
-    }
-};
-
-const UNPUBLISH_ACTION: ContentDriveWorkflowAction = {
-    name: 'Default-Action-Unpublish',
-    id: WORKFLOW_ACTION_ID.UNPUBLISH,
-    // Unpublish: showOn: ["LISTING", "LOCKED", "PUBLISHED", "UNLOCKED"]
-    showWhen: {
-        noneArchived: true,
-        allLive: true,
-        noneFolder: true
-    }
-};
-
-const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Default-Action-Archive',
-    id: WORKFLOW_ACTION_ID.ARCHIVE,
-    // Archive: showOn: ["LISTING", "ARCHIVED", "UNPUBLISHED", "UNLOCKED"]
-    showWhen: {
-        noneArchived: true,
-        noneFolder: true
-    }
-};
-
-const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Default-Action-Unarchive',
-    id: WORKFLOW_ACTION_ID.UNARCHIVE,
-    showWhen: {
-        allArchived: true,
-        noneFolder: true
-    }
-};
-
-const DELETE_ACTION: ContentDriveWorkflowAction = {
-    name: 'Default-Action-Delete',
-    id: WORKFLOW_ACTION_ID.DELETE,
-    showWhen: {
-        allArchived: true,
-        noneFolder: true
-    },
-    confirmationMessage: 'content.drive.worflow.action.delete.confirm'
-};
+/*
+ * Publish, Unpublish, Archive, Unarchive and Delete deliberately no longer live here. They are
+ * offered by the Workflow Center dialog's Quick Actions, which shows how many of the selected items
+ * each one applies to — something a flat toolbar button cannot express. Keeping them in both places
+ * meant the same action appeared twice, reached by two different code paths.
+ *
+ * The toolbar keeps the actions the dialog does not cover: the two Edit entries, Rename and Download.
+ */
 
 const RENAME_ACTION: ContentDriveWorkflowAction = {
     name: 'content.drive.worflow.action.rename',
@@ -165,21 +108,19 @@ const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
     }
 };
 
+/**
+ * Actions shown as flat buttons in the toolbar when a selection is active.
+ *
+ * The publication-lifecycle and removal actions are intentionally absent — the Workflow Center
+ * dialog owns those now. See the note above `RENAME_ACTION`.
+ */
 export const DEFAULT_WORKFLOW_ACTIONS = [
     // Edit actions (most frequent)
     GOT_TO_EDIT_CONTENTLET_ACTION,
     GOT_TO_EDIT_PAGE_ACTION,
     RENAME_ACTION,
-    // Content state (publication lifecycle)
-    SAVE_AS_DRAFT_ACTION,
-    PUBLISH_ACTION,
-    UNPUBLISH_ACTION,
     // Asset operations
-    DOWNLOAD_ACTION,
-    // Removal actions (increasing severity)
-    ARCHIVE_ACTION,
-    UNARCHIVE_ACTION,
-    DELETE_ACTION
+    DOWNLOAD_ACTION
 ];
 
 /**

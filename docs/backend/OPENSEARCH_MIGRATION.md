@@ -246,6 +246,162 @@ contradiction of the rule above — the strip is applied to a throwaway local us
 number; the name that is returned or stored keeps its tag. Rule of thumb: **strip to parse a
 value out of a name, never to hand a name back.**
 
+#### Exception: Site Search uses a vendor-neutral logical handle
+
+The rule above ("the tag is part of the identity") describes the **content-index** model, where the
+ES working/live index and its OS counterpart are tracked as *distinct* indices (separate slots in
+the `indicies` table) and the tag is their only discriminator. **Site Search deliberately uses the
+opposite model** and is the one sanctioned exception.
+
+A Site Search index is conceptually **one logical index mirrored across both engines**, not two
+independent indices. The crawl produces a single bundle that is replicated; a single `putToIndex` /
+`deleteFromIndex` / `search` call fans out to every write provider through the phase router. To make
+that fan-out possible, the `SiteSearchAPI` surface is expressed in **logical (untagged) names** — a
+vendor-neutral *handle* — and each engine adapter translates that handle to its own physical name at
+the boundary:
+
+- `ESSiteSearchAPI` uses the handle as-is (ES indices carry no `.os`).
+- `OSSiteSearchAPI` applies `.os` internally via `physicalName()`
+  (`getNameWithClusterIDPrefix(IndexTag.OS.tag(name))`) for **every** physical operation — create,
+  mapping, put, get, delete, search, alias.
+
+Consequences:
+
+- `SiteSearchAPI.listIndices()` **strips** `.os` and **deduplicates** the ES/OS twin into a single
+  logical row (issue #36672). This is why it — unlike the content-index provider methods described
+  above — does *not* return tagged names. A caller cannot tell ES from OS from this list, and does
+  not need to: it hands the logical name back to the API and the router/adapter re-targets per
+  engine.
+- If the handle carried the tag, the same operation could not fan out to ES (which has no `.os`);
+  the OS adapters apply `.os` unconditionally and therefore **expect an untagged handle as input**.
+
+**Load-bearing discipline (the recurring bug class).** Because `.os` is applied only at the OS
+adapter, every Site Search index/alias operation MUST go through `SiteSearchAPI`, never through the
+content-index router (`APILocator.getESIndexAPI()`) with a logical Site Search name. The content
+router builds the OS physical name **without** `.os`, so in Phases 2/3 (OS reads) it queries a name
+that does not exist and silently misses (lenient `ignoreUnavailable` → empty result, no error). This
+exact leak broke alias resolution (`$sitesearch.search(alias,…)`, the portlet Alias column, the
+crawl's incremental/full decision, deactivate-by-alias) and the index-stats join
+(`getIndicesStats()` / `getClusterHealth()` key OS entries by `.os`, so a logical-name lookup found
+nothing → blank Count/Shards/Replicas/Size/Health). Both were fixed by routing the callers through
+`SiteSearchAPI.getAliasToIndexMap()` and by an `.os`-fallback lookup in the portlet (issue #36360).
+The abstraction is correct but **enforced by convention** — a call site that reaches for the content
+router with an untagged Site Search name reintroduces the bug.
+
+**Display visibility.** The logical-name surface means the Site Search portlet shows untagged names
+in every phase, whereas the content-index maintenance page reveals `.os` to the migration QA role
+via `MigrationIndexVisibility`. Aligning Site Search's display with that role-gated policy — so QA
+can preview `.os` (and the ES/OS twin as distinct rows) while normal users keep the clean logical
+view — is the one place the two UIs should converge; it does **not** require changing the internal
+handle model, only the display sink.
+
+#### Site Search mirror reconciliation (write path) — self-heal on crawl
+
+The logical-handle model above makes *reads* correct, but a Site Search index can still end up
+physically **out of sync** between engines: the ES index and its OS twin may hold different content,
+or the twin may be missing entirely. This happens through paths that skip the happy path (a full
+crawl in a dual-write phase, which creates both twins and re-points the alias on both):
+
+- **Forward-only phase change** — moving Phase 0→1/2 does not retroactively build OS twins of
+  indices that already existed in ES.
+- **Phase-0 crawl** builds an ES-only index; its OS twin never existed.
+- **Incremental crawl** writes documents *in place* and never calls `createSiteSearchIndex`. Two ways
+  it desyncs: (a) if the OS twin is **missing**, the raw `putToIndex` lets OpenSearch **auto-create**
+  it with a *dynamic* mapping (`keyword`→`text`, breaking aggregations) holding only the incremental
+  delta — a partial, wrongly-mapped twin; (b) if the twins already **drifted** (both exist, different
+  content — see the next mode), an incremental only layers the new delta on both and never reconciles
+  the pre-existing difference.
+- **Fire-and-forget shadow create/write** — a failed OS `createSiteSearchIndex` *or* `putToIndex` in a
+  dual-write phase is swallowed at `WARN` (shadow policy). This is the main source of **content
+  drift**: the OS twin exists but silently holds fewer documents than ES.
+- **Phase-scoped delete** — a delete that fans out only to the current phase's write providers leaves
+  a twin on the *other* engine as an orphan after a rollback.
+
+**The fix is self-heal on crawl, not a big-bang rebuild on phase change** (the latter is expensive and
+fragile). Two mechanisms (issue #36360):
+
+1. **Incremental-crawl gate — existence *and* document-count parity.**
+   `SiteSearchAPI.existsOnAllWriteEngines(name)` reports whether the index exists on *every* current
+   write engine; `writeMirrorsInSync(name)` adds a **document-count comparison** across those engines
+   (each leaf reports its own physical index's count — ES the plain name, OS the `.os` twin — via
+   `SiteSearchAPI.documentCount`). That count is an **exact** total (a dedicated `_count` request on ES,
+   a `size:0` match-all with `track_total_hits:true` on OS) — *not* a plain search total, which the ES
+   7.x / OpenSearch clients cap at 10,000, so two large mirrors that had genuinely drifted (e.g. 15,000
+   vs 12,000) would both read `10000` and wrongly compare equal. A count that fails on any engine
+   (`-1`) is treated as **out of sync** (fail-safe rebuild), so a both-failed `0 == 0` is never mistaken
+   for "in sync". `SiteSearchJobImpl` gates the incremental crawl on `writeMirrorsInSync`: a missing twin
+   **or** a count mismatch demotes the crawl to a **full rebuild**, which recreates identical copies
+   (correct mapping) on every engine and re-points the alias. This heals both desync kinds — the
+   missing/partial twin *and* content drift from a swallowed shadow write — on the next crawl, and the
+   dynamic-mapping auto-create path can no longer be reached through the gated crawl. (Count parity is
+   a sound in-sync test here because Site Search is single-writer with immediate refresh and no
+   concurrent crawl on the same index, so the copies are quiescent at crawl-planning time.)
+2. **Delete sweeps both engines.** `SiteSearchAPIImpl.deleteIndex` deletes on the primary (current
+   read provider) authoritatively and best-effort on the *other* engine, so a rollback leftover is
+   swept even in a single-provider phase (0/3). The other engine is tolerant: an unreachable or
+   decommissioned engine logs a `WARN` and never fails the delete.
+
+**Residual limitation — the no-crawl window.** Because reconciliation is *on crawl*, the gap is only
+closed when a crawl actually runs in a dual-write phase (1 or 2). In the window before that:
+
+- In **Phase 2** a *missing* OS twin is caught by the read fallback (OS errors → read from ES), so
+  reads stay correct; a *partial-on-create* twin can no longer be created (the gate rebuilds instead),
+  and *content drift* is healed on the next crawl by the count-parity gate — but a drifted twin read
+  **before** that next crawl still returns incomplete results silently (OS answers with no error, so
+  no fallback).
+- **Phase 3 is the cliff:** ES is decommissioned, so there is no fallback. Reaching Phase 3 with a
+  twin that was never rebuilt, and never crawling, is a hard gap.
+
+**Operational rule (pairs with the code):** before promoting the phase — especially into Phase 3 —
+ensure every Site Search index has been crawled at least once so its OS counterpart exists and is in
+sync. The migration-readiness endpoint below is what tells the operator *which* indices still need
+that crawl, before they change the phase.
+
+#### Migration-readiness endpoint (pre-phase-change advisory)
+
+`GET /api/v1/index/migration/readiness` is an internal, read-only report a support technician runs
+**before changing the migration phase** to see whether it is safe and, if not, what to do. It never
+mutates anything — the fix is always the operator re-running the crawl / reindex, which self-heals
+through the write-path gate above.
+
+- **Not public.** The resource is `@Hidden` (absent from the OpenAPI / API-playground schema) and
+  gated to CMS administrators who **also** hold the migration support role
+  (`OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY`, default `os_migration_qa`) — a plain admin without the
+  role is not enough. Anyone else gets a 403, so regular users never learn a migration is running.
+- **What it reports.** The current phase with its read/write engines and a `dualWrite` flag; an
+  overall verdict — `safeToAdvance` (toward OpenSearch-only) and `safeToRollback` (downgrade) with an
+  `outOfSyncCount`, a human `summary`, and per-index `blockers`; and the per-index ES↔OS mirror diff
+  for **both** mirrored families — the versioned content indices (`working`/`live`) and the Site
+  Search indices. `content` is a keyed object by slot (`WORKING` / `LIVE` — a fixed pair);
+  `siteSearch` is a list (an open set). Each entry carries `{indexName, es:{exists,docCount,physicalName},
+  os:{exists,docCount,physicalName}, driftPercent, verdict, recommendation}` — `physicalName` is the
+  full name as stored on each server (cluster-prefixed; `.os`-tagged on OpenSearch), and
+  `driftPercent` is the signed % the OpenSearch (mirror) count deviates from the Elasticsearch
+  (original) — negative = behind, positive = ahead, `null` when a count is unknown — with verdict `IN_SYNC` /
+  `MISSING_COUNTERPART` / `COUNT_DRIFT`. The top level also carries the `clusterId` embedded in every
+  physical name. The response is the model itself (no `ResponseEntityView` envelope).
+- **Stateless, from live counts.** Every field is derived at request time. Counts are **exact** — the
+  Site Search half uses `SiteSearchAPI.documentCount` and the content half reads each engine leaf's
+  `getIndicesStats()` (index `_stats` `primaries.docs.count`), never a search total (which the ES/OS
+  clients cap at 10,000 and would hide drift on large indices). Both reconcilers query the two engine
+  leaves directly, not the phase-aware router, so the report shows both sides in every phase.
+- **`safeToRollback` needs no history.** A downgrade routes reads back to Elasticsearch, so it is
+  unsafe when any index's ES copy is behind its OpenSearch counterpart (`esDocCount < osDocCount`, or
+  the ES copy missing) — that delta, typically content written while OpenSearch served reads, would be
+  silently absent after the downgrade until a full reindex. That is derivable from the same snapshot,
+  so no per-phase state is persisted. An **unmeasurable** count on either engine (reported as `-1`)
+  also makes it unsafe: it is never compared numerically, because `100 < -1` would otherwise read as
+  a green while OpenSearch may hold more documents.
+- **`outOfSyncCount` is phase-aware.** In Phase 0 the OpenSearch counterparts have not been built yet
+  — they are created during dual-write — so a missing OpenSearch copy is the expected state and is not
+  counted; otherwise the count would contradict the "nothing to reconcile yet" summary next to it. Any
+  *other* mismatch (an OpenSearch index with no ES source, a drift between two existing copies) is
+  still unexpected in Phase 0 and stays counted and named in the summary.
+
+Because this endpoint is the source of truth for migration/QA, the index portlets no longer reveal
+`.os` indices by role: `MigrationIndexVisibility` is now purely phase-based (hidden in Phases 0/1/2,
+shown in Phase 3, for everyone). The role key is retained only to gate this endpoint.
+
 #### Tag manipulation is the sole responsibility of `IndexTag`
 
 All read/write of the vendor marker on an index name MUST go through the `IndexTag` enum.
@@ -383,6 +539,41 @@ single-index cluster.
   expensive on very large customers), not as a code-level exclusion.
 - Safety guards (e.g. the active-index delete guard, which blocks deleting the live/working index)
   exist to **reproduce** the single-index UX, not to protect OS from the operator.
+
+### Index pointer ops (`activateIndex` / `deactivateIndex`) are name-driven, not existence-checked
+
+`activateIndex` and `deactivateIndex` update the **pointer stores** (`indicies` for ES,
+`VersionedIndices` for OS) by index **name** — they deliberately do **not** verify that the named
+index exists in the cluster. This is load-bearing for the mirror model: during **migration catchup**
+the ES and OS names diverge (see "Index name divergence between providers") and the OS physical index
+may not be built yet, so activation mirrors the pointer **optimistically** and lets catchup fill in
+the OS side. The contract is asserted in `ContentletIndexAPIImplMigrationIntegrationTest` — *"the OS
+DB pointer reflects the name passed in, regardless of which index the OS cluster actually holds"* and
+*"deactivateIndex never validates cluster existence … a pointer-store update driven by the name
+pattern, not by cluster state"*.
+
+**Do not add a hard existence guard to `activateIndex`.** The failure it would target is real:
+reactivating an **old, pre-migration backup index** (kept as a rollback point) that never received an
+OS copy leaves OS pointing at a non-existent index → in Phase 3 (no ES fallback) search returns empty
+= "content lost". But at activation time the dangerous case is **indistinguishable** from the
+legitimate one:
+
+- ✅ the OS copy will exist in a moment — normal dual-write **catchup** (the index is being built), vs.
+- ❌ the OS copy will never exist — an old backup that nothing is migrating.
+
+Both are "no OS copy right now". A point-in-time `indexExists` check cannot tell "not built **yet**"
+from "**never** built", so a hard guard blocks the legitimate catchup too and breaks normal migration
+operation. This was tried and reverted (PR #36880): the guard failed 6 integration tests in the
+OpenSearch Upgrade Suite that assert exactly this catchup behavior — the tests are the design
+contract, not stale coverage.
+
+**The intended mitigation is the migration-readiness endpoint, not a guard on activate.** An active
+index with no OS counterpart is a *state to report*, not a per-operation precondition to enforce. The
+readiness endpoint (see "Migration-readiness endpoint (pre-phase-change advisory)") detects a
+`MISSING_COUNTERPART` for the active working/live and marks the phase **not safe to advance** —
+gating the Phase-3 promotion, which is where the real damage would occur. Reactivating an un-mirrored
+backup is recovered the normal way: turn the migration off (set the phase to 0) to roll back freely,
+or run a full reindex to rebuild the OS side.
 
 ## Design Rules
 

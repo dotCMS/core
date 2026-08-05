@@ -1,12 +1,6 @@
 package com.dotcms.content.index;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,20 +15,20 @@ import java.util.stream.Collectors;
  * (optimize-all, flush-all, {@code indexExists} validation, bulk fix). Filtering inside those
  * methods would silently skip OS indices for those operations in phases&nbsp;1/2 — a behavioural
  * change disguised as a UI tweak. The complete, phase-correct set must stay intact at the API;
- * only the two display sinks (the maintenance JSP and {@code IndexResourceHelper.indexStatsList})
+ * only the display sinks (the maintenance JSP and {@code IndexResourceHelper.indexStatsList})
  * apply this filter, and only those — see {@code docs/backend/OPENSEARCH_MIGRATION.md}.</p>
  *
- * <h2>Rule</h2>
+ * <h2>Rule — phase-based, for everyone</h2>
  * <ul>
  *   <li>Phase&nbsp;3 (OS-only): OS is the live store, so {@code .os} indices are always visible.</li>
- *   <li>Phases&nbsp;0/1/2: {@code .os} indices are a migration/uniqueness artifact and are hidden,
- *       <em>unless</em> the acting user holds the configured QA/preview role
- *       ({@value #VISIBILITY_ROLE_KEY}, default {@value #DEFAULT_VISIBILITY_ROLE_KEY}).</li>
+ *   <li>Phases&nbsp;0/1/2: {@code .os} indices are a migration/uniqueness artifact and are hidden
+ *       from every user — regular admins never learn a migration is running.</li>
  * </ul>
  *
- * <p>The acting {@link User} is supplied explicitly by each display sink (both are authenticated
- * admin requests where the user is always available) — never resolved from a thread-local inside
- * this policy, so it is safe to unit-test and free of request-context coupling.</p>
+ * <p>The role-gated preview of {@code .os} indices was removed in issue #36360: support and QA now
+ * get migration detail from the dedicated, role-gated migration-readiness endpoint
+ * ({@code /api/v1/index/migration/readiness}), which is the single source of truth. This display
+ * policy is therefore purely phase-based and consults no user or role.</p>
  *
  * <p>OS-origin detection always goes through {@link IndexTag#isTagged(String)}, never
  * {@code name.endsWith(".os")}, per the {@link IndexTag} contract.</p>
@@ -42,13 +36,14 @@ import java.util.stream.Collectors;
 public final class MigrationIndexVisibility {
 
     /**
-     * Config key holding the {@link Role#getRoleKey() role key} whose members may preview
-     * OS-tagged ({@code .os}) indices before Phase&nbsp;3. Defaults to
-     * {@value #DEFAULT_VISIBILITY_ROLE_KEY}.
+     * Config key holding the {@link com.dotmarketing.business.Role#getRoleKey() role key} whose
+     * members may read the role-gated <em>migration-readiness endpoint</em>
+     * ({@code /api/v1/index/migration/readiness}). Defaults to {@value #DEFAULT_VISIBILITY_ROLE_KEY}.
+     * It no longer governs the index portlet display (which is purely phase-based since issue #36360).
      */
     public static final String VISIBILITY_ROLE_KEY = "OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY";
 
-    /** Default role key allowed to preview migration ({@code .os}) indices. */
+    /** Default role key allowed to read the migration-readiness endpoint. */
     public static final String DEFAULT_VISIBILITY_ROLE_KEY = "os_migration_qa";
 
     private MigrationIndexVisibility() {
@@ -56,40 +51,24 @@ public final class MigrationIndexVisibility {
     }
 
     /**
-     * Whether {@code user} may see OS-tagged ({@code .os}) indices in the current phase.
-     *
-     * @param user the acting user; {@code null} is treated as "not allowed" outside Phase&nbsp;3
-     * @return {@code true} in Phase&nbsp;3, or when {@code user} holds the configured QA role
+     * Whether OS-tagged ({@code .os}) indices are shown in the current phase — only in Phase&nbsp;3,
+     * where OpenSearch is the live store. Before Phase&nbsp;3 they are a migration artifact and stay
+     * hidden from everyone.
      */
-    public static boolean canSeeMigrationIndices(final User user) {
-        if (MigrationPhase.current().isMigrationComplete()) {
-            return true;
-        }
-        if (user == null) {
-            return false;
-        }
-        final String roleKey = Config.getStringProperty(VISIBILITY_ROLE_KEY,
-                DEFAULT_VISIBILITY_ROLE_KEY);
-        if (!UtilMethods.isSet(roleKey)) {
-            return false;
-        }
-        return Try.of(() -> {
-            final Role role = APILocator.getRoleAPI().loadRoleByKey(roleKey);
-            return role != null && APILocator.getRoleAPI().doesUserHaveRole(user, role);
-        }).getOrElse(false);
+    public static boolean showMigrationIndices() {
+        return MigrationPhase.current().isMigrationComplete();
     }
 
     /**
-     * Returns {@code indexNames} with OS-tagged ({@code .os}) entries removed when {@code user}
-     * is not allowed to see them; otherwise returns the list unchanged.
+     * Returns {@code indexNames} with OS-tagged ({@code .os}) entries removed outside Phase&nbsp;3;
+     * in Phase&nbsp;3 (or for a null/empty input) the list is returned unchanged.
      *
-     * @param indexNames the full, phase-correct list of index names; {@code null}/empty is
-     *                   returned as-is
-     * @param user       the acting user
+     * @param indexNames the full, phase-correct list of index names; {@code null}/empty is returned
+     *                   as-is
      * @return a filtered copy, or the original list when no filtering applies
      */
-    public static List<String> filter(final List<String> indexNames, final User user) {
-        if (indexNames == null || indexNames.isEmpty() || canSeeMigrationIndices(user)) {
+    public static List<String> filter(final List<String> indexNames) {
+        if (indexNames == null || indexNames.isEmpty() || showMigrationIndices()) {
             return indexNames;
         }
         return indexNames.stream()

@@ -17,7 +17,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.StringPool;
-import org.apache.logging.log4j.util.Strings;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -160,43 +159,99 @@ public class UserFactoryImpl implements UserFactory {
 
     @Override
     public long getCountUsersByName(String filter, final List<Role> roles) {
-        filter = SQLUtil.sanitizeParameter(filter);
-        final DotConnect dotConnect = new DotConnect();
-        final boolean isFilteredByName = UtilMethods.isSet(filter);
-        filter = (isFilteredByName ? filter : Strings.EMPTY);
-        final StringBuilder baseSql = new StringBuilder(
-                "select count(*) as count from user_ where companyid <> ? and userid <> 'system' ");
-        if (UtilMethods.isSet(roles)) {
-            final String joinedRoleKeys = roles.stream().map(Role::getRoleKey)
-                    .map(s -> String.format("'%s'", s)).collect(Collectors.joining(","));
-            final String backendRoleFilter = String
-                    .format(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (%s) and ur.user_id = user_.userId )",
-                            joinedRoleKeys);
-            baseSql.append(backendRoleFilter);
-        }
+        return getCountUsersByName(filter, roles, new UserAPI.FilteringParams.Builder().build());
+    }
 
-        final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
+    @Override
+    public long getCountUsersByName(final String filter, final List<Role> roles,
+                                    final UserAPI.FilteringParams filteringParams) {
+        final StringBuilder baseSql = new StringBuilder("select count(*) as count from user_ where ");
+        baseSql.append(!filteringParams.includeDefaultUser() ? "companyid <> ? AND " : StringPool.BLANK);
+        baseSql.append(" userid <> 'system' ");
+        baseSql.append(!filteringParams.includeAnonymousUser() ? " AND userid <> 'anonymous' " : StringPool.BLANK);
+        appendRoleFilter(baseSql, roles);
 
+        final String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
+        final boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         if (isFilteredByName) {
-            baseSql.append(" and lower(");
-            baseSql.append(userFullName);
-            baseSql.append(") like ?");
+            appendUserFilter(baseSql);
         }
 
         baseSql.append(AND_DELETE_IN_PROGRESS);
         baseSql.append(DbConnectionFactory.getDBFalse());
 
-        final String sql = baseSql.toString();
-        dotConnect.setSQL(sql);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(baseSql.toString());
         Logger.debug(UserFactoryImpl.class,
                 "::getCountUsersByName -> query: " + dotConnect.getSQL());
 
-        dotConnect.addParam(User.DEFAULT);
+        if (!filteringParams.includeDefaultUser()) {
+            dotConnect.addParam(User.DEFAULT);
+        }
+        addRoleFilterParams(dotConnect, roles);
         if (isFilteredByName) {
-            dotConnect.addParam("%" + filter.toLowerCase() + "%");
+            addUserFilterParams(dotConnect, sanitizeFilter);
         }
 
         return dotConnect.getInt("count");
+    }
+
+    /**
+     * Returns the SQL expressions that the user-search filter is matched against: user ID, first
+     * name, last name, email address, and the "first last" full name. Both the predicate and its
+     * bound parameters are derived from this list so they always stay in sync.
+     */
+    private static List<String> userFilterExpressions() {
+        final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
+        return List.of("lower(userid)", "lower(firstname)", "lower(lastname)",
+                "lower(emailaddress)", "lower(" + userFullName + ")");
+    }
+
+    /**
+     * Appends the parameterized predicate matching the user-search filter against every expression
+     * in {@link #userFilterExpressions()}. Callers must bind the filter value at the same SQL
+     * position via {@link #addUserFilterParams(DotConnect, String)}.
+     */
+    private static void appendUserFilter(final StringBuilder sql) {
+        sql.append(userFilterExpressions().stream()
+                .map(expression -> expression + " like ?")
+                .collect(Collectors.joining(" or ", " and (", ")")));
+    }
+
+    /**
+     * Binds one case-insensitive, partial-match parameter per expression appended by
+     * {@link #appendUserFilter(StringBuilder)}.
+     */
+    private static void addUserFilterParams(final DotConnect dotConnect, final String filter) {
+        final String likeParam = "%" + filter.toLowerCase() + "%";
+        userFilterExpressions().forEach(expression -> dotConnect.addParam(likeParam));
+    }
+
+    /**
+     * Appends the parameterized {@code EXISTS} sub-query restricting results to users that hold
+     * any of the specified Roles. Callers must bind one parameter per Role at the same SQL
+     * position via {@link #addRoleFilterParams(DotConnect, List)}.
+     */
+    private static void appendRoleFilter(final StringBuilder sql, final List<Role> roles) {
+        if (!UtilMethods.isSet(roles)) {
+            return;
+        }
+        final String placeholders = roles.stream().map(role -> "?")
+                .collect(Collectors.joining(StringPool.COMMA));
+        sql.append(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (")
+                .append(placeholders)
+                .append(") and ur.user_id = user_.userId )");
+    }
+
+    /**
+     * Binds the Role keys expected by the placeholders appended via
+     * {@link #appendRoleFilter(StringBuilder, List)}.
+     */
+    private static void addRoleFilterParams(final DotConnect dotConnect, final List<Role> roles) {
+        if (!UtilMethods.isSet(roles)) {
+            return;
+        }
+        roles.forEach(role -> dotConnect.addParam(role.getRoleKey()));
     }
 
     @Override
@@ -213,20 +268,12 @@ public class UserFactoryImpl implements UserFactory {
         baseSql.append(" userid <> 'system' ");
         baseSql.append(!filteringParams.includeAnonymousUser() ? " AND userid <> 'anonymous' " : StringPool.BLANK);
 
-        if (UtilMethods.isSet(roles)) {
-            final String joinedRoleKeys =
-                    roles.stream().map(Role::getRoleKey).map(s -> String.format("'%s'", s)).collect(Collectors.joining(StringPool.COMMA));
-            final String backendRoleFilter = String.format(" and exists ( select ur.user_id from users_cms_roles ur " +
-                                                                   "join cms_role r on ur.role_id = r.id where r" +
-                                                                   ".role_key in (%s) and ur.user_id = user_.userId )"
-                    , joinedRoleKeys);
-            baseSql.append(backendRoleFilter);
-        }
+        appendRoleFilter(baseSql, roles);
         final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
         final String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
         boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         if (isFilteredByName) {
-            baseSql.append(" and lower(").append(userFullName).append(") like ?");
+            appendUserFilter(baseSql);
         }
         baseSql.append(AND_DELETE_IN_PROGRESS).append(DbConnectionFactory.getDBFalse());
 
@@ -242,8 +289,9 @@ public class UserFactoryImpl implements UserFactory {
         if (!filteringParams.includeDefaultUser()) {
             dotConnect.addParam(User.DEFAULT);
         }
+        addRoleFilterParams(dotConnect, roles);
         if (isFilteredByName) {
-            dotConnect.addParam("%" + sanitizeFilter.toLowerCase() + "%");
+            addUserFilterParams(dotConnect, sanitizeFilter);
         }
         if (start > -1) {
             dotConnect.setStartRow(start);

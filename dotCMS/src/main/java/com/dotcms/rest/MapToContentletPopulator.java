@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -297,6 +298,18 @@ public class MapToContentletPopulator  {
         APILocator.getContentletAPI().setContentletProperty(contentlet, field, storyBlockJson);
     }
 
+    /**
+     * Emergency rollback switch for the #36658 semantic change: when {@code true}, a
+     * Markdown/HTML write to a Story Block document holding rich blocks is discarded and the
+     * existing document kept — the pre-#36658 behavior — instead of applying the write and
+     * surfacing a replacement warning. Default {@code false} (writes apply).
+     */
+    public static final String STORY_BLOCK_RICH_OVERWRITE_PROTECT_PROP =
+            "STORY_BLOCK_MARKDOWN_RICH_OVERWRITE_PROTECT";
+
+    /** Cap on the rich-block descriptors enumerated inside a single warning message. */
+    private static final int WARNING_DETAIL_LIMIT = 5;
+
     private String toStoryBlockJson(final Contentlet contentlet, final Field field,
                                     final String value) {
 
@@ -307,20 +320,36 @@ public class MapToContentletPopulator  {
         if (trimmed.isEmpty() || trimmed.charAt(0) == '{') {
             return value;
         }
-        final boolean html = looksLikeHtml(trimmed);
-
-        // Markdown/HTML cannot represent rich blocks (embedded contentlets, video, layout grids). Per
-        // the documented contract (see the fire endpoints' Block Editor note), they are for plain
-        // content only and must not be used to modify a field that already holds such blocks. If that
-        // is attempted, keep the existing document untouched and log a warning — neither destroying the
-        // rich content nor failing the save. (A rich merge is planned as a follow-up.)
+        // Route on what follows any leading dotcms:attrs decoration comments — the comment is
+        // shared vocabulary (#36658 §2.4, #36659): before a Markdown block it must reach the
+        // Markdown converter (the '<!--' start would otherwise match the HTML regex and shred
+        // the dotcms-* fences), before an HTML block it must reach the HTML converter, which
+        // now honors it too. A leading <dotcms-*> element is the HTML rich-node vocabulary; the
+        // HTML_START regex only matches spec-simple tag names, so without its own carve-out a
+        // hyphenated custom element would misroute to Markdown and store as literal text.
+        final String probe = skipLeadingDotcmsAttrsComments(trimmed);
+        // The re-check keeps an UNTERMINATED dotcms:attrs comment (no '-->', so it cannot be
+        // skipped) on the Markdown route, exactly as #36658 shipped it.
+        final boolean html = !TiptapMarkdown.startsWithDotcmsAttrsComment(probe)
+                && (looksLikeHtml(probe) || TiptapHtml.startsWithDotcmsElement(probe));
+        final String sourceName = html ? "HTML" : "Markdown";
         final String existing = contentlet.getStringProperty(field.getVelocityVarName());
-        if (TiptapMarkdown.isTiptapDoc(existing) && !TiptapMarkdown.isMarkdownRepresentable(existing)) {
-            Logger.warn(this, String.format(
-                    "Story Block field [%s] holds rich content that %s cannot represent; ignoring the "
-                            + "value and keeping the existing document. Send a full Tiptap/ProseMirror "
-                            + "JSON document to modify this field.",
-                    field.getVelocityVarName(), html ? "HTML" : "Markdown"));
+
+        // Rich nodes are expressible in Markdown via the dotcms-* fence vocabulary (#36658), so a
+        // Markdown/HTML write to a rich document now APPLIES with full-replace semantics; when the
+        // incoming value lacks rich blocks the stored document has, an advisory warning rides the
+        // response envelope's messages. The config flag restores the pre-#36658 keep-existing
+        // behavior as an emergency rollback of that semantic change.
+        if (Config.getBooleanProperty(STORY_BLOCK_RICH_OVERWRITE_PROTECT_PROP, false)
+                && TiptapMarkdown.isTiptapDoc(existing)
+                && !TiptapMarkdown.isMarkdownRepresentable(existing)) {
+            final String message = String.format(
+                    "Story Block field [%s] holds rich content that plain %s cannot represent and "
+                            + "%s is enabled; the value was ignored and the existing document kept. "
+                            + "Send a full Tiptap/ProseMirror JSON document to modify this field.",
+                    field.getVelocityVarName(), sourceName, STORY_BLOCK_RICH_OVERWRITE_PROTECT_PROP);
+            Logger.warn(this, message);
+            appendStoryBlockWarning(contentlet, message);
             return existing;
         }
 
@@ -331,11 +360,28 @@ public class MapToContentletPopulator  {
             // wipe any prior value, so keep the existing value and warn instead. A genuine field-clear
             // arrives as a blank value (handled above), so this never blocks an intended clear.
             if (converted.path("content").size() == 0 && UtilMethods.isSet(existing)) {
-                Logger.warn(this, String.format(
+                final String message = String.format(
                         "Story Block field [%s]: %s input converted to an empty document; keeping the "
                                 + "existing value rather than clearing the field.",
-                        field.getVelocityVarName(), html ? "HTML" : "Markdown"));
+                        field.getVelocityVarName(), sourceName);
+                Logger.warn(this, message);
+                appendStoryBlockWarning(contentlet, message);
                 return existing;
+            }
+            // Full-replace applies; tell the caller which stored rich blocks the submitted value
+            // did not carry (compare by type + identifier) so nothing is destroyed silently.
+            if (TiptapMarkdown.isTiptapDoc(existing)) {
+                final List<String> missing = TiptapMarkdown.missingRichBlocks(existing, converted);
+                if (!missing.isEmpty()) {
+                    final String message = String.format(
+                            "Story Block field [%s]: %d rich block(s) in the stored document are not "
+                                    + "present in the submitted %s and were replaced (%s). Carry them "
+                                    + "over as dotcms-* fences to preserve them.",
+                            field.getVelocityVarName(), missing.size(), sourceName,
+                            summarize(missing));
+                    Logger.warn(this, message);
+                    appendStoryBlockWarning(contentlet, message);
+                }
             }
             return converted.toString();
         } catch (final Exception e) {
@@ -343,9 +389,60 @@ public class MapToContentletPopulator  {
             // must never block the save — store the original value and move on.
             Logger.warn(this, String.format(
                     "Story Block field [%s]: %s conversion failed, storing value unchanged. %s",
-                    field.getVelocityVarName(), html ? "HTML" : "Markdown", e.getMessage()));
+                    field.getVelocityVarName(), sourceName, e.getMessage()));
             return value;
         }
+    }
+
+    /**
+     * Stashes an advisory warning on the contentlet under
+     * {@link Contentlet#STORY_BLOCK_CONVERSION_WARNINGS_KEY}. The REST layer pops the key and
+     * surfaces each entry in the response envelope's {@code messages}; the key is transient and
+     * stripped before persistence like the other workflow bookkeeping keys.
+     */
+    @SuppressWarnings("unchecked")
+    private void appendStoryBlockWarning(final Contentlet contentlet, final String message) {
+        final Object current = contentlet.getMap().get(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+        final List<String> warnings;
+        if (current instanceof List) {
+            warnings = (List<String>) current;
+        } else {
+            warnings = new ArrayList<>();
+            contentlet.getMap().put(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY, warnings);
+        }
+        warnings.add(message);
+    }
+
+    private static String summarize(final List<String> descriptors) {
+        if (descriptors.size() <= WARNING_DETAIL_LIMIT) {
+            return String.join(", ", descriptors);
+        }
+        return String.join(", ", descriptors.subList(0, WARNING_DETAIL_LIMIT))
+                + ", +" + (descriptors.size() - WARNING_DETAIL_LIMIT) + " more";
+    }
+
+    /**
+     * Pops the transient Story Block conversion warnings off the given contentlets (first
+     * non-empty batch wins; the key is removed from every one so it can never leak into a
+     * response entity map) and converts them to {@link MessageEntity} items for the response
+     * envelope's {@code messages}. Returns {@code null} when there is nothing to report.
+     */
+    public static List<MessageEntity> popStoryBlockConversionMessages(final Contentlet... contentlets) {
+        List<MessageEntity> result = null;
+        for (final Contentlet contentlet : contentlets) {
+            if (contentlet == null) {
+                continue;
+            }
+            final Object popped = contentlet.getMap()
+                    .remove(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+            if (result == null && popped instanceof List && !((List<?>) popped).isEmpty()) {
+                result = ((List<?>) popped).stream()
+                        .map(String::valueOf)
+                        .map(MessageEntity::new)
+                        .collect(Collectors.toList());
+            }
+        }
+        return result;
     }
 
     /**
@@ -356,6 +453,24 @@ public class MapToContentletPopulator  {
      */
     private static boolean looksLikeHtml(final String trimmed) {
         return HTML_START.matcher(trimmed).find();
+    }
+
+    /**
+     * Skips past any leading {@code <!-- dotcms:attrs ... -->} decoration comments so the
+     * HTML-vs-Markdown routing decision is made on the first piece of real content. The
+     * comment itself is understood by both converters (#36658 §2.4 for Markdown, #36659 for
+     * HTML), so it must not decide the route.
+     */
+    private static String skipLeadingDotcmsAttrsComments(final String trimmed) {
+        String probe = trimmed;
+        while (TiptapMarkdown.startsWithDotcmsAttrsComment(probe)) {
+            final int end = probe.indexOf("-->");
+            if (end < 0) {
+                break;
+            }
+            probe = probe.substring(end + "-->".length()).stripLeading();
+        }
+        return probe;
     }
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,

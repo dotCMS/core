@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
+import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -1180,13 +1181,16 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
-            final String titleFilters = String.format(
-                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:*%s*^10",
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter);
-            textGroup.append(titleFilters);
+            // Reuse the Content Search global-search strategy so Content Drive keyword search stays
+            // consistent with the Search portlet (issue #36688). It builds a selective mandatory
+            // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
+            // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
+            // scanned slowly on large, indexed datasets.
+            final FieldContext globalSearchContext = new FieldContext.Builder()
+                    .withFieldName("title")
+                    .withFieldValue(browserQuery.filter)
+                    .build();
+            textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
