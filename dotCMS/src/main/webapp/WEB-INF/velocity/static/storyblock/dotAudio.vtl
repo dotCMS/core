@@ -1,0 +1,7 @@
+<div style="max-width: 100%; margin-bottom: 1.5rem; text-align: #if($!item.attrs.textAlign && $!item.attrs.textAlign != "null")$!item.attrs.textAlign#{else}center#end">
+    <audio
+        controls
+        style="max-width: 100%;"
+        src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
+    />
+</div>

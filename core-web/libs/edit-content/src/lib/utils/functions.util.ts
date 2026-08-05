@@ -355,6 +355,18 @@ export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
 };
 
 /**
+ * Determines whether a tab's layout is single-column, i.e. every row has exactly one column.
+ * Used to pick the form's max-width: single-column tabs cap at 720px, multi-column tabs cap
+ * at 1000px. An empty layout (e.g. an empty tab) is treated as multi-column since `every`
+ * would otherwise be vacuously true and there's nothing to render anyway.
+ *
+ * @param {Tab['layout']} layout - The layout rows of a tab.
+ * @returns {boolean} True when every row has exactly one column.
+ */
+export const isSingleColumnLayout = (layout: Tab['layout']): boolean =>
+    layout.length > 0 && layout.every((row) => row.columns.length === 1);
+
+/**
  * Transforms the form data by filtering out specific field types and organizing the content into tabs.
  *
  * @param formData - The original form data to be transformed.

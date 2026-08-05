@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
@@ -54,6 +55,8 @@ import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.client.opensearch.indices.ExistsRequest;
 import org.opensearch.client.opensearch.indices.ForcemergeRequest;
 import org.opensearch.client.opensearch.indices.ForcemergeResponse;
+import com.google.common.collect.Lists;
+import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch.indices.GetAliasRequest;
 import org.opensearch.client.opensearch.indices.GetAliasResponse;
 import org.opensearch.client.opensearch.indices.PutIndicesSettingsRequest;
@@ -271,9 +274,29 @@ public class OSIndexAPIImpl implements IndexAPI {
             final var response = clientProvider.getClient().indices().delete(request);
             return response.acknowledged();
         } catch (Exception e) {
+            if (isIndexNotFound(e)) {
+                // Deleting an already-absent index is a no-op: the desired end state (index gone)
+                // already holds. ES tolerated this; OS must too, otherwise phase-2 cleanup paths
+                // (where OS is the write primary) fail hard on a missing shadow/working index.
+                Logger.debug(this.getClass(), "Index already absent; delete is a no-op: " + indexName);
+                return true;
+            }
             Logger.error(this.getClass(), "Error deleting index: " + indexName, e);
             throw new RuntimeException("Failed to delete index: " + indexName, e);
         }
+    }
+
+    /**
+     * True when {@code e} (or its cause) is an OpenSearch "index not found" (HTTP 404) error, so
+     * callers can treat delete/lookup of an absent index idempotently.
+     */
+    private static boolean isIndexNotFound(final Throwable e) {
+        if (e instanceof OpenSearchException && ((OpenSearchException) e).status() == 404) {
+            return true;
+        }
+        final Throwable root = (e.getCause() != null) ? e.getCause() : e;
+        final String msg = String.valueOf(root.getMessage()).toLowerCase();
+        return msg.contains("index_not_found") || msg.contains("no such index");
     }
 
     @Override
@@ -650,8 +673,20 @@ public class OSIndexAPIImpl implements IndexAPI {
      * instead of only echoing a raw transport message (issue #36244 follow-up: error classification
      * hardening). Motivated by a TLS-scheme mismatch (an {@code http://} client against an
      * {@code https}-only OS 3.x port) that surfaced only as an opaque {@code ConnectionClosedException}.
+     *
+     * <p>Also reused to classify <em>operation</em> failures — an OS request that reaches the
+     * cluster and is rejected, most notably an {@code HTTP 403} on index creation when the
+     * configured OS user's role does not cover the dotCMS index-name prefix (issue #36222).</p>
      */
-    enum ConnectionFailureKind {
+    /**
+     * Matches an HTTP 401/403 status code that is not part of a longer digit run, so a real status
+     * code is recognised ({@code status: 403}, {@code HTTP/1.1 403}) while the same digits appearing
+     * inside an index-name timestamp are not (see {@link #classifyConnectionError}).
+     */
+    private static final Pattern AUTH_STATUS_CODE =
+            Pattern.compile("(?<![0-9])(401|403)(?![0-9])");
+
+    public enum ConnectionFailureKind {
         TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
                 + " server (e.g. http:// against an https-only OS port, or https:// against a"
                 + " plaintext port). Align OS_PROTOCOL / OS_TLS_ENABLED with the server's scheme"
@@ -668,7 +703,7 @@ public class OSIndexAPIImpl implements IndexAPI {
             this.remediation = remediation;
         }
 
-        String remediation() {
+        public String remediation() {
             return remediation;
         }
     }
@@ -683,10 +718,10 @@ public class OSIndexAPIImpl implements IndexAPI {
      * <p>Order matters: TLS/scheme is checked first (its symptoms — closed connection, SSL/plaintext
      * — otherwise look like a generic unreachable), then auth (401/403), then unreachable.</p>
      *
-     * @param error the last connection error observed, or {@code null}
+     * @param error the last connection or operation error observed, or {@code null}
      * @return the inferred {@link ConnectionFailureKind}; never {@code null}
      */
-    static ConnectionFailureKind classifyConnectionError(final Throwable error) {
+    public static ConnectionFailureKind classifyConnectionError(final Throwable error) {
         for (Throwable t = error; t != null; t = t.getCause()) {
             final String type = t.getClass().getName().toLowerCase(Locale.ROOT);
             final String msg  = t.getMessage() == null
@@ -705,8 +740,13 @@ public class OSIndexAPIImpl implements IndexAPI {
                     || msg.contains("connection closed")) {
                 return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
             }
-            // Authentication / authorization.
-            if (msg.contains("401") || msg.contains("403")
+            // Authentication / authorization. The status code must not be matched as a bare
+            // substring: dotCMS wrapper messages embed the physical index name, whose
+            // _yyyyMMddHHmmss timestamp regularly contains the digits 401/403 (e.g. an index
+            // created at 12:04:03 → working_20260728120403.os), which would misreport an unrelated
+            // failure — a settings-parse or orphan-delete error — as a permission problem and send
+            // the operator to change DOT_DOTCMS_CLUSTER_ID for nothing (issue #36222).
+            if (AUTH_STATUS_CODE.matcher(msg).find()
                     || msg.contains("unauthorized") || msg.contains("forbidden")) {
                 return ConnectionFailureKind.AUTH_FORBIDDEN;
             }
@@ -734,7 +774,12 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void createAlias(final String indexName, final String alias) {
         try {
             // Only create the alias when it is not already pointing at an index — mirrors ES.
-            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias) == null) {
+            // Re-tag the logical site-search names with .os before the lookup: the physical OpenSearch
+            // indices are .os-tagged, so a bare-name lookup always missed and made this a false
+            // negative, letting createAlias add unconditionally and risk a multi-index alias in
+            // Phases 2/3 (issue #36360).
+            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices().stream()
+                    .map(IndexTag.OS::tag).collect(Collectors.toList())).get(alias) == null) {
                 clientProvider.getClient().indices().updateAliases(UpdateAliasesRequest.of(r -> r
                         .actions(a -> a.add(add -> add
                                 .index(getNameWithClusterIDPrefix(indexName))
@@ -751,6 +796,13 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * Max index names per {@code _alias} lookup request. Keeps the GET request line well under
+     * OpenSearch's ~4096-byte limit so a large index set never triggers
+     * {@code too_long_http_line_exception}.
+     */
+    private static final int ALIAS_LOOKUP_BATCH_SIZE = 50;
+
     @Override
     public Map<String, String> getIndexAlias(final List<String> indexNames) {
         final Map<String, String> aliases = new HashMap<>();
@@ -761,17 +813,27 @@ public class OSIndexAPIImpl implements IndexAPI {
             final List<String> physicalNames = indexNames.stream()
                     .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
-            final GetAliasResponse response = clientProvider.getClient().indices()
-                    .getAlias(GetAliasRequest.of(b -> b.index(physicalNames)));
-            // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
-            response.result().forEach((indexName, indexAliases) -> {
-                final Map<String, ?> aliasMap = indexAliases.aliases();
-                if (UtilMethods.isSet(aliasMap)) {
-                    final String aliasName = aliasMap.keySet().iterator().next();
-                    aliases.put(removeClusterIdFromName(indexName),
-                            removeClusterIdFromName(aliasName));
-                }
-            });
+            // Batch the lookup so a large set (100+ site-search indices) never overflows the HTTP
+            // request line — otherwise OpenSearch returns too_long_http_line_exception and the whole
+            // lookup aborts. Within each batch, ignoreUnavailable/allowNoIndices tolerate names
+            // absent on this engine: during the ES→OS migration callers pass a MERGED ES∪OS index
+            // list, so an OS-only read can receive ES-only names with no OpenSearch twin — without
+            // these a single missing index throws index_not_found and drops EVERY alias in the batch
+            // (issue #36360, I-3).
+            for (final List<String> batch : Lists.partition(physicalNames, ALIAS_LOOKUP_BATCH_SIZE)) {
+                final GetAliasResponse response = clientProvider.getClient().indices()
+                        .getAlias(GetAliasRequest.of(b -> b.index(batch)
+                                .ignoreUnavailable(true).allowNoIndices(true)));
+                // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
+                response.result().forEach((indexName, indexAliases) -> {
+                    final Map<String, ?> aliasMap = indexAliases.aliases();
+                    if (UtilMethods.isSet(aliasMap)) {
+                        final String aliasName = aliasMap.keySet().iterator().next();
+                        aliases.put(removeClusterIdFromName(indexName),
+                                removeClusterIdFromName(aliasName));
+                    }
+                });
+            }
         } catch (Exception e) {
             // Consistent with the other OS read methods (listIndices, getClusterHealth, …):
             // log and return what was resolved rather than propagating provider errors.

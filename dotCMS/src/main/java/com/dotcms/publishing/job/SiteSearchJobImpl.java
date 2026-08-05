@@ -1,6 +1,5 @@
 package com.dotcms.publishing.job;
 
-import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
@@ -78,7 +77,6 @@ public class SiteSearchJobImpl {
     static final String INCLUDE = "include";
     static final String PATHS = "paths";
 
-    private final IndexAPI esIndexAPI;
     private final IndiciesAPI indicesAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
@@ -90,7 +88,6 @@ public class SiteSearchJobImpl {
 
     @VisibleForTesting
     SiteSearchJobImpl(
-            final IndexAPI esIndexAPI,
             final IndiciesAPI indicesAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,
@@ -98,7 +95,6 @@ public class SiteSearchJobImpl {
             final SiteSearchAuditAPI siteSearchAuditAPI,
             final PublisherAPI publisherAPI
             ) {
-        this.esIndexAPI = esIndexAPI;
         this.indicesAPI = indicesAPI;
         this.siteSearchAPI = siteSearchAPI;
         this.hostAPI = hostAPI;
@@ -108,7 +104,7 @@ public class SiteSearchJobImpl {
     }
 
     public SiteSearchJobImpl() {
-        this(APILocator.getESIndexAPI(), APILocator.getIndiciesAPI(), APILocator.getSiteSearchAPI(),
+        this(APILocator.getIndiciesAPI(), APILocator.getSiteSearchAPI(),
                 APILocator.getHostAPI(), APILocator.getUserAPI(),
                 APILocator.getSiteSearchAuditAPI(), APILocator.getPublisherAPI());
     }
@@ -387,7 +383,10 @@ public class SiteSearchJobImpl {
         long recordCount = 0;
         if (UtilMethods.isSet(indexAlias)) {
             final List<String> indices = siteSearchAPI.listIndices();
-            final Map<String, String> aliasMap = esIndexAPI.getAliasToIndexMap(indices);
+            // Resolve via the site-search API so aliases are looked up with .os-aware physical names
+            // in Phases 2/3; the content-index router misses site-search aliases there
+            // and would force every crawl into full mode (issue #36360).
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
             indexName = aliasMap.get(indexAlias);
             if (UtilMethods.isSet(indexName)) {
                 if (siteSearchAPI.isDefaultIndex(indexAlias)) {

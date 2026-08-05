@@ -16,48 +16,15 @@ import {
     JSON_PRETTY_PRINT_MAX_BYTES,
     parseVelocityError,
     parseWarningsHeader,
-    readJson,
-    removeKey,
     SPLITTER_STORAGE_KEY,
     UNKNOWN_ERROR_KEY,
-    VELOCITY_HELP_EXAMPLES,
-    writeJson
+    VELOCITY_HELP_EXAMPLES
 } from './dot-velocity-playground.utils';
 
+// readJson / writeJson / removeKey moved to @dotcms/data-access — their
+// tests live in libs/data-access/src/lib/dot-localstorage/dot-persisted-query.utils.spec.ts.
+
 describe('dot-velocity-playground.utils', () => {
-    describe('readJson', () => {
-        afterEach(() => window.localStorage.clear());
-
-        it('returns the fallback when the key is missing', () => {
-            expect(readJson('missing-key', { ok: false })).toEqual({ ok: false });
-        });
-
-        it('parses and returns stored JSON', () => {
-            window.localStorage.setItem('answer', JSON.stringify(42));
-            expect(readJson<number>('answer', 0)).toBe(42);
-        });
-
-        it('returns the fallback when the stored payload is not valid JSON', () => {
-            window.localStorage.setItem('broken', '{not json');
-            expect(readJson('broken', 'fallback')).toBe('fallback');
-        });
-    });
-
-    describe('writeJson + removeKey', () => {
-        afterEach(() => window.localStorage.clear());
-
-        it('round-trips JSON values through localStorage', () => {
-            writeJson('roundtrip', { a: 1 });
-            expect(JSON.parse(window.localStorage.getItem('roundtrip') ?? '')).toEqual({ a: 1 });
-        });
-
-        it('removeKey drops the stored entry', () => {
-            window.localStorage.setItem('drop-me', 'x');
-            removeKey('drop-me');
-            expect(window.localStorage.getItem('drop-me')).toBeNull();
-        });
-    });
-
     describe('isValidHistory', () => {
         it('accepts arrays of strings', () => {
             expect(isValidHistory(['$a', '$b'])).toBe(true);

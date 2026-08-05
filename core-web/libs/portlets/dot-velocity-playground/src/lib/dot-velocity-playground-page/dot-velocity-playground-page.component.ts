@@ -48,8 +48,7 @@ import {
 } from '../dot-velocity-playground.utils';
 import {
     ensureVelocityLanguageRegistered,
-    VELOCITY_LANGUAGE_ID,
-    VELOCITY_THEME_ID
+    VELOCITY_LANGUAGE_ID
 } from '../monaco/register-velocity';
 
 @Component({
@@ -95,14 +94,12 @@ export class DotVelocityPlaygroundPageComponent {
     // 3. Computed signals — $ prefix
     readonly $editorOptions = computed(() => ({
         ...DOT_MONACO_BASE_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: VELOCITY_LANGUAGE_ID,
         wordWrap: this.store.wrapCode() ? 'on' : 'off'
     }));
 
     readonly $outputOptions = computed(() => ({
         ...DOT_MONACO_RAW_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: this.store.outputContentType(),
         wordWrap: this.store.wrapCode() ? 'on' : 'off',
         readOnly: true
@@ -111,7 +108,6 @@ export class DotVelocityPlaygroundPageComponent {
     // Read-only, plaintext options for the error "stack trace" pane.
     readonly $errorEditorOptions = computed(() => ({
         ...DOT_MONACO_RAW_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: 'plaintext',
         wordWrap: this.store.wrapCode() ? 'on' : 'off',
         readOnly: true,
@@ -160,7 +156,8 @@ export class DotVelocityPlaygroundPageComponent {
     readonly emptyOutputConfig: PrincipalConfiguration = {
         title: this.#messageService.get('velocityPlayground.output.empty'),
         subtitle: this.#messageService.get('velocityPlayground.output.empty.hint'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     // 5. Lifecycle

@@ -2,6 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { of, throwError } from 'rxjs';
 
 import {
+    buildPersistedQueryKey,
     DotCurrentUserService,
     DotEsSearchService,
     DotHttpErrorManagerService,
@@ -104,8 +105,13 @@ describe('DotEsSearchStore', () => {
     });
 
     beforeEach(() => {
+        window.localStorage.clear();
         spectator = createService();
         spectator.flushEffects();
+    });
+
+    afterEach(() => {
+        window.localStorage.clear();
     });
 
     it('should initialise with INIT status and no response', () => {
@@ -500,5 +506,53 @@ describe('DotEsSearchStore (admin user)', () => {
 
     it('isAdmin() should be true when current user is admin', () => {
         expect(adminSpectator.service.isAdmin()).toBe(true);
+    });
+});
+
+describe('DotEsSearchStore persistedQuery', () => {
+    const persistedKey = buildPersistedQueryKey('es-search');
+
+    const createService = createServiceFactory({
+        service: DotEsSearchStore,
+        providers: [
+            mockProvider(DotEsSearchService, {
+                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false }))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        window.localStorage.clear();
+    });
+
+    it('hydrates query from the persisted-query storage key', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify(MOCK_QUERY));
+
+        const spectator = createService();
+        spectator.flushEffects();
+
+        expect(spectator.service.query()).toBe(MOCK_QUERY);
+    });
+
+    it('clearPersistedQuery empties the query and removes the stored entry', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify(MOCK_QUERY));
+
+        const spectator = createService();
+        spectator.flushEffects();
+        expect(spectator.service.query()).toBe(MOCK_QUERY);
+
+        spectator.service.clearPersistedQuery();
+
+        expect(spectator.service.query()).toBe('');
+        expect(window.localStorage.getItem(persistedKey)).toBeNull();
     });
 });

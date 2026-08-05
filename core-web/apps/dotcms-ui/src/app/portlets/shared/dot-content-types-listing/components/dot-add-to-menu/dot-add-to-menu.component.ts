@@ -73,7 +73,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     dialogActions: DotDialogActions;
 
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
-    readonly $cancel = output<boolean>();
+    readonly cancel = output<boolean>();
 
     readonly $titleName = viewChild.required<ElementRef>('titleName');
 
@@ -111,7 +111,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
      * @memberof DotAddToBundleComponent
      */
     close(): void {
-        this.$cancel.emit(true);
+        this.cancel.emit(true);
         this.dialogShow = false;
     }
 

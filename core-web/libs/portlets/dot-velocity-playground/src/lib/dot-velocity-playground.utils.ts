@@ -28,42 +28,6 @@ export interface VelocityDownloadParams {
     mime: 'text/plain' | 'application/json' | 'application/xml';
 }
 
-/**
- * Read a JSON value from localStorage with a typed fallback. Returns the
- * fallback in non-browser environments, when the key is missing, or when the
- * payload can't be parsed.
- */
-export const readJson = <T>(key: string, fallback: T): T => {
-    if (typeof window === 'undefined') return fallback;
-    try {
-        const raw = window.localStorage.getItem(key);
-        if (raw == null) return fallback;
-        return JSON.parse(raw) as T;
-    } catch {
-        return fallback;
-    }
-};
-
-/** Persist a JSON-serializable value to localStorage; silently noop on quota / private mode. */
-export const writeJson = (key: string, value: unknown): void => {
-    if (typeof window === 'undefined') return;
-    try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-        // Storage may be unavailable (quota, private mode) — ignore
-    }
-};
-
-/** Remove a localStorage entry; silently noop when storage is unavailable. */
-export const removeKey = (key: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-        window.localStorage.removeItem(key);
-    } catch {
-        // ignore
-    }
-};
-
 /** Type guard: the raw value is an array of strings (suitable as history). */
 export const isValidHistory = (value: unknown): value is string[] =>
     Array.isArray(value) && value.every((entry) => typeof entry === 'string');

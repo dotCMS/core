@@ -82,8 +82,8 @@ export interface DotContentDriveInit {
  * @interface DotContentDriveContextMenu
  */
 export interface DotContentDriveContextMenu {
-    triggeredEvent: Event;
-    contentlet: DotContentDriveItem;
+    triggeredEvent: Event | null;
+    contentlet: DotContentDriveItem | null;
     showAddToBundle: boolean;
 }
 
@@ -166,6 +166,12 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * hold the first search until fields load, instead of firing one that drops the `us.*` values.
      */
     userSearchableFieldsLoaded: boolean;
+    /**
+     * "Show In List" fields (`field.listed`) of the currently-selected single content type.
+     * Populated from the same content-type fetch as {@link userSearchableFields}; empty when 0 or
+     * >1 content types are selected. Consumed by the results table as extra columns.
+     */
+    showInListFields: DotCMSContentTypeField[];
 }
 
 /**

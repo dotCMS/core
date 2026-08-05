@@ -155,9 +155,9 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             expect(spectator.component.$editorOptions().wordWrap).toBe('off');
         });
 
-        it('applies the dot-velocity-dark Monaco theme', () => {
+        it('inherits the shared Monaco light theme — consistent with the other dev-tool portlets', () => {
             setup();
-            expect(spectator.component.$editorOptions().theme).toBe('dot-velocity-dark');
+            expect(spectator.component.$editorOptions().theme).toBe('vs');
         });
     });
 
@@ -168,9 +168,9 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             expect(spectator.component.$outputOptions().readOnly).toBe(true);
         });
 
-        it('uses the same custom dark theme as the editor', () => {
+        it('inherits the shared Monaco light theme', () => {
             setup();
-            expect(spectator.component.$outputOptions().theme).toBe('dot-velocity-dark');
+            expect(spectator.component.$outputOptions().theme).toBe('vs');
         });
     });
 

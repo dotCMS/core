@@ -167,6 +167,28 @@ public record Aggregation(
                             .map(AggregationBucket::fromOS)
                             .collect(Collectors.toList()))
                     .build();
+        } else if (agg.isDateHistogram()) {
+            // The ES path types a date histogram as "date_histogram" (esAgg.getType()); mirror it so
+            // the vendor-neutral output matches across providers (issue #36360, I-6). Buckets carry
+            // epoch-millis keys, matching AggregationBucket.fromHistogram on the ES side.
+            final org.opensearch.client.opensearch._types.aggregations.DateHistogramAggregate dateHistogram =
+                    agg.dateHistogram();
+            return builder.type("date_histogram")
+                    .metadata(fromOSMeta(dateHistogram.meta()))
+                    .buckets(dateHistogram.buckets().array().stream()
+                            .map(AggregationBucket::fromOS)
+                            .collect(Collectors.toList()))
+                    .build();
+        } else if (agg.isHistogram()) {
+            // Numeric histogram — typed "histogram" to match the ES path (issue #36360, I-6).
+            final org.opensearch.client.opensearch._types.aggregations.HistogramAggregate histogram =
+                    agg.histogram();
+            return builder.type("histogram")
+                    .metadata(fromOSMeta(histogram.meta()))
+                    .buckets(histogram.buckets().array().stream()
+                            .map(AggregationBucket::fromOS)
+                            .collect(Collectors.toList()))
+                    .build();
         } else if (agg.isTopHits()) {
             final org.opensearch.client.opensearch._types.aggregations.TopHitsAggregate topHits =
                     agg.topHits();
