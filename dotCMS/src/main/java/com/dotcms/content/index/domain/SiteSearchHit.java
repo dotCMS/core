@@ -53,11 +53,18 @@ public record SiteSearchHit(
     /**
      * {@inheritDoc}
      *
-     * <p>Answers from the fragments this hit carries. Saves every caller the {@code getOrDefault}
-     * dance — Site Search only ever asks for one field ({@code content}).</p>
+     * <p>Answers from the fragments this hit carries. Saves every caller the null dance — Site Search
+     * only ever asks for one field ({@code content}) and turns the result straight into an array.</p>
+     *
+     * <p>Deliberately not {@code getOrDefault}: that substitutes the default only when the key is
+     * <i>absent</i>, so a field explicitly mapped to {@code null} would come back as {@code null} and
+     * NPE at the {@code toArray} on the caller's side. Both unvalidated inputs can produce that — the
+     * OpenSearch adapter passes {@code Hit.highlight()} through as-is, and a {@code "highlights":
+     * {"content": null}} payload survives deserialization.</p>
      */
     @Override
     public List<String> highlightsFor(final String fieldName) {
-        return getHighlights.getOrDefault(fieldName, List.of());
+        final List<String> fragments = getHighlights.get(fieldName);
+        return fragments == null ? List.of() : fragments;
     }
 }

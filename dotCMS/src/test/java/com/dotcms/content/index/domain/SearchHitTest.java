@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -138,6 +139,32 @@ public class SearchHitTest {
                 hit.highlightsFor("content").isEmpty());
         assertTrue("the builder default must behave the same",
                 SearchHit.builder().id("1").build().highlightsFor("content").isEmpty());
+    }
+
+    /**
+     * Method to test: {@link SearchHit#highlightsFor(String)}
+     * Given scenario: the highlight map carries the field as an explicit {@code null} value rather than
+     *          omitting it. Both unvalidated inputs can produce this — the OpenSearch adapter passes
+     *          {@code Hit.highlight()} through as-is, and a {@code "highlights": {"content": null}}
+     *          payload survives deserialization.
+     * Expected result: an empty list, not {@code null}. {@code getOrDefault} would have returned the
+     *          {@code null} (it only substitutes when the key is absent) and NPE'd at the caller's
+     *          {@code toArray}.
+     */
+    @Test
+    public void highlightsFor_fieldMappedToNull_yieldsEmptyList() {
+        final Map<String, List<String>> withNullValue = new HashMap<>();
+        withNullValue.put("content", null);
+        withNullValue.put("title", List.of("a <em>fragment</em>"));
+
+        final SearchHit hit = SearchHit.builder().id("1").highlights(withNullValue).build();
+
+        assertTrue("precondition: a non-empty map must still pick the highlight-bearing shape",
+                hit instanceof SiteSearchHit);
+        assertTrue("a field explicitly mapped to null must yield an empty list, not null",
+                hit.highlightsFor("content").isEmpty());
+        assertEquals("a sibling field with real fragments must still resolve",
+                1, hit.highlightsFor("title").size());
     }
 
     /**
