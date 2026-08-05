@@ -1,0 +1,103 @@
+# Architecture primitives map — AI agent platform (seed)
+#
+# A hand-curated map of the system's architectural building blocks: the nouns
+# you'd name describing "the moving parts", not every file or class. The
+# visual-recap skill (.claude/skills/visual-recap) reads this to (1) classify
+# each PR against a stable vocabulary, (2) map changed paths → primitives via
+# the `code` globs, and (3) flag changes that touch a stated invariant.
+#
+# SCOPE: This is a SEED, deliberately narrow — it covers only the AI agent
+# platform (the Accessibility Studio and the shared pieces it stands on),
+# introduced by PR #36641. dotCMS/core has no full primitives map; growing this
+# into one is a cross-team exercise, not a per-PR one. Add primitives here as
+# adjacent agent work lands; do not back-fill unrelated legacy modules.
+#
+# Entry fields:
+#   id          Stable identifier, quoted verbatim into recap tables + mermaid.
+#   group       Bucket for the "Primitives touched" table (frontend|backend|i18n).
+#   summary     One line: what it is.
+#   code        Repo-root-relative globs mapping changed paths → this primitive.
+#   depends_on  Other primitive ids it builds on (for the system map's edges).
+#   invariants  Guarantees a reviewer must re-check if the primitive changes.
+
+primitives:
+  # ── Frontend ──────────────────────────────────────────────────────────────
+  - id: dot-agents-portlet
+    group: frontend
+    summary: >-
+      Nx portlet hosting the AI agents surface — agents shell + registry-driven
+      landing, with the Accessibility Studio (picker → run → diff) as agent #1.
+    code:
+      - core-web/libs/portlets/dot-agents/**
+    depends_on: [ai-ui, a11y-run-store, a11y-picker-store]
+
+  - id: a11y-run-store
+    group: frontend
+    summary: >-
+      Route-scoped SignalStore for one page's run: scan → fix (SSE) → review →
+      publish/discard, plus the working-vs-live report accounting.
+    code:
+      - core-web/libs/portlets/dot-agents/src/lib/agents/a11y/store/a11y-run.store.ts
+    depends_on: [a11y-agent-resource, page-render-sources, ai-ui]
+    invariants:
+      - >-
+        Fix/report counts derive from the before/after rescan, not fix-row
+        counts — rows log only the deterministic pass, so agentic-pass fixes
+        have no row. A `reported` status is a pass-1→pass-2 handoff, never
+        counted as unresolved.
+
+  - id: a11y-picker-store
+    group: frontend
+    summary: >-
+      Route-scoped SignalStore for the page picker: host-scoped paginated page
+      search with filter/pagination, independent of the run store's lifetime.
+    code:
+      - core-web/libs/portlets/dot-agents/src/lib/agents/a11y/store/a11y-picker.store.ts
+
+  - id: ai-ui
+    group: frontend
+    summary: >-
+      Agent-agnostic streaming-UI kernel (@dotcms/ai-ui): activity-log +
+      thinking components and the AgentMessagePresenter seam each agent
+      implements to turn its stream/report into log bubbles.
+    code:
+      - core-web/libs/ai-ui/**
+
+  # ── Backend ───────────────────────────────────────────────────────────────
+  - id: a11y-agent-resource
+    group: backend
+    summary: >-
+      REST proxy (/api/v1/agents/a11y): authenticates the backend user, mints a
+      short-lived JWT, resolves the page identifier to a full agent payload, and
+      relays to the external agent service — JSON /fix, SSE /fix/stream, /stop,
+      /active-run.
+    code:
+      - dotCMS/src/main/java/com/dotcms/rest/api/v1/a11yagent/**
+    depends_on: [page-render-sources]
+    invariants:
+      - >-
+        Agent base URL and service token come from the `dotPageScanner-config`
+        App secret, NEVER from request input.
+      - >-
+        A fresh short-lived JWT is minted per request, so run-referencing
+        endpoints (/stop, /active-run) are addressed by `runId` in the body,
+        not by caller identity.
+
+  - id: page-render-sources
+    group: backend
+    summary: >-
+      /api/v1/page/_render-sources — read-only view of the file assets that
+      compose a page (theme VTL/CSS, container VTLs, widget VTLs). Consumed by
+      the Studio for the working-vs-live diff. Already on `main`.
+    code:
+      - dotCMS/src/main/java/com/dotcms/rest/api/v1/page/PageRenderSourcesView.java
+      - dotCMS/src/main/java/com/dotcms/rest/api/v1/page/ResponseEntityPageRenderSourcesView.java
+
+  # ── i18n ──────────────────────────────────────────────────────────────────
+  - id: agent-i18n
+    group: i18n
+    summary: >-
+      accessibility.studio.* / page.scanner.a11y.* message keys backing the
+      Studio UI copy.
+    code:
+      - dotCMS/src/main/webapp/WEB-INF/messages/Language.properties
