@@ -246,6 +246,122 @@ export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterS
 };
 
 /**
+ * Groups a contentlet selection by content type variable name, preserving selection order.
+ *
+ * Used to split the bulk-actions lookup into one request per content type, which is what makes
+ * per-action eligibility knowable at all — see {@link mergeActionCenterSchemes}.
+ *
+ * @param contentlets - Contentlets (folders already excluded)
+ * @returns One entry per distinct content type
+ */
+export const groupByContentType = (
+    contentlets: DotCMSContentlet[]
+): { contentType: string; contentlets: DotCMSContentlet[] }[] => {
+    const groups = new Map<string, DotCMSContentlet[]>();
+
+    for (const contentlet of contentlets) {
+        const existing = groups.get(contentlet.contentType);
+
+        if (existing) {
+            existing.push(contentlet);
+        } else {
+            groups.set(contentlet.contentType, [contentlet]);
+        }
+    }
+
+    return [...groups].map(([contentType, items]) => ({ contentType, contentlets: items }));
+};
+
+/**
+ * Merges per-content-type bulk-action responses into one scheme list, recording which content types
+ * contributed each action.
+ *
+ * The endpoint only ever reports counts, so a single lookup over a mixed selection cannot say which
+ * contentlets an action applies to. Asking once per content type recovers that: schemes are assigned
+ * per content type, so an action returned for the "Blog" request applies to Blog contentlets and no
+ * others.
+ *
+ * Counts are summed across groups, which reproduces exactly what a single combined lookup would have
+ * reported — each contentlet is counted by exactly one group.
+ *
+ * @param groups - One `(contentType, response)` pair per content type in the selection
+ * @returns Merged schemes, each action carrying its eligible content types
+ */
+export const mergeActionCenterSchemes = (
+    groups: { contentType: string; view: DotBulkActionView }[]
+): DotActionCenterScheme[] => {
+    const bySchemeId = new Map<string, DotActionCenterScheme>();
+
+    for (const { contentType, view } of groups) {
+        for (const scheme of toActionCenterSchemes(view)) {
+            const existing = bySchemeId.get(scheme.id);
+
+            if (!existing) {
+                bySchemeId.set(scheme.id, {
+                    ...scheme,
+                    actions: scheme.actions.map((action) => ({
+                        ...action,
+                        contentTypes: [contentType]
+                    }))
+                });
+
+                continue;
+            }
+
+            existing.count += scheme.count;
+
+            for (const action of scheme.actions) {
+                const merged = existing.actions.find((candidate) => candidate.id === action.id);
+
+                if (!merged) {
+                    existing.actions.push({ ...action, contentTypes: [contentType] });
+
+                    continue;
+                }
+
+                merged.count += action.count;
+                // Approximate wins: if the condition was unevaluated for any group, the total is an
+                // upper bound too.
+                merged.approximateCount = merged.approximateCount || action.approximateCount;
+
+                if (!merged.contentTypes.includes(contentType)) {
+                    merged.contentTypes.push(contentType);
+                }
+            }
+
+            existing.actions.sort((a, b) => a.name.localeCompare(b.name));
+        }
+    }
+
+    return [...bySchemeId.values()];
+};
+
+/**
+ * Narrows a selection to the contentlets a workflow action can actually run on.
+ *
+ * Falls back to the whole selection when the action has no resolved content types, so an unresolved
+ * lookup shows too many rows rather than none.
+ *
+ * Scheme-level accurate, not step-level: two contentlets of the same content type can sit on
+ * different steps, and only one of those steps may expose the action. The action's own `count` stays
+ * the authority on the true total, which is why the dialog still warns when it falls short.
+ *
+ * @param action - The selected workflow action
+ * @param contentlets - Contentlets in the selection (folders already excluded)
+ * @returns The contentlets whose content type exposes the action
+ */
+export const eligibleContentlets = (
+    action: DotActionCenterWorkflowAction | undefined,
+    contentlets: DotCMSContentlet[]
+): DotCMSContentlet[] => {
+    if (!action?.contentTypes.length) {
+        return contentlets;
+    }
+
+    return contentlets.filter((item) => action.contentTypes.includes(item.contentType));
+};
+
+/**
  * Maps one `CountWorkflowAction` onto the UI shape.
  *
  * `requiresInput` folds together every flag that means the action cannot be fired straight from the
@@ -263,6 +379,9 @@ const toActionCenterAction = (
         count,
         requiresInput:
             pushPublish || moveable || workflowAction.assignable || workflowAction.commentable,
-        approximateCount: conditionPresent
+        approximateCount: conditionPresent,
+        // Stamped by `mergeActionCenterSchemes`, which is the only caller that knows which content
+        // type a response came from.
+        contentTypes: []
     };
 };

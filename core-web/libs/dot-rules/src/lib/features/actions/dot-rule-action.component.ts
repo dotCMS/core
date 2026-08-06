@@ -1,7 +1,7 @@
 import { Observable, from, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, effect, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -25,6 +25,7 @@ import { DotServersideConditionComponent } from '../conditions/serverside-condit
     selector: 'dot-rule-action',
     templateUrl: './dot-rule-action.component.html',
     imports: [AsyncPipe, FormsModule, ButtonModule, SelectModule, DotServersideConditionComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'flex flex-1 items-center gap-3'
     }

@@ -1,4 +1,13 @@
-import { Component, ElementRef, effect, input, output, viewChild, inject } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    effect,
+    input,
+    output,
+    viewChild,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     AbstractControl,
     FormsModule,
@@ -20,6 +29,7 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     selector: 'dot-key-value-table-header-row',
     templateUrl: './dot-key-value-table-header-row.component.html',
     host: { class: 'contents' },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
         ToggleSwitchModule,

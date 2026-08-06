@@ -92,8 +92,8 @@ describe('DotBrowsingService', () => {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
+                    expandedIcon: 'pi pi-globe',
+                    collapsedIcon: 'pi pi-globe',
                     leaf: false
                 });
                 expect(result[1]).toEqual({
@@ -105,8 +105,8 @@ describe('DotBrowsingService', () => {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
+                    expandedIcon: 'pi pi-globe',
+                    collapsedIcon: 'pi pi-globe',
                     leaf: false
                 });
                 expect(dotSiteService.getSites).toHaveBeenCalledWith({
@@ -945,8 +945,8 @@ describe('DotBrowsingService', () => {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
+                    expandedIcon: 'pi pi-globe',
+                    collapsedIcon: 'pi pi-globe',
                     leaf: false
                 });
                 expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
