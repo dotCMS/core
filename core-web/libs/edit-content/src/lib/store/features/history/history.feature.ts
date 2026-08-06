@@ -786,8 +786,19 @@ export function withHistory() {
                     // we are leaving. Waiting for LOADING to clear is safe: the reload
                     // patches `contentlet` and `state: LOADED` together while the statuses
                     // are still INIT, so this fires on that same pass.
-                    // The loaders themselves only ever move LOADING -> LOADED/ERROR, so
-                    // reading these cannot re-trigger them.
+                    //
+                    // INVARIANT this depends on — do not break it: nothing writes INIT
+                    // back to these statuses except the reducer defaults,
+                    // `initializeExistingContent`, and `clearVersions`/
+                    // `clearPushPublishHistory`. `loadVersions`/`loadPushPublishHistory`
+                    // only ever move LOADING -> LOADED/ERROR, so reading the statuses here
+                    // cannot re-trigger them. A loader that reset to INIT on completion or
+                    // error would turn this into a fetch loop.
+                    //
+                    // Nor can the cleared-list fetch be deferred forever: `state: LOADING`
+                    // is written only by the two initialize methods, there is no retry that
+                    // re-enters it, and the failure path navigates away from the editor
+                    // (content.feature.ts) — which tears down this store.
                     const isReloading = store.state() === ComponentStatus.LOADING;
                     const versionsCleared =
                         !isReloading && store.versionsStatus().status === ComponentStatus.INIT;
