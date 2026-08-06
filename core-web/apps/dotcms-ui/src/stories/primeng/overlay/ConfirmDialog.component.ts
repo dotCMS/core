@@ -1,10 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-p-confirm-dialog',
     imports: [ConfirmDialogModule, ButtonModule],
     template: `

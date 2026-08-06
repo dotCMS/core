@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject } from '@angular/core';
+import { AfterViewInit, Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
@@ -11,6 +11,7 @@ import { DotContentletEditorService } from '../../../view/components/dot-content
     selector: 'dot-contentlets',
     template:
         '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)" />',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotEditContentletComponent]
 })
 export class DotContentletsComponent implements AfterViewInit {

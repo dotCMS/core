@@ -6,7 +6,8 @@ import {
     HostListener,
     Input,
     OnInit,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
@@ -14,6 +15,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
     selector: 'dot-suggestions-list-item',
     templateUrl: './suggestions-list-item.component.html',
     styleUrls: ['./suggestions-list-item.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SuggestionsListItemComponent implements FocusableOption, OnInit {

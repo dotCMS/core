@@ -1,4 +1,11 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    OnInit,
+    inject,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -55,6 +62,7 @@ const EXAMPLE_CONFIG = {
     selector: 'dot-ai-config-detail',
     templateUrl: './dot-ai-config-detail.component.html',
     host: { class: 'flex h-full p-4 bg-gray-200 shadow-md' },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         ButtonModule,

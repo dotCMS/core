@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -14,6 +14,7 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
     templateUrl: './dot-apps-configuration-item.component.html',
     styleUrls: ['./dot-apps-configuration-item.component.scss'],
     imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         '[class.bg-gray-100]': '!site()?.configured',
         '[class.text-gray-500]': '!site()?.configured',
