@@ -51,7 +51,8 @@
                         @for (quickAction of $quickActions(); track quickAction.id) {
                             <!-- Rows with a zero count do not apply to this selection. They stay
                                  visible but non-selectable, so the action list is stable as the
-                                 selection changes. -->
+                                 selection changes. Clicking opens the preview; nothing fires from
+                                 here. -->
                             <button
                                 type="button"
                                 class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
@@ -62,7 +63,7 @@
                                 "
                                 [pTooltip]="quickActionHint(quickAction) | dm"
                                 [attr.data-testid]="'quick-action-' + quickAction.id"
-                                (click)="onExecuteQuickAction(quickAction)">
+                                (click)="onSelectQuickAction(quickAction)">
                                 <span
                                     class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
                                     [class]="
@@ -298,7 +299,9 @@
             paginator sits below the scroll region rather than at the bottom of a scrolled page.
         -->
         <div class="flex min-h-0 flex-1 flex-col" data-testid="action-preview-body">
-            @if ($selectedAction(); as action) {
+            <!-- Workflow actions only. A quick action's count and its rows come from the same
+                 client-side filter, so it can never apply to fewer items than it lists. -->
+            @if (!$pendingQuickAction() && $selectedAction(); as action) {
                 <!-- The rows are already narrowed to content types this action's scheme covers, but
                      eligibility is also per workflow step: two contentlets of one type can sit on
                      different steps and only one may expose the action. `count` is the backend's true
@@ -344,7 +347,7 @@
                 [disabled]="!$includedCount() || $executing()"
                 [loading]="$executing()"
                 data-testid="action-preview-execute"
-                (click)="onExecuteWorkflowAction()" />
+                (click)="onExecutePreview()" />
         </div>
     }
 

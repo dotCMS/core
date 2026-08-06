@@ -67,12 +67,19 @@ type DotActionCenterView = 'actions' | 'preview';
  *    selection (see {@link loadWorkflowActions}). Counts come from the backend's Elasticsearch
  *    aggregation on `wfstep` and are real per-action eligibility counts.
  *
- * The two sections differ in how they commit. A quick action fires on click, over exactly the
- * contentlets its count was derived from. A workflow action goes through a **preview** screen first
- * (`$view`), listing the contentlets with a checkbox each, so the payload can be trimmed before it is
- * sent. Only workflow actions need this: their counts come from the backend and can be lower than the
- * selection, so "which items is this about to touch?" is a real question there and not for quick
- * actions.
+ * **Both sections commit the same way**: picking an action opens a **preview** screen (`$view`)
+ * listing the contentlets it will run on with a checkbox each, and nothing is sent until Execute.
+ *
+ * This used to be workflow-only, on the reasoning that a quick action's count is derived from the
+ * rows themselves and so "which items is this about to touch?" had an obvious answer. That confused
+ * *knowing* the answer with *being able to change it*. The set is knowable, but the user still had no
+ * way to narrow it — clicking Publish (12) published twelve items with no chance to drop one. The
+ * preview is worth most on Unlock, where the row warns that some locks belong to other users and the
+ * only way to act on that warning is to uncheck those rows.
+ *
+ * What still differs is what the count means. A quick action's count and its preview rows are the
+ * same client-side filter, so they always agree. A workflow action's count comes from the backend and
+ * can be lower than the rows shown, which is why only that path renders the partial-match warning.
  *
  * The preview retitles the shell's dialog header to the action name through the store's drill-down
  * state, rather than rendering a second header of its own.
@@ -219,6 +226,13 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * grid behind the dialog.
      */
     protected readonly $includedItems = signal<DotCMSContentlet[]>([]);
+    /**
+     * The quick action drilled into, or `null` when the preview belongs to a workflow action.
+     *
+     * Doubles as the discriminator for the whole preview screen: which items it lists, what Execute
+     * fires, and whether the partial-match warning applies.
+     */
+    protected readonly $pendingQuickAction = signal<DotActionCenterQuickAction | null>(null);
 
     /** Contentlets in the selection — folders are ignored by every bulk endpoint. */
     protected readonly $contentlets = computed(() => excludeFolders(this.$selectedItems()));
@@ -259,9 +273,19 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Narrowed by content type so an action from one scheme never lists contentlets of a type that
      * scheme is not assigned to.
      */
-    protected readonly $previewItems = computed(() =>
-        eligibleContentlets(this.$selectedAction(), this.$contentlets())
-    );
+    protected readonly $previewItems = computed(() => {
+        const quickAction = this.$pendingQuickAction();
+
+        if (quickAction) {
+            // Filtered against the action's own `eligibleInodes` rather than re-deriving the
+            // predicate, so the rows shown are exactly the set the row's count was built from.
+            const eligible = new Set(quickAction.eligibleInodes);
+
+            return this.$contentlets().filter((item) => eligible.has(item.inode));
+        }
+
+        return eligibleContentlets(this.$selectedAction(), this.$contentlets());
+    });
 
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
@@ -295,20 +319,65 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Fires a system action over the contentlets it applies to, in one request.
+     * Drills into a quick action's preview, listing the contentlets it applies to.
      *
-     * Only `eligibleInodes` are sent — the same set the row's count is derived from. Firing over the
-     * whole selection instead would act on items the row never claimed: a Publish showing "(1)"
-     * would publish two, and Delete would be attempted on contentlets that are not archived.
+     * Nothing is sent here — this only opens the screen where the user confirms or narrows the set.
+     * The starting rows are `eligibleInodes`, the same set the row's count is derived from, so the
+     * preview can never open on items the row never claimed: a Publish showing "(1)" lists one.
      *
      * @param quickAction - The quick action chosen by the user
      */
-    protected onExecuteQuickAction(quickAction: DotActionCenterQuickAction): void {
-        const inodes = quickAction.eligibleInodes;
-
+    protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
         // `pendingHint` marks an action with no working implementation yet (Add to Bundle needs a
-        // bundle picker). The row is disabled, but guard here too so it can never fire.
-        if (!inodes.length || quickAction.pendingHint) {
+        // bundle picker). The row is disabled, but guard here too so it can never open.
+        if (!quickAction.count || quickAction.pendingHint) {
+            return;
+        }
+
+        this.$pendingQuickAction.set(quickAction);
+        // Keeps the two paths mutually exclusive: a workflow radio left armed from an earlier visit
+        // must not decide what Execute fires now.
+        this.$selectedActionId.set(null);
+
+        const previewItems = this.$previewItems();
+
+        this.$includedItems.set(previewItems);
+        this.$view.set('preview');
+        this.publishDrillDownHeader(
+            // Quick action names are i18n keys, unlike workflow actions which arrive pre-translated.
+            this.#dotMessageService.get(quickAction.name),
+            previewItems.length
+        );
+    }
+
+    /**
+     * Commits whatever the preview is showing — the single Execute path for both sections.
+     *
+     * Both branches send `$includedItems`, so unchecking a row is honoured no matter which kind of
+     * action opened the screen.
+     */
+    protected onExecutePreview(): void {
+        const quickAction = this.$pendingQuickAction();
+
+        if (quickAction) {
+            this.executeQuickAction(quickAction);
+
+            return;
+        }
+
+        this.onExecuteWorkflowAction();
+    }
+
+    /**
+     * Fires a quick action over the rows left checked, prompting first when it warrants one.
+     *
+     * The prompt sits here rather than on the row click because this is the commit point: opening a
+     * preview changes nothing, so confirming there would ask about a decision not yet made.
+     */
+    private executeQuickAction(quickAction: DotActionCenterQuickAction): void {
+        const inodes = this.$includedItems().map((item) => item.inode);
+
+        if (!inodes.length) {
             return;
         }
 
@@ -365,9 +434,18 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected onContinueToPreview(): void {
         const action = this.$selectedAction();
+
+        if (!action) {
+            return;
+        }
+
+        // Cleared *before* reading `$previewItems`, which is discriminated on it: reading first
+        // would resolve the rows against a stale quick action.
+        this.$pendingQuickAction.set(null);
+
         const previewItems = this.$previewItems();
 
-        if (!action || !previewItems.length) {
+        if (!previewItems.length) {
             return;
         }
 
@@ -389,12 +467,24 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
         this.$view.set('actions');
         this.$includedItems.set([]);
+        this.$pendingQuickAction.set(null);
         this.#store.clearDialogDrillDown();
     }
 
     /** Tracks the preview's checked rows, keeping the dialog header's count in step. */
     protected onIncludedItemsChange(items: DotCMSContentlet[]): void {
         this.$includedItems.set(items);
+
+        const quickAction = this.$pendingQuickAction();
+
+        if (quickAction) {
+            this.publishDrillDownHeader(
+                this.#dotMessageService.get(quickAction.name),
+                items.length
+            );
+
+            return;
+        }
 
         const action = this.$selectedAction();
 

@@ -169,6 +169,20 @@ describe('DotContentDriveActionCenterComponent', () => {
         spectator.detectChanges();
     };
 
+    /** Opens a quick action's preview. Renders first, so callers can set the selection beforehand. */
+    const openQuickActionPreview = (id: string): void => {
+        spectator.detectChanges();
+        spectator.click(`[data-testid="quick-action-${id}"]`);
+        spectator.detectChanges();
+    };
+
+    /** Opens a quick action's preview and commits it, the full two-step path a user takes. */
+    const executeQuickAction = (id: string): void => {
+        openQuickActionPreview(id);
+        spectator.click('[data-testid="action-preview-execute"]');
+        spectator.detectChanges();
+    };
+
     /** Clicks the real checkbox of the first preview row, dropping it from the included set. */
     const uncheckFirstRow = (): void => {
         const checkbox = spectator
@@ -295,7 +309,9 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
 
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
         });
 
@@ -308,8 +324,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 return confirmationService;
             });
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            executeQuickAction('DELETE');
 
             expect(confirmationService.confirm).toHaveBeenCalled();
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
@@ -321,18 +336,14 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should not fire Delete when the confirmation is dismissed', () => {
             mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
             // Default mock records the call without invoking `accept`.
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            executeQuickAction('DELETE');
 
             expect(confirmationService.confirm).toHaveBeenCalled();
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
         });
 
         it('should fire non-destructive actions without confirming', () => {
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(confirmationService.confirm).not.toHaveBeenCalled();
             expect(fireService.fireDefaultAction).toHaveBeenCalled();
@@ -342,15 +353,16 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-DELETE"]');
+            spectator.detectChanges();
 
+            // Never even reaches the preview.
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
         });
 
         it('should fire only the inodes the action applies to, not the whole selection', () => {
             // Selection is inode-1 (not live) and inode-2 (live). Publish applies to inode-1 only.
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'PUBLISH',
@@ -366,7 +378,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const row = spectator.query('[data-testid="quick-action-PUBLISH"]');
             const advertised = Number(row?.textContent?.match(/\((\d+)\)/)?.[1]);
 
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             const fired = (fireService.fireDefaultAction as unknown as jest.Mock).mock
                 .calls[0][0] as { inodes: string[] };
@@ -386,8 +398,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 return confirmationService;
             });
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            executeQuickAction('DELETE');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'DELETE',
@@ -396,9 +407,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should refresh the grid and close the dialog on success', () => {
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(store.loadItems).toHaveBeenCalled();
             expect(store.closeDialog).toHaveBeenCalled();
@@ -408,8 +417,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const error = new HttpErrorResponse({ status: 403 });
             jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(throwError(() => error));
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.closeDialog).not.toHaveBeenCalled();
@@ -425,8 +433,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 })
             );
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -437,8 +444,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should report a plain success when nothing failed', () => {
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -456,8 +462,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 contentlet({ inode: 'locked-1', locked: true })
             ]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-LOCK"]');
+            executeQuickAction('LOCK');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'LOCK',
@@ -471,8 +476,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 contentlet({ inode: 'locked-1', locked: true })
             ]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-UNLOCK"]');
+            executeQuickAction('UNLOCK');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'UNLOCK',
@@ -531,8 +535,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 contentlet({ inode: 'theirs', locked: true, contentEditable: false })
             ]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-UNLOCK"]');
+            executeQuickAction('UNLOCK');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'UNLOCK',
@@ -552,8 +555,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 contentlet({ inode: 'theirs', locked: true, contentEditable: false })
             ]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-UNLOCK"]');
+            executeQuickAction('UNLOCK');
 
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -569,8 +571,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 folder('folder-1')
             ]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-LOCK"]');
+            executeQuickAction('LOCK');
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
                 action: 'LOCK',
@@ -581,8 +582,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should refresh the grid and clear the selection after unlocking', () => {
             mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-UNLOCK"]');
+            executeQuickAction('UNLOCK');
 
             expect(store.setSelectedItems).toHaveBeenCalledWith([]);
             expect(store.loadItems).toHaveBeenCalled();
@@ -592,10 +592,121 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should not confirm before locking or unlocking', () => {
             mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-UNLOCK"]');
+            executeQuickAction('UNLOCK');
 
             expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('quick action preview', () => {
+        it('should open the preview instead of firing when a quick action is clicked', () => {
+            openQuickActionPreview('PUBLISH');
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-center"]')).toBeNull();
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+        });
+
+        it('should list only the contentlets the quick action applies to', () => {
+            // inode-1 is not live, inode-2 is. Publish applies to inode-1 only, so the preview must
+            // not offer inode-2 as something the user could include.
+            openQuickActionPreview('PUBLISH');
+
+            const rows = spectator.queryAll('[data-testid="preview-row"]');
+
+            expect(rows).toHaveLength(1);
+            expect(rows[0].textContent).toContain('Title inode-1');
+        });
+
+        it('should retitle the dialog header with the quick action and its count', () => {
+            openQuickActionPreview('PUBLISH');
+
+            expect(store.setDialogDrillDown).toHaveBeenCalledWith({
+                header: 'Default-Action-Publish',
+                itemCount: 1
+            });
+        });
+
+        it('should fire only the rows left checked in the preview', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'keep-me' }),
+                contentlet({ inode: 'drop-me' })
+            ]);
+
+            openQuickActionPreview('PUBLISH');
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'PUBLISH',
+                inodes: ['drop-me']
+            });
+        });
+
+        it('should keep Execute disabled once every row is unchecked', () => {
+            mockSelectedItems.set([contentlet({ inode: 'only-one' })]);
+
+            openQuickActionPreview('PUBLISH');
+            uncheckFirstRow();
+
+            const execute = spectator.query(
+                '[data-testid="action-preview-execute"] button'
+            ) as HTMLButtonElement;
+
+            expect(execute.disabled).toBe(true);
+        });
+
+        it('should return to the action list without firing when Back is clicked', () => {
+            openQuickActionPreview('PUBLISH');
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-center"]')).toBeTruthy();
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            expect(store.clearDialogDrillDown).toHaveBeenCalled();
+        });
+
+        it('should confirm at Execute rather than when the destructive row is clicked', () => {
+            // The commit point moved: opening a preview changes nothing, so prompting there would
+            // ask the user to confirm something that has not been decided yet.
+            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
+
+            openQuickActionPreview('DELETE');
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(confirmationService.confirm).toHaveBeenCalled();
+        });
+
+        it('should not show the workflow partial-match warning on a quick action', () => {
+            // That warning explains a backend count falling short of the rows shown. A quick
+            // action's count is derived from the rows themselves, so it can never fall short.
+            openQuickActionPreview('PUBLISH');
+
+            expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
+        });
+
+        it('should let the user drop locks held by other users before unlocking', () => {
+            // The reason a preview earns its place on Unlock: the row-level warning becomes
+            // actionable here, because the user can exclude the items that would fail.
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            openQuickActionPreview('UNLOCK');
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'UNLOCK',
+                inodes: ['theirs']
+            });
         });
     });
 
