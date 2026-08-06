@@ -6,7 +6,8 @@ import {
     inject,
     Input,
     OnInit,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -43,6 +44,7 @@ export enum ItemsType {
     selector: 'dot-suggestions',
     templateUrl: './suggestions.component.html',
     styleUrls: ['./suggestions.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SuggestionsComponent implements OnInit {

@@ -11,7 +11,8 @@ import {
     OnInit,
     output,
     SimpleChanges,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -46,6 +47,7 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 @Component({
     selector: 'dot-add-to-menu',
     templateUrl: 'dot-add-to-menu.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ReactiveFormsModule,
         DialogModule,
