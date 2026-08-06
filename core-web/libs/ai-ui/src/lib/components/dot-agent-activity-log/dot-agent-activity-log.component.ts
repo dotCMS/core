@@ -40,7 +40,7 @@ import { DotAgentThinkingComponent } from '../dot-agent-thinking/dot-agent-think
     imports: [DotAgentMessageComponent, DotAgentThinkingComponent],
     templateUrl: './dot-agent-activity-log.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block' }
+    host: { class: 'flex flex-col', 'data-testid': 'agent-activity-steps' }
 })
 export class DotAgentActivityLogComponent {
     /** The settled bubbles — completed steps and/or the expanded terminal result. */

@@ -1,13 +1,11 @@
 import { patchState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Observable, of, throwError } from 'rxjs';
 
-import { signal } from '@angular/core';
+import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 
-import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
-import { GlobalStore } from '@dotcms/store';
 
 import { A11yRunStore } from './a11y-run.store';
 
@@ -99,33 +97,6 @@ const MOCK_SCAN_RESPONSE = {
     }
 } as unknown as PageScannerA11yResponse;
 
-const MOCK_CONTENTLETS = [
-    {
-        identifier: 'id-1',
-        title: 'About Us',
-        url: '/about-us',
-        contentType: 'htmlpageasset',
-        languageId: 1,
-        host: 'host-id-1',
-        hostName: 'demo.dotcms.com',
-        modDate: '04/09/2026',
-        modUserName: 'Admin User',
-        live: true
-    },
-    {
-        identifier: 'id-2',
-        title: 'Blog Post',
-        url: '/blog/post/hello',
-        contentType: 'Blog',
-        languageId: 1,
-        host: 'host-id-1',
-        hostName: 'demo.dotcms.com',
-        modDate: '03/10/2026',
-        modUserName: 'Admin User',
-        live: false
-    }
-] as unknown as DotCMSContentlet[];
-
 const MOCK_ROW: StudioPageRow = {
     identifier: 'id-1',
     title: 'About Us',
@@ -139,23 +110,29 @@ const MOCK_ROW: StudioPageRow = {
     live: true
 };
 
+/** A second page, for switch-away assertions. */
+const OTHER_ROW: StudioPageRow = {
+    identifier: 'id-2',
+    title: 'Blog Post',
+    path: '/blog/post/hello',
+    type: 'Blog',
+    languageId: 1,
+    hostId: 'host-id-1',
+    hostName: 'demo.dotcms.com',
+    modDate: '03/10/2026',
+    modUserName: 'Admin User',
+    live: false
+};
+
 describe('A11yRunStore', () => {
     let spectator: SpectatorService<InstanceType<typeof A11yRunStore>>;
     let store: InstanceType<typeof A11yRunStore>;
-    let searchService: jest.Mocked<DotContentSearchService>;
     let scannerService: jest.Mocked<DotPageScannerService>;
     let agentService: jest.Mocked<DotA11yAgentService>;
-    let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
 
     const createService = createServiceFactory({
         service: A11yRunStore,
         providers: [
-            mockProvider(DotContentSearchService, {
-                // Default: the rehydration fetch resolves the selected page (id-1).
-                get: jest
-                    .fn()
-                    .mockReturnValue(of({ jsonObjectView: { contentlets: [MOCK_CONTENTLETS[0]] } }))
-            }),
             mockProvider(DotPageScannerService, {
                 checkA11y: jest.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
             }),
@@ -165,34 +142,23 @@ describe('A11yRunStore', () => {
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of(null))
-            }),
-            mockProvider(GlobalStore, {
-                get currentSiteId() {
-                    return currentSiteIdSignal;
-                }
             })
         ]
     });
 
     beforeEach(() => {
         jest.clearAllMocks();
-        // The current site matches the pages' host — the picker query is
-        // host-scoped, so a selected page's host always equals the current site.
-        currentSiteIdSignal = signal<string | null>('host-id-1');
         spectator = createService();
         store = spectator.service;
-        searchService = spectator.inject(
-            DotContentSearchService
-        ) as jest.Mocked<DotContentSearchService>;
         scannerService = spectator.inject(
             DotPageScannerService
         ) as jest.Mocked<DotPageScannerService>;
         agentService = spectator.inject(DotA11yAgentService) as jest.Mocked<DotA11yAgentService>;
     });
 
-    /** Open the default page (id-1, /about-us) via the URL rehydration path. */
+    /** Open the default page (id-1, /about-us) the way the page list hands it over. */
     function openDefaultPage() {
-        store.openPageByUri('/about-us');
+        store.openSelectedPage(MOCK_ROW);
     }
 
     it('starts in the ready phase with no page', () => {
@@ -200,70 +166,35 @@ describe('A11yRunStore', () => {
         expect(store.selected()).toBeNull();
     });
 
-    describe('openPageByUri (deep-link rehydration)', () => {
-        it('fetches a page by its URI (host-scoped) and opens it to ready', () => {
-            searchService.get.mockReturnValueOnce(
-                of({ jsonObjectView: { contentlets: [MOCK_CONTENTLETS[1]] } })
-            );
-            store.openPageByUri('/blog/post/hello');
-
-            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
-            expect(query).toContain('path:"/blog/post/hello"');
-            expect(query).toContain('urlmap:"/blog/post/hello"');
-            expect(query).toContain('+working:true');
-            expect(query).toContain('+deleted:false');
-            expect(query).toContain('+conhost:host-id-1'); // host-scoped
-            expect(store.selected()?.path).toBe('/blog/post/hello');
+    describe('openSelectedPage', () => {
+        it('adopts the row handed over by the page list and opens it to ready', () => {
+            store.openSelectedPage(MOCK_ROW);
+            expect(store.selected()).toEqual(MOCK_ROW);
             expect(store.phase()).toBe('ready');
-            expect(store.rehydrateStatus()).toBe('idle');
         });
 
-        it('is a no-op when the same page under the same site is already selected', () => {
-            openDefaultPage();
-            searchService.get.mockClear();
-            store.openPageByUri('/about-us');
-            expect(searchService.get).not.toHaveBeenCalled();
-            expect(store.rehydrateStatus()).toBe('idle');
+        it('is a no-op when the same page is already selected (keeps an in-progress run)', () => {
+            store.openSelectedPage(MOCK_ROW);
+            store.runScan();
+            const scanResult = store.scanResult();
+
+            store.openSelectedPage({ ...MOCK_ROW });
+
+            // Same identifier → the run is left alone rather than reset.
+            expect(store.scanResult()).toBe(scanResult);
+            expect(store.phase()).toBe('scanned');
         });
 
-        it('re-resolves the same path when the site changes', () => {
-            openDefaultPage(); // selected under host-id-1
-            searchService.get.mockClear();
+        it('switches to a different page and resets the prior run', () => {
+            store.openSelectedPage(MOCK_ROW);
+            store.runScan();
+            expect(store.scanResult()).not.toBeNull();
 
-            // Switch sites: the same path now points at the other site's page.
-            currentSiteIdSignal.set('host-id-2');
-            searchService.get.mockReturnValueOnce(
-                of({
-                    jsonObjectView: {
-                        contentlets: [{ ...MOCK_CONTENTLETS[0], host: 'host-id-2' }]
-                    }
-                })
-            );
-            store.openPageByUri('/about-us'); // same path, different site
+            store.openSelectedPage(OTHER_ROW);
 
-            expect(searchService.get).toHaveBeenCalledTimes(1);
-            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
-            expect(query).toContain('+conhost:host-id-2'); // scoped to the NEW site
-            expect(store.selected()?.hostId).toBe('host-id-2');
-        });
-
-        it('stays loading (no fetch) until the current site is known', () => {
-            currentSiteIdSignal.set(null);
-            store.openPageByUri('/blog/post/hello');
-            expect(searchService.get).not.toHaveBeenCalled();
-            expect(store.rehydrateStatus()).toBe('loading');
-        });
-
-        it('flags not-found when the path resolves to no page', () => {
-            searchService.get.mockReturnValueOnce(of({ jsonObjectView: { contentlets: [] } }));
-            store.openPageByUri('/missing');
-            expect(store.rehydrateStatus()).toBe('not-found');
-        });
-
-        it('flags not-found and does not throw when the fetch errors', () => {
-            searchService.get.mockReturnValueOnce(throwError(() => new Error('boom')));
-            store.openPageByUri('/blog/post/hello');
-            expect(store.rehydrateStatus()).toBe('not-found');
+            expect(store.selected()).toEqual(OTHER_ROW);
+            expect(store.phase()).toBe('ready');
+            expect(store.scanResult()).toBeNull();
         });
     });
 
@@ -631,6 +562,55 @@ describe('A11yRunStore', () => {
             expect(store.skipCss()).toBe(false);
             store.setSkipCss(true);
             expect(store.skipCss()).toBe(true);
+        });
+    });
+
+    /**
+     * The store is provided per-route, so navigation destroys its injector. Instantiate it in a
+     * child environment injector here so `destroy()` fires the real `onDestroy` hook — Spectator's
+     * own injector outlives the individual test.
+     */
+    describe('teardown on destroy', () => {
+        let injector: EnvironmentInjector;
+        let scopedStore: InstanceType<typeof A11yRunStore>;
+
+        beforeEach(() => {
+            injector = createEnvironmentInjector(
+                [A11yRunStore],
+                spectator.inject(EnvironmentInjector)
+            );
+            scopedStore = injector.get(A11yRunStore);
+        });
+
+        it('aborts an in-flight fix stream when the store is destroyed', () => {
+            const fixTeardown = jest.fn();
+            agentService.fixStream.mockReturnValue(new Observable(() => fixTeardown));
+
+            scopedStore.openSelectedPage(MOCK_ROW);
+            scopedStore.runScan();
+            scopedStore.startFix();
+            expect(fixTeardown).not.toHaveBeenCalled();
+
+            injector.destroy();
+
+            expect(fixTeardown).toHaveBeenCalledTimes(1);
+        });
+
+        it('aborts both in-flight scans when the store is destroyed', () => {
+            const previewTeardown = jest.fn();
+            const liveTeardown = jest.fn();
+            scannerService.checkA11y
+                .mockReturnValueOnce(new Observable(() => previewTeardown))
+                .mockReturnValueOnce(new Observable(() => liveTeardown));
+
+            scopedStore.openSelectedPage(MOCK_ROW);
+            scopedStore.runScan();
+            expect(previewTeardown).not.toHaveBeenCalled();
+
+            injector.destroy();
+
+            expect(previewTeardown).toHaveBeenCalledTimes(1);
+            expect(liveTeardown).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -24,8 +24,8 @@ export type AgentMessageTone = (typeof AGENT_MESSAGE_TONE)[keyof typeof AGENT_ME
  * presenter ("result-as-more-messages"), consumed by the message component.
  *
  * @property id   Stable id for `@for` tracking + entry animation.
- * @property icon PrimeNG icon class (e.g. `pi pi-check`) — a render detail the
- *   presenter chooses; the agent response carries no icon.
+ * @property icon Material Symbols ligature name (e.g. `check`) — a render detail
+ *   the presenter chooses; the agent response carries no icon.
  * @property text Primary line.
  * @property sub  Optional secondary line (e.g. a rule id + file).
  * @property tone Bubble/icon color — see {@link AgentMessageTone}.

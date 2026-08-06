@@ -10,13 +10,13 @@ import {
     StudioStepPhase
 } from './accessibility-studio.models';
 
-/** Icon for each live agent step phase (SSE `step` events). */
+/** Material Symbols icon for each live agent step phase (SSE `step` events). */
 const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
-    scan: 'pi pi-search',
-    locate: 'pi pi-sitemap',
-    read: 'pi pi-file',
-    fix: 'pi pi-wrench',
-    rescan: 'pi pi-verified'
+    scan: 'search',
+    locate: 'account_tree',
+    read: 'description',
+    fix: 'build',
+    rescan: 'verified'
 };
 
 /**
@@ -46,7 +46,7 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
         const phase = step.meta?.['phase'] as StudioStepPhase | undefined;
         return {
             id: index,
-            icon: phase ? STEP_PHASE_ICON[phase] : 'pi pi-wrench',
+            icon: phase ? STEP_PHASE_ICON[phase] : 'build',
             text: cleanStepText(step.message),
             tone: 'info'
         };
@@ -66,7 +66,7 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
         return [
             {
                 id: 'scan',
-                icon: 'pi pi-search',
+                icon: 'search',
                 text: this.dm.get('accessibility.studio.recipe.scan'),
                 sub: this.dm.get(
                     'accessibility.studio.recipe.scan.sub',
@@ -76,13 +76,13 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
             },
             {
                 id: 'locate',
-                icon: 'pi pi-sitemap',
+                icon: 'account_tree',
                 text: this.dm.get('accessibility.studio.recipe.locate'),
                 tone: 'info'
             },
             ...fixed.map((r, i) => ({
                 id: `fixed-${i}`,
-                icon: 'pi pi-check',
+                icon: 'check',
                 text: r.review ?? this.dm.get('accessibility.studio.recipe.fixed', r.ruleId),
                 sub: this.ruleAndFile(r),
                 tone: 'success' as const
@@ -90,7 +90,7 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
             ...reported.map((r, i) => ({
                 id: `reported-${i}`,
                 // Distinct icon: reverted/regressed → undo, everything else → flag.
-                icon: r.reverted || r.status === 'regressed' ? 'pi pi-replay' : 'pi pi-flag',
+                icon: r.reverted || r.status === 'regressed' ? 'undo' : 'flag',
                 text:
                     r.review ??
                     r.reason ??
@@ -100,7 +100,7 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
             })),
             {
                 id: 'rescan',
-                icon: 'pi pi-verified',
+                icon: 'verified',
                 text: this.dm.get('accessibility.studio.recipe.rescan'),
                 sub: this.dm.get(
                     'accessibility.studio.recipe.rescan.sub',

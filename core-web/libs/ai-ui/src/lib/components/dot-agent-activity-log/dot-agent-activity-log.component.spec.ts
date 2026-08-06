@@ -7,15 +7,15 @@ import { DotAgentActivityLogComponent } from './dot-agent-activity-log.component
 import { AgentMessage } from '../../models/agent-message';
 
 const MESSAGES: AgentMessage[] = [
-    { id: 1, icon: 'pi pi-search', text: 'Scanning page', tone: 'info' },
+    { id: 1, icon: 'search', text: 'Scanning page', tone: 'info' },
     {
         id: 2,
-        icon: 'pi pi-check',
+        icon: 'check',
         text: 'Fixed alt text',
         sub: 'image-alt · hero.vtl',
         tone: 'success'
     },
-    { id: 3, icon: 'pi pi-flag', text: 'Reported contrast', tone: 'warning' }
+    { id: 3, icon: 'flag', text: 'Reported contrast', tone: 'warning' }
 ];
 
 describe('DotAgentActivityLogComponent', () => {
@@ -62,7 +62,7 @@ describe('DotAgentActivityLogComponent', () => {
             working: true,
             workingMessage: {
                 id: 'agent-working',
-                icon: 'pi pi-spin pi-spinner',
+                icon: '',
                 text: 'Still working…',
                 sub: '8s',
                 tone: 'info'

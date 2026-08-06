@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,7 +12,6 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -21,12 +21,9 @@ import { ChartModule } from 'primeng/chart';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { map } from 'rxjs/operators';
-
 import { AgentMessage, DotAgentActivityLogComponent } from '@dotcms/ai-ui';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAgentRunService, DotMessageService } from '@dotcms/data-access';
 import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
@@ -39,6 +36,7 @@ import {
     SEVERITY_ORDER,
     type Severity
 } from '../models/a11y-severity';
+import { StudioPageRow } from '../models/accessibility-studio.models';
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
@@ -155,7 +153,13 @@ interface SeverityRow {
     // The run store + the services it drives are provided HERE (not at the root),
     // so each run route gets a fresh instance — navigating to a different page
     // recreates the store with clean scan/fix state.
-    providers: [A11yRunStore, A11yMarkerService, DotPageScannerService, DotA11yAgentService],
+    providers: [
+        A11yRunStore,
+        A11yMarkerService,
+        DotPageScannerService,
+        DotA11yAgentService,
+        DotAgentRunService
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'grid h-full min-h-0 grid-cols-[412px_1fr]' }
 })
@@ -165,7 +169,7 @@ export class DotA11yRunComponent {
     private readonly markerService = inject(A11yMarkerService);
     private readonly router = inject(Router);
     private readonly route = inject(ActivatedRoute);
-    private readonly globalStore = inject(GlobalStore);
+    private readonly location = inject(Location);
     private readonly destroyRef = inject(DestroyRef);
 
     /**
@@ -214,41 +218,18 @@ export class DotA11yRunComponent {
     private readonly liveFrame = viewChild<ElementRef<HTMLIFrameElement>>('liveFrame');
     private readonly previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
 
-    /**
-     * The page path this run screen is opened against — reconstructed from the
-     * wildcard route's segments (e.g. `['blog','post','hello']` → `/blog/post/hello`).
-     */
-    private readonly pageUri = toSignal(
-        this.route.url.pipe(
-            map((segments) =>
-                segments.length ? `/${segments.map((s) => s.path).join('/')}` : null
-            )
-        )
-    );
-
     constructor() {
-        // The URL is the source of truth for which page is open. Drive the store
-        // from the page path: rehydrate it (a no-op when that same page under the
-        // same site is already selected, e.g. arriving from the picker), so a cold
-        // load / shared link / refresh lands on the run screen for that page. Also
-        // track the current site: the lookup is host-scoped, so this re-runs when
-        // the site resolves on a cold load AND when the user switches sites — a
-        // switch re-resolves the same path against the new site (or bounces to the
-        // picker if it doesn't exist there).
-        effect(() => {
-            const uri = this.pageUri();
-            const siteId = this.globalStore.currentSiteId();
-            if (uri && siteId) {
-                untracked(() => this.store.openPageByUri(uri));
-            }
-        });
-
-        // A deep link to a page that no longer resolves → back to the picker.
-        effect(() => {
-            if (this.store.rehydrateStatus() === 'not-found') {
-                untracked(() => this.toPicker());
-            }
-        });
+        // The page list hands the selected row over in the navigation's `state` (the
+        // URL carries only its readable path, which can't supply identifier/host/
+        // language). Adopt it, or bounce back to the list when there is none — which
+        // is what a cold load, refresh, or pasted run URL looks like, since the run
+        // route is reachable only THROUGH the list.
+        const row = (this.location.getState() as { row?: StudioPageRow } | null)?.row;
+        if (row) {
+            this.store.openSelectedPage(row);
+        } else {
+            this.toPageList();
+        }
 
         // Redraw both frames' marker layers whenever their scans (or the phase)
         // change. Each frame gets its OWN scan's findings: the preview frame from
@@ -325,8 +306,8 @@ export class DotA11yRunComponent {
         }
     }
 
-    /** Navigate up to the picker route (`/agents/a11y`). */
-    private toPicker(): void {
+    /** Navigate up to the page-list route (`/agents/a11y`). */
+    private toPageList(): void {
         this.router.navigate(['..'], { relativeTo: this.route });
     }
 
@@ -570,7 +551,9 @@ export class DotA11yRunComponent {
 
         return {
             id: 'agent-working',
-            icon: 'pi pi-spin pi-spinner',
+            // Unused: dot-agent-thinking renders its own spinner and reads only
+            // text/sub. Kept non-empty only to satisfy AgentMessage.
+            icon: '',
             text: this.dm.get(this.workingReassuranceKey(sinceLastEventMs)),
             sub,
             tone: 'info'
@@ -672,12 +655,12 @@ export class DotA11yRunComponent {
     readonly previewUrl = computed(() => this.urlFor('PREVIEW_MODE', this.store.previewRevision()));
 
     /**
-     * Back button / "All pages" — return to the picker. No store reset needed: the
+     * Back button / "All pages" — return to the page list. No store reset needed: the
      * run store is provided at this component, so navigating away destroys it and
      * the next run starts fresh.
      */
-    backToPicker(): void {
-        this.toPicker();
+    backToPageList(): void {
+        this.toPageList();
     }
 
     /**

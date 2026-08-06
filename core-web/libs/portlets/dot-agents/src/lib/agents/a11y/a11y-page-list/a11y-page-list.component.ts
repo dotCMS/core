@@ -17,14 +17,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
-import { A11yPickerStore } from '../store/a11y-picker.store';
+import { A11yPageListStore } from '../store/a11y-page-list.store';
 
 /**
  * The Studio entry screen (§7): lists/searches the site's pages and selects one
  * to scan. Pages come from a real `_search`; selecting a row opens the studio.
  */
 @Component({
-    selector: 'dot-a11y-picker',
+    selector: 'dot-a11y-page-list',
     standalone: true,
     imports: [
         FormsModule,
@@ -36,13 +36,13 @@ import { A11yPickerStore } from '../store/a11y-picker.store';
         TagModule,
         DotMessagePipe
     ],
-    templateUrl: './a11y-picker.component.html',
-    providers: [A11yPickerStore],
+    templateUrl: './a11y-page-list.component.html',
+    providers: [A11yPageListStore],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block h-full min-h-0 overflow-y-auto' }
 })
-export class DotA11yPickerComponent {
-    readonly store = inject(A11yPickerStore);
+export class DotA11yPageListComponent {
+    readonly store = inject(A11yPageListStore);
 
     /** Skeleton rows to render while a page of results loads. */
     readonly skeletonRows = Array.from({ length: 8 });
@@ -66,16 +66,19 @@ export class DotA11yPickerComponent {
     }
 
     /**
-     * Open a page by navigating to its run route, so the selected page lands in
-     * the URL and the run is deep-linkable / shareable with a readable path (e.g.
-     * `/agents/a11y/blog/post/hello`). The page path becomes real route segments;
-     * the run screen reads them back and drives the store — selection is never set
-     * directly here, keeping the URL the single source of truth for what's open.
+     * Open a page by navigating to its run route, so the run URL carries a readable
+     * path (e.g. `/agents/a11y/blog/post/hello`).
+     *
+     * The selected row rides along in the navigation's `state`: the run screen needs
+     * the whole {@link StudioPageRow} (identifier, host, language) and the path alone
+     * can't supply it. Handing it over here is what lets the run store skip a lookup
+     * entirely — the trade-off is that the run route is only reachable THROUGH this
+     * list, so a cold load / refresh of a run URL has no row and bounces back here.
      */
     openPage(row: StudioPageRow): void {
         // "/blog/post/hello" → ['blog','post','hello'] (drop empty leading/trailing).
         const segments = row.path.split('/').filter(Boolean);
-        this.router.navigate(segments, { relativeTo: this.route });
+        this.router.navigate(segments, { relativeTo: this.route, state: { row } });
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {

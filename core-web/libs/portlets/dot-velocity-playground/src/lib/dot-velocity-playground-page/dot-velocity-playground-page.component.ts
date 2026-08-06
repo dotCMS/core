@@ -37,7 +37,9 @@ import {
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
+import { DotVelocityPlaygroundWarningsComponent } from './dot-velocity-playground-warnings/dot-velocity-playground-warnings.component';
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
+
 
 import {
     firstLine,
@@ -67,7 +69,8 @@ import {
         PopoverModule,
         DotEmptyContainerComponent,
         DotSpinnerComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotVelocityPlaygroundWarningsComponent
     ],
     providers: [DotVelocityPlaygroundStore, DotClipboardUtil],
     templateUrl: './dot-velocity-playground-page.component.html',

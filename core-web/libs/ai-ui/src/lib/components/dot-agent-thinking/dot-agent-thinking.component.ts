@@ -56,11 +56,30 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
                     animation: none;
                 }
             }
+
+            /* Entrance animation, owned here rather than in the app's Tailwind theme
+               so this library carries its own presentation (see DotAgentMessageComponent). */
+            @keyframes agent-enter {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @media (prefers-reduced-motion: no-preference) {
+                :host {
+                    animation: agent-enter 0.28s ease-out both;
+                }
+            }
         `
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex items-center gap-2.5 py-2 motion-safe:animate-agent-enter',
+        class: 'flex items-center gap-2.5 py-2',
         'data-testid': 'agent-thinking',
         // Announce the busy state to assistive tech (the spinner is decorative).
         role: 'status',

@@ -136,7 +136,7 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
     const hostFolder = folderId ?? siteId;
 
     const title = options.title;
-    const fired = (await options.dotcms.request({
+    const fired = await options.dotcms.request({
         method: 'PUT',
         path: '/api/v1/workflow/actions/default/fire/PUBLISH',
         query: { indexPolicy: 'WAIT_FOR' },
@@ -158,7 +158,7 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
                 pageTitle: options.pageTitle ?? title
             }
         }
-    })) as { entity?: PageEntity };
+    });
 
     const entity = extractPageEntity(fired);
     const identifier = entity?.identifier;
@@ -275,17 +275,28 @@ async function fetchContentTypeDefinition(
     dotcms: DotCMSRuntime,
     idOrVar: string
 ): Promise<ContentTypeDefinition> {
-    const response = (await dotcms.request({
+    const response = await dotcms.request({
         path: `/api/v1/contenttype/id/${encodeURIComponent(idOrVar)}`
-    })) as { entity?: { id?: string; variable?: string; baseType?: string; fields?: unknown } };
+    });
 
-    const entity = response.entity ?? {};
-    const fields = Array.isArray(entity.fields) ? (entity.fields as ContentTypeField[]) : [];
+    const entity = asRecord(responseEntity(response));
+    const rawFields = entity?.['fields'];
+    const fields: ContentTypeField[] = Array.isArray(rawFields)
+        ? rawFields
+              .map(asRecord)
+              .filter((f): f is Record<string, unknown> => f !== undefined)
+              .map((f) => ({
+                  variable: optionalString(f, 'variable'),
+                  required: f['required'] === true,
+                  fixed: f['fixed'] === true,
+                  defaultValue: f['defaultValue']
+              }))
+        : [];
 
     return {
-        id: entity.id ?? idOrVar,
-        variable: entity.variable ?? idOrVar,
-        baseType: entity.baseType ?? PAGE_BASE_TYPE,
+        id: optionalString(entity, 'id') ?? idOrVar,
+        variable: optionalString(entity, 'variable') ?? idOrVar,
+        baseType: optionalString(entity, 'baseType') ?? PAGE_BASE_TYPE,
         fields
     };
 }
@@ -300,15 +311,15 @@ function assertRequiredFieldsSatisfied(
     contentType: ContentTypeDefinition,
     extraFields: Record<string, unknown>
 ): void {
-    const missing = contentType.fields
-        .filter((field) => {
-            const variable = field.variable;
-            if (!variable || !field.required || field.fixed) return false;
-            if (SYSTEM_PAGE_FIELD_VARS.has(variable)) return false;
-            if (hasDefault(field.defaultValue)) return false;
-            return !hasValue(extraFields[variable]);
-        })
-        .map((field) => field.variable as string);
+    // flatMap (not filter + map) so `variable` stays narrowed to string without a cast.
+    const missing = contentType.fields.flatMap((field) => {
+        const variable = field.variable;
+        if (!variable || !field.required || field.fixed) return [];
+        if (SYSTEM_PAGE_FIELD_VARS.has(variable)) return [];
+        if (hasDefault(field.defaultValue)) return [];
+
+        return hasValue(extraFields[variable]) ? [] : [variable];
+    });
 
     if (missing.length > 0) {
         throw new Error(
@@ -406,19 +417,60 @@ async function ensureFolder(
         return undefined;
     }
 
-    const response = (await dotcms.request({
+    const response = await dotcms.request({
         method: 'POST',
         path: `/api/v1/folder/createfolders/${encodeURIComponent(site)}`,
         body: [folder]
-    })) as { entity?: FolderEntity[] | FolderEntity };
+    });
 
-    return extractFolderId(response, folder);
+    const folderId = extractFolderId(response, folder);
+
+    // A nested page MUST be anchored on its real folder id. Falling back to the site id here
+    // (the root-page path below) would silently anchor the page at the site root and
+    // reintroduce the very /index URL-collapse trap this function exists to prevent, while the
+    // manifest still reported the intended folder/fullPath. Fail loudly instead.
+    if (!folderId) {
+        throw new Error(
+            `Folder "${folder}" was requested on site "${site}" but createfolders returned no ` +
+                `resolvable folder id, so the page cannot be anchored to it. Refusing to fall ` +
+                `back to the site root (that would collapse the page url to /index). ` +
+                `Response entity: ${JSON.stringify(responseEntity(response))}`
+        );
+    }
+
+    return folderId;
 }
 
-interface FolderEntity {
-    identifier?: string;
-    inode?: string;
-    path?: string;
+/**
+ * `dotcms.request()` is typed `unknown` — it speaks to a live instance whose payload we cannot
+ * prove at compile time. Rather than assert a shape with `as` (which type-checks a lie and then
+ * lets `undefined` surface deep in the caller), narrow the ONE thing every dotCMS REST envelope
+ * guarantees: an object with an optional `entity`. Callers keep their own per-endpoint guards for
+ * what lives inside it, so a shape change becomes a handled `undefined` rather than a crash.
+ */
+function responseEntity(response: unknown): unknown {
+    if (typeof response !== 'object' || response === null) {
+        return undefined;
+    }
+
+    return (response as { entity?: unknown }).entity;
+}
+
+/** Narrow a value to an indexable record, or undefined when it isn't one. */
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : undefined;
+}
+
+/** Read an optional string property, ignoring non-string values. */
+function optionalString(
+    record: Record<string, unknown> | undefined,
+    key: string
+): string | undefined {
+    const value = record?.[key];
+
+    return typeof value === 'string' ? value : undefined;
 }
 
 /**
@@ -426,33 +478,33 @@ interface FolderEntity {
  * target path. Shapes vary across versions (array vs object, identifier vs inode), so probe
  * defensively and fall back to the deepest entry.
  */
-function extractFolderId(
-    response: { entity?: FolderEntity[] | FolderEntity },
-    folder: string
-): string | undefined {
-    const entity = response.entity;
-    const list: FolderEntity[] = Array.isArray(entity) ? entity : entity ? [entity] : [];
+function extractFolderId(response: unknown, folder: string): string | undefined {
+    const entity = responseEntity(response);
+    const raw: unknown[] = Array.isArray(entity) ? entity : entity ? [entity] : [];
+    const list = raw.map(asRecord).filter((f): f is Record<string, unknown> => f !== undefined);
     if (list.length === 0) {
         return undefined;
     }
 
     const normalized = folder.replace(/\/+$/, '');
-    const match = list.find((f) => f.path?.replace(/\/+$/, '') === normalized);
+    const match = list.find((f) => optionalString(f, 'path')?.replace(/\/+$/, '') === normalized);
     const chosen = match ?? list[list.length - 1];
 
-    return chosen.identifier ?? chosen.inode;
+    return optionalString(chosen, 'identifier') ?? optionalString(chosen, 'inode');
 }
 
-function extractPageEntity(fired: { entity?: PageEntity }): PageEntity | undefined {
-    const entity = fired.entity;
+function extractPageEntity(response: unknown): PageEntity | undefined {
+    const entity = asRecord(responseEntity(response));
     if (!entity) {
         return undefined;
     }
     // Fire responses sometimes wrap the contentlet under `contentlets[0]`.
-    if (entity.contentlets?.length) {
-        return entity.contentlets[0];
+    const contentlets = entity['contentlets'];
+    if (Array.isArray(contentlets) && contentlets.length) {
+        return asRecord(contentlets[0]) as PageEntity | undefined;
     }
-    return entity;
+
+    return entity as PageEntity;
 }
 
 async function isLive(dotcms: DotCMSRuntime, identifier?: string): Promise<boolean> {
@@ -461,10 +513,11 @@ async function isLive(dotcms: DotCMSRuntime, identifier?: string): Promise<boole
     }
 
     try {
-        const response = (await dotcms.request({
+        const response = await dotcms.request({
             path: `/api/v1/content/${encodeURIComponent(identifier)}`,
             query: { depth: 0 }
-        })) as { entity?: PageEntity };
+        });
+
         return extractPageEntity(response)?.live === true;
     } catch {
         // A failed liveness check is not a failed create — surface it as a non-live result.

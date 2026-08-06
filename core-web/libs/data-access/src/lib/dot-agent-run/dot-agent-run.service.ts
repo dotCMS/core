@@ -28,8 +28,12 @@ import { AgentRunStep, AgentStreamEvent } from '@dotcms/dotcms-models';
  * result type parameter, and interprets the terminal `result` payload. Calls go
  * same-origin to a dotCMS proxy resource that authenticates the session and
  * streams the agent response back — the browser never holds a token.
+ *
+ * NOT provided at the root: add it to the `providers` of the agent route/component
+ * that runs a stream, so it lives and dies with that screen instead of being
+ * retained app-wide by every consumer of `@dotcms/data-access`.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class DotAgentRunService {
     readonly #http = inject(HttpClient);
 

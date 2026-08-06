@@ -111,7 +111,12 @@ export async function placeContent(
 
     // Read the page's current content. This is the whole point of merge mode, but replace mode needs
     // it too — to validate the addressed slots exist and to build the before/after diff.
-    const { pageId, url, slots } = await loadPageSlots(options.dotcms, options.path, languageId);
+    const { pageId, url, slots } = await loadPageSlots(
+        options.dotcms,
+        options.path,
+        languageId,
+        variantName
+    );
 
     // Index the real slots two ways so a caller can address either by 1-based layout order or by
     // container (+optional instance uuid). Resolution validates existence and disambiguates.
@@ -310,12 +315,17 @@ interface LayoutRow {
 async function loadPageSlots(
     dotcms: DotCMSRuntime,
     path: string,
-    languageId: number
+    languageId: number,
+    variantName: string
 ): Promise<{ pageId: string; url: string; slots: PageSlot[] }> {
     const uri = path.trim().startsWith('/') ? path.trim() : `/${path.trim()}`;
+    // Read the SAME variant the write targets. Omitting `variantName` here reads DEFAULT,
+    // so in `merge` mode on a non-DEFAULT variant the "before" slot map and the
+    // untouched-slot preservation would be computed from DEFAULT and then written into the
+    // target variant — clobbering its real contents and reporting a bogus before/after diff.
     const response = (await dotcms.request({
         path: `/api/v1/page/json${uri}`,
-        query: { language_id: languageId }
+        query: { variantName, language_id: languageId }
     })) as PageJsonResponse;
 
     const entity = response.entity;

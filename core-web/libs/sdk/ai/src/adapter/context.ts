@@ -165,21 +165,21 @@ export async function loadDotCMSContext(
     const request = getRequestFn(apiAdapter);
 
     const [contentTypes, sites, languages, currentUser] = await Promise.all([
-        loadContentTypes(request).catch((err) => {
+        loadContentTypes(request).catch((err): ContentTypeSummary[] => {
             onError?.('contentTypes', err);
-            return [] as ContentTypeSummary[];
+            return [];
         }),
-        loadSites(request).catch((err) => {
+        loadSites(request).catch((err): SiteSummary[] => {
             onError?.('sites', err);
-            return [] as SiteSummary[];
+            return [];
         }),
-        loadLanguages(request).catch((err) => {
+        loadLanguages(request).catch((err): LanguageSummary[] => {
             onError?.('languages', err);
-            return [] as LanguageSummary[];
+            return [];
         }),
-        loadCurrentUser(request).catch((err) => {
+        loadCurrentUser(request).catch((err): CurrentUserSummary | null => {
             onError?.('currentUser', err);
-            return null as CurrentUserSummary | null;
+            return null;
         })
     ]);
 

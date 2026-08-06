@@ -7,7 +7,7 @@ import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/dat
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { A11yPickerStore } from './a11y-picker.store';
+import { A11yPageListStore } from './a11y-page-list.store';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
 
@@ -56,14 +56,14 @@ const MOCK_ROW: StudioPageRow = {
     live: true
 };
 
-describe('A11yPickerStore', () => {
-    let spectator: SpectatorService<InstanceType<typeof A11yPickerStore>>;
-    let store: InstanceType<typeof A11yPickerStore>;
+describe('A11yPageListStore', () => {
+    let spectator: SpectatorService<InstanceType<typeof A11yPageListStore>>;
+    let store: InstanceType<typeof A11yPageListStore>;
     let searchService: jest.Mocked<DotContentSearchService>;
     let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
 
     const createService = createServiceFactory({
-        service: A11yPickerStore,
+        service: A11yPageListStore,
         providers: [
             mockProvider(DotContentSearchService, {
                 get: jest.fn().mockReturnValue(of(MOCK_SEARCH_ENTITY))
@@ -87,7 +87,7 @@ describe('A11yPickerStore', () => {
         searchService = spectator.inject(
             DotContentSearchService
         ) as jest.Mocked<DotContentSearchService>;
-        // The onInit effect loads the page list — this store is picker-only, no gate.
+        // The onInit effect loads the page list — this store is page-list-only, no gate.
         spectator.flushEffects();
     });
 
@@ -96,7 +96,7 @@ describe('A11yPickerStore', () => {
         expect(store.pages().length).toBe(2);
         expect(store.pages()[0]).toEqual(MOCK_ROW);
         expect(store.totalRecords()).toBe(42);
-        expect(store.pickerStatus()).toBe('loaded');
+        expect(store.pageListStatus()).toBe('loaded');
     });
 
     it('prefers the urlMap over url for the row path (URL-mapped content)', () => {
@@ -184,6 +184,6 @@ describe('A11yPickerStore', () => {
         spectator.flushEffects();
 
         expect(errorManager.handle).toHaveBeenCalled();
-        expect(store.pickerStatus()).toBe('error');
+        expect(store.pageListStatus()).toBe('error');
     });
 });

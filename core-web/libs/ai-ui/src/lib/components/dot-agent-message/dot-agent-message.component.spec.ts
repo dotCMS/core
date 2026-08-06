@@ -6,7 +6,7 @@ import { AgentMessage } from '../../models/agent-message';
 
 const MESSAGE: AgentMessage = {
     id: 1,
-    icon: 'pi pi-check',
+    icon: 'check',
     text: 'Fixed alt text',
     sub: 'image-alt · hero.vtl',
     tone: 'success'
@@ -17,6 +17,14 @@ describe('DotAgentMessageComponent', () => {
 
     const createComponent = createComponentFactory(DotAgentMessageComponent);
 
+    /** The tone accent dot-color-icon resolved onto its host custom property. */
+    const chipColor = () =>
+        spectator
+            .query('dot-color-icon')
+            ?.getAttribute('style')
+            ?.match(/--dot-color-icon-color:\s*([^;]+)/)?.[1]
+            ?.trim();
+
     beforeEach(() => {
         spectator = createComponent({ props: { message: MESSAGE } });
     });
@@ -26,29 +34,35 @@ describe('DotAgentMessageComponent', () => {
         expect(spectator.element).toHaveText('image-alt · hero.vtl');
     });
 
-    it('renders the icon', () => {
-        expect(spectator.query('i.pi-check')).toBeTruthy();
+    it('renders the icon as a material symbol ligature', () => {
+        const icon = spectator.query('.material-symbols-outlined');
+        expect(icon).toBeTruthy();
+        expect(icon).toHaveText('check');
+    });
+
+    it('keeps the timeline-dot size override on the chip host', () => {
+        const chip = spectator.query('dot-color-icon');
+        expect(chip).toHaveClass('size-7.5!');
+        expect(chip).toHaveClass('rounded-lg!');
     });
 
     it('tints the icon chip by tone', () => {
-        const chip = spectator.query('.rounded-lg');
-        expect(chip).toHaveClass('bg-green-50');
-        expect(chip).toHaveClass('text-green-600');
+        expect(chipColor()).toBe('var(--p-green-500)');
     });
 
-    it('maps each tone to its chip classes', () => {
+    it('maps each tone to its accent color', () => {
         spectator.setInput('message', { ...MESSAGE, tone: 'warning' });
-        expect(spectator.query('.rounded-lg')).toHaveClass('text-orange-700');
+        expect(chipColor()).toBe('var(--p-orange-500)');
         spectator.setInput('message', { ...MESSAGE, tone: 'info' });
-        expect(spectator.query('.rounded-lg')).toHaveClass('text-primary');
+        expect(chipColor()).toBe('var(--p-primary-500)');
         spectator.setInput('message', { ...MESSAGE, tone: 'danger' });
-        expect(spectator.query('.rounded-lg')).toHaveClass('text-red-600');
+        expect(chipColor()).toBe('var(--p-red-500)');
     });
 
     it('omits the sub-line when absent', () => {
         spectator.setInput('message', {
             id: 2,
-            icon: 'pi pi-search',
+            icon: 'search',
             text: 'Scanning',
             tone: 'info'
         });
@@ -63,7 +77,7 @@ describe('DotAgentMessageComponent', () => {
     });
 
     it('renders the settled message icon (never a spinner)', () => {
-        expect(spectator.query('i.pi-check')).toBeTruthy();
-        expect(spectator.query('i.pi-spinner')).toBeNull();
+        expect(spectator.query('.material-symbols-outlined')).toHaveText('check');
+        expect(spectator.query('.pi-spinner')).toBeNull();
     });
 });

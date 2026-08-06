@@ -20,8 +20,16 @@ export interface AgentDefinition {
     readonly labelKey: string;
     /** i18n key for the gallery card description. */
     readonly descriptionKey: string;
-    /** PrimeNG / PrimeIcons class for the card icon, e.g. `pi pi-universal-access`. */
+    /**
+     * Material Symbols ligature name for the card icon, e.g. `accessibility_new`.
+     * Rendered inside a `dot-color-icon` — see the gallery template.
+     */
     readonly icon: string;
+    /**
+     * Icon accent, passed straight to `dot-color-icon`'s `color`. A PrimeNG palette
+     * token (e.g. `blue`) or a hex value.
+     */
+    readonly iconColor: string;
     /** Availability. `coming-soon` disables the card and skips routing. */
     readonly status: AgentStatus;
     /**
@@ -45,7 +53,8 @@ export const DOT_AGENTS: readonly AgentDefinition[] = [
         id: 'a11y',
         labelKey: 'agents.a11y.label',
         descriptionKey: 'agents.a11y.description',
-        icon: 'pi pi-universal-access',
+        icon: 'accessibility_new',
+        iconColor: 'blue',
         status: 'available',
         loadChildren: () =>
             import('./agents/a11y/a11y.routes').then((m) => m.dotAccessibilityStudioRoutes)
@@ -54,14 +63,16 @@ export const DOT_AGENTS: readonly AgentDefinition[] = [
         id: 'geo-fixer',
         labelKey: 'agents.geo-fixer.label',
         descriptionKey: 'agents.geo-fixer.description',
-        icon: 'pi pi-map-marker',
+        icon: 'location_on',
+        iconColor: 'green',
         status: 'coming-soon'
     },
     {
         id: 'page-builder',
         labelKey: 'agents.page-builder.label',
         descriptionKey: 'agents.page-builder.description',
-        icon: 'pi pi-objects-column',
+        icon: 'dashboard_customize',
+        iconColor: 'purple',
         status: 'coming-soon'
     }
 ];

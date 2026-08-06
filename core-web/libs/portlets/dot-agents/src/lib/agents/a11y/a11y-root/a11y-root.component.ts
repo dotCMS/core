@@ -4,12 +4,12 @@ import { RouterOutlet } from '@angular/router';
 /**
  * Root of the Accessibility Studio agent — a thin layout wrapper that owns the
  * full-height host box and hosts the child routes via `<router-outlet>`:
- *   - `''`     → the page picker (provides its own {@link A11yPickerStore})
+ *   - `''`     → the page list (provides its own {@link A11yPageListStore})
  *   - `**`     → the run screen (provides its own {@link A11yRunStore})
  *
- * It holds NO store: the picker and run screens are independent routes, each
+ * It holds NO store: the page-list and run screens are independent routes, each
  * providing its own store at its component (see {@link dotAccessibilityStudioRoutes}),
- * so run state resets per page and picker state never leaks into a run.
+ * so run state resets per page and page-list state never leaks into a run.
  */
 @Component({
     selector: 'dot-a11y',

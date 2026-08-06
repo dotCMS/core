@@ -1,19 +1,22 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { EMPTY, Subscription } from 'rxjs';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
+import { EMPTY } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { computed, inject, isDevMode } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import {
-    AgentHeartbeat,
-    AgentProgress,
-    AgentRunStep,
-    DotCMSContentlet
-} from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { AgentHeartbeat, AgentProgress, AgentRunStep } from '@dotcms/dotcms-models';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
-import { GlobalStore } from '@dotcms/store';
+
+import { SubscriptionSlot } from './subscription-slot';
 
 import { A11yGroup, buildA11yGroups } from '../models/a11y-groups';
 import {
@@ -33,21 +36,21 @@ import {
 } from '../models/accessibility-studio.models';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
+
 /**
- * Status of rehydrating the selected page from a deep link (`/agents/a11y/<path>`
- * opened cold): `loading` while the single-page fetch is in flight, `not-found`
- * when the path resolves to no page (so the run screen can bounce back to the
- * picker), `idle` otherwise.
+ * Dev-only port swap for {@link backendOrigin}. Under `nx serve` the app is served
+ * on DEV_SERVER_PORT while dotCMS itself answers on DEV_BACKEND_PORT; the agent
+ * renders server-side and must be handed the latter. Both are inert in prod, where
+ * the portlet is served from the dotCMS origin and no swap happens.
  */
-type RehydrateStatus = 'idle' | 'loading' | 'not-found';
+const DEV_SERVER_PORT = '4200';
+const DEV_BACKEND_PORT = '8080';
 
 interface A11yRunState {
     /** Studio state machine (§7). Starts at `ready` (a page is being opened). */
     phase: StudioPhase;
     /** The page this run is against. */
     selected: StudioPageRow | null;
-    /** Deep-link rehydration status for {@link A11yRunStore.openPageByUri}. */
-    rehydrateStatus: RehydrateStatus;
     /** Per-run opt-out: when true, the agent reports CSS contrast instead of fixing it (§3). */
     skipCss: boolean;
     /**
@@ -98,7 +101,6 @@ interface A11yRunState {
 const initialState: A11yRunState = {
     phase: 'ready',
     selected: null,
-    rehydrateStatus: 'idle',
     skipCss: false,
     scanResult: null,
     liveScanResult: null,
@@ -124,33 +126,15 @@ const runReset = (): Partial<A11yRunState> => ({
     previewRevision: 0
 });
 
-/** Projects a search contentlet into the run's page shape. */
-function toPageRow(content: DotCMSContentlet): StudioPageRow {
-    return {
-        identifier: content.identifier,
-        title: content.title || content.url || content.identifier,
-        // Prefer the urlMap for URL-mapped content (e.g. Blog): it's the real
-        // navigable path visitors use. Fall back to `url` for plain pages.
-        path: content['urlMap'] || content.url || '',
-        type: content.contentType,
-        languageId: content.languageId,
-        hostId: content.host,
-        hostName: content.hostName,
-        modDate: content.modDate,
-        modUserName: content.modUserName,
-        live: !!content.live
-    };
-}
-
 /**
  * The Accessibility Studio **run** store — owns a single page's scan / fix /
  * review / publish lifecycle for the run route (`agents/a11y/<page-path>`). It's
  * provided at {@link DotA11yRunComponent}, so navigating to a different page
  * destroys and recreates it → fresh state per page, no manual reset needed.
  *
- * The page it runs against comes from the URL: {@link openPageByUri} rehydrates
- * the selection from the path on cold load / refresh. The picker never hands
- * state to this store — the URL is the single source of truth (see [[A11yPickerStore]]).
+ * The page it runs against is handed over by the page list through router state
+ * ({@link openSelectedPage}); the URL carries its readable path for display and
+ * sharing, but the run route is only reachable through the list.
  */
 export const A11yRunStore = signalStore(
     withState<A11yRunState>(initialState),
@@ -323,41 +307,50 @@ export const A11yRunStore = signalStore(
         };
     }),
     withMethods((store) => {
-        const contentSearchService = inject(DotContentSearchService);
         const scannerService = inject(DotPageScannerService);
         const agentService = inject(DotA11yAgentService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
-        const globalStore = inject(GlobalStore);
 
         // The in-flight scan / fix-stream subscription, held so Stop can cancel it
         // (unsubscribing aborts the underlying fetch). Not reactive UI state.
-        let activeSub: Subscription | null = null;
+        const activeScan = new SubscriptionSlot();
         // The comparison-only LIVE scan, tracked separately so Stop cancels it too
         // without coupling it to the UI-driving preview scan's lifecycle.
-        let liveScanSub: Subscription | null = null;
+        const liveScan = new SubscriptionSlot();
         // The mid-fix re-scan of the PREVIEW render, triggered by `progress` frames
         // so the ring + per-severity legend track the agent's live fixes. Held so a
         // newer progress frame supersedes an in-flight one (no stampede / stale writes).
-        let fixRescanSub: Subscription | null = null;
+        const fixRescan = new SubscriptionSlot();
 
         /**
-         * The dotCMS backend origin the agent must render + call against. In prod the
-         * portlet is served FROM the dotCMS origin, so `window.location.origin` is
-         * already correct and the agent trusts it verbatim. The dev split below is the
-         * ONLY adjustment — see backendOrigin().
+         * The dotCMS backend origin the agent must render + call against.
+         *
+         * In prod the portlet is served FROM the dotCMS origin, so the browser's own
+         * origin is already correct and is returned untouched.
+         *
+         * Under `nx serve` the app is on the dev-server port but the agent (and the
+         * dotCMS scanner it drives) render server-side and can only reach the backend
+         * directly, so the port is swapped for the backend's. Only the PORT is
+         * rewritten — protocol and hostname are preserved — and only in dev mode, so a
+         * hostname that merely contains the dev port's digits (`dev4200.example.com`)
+         * can't be corrupted the way a blind string replace would.
          */
         function backendOrigin(): string {
-            // ====================================================================
-            // ⚠️ DEV-ONLY HACK — REMOVE BEFORE PRODUCTION ⚠️
-            // --------------------------------------------------------------------
-            // The Angular dev server runs on :4200, but the agent (and the dotCMS
-            // scanner it drives) render/call the page server-side and can only reach
-            // the BE on :8080. Rewrite the dev-server origin → the BE origin so the
-            // agent receives a backend-reachable dotcmsBaseUrl. Mirrors the same
-            // :4200→:8080 hack in DotPageScannerService.checkA11y. In prod there is
-            // no split, so this is a no-op. MUST be replaced by an env-aware origin.
-            // ====================================================================
-            return window.location.origin.replace('4200', '8080');
+            const origin = window.location.origin;
+            if (!isDevMode()) {
+                return origin;
+            }
+
+            try {
+                const url = new URL(origin);
+                if (url.port === DEV_SERVER_PORT) {
+                    url.port = DEV_BACKEND_PORT;
+                }
+
+                return url.origin;
+            } catch {
+                return origin;
+            }
         }
 
         /**
@@ -402,24 +395,25 @@ export const A11yRunStore = signalStore(
             if (store.phase() !== 'fixing' || !page) {
                 return;
             }
-            fixRescanSub?.unsubscribe();
-            fixRescanSub = scannerService
-                .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
-                .pipe(
-                    take(1),
-                    catchError(() => EMPTY)
-                )
-                .subscribe((scanResult) => {
-                    // Only apply if we're still fixing (a done/abort may have landed).
-                    if (store.phase() === 'fixing') {
-                        // Bump previewRevision so the preview iframe reloads and shows
-                        // the fixes that this re-scan just picked up.
-                        patchState(store, {
-                            scanResult,
-                            previewRevision: store.previewRevision() + 1
-                        });
-                    }
-                });
+            fixRescan.set(
+                scannerService
+                    .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
+                    .pipe(
+                        take(1),
+                        catchError(() => EMPTY)
+                    )
+                    .subscribe((scanResult) => {
+                        // Only apply if we're still fixing (a done/abort may have landed).
+                        if (store.phase() === 'fixing') {
+                            // Bump previewRevision so the preview iframe reloads and shows
+                            // the fixes that this re-scan just picked up.
+                            patchState(store, {
+                                scanResult,
+                                previewRevision: store.previewRevision() + 1
+                            });
+                        }
+                    })
+            );
         }
 
         /** Open a page → studio "ready" (waits for the user to scan). */
@@ -427,8 +421,7 @@ export const A11yRunStore = signalStore(
             patchState(store, {
                 selected,
                 phase: 'ready',
-                rehydrateStatus: 'idle',
-                ...runReset()
+                            ...runReset()
             });
         }
 
@@ -438,67 +431,20 @@ export const A11yRunStore = signalStore(
             },
 
             /**
-             * Rehydrate the selected page from a deep link (`/agents/a11y/<path>`
-             * opened cold or refreshed): fetch the single page by its URI, then
-             * `openPage` it → run screen "ready". If the path resolves to no page,
-             * flag `not-found` so the run screen can bounce back to the picker.
+             * Adopt the page the page list handed over via router state → run screen
+             * "ready". The row carries everything the run needs (identifier, host,
+             * language), so there is no lookup: the run route is entered only from the
+             * list, and a run URL opened cold has no row to adopt (the run screen
+             * bounces back to the list instead).
              *
-             * A no-op only when the SAME page under the SAME site is already
-             * selected, so in-session navigation into the run route doesn't refetch
-             * or reset an in-progress run. But a site change with the same path must
-             * re-resolve (the path points at a different page per site) — the caller
-             * re-runs this on `currentSiteId` changes, so the host check reloads it.
-             *
-             * Paths are unique per-site, so the lookup is host-scoped — matching the
-             * picker query. Until the current site is known the lookup would be
-             * ambiguous, so we wait (the run effect re-runs when the site resolves).
+             * A no-op when the SAME page under the SAME site is already selected, so a
+             * re-navigation into the route can't reset an in-progress run.
              */
-            openPageByUri(uri: string) {
-                const siteId = globalStore.currentSiteId();
-                if (store.selected()?.path === uri && store.selected()?.hostId === siteId) {
+            openSelectedPage(row: StudioPageRow) {
+                if (store.selected()?.identifier === row.identifier) {
                     return;
                 }
-                if (!siteId) {
-                    // Site not resolved yet — stay in loading; the caller re-runs.
-                    patchState(store, { rehydrateStatus: 'loading' });
-
-                    return;
-                }
-                patchState(store, { rehydrateStatus: 'loading' });
-
-                // Escape Lucene special characters in the path (it comes from the URL).
-                const safeUri = uri.replace(/[+\-&|!(){}[\]^"~*?:\\]/g, '\\$&');
-                // Match the picker query shape (pages + urlmapped, working, not
-                // deleted, host-scoped) but pinned to this exact path / urlmap.
-                const query =
-                    `+working:true +(urlmap:* OR basetype:5) +deleted:false ` +
-                    `+conhost:${siteId} +(path:"${safeUri}" OR urlmap:"${safeUri}")`;
-
-                contentSearchService
-                    .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                        query,
-                        limit: 1,
-                        offset: 0
-                    })
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { rehydrateStatus: 'not-found' });
-
-                            return EMPTY;
-                        })
-                    )
-                    .subscribe((entity) => {
-                        const content = entity?.jsonObjectView?.contentlets?.[0];
-                        if (!content) {
-                            patchState(store, { rehydrateStatus: 'not-found' });
-
-                            return;
-                        }
-                        // openPage resets rehydrateStatus → 'idle'.
-                        openPage(toPageRow(content));
-                    });
+                openPage(row);
             },
 
             /**
@@ -523,35 +469,54 @@ export const A11yRunStore = signalStore(
 
                 // Primary scan — the PREVIEW (working) render. Owns the phase + all
                 // widgets. Failure returns to `ready` so the user can retry.
-                activeSub = scannerService
-                    .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            // Return to ready so the user can retry the scan.
-                            patchState(store, { phase: 'ready' });
+                activeScan.set(
+                    scannerService
+                        .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
+                        .pipe(
+                            take(1),
+                            catchError((error) => {
+                                httpErrorManager.handle(error);
+                                // Return to ready so the user can retry the scan.
+                                patchState(store, { phase: 'ready' });
 
-                            return EMPTY;
+                                return EMPTY;
+                            })
+                        )
+                        .subscribe((scanResult) => {
+                            patchState(store, { scanResult, phase: 'scanned' });
                         })
-                    )
-                    .subscribe((scanResult) => {
-                        patchState(store, { scanResult, phase: 'scanned' });
-                    });
+                );
 
                 // Comparison-only scan — the LIVE (published) render. Draws the
                 // live-frame markers and nothing else, so its failure must NOT touch
                 // the phase or surface an error dialog: swallow it and leave the live
                 // markers empty. Runs in parallel with the primary scan.
-                liveScanSub = scannerService
-                    .checkA11y(buildScanUrl(page, 'LIVE'))
-                    .pipe(
-                        take(1),
-                        catchError(() => EMPTY)
-                    )
-                    .subscribe((liveScanResult) => {
-                        patchState(store, { liveScanResult });
-                    });
+                liveScan.set(
+                    scannerService
+                        .checkA11y(buildScanUrl(page, 'LIVE'))
+                        .pipe(
+                            take(1),
+                            catchError(() => EMPTY)
+                        )
+                        .subscribe((liveScanResult) => {
+                            patchState(store, { liveScanResult });
+                        })
+                );
+            },
+
+            /**
+             * Tear down every in-flight subscription without touching state.
+             *
+             * The in-band transitions (stopScan / done / error) each clean up the
+             * subscriptions they own, but component/route teardown does not: navigating
+             * away mid-run would otherwise leave the SSE `fetch` ReadableStream open,
+             * with its `subscriber.next` closures keeping this store alive and the
+             * abandoned run still streaming. Called from the `onDestroy` hook below.
+             */
+            teardown() {
+                activeScan.cancel();
+                liveScan.cancel();
+                fixRescan.cancel();
             },
 
             /** Cancel the in-flight scan (unsubscribe aborts the request) → back to ready. */
@@ -559,11 +524,9 @@ export const A11yRunStore = signalStore(
                 if (store.phase() !== 'scanning') {
                     return;
                 }
-                activeSub?.unsubscribe();
-                activeSub = null;
+                activeScan.cancel();
                 // Cancel the parallel comparison scan too.
-                liveScanSub?.unsubscribe();
-                liveScanSub = null;
+                liveScan.cancel();
                 patchState(store, { phase: 'ready' });
             },
 
@@ -599,73 +562,75 @@ export const A11yRunStore = signalStore(
                     skipCss: store.skipCss()
                 };
 
-                activeSub = agentService
-                    .fixStream(request)
-                    .pipe(
-                        catchError((error: unknown) => {
-                            const message =
-                                error instanceof Error ? error.message : 'The agent run failed.';
-                            patchState(store, { phase: 'scanned', fixError: message });
+                activeScan.set(
+                    agentService
+                        .fixStream(request)
+                        .pipe(
+                            catchError((error: unknown) => {
+                                const message =
+                                    error instanceof Error
+                                        ? error.message
+                                        : 'The agent run failed.';
+                                patchState(store, { phase: 'scanned', fixError: message });
 
-                            return EMPTY;
+                                return EMPTY;
+                            })
+                        )
+                        .subscribe((event) => {
+                            switch (event.type) {
+                                case 'run':
+                                    // First frame: capture the run id so Stop can target it.
+                                    patchState(store, { runId: event.runId });
+                                    break;
+                                // `step` is the legacy alias of `phase` — treat identically.
+                                case 'phase':
+                                case 'step':
+                                    patchState(store, { steps: [...store.steps(), event.step] });
+                                    break;
+                                case 'progress':
+                                    // Live violation count → drives the score donut down.
+                                    patchState(store, { progress: event.progress });
+                                    // Re-scan the preview so the ring segments, legend, and
+                                    // issue list reflect the fixes that just landed (the
+                                    // progress totals alone carry no per-severity split).
+                                    rescanPreviewDuringFix();
+                                    break;
+                                case 'heartbeat':
+                                    // Keep-alive while the agent is thinking between
+                                    // actions — drives the "still working…" indicator so a
+                                    // long, quiet step doesn't look hung.
+                                    patchState(store, { heartbeat: event.heartbeat });
+                                    break;
+                                case 'done':
+                                case 'aborted':
+                                    // done = full run; aborted = stopped early with a partial
+                                    // report (fixes already applied are kept). Both land on
+                                    // the done screen with the report the agent returned.
+                                    // Cancel any pending mid-fix rescan first so it can't
+                                    // overwrite the report-driven widgets afterwards.
+                                    fixRescan.cancel();
+                                    patchState(store, {
+                                        phase: 'done',
+                                        report: event.result,
+                                        // Final reload so the preview reflects the finished
+                                        // working render.
+                                        previewRevision: store.previewRevision() + 1
+                                    });
+                                    break;
+                                case 'error':
+                                    // Terminal error event from the agent.
+                                    fixRescan.cancel();
+                                    patchState(store, {
+                                        phase: 'scanned',
+                                        fixError: event.message
+                                    });
+                                    break;
+                                default:
+                                    // Exhaustive: any unhandled event type is ignored.
+                                    break;
+                            }
                         })
-                    )
-                    .subscribe((event) => {
-                        switch (event.type) {
-                            case 'run':
-                                // First frame: capture the run id so Stop can target it.
-                                patchState(store, { runId: event.runId });
-                                break;
-                            // `step` is the legacy alias of `phase` — treat identically.
-                            case 'phase':
-                            case 'step':
-                                patchState(store, { steps: [...store.steps(), event.step] });
-                                break;
-                            case 'progress':
-                                // Live violation count → drives the score donut down.
-                                patchState(store, { progress: event.progress });
-                                // Re-scan the preview so the ring segments, legend, and
-                                // issue list reflect the fixes that just landed (the
-                                // progress totals alone carry no per-severity split).
-                                rescanPreviewDuringFix();
-                                break;
-                            case 'heartbeat':
-                                // Keep-alive while the agent is thinking between
-                                // actions — drives the "still working…" indicator so a
-                                // long, quiet step doesn't look hung.
-                                patchState(store, { heartbeat: event.heartbeat });
-                                break;
-                            case 'done':
-                            case 'aborted':
-                                // done = full run; aborted = stopped early with a partial
-                                // report (fixes already applied are kept). Both land on
-                                // the done screen with the report the agent returned.
-                                // Cancel any pending mid-fix rescan first so it can't
-                                // overwrite the report-driven widgets afterwards.
-                                fixRescanSub?.unsubscribe();
-                                fixRescanSub = null;
-                                patchState(store, {
-                                    phase: 'done',
-                                    report: event.result,
-                                    // Final reload so the preview reflects the finished
-                                    // working render.
-                                    previewRevision: store.previewRevision() + 1
-                                });
-                                break;
-                            case 'error':
-                                // Terminal error event from the agent.
-                                fixRescanSub?.unsubscribe();
-                                fixRescanSub = null;
-                                patchState(store, {
-                                    phase: 'scanned',
-                                    fixError: event.message
-                                });
-                                break;
-                            default:
-                                // Exhaustive: any unhandled event type is ignored.
-                                break;
-                        }
-                    });
+                );
             },
 
             /**
@@ -717,5 +682,15 @@ export const A11yRunStore = signalStore(
                 patchState(store, { phase: store.scanResult() ? 'scanned' : 'ready' });
             }
         };
+    }),
+    withHooks({
+        /**
+         * Abort any in-flight scan / SSE fix stream when the store is destroyed
+         * (route navigation, component teardown), so an abandoned run cannot keep
+         * streaming in the background.
+         */
+        onDestroy(store) {
+            store.teardown();
+        }
     })
 );

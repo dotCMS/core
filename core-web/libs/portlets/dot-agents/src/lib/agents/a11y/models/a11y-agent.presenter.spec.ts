@@ -23,12 +23,12 @@ describe('A11yAgentPresenter', () => {
     describe('liveStep', () => {
         it('picks the icon from the step phase meta and uses info tone', () => {
             const msg = presenter.liveStep({ message: 'Scanning', meta: { phase: 'scan' } }, 0);
-            expect(msg).toEqual({ id: 0, icon: 'pi pi-search', text: 'Scanning', tone: 'info' });
+            expect(msg).toEqual({ id: 0, icon: 'search', text: 'Scanning', tone: 'info' });
         });
 
         it('falls back to the wrench icon when phase meta is missing', () => {
             const msg = presenter.liveStep({ message: 'Working' }, 3);
-            expect(msg).toEqual({ id: 3, icon: 'pi pi-wrench', text: 'Working', tone: 'info' });
+            expect(msg).toEqual({ id: 3, icon: 'build', text: 'Working', tone: 'info' });
         });
     });
 

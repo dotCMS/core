@@ -1,13 +1,20 @@
 <div class="flex flex-none flex-col items-center">
-    <div class="flex size-7.5 items-center justify-center rounded-lg" [class]="toneClass()">
-        <i [class]="message().icon" class="text-base!" aria-hidden="true"></i>
-    </div>
+    <!-- Timeline dot. dot-color-icon's own sizes (48/56px) are far too big for a
+         log row, so the w/h + radius are overridden here — it's kept for the
+         tone-driven bg/fg derivation, which is the part worth sharing. -->
+    <dot-color-icon
+        class="size-7.5! rounded-lg!"
+        size="sm"
+        aria-hidden="true"
+        [color]="toneColor()">
+        <span class="material-symbols-outlined text-base!">{{ message().icon }}</span>
+    </dot-color-icon>
     @if (!last()) {
         <div class="mt-0.5 min-h-1.5 w-0.5 flex-1 bg-surface-100"></div>
     }
 </div>
 <div class="min-w-0 pt-1">
-    <div class="leading-snug font-normal text-gray-700">
+    <div class="text-gray-700">
         {{ message().text }}
     </div>
     @if (message().sub) {

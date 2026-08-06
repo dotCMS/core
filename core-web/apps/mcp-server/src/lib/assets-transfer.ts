@@ -377,7 +377,17 @@ async function verifyLive(
         pending = notLive;
     }
 
-    return pending;
+    // The PUBLISH fired in the final round has not been verified yet — without this pass an
+    // asset that only goes live on its last re-fire would be reported as notLive despite
+    // having published successfully (a false negative in the transfer manifest).
+    const stillNotLive: AssetManifestFile[] = [];
+    for (const file of pending) {
+        if (!(await isLive(dotcms, file.identifier as string))) {
+            stillNotLive.push(file);
+        }
+    }
+
+    return stillNotLive;
 }
 
 async function isLive(dotcms: DotCMSRuntime, identifier: string): Promise<boolean> {

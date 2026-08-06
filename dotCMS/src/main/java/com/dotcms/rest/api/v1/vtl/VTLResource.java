@@ -727,9 +727,24 @@ public class VTLResource {
     }
 
     /**
+     * Maximum serialized length of the {@code X-Dot-Velocity-Warnings} header value.
+     *
+     * <p>Tomcat's default {@code maxHttpHeaderSize} is 8 KB for the whole header block, and a
+     * reverse proxy may enforce a tighter limit. {@link CollectingInvalidReferenceHandler#MAX_WARNINGS}
+     * warnings carrying long chained references serialize to well over that, which would make the
+     * container reject or truncate an otherwise successful 200. Cap the value at a conservative
+     * budget that leaves room for the rest of the response headers.</p>
+     */
+    private static final int MAX_WARNINGS_HEADER_LENGTH = 4096;
+
+    /**
      * Attaches collected Velocity warnings to a successful response as the {@code X-Dot-Velocity-Warnings}
      * header (JSON array), keeping the response body byte-for-byte the script's output. No-op when
      * there are no warnings or the handler is absent (non-dynamic requests).
+     *
+     * <p>The serialized value is bounded by {@link #MAX_WARNINGS_HEADER_LENGTH}: warnings are dropped
+     * from the tail until the JSON fits, and a trailing marker records how many were omitted so a
+     * caller never mistakes a truncated list for the complete one. The full set is always logged.</p>
      */
     private Response.ResponseBuilder withWarningsHeader(final Response.ResponseBuilder builder,
                                                         final CollectingInvalidReferenceHandler warningsHandler) {
@@ -737,8 +752,31 @@ public class VTLResource {
             return builder;
         }
         try {
-            return builder.header("X-Dot-Velocity-Warnings",
-                    new ObjectMapper().writeValueAsString(warningsHandler.getWarnings()));
+            final ObjectMapper objectMapper = new ObjectMapper();
+            final List<VelocityWarningView> warnings = warningsHandler.getWarnings();
+            String serialized = objectMapper.writeValueAsString(warnings);
+
+            if (serialized.length() > MAX_WARNINGS_HEADER_LENGTH) {
+                // Drop from the tail until the payload (plus its truncation marker) fits. The
+                // earliest warnings are the most useful — they point at the first mistake.
+                final List<VelocityWarningView> kept = new ArrayList<>(warnings);
+                String candidate = serialized;
+                while (!kept.isEmpty() && candidate.length() > MAX_WARNINGS_HEADER_LENGTH) {
+                    kept.remove(kept.size() - 1);
+                    final List<Object> withMarker = new ArrayList<>(kept);
+                    withMarker.add(Map.of(
+                            "type", "TRUNCATED",
+                            "message", (warnings.size() - kept.size())
+                                    + " additional warning(s) omitted to stay within the response "
+                                    + "header size limit; see the server log for the full list"));
+                    candidate = objectMapper.writeValueAsString(withMarker);
+                }
+                Logger.warn(this, "Velocity warnings header truncated: kept " + kept.size()
+                        + " of " + warnings.size() + " warnings. Full list: " + warnings);
+                serialized = candidate;
+            }
+
+            return builder.header("X-Dot-Velocity-Warnings", serialized);
         } catch (final IOException e) {
             Logger.warn(this, "Unable to serialize Velocity warnings header: " + e.getMessage());
             return builder;

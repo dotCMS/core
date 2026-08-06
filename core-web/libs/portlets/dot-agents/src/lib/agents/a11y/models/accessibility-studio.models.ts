@@ -75,12 +75,12 @@ export interface AgentFixRequest {
  * The run screen's state machine. Drives which action block renders.
  * ready → scanning → scanned → fixing → done → published
  *
- * (The picker is a separate route with its own store — see A11yPickerStore — so
- * there is no `picker` phase here.)
+ * (The page list is a separate route with its own store — see A11yPageListStore — so
+ * there is no `page-list` phase here.)
  */
 export type StudioPhase = 'ready' | 'scanning' | 'scanned' | 'fixing' | 'done' | 'published';
 
-/** A page row in the picker, projected from a DotCMSContentlet. */
+/** A page row in the page list, projected from a DotCMSContentlet. */
 export interface StudioPageRow {
     identifier: string;
     title: string;

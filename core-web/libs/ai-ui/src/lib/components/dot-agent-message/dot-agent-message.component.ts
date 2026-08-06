@@ -1,13 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+import { DotColorIconComponent } from '@dotcms/ui';
+
 import { AgentMessage, AgentMessageTone } from '../../models/agent-message';
 
-/** Tailwind chip classes (icon background + foreground) per message tone. */
-const TONE_CLASS: Record<AgentMessageTone, string> = {
-    info: 'bg-primary-50 text-primary',
-    success: 'bg-green-50 text-green-600',
-    warning: 'bg-orange-50 text-orange-700',
-    danger: 'bg-red-50 text-red-600'
+/**
+ * `dot-color-icon` accent per message tone. The component derives the chip's
+ * background + foreground from this single color, so tones stay one token each.
+ */
+const TONE_COLOR: Record<AgentMessageTone, string> = {
+    info: 'primary',
+    success: 'green',
+    warning: 'orange',
+    danger: 'red'
 };
 
 /**
@@ -20,12 +25,35 @@ const TONE_CLASS: Record<AgentMessageTone, string> = {
  */
 @Component({
     selector: 'dot-agent-message',
+    imports: [DotColorIconComponent],
     templateUrl: './dot-agent-message.component.html',
+    // The entrance animation lives here, not in the app's Tailwind theme: it is
+    // this library's own presentation detail, and a consuming app shouldn't have to
+    // register a keyframe for the component to look right. Same treatment as the
+    // shimmer in DotAgentThinkingComponent.
+    styles: [
+        `
+            @keyframes agent-enter {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @media (prefers-reduced-motion: no-preference) {
+                :host {
+                    animation: agent-enter 0.28s ease-out both;
+                }
+            }
+        `
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // The bubble fades + slides in as it's appended to the stream (motion-safe
-    // only). The `agent-enter` animation is registered in the app's Tailwind theme.
     host: {
-        class: 'relative flex gap-3 py-1.5 motion-safe:animate-agent-enter',
+        class: 'relative flex gap-3 py-1.5',
         'data-testid': 'agent-message'
     }
 })
@@ -39,6 +67,6 @@ export class DotAgentMessageComponent {
      */
     readonly last = input<boolean>(true);
 
-    /** Tailwind chip classes for the message's tone. */
-    readonly toneClass = computed<string>(() => TONE_CLASS[this.message().tone]);
+    /** `dot-color-icon` accent for the message's tone. */
+    readonly toneColor = computed<string>(() => TONE_COLOR[this.message().tone]);
 }

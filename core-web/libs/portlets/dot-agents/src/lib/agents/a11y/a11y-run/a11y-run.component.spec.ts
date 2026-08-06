@@ -1,12 +1,11 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of } from 'rxjs';
 
-import { Component, input, output, signal } from '@angular/core';
-import { ActivatedRoute, Router, UrlSegment } from '@angular/router';
+import { Location } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotA11yRunComponent } from './a11y-run.component';
@@ -78,7 +77,7 @@ describe('DotA11yRunComponent', () => {
     const publish = jest.fn();
     const discard = jest.fn();
     const setSkipCss = jest.fn();
-    const openPageByUri = jest.fn();
+    const openSelectedPage = jest.fn();
     const navigate = jest.fn();
 
     // Mutable per-test state read by the store mock's reactive getters.
@@ -86,16 +85,15 @@ describe('DotA11yRunComponent', () => {
     let report: FixReport | null = null;
     let steps: AgentRunStep[] = [];
     let fixError: string | null = null;
-    let rehydrateStatus: 'idle' | 'loading' | 'not-found' = 'idle';
     let heartbeat: AgentHeartbeat | null = null;
     // Bumped when the working render changes → preview iframe cache-buster.
     let previewRevision = 0;
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
     // The page path (as URL segments) the run component reads on init.
-    let pathSegments = ['about-us'];
+    /** The row the page list "handed over" via router state for the current test. */
+    let handoverRow: StudioPageRow | null = null;
     // The current site — the run rehydrate effect waits for it before fetching.
-    const currentSiteIdSignal = signal<string | null>('site-1');
 
     // Two error groups (5 elements) + one warning group (2 elements).
     const MOCK_GROUPS: A11yGroup[] = [
@@ -177,7 +175,6 @@ describe('DotA11yRunComponent', () => {
         fixedCount: () =>
             report ? Math.max(0, report.scan.before.violations - report.scan.after.violations) : 0,
         reportedCount: () => report?.scan.after.violations ?? 0,
-        rehydrateStatus: () => rehydrateStatus,
         previewRevision: () => previewRevision,
         runScan,
         stopScan,
@@ -186,7 +183,7 @@ describe('DotA11yRunComponent', () => {
         publish,
         discard,
         setSkipCss,
-        openPageByUri
+        openSelectedPage
     };
 
     const createComponent = createComponentFactory({
@@ -221,21 +218,11 @@ describe('DotA11yRunComponent', () => {
             },
             { provide: Router, useValue: { navigate } },
             {
-                provide: GlobalStore,
-                useValue: {
-                    get currentSiteId() {
-                        return currentSiteIdSignal;
-                    }
-                }
+                provide: Location,
+                // useFactory so each test's `handoverRow` is read at injection time.
+                useFactory: () => ({ getState: () => (handoverRow ? { row: handoverRow } : null) })
             },
-            {
-                provide: ActivatedRoute,
-                // useFactory so the segments are read at injection time (per test),
-                // not when the component factory config is first evaluated.
-                useFactory: () => ({
-                    url: of(pathSegments.map((p) => new UrlSegment(p, {})))
-                })
-            }
+            { provide: ActivatedRoute, useValue: {} }
         ]
     });
 
@@ -261,12 +248,10 @@ describe('DotA11yRunComponent', () => {
         report = null;
         steps = [];
         fixError = null;
-        rehydrateStatus = 'idle';
         heartbeat = null;
         previewRevision = 0;
         hasScan = false;
-        pathSegments = ['about-us'];
-        currentSiteIdSignal.set('site-1');
+        handoverRow = MOCK_PAGE;
         // Report reduced-motion so the score count-up snaps to its final value
         // synchronously (no requestAnimationFrame timing in the DOM assertions).
         window.matchMedia = jest
@@ -806,7 +791,7 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    it('navigates up to the picker from the back button', () => {
+    it('navigates up to the page list from the back button', () => {
         render('ready');
         const btn = spectator.query(byTestId('studio-back-btn'))?.querySelector('button');
         spectator.click(btn as HTMLElement);
@@ -817,22 +802,17 @@ describe('DotA11yRunComponent', () => {
         );
     });
 
-    describe('deep link (page path)', () => {
-        it('rehydrates the store from the route page path on init', () => {
-            pathSegments = ['blog', 'post', 'hello'];
+    describe('page handover from the page list', () => {
+        it('adopts the row handed over in the navigation state on init', () => {
+            handoverRow = MOCK_PAGE;
             render('ready');
-            expect(openPageByUri).toHaveBeenCalledWith('/blog/post/hello');
+            expect(openSelectedPage).toHaveBeenCalledWith(MOCK_PAGE);
         });
 
-        it('does not rehydrate until the current site is known', () => {
-            currentSiteIdSignal.set(null);
+        it('bounces back to the page list when no row was handed over (cold load)', () => {
+            handoverRow = null;
             render('ready');
-            expect(openPageByUri).not.toHaveBeenCalled();
-        });
-
-        it('bounces back to the picker when the deep-linked page is not found', () => {
-            rehydrateStatus = 'not-found';
-            render('ready');
+            expect(openSelectedPage).not.toHaveBeenCalled();
             expect(navigate).toHaveBeenCalledWith(
                 ['..'],
                 expect.objectContaining({ relativeTo: expect.anything() })

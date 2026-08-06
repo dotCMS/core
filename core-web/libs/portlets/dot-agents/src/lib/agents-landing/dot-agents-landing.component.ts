@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_AGENTS } from '../agent-registry';
 
@@ -18,7 +18,14 @@ import { DOT_AGENTS } from '../agent-registry';
 @Component({
     selector: 'dot-agents-landing',
     standalone: true,
-    imports: [NgTemplateOutlet, RouterLink, CardModule, TagModule, DotMessagePipe],
+    imports: [
+        NgTemplateOutlet,
+        RouterLink,
+        CardModule,
+        TagModule,
+        DotMessagePipe,
+        DotColorIconComponent
+    ],
     templateUrl: './dot-agents-landing.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block h-full min-h-0 overflow-y-auto' }

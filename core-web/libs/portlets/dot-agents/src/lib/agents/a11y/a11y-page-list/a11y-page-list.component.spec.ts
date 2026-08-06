@@ -5,10 +5,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotA11yPickerComponent } from './a11y-picker.component';
+import { DotA11yPageListComponent } from './a11y-page-list.component';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
-import { A11yPickerStore } from '../store/a11y-picker.store';
+import { A11yPageListStore } from '../store/a11y-page-list.store';
 
 const MOCK_ROWS: StudioPageRow[] = [
     {
@@ -37,8 +37,8 @@ const MOCK_ROWS: StudioPageRow[] = [
     }
 ];
 
-describe('DotA11yPickerComponent', () => {
-    let spectator: Spectator<DotA11yPickerComponent>;
+describe('DotA11yPageListComponent', () => {
+    let spectator: Spectator<DotA11yPageListComponent>;
 
     const setFilter = jest.fn();
     const setPagination = jest.fn();
@@ -50,14 +50,14 @@ describe('DotA11yPickerComponent', () => {
         page: () => 1,
         rows: () => 25,
         filter: () => '',
-        pickerStatus: () => 'loaded',
+        pageListStatus: () => 'loaded',
         setFilter,
         setPagination
     };
 
     const createComponent = createComponentFactory({
-        component: DotA11yPickerComponent,
-        componentProviders: [{ provide: A11yPickerStore, useValue: storeMock }],
+        component: DotA11yPageListComponent,
+        componentProviders: [{ provide: A11yPageListStore, useValue: storeMock }],
         providers: [
             { provide: Router, useValue: { navigate } },
             { provide: ActivatedRoute, useValue: {} },
@@ -65,9 +65,9 @@ describe('DotA11yPickerComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'accessibility.studio.title': 'Accessibility Studio',
-                    'accessibility.studio.picker.col.title': 'Title',
-                    'accessibility.studio.picker.status.published': 'Published',
-                    'accessibility.studio.picker.status.draft': 'Draft'
+                    'accessibility.studio.pagelist.col.title': 'Title',
+                    'accessibility.studio.pagelist.status.published': 'Published',
+                    'accessibility.studio.pagelist.status.draft': 'Draft'
                 })
             }
         ]
@@ -90,7 +90,7 @@ describe('DotA11yPickerComponent', () => {
 
     it('navigates to the page run route (deep link) when a row is clicked', () => {
         spectator.click(spectator.queryAll(byTestId('studio-page-row'))[0]);
-        // Navigates to the page path as route segments relative to the picker —
+        // Navigates to the page path as route segments relative to the page list —
         // the run screen then drives the store from the URL. Selection not set here.
         // MOCK_ROWS[0].path === '/about-us' → ['about-us'].
         expect(navigate).toHaveBeenCalledWith(

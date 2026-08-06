@@ -11,9 +11,9 @@ import { GlobalStore } from '@dotcms/store';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
 
-type PickerStatus = 'init' | 'loading' | 'loaded' | 'error';
+type PageListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
-interface A11yPickerState {
+interface A11yPageListState {
     /** The page rows for the current query + page. */
     pages: StudioPageRow[];
     /** Total matches for the current query (drives the paginator). */
@@ -24,20 +24,20 @@ interface A11yPickerState {
     rows: number;
     /** Free-text search term (title / path / urlmap prefix). */
     filter: string;
-    pickerStatus: PickerStatus;
+    pageListStatus: PageListStatus;
 }
 
-const initialState: A11yPickerState = {
+const initialState: A11yPageListState = {
     pages: [],
     totalRecords: 0,
     page: 1,
     rows: 25,
     filter: '',
-    pickerStatus: 'init'
+    pageListStatus: 'init'
 };
 
 /**
- * Builds the Lucene query for the picker — pages (`basetype:5`) plus URL-mapped
+ * Builds the Lucene query for the page list — pages (`basetype:5`) plus URL-mapped
  * content, working + not deleted, scoped to the current host. Search adds a
  * title / path / urlmap prefix clause.
  */
@@ -58,7 +58,7 @@ function buildPagesQuery(filter: string, siteId: string | null): string {
     return clauses.join(' ');
 }
 
-/** Projects a search contentlet into the picker row shape. */
+/** Projects a search contentlet into the page-list row shape. */
 function toPageRow(content: DotCMSContentlet): StudioPageRow {
     return {
         identifier: content.identifier,
@@ -78,17 +78,17 @@ function toPageRow(content: DotCMSContentlet): StudioPageRow {
 }
 
 /**
- * The Accessibility Studio **picker** store — owns only the page-list screen
+ * The Accessibility Studio **page list** store — owns only the page-list screen
  * (`agents/a11y`): the searchable, paginated list of pages to run against. It's
- * provided at {@link DotA11yPickerComponent}, so it lives and dies with that
+ * provided at {@link DotA11yPageListComponent}, so it lives and dies with that
  * route and never shares state with a run.
  *
  * Selecting a page navigates to the run route; the run screen reads the page from
  * the URL and drives its own {@link A11yRunStore}. This store never holds run
  * state (no selected page, no scan/fix/report) — that split is the whole point.
  */
-export const A11yPickerStore = signalStore(
-    withState<A11yPickerState>(initialState),
+export const A11yPageListStore = signalStore(
+    withState<A11yPageListState>(initialState),
     withMethods((store) => {
         const contentSearchService = inject(DotContentSearchService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
@@ -103,7 +103,7 @@ export const A11yPickerStore = signalStore(
             if (!siteId) {
                 return;
             }
-            patchState(store, { pickerStatus: 'loading' });
+            patchState(store, { pageListStatus: 'loading' });
 
             const query = buildPagesQuery(store.filter(), siteId);
             const offset = (store.page() - 1) * store.rows();
@@ -119,7 +119,7 @@ export const A11yPickerStore = signalStore(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { pickerStatus: 'error' });
+                        patchState(store, { pageListStatus: 'error' });
 
                         return EMPTY;
                     })
@@ -129,7 +129,7 @@ export const A11yPickerStore = signalStore(
                     patchState(store, {
                         pages: contentlets.map(toPageRow),
                         totalRecords: entity?.resultsSize ?? 0,
-                        pickerStatus: 'loaded'
+                        pageListStatus: 'loaded'
                     });
                 });
         }
@@ -158,7 +158,7 @@ export const A11yPickerStore = signalStore(
                 });
 
                 // Reload the list on query / pagination / site changes. This store
-                // only exists on the picker route, so it always loads (no phase gate).
+                // only exists on the page-list route, so it always loads (no phase gate).
                 effect(() => {
                     store.filter();
                     store.page();
