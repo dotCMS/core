@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
@@ -57,6 +65,7 @@ interface FolderForm {
         DotFieldRequiredDirective
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: { class: 'block' }
 })
 export class DotContentDriveDialogFolderComponent {

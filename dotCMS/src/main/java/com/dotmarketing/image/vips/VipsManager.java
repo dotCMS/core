@@ -48,12 +48,19 @@ public final class VipsManager {
             synchronized (VipsManager.class) {
                 local = available;
                 if (local == null) {
-                    local = Try.of(() -> {
+                    // Deliberately a plain try/catch rather than io.vavr Try: when native libvips is
+                    // absent the class initializer of app.photofox.vipsffm.Vips fails with an
+                    // ExceptionInInitializerError (and NoClassDefFoundError thereafter). Both are
+                    // LinkageErrors, which vavr classifies as fatal and rethrows instead of
+                    // capturing as a Failure — so the probe would propagate rather than fall back.
+                    try {
                         Vips.run(arena -> configureCache());
-                        return Boolean.TRUE;
-                    }).onFailure(e -> Logger.warn(VipsManager.class,
-                            "libvips not available, falling back to pure-JVM image engine: " + e.getMessage()))
-                            .getOrElse(Boolean.FALSE);
+                        local = Boolean.TRUE;
+                    } catch (Throwable t) {
+                        Logger.warn(VipsManager.class,
+                                "libvips not available, falling back to pure-JVM image engine: " + t);
+                        local = Boolean.FALSE;
+                    }
                     available = local;
                 }
             }
@@ -65,7 +72,7 @@ public final class VipsManager {
      * @return true if libvips is both enabled by config and physically available.
      */
     public static boolean isEnabled() {
-        return Config.getBooleanProperty(USE_LIBVIPS, false) && isAvailable();
+        return Config.getBooleanProperty(USE_LIBVIPS, true) && isAvailable();
     }
 
     /**

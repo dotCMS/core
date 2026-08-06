@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { Checkbox } from 'primeng/checkbox';
@@ -15,6 +15,7 @@ import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/ty
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './uve-style-editor-field-checkbox-group.component.html'
 })
 export class UveStyleEditorFieldCheckboxGroupComponent {

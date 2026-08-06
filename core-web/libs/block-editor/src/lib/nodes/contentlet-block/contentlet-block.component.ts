@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { AngularNodeViewComponent } from '../../NodeViewRenderer';
 
@@ -6,6 +6,7 @@ import { AngularNodeViewComponent } from '../../NodeViewRenderer';
     selector: 'dot-contentlet-block',
     templateUrl: './contentlet-block.component.html',
     styleUrls: ['./contentlet-block.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ContentletBlockComponent extends AngularNodeViewComponent implements OnInit {

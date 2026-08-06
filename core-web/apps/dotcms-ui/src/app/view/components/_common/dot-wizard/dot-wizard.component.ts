@@ -9,7 +9,8 @@ import {
     signal,
     Type,
     ViewChild,
-    ViewChildren
+    ViewChildren,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -36,6 +37,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DialogModule, ButtonModule, DotContainerReferenceDirective]
 })
 export class DotWizardComponent implements AfterViewInit {

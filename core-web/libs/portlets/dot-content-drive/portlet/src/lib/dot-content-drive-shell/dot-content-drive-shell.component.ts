@@ -277,11 +277,11 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Drops the header's bottom rule for the Action Center so its title and the "N items selected"
-     * sub-line read as one block rather than being split by a divider.
+     * Drops the header's bottom rule and locks horizontal padding to `px-6` so the title lines up
+     * with the Action Center body/footer (PrimeNG's dialog header padding token may not match).
      */
     readonly $dialogHeaderClass = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 pb-2' : ''
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 px-6! pb-2' : ''
     );
 
     /**
@@ -290,6 +290,22 @@ export class DotContentDriveShellComponent {
      */
     readonly $actionCenterSelectionCount = computed(
         () => excludeFolders(this.#store.selectedItems()).length
+    );
+
+    /**
+     * Action Center title. Swaps to the drilled-into screen's title (the selected workflow action)
+     * when its body publishes one, so there is one header rather than the dialog's and the body's.
+     */
+    readonly $actionCenterHeader = computed(
+        () => this.#store.dialogDrillDown()?.header ?? this.$activeDialog()?.header
+    );
+
+    /**
+     * Item count for the Action Center's header sub-line: the items the drilled-into action will run
+     * on, falling back to the whole contentlet selection at the top level.
+     */
+    readonly $actionCenterCount = computed(
+        () => this.#store.dialogDrillDown()?.itemCount ?? this.$actionCenterSelectionCount()
     );
 
     /**

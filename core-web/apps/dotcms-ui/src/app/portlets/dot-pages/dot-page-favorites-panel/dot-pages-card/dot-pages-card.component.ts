@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -10,6 +10,7 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
     selector: 'dot-pages-card',
     templateUrl: './dot-pages-card.component.html',
     styleUrls: ['./dot-pages-card.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [CardModule, ButtonModule, TooltipModule, DotPagesFavoritePageEmptySkeletonComponent]
 })
 export class DotPagesCardComponent {

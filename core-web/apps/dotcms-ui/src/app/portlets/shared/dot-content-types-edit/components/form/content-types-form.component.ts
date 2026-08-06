@@ -11,7 +11,8 @@ import {
     inject,
     input,
     output,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -70,6 +71,7 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
     providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],
     selector: 'dot-content-types-form',
     templateUrl: 'content-types-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ReactiveFormsModule,
         AsyncPipe,

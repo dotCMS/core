@@ -79,6 +79,7 @@ import {
 } from '../shared/mocks';
 import {
     DotContentDriveDialog,
+    DotContentDriveDialogDrillDown,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -101,6 +102,8 @@ describe('DotContentDriveShellComponent', () => {
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
     // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    // Header override published by a dialog body that has drilled into a sub-screen.
+    let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
     // Reactive so the shell's $extraColumns computed recomputes when the fields change.
     let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
 
@@ -172,6 +175,7 @@ describe('DotContentDriveShellComponent', () => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
+        dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
 
@@ -206,7 +210,10 @@ describe('DotContentDriveShellComponent', () => {
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
+                    dialogDrillDown: dialogDrillDownSignal,
                     setDialog: jest.fn(),
+                    setDialogDrillDown: jest.fn(),
+                    clearDialogDrillDown: jest.fn(),
                     loadFolders: jest.fn(),
                     loadChildFolders: jest.fn(),
                     updateFolders: jest.fn(),
@@ -516,6 +523,38 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+        });
+
+        it('should retitle the header to the drilled-into action', () => {
+            // The Action Center body publishes this when it opens an action's preview, so the one
+            // dialog header names the action instead of the body rendering a second header.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
+                'Send for Review'
+            );
+            // The count follows the drill-down, not the full selection of 2.
+            expect(spectator.component.$actionCenterCount()).toBe(1);
+        });
+
+        it('should restore the dialog title when the drill-down is cleared', () => {
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            dialogDrillDownSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
+                'Workflow Center'
+            );
+            expect(spectator.component.$actionCenterCount()).toBe(2);
         });
 
         it('should not render the sub-header for other dialog types', () => {
