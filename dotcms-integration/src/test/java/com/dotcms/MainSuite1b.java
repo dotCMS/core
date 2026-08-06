@@ -15,6 +15,15 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Data-scanning tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so anything
+        // that walks the whole dataset (findAll*, findAllVersions*) costs
+        // O(all content created so far). Scheduled late these pay for every
+        // preceding test's leftovers. Keep new full-scan tests in this block.
+        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
+        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
+
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
         com.dotcms.tika.TikaUtilsTest.class,
@@ -90,11 +99,9 @@ import org.junit.runners.Suite.SuiteClasses;
         QuartzUtilsTest.class,
         DotConnectTest.class,
         com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
-        com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
-        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class,
         com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class
