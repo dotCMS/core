@@ -1867,6 +1867,66 @@
 			"name": "Test Get ContentTypes",
 			"item": [
 				{
+					"name": "Ensure Video DotAsset type exists (setup)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Setup: the 'ensure' tests in this folder expect a 'Video' content type to exist.",
+									"// Nothing in dotCMS creates it eagerly at startup, so when this collection runs",
+									"// without the collections that create it indirectly, the assertions fail.",
+									"// Create it if missing so this collection is self-contained (400 = already exists).",
+									"pm.test(\"Video type exists or was created\", function () {",
+									"    pm.expect([200, 201, 400]).to.include(pm.response.code);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableDotAssetContentType\",\n    \"defaultType\": false,\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Video\",\n    \"variable\": \"Video\",\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get ContentTypes sending HostID",
 					"event": [
 						{
