@@ -622,6 +622,21 @@ export class DotA11yRunComponent {
      * prefix — `/dot-page` would 404 there. `isDevMode()` is build-time accurate
      * (true under `ng serve`, false in a production build) and needs no app-env
      * import, so the dev-only prefix never leaks to production.
+     *
+     * NOTE: this pairs with the `/dot-page` rule in proxy-dev.conf.mjs — the two
+     * must change together, or the preview frames 404 in local dev.
+     *
+     * Same-origin is a hard requirement, not a convenience: the marker overlay and
+     * the scroll sync both reach into each frame's `contentWindow`
+     * ({@link frameWindow}), which the browser forbids cross-origin. A cross-origin
+     * frame would still render the page but silently draw no violation markers.
+     *
+     * NEEDS A BACKEND FIX: the proper solution is a first-class, same-origin dotCMS
+     * endpoint that renders a page for inspection (a supported resource under
+     * `/api`), so this component — and any future agent that has to inspect a
+     * rendered page — can frame it directly with no origin games and no dev-server
+     * rewrite. No such endpoint exists today; that gap is why the sentinel + proxy
+     * pair exists. Delete both once it lands.
      */
     private readonly previewPathPrefix = isDevMode() ? '/dot-page' : '';
 
