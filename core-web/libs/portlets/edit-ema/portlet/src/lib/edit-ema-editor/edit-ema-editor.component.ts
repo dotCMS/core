@@ -118,6 +118,7 @@ import {
     deleteContentletFromContainer,
     getTargetUrl,
     insertContentletInContainer,
+    isAssetPath,
     isSamePageNavigation,
     measureCanvasAvailableSize,
     shouldNavigate
@@ -764,6 +765,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         if (url.hostname !== this.window.location.hostname) {
             this.window.open(href, '_blank');
+
+            return;
+        }
+
+        // Files (PDFs, images, docs…) are not pages: the Page API cannot resolve
+        // them and the editor would show "Page not found". Open them in a new tab
+        // so the author can verify the link without leaving the editor.
+        if (isAssetPath(url.pathname)) {
+            this.window.open(href, '_blank');
+            e.preventDefault();
 
             return;
         }
