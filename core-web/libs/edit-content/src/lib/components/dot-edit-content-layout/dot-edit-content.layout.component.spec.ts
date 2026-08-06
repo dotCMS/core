@@ -1065,187 +1065,197 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
 describe.each([
     ['full-screen', false],
     ['dialog', true]
-])('EditContentLayoutComponent - sidebar refresh is store-owned (%s host)', (_hostName, inPlaceNavigation) => {
-    let spectator: Spectator<DotEditContentLayoutComponent>;
-    let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
-    let dotEditContentService: SpyObject<DotEditContentService>;
+])(
+    'EditContentLayoutComponent - sidebar refresh is store-owned (%s host)',
+    (_hostName, inPlaceNavigation) => {
+        let spectator: Spectator<DotEditContentLayoutComponent>;
+        let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
+        let dotEditContentService: SpyObject<DotEditContentService>;
 
-    const IDENTIFIER = MOCK_CONTENTLET_1_TAB.identifier;
-    const hostTrail = signal<DotRelatedContentCrumb[]>([]);
-    const host = {
-        inPlaceNavigation,
-        inPlaceNavigation$: undefined,
-        trail: hostTrail,
-        setTrail: jest.fn(),
-        resolveIdentity: jest.fn().mockReturnValue({}),
-        reportSaved: jest.fn(),
-        reloadContent: jest.fn(),
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn(),
-        goToRelatedContent: jest.fn(),
-        goToCrumb: jest.fn()
-    };
+        const IDENTIFIER = MOCK_CONTENTLET_1_TAB.identifier;
+        const hostTrail = signal<DotRelatedContentCrumb[]>([]);
+        const host = {
+            inPlaceNavigation,
+            inPlaceNavigation$: undefined,
+            trail: hostTrail,
+            setTrail: jest.fn(),
+            resolveIdentity: jest.fn().mockReturnValue({}),
+            reportSaved: jest.fn(),
+            reloadContent: jest.fn(),
+            setContentTitle: jest.fn(),
+            addBreadcrumb: jest.fn(),
+            goToSavedContent: jest.fn(),
+            goToRestoredVersion: jest.fn(),
+            goToRelatedContent: jest.fn(),
+            goToCrumb: jest.fn()
+        };
 
-    const emptyPage = { entity: [], pagination: null, errors: [], i18nMessagesMap: {}, messages: [], permissions: [] };
+        const emptyPage = {
+            entity: [],
+            pagination: null,
+            errors: [],
+            i18nMessagesMap: {},
+            messages: [],
+            permissions: []
+        };
 
-    const createComponent = createComponentFactory({
-        component: DotEditContentLayoutComponent,
-        imports: [
-            MessageModule,
-            ButtonModule,
-            MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentSidebarComponent),
-            DotMessagePipe
-        ],
-        componentProviders: [
-            DotEditContentStore,
-            mockProvider(DotWorkflowsActionsService),
-            mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowService),
-            mockProvider(DotContentletService),
-            mockProvider(DotVersionableService),
-            ConfirmationService,
-            { provide: EDIT_CONTENT_HOST, useValue: host }
-        ],
-        providers: [
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(MessageService),
-            mockProvider(DialogService),
-            mockProvider(DotLanguagesService),
-            mockProvider(DotSiteService, {
-                getCurrentSite: jest
-                    .fn()
-                    .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
-            }),
-            mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(of({}))
-            }),
-            GlobalStore,
-            {
-                provide: DotCurrentUserService,
-                useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
-            },
-            {
-                provide: ActivatedRoute,
-                useValue: {
-                    get snapshot() {
-                        return { params: { id: '', contentType: '' } };
+        const createComponent = createComponentFactory({
+            component: DotEditContentLayoutComponent,
+            imports: [
+                MessageModule,
+                ButtonModule,
+                MockComponent(DotEditContentFormComponent),
+                MockComponent(DotEditContentSidebarComponent),
+                DotMessagePipe
+            ],
+            componentProviders: [
+                DotEditContentStore,
+                mockProvider(DotWorkflowsActionsService),
+                mockProvider(DotWorkflowActionsFireService),
+                mockProvider(DotEditContentService),
+                mockProvider(DotContentTypeService),
+                mockProvider(DotWorkflowService),
+                mockProvider(DotContentletService),
+                mockProvider(DotVersionableService),
+                ConfirmationService,
+                { provide: EDIT_CONTENT_HOST, useValue: host }
+            ],
+            providers: [
+                mockProvider(DotHttpErrorManagerService),
+                mockProvider(MessageService),
+                mockProvider(DialogService),
+                mockProvider(DotLanguagesService),
+                mockProvider(DotSiteService, {
+                    getCurrentSite: jest
+                        .fn()
+                        .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
+                }),
+                mockProvider(DotSystemConfigService, {
+                    getSystemConfig: jest.fn().mockReturnValue(of({}))
+                }),
+                GlobalStore,
+                {
+                    provide: DotCurrentUserService,
+                    useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        get snapshot() {
+                            return { params: { id: '', contentType: '' } };
+                        }
                     }
-                }
-            },
-            mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
-                url: '/test-url',
-                events: of()
-            }),
-            provideHttpClient(),
-            provideHttpClientTesting(),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DotRelatedContentNavigationStore, {
-                trail: hostTrail,
-                registerTitle: jest.fn(),
-                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
-            })
-        ]
-    });
-
-    /** Puts the store in the state a loaded contentlet produces, so the sidebar renders. */
-    const loadContentlet = (contentlet = MOCK_CONTENTLET_1_TAB) => {
-        patchState(store, {
-            contentlet,
-            contentType: CONTENT_TYPE_MOCK,
-            state: ComponentStatus.LOADED
+                },
+                mockProvider(Router, {
+                    navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                    url: '/test-url',
+                    events: of()
+                }),
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+                mockProvider(DotRelatedContentNavigationStore, {
+                    trail: hostTrail,
+                    registerTitle: jest.fn(),
+                    buildTrailForSavedInode: jest.fn().mockReturnValue(null)
+                })
+            ]
         });
-        spectator.detectChanges();
-    };
 
-    beforeEach(() => {
-        spectator = createComponent({ detectChanges: false });
-        store = spectator.inject(DotEditContentStore, true);
-        dotEditContentService = spectator.inject(DotEditContentService, true);
+        /** Puts the store in the state a loaded contentlet produces, so the sidebar renders. */
+        const loadContentlet = (contentlet = MOCK_CONTENTLET_1_TAB) => {
+            patchState(store, {
+                contentlet,
+                contentType: CONTENT_TYPE_MOCK,
+                state: ComponentStatus.LOADED
+            });
+            spectator.detectChanges();
+        };
 
-        dotEditContentService.getActivities.mockReturnValue(of([]));
-        dotEditContentService.getReferencePages.mockReturnValue(of(0));
-        dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
-        dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
+        beforeEach(() => {
+            spectator = createComponent({ detectChanges: false });
+            store = spectator.inject(DotEditContentStore, true);
+            dotEditContentService = spectator.inject(DotEditContentService, true);
 
-        // The lock and workflow features also react to `contentlet`, so their services
-        // need observables or their effects blow up before the ones under test run.
-        spectator
-            .inject(DotContentletService, true)
-            .canLock.mockReturnValue(of({ entity: { canLock: true } }));
-        spectator
-            .inject(DotWorkflowsActionsService, true)
-            .getByInode.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
-        spectator
-            .inject(DotWorkflowService, true)
-            .getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-    });
+            dotEditContentService.getActivities.mockReturnValue(of([]));
+            dotEditContentService.getReferencePages.mockReturnValue(of(0));
+            dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
+            dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
 
-    it('should fetch sidebar data even while the sidebar component is not rendered', fakeAsync(() => {
-        // `@if` is false here (not loaded, not saving, not reloading), so the sidebar is
-        // never mounted — yet the data must still load, because the store owns it.
-        patchState(store, {
-            contentlet: MOCK_CONTENTLET_1_TAB,
-            state: ComponentStatus.LOADING
+            // The lock and workflow features also react to `contentlet`, so their services
+            // need observables or their effects blow up before the ones under test run.
+            spectator
+                .inject(DotContentletService, true)
+                .canLock.mockReturnValue(of({ entity: { canLock: true } }));
+            spectator
+                .inject(DotWorkflowsActionsService, true)
+                .getByInode.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
+            spectator
+                .inject(DotWorkflowService, true)
+                .getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
         });
-        spectator.detectChanges();
-        tick();
 
-        expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
-        expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
-        expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
-        expect(dotEditContentService.getVersions).toHaveBeenCalled();
-    }));
+        it('should fetch sidebar data even while the sidebar component is not rendered', fakeAsync(() => {
+            // `@if` is false here (not loaded, not saving, not reloading), so the sidebar is
+            // never mounted — yet the data must still load, because the store owns it.
+            patchState(store, {
+                contentlet: MOCK_CONTENTLET_1_TAB,
+                state: ComponentStatus.LOADING
+            });
+            spectator.detectChanges();
+            tick();
 
-    it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {
-        loadContentlet();
-        tick();
-        expect(spectator.query('dot-edit-content-sidebar')).not.toBeNull();
+            expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getVersions).toHaveBeenCalled();
+        }));
 
-        dotEditContentService.getActivities.mockClear();
-        dotEditContentService.getReferencePages.mockClear();
-        dotEditContentService.getVersions.mockClear();
+        it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {
+            loadContentlet();
+            tick();
+            expect(spectator.query('dot-edit-content-sidebar')).not.toBeNull();
 
-        // Flip the `@if` off — Angular destroys the sidebar and, before this fix, its effects.
-        patchState(store, { contentType: null, state: ComponentStatus.LOADING });
-        spectator.detectChanges();
-        tick();
-        expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
+            dotEditContentService.getActivities.mockClear();
+            dotEditContentService.getReferencePages.mockClear();
+            dotEditContentService.getVersions.mockClear();
 
-        // Come back with a new inode, as a save does.
-        loadContentlet({ ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-save' });
-        tick();
+            // Flip the `@if` off — Angular destroys the sidebar and, before this fix, its effects.
+            patchState(store, { contentType: null, state: ComponentStatus.LOADING });
+            spectator.detectChanges();
+            tick();
+            expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
 
-        expect(spectator.query('dot-edit-content-sidebar')).not.toBeNull();
-        expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
-        expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
-        expect(dotEditContentService.getVersions).toHaveBeenCalled();
-    }));
+            // Come back with a new inode, as a save does.
+            loadContentlet({ ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-save' });
+            tick();
 
-    it('should refresh on a save that mints a new inode without any re-initialization', fakeAsync(() => {
-        // This is the dialog host's path: no navigation, so nothing clears the lists and
-        // the identifier/locale never change. Asserted for both hosts because the refresh
-        // must no longer depend on which one is mounted.
-        loadContentlet();
-        tick();
+            expect(spectator.query('dot-edit-content-sidebar')).not.toBeNull();
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getVersions).toHaveBeenCalled();
+        }));
 
-        dotEditContentService.getActivities.mockClear();
-        dotEditContentService.getReferencePages.mockClear();
-        dotEditContentService.getVersions.mockClear();
+        it('should refresh on a save that mints a new inode without any re-initialization', fakeAsync(() => {
+            // This is the dialog host's path: no navigation, so nothing clears the lists and
+            // the identifier/locale never change. Asserted for both hosts because the refresh
+            // must no longer depend on which one is mounted.
+            loadContentlet();
+            tick();
 
-        patchState(store, {
-            contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-publish' }
-        });
-        spectator.detectChanges();
-        tick();
+            dotEditContentService.getActivities.mockClear();
+            dotEditContentService.getReferencePages.mockClear();
+            dotEditContentService.getVersions.mockClear();
 
-        expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
-        expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
-        expect(dotEditContentService.getVersions).toHaveBeenCalled();
-    }));
-});
+            patchState(store, {
+                contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-publish' }
+            });
+            spectator.detectChanges();
+            tick();
+
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getVersions).toHaveBeenCalled();
+        }));
+    }
+);
