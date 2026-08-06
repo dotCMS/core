@@ -223,8 +223,17 @@ jobs:
   #   * failure  -> post (plan or apply actually errored)
   #   * moved    -> post (a track advanced; newsworthy in a releases channel)
   #   * no moves -> post NOTHING (most days — the planner is age-gated)
-  # A rejected break-glass approval leaves `apply` SKIPPED, not failed, so a
-  # deliberate "no" never pages the channel.
+  # A rejected break-glass approval leaves `apply` SKIPPED, so a deliberate "no"
+  # never pages the channel.
+  #
+  # Deliberately NOT keyed on `needs.gate.result == 'failure'`: a reviewer
+  # rejection also reports the gate as `failure` (verified — rejecting marks gate
+  # failure, apply skipped, run failure), so it is indistinguishable from a gate
+  # infrastructure failure at the job-result level. Including it would page the
+  # channel on every intentional rejection. The only thing that would go
+  # unannounced is an infra failure of the gate job itself — which cannot happen
+  # on the unattended cron (gate is dispatch-only) and, on the manual path, leaves
+  # a red run in front of the operator who just triggered it.
   notify:
     needs: [ plan, gate, apply ]
     if: always()
