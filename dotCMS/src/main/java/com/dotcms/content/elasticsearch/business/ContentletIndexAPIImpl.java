@@ -25,6 +25,7 @@ import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.MigrationHaltReport;
 import com.dotcms.content.index.opensearch.IndexStartupValidator;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
@@ -1175,6 +1176,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 + " Any OS index created before the failure is left in the cluster and is reused or"
                 + " repaired by the next bootstrap; it is never registered in the OS index store."
                 + " Fix the cause above and re-enable the migration phase when ready.", e);
+
+        // Keep the classified cause where callers outside the index layer can read it: the log line
+        // above is for support, this is what the operator who triggered the operation gets told.
+        MigrationHaltReport.record(new MigrationHaltReport(phase.name(), kind.name(),
+                kind.remediation(),
+                operationsOS.toPhysicalName(workingName) + ", "
+                        + operationsOS.toPhysicalName(liveName)));
         haltMigration();
 
         // haltMigration() writes the phase through Config, which the DB-backed ConfigSystemTable
@@ -1341,28 +1349,62 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @WrapInTransaction
     public synchronized IndexStartResult fullReindexStart() throws DotDataException {
         if (indexReady() && !isInFullReindex()) {
-            final User currentUser = Try.of(
-                    () -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                    .getOrNull();
-            if (currentUser != null) {
-                Logger.info(this, "Full reindex started by user: "
-                        + currentUser.getUserId() + " (" + currentUser.getEmailAddress()
-                        + ") at " + new java.util.Date());
-            } else {
-                Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
-            }
-
-            final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
-                    .format(LocalDateTime.now());
-            initAndPointReindex(ts);
-
-            return ImmutableIndexStartResult.builder()
-                    .indexSuffixES(ts)
-                    .indexSuffixOS(isMigrationNotStarted() ? "" : ts)
-                    .build();
-        } else {
-            return initIndex();
+            return startFullReindex();
         }
+
+        final boolean migrationWasRunning = isMigrationStarted();
+        final IndexStartResult bootstrapResult = initIndex();
+
+        // A dual-phase OpenSearch rejection makes indexReady() false — an index the OS user may not
+        // even probe reads as missing — so the branch above is skipped and the caller silently gets
+        // a bootstrap instead of the full reindex it asked for. initIndex() absorbs that rejection
+        // and halts the migration (handleOsBootstrapFailure), and once dotCMS is ES-only the reindex
+        // is possible again: run it rather than return a downgraded no-op (issue #36222).
+        //
+        // Gated on the halt, not on a bare indexReady() re-check: on a fresh install initIndex()
+        // legitimately turns indexReady() true by creating the indices, and reindexing brand-new
+        // empty indices is not this method's contract.
+        if (migrationWasRunning && !isMigrationStarted() && indexReady() && !isInFullReindex()) {
+            Logger.warn(this, "The OpenSearch migration was halted while preparing the full reindex."
+                    + " Continuing on Elasticsearch only — see the ERROR above for the cause."
+                    + MigrationHaltReport.last()
+                            .map(report -> " " + report.operatorMessage()).orElse(""));
+            return startFullReindex();
+        }
+
+        return bootstrapResult;
+    }
+
+    /**
+     * Creates the reindex slots for every applicable provider and reports the timestamp they share.
+     *
+     * <p>Extracted from {@link #fullReindexStart()} so that the same work runs both on the happy
+     * path and on the retry that follows an absorbed OpenSearch failure (issue #36222). Callers must
+     * have checked {@link #indexReady()} and {@link #isInFullReindex()} first.</p>
+     *
+     * @return the ES suffix always, and the OS suffix only while the migration is running
+     * @throws DotDataException on persistence or creation failure
+     */
+    private IndexStartResult startFullReindex() throws DotDataException {
+        final User currentUser = Try.of(
+                () -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                .getOrNull();
+        if (currentUser != null) {
+            Logger.info(this, "Full reindex started by user: "
+                    + currentUser.getUserId() + " (" + currentUser.getEmailAddress()
+                    + ") at " + new java.util.Date());
+        } else {
+            Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
+        }
+
+        final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
+                .format(LocalDateTime.now());
+        initAndPointReindex(ts);
+
+        return ImmutableIndexStartResult.builder()
+                .indexSuffixES(ts)
+                .indexSuffixOS(isMigrationNotStarted() ? "" : ts)
+                .build();
     }
 
     /**
