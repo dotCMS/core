@@ -199,9 +199,10 @@ public class WorkflowResourceLockUnlockIntegrationTest {
             contentletAPI.lock(contentlet, adminUser(), false);
         }
 
-        final JsonNode summary = fireMultiple(
+        final JsonNode entity = fireMultipleEntity(
                 requestForUser(limitedUser.getEmailAddress(), password), SystemAction.UNLOCK,
                 contentlets);
+        final JsonNode summary = entity.get("summary");
 
         assertEquals(0, summary.get("successCount").asInt());
         assertEquals(2, summary.get("failCount").asInt());
@@ -209,6 +210,12 @@ public class WorkflowResourceLockUnlockIntegrationTest {
             assertEquals("The lock must survive a denied unlock", adminUser().getUserId(),
                     lockedBy(contentlet));
         }
+        // Guards against the failure coming from the wrong place. Without the content-type half of
+        // `grantEdit` these items are rejected by `populateContentlet` on permissions and never
+        // reach `canLock`, so the counts above would be satisfied without the lock rule ever being
+        // exercised — green, and proving nothing.
+        assertTrue("Expected a lock failure, got: " + failMessages(entity),
+                failMessages(entity).toLowerCase().contains("lock"));
     }
 
     /**
@@ -245,23 +252,21 @@ public class WorkflowResourceLockUnlockIntegrationTest {
     /**
      * Method to test: {@link WorkflowResource#fireMultipleActionDefault}
      * <p>
-     * Given scenario: A limited user with no EDIT permission on the contentlet fires {@code LOCK}.
+     * Given scenario: A limited user granted nothing at all on the target fires {@code LOCK}.
      * <p>
      * Expected result: The item is reported as a failure and stays unlocked — permission is
      * enforced server-side, regardless of what the UI offered.
+     * <p>
+     * No permissions are stripped to set this up: a freshly created user holds only the backend and
+     * frontend roles, so it starts with no access to the content type. An earlier attempt overrode
+     * the contentlet's permissions in favour of the system role, which fails outright because that
+     * role is locked for editing.
      */
     @Test
-    public void test_fireLock_withoutEditPermission_reportsFailure() throws Exception {
+    public void test_fireLock_withoutAnyPermission_reportsFailure() throws Exception {
         final String password = "TestPass" + System.currentTimeMillis() + "!";
         final User limitedUser = newLimitedUser(password);
         final Contentlet contentlet = newContentlet();
-
-        // Individual permissions granting READ to the system role only, which overrides whatever
-        // the contentlet inherited — the limited user is left without EDIT.
-        final Permission readForSystemRoleOnly = new Permission(contentlet.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(systemUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ, true);
-        permissionAPI.save(readForSystemRoleOnly, contentlet, systemUser, false);
 
         final JsonNode summary = fireMultiple(
                 requestForUser(limitedUser.getEmailAddress(), password), SystemAction.LOCK,
@@ -311,11 +316,24 @@ public class WorkflowResourceLockUnlockIntegrationTest {
                 .roles(role, TestUserUtils.getFrontendRole()).nextPersisted();
     }
 
+    /**
+     * Grants the user READ+EDIT on the contentlet <b>and on its content type</b>.
+     *
+     * The content type half is not optional. {@code fireTransactionalAction} loads the target
+     * through {@code populateContentlet}, which rejects a caller without content-type permission
+     * before any lock logic runs — so a contentlet-only grant never reaches {@code canLock}, and a
+     * test written to prove the lock-ownership rule would pass on the wrong exception.
+     */
     private static void grantEdit(final Contentlet contentlet, final User user) throws Exception {
+        final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+        final String roleId = APILocator.getRoleAPI().getUserRole(user).getId();
+
+        final List<Permission> typePermissions = new ArrayList<>();
+        typePermissions.add(new Permission(contentType.getPermissionId(), roleId, readEdit, true));
+        permissionAPI.save(typePermissions, contentType, systemUser, false);
+
         final List<Permission> permissions = new ArrayList<>();
-        permissions.add(new Permission(contentlet.getPermissionId(),
-                APILocator.getRoleAPI().getUserRole(user).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true));
+        permissions.add(new Permission(contentlet.getPermissionId(), roleId, readEdit, true));
         permissionAPI.save(permissions, contentlet, systemUser, false);
     }
 
@@ -344,6 +362,16 @@ public class WorkflowResourceLockUnlockIntegrationTest {
     private static JsonNode fireMultiple(final HttpServletRequest request,
             final SystemAction systemAction, final List<Contentlet> contentlets) throws Exception {
 
+        return fireMultipleEntity(request, systemAction, contentlets).get("summary");
+    }
+
+    /**
+     * As {@link #fireMultiple}, but returns the whole entity so a test can inspect the per-item
+     * {@code results} — needed to tell *why* an item failed, not merely that it did.
+     */
+    private static JsonNode fireMultipleEntity(final HttpServletRequest request,
+            final SystemAction systemAction, final List<Contentlet> contentlets) throws Exception {
+
         final List<Map<String, Object>> contentletForms = new ArrayList<>();
         for (final Contentlet contentlet : contentlets) {
             contentletForms.add(Map.of("inode", contentlet.getInode()));
@@ -363,7 +391,23 @@ public class WorkflowResourceLockUnlockIntegrationTest {
         final JsonNode entity = new ObjectMapper().readTree(output.toByteArray()).get("entity");
         assertTrue("The response must carry a summary", entity.has("summary"));
 
-        return entity.get("summary");
+        return entity;
+    }
+
+    /** Every {@code errorMessage} in the streamed results, flattened for assertion. */
+    private static String failMessages(final JsonNode entity) {
+        final StringBuilder messages = new StringBuilder();
+
+        for (final JsonNode result : entity.get("results")) {
+            result.fields().forEachRemaining(field -> {
+                final JsonNode errorMessage = field.getValue().get("errorMessage");
+                if (null != errorMessage) {
+                    messages.append(errorMessage.asText()).append(' ');
+                }
+            });
+        }
+
+        return messages.toString();
     }
 
     private static HttpServletRequest adminRequest() {

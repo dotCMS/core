@@ -159,16 +159,17 @@ describe('action-center utils', () => {
             expect(lock?.eligibleInodes).toEqual(['a', 'c']);
         });
 
-        it('should not count archived items as lockable', () => {
-            // An archived contentlet is always unlocked (archive refuses locked content), so it
-            // would otherwise be counted — but locking it would only block Unarchive and Delete.
+        it('should not count archived items as lockable or unlockable', () => {
+            // Archived content is a dead end until it is unarchived: locking it has no purpose and
+            // `deleteContentlets` honours `canLock`, so a stray lock quietly makes the item
+            // undeletable by anyone but the lock holder. Unlock is covered by `locked` alone
+            // (archive refuses locked content), but excluded explicitly so the pair reads the same.
             const items = [contentlet({ inode: 'a', archived: true, locked: false })];
 
-            const lock = getQuickActions(items).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
-            );
+            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
-            expect(lock?.count).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)).toBe(0);
         });
 
         it('should count Unlock only for locked items', () => {
@@ -237,13 +238,13 @@ describe('action-center utils', () => {
 
         it('should keep a fixed display order regardless of the selection', () => {
             const expected = [
+                WORKFLOW_ACTION_ID.LOCK,
+                WORKFLOW_ACTION_ID.UNLOCK,
                 WORKFLOW_ACTION_ID.PUBLISH,
                 WORKFLOW_ACTION_ID.UNPUBLISH,
                 WORKFLOW_ACTION_ID.ARCHIVE,
                 WORKFLOW_ACTION_ID.DELETE,
                 WORKFLOW_ACTION_ID.UNARCHIVE,
-                WORKFLOW_ACTION_ID.LOCK,
-                WORKFLOW_ACTION_ID.UNLOCK,
                 ADD_TO_BUNDLE_ACTION_ID
             ];
 

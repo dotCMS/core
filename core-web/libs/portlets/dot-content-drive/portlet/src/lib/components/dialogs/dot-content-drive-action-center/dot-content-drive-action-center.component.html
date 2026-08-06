@@ -85,6 +85,23 @@
                                     {{ quickAction.name | dm }}
                                 </span>
 
+                                <!-- Items the action will still be fired over, but which are
+                                     expected to fail — a lock held by another user. Flagged rather
+                                     than subtracted from the count, since only the server can
+                                     decide. -->
+                                @if (quickAction.warningCount > 0) {
+                                    <i
+                                        class="pi pi-exclamation-triangle text-xs text-orange-500"
+                                        [pTooltip]="
+                                            quickAction.warningHint
+                                                | dm: [quickAction.warningCount.toString()]
+                                        "
+                                        [attr.data-testid]="
+                                            'quick-action-warning-' + quickAction.id
+                                        "
+                                        aria-hidden="true"></i>
+                                }
+
                                 <span class="text-xs font-medium text-surface-400">
                                     ({{ quickAction.count }})
                                 </span>

@@ -3420,7 +3420,8 @@ public class WorkflowResource {
                                                       allowableValues = {
                                                               "NEW", "EDIT", "PUBLISH",
                                                               "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                                              "DELETE", "DESTROY"
+                                                              "DELETE", "DESTROY",
+                                                              "LOCK", "UNLOCK"
                                                       }
                                               ),
                                               description = "Default system action."
@@ -3652,7 +3653,8 @@ public class WorkflowResource {
                                                                     allowableValues = {
                                                                             "NEW", "EDIT", "PUBLISH",
                                                                             "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                                                            "DELETE", "DESTROY"
+                                                                            "DELETE", "DESTROY",
+                                                                            "LOCK", "UNLOCK"
                                                                     }
                                                             ),
                                                             description = "Default system action."
@@ -4292,7 +4294,7 @@ public class WorkflowResource {
     /**
      * Check preconditions.
      * If contentlet can not be found, 404
-     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY
+     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY, LOCK, UNLOCK
      * @param contentlet
      * @param systemAction
      * @throws NotFoundInDbException
@@ -4307,12 +4309,17 @@ public class WorkflowResource {
 
         if (contentlet.isNew()) {
 
+            // LOCK/UNLOCK act on the version info of an existing contentlet. On a new one there is
+            // nothing to lock, and `lock` would otherwise fail deeper with a blank-inode state
+            // exception rather than a clear bad request.
             if (    systemAction == SystemAction.UNPUBLISH ||
                     systemAction == SystemAction.UNARCHIVE ||
                     systemAction == SystemAction.DELETE    ||
-                    systemAction == SystemAction.DESTROY) {
+                    systemAction == SystemAction.DESTROY   ||
+                    systemAction == SystemAction.LOCK      ||
+                    systemAction == SystemAction.UNLOCK) {
 
-                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY]");
+                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY, LOCK, UNLOCK]");
             }
         }
     }
@@ -4545,7 +4552,8 @@ public class WorkflowResource {
                             allowableValues = {
                                     "NEW", "EDIT", "PUBLISH",
                                     "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                    "DELETE", "DESTROY"
+                                    "DELETE", "DESTROY",
+                                    "LOCK", "UNLOCK"
                             }
                     ),
                     description = "Default system action."

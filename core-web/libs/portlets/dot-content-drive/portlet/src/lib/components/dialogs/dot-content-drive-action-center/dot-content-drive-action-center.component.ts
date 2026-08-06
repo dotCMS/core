@@ -341,10 +341,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 finalize(() => this.$executing.set(false))
             )
             .subscribe({
-                next: () =>
+                // Counts come from the response, not from `inodes.length`: the endpoint answers 200
+                // with per-item failures inside, so a lock held by another user or a permission the
+                // row state could not see would otherwise be reported as a success.
+                next: (result) =>
                     this.onExecuteSuccess(
                         this.#dotMessageService.get(quickAction.name),
-                        inodes.length
+                        result?.summary?.successCount ?? inodes.length,
+                        0,
+                        result?.summary?.failCount ?? 0
                     ),
                 error: (error) => this.onExecuteError(error)
             });
@@ -542,32 +547,46 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Reports a successful execution, refreshes the grid, and closes the dialog.
+     * Reports a completed execution, refreshes the grid, and closes the dialog.
      *
      * Counts go stale the moment an action runs — contentlets move to a new step — so the dialog
      * closes rather than showing numbers that no longer hold.
+     *
+     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
+     * unqualified success would be the one thing the user cannot recover from: the dialog has
+     * already closed and the grid has already reloaded.
      */
     private onExecuteSuccess(
         actionName: string,
         successCount?: number,
-        skippedCount?: number
+        skippedCount?: number,
+        failCount?: number
     ): void {
+        const failed = failCount ?? 0;
         const detail =
-            skippedCount && skippedCount > 0
+            failed > 0
                 ? this.#dotMessageService.get(
-                      'content-drive.action-center.toast.executed-with-skips',
+                      'content-drive.action-center.toast.executed-with-fails',
                       actionName,
                       String(successCount ?? 0),
-                      String(skippedCount)
+                      String(failed)
                   )
-                : this.#dotMessageService.get(
-                      'content-drive.action-center.toast.executed-detail',
-                      actionName,
-                      String(successCount ?? 0)
-                  );
+                : skippedCount && skippedCount > 0
+                  ? this.#dotMessageService.get(
+                        'content-drive.action-center.toast.executed-with-skips',
+                        actionName,
+                        String(successCount ?? 0),
+                        String(skippedCount)
+                    )
+                  : this.#dotMessageService.get(
+                        'content-drive.action-center.toast.executed-detail',
+                        actionName,
+                        String(successCount ?? 0)
+                    );
 
         this.#messageService.add({
-            severity: 'success',
+            severity: failed > 0 ? 'warn' : 'success',
             summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
             detail,
             life: SUCCESS_MESSAGE_LIFE
