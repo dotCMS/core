@@ -17,6 +17,9 @@ import org.quartz.SchedulerException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
+
+import org.awaitility.Awaitility;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -72,19 +75,24 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
             scheduledToStartExperiment = experimentsAPI.start(scheduledToStartExperiment.id().orElseThrow(),
                     APILocator.systemUser());
 
-            // wait for both the start date and the end date to be reached
-            Thread.sleep(25 * 1000);
-
             assertEquals(Status.SCHEDULED, scheduledToStartExperiment.status());
 
-            new StartEndScheduledExperimentsJob().run(null);
-
-            assertEquals(Status.RUNNING,
-                    experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
-                            , APILocator.systemUser()).orElseThrow().status());
-            assertEquals(Status.ENDED,
-                    experimentsAPI.find(scheduledToEndExperiment.id().orElseThrow()
-                            , APILocator.systemUser()).orElseThrow().status());
+            // Re-run the job (as Quartz would) until both scheduling dates have passed and
+            // the transitions land: no fixed sleep, completes as soon as the dates are reached
+            final String startId = scheduledToStartExperiment.id().orElseThrow();
+            final String endId = scheduledToEndExperiment.id().orElseThrow();
+            Awaitility.await()
+                    .atMost(40, TimeUnit.SECONDS)
+                    .pollInterval(2, TimeUnit.SECONDS)
+                    .untilAsserted(() -> {
+                        new StartEndScheduledExperimentsJob().run(null);
+                        assertEquals(Status.RUNNING,
+                                experimentsAPI.find(startId, APILocator.systemUser())
+                                        .orElseThrow().status());
+                        assertEquals(Status.ENDED,
+                                experimentsAPI.find(endId, APILocator.systemUser())
+                                        .orElseThrow().status());
+                    });
         } finally {
             final Experiment shouldBeRunning = experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
                     , APILocator.systemUser()).orElseThrow();
