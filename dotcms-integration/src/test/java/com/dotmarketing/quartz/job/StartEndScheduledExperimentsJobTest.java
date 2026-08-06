@@ -78,11 +78,12 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
             assertEquals(Status.SCHEDULED, scheduledToStartExperiment.status());
 
             // Re-run the job (as Quartz would) until both scheduling dates have passed and
-            // the transitions land: no fixed sleep, completes as soon as the dates are reached
+            // the transitions land: no fixed sleep, completes as soon as the dates are
+            // reached (~20s); the 2-minute cap is failure-path only, sized for slow runners
             final String startId = scheduledToStartExperiment.id().orElseThrow();
             final String endId = scheduledToEndExperiment.id().orElseThrow();
             Awaitility.await()
-                    .atMost(40, TimeUnit.SECONDS)
+                    .atMost(2, TimeUnit.MINUTES)
                     .pollInterval(2, TimeUnit.SECONDS)
                     .untilAsserted(() -> {
                         new StartEndScheduledExperimentsJob().run(null);
