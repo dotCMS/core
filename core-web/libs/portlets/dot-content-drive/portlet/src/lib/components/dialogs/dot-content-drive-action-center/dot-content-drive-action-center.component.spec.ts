@@ -133,7 +133,12 @@ describe('DotContentDriveActionCenterComponent', () => {
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
         );
-        jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(of([]));
+        jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(
+            of({
+                results: [],
+                summary: { affected: 1, successCount: 1, failCount: 0, time: 1 }
+            })
+        );
         jest.spyOn(fireService, 'bulkFire').mockReturnValue(
             of({ successCount: 2, skippedCount: 0, fails: [] })
         );
@@ -408,6 +413,189 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+
+        it('should report the counts the endpoint returned, not the number of inodes sent', () => {
+            // Per-item failures are an expected outcome (a lock held by another user, a permission
+            // the row state can't see), so the toast has to reflect what the server actually did.
+            jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 1, failCount: 1, time: 1 }
+                })
+            );
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: expect.stringContaining('executed-with-fails')
+                })
+            );
+        });
+
+        it('should report a plain success when nothing failed', () => {
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-PUBLISH"]');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    detail: expect.stringContaining('executed-detail')
+                })
+            );
+        });
+    });
+
+    describe('lock and unlock quick actions', () => {
+        it('should fire LOCK with only the unlocked inodes', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'unlocked-1', locked: false }),
+                contentlet({ inode: 'locked-1', locked: true })
+            ]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-LOCK"]');
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'LOCK',
+                inodes: ['unlocked-1']
+            });
+        });
+
+        it('should fire UNLOCK with only the locked inodes', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'unlocked-1', locked: false }),
+                contentlet({ inode: 'locked-1', locked: true })
+            ]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'UNLOCK',
+                inodes: ['locked-1']
+            });
+        });
+
+        it('should keep Unlock non-selectable when nothing in the selection is locked', () => {
+            mockSelectedItems.set([contentlet({ inode: 'unlocked-1', locked: false })]);
+
+            spectator.detectChanges();
+
+            const unlock = spectator.query(
+                '[data-testid="quick-action-UNLOCK"]'
+            ) as HTMLButtonElement;
+
+            expect(unlock.disabled).toBe(true);
+        });
+
+        it('should keep Lock non-selectable when everything is already locked', () => {
+            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
+
+            spectator.detectChanges();
+
+            const lock = spectator.query('[data-testid="quick-action-LOCK"]') as HTMLButtonElement;
+
+            expect(lock.disabled).toBe(true);
+        });
+
+        it('should flag on the Unlock row how many locks are held by other users', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeTruthy();
+        });
+
+        it('should not flag the Unlock row when every lock is the current user’s own', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should still fire every locked item when some are held by other users', () => {
+            // Attempt-all is deliberate: the client cannot know whether the user holds the CMS
+            // Administrator role that lets them release someone else's lock.
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'UNLOCK',
+                inodes: ['mine', 'theirs']
+            });
+        });
+
+        it('should report partially failed unlocks back to the user', () => {
+            jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 1, failCount: 1, time: 1 }
+                })
+            );
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: expect.stringContaining('executed-with-fails')
+                })
+            );
+        });
+
+        it('should exclude folders from Lock', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'unlocked-1', locked: false }),
+                folder('folder-1')
+            ]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-LOCK"]');
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'LOCK',
+                inodes: ['unlocked-1']
+            });
+        });
+
+        it('should refresh the grid and clear the selection after unlocking', () => {
+            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should not confirm before locking or unlocking', () => {
+            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
         });
     });
 
