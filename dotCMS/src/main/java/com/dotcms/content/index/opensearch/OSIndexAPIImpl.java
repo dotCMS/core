@@ -723,44 +723,76 @@ public class OSIndexAPIImpl implements IndexAPI {
      */
     public static ConnectionFailureKind classifyConnectionError(final Throwable error) {
         for (Throwable t = error; t != null; t = t.getCause()) {
-            final String type = t.getClass().getName().toLowerCase(Locale.ROOT);
-            final String msg  = t.getMessage() == null
-                    ? "" : t.getMessage().toLowerCase(Locale.ROOT);
+            final ConnectionFailureKind kind = classify(t.getClass().getName(), t.getMessage());
+            if (kind != ConnectionFailureKind.UNKNOWN) {
+                return kind;
+            }
+        }
+        return ConnectionFailureKind.UNKNOWN;
+    }
 
-            // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
-            // (the classic symptom of speaking http:// to an https-only port).
-            if (type.contains("sslexception")
-                    || type.contains("sslhandshake")
-                    || type.contains("connectionclosedexception")
-                    || msg.contains("unrecognized ssl message")
-                    || msg.contains("plaintext")
-                    || msg.contains("ssl")
-                    || msg.contains("certificat") // certificate / certification path (PKIX)
-                    || msg.contains("pkix")
-                    || msg.contains("connection closed")) {
-                return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
-            }
-            // Authentication / authorization. The status code must not be matched as a bare
-            // substring: dotCMS wrapper messages embed the physical index name, whose
-            // _yyyyMMddHHmmss timestamp regularly contains the digits 401/403 (e.g. an index
-            // created at 12:04:03 → working_20260728120403.os), which would misreport an unrelated
-            // failure — a settings-parse or orphan-delete error — as a permission problem and send
-            // the operator to change DOT_DOTCMS_CLUSTER_ID for nothing (issue #36222).
-            if (AUTH_STATUS_CODE.matcher(msg).find()
-                    || msg.contains("unauthorized") || msg.contains("forbidden")) {
-                return ConnectionFailureKind.AUTH_FORBIDDEN;
-            }
-            // Host/port unreachable.
-            if (type.contains("connectexception")
-                    || type.contains("unknownhostexception")
-                    || type.contains("sockettimeoutexception")
-                    || type.contains("nohttpresponseexception")
-                    || msg.contains("connection refused")
-                    || msg.contains("timed out")
-                    || msg.contains("timeout")
-                    || msg.contains("unknown host")) {
-                return ConnectionFailureKind.UNREACHABLE;
-            }
+    /**
+     * Classifies a bare failure <em>message</em>, for rejections that never reach the caller as an
+     * exception. The motivating case is a bulk write: the OpenSearch client reports a per-item
+     * rejection as text on the bulk item (e.g. {@code security_exception: no permissions for
+     * [indices:data/write/bulk[s]] …}) rather than throwing, so a systemic permission problem is
+     * indistinguishable from a per-document problem unless the message itself is classified
+     * (issue #36222 follow-up).
+     *
+     * @param failureMessage the vendor-reported failure text, or {@code null}
+     * @return the inferred {@link ConnectionFailureKind}; never {@code null}
+     */
+    public static ConnectionFailureKind classifyFailureMessage(final String failureMessage) {
+        return classify("", failureMessage);
+    }
+
+    /**
+     * Matching core shared by {@link #classifyConnectionError(Throwable)} (once per link of the
+     * exception chain) and {@link #classifyFailureMessage(String)}.
+     *
+     * @param typeName fully-qualified exception type name, or {@code ""} when classifying a message
+     * @param message  the failure message, or {@code null}
+     */
+    private static ConnectionFailureKind classify(final String typeName, final String message) {
+        final String type = typeName == null ? "" : typeName.toLowerCase(Locale.ROOT);
+        final String msg  = message == null ? "" : message.toLowerCase(Locale.ROOT);
+
+        // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
+        // (the classic symptom of speaking http:// to an https-only port).
+        if (type.contains("sslexception")
+                || type.contains("sslhandshake")
+                || type.contains("connectionclosedexception")
+                || msg.contains("unrecognized ssl message")
+                || msg.contains("plaintext")
+                || msg.contains("ssl")
+                || msg.contains("certificat") // certificate / certification path (PKIX)
+                || msg.contains("pkix")
+                || msg.contains("connection closed")) {
+            return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
+        }
+        // Authentication / authorization. The status code must not be matched as a bare
+        // substring: dotCMS wrapper messages embed the physical index name, whose
+        // _yyyyMMddHHmmss timestamp regularly contains the digits 401/403 (e.g. an index
+        // created at 12:04:03 → working_20260728120403.os), which would misreport an unrelated
+        // failure — a settings-parse or orphan-delete error — as a permission problem and send
+        // the operator to change DOT_DOTCMS_CLUSTER_ID for nothing (issue #36222).
+        // The security plugin's own wording is matched too: a rejected bulk item never carries a
+        // status code, only "security_exception: no permissions for [action] and User [...]".
+        if (AUTH_STATUS_CODE.matcher(msg).find()
+                || msg.contains("unauthorized") || msg.contains("forbidden")
+                || msg.contains("security_exception") || msg.contains("no permissions for")) {
+            return ConnectionFailureKind.AUTH_FORBIDDEN;
+        }
+        // Host/port unreachable.
+        if (type.contains("connectexception")
+                || type.contains("unknownhostexception")
+                || type.contains("sockettimeoutexception")
+                || type.contains("nohttpresponseexception")
+                || msg.contains("connection refused")
+                || msg.contains("timed out")
+                || msg.contains("timeout")
+                || msg.contains("unknown host")) {
+            return ConnectionFailureKind.UNREACHABLE;
         }
         return ConnectionFailureKind.UNKNOWN;
     }
