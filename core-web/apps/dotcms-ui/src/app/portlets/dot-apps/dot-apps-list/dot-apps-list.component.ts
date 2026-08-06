@@ -1,7 +1,15 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { Component, DestroyRef, ElementRef, AfterViewInit, inject, viewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    ElementRef,
+    AfterViewInit,
+    inject,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
@@ -29,6 +37,7 @@ interface DotAppsListState {
     selector: 'dot-apps-list',
     templateUrl: './dot-apps-list.component.html',
     styleUrls: ['./dot-apps-list.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         InputTextModule,
         ButtonModule,

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, output } from '@angular/core';
+import { Component, OnInit, inject, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -14,6 +14,7 @@ import { FieldUtil } from '@dotcms/utils';
     selector: 'dot-content-type-fields-row',
     templateUrl: './content-type-fields-row.component.html',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'block relative mb-2 last:mb-0 transition-shadow duration-200'
     }

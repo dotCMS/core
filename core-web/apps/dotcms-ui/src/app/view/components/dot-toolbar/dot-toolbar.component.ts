@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
@@ -19,6 +19,7 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
 @Component({
     selector: 'dot-toolbar',
     templateUrl: './dot-toolbar.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ToolbarModule,
         DividerModule,

@@ -1,4 +1,4 @@
-import { Component, Renderer2, inject, viewChild } from '@angular/core';
+import { Component, Renderer2, inject, viewChild, ChangeDetectionStrategy } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -42,6 +42,7 @@ export type DotEditFieldDialogResult =
     standalone: false,
     // Scope the cache to this dialog instance so the nested relationships editor reads
     // the content type being edited here, instead of sharing an app-wide singleton.
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotEditContentTypeCacheService]
 })
 export class DotEditFieldDialogComponent {

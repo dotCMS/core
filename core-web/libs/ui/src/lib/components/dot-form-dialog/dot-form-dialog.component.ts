@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -23,6 +24,7 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     selector: 'dot-form-dialog',
     imports: [ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'flex min-h-0 flex-1 flex-col',
         style: 'height: 100%'
