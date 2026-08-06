@@ -84,6 +84,35 @@ public class OSIndexAPIImplConnectionClassifyTest {
     }
 
     /**
+     * A rejected <em>bulk item</em> never carries a status code: the client reports the cluster's
+     * refusal as plain text on the item. Without matching the security plugin's own wording, a
+     * permission problem that rejects every shadow write would be classified as
+     * {@link ConnectionFailureKind#UNKNOWN} and never escalated (issue #36222 follow-up).
+     */
+    @Test
+    public void bulkItemSecurityException_withoutStatusCode_isAuthForbidden() {
+        assertEquals(ConnectionFailureKind.AUTH_FORBIDDEN,
+                OSIndexAPIImpl.classifyFailureMessage(
+                        "security_exception: no permissions for [indices:data/write/bulk[s],"
+                                + " indices:data/write/index] and User [name=non-admin,"
+                                + " backend_roles=[], requestedTenant=null]"));
+    }
+
+    @Test
+    public void bulkItemMappingFailure_isNotClassified() {
+        // A per-document problem must stay UNKNOWN: it is not a migration blocker, and reporting it
+        // as one would escalate every malformed contentlet.
+        assertEquals(ConnectionFailureKind.UNKNOWN,
+                OSIndexAPIImpl.classifyFailureMessage(
+                        "mapper_parsing_exception: failed to parse field [myNumber] of type [long]"));
+    }
+
+    @Test
+    public void nullFailureMessage_isNotClassified() {
+        assertEquals(ConnectionFailureKind.UNKNOWN, OSIndexAPIImpl.classifyFailureMessage(null));
+    }
+
+    /**
      * A dotCMS wrapper message embeds the physical index name, and a {@code _yyyyMMddHHmmss}
      * timestamp regularly contains the digits 403 or 401 (here 12:04:03). Matching the status code
      * as a bare substring reported such a failure as a permission problem and told the operator to
