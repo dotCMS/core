@@ -8,7 +8,6 @@
     "collections": [
       "Category.postman_collection",
       "ContentResourceV1.postman_collection",
-      "ContentTypeResourceTests",
       "Content_Resource.postman_collection"
     ]
   },
@@ -45,7 +44,10 @@
   },
   {
     "name": "template",
-    "collections": ["Template_Resource.postman_collection"]
+    "collections": [
+      "Template_Resource.postman_collection",
+      "ContentTypeResourceTests"
+    ]
   },
   {
     "name": "workflow",
