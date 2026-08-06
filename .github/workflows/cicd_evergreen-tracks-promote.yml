@@ -202,8 +202,11 @@ jobs:
 
           # Summarize what moved, for the Slack notice. Most days this is empty
           # (the planner is age-gated), and an empty summary posts nothing.
+          # The optional `(held) ` matches the held-track reconcile line
+          # ("standard (held) -> reconcile to standard_hold"): the engine really
+          # does re-point that tag, so it must not be silently omitted here.
           MOVES=$(printf '%s\n' "$CURRENT_PLAN" \
-            | grep -E '^(standard|trailing) -> ' \
+            | grep -E '^(standard|trailing) (\(held\) )?-> ' \
             | sed 's/ (sha256:.*//' || true)
           if [ -n "$MOVES" ]; then
             echo "moved=true" >> "$GITHUB_OUTPUT"
@@ -238,7 +241,8 @@ jobs:
           payload: >-
             :rotating_light: *Evergreen track promotion FAILED*
             (`${{ github.event.inputs.repo || 'dotcms/dotcms' }}`, trigger `${{ github.event_name }}`).
-            The `standard`/`trailing` tags did NOT move — they are unchanged, not half-moved.
+            Tags are applied one at a time, so one track may have moved before the failure —
+            check the run log for which actually applied.
             Customer environments are unaffected until the next in-cluster reconciler window.
             <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
 
@@ -250,7 +254,7 @@ jobs:
           channel-id: 'CE1TBQU00'  # #dot-releases
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: >-
-            :evergreen_tree: *Evergreen tracks advanced* on `${{ github.event.inputs.repo || 'dotcms/dotcms' }}`
+            :evergreen_tree: *Evergreen track tags moved* on `${{ github.event.inputs.repo || 'dotcms/dotcms' }}`
             — ${{ needs.apply.outputs.summary }}.
             Environments on these tracks pick this up at their next reconciler maintenance window,
             not immediately. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>

@@ -35,8 +35,8 @@ The workflow posts to **#dot-releases**, deliberately only when there's somethin
 
 | Outcome | Posts |
 |---|---|
-| `plan` or `apply` failed | 🚨 yes — the tags did **not** move (unchanged, not half-moved) |
-| A track advanced | 🌲 yes — with what moved where |
+| `plan` or `apply` failed | 🚨 yes — tags apply one at a time, so it points at the run log for which actually landed |
+| A tag moved — a track advanced, or a held track was reconciled back to its hold marker | 🌲 yes — with what moved where |
 | Nothing to do (most days) | nothing |
 
 A rejected break-glass approval leaves `apply` *skipped* rather than failed, so declining a
