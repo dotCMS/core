@@ -238,8 +238,7 @@ export const A11yRunStore = signalStore(
                     store
                         .report()
                         ?.results.filter(
-                            (r) =>
-                                r.status === 'fixed-to-working' && r.ruleId !== RESEARCH_RULE_ID
+                            (r) => r.status === 'fixed-to-working' && r.ruleId !== RESEARCH_RULE_ID
                         ) ?? [];
 
                 return [

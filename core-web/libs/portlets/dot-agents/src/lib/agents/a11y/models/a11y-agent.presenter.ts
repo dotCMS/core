@@ -19,7 +19,6 @@ const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
     rescan: 'pi pi-verified'
 };
 
-
 /**
  * Strips a leading role label (e.g. `Agent:`, `Assistant:`) that the model
  * sometimes prepends to a step message, so the log shows the action itself
