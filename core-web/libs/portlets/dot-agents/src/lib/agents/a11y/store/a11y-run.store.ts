@@ -36,7 +36,6 @@ import {
 } from '../models/accessibility-studio.models';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
-
 /**
  * Dev-only port swap for {@link backendOrigin}. Under `nx serve` the app is served
  * on DEV_SERVER_PORT while dotCMS itself answers on DEV_BACKEND_PORT; the agent
@@ -421,7 +420,7 @@ export const A11yRunStore = signalStore(
             patchState(store, {
                 selected,
                 phase: 'ready',
-                            ...runReset()
+                ...runReset()
             });
         }
 

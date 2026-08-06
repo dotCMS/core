@@ -40,7 +40,6 @@ import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/ut
 import { DotVelocityPlaygroundWarningsComponent } from './dot-velocity-playground-warnings/dot-velocity-playground-warnings.component';
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
 
-
 import {
     firstLine,
     formatErrorTrace,
