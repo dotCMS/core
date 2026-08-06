@@ -1,10 +1,11 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
 @Component({
     selector: 'dot-pagination',
     imports: [ButtonModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './pagination.component.html'
 })
 export class PaginationComponent {

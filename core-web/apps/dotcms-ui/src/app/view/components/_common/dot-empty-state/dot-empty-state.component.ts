@@ -1,4 +1,11 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -6,6 +13,7 @@ import { ButtonModule } from 'primeng/button';
     selector: 'dot-empty-state',
     templateUrl: './dot-empty-state.component.html',
     styleUrls: ['./dot-empty-state.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ButtonModule]
 })
 export class DotEmptyStateComponent implements OnInit {

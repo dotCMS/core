@@ -245,9 +245,37 @@ public class Logger {
 
 
     /**
+     * this method will print the message at ERROR level at most once per millis set, keyed by
+     * {@code messageKey}: a repeating condition (e.g. every bulk batch being rejected for the same
+     * reason) is reported without flooding the log, while a <em>different</em> key is reported
+     * immediately. Mirrors {@link #warnEvery(Class, String, String, int)} at ERROR level.
+     *
+     * @param cl              the class to attribute the log entry to
+     * @param messageKey      identity of the condition; the same key is throttled together
+     * @param message         the message to print
+     * @param errorEveryMillis minimum millis between two entries for this key
+     */
+    public static void errorEvery(final Class cl, final String messageKey, final String message,
+            final int errorEveryMillis) {
+
+        if (UtilMethods.isEmpty(messageKey)) {
+            return;
+        }
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+
+        final Long hash = Long.valueOf(Objects.hashCode(messageKey.intern()));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + errorEveryMillis, true);
+            logger.error(message + " (log every " + errorEveryMillis + "ms)");
+        }
+    }
+
+    /**
      * this method will print the message at WARN level every millis set and print the message plus
      * whole stack trace if at DEGUG level
-     * 
+     *
      * @param cl
      * @param message
      * @param ex

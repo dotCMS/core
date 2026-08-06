@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -334,6 +334,31 @@ describe('DotCustomEventHandlerService', () => {
         );
 
         expect<any>(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
+    });
+
+    it('should open push publish dialog even when feature-flag lookup has not resolved', () => {
+        setup({
+            getKeys: () => NEVER
+        });
+
+        const dataMock = {
+            assetIdentifier: '456',
+            dateFilter: false,
+            removeOnly: false,
+            isBundle: false
+        };
+
+        jest.spyOn(dotPushPublishDialogService, 'open');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'push-publish',
+                    data: dataMock
+                }
+            })
+        );
+
+        expect(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
     });
 
     it('should notify to open download bundle dialog', () => {

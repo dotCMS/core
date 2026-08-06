@@ -15,7 +15,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewContainerRef
+    ViewContainerRef,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     AbstractControl,
@@ -102,6 +103,7 @@ import {
             multi: true
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 /**
