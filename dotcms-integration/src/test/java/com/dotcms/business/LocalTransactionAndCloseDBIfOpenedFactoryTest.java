@@ -95,7 +95,7 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
                 try {
                     hibernateUtil.list();
                 } catch (Exception e) {
-                    Assert.fail("Hibernate wired connection still works");
+                    throw new AssertionError("Hibernate wired connection still works", e);
                 }
 
             } );
@@ -168,7 +168,7 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
                 try {
                     hibernateUtil.list();
                 } catch (Exception e) {
-                    Assert.fail("Hibernate wired connection still works");
+                    throw new AssertionError("Hibernate wired connection still works", e);
                 }
 
             } );
@@ -245,7 +245,7 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
                 try {
                     hibernateUtil.list();
                 } catch (Exception e) {
-                    Assert.fail("Hibernate wired connection still works");
+                    throw new AssertionError("Hibernate wired connection still works", e);
                 }
 
                 Assert.assertTrue(DbConnectionFactory.inTransaction());

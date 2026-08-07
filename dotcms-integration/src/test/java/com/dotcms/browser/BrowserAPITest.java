@@ -433,7 +433,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             Assert.assertTrue( folderContent.containsKey( "total" ) );
             Assert.assertTrue( folderContent.containsKey( "list" ) );
         } catch ( Exception e ){
-            Assert.fail( "We should not be getting any exception here" );
+            throw new AssertionError("We should not be getting any exception here", e);
         } finally {
             folderAPI.delete( folder, user, false );
         }

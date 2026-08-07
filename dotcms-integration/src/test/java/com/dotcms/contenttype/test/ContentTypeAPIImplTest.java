@@ -365,7 +365,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		} catch (Exception e) {
 
-			fail("Should work");
+			throw new AssertionError("Should work", e);
 		} finally {
 
 			ctApi.delete(movie);

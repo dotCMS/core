@@ -306,7 +306,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI()
                     .refreshStoryBlockValueReferences(JSON_SELF_REFERENCE, "3d3a99c4-9b94-4840-8390-704fb6d1d998");
         } catch (Throwable e) {
-            Assert.fail("Should not throw any exception");
+            throw new AssertionError("Should not throw any exception", e);
         }
     }
 

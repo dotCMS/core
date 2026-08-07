@@ -118,10 +118,10 @@ public class TailLogResourceTest {
                         // meaning that at least once we will see the keepAlive event which is sent every 20 seconds
                         Thread.sleep(TimeUnit.SECONDS.toMillis(3));
                     } catch (IOException e) {
-                        fail("Error writing to file");
+                        throw new AssertionError("Error writing to file", e);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        fail("Error attempting to sleep thread");
+                        throw new AssertionError("Error attempting to sleep thread", e);
                     }
                 }));
             }
@@ -131,7 +131,7 @@ public class TailLogResourceTest {
                     future.get();
                 } catch (Exception e) {
                     Thread.currentThread().interrupt();
-                    fail("Error writing to file");
+                    throw new AssertionError("Error writing to file", e);
                 }
             }
 

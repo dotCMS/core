@@ -76,7 +76,7 @@ public class Chainable404StorageCacheTest extends IntegrationTestBase {
         try {
             cache.put404(null, null);
         } catch (Exception e) {
-            Assert.fail("Should not throw exception put404 null null");
+            throw new AssertionError("Should not throw exception put404 null null", e);
         }
     }
 
