@@ -109,7 +109,9 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Initial Artifact Build"
-          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true -Dgithub.event.name=${{ github.event_name }}"
+          # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,
+          # which made the PR effective pom differ from trunk's for that module.
+          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
           require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

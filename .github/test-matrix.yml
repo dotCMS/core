@@ -46,7 +46,10 @@ test_types:
       needs_node: true
     suites:
       - name: "Frontend Unit Tests"
-        maven_args: "test -pl :dotcms-core-web"
+        # -Pvalidate runs eslint + prettier (generate-resources). They used to run inside the
+        # Initial Artifact Build on PRs only, which kept core-web out of the build cache.
+        # This job already builds the whole workspace, so they cost almost nothing here.
+        maven_args: "test -pl :dotcms-core-web -Pvalidate"
         stage_name: "Frontend Tests"
 
   # === MULTI-SUITE TESTS ===
