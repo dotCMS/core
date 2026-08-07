@@ -5,7 +5,9 @@ import { TagModule } from 'primeng/tag';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-type StatusBucket = 'success' | 'danger' | 'warning' | 'info';
+/** `warn` (not `warning`) is PrimeNG's spelling — any other value produces no
+ * `p-tag-*` class and the tag falls back to the solid primary fill. */
+type StatusBucket = 'success' | 'danger' | 'warn' | 'info';
 
 const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     // success: bundle reached its target
@@ -13,8 +15,8 @@ const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY]: 'success',
     [PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY]: 'success',
 
-    // warning: shipped but with non-fatal issues
-    [PublishAuditStatus.SUCCESS_WITH_WARNINGS]: 'warning',
+    // warn: shipped but with non-fatal issues
+    [PublishAuditStatus.SUCCESS_WITH_WARNINGS]: 'warn',
 
     // danger: anything that failed
     [PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS]: 'danger',
@@ -32,11 +34,11 @@ const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     // info: future-dated bundle, not yet picked up by the publisher job
     [PublishAuditStatus.SCHEDULED]: 'info',
 
-    // warning: actively being packed/sent (in-flight)
-    [PublishAuditStatus.BUNDLING]: 'warning',
-    [PublishAuditStatus.SENDING_TO_ENDPOINTS]: 'warning',
-    [PublishAuditStatus.PUBLISHING_BUNDLE]: 'warning',
-    [PublishAuditStatus.RECEIVED_BUNDLE]: 'warning'
+    // warn: actively being packed/sent (in-flight)
+    [PublishAuditStatus.BUNDLING]: 'warn',
+    [PublishAuditStatus.SENDING_TO_ENDPOINTS]: 'warn',
+    [PublishAuditStatus.PUBLISHING_BUNDLE]: 'warn',
+    [PublishAuditStatus.RECEIVED_BUNDLE]: 'warn'
 };
 
 /** Pure mapping function — exported for direct testing without component instantiation. */
