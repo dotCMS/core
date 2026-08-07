@@ -317,6 +317,9 @@ jobs:
   claude:
     name: Run Claude (Bedrock)
     needs: prep
+    permissions:
+      id-token: write
+      contents: read
     uses: dotCMS/ai-workflows/.github/workflows/autodoc-executor.yml@v3.5.0
     secrets:
       AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
@@ -431,12 +434,21 @@ jobs:
           # live==false → a draft exists on top of the published version.
           #   modUser == service account → automation owns the draft → safe.
           #   modUser == anyone else     → human has an outstanding draft → skip.
-          CONTENT_CHECK=$(curl -s \
+          CONTENT_CHECK=$(curl -s --fail-with-body \
             "$AUTODOC_DOTCMS_BASE_URL/api/v1/content/$IDENTIFIER" \
             -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING")
-          IS_LIVE=$(echo "$CONTENT_CHECK" | jq -r '.entity.live // true')
+          if [ $? -ne 0 ]; then
+            echo "SKIP: content check request failed — cannot confirm draft ownership. Skipping to avoid clobbering a potential human edit."
+            exit 0
+          fi
+          IS_LIVE=$(echo "$CONTENT_CHECK" | jq -r '.entity.live // empty')
           MOD_USER=$(echo "$CONTENT_CHECK" | jq -r '.entity.modUser // ""')
           SERVICE_ACCOUNT='user-3244a6be-d28b-4d80-a3fc-9f66a1d832ae'
+
+          if [ -z "$IS_LIVE" ]; then
+            echo "SKIP: content check returned unexpected response — cannot confirm draft ownership. Skipping to avoid clobbering a potential human edit."
+            exit 0
+          fi
 
           if [ "$IS_LIVE" = "false" ] && [ "$MOD_USER" != "$SERVICE_ACCOUNT" ]; then
             echo "SKIP: outstanding draft last saved by '${MOD_USER}' (not the CI Autodoc service account)."
