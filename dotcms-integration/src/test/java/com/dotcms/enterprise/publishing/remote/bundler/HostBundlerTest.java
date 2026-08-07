@@ -19,7 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.FileUtil;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -30,12 +30,10 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
@@ -128,7 +126,7 @@ public class HostBundlerTest {
     public void test_relatedNonHostContentlet_isNotBundledAsHostXml() throws Exception {
         // Given: a ContentType and a legacy Relationship between Host and that type
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final ContentType hostContentType = APILocator.getContentTypeAPI()
+        final ContentType hostContentType = APILocator.getContentTypeAPI(APILocator.systemUser(), false)
                 .find(Host.HOST_VELOCITY_VAR_NAME);
         final Relationship relationship = new RelationshipDataGen()
                 .parentContentType(hostContentType)
@@ -163,7 +161,7 @@ public class HostBundlerTest {
             bundler.generate(directoryBundleOutput, status);
 
             // Then: the related non-Host contentlet is NOT present in the bundle as a .host.xml file
-            final Collection<File> hostXmlFiles = FileUtil.listFilesRecursively(
+            final List<File> hostXmlFiles = FileUtil.listFilesRecursively(
                     directoryBundleOutput.getFile(), new HostBundler().getFileFilter());
 
             assertFalse("Bundle should contain at least the Site's .host.xml file",
