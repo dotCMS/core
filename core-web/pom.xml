@@ -18,6 +18,21 @@
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
         <nx.build.options></nx.build.options>
+        <!--
+          The projects the dotCMS WAR actually consumes. These map 1:1 to the
+          webResources entries below (dotcms-ui -> dotAdmin, dotcms-webcomponents,
+          dotcms-binary-field-builder, dotcms-block-editor); analytics-standalone is
+          built by its own `build-analytics` execution.
+
+          Building the whole workspace here also built the sdk-* packages, which the
+          WAR does not contain - they are published separately, and both
+          deploy-javascript-sdk and publish-sdk-next rebuild them from a clean
+          checkout anyway, so that work was thrown away. nx resolves each project's
+          dependencies via `dependsOn: ["^build"]`, so listing the leaves is enough.
+
+          Keep this list in sync with the webResources block further down.
+        -->
+        <nx.build.projects>dotcms-ui,dotcms-webcomponents,dotcms-binary-field-builder,dotcms-block-editor</nx.build.projects>
         <cargo.server.port>8084</cargo.server.port>
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
@@ -188,7 +203,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <commandlineArgs>exec nx run-many -t build --exclude=tag:skip:build --verbose ${nx.build.options}</commandlineArgs>
+                            <commandlineArgs>exec nx run-many -t build -p ${nx.build.projects} --verbose ${nx.build.options}</commandlineArgs>
                         </configuration>
                     </execution>
 
