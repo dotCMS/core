@@ -821,7 +821,18 @@ export function withHistory() {
                         const identityChanged = versionsKey !== loadedVersionsKey;
                         // A workflow action (save/publish/restore) moved the live version
                         // forward. Skipped on the first pass, where there is no baseline yet.
+                        //
+                        // Also skipped mid-reload, for the same reason the cleared-list
+                        // checks are: `initializeExistingContent` resets
+                        // `isViewingHistoricalVersion` to false in the SAME patch that flips
+                        // state to LOADING, while keeping the outgoing contentlet on screen.
+                        // If that contentlet was a historical version, its inode differs from
+                        // the live baseline and this would read as a new live version —
+                        // firing a request for the identifier we are leaving. The incoming
+                        // contentlet triggers the correct load once the reload lands, through
+                        // `identityChanged` or the still-INIT `versionsCleared`.
                         const newLiveVersion =
+                            !isReloading &&
                             !isViewingHistoricalVersion &&
                             loadedLiveInode !== null &&
                             contentlet.inode !== loadedLiveInode;
@@ -865,8 +876,12 @@ export function withHistory() {
 
                         // Only the live version updates the baseline, so returning from a
                         // historical version lands back on a known inode instead of looking
-                        // like a brand-new one.
-                        if (!isViewingHistoricalVersion) {
+                        // like a brand-new one. Mid-reload is excluded too: the contentlet on
+                        // screen is the outgoing one (possibly a historical version whose
+                        // `isViewingHistoricalVersion` flag was already cleared), so adopting
+                        // its inode would leave the baseline pointing at a version that was
+                        // never the live one.
+                        if (!isReloading && !isViewingHistoricalVersion) {
                             loadedLiveInode = contentlet.inode;
                         }
                     });

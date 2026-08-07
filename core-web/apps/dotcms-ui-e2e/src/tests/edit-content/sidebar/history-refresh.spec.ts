@@ -133,6 +133,25 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
     });
 
     test.describe('dialog host', () => {
+        // Tracked at describe scope so teardown can reach them: they are created inside
+        // the helper below, which runs per test. Assigned as soon as each create resolves
+        // so a failure halfway through setup still leaves the earlier type deletable.
+        let dialogTargetTypeId: string | undefined;
+        let dialogParentTypeId: string | undefined;
+
+        test.afterAll(async ({ request }) => {
+            // Parent first: it holds the relationship field pointing at the target type,
+            // so removing the target while that reference exists is not safe.
+            // deleteContentType cascades the contentlets of each type.
+            if (dialogParentTypeId) {
+                await deleteContentType(request, dialogParentTypeId);
+            }
+
+            if (dialogTargetTypeId) {
+                await deleteContentType(request, dialogTargetTypeId);
+            }
+        });
+
         /**
          * Opens the editor in a dialog through the relationship field's "New Content"
          * item, saves once so the contentlet gains a version, and returns the dialog root.
@@ -155,6 +174,7 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
                     }
                 ]
             });
+            dialogTargetTypeId = targetType.id;
 
             const parentType = await createFakeContentType(request, {
                 name: `DialogParent${suffix}`,
@@ -178,6 +198,7 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
                     }
                 ]
             });
+            dialogParentTypeId = parentType.id;
 
             const created = await request.put(
                 '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',

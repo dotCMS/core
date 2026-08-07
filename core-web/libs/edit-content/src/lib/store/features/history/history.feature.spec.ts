@@ -1288,6 +1288,71 @@ describe('HistoryFeature', () => {
             );
         }));
 
+        it('should not fetch while a reload is in flight over a historical version', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            // The user is browsing a historical version: `loadVersionContent` swaps the
+            // contentlet for the older one, so the inode on screen no longer matches the
+            // live baseline.
+            patchState(store, {
+                contentlet: { ...mockContentlet, inode: 'historical-inode' },
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: true,
+                historicalVersionInode: 'historical-inode'
+            });
+            spectator.flushEffects();
+            tick();
+
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            // What `initializeExistingContent` does from here: it clears the historical
+            // flags in the SAME patch that flips state to LOADING, while keeping the
+            // outgoing (historical) contentlet on screen. Without the `!isReloading` guard
+            // the inode mismatch reads as a new live version and fires a request for the
+            // identifier we are leaving.
+            patchState(store, {
+                state: ComponentStatus.LOADING,
+                versions: [],
+                versionsPagination: null,
+                versionsStatus: { status: ComponentStatus.INIT, error: null },
+                pushPublishHistory: [],
+                pushPublishHistoryPagination: null,
+                pushPublishHistoryStatus: { status: ComponentStatus.INIT, error: null },
+                isViewingHistoricalVersion: false,
+                historicalVersionInode: null,
+                originalContentlet: null,
+                compareContentlet: null
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+
+            // The reload lands and the incoming content is fetched normally.
+            const incoming = {
+                ...mockContentlet,
+                identifier: 'incoming-identifier',
+                inode: 'incoming-inode'
+            };
+            patchState(store, { contentlet: incoming, state: ComponentStatus.LOADED });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                'incoming-identifier',
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                incoming.languageId
+            );
+            expect(dotEditContentService.getPushPublishHistory).toHaveBeenCalledWith(
+                'incoming-identifier',
+                { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
+            );
+        }));
+
         it('should not reload versions when entering a historical version', fakeAsync(() => {
             spectator.flushEffects();
             tick();
