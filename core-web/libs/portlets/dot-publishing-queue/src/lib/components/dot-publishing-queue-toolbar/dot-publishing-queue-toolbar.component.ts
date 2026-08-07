@@ -59,10 +59,8 @@ export class DotPublishingQueueToolbarComponent {
     /** Bulk actions appear only when the user has explicitly checked one or more rows. */
     protected readonly $hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
 
-    /** "Bundles (12)" — the trigger label carries the number of drafts waiting to
-     * be sent, so the user knows there is something behind the button without
-     * opening it. Falls back to a bare "Bundles" while the count is unknown
-     * (in flight, or the request failed) rather than claiming "(0)". */
+    /** Bare "Bundles" while the count is unknown — "(0)" would read as "you
+     * have no drafts". */
     protected readonly $bundlesLabel = computed(() => {
         const total = this.store.draftBundlesTotal();
 
@@ -71,18 +69,8 @@ export class DotPublishingQueueToolbarComponent {
             : this.#dotMessageService.get('publishing-queue.bundles.count', String(total));
     });
 
-    /** Menu items. The commands emit outputs instead of calling services
-     * directly so the shell owns dialog orchestration (component ↔ dialog
-     * separation per libs/portlets/CLAUDE.md).
-     *
-     * `id` is what the template's item template keys off to decide which row
-     * gets the trailing draft count — the count is read from the store in the
-     * template so this array can stay a stable, built-once reference (PrimeNG
-     * re-processes `[model]` on every identity change, which makes the menu
-     * swallow the first click).
-     *
-     * `SELECT_BUNDLE_ITEM_ID` is exported so the spec can assert the wiring
-     * without hardcoding the string in two places. */
+    /** Built once, never recomputed: PrimeNG re-processes `[model]` on every
+     * identity change and the menu then swallows the first click. */
     readonly addBundleItems: MenuItem[] = [
         {
             id: SELECT_BUNDLE_ITEM_ID,
@@ -109,8 +97,6 @@ export class DotPublishingQueueToolbarComponent {
         this.store.retryBundles({ bundleIds: this.store.bundlesSelectedIds() });
     }
 
-    /** True for the one menu row that shows the draft count. Kept as a method so
-     * the item template stays readable and the id lives in one constant. */
     protected showsDraftCount(item: MenuItem): boolean {
         return item.id === SELECT_BUNDLE_ITEM_ID && this.store.draftBundlesTotal() !== null;
     }

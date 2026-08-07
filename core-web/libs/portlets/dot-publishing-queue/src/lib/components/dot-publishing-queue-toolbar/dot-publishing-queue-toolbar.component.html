@@ -51,12 +51,8 @@
                     showTransitionOptions="0ms"
                     hideTransitionOptions="0ms"
                     data-testid="pq-add-bundle-menu">
-                    <!-- Custom item template only so the "Select Bundle" row can
-                         carry the same draft count as the trigger button. The
-                         classes mirror PrimeNG's default item markup (global,
-                         unencapsulated) so padding/hover stay identical; the
-                         click that fires `command` is handled by the wrapping
-                         `.p-menu-item-content` PrimeNG renders around this. -->
+                    <!-- Classes mirror PrimeNG's default item markup so padding
+                         and hover stay identical. -->
                     <ng-template pTemplate="item" let-item>
                         <span class="p-menu-item-link">
                             <span class="p-menu-item-label">{{ item.label }}</span>
