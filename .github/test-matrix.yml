@@ -62,10 +62,6 @@ test_types:
         verify -Dit.test.forkcount=1 -pl :dotcms-integration
         -Dcoreit.test.skip=false
     suites:
-      # Shards are balanced on measured per-class test time (~18.4m each), not on
-      # class count - class count is a poor proxy (one shard was 298 classes/31m,
-      # another 52 classes/14m). Rebalance with the same measurement when shard
-      # times drift apart; see scripts referenced in the PR that introduced this.
       - name: "Integration Tests - MainSuite 1a"
         test_class: "MainSuite1a"
         stage_name: "IT Tests MainSuite 1a"
@@ -81,12 +77,6 @@ test_types:
       - name: "Integration Tests - MainSuite 3a"
         test_class: "MainSuite3a"
         stage_name: "IT Tests MainSuite 3a"
-      - name: "Integration Tests - MainSuite 3b"
-        test_class: "MainSuite3b"
-        stage_name: "IT Tests MainSuite 3b"
-      - name: "Integration Tests - MainSuite 4a"
-        test_class: "MainSuite4a"
-        stage_name: "IT Tests MainSuite 4a"
       - name: "Integration Tests - Junit5 Suite 1"
         test_class: "Junit5Suite1"
         stage_name: "IT Tests Junit5Suite1"
@@ -111,34 +101,36 @@ test_types:
       base_maven_args: >-
         verify -pl :dotcms-postman 
         -Dpostman.test.skip=false
-    # Groups are balanced on measured newman time (~16.4m each) and defined in
-    # dotcms-postman/config.json. Every shard pays ~9.4m of fixed cost (artifact
-    # download, docker load, dotCMS boot), so a handful of tiny groups is pure
-    # waste - keep groups few and evenly sized rather than thematically pure.
-    #
-    # `default` is special: index.js computes it as every collection on disk NOT
-    # listed in config.json, so it is the safety net that runs newly added
-    # collections. It must always have a shard here.
     suites:
-      - name: "Postman Tests - Content"
-        collection: "content"
-      - name: "Postman Tests - ContentType"
-        collection: "contenttype"
-      # GraphQLTests is one 25.6m collection - too big for a single shard and the
-      # binding constraint on the whole Postman tail. config.json splits it by
-      # top-level folder instead of splitting the 518KB collection file.
-      - name: "Postman Tests - GraphQL A"
-        collection: "graphql-a"
-      - name: "Postman Tests - GraphQL B"
-        collection: "graphql-b"
-      - name: "Postman Tests - Pages"
-        collection: "pages"
-      - name: "Postman Tests - Site"
-        collection: "site"
+      # AI and ML related tests
+      - name: "Postman Tests - AI"
+        collection: "ai"
+      
+      # Content management tests
+      - name: "Postman Tests - Category Content"
+        collection: "category-content"
+      - name: "Postman Tests - Container"
+        collection: "container"
+      - name: "Postman Tests - Page"
+        collection: "page"
       - name: "Postman Tests - Template"
         collection: "template"
+      
+      # Feature-specific tests
+      - name: "Postman Tests - Experiment"
+        collection: "experiment"
+      - name: "Postman Tests - GraphQL"
+        collection: "graphql"
       - name: "Postman Tests - Workflow"
         collection: "workflow"
+      
+      # Push/Publish tests
+      - name: "Postman Tests - PP"
+        collection: "pp"
+      
+      # Default test suites
+      - name: "Postman Tests - Default Split"
+        collection: "default-split"
       - name: "Postman Tests - Default"
         collection: "default"
 

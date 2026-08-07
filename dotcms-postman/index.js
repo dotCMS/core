@@ -145,8 +145,7 @@ async function runNewman(
   collectionName,
   postmanTestsDir,
   postmanTestsResultsDir,
-  jwt,
-  folders
+  jwt
 ) {
   return new Promise((resolve, reject) => {
     const collectionPath = path.join(postmanTestsDir, `${collectionName}.json`);
@@ -157,9 +156,6 @@ async function runNewman(
 
     console.log("Running collection:", collectionName);
     console.log("using jwt:", jwt);
-    if (folders && folders.length) {
-      console.log("restricted to folders:", folders.join(", "));
-    }
 
     // Validate and sanitize environment variables
     const envVars = [
@@ -170,11 +166,6 @@ async function runNewman(
     // Add additional configuration for Node.js 22 compatibility
     const newmanConfig = {
       collection: require(collectionPath),
-      // When a group pins `folders`, run only those top-level folders. Lets a
-      // single expensive collection be sharded across CI jobs without splitting
-      // the collection file. Newman preserves collection order, so a shared
-      // setup folder listed here still runs before the rest.
-      ...(folders && folders.length ? { folder: folders } : {}),
       envVar: envVars,
       reporters: ["junit", "cli"],
       reporter: {
@@ -291,8 +282,6 @@ async function processCollections(
   console.log(`Starting collections for groupname: ${groupname}`);
 
   let collectionsToRun = [];
-  // Optional per-collection folder restriction, keyed by collection name.
-  let folderMap = {};
 
   const collectionFile = path.join(postmanTestsDir, groupname + ".json");
   if (fs.existsSync(collectionFile)) {
@@ -316,32 +305,8 @@ async function processCollections(
     const configItem = config.find((item) => item.name === groupname);
     if (configItem) {
       collectionsToRun = configItem.collections;
-      folderMap = configItem.folders || {};
     } else {
       console.error(`Collection or groupname '${groupname}' not found.`);
-      process.exit(1);
-    }
-  }
-
-  // Validate pinned folders up front. A folder name that does not exist makes
-  // newman run zero requests and still exit green, so a typo would silently
-  // delete test coverage. Treated as a config error like an unknown groupname:
-  // fail immediately rather than let the run report success.
-  for (const [collection, folders] of Object.entries(folderMap)) {
-    if (!collectionsToRun.includes(collection)) {
-      console.error(
-        `Group '${groupname}' pins folders for '${collection}', which it does not run.`
-      );
-      process.exit(1);
-    }
-    const doc = require(path.join(postmanTestsDir, `${collection}.json`));
-    const known = new Set((doc.item || []).filter((i) => i.item).map((i) => i.name));
-    const unknown = folders.filter((f) => !known.has(f));
-    if (unknown.length) {
-      console.error(
-        `Collection '${collection}' has no folder(s): ${unknown.join(", ")}\n` +
-        `Known folders: ${[...known].join(" | ")}`
-      );
       process.exit(1);
     }
   }
@@ -354,8 +319,7 @@ async function processCollections(
         collection,
         postmanTestsDir,
         postmanTestsResultsDir,
-        jwt,
-        folderMap[collection]
+        jwt
       );
       console.log(`Collection ${collection} executed successfully.`);
     } catch (error) {

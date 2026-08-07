@@ -1,157 +1,85 @@
 [
   {
-    "name": "content",
-    "collections": [
-      "Content_Resource.postman_collection",
-      "Containers.postman_collection",
-      "User_Include_Into_Experiment.postman_collection",
-      "Bundle_Resource.postman_collection",
-      "BringBack.postman_collection",
-      "WebDav.postman_collection",
-      "LangVariables.postman_collection",
-      "Image.postman_collection",
-      "PortletResource",
-      "Maintenance_Resource-Donwload_Log_File",
-      "Osgi.postman_collection",
-      "TempAPI.postman_collection"
-    ]
+    "name": "ai",
+    "collections": ["AI.postman_collection"]
   },
   {
-    "name": "contenttype",
+    "name": "category-content",
     "collections": [
-      "ContentTypeResourceTests",
-      "Integrity_Checker_From_Sender.postman_collection",
-      "DotAsset.postman_collection",
-      "Visitor.postman_collection",
-      "Push_Publish_JWT_Token_Test.postman_collection",
-      "JobQueueResourceAPITests.postman_collection",
-      "CacheResource.postman_collection",
-      "UIComponents.postman_collection",
-      "PublishingResource.postman_collection",
-      "MonitorResource.postman_collection",
-      "ForgotPasswordResource.postman_collection",
-      "DateTool.postman_collection",
-      "Maintenance_Resource",
-      "ProbesResource.postman_collection"
-    ]
-  },
-  {
-    "name": "graphql-a",
-    "collections": [
-      "GraphQLTests",
-      "DotFavoritePage.postman_collection",
-      "JsScriptAPI.postman_collection",
-      "SystemTable.postman_collection",
-      "Scripting_Resource.postman_collection",
-      "PushPublishFilterResource.postman_collection",
-      "Apps.postman_collection",
-      "EMA.postman_collection"
-    ],
-    "folders": {
-      "GraphQLTests": [
-        "Pre-Execution Requests",
-        "Page API"
-      ]
-    }
-  },
-  {
-    "name": "graphql-b",
-    "collections": [
-      "GraphQLTests",
-      "LanguageResourceTests",
-      "ContainerResource.postman_collection",
-      "Field_Variable_Resource.postman_collection",
-      "Content_Version_Resource.postman_collection",
-      "ContentTypePages.postman_collection",
-      "VelocityMacro.postman_collection",
-      "Content_Analytics.postman_collection",
-      "Maintenance_Resource-Download_Starter",
-      "Promote_Variant.postman_collection",
-      "ThemeResource.postman_collection"
-    ],
-    "folders": {
-      "GraphQLTests": [
-        "Pre-Execution Requests",
-        "Query Cache",
-        "Test BaseType fields ",
-        "Related content with condition / query",
-        "PageAPI_TestMapSpecialField",
-        "Test File/Image Field fields",
-        "Nav",
-        "Related content respects language in query for parent",
-        "Tests For New StoryBlockField",
-        "Get content in new Language",
-        "Pagination",
-        "Metadata ",
-        "Page Lock Test",
-        "Test Render Content Fields",
-        "Test DateField Render Right Format",
-        "Given JSONField should return as JSON",
-        "Cats",
-        "File Metadata",
-        "Tags",
-        "Empty Collection",
-        "Disallow Introspection Query",
-        "Page API - Testing 'page' field with inline fragments",
-        "DotFolderByPath Tests"
-      ]
-    }
-  },
-  {
-    "name": "pages",
-    "collections": [
-      "PagesResourceTests",
-      "Define_Contentlets_StyleProperties.postman_collection",
-      "VersionableResource.postman_collection",
-      "Permission_Resource.postman_collection",
-      "Tags_Resource_V2.postman_collection",
-      "Browser_Resource.postman_collection",
-      "Reltionship_cache_in_push_publish.postman_collection",
-      "PPEndpointResource.postman_collection",
-      "DotAsset-MultiPart-TempFile.postman_collection",
-      "PublishQueueResource"
-    ]
-  },
-  {
-    "name": "site",
-    "collections": [
-      "Site_Resource.postman_collection",
-      "ContentResourceV1.postman_collection",
       "Category.postman_collection",
-      "ContentDriveResource.postman_collection",
+      "ContentResourceV1.postman_collection",
+      "ContentTypeResourceTests",
+      "Content_Resource.postman_collection"
+    ]
+  },
+  {
+    "name": "container",
+    "collections": [
+      "ContainerResource.postman_collection",
+      "Containers.postman_collection"
+    ]
+  },
+  {
+    "name": "experiment",
+    "collections": [
+      "Experiments_Resource.postman_collection",
+      "Experiment_Result.postman_collection"
+    ]
+  },
+  {
+    "name": "graphql",
+    "collections": ["GraphQLTests"]
+  },
+  {
+    "name": "page",
+    "collections": ["PagesResourceTests"]
+  },
+  {
+    "name": "pp",
+    "collections": [
+      "PublishQueueResource",
       "Push_Publish_from_sender.postman_collection",
-      "AI.postman_collection",
-      "VanityURL.postman_collection",
-      "Announcements.postman_collection",
-      "VelocitySecrets.postman_collection",
-      "ContentImportResource.postman_collection",
-      "Logger_Resource.postman_collection",
-      "Accessibility_Checker_Tests.postman_collection"
+      "Push_Publish_JWT_Token_Test.postman_collection",
+      "PushPublishFilterResource.postman_collection"
     ]
   },
   {
     "name": "template",
-    "collections": [
-      "Template_Resource.postman_collection",
-      "ApiToken_Resource.postman_collection",
-      "NavResourceTests",
-      "UserResource.postman_collection",
-      "Integrity_Checker_JWT_Token_Test.postman_collection",
-      "Save_Layout_With_Relative_Path.postman_collection",
-      "Content_Report_Resource.postman_collection",
-      "EnvironmentResource.postman_collection",
-      "Form_Resource.postman_collection",
-      "Experiment_Result.postman_collection",
-      "RoleResource.postman_collection"
-    ]
+    "collections": ["Template_Resource.postman_collection"]
   },
   {
     "name": "workflow",
+    "collections": ["Workflow_Resource_Tests"]
+  },
+  {
+    "name": "default-split",
     "collections": [
-      "Workflow_Resource_Tests",
-      "ConfigurationResource.postman_collection",
+      "ApiToken_Resource.postman_collection",
+      "ContentImportResource.postman_collection",
+      "Manifest_Download_End_Point.postman_collection",
+      "Osgi.postman_collection",
+      "Page_Version_with_different_Templates.postman_collection",
+      "Permission_Resource.postman_collection",
+      "Promote_Variant.postman_collection",
+      "Relationship_cache_in_push_publish.postman_collection",
       "ResourceLink.postman_collection",
-      "System.postman_collection"
+      "RoleResource.postman_collection",
+      "Scripting_Resource.postman_collection",
+      "Site_Resource.postman_collection",
+      "System.postman_collection",
+      "SystemTable.postman_collection",
+      "Tags_Resource_V2.postman_collection",
+      "TempAPI.postman_collection",
+      "ThemeResource.postman_collection",
+      "ToolGroupResource.postman_collection",
+      "UIComponents.postman_collection",
+      "UserResource.postman_collection",
+      "User_Include_Into_Experiment.postman_collection",
+      "VelocityMacro.postman_collection",
+      "VelocitySecrets.postman_collection",
+      "VersionableResource.postman_collection",
+      "Visitor.postman_collection",
+      "WebAssets.postman_collection"
     ]
   }
 ]
