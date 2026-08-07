@@ -345,6 +345,73 @@ export class DotContentDriveShellComponent {
             : limit * (currentPage - 1) + items.length;
     });
 
+    /**
+     * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
+     * is still open.
+     *
+     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
+     * user may close it mid-flight and the result still has to be reported. The shell owns
+     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
+     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
+     *
+     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
+     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
+     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
+     * whole post-run refresh.
+     *
+     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
+     * unqualified success would be the one thing the user cannot recover from — the grid has already
+     * reloaded and the selection is gone.
+     */
+    readonly actionExecutionResultEffect = effect(() => {
+        const result = this.#store.actionExecutionResult();
+
+        if (!result) {
+            return;
+        }
+
+        const { actionName, successCount, skippedCount, failCount } = result;
+
+        const detail =
+            failCount > 0
+                ? this.#dotMessageService.get(
+                      'content-drive.action-center.toast.executed-with-fails',
+                      actionName,
+                      String(successCount),
+                      String(failCount)
+                  )
+                : skippedCount > 0
+                  ? this.#dotMessageService.get(
+                        'content-drive.action-center.toast.executed-with-skips',
+                        actionName,
+                        String(successCount),
+                        String(skippedCount)
+                    )
+                  : this.#dotMessageService.get(
+                        'content-drive.action-center.toast.executed-detail',
+                        actionName,
+                        String(successCount)
+                    );
+
+        this.#messageService.add({
+            severity: failCount > 0 ? 'warn' : 'success',
+            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
+            detail,
+            life: failCount > 0 ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+        });
+
+        untracked(() => {
+            // Contentlets have moved step, so the grid is stale; `loadItems` also drops the selection
+            // the run consumed.
+            this.#store.loadItems();
+            // A no-op when the user already closed the dialog, which is the common path now that
+            // firing hands off to the toolbar.
+            this.#store.closeDialog();
+            this.#store.clearActionExecutionResult();
+        });
+    });
+
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
         const path = this.#store.path();

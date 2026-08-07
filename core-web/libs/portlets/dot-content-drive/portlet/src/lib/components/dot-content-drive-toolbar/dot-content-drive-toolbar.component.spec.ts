@@ -30,6 +30,7 @@ import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.com
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveActionExecution } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
@@ -57,6 +58,7 @@ describe('DotContentDriveToolbarComponent', () => {
     const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
         undefined
     );
+    const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -76,7 +78,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 userSearchableActive: signal<string[]>([]),
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn()
+                clearUserSearchableFilters: jest.fn(),
+                actionExecution: actionExecutionSignal
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -136,6 +139,7 @@ describe('DotContentDriveToolbarComponent', () => {
         filtersSignal.set({});
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
+        actionExecutionSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -461,6 +465,38 @@ describe('DotContentDriveToolbarComponent', () => {
                 type: DIALOG_TYPE.ACTION_CENTER,
                 header: 'content-drive.action-center.header'
             });
+        });
+    });
+
+    describe('running-action indicator', () => {
+        it('should stay hidden when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        it('should report the action and the number of items once a run starts', () => {
+            // The toolbar is the only place still reporting the run after the Action Center dialog is
+            // closed, which is the whole reason the indicator lives out here.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            expect(indicator).toBeTruthy();
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying'
+            );
+        });
+
+        it('should disappear again once the run settles', () => {
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
         });
     });
 

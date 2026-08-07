@@ -1,6 +1,5 @@
 import { forkJoin } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,7 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -23,24 +22,16 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize, map, take } from 'rxjs/operators';
 
-import {
-    DotHttpErrorManagerService,
-    DotMessageService,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
-    DotActionBulkRequestOptions,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
-import { SUCCESS_MESSAGE_LIFE } from '../../../shared/constants';
-import { DotContentDriveStatus } from '../../../shared/models';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     DotActionCenterQuickAction,
@@ -116,7 +107,10 @@ type DotActionCenterView = 'actions' | 'preview';
         SkeletonModule,
         TooltipModule
     ],
-    providers: [DotWorkflowsActionsService, DotWorkflowActionsFireService, ConfirmationService],
+    // `DotWorkflowActionsFireService` is deliberately absent: firing moved to the store, which
+    // outlives this dialog. Providing it here would tie the service to a component that is destroyed
+    // the moment the dialog closes — mid-run.
+    providers: [DotWorkflowsActionsService, ConfirmationService],
     templateUrl: './dot-content-drive-action-center.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     // Sit in the shell's flex content box: without this the host ignores `flex-1`/`min-h-0` and
@@ -127,12 +121,9 @@ type DotActionCenterView = 'actions' | 'preview';
 })
 export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
-    readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
-    readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #confirmationService = inject(ConfirmationService);
-    readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -212,8 +203,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * the others, which also keeps the "one action per execute" rule visually obvious.
      */
     protected readonly $openSchemeId = signal<string | undefined>(undefined);
-    /** True while an action is being fired; disables the whole dialog. */
-    protected readonly $executing = signal<boolean>(false);
+    /**
+     * True while an action is being fired; disables the whole dialog.
+     *
+     * Read from the store rather than held locally, because the run outlives this component: closing
+     * the dialog mid-flight destroys it, and reopening must still report the run as in progress. A
+     * local signal would reset to `false` on the new instance and let the same action be fired twice
+     * over the same rows.
+     */
+    protected readonly $executing = computed(() => !!this.#store.actionExecution());
     /**
      * Which screen is showing. Quick actions never leave `'actions'`; picking a workflow action and
      * continuing swaps to `'preview'`.
@@ -401,27 +399,28 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * confirmation branch and the direct branch share one execution path.
      */
     private fireQuickAction(quickAction: DotActionCenterQuickAction, inodes: string[]): void {
-        this.$executing.set(true);
+        this.#store.executeQuickAction(
+            quickAction.id,
+            this.#dotMessageService.get(quickAction.name),
+            inodes
+        );
+        this.handOffToToolbar();
+    }
 
-        this.#workflowActionsFireService
-            .fireDefaultAction({ action: quickAction.id, inodes })
-            .pipe(
-                take(1),
-                finalize(() => this.$executing.set(false))
-            )
-            .subscribe({
-                // Counts come from the response, not from `inodes.length`: the endpoint answers 200
-                // with per-item failures inside, so a lock held by another user or a permission the
-                // row state could not see would otherwise be reported as a success.
-                next: (result) =>
-                    this.onExecuteSuccess(
-                        this.#dotMessageService.get(quickAction.name),
-                        result?.summary?.successCount ?? inodes.length,
-                        0,
-                        result?.summary?.failCount ?? 0
-                    ),
-                error: (error) => this.onExecuteError(error)
-            });
+    /**
+     * Closes the dialog the moment a run is handed to the store.
+     *
+     * The store owns the request now, so keeping the dialog open buys nothing and costs everything:
+     * it is modal, so it dims the toolbar that is reporting the run, and it blocks the grid while
+     * work happens that no longer needs the dialog to be alive. Closing here is what makes the
+     * toolbar indicator observable — otherwise the only window to see it is the milliseconds between
+     * the user manually closing the dialog and the request settling.
+     *
+     * Counts are also stale from this point on: the contentlets are moving to a new step, so the
+     * numbers this dialog is showing no longer hold.
+     */
+    private handOffToToolbar(): void {
+        this.#store.closeDialog();
     }
 
     /**
@@ -511,19 +510,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
         const actionName = this.$selectedAction()?.name ?? workflowActionId;
 
-        this.$executing.set(true);
-
-        this.#workflowActionsFireService
-            .bulkFire(this.buildBulkRequest(workflowActionId, contentletIds))
-            .pipe(
-                take(1),
-                finalize(() => this.$executing.set(false))
-            )
-            .subscribe({
-                next: (result) =>
-                    this.onExecuteSuccess(actionName, result?.successCount, result?.skippedCount),
-                error: (error) => this.onExecuteError(error)
-            });
+        this.#store.executeWorkflowAction(workflowActionId, actionName, contentletIds);
+        this.handOffToToolbar();
     }
 
     /**
@@ -553,28 +541,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected onDone(): void {
         this.#store.closeDialog();
-    }
-
-    /**
-     * Builds the bulk-fire payload.
-     *
-     * `additionalParams` is required by the request model but carries nothing here: actions that
-     * need real parameters are disabled in this dialog, so the empty bags are never read by the
-     * backend actionlets.
-     */
-    private buildBulkRequest(
-        workflowActionId: string,
-        contentletIds: string[]
-    ): DotActionBulkRequestOptions {
-        return {
-            workflowActionId,
-            contentletIds,
-            additionalParams: {
-                assignComment: { assign: '', comment: '' },
-                pushPublish: {},
-                additionalParamsMap: { _path_to_move: '' }
-            }
-        };
     }
 
     /**
@@ -634,69 +600,5 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                     this.$schemesError.set(true);
                 }
             });
-    }
-
-    /**
-     * Reports a completed execution, refreshes the grid, and closes the dialog.
-     *
-     * Counts go stale the moment an action runs — contentlets move to a new step — so the dialog
-     * closes rather than showing numbers that no longer hold.
-     *
-     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
-     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
-     * unqualified success would be the one thing the user cannot recover from: the dialog has
-     * already closed and the grid has already reloaded.
-     */
-    private onExecuteSuccess(
-        actionName: string,
-        successCount?: number,
-        skippedCount?: number,
-        failCount?: number
-    ): void {
-        const failed = failCount ?? 0;
-        const detail =
-            failed > 0
-                ? this.#dotMessageService.get(
-                      'content-drive.action-center.toast.executed-with-fails',
-                      actionName,
-                      String(successCount ?? 0),
-                      String(failed)
-                  )
-                : skippedCount && skippedCount > 0
-                  ? this.#dotMessageService.get(
-                        'content-drive.action-center.toast.executed-with-skips',
-                        actionName,
-                        String(successCount ?? 0),
-                        String(skippedCount)
-                    )
-                  : this.#dotMessageService.get(
-                        'content-drive.action-center.toast.executed-detail',
-                        actionName,
-                        String(successCount ?? 0)
-                    );
-
-        this.#messageService.add({
-            severity: failed > 0 ? 'warn' : 'success',
-            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
-            detail,
-            life: SUCCESS_MESSAGE_LIFE
-        });
-
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
-        this.#store.setSelectedItems([]);
-        this.#store.loadItems();
-        this.#store.closeDialog();
-    }
-
-    /**
-     * Routes execution failures through the shared error manager rather than a bespoke toast.
-     *
-     * This matters beyond convention here: per-item permission failures are an expected outcome of
-     * these endpoints (the bulk-actions lookup filters by role permission only, not per contentlet),
-     * and the error manager distinguishes 401/403 from a generic failure instead of flattening
-     * everything into one message.
-     */
-    private onExecuteError(error: HttpErrorResponse): void {
-        this.#httpErrorManagerService.handle(error);
     }
 }
