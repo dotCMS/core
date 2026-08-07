@@ -26,6 +26,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.dotcms.rest.ResponseEntityListView;
@@ -80,6 +81,9 @@ public class FolderResource implements Serializable {
      */
     static final String PERMISSIONS_MAX_PER_PAGE_KEY = "content.drive.folder.search.permissions.max.per.page";
     static final int PERMISSIONS_MAX_PER_PAGE_DEFAULT = 200;
+
+    /** Mirrors {@link PaginationUtil}'s own fallback for {@code dotcms.paginator.rows}. */
+    static final int DEFAULT_PAGINATION_ROWS = 10;
 
     private final WebResource webResource;
     private final FolderHelper folderHelper;
@@ -596,24 +600,16 @@ public class FolderResource implements Serializable {
         if (UtilMethods.isSet(name) && name.length() < 2) {
             throw new BadRequestException("'name' must be at least 2 characters long");
         }
-        final int permissionsMaxPerPage =
-                Config.getIntProperty(PERMISSIONS_MAX_PER_PAGE_KEY, PERMISSIONS_MAX_PER_PAGE_DEFAULT);
-        if (includePermissions && perPage > permissionsMaxPerPage) {
-            // Varargs form on purpose: HttpStatusCodeException runs String.format over the message
-            // itself, so pre-formatting here would format twice and blow up on a literal '%'.
-            throw new BadRequestException(
-                    "'perPage' cannot exceed %s when '%s' is true (requested: %s). Request a smaller page, "
-                            + "or drop '%s' to page without permissions.",
-                    String.valueOf(permissionsMaxPerPage), INCLUDE_PERMISSIONS_PARAM,
-                    String.valueOf(perPage), INCLUDE_PERMISSIONS_PARAM);
-        }
-
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .rejectWhenNoUser(true)
                 .init().getUser();
+
+        // Deliberately below init(): unlike the checks above, this message discloses a configured
+        // value, so an unauthenticated caller should get a 401 rather than the cap.
+        validatePermissionsPerPage(includePermissions, perPage);
 
         validateSiteReadAccess(siteId, user);
 
@@ -641,6 +637,41 @@ public class FolderResource implements Serializable {
                 .build();
 
         return folderSearchPaginationUtil.getPageView(params);
+    }
+
+    /**
+     * Rejects requests that would resolve permissions for a page larger than
+     * {@link #PERMISSIONS_MAX_PER_PAGE_KEY} allows.
+     *
+     * <p>The check runs against the <b>effective</b> page size, not the raw query parameter:
+     * {@link PaginationUtil} replaces any {@code perPage <= 0} with
+     * {@code Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10)}. Validating the raw value would let
+     * {@code ?includePermissions=true&per_page=0} through and then page at whatever
+     * {@code dotcms.paginator.rows} happens to be — harmless at its default of 10, but it makes this
+     * guard depend on an unrelated property, so a deployment that raises that property above the cap
+     * would silently reopen the hole this check exists to close.
+     *
+     * @param includePermissions whether the caller asked for the {@code permissions} array
+     * @param perPage            the raw {@code per_page} query parameter
+     */
+    private void validatePermissionsPerPage(final boolean includePermissions, final int perPage) {
+        if (!includePermissions) {
+            return;
+        }
+        final int effectivePerPage = perPage <= 0
+                ? Config.getIntProperty(WebKeys.DOTCMS_PAGINATION_ROWS, DEFAULT_PAGINATION_ROWS)
+                : perPage;
+        final int permissionsMaxPerPage =
+                Config.getIntProperty(PERMISSIONS_MAX_PER_PAGE_KEY, PERMISSIONS_MAX_PER_PAGE_DEFAULT);
+        if (effectivePerPage > permissionsMaxPerPage) {
+            // Varargs form on purpose: HttpStatusCodeException runs String.format over the message
+            // itself, so pre-formatting here would format twice and blow up on a literal '%'.
+            throw new BadRequestException(
+                    "'perPage' cannot exceed %s when '%s' is true (effective page size: %s). "
+                            + "Request a smaller page, or drop '%s' to page without permissions.",
+                    String.valueOf(permissionsMaxPerPage), INCLUDE_PERMISSIONS_PARAM,
+                    String.valueOf(effectivePerPage), INCLUDE_PERMISSIONS_PARAM);
+        }
     }
 
     /**

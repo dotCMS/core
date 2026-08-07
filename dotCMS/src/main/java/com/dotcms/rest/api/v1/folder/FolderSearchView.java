@@ -49,4 +49,53 @@ public record FolderSearchView(
                         + "requested, while an empty array means they were requested and the user holds none."),
                 schema = @Schema(allowableValues = {"READ", "EDIT", "PUBLISH", "EDIT_PERMISSIONS", "CAN_ADD_CHILDREN"}))
         List<String> permissions
-) {}
+) {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder for {@link FolderSearchView}. The record has thirteen components, several of them
+     * adjacent {@code String}s and {@code boolean}s — positional construction is easy to get
+     * silently wrong, so callers name what they set.
+     */
+    public static final class Builder {
+
+        private String id;
+        private String inode;
+        private String name;
+        private String path;
+        private boolean addChildrenAllowed;
+        private boolean hasChildren;
+        private String defaultBaseType;
+        private String title;
+        private int sortOrder;
+        private String filesMasks;
+        private String defaultFileType;
+        private boolean showOnMenu;
+        private List<String> permissions;
+
+        private Builder() {}
+
+        public Builder id(final String id) { this.id = id; return this; }
+        public Builder inode(final String inode) { this.inode = inode; return this; }
+        public Builder name(final String name) { this.name = name; return this; }
+        public Builder path(final String path) { this.path = path; return this; }
+        public Builder addChildrenAllowed(final boolean addChildrenAllowed) { this.addChildrenAllowed = addChildrenAllowed; return this; }
+        public Builder hasChildren(final boolean hasChildren) { this.hasChildren = hasChildren; return this; }
+        public Builder defaultBaseType(final String defaultBaseType) { this.defaultBaseType = defaultBaseType; return this; }
+        public Builder title(final String title) { this.title = title; return this; }
+        public Builder sortOrder(final int sortOrder) { this.sortOrder = sortOrder; return this; }
+        public Builder filesMasks(final String filesMasks) { this.filesMasks = filesMasks; return this; }
+        public Builder defaultFileType(final String defaultFileType) { this.defaultFileType = defaultFileType; return this; }
+        public Builder showOnMenu(final boolean showOnMenu) { this.showOnMenu = showOnMenu; return this; }
+        public Builder permissions(final List<String> permissions) { this.permissions = permissions; return this; }
+
+        public FolderSearchView build() {
+            return new FolderSearchView(id, inode, name, path, addChildrenAllowed, hasChildren,
+                    defaultBaseType, title, sortOrder, filesMasks, defaultFileType, showOnMenu,
+                    permissions);
+        }
+    }
+}

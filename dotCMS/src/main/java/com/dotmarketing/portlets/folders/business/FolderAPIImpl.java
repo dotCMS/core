@@ -811,78 +811,119 @@ public class FolderAPIImpl implements FolderAPI  {
 	public PaginatedArrayList<FolderSearchView> searchFolders(final FolderSearchParams params)
 			throws DotDataException, DotSecurityException {
 
-		// 1. Load all matching folders (no LIMIT — pagination happens in Java so that
-		//    permission filtering does not produce short pages for limited users).
-		final var all = folderFactory.searchFolders(params);
+		// Load all matching folders (no LIMIT — pagination happens in Java so that permission
+		// filtering does not produce short pages for limited users), then batch-filter by READ in a
+		// single SQL round-trip for the whole collection.
+		final List<Folder> readable = permissionAPI.filterCollection(
+				folderFactory.searchFolders(params), PermissionAPI.PERMISSION_READ,
+				params.user(), params.respectFrontendRoles());
 
-		// 2. Batch READ filter — one SQL round-trip for the entire collection.
-		final var filtered = permissionAPI.filterCollection(
-				all, PermissionAPI.PERMISSION_READ, params.user(), params.respectFrontendRoles());
+		final int total = readable.size();
+		final List<Folder> page = paginate(readable, params);
 
-		// 3. Java pagination — applied after permission filtering for correctness.
-		final int total = filtered.size();
-		final int from  = Math.min(params.offset(), total);
-		final int to    = params.limit() < 0 ? total : Math.min(params.offset() + params.limit(), total);
-		final var page  = filtered.subList(from, to);
-
-		// 4. Batch CAN_ADD_CHILDREN check — only on the page (≤ perPage items).
-		final Set<String> canAddIds = permissionAPI.filterCollection(
-				page, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, params.user(), params.respectFrontendRoles())
-				.stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
-
-		// 5. Opt-in permission types, each a batch call scoped to the page. READ needs no call (the
-		//    folder is here because it passed the READ filter in step 2) and CAN_ADD_CHILDREN reuses
-		//    step 4, so the full 5-type set costs 3 extra calls.
-		final Set<String> editableIds        = filterIdsByPermission(page, PermissionAPI.PERMISSION_EDIT, params);
-		final Set<String> publishableIds     = filterIdsByPermission(page, PermissionAPI.PERMISSION_PUBLISH, params);
-		final Set<String> editPermissionsIds = filterIdsByPermission(page, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, params);
-
-		// 6. Determine which folders have permission-visible children.
+		final PagePermissions permissions = resolvePagePermissions(page, params);
 		final Set<String> parentPathsWithVisibleChildren =
 				findParentPathsWithVisibleChildren(page, params);
 
-		// 7. Map to views.
-		final var views = page.stream()
-				.map(folder -> {
-					final var fullPath   = folder.getPath();
-					final var parentPath = fullPath.substring(0, fullPath.length() - folder.getName().length() - 1);
-					final List<String> permissions = params.includePermissions()
-							? permissionNames(folder, canAddIds, editableIds, publishableIds, editPermissionsIds)
-							: null;
-					return new FolderSearchView(
-							folder.getIdentifier(), folder.getInode(), folder.getName(),
-							parentPath, canAddIds.contains(folder.getPermissionId()),
-							parentPathsWithVisibleChildren.contains(folder.getPath()),
-							folder.getDefaultBaseType(),
-							folder.getTitle(), folder.getSortOrder(), folder.getFilesMasks(),
-							folder.getDefaultFileType(), folder.isShowOnMenu(),
-							permissions);
-				})
-				.toList();
-
-		final var result = new PaginatedArrayList<FolderSearchView>();
+		final PaginatedArrayList<FolderSearchView> result = new PaginatedArrayList<>();
 		result.setTotalResults(total);
-		result.addAll(views);
+		result.addAll(toViews(page, permissions, parentPathsWithVisibleChildren, params));
 		return result;
 	}
 
 	/**
-	 * Batch-resolves which folders in {@code page} the requesting user holds {@code permission} on,
-	 * returning their permission ids. Returns an empty set — issuing no query at all — when
-	 * {@link FolderSearchParams#includePermissions()} is {@code false}.
+	 * The permission-id sets resolved for a single page of folders.
 	 *
-	 * @param page       the already-paginated slice; never the pre-pagination collection
-	 * @param permission one of the {@code PermissionAPI.PERMISSION_*} constants
+	 * <p>{@code canAddIds} is always populated — it backs {@code addChildrenAllowed} whether or not
+	 * permissions were requested. The other three are empty unless
+	 * {@link FolderSearchParams#includePermissions()} is set.
 	 */
-	private Set<String> filterIdsByPermission(final List<Folder> page, final int permission,
+	private record PagePermissions(Set<String> canAddIds, Set<String> editableIds,
+			Set<String> publishableIds, Set<String> editPermissionsIds) {}
+
+	/**
+	 * Slices the requested page out of the permission-filtered collection. Pagination happens here,
+	 * in Java, rather than in SQL so that a limited user does not receive short pages when the
+	 * READ filter removes rows.
+	 */
+	private static List<Folder> paginate(final List<Folder> readable, final FolderSearchParams params) {
+		final int total = readable.size();
+		final int from  = Math.min(params.offset(), total);
+		final int to    = params.limit() < 0 ? total : Math.min(params.offset() + params.limit(), total);
+		return readable.subList(from, to);
+	}
+
+	/**
+	 * Batch-resolves the permissions the requesting user holds over {@code page} — always the
+	 * post-pagination slice (≤ perPage items), never the pre-pagination collection.
+	 *
+	 * <p>{@code READ} needs no call at all: a folder is only in {@code page} because it passed the
+	 * READ filter. {@code CAN_ADD_CHILDREN} is resolved unconditionally. So the full five-type set
+	 * costs three extra calls, and requesting no permissions costs none.
+	 */
+	private PagePermissions resolvePagePermissions(final List<Folder> page,
 			final FolderSearchParams params) throws DotDataException, DotSecurityException {
 
+		final Set<String> canAddIds =
+				permissionIds(page, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, params);
 		if (!params.includePermissions()) {
-			return Set.of();
+			return new PagePermissions(canAddIds, Set.of(), Set.of(), Set.of());
 		}
+		return new PagePermissions(canAddIds,
+				permissionIds(page, PermissionAPI.PERMISSION_EDIT, params),
+				permissionIds(page, PermissionAPI.PERMISSION_PUBLISH, params),
+				permissionIds(page, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, params));
+	}
+
+	/**
+	 * Returns the permission ids of the folders in {@code page} that the requesting user holds
+	 * {@code permission} on.
+	 *
+	 * @param permission one of the {@code PermissionAPI.PERMISSION_*} constants
+	 */
+	private Set<String> permissionIds(final List<Folder> page, final int permission,
+			final FolderSearchParams params) throws DotDataException, DotSecurityException {
+
 		return permissionAPI.filterCollection(
 				page, permission, params.user(), params.respectFrontendRoles())
 				.stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
+	}
+
+	/**
+	 * Maps the page of folders to their REST views. Pure mapping — every value is already resolved.
+	 */
+	private static List<FolderSearchView> toViews(final List<Folder> page,
+			final PagePermissions permissions, final Set<String> parentPathsWithVisibleChildren,
+			final FolderSearchParams params) {
+
+		return page.stream()
+				.map(folder -> FolderSearchView.builder()
+						.id(folder.getIdentifier())
+						.inode(folder.getInode())
+						.name(folder.getName())
+						.path(parentPathOf(folder))
+						.addChildrenAllowed(permissions.canAddIds().contains(folder.getPermissionId()))
+						.hasChildren(parentPathsWithVisibleChildren.contains(folder.getPath()))
+						.defaultBaseType(folder.getDefaultBaseType())
+						.title(folder.getTitle())
+						.sortOrder(folder.getSortOrder())
+						.filesMasks(folder.getFilesMasks())
+						.defaultFileType(folder.getDefaultFileType())
+						.showOnMenu(folder.isShowOnMenu())
+						.permissions(params.includePermissions()
+								? permissionNames(folder, permissions)
+								: null)
+						.build())
+				.toList();
+	}
+
+	/**
+	 * Strips the folder's own name off its full path, leaving the parent path
+	 * (e.g. {@code "/application/blog/"} → {@code "/application/"}).
+	 */
+	private static String parentPathOf(final Folder folder) {
+		final String fullPath = folder.getPath();
+		return fullPath.substring(0, fullPath.length() - folder.getName().length() - 1);
 	}
 
 	/**
@@ -893,24 +934,22 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * {@link PermissionAPI.Type#getCanonicalTypes()}, which carries the {@code WRITE} alias instead
 	 * of {@code EDIT} and would emit a name no consumer checks for.
 	 */
-	private static List<String> permissionNames(final Folder folder, final Set<String> canAddIds,
-			final Set<String> editableIds, final Set<String> publishableIds,
-			final Set<String> editPermissionsIds) {
+	private static List<String> permissionNames(final Folder folder, final PagePermissions permissions) {
 
 		final String permissionId = folder.getPermissionId();
 		final List<String> names = new ArrayList<>(5);
 		// READ is implicit: the folder only reaches this point by passing the READ filter.
 		names.add(PermissionAPI.Type.READ.name());
-		if (editableIds.contains(permissionId)) {
+		if (permissions.editableIds().contains(permissionId)) {
 			names.add(PermissionAPI.Type.EDIT.name());
 		}
-		if (publishableIds.contains(permissionId)) {
+		if (permissions.publishableIds().contains(permissionId)) {
 			names.add(PermissionAPI.Type.PUBLISH.name());
 		}
-		if (editPermissionsIds.contains(permissionId)) {
+		if (permissions.editPermissionsIds().contains(permissionId)) {
 			names.add(PermissionAPI.Type.EDIT_PERMISSIONS.name());
 		}
-		if (canAddIds.contains(permissionId)) {
+		if (permissions.canAddIds().contains(permissionId)) {
 			names.add(PermissionAPI.Type.CAN_ADD_CHILDREN.name());
 		}
 		return names;

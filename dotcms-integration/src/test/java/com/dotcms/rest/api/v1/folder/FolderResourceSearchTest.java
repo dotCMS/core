@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import org.junit.Assert;
@@ -538,6 +539,58 @@ public class FolderResourceSearchTest {
                 getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
                 "res-cap-at-" + ts, "/", true, site.getIdentifier(),
                 "name", "ASC", 1, cap, true);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, ((List<?>) result.getEntity()).size());
+    }
+
+    /**
+     * Given Scenario: {@code includePermissions=true} with {@code per_page=0} while
+     * {@code dotcms.paginator.rows} is raised above the cap. <br>
+     * Expected Result: 400. {@link com.dotcms.util.PaginationUtil} turns any {@code perPage <= 0}
+     * into {@code dotcms.paginator.rows}, so validating the raw parameter would let this through and
+     * then page above the cap. The guard must run against the effective page size.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_perPageZero_validatesEffectivePageSize()
+            throws DotDataException, DotSecurityException {
+        final int cap = Config.getIntProperty(FolderResource.PERMISSIONS_MAX_PER_PAGE_KEY,
+                FolderResource.PERMISSIONS_MAX_PER_PAGE_DEFAULT);
+        final int originalRows = Config.getIntProperty(WebKeys.DOTCMS_PAGINATION_ROWS,
+                FolderResource.DEFAULT_PAGINATION_ROWS);
+        Config.setProperty(WebKeys.DOTCMS_PAGINATION_ROWS, cap + 1);
+        try {
+            resource.searchFolders(
+                    getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                    null, "/", true, site().getIdentifier(),
+                    "name", "ASC", 1, 0, true);
+            Assert.fail("Expected a BadRequestException: per_page=0 resolves to a page above the cap");
+        } catch (final BadRequestException e) {
+            final String clientMessage = errorMessageOf(e);
+            Assert.assertTrue("the 400 must report the effective page size, got: " + clientMessage,
+                    clientMessage.contains(String.valueOf(cap + 1)));
+        } finally {
+            Config.setProperty(WebKeys.DOTCMS_PAGINATION_ROWS, originalRows);
+        }
+    }
+
+    /**
+     * Given Scenario: {@code includePermissions=true} with {@code per_page=0} under the default
+     * {@code dotcms.paginator.rows}. <br>
+     * Expected Result: 200 — the effective page size (10 by default) is well under the cap, so the
+     * stricter guard must not reject ordinary callers that omit the parameter.
+     */
+    @Test
+    public void test_searchFolders_includePermissions_perPageZero_underDefaultRows_succeeds()
+            throws DotDataException, DotSecurityException {
+        final long ts = System.currentTimeMillis();
+        final Host site = new SiteDataGen().nextPersisted();
+        new FolderDataGen().site(site).name("res-zero-" + ts).nextPersisted();
+
+        final var result = resource.searchFolders(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                "res-zero-" + ts, "/", true, site.getIdentifier(),
+                "name", "ASC", 1, 0, true);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, ((List<?>) result.getEntity()).size());
