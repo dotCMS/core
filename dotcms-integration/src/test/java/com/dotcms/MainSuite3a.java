@@ -101,7 +101,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.cdi.SimpleJUnit4InjectionIT.class,
         com.dotmarketing.util.TestConfig.class,
         com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest.class,
-        com.dotmarketing.util.HashBuilderTest.class
+        com.dotmarketing.util.HashBuilderTest.class,
+        com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest.class
 })
 public class MainSuite3a {
 

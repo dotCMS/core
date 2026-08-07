@@ -7,7 +7,8 @@ import { TestBed } from '@angular/core/testing';
 import {
     DotContentTypeService,
     DotFieldService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotLanguage, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
@@ -66,6 +67,14 @@ describe('RelationshipFieldStore', () => {
             }),
             mockProvider(DotEditContentService, {
                 getContentById: jest.fn().mockReturnValue(of({}))
+            }),
+            // `withFlags` batch-fetches the side-panel flag on init.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                    )
             })
         ]
     });
@@ -832,6 +841,14 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         }),
         mockProvider(DotEditContentService, {
             getContentById: jest.fn().mockReturnValue(of({}))
+        }),
+        // `withFlags` batch-fetches the side-panel flag on init.
+        mockProvider(DotPropertiesService, {
+            getFeatureFlags: jest
+                .fn()
+                .mockReturnValue(
+                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                )
         })
     ];
 

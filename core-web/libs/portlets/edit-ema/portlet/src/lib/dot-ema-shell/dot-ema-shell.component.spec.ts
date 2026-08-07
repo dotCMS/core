@@ -623,6 +623,41 @@ describe('DotEmaShellComponent', () => {
                     angularCurrentPortlet: 'edit-page'
                 });
             });
+
+            it('routes the properties click through the active editor (new editor/side panel) when the content route is mounted, instead of the legacy dialog', () => {
+                const openContentForEdit = jest.fn();
+                spectator.component.onRouteActivate({ openContentForEdit });
+                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                expect(openContentForEdit).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: '123', identifier: '123' })
+                );
+                expect(dialogSpy).not.toHaveBeenCalled();
+            });
+
+            it('falls back to the legacy dialog when a sibling route (layout/rules/experiments) is active', () => {
+                spectator.component.onRouteActivate({ openContentForEdit: jest.fn() });
+                spectator.component.onRouteDeactivate();
+                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                expect(dialogSpy).toHaveBeenCalled();
+            });
+
+            it('ignores an activated component that does not expose openContentForEdit (a sibling route)', () => {
+                spectator.component.onRouteActivate({ someOtherMethod: jest.fn() });
+                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                expect(dialogSpy).toHaveBeenCalled();
+            });
         });
 
         describe('Page Params', () => {

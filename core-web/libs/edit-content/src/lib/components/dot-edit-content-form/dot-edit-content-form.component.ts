@@ -11,6 +11,7 @@ import {
     DestroyRef,
     DOCUMENT,
     effect,
+    ElementRef,
     inject,
     OnInit,
     output,
@@ -127,6 +128,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #elementRef = inject(ElementRef);
     readonly #fb = inject(FormBuilder);
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
@@ -205,6 +207,14 @@ export class DotEditContentFormComponent implements OnInit {
 
     protected readonly $shouldRenderFields = signal(true);
     protected readonly $shouldRenderPreservedFields = signal(true);
+
+    /**
+     * True once the user has genuinely interacted with a field (see the capture-phase listeners set
+     * up in the constructor). While false, any form value change is async-CVA populate noise, so
+     * {@link initializeFormListener} re-marks the form pristine — decoupling "the user edited
+     * something" from load timing. Reset on each (re)build of the form in {@link initializeForm}.
+     */
+    #userTouched = false;
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
@@ -291,6 +301,30 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     constructor() {
+        // Detect the first REAL user interaction (pointer/keyboard/input from any field) in the
+        // CAPTURE phase, so `#userTouched` is set BEFORE the field's value-accessor emits
+        // `valueChanges` (which runs in the target/bubble phase) — only then can
+        // initializeFormListener tell a genuine edit apart from async-CVA populate noise.
+        // Programmatic `writeValue` on load never dispatches these DOM events, so it never trips it.
+        const host = this.#elementRef.nativeElement as HTMLElement;
+        const markTouched = () => {
+            this.#userTouched = true;
+        };
+        // `drop` is included because dragging a file in from the OS (e.g. onto the binary/file
+        // field) sets the control value programmatically via `(fileDropped)` — the drag starts
+        // outside the window, so no `pointerdown` precedes it. Without latching here, that first
+        // interaction would look like async-CVA populate and the edit would be marked pristine.
+        const interactionEvents = ['pointerdown', 'keydown', 'input', 'drop'] as const;
+        const listenerOptions: AddEventListenerOptions = { capture: true };
+        interactionEvents.forEach((type) =>
+            host.addEventListener(type, markTouched, listenerOptions)
+        );
+        this.#destroyRef.onDestroy(() =>
+            interactionEvents.forEach((type) =>
+                host.removeEventListener(type, markTouched, listenerOptions)
+            )
+        );
+
         /**
          * Effect that reinitializes the form when contentlet changes (e.g., when viewing historical versions)
          *
@@ -424,7 +458,12 @@ export class DotEditContentFormComponent implements OnInit {
         race(this.#appRef.isStable.pipe(filter(Boolean)), timer(500))
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
-                this.form?.markAsPristine();
+                // Gate on `#userTouched` for the same reason `initializeFormListener` does: if the
+                // user genuinely edited a field within the isStable/500ms window, clearing dirty
+                // here would silently drop that edit. Only clear load-time (untouched) CVA noise.
+                if (!this.#userTouched) {
+                    this.form?.markAsPristine();
+                }
             });
     }
 
@@ -454,6 +493,13 @@ export class DotEditContentFormComponent implements OnInit {
         this.formValueSubscription = this.form.valueChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
+                // Until the user has actually interacted, a value change is async-CVA populate,
+                // not an edit — keep the form pristine so the unsaved-changes guard never fires
+                // for load-time noise (independent of how slow the fields load).
+                if (!this.#userTouched) {
+                    this.form.markAsPristine();
+                }
+
                 this.onFormChange(value);
             });
     }
@@ -624,6 +670,10 @@ export class DotEditContentFormComponent implements OnInit {
      * @private
      */
     private initializeForm() {
+        // A fresh (re)build starts a new populate window: until the user interacts, changes are
+        // programmatic CVA noise, not edits.
+        this.#userTouched = false;
+
         const controls = this.$formFields().reduce(
             (acc, field) => ({
                 ...acc,
