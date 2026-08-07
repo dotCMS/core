@@ -1432,15 +1432,22 @@ public class BrowserAPITest extends IntegrationTestBase {
      * to calculate the offset within the database pagination.
      */
     @Test
-    public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+    public void test_SmartPaginationPage1_FoldersThenOneContentlet() throws Exception {
+        // What is under test is the RELATIONSHIP between page size and folder count:
+        // a page larger than the folder count is filled with every folder and then
+        // topped up from the DB. The absolute sizes do not matter, and each item
+        // costs a persist + index, so keep them small.
+        final int folderCount = 5;
+        final int contentCount = 6;      // more than needed, so the top-up is bounded
+        final int pageSize = folderCount + 1;
+
         final User owner = new UserDataGen().nextPersisted();
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 25 folders
         final List<Folder> subFolders = new ArrayList<>();
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < folderCount; i++) {
             final Folder subFolder = new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
@@ -1449,8 +1456,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             subFolders.add(subFolder);
         }
 
-        // Create 30 contentlets
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < contentCount; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1458,7 +1464,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Execute pagination query - Page 1 with page size 26
+        // Execute pagination query - Page 1, one slot wider than the folder count
         final BrowserQuery browserQuery = BrowserQuery.builder()
                 .showFolders(true)
                 .showContent(true)
@@ -1467,7 +1473,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showLinks(false) // Simplify test by disabling links
                 .withHostOrFolderId(parentFolder.getIdentifier())
                 .offset(0)
-                .maxResults(26)
+                .maxResults(pageSize)
                 .build();
 
         final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
@@ -1478,46 +1484,53 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
-        assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
+        assertEquals("Should return every folder plus one contentlet", pageSize, list.size());
+        assertEquals("Folder count should be " + folderCount, folderCount, paginatedContents.folderCount);
         assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
 
-        // Verify first 25 items are folders
-        for (int i = 0; i < 25; i++) {
+        // Verify the folders come first
+        for (int i = 0; i < folderCount; i++) {
             final Map<String, Object> item = list.get(i);
             assertNotNull("Item should have name", item.get("name"));
-            assertTrue("First 25 items should be folders",
+            assertTrue("Leading items should be folders",
                 item.get("name").toString().startsWith("folder_"));
             assertEquals("Owner should be the same as parent folder",
                 owner.getFullName(), item.get("owner"));
         }
 
         // Verify the last item is a contentlet
-        final Map<String, Object> lastItem = list.get(25);
+        final Map<String, Object> lastItem = list.get(folderCount);
         assertNotNull("Last item should have extension", lastItem.get("extension"));
         assertEquals("Last item should be a file", "txt", lastItem.get("extension"));
     }
 
     /**
-     * Test Case: Smart Pagination - Page 2 with the same data (offset=11, still 11 items per page)
-     * Expected: 11 contentlets (all folders were shown on page 1)
+     * Test Case: Smart Pagination - a later page, past the end of the folders
+     * Expected: only the contentlets left after the cursor, and no more pages
      */
     @Test
-    public void test_SmartPaginationPage2_15Contentlets() throws Exception {
+    public void test_SmartPaginationPage2_RemainingContentletsOnly() throws Exception {
+        // The invariant: once the folder cursor is past every folder, the page is
+        // contentlets only, and when fewer than a full page remain there is no next
+        // page. Sizes are kept small - each item costs a persist + index.
+        final int folderCount = 2;
+        final int contentCount = 5;
+        final int contentCursor = 2;
+        final int remaining = contentCount - contentCursor;   // 3
+        final int pageSize = remaining + 1;                   // wider than what is left
+
         // Create test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 10 folders
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < folderCount; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
                     .nextPersisted();
         }
 
-        // Create 25 contentlets
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < contentCount; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1525,16 +1538,16 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Execute pagination query - Page 2 (offset=10)
+        // Execute pagination query - cursors placed past all folders
         final BrowserQuery browserQuery = BrowserQuery.builder()
                 .showFolders(true)
                 .showContent(true)
                 .showFiles(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .folderCursor(10) // Second page
-                .contentCursor(10)
-                .maxResults(20)
+                .folderCursor(folderCount) // past every folder
+                .contentCursor(contentCursor)
+                .maxResults(pageSize)
                 .build();
 
         final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
@@ -1545,33 +1558,39 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 15 items (15 contentlets, no folders)", 15, list.size());
-        assertEquals("Folder count should be 0 the 10 folders where in the first page", 0, paginatedContents.folderCount);
+        assertEquals("Should return only the contentlets left after the cursor", remaining, list.size());
+        assertEquals("Folder count should be 0, all folders were on the first page", 0, paginatedContents.folderCount);
         assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
-        assertEquals("Content count should be 15", 15, paginatedContents.contentCount);
+        assertEquals("Content count should be " + remaining, remaining, paginatedContents.contentCount);
         assertFalse("Should indicate NO more content available", paginatedContents.hasMoreContent);
     }
 
     /**
-     * Test Case: Smart Pagination - Page 3 (offset=52)
-     * Expected: 26 more contentlets
+     * Test Case: Smart Pagination - a full mid-stream page with more still to come
+     * Expected: exactly one page of contentlets, and hasMoreContent set
      */
     @Test
-    public void test_SmartPaginationPage3_16MoreContentlets() throws Exception {
+    public void test_SmartPaginationPage3_FullPageWithMoreRemaining() throws Exception {
+        // The invariant here is the opposite of the previous test: MORE than a page
+        // remains after the cursor, so the page comes back full and hasMoreContent
+        // is true. Sizes are kept small - each item costs a persist + index.
+        final int folderCount = 3;
+        final int contentCount = 10;
+        final int contentCursor = 3;
+        final int pageSize = 4;                               // < contentCount - contentCursor (7)
+
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 15 folders
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < folderCount; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
                     .nextPersisted();
         }
 
-        // Create 50 contentlets
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < contentCount; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1579,7 +1598,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Execute pagination query - Page 3 (offset=52)
+        // Execute pagination query - cursors past all folders, mid-way through content
         final BrowserQuery browserQuery = BrowserQuery.builder()
                 .showFolders(true)
                 .showContent(true)
@@ -1587,9 +1606,9 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showDotAssets(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .folderCursor(15)
-                .contentCursor(17)  // Third page (16*2) = 32 (15 folders and 17 contents)
-                .maxResults(16)
+                .folderCursor(folderCount)
+                .contentCursor(contentCursor)
+                .maxResults(pageSize)
                 .build();
 
         final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
@@ -1600,10 +1619,10 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 16 items (16 contentlets)", 16, list.size());
+        assertEquals("Should return a full page of contentlets", pageSize, list.size());
         assertEquals("Folder count should be 0", 0, paginatedContents.folderCount);
         assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
-        assertEquals("Content count should be 16", 16, paginatedContents.contentCount);
+        assertEquals("Content count should be " + pageSize, pageSize, paginatedContents.contentCount);
         assertTrue("Should indicate more content available", paginatedContents.hasMoreContent);
     }
 
@@ -1917,8 +1936,13 @@ public class BrowserAPITest extends IntegrationTestBase {
         // This ensures non-continuous distribution in the database
         final List<Contentlet> accessibleContentlets = new ArrayList<>();
 
-        // Create 20 pieces of content, alternating permissions (10 accessible, 10 non-accessible)
-        for (int i = 0; i < 20; i++) {
+        // What matters is that accessible items are separated by gaps the scan has to
+        // skip, not how many there are. Alternating permissions over totalContent
+        // gives accessibleCount readable items; each costs a persist + index, so keep
+        // the total small.
+        final int totalContent = 10;
+        final int accessibleCount = totalContent / 2;
+        for (int i = 0; i < totalContent; i++) {
             final File file = FileUtil.createTemporaryFile("content(" + i + ")", ".txt", "content-" + i);
             final Contentlet contentlet = new FileAssetDataGen(file)
                     .host(host)
@@ -1954,10 +1978,11 @@ public class BrowserAPITest extends IntegrationTestBase {
             });
         });
 
-        // Verify permission setup: should have 10 accessible contentlets
-        assertEquals("Should have created 10 accessible contentlets", 10, accessibleContentlets.size());
+        // Verify permission setup
+        assertEquals("Should have created " + accessibleCount + " accessible contentlets",
+                accessibleCount, accessibleContentlets.size());
 
-        // Test Case 1: Request page size of 5 - should get exactly 5 accessible items
+        // Test Case 1: Request a partial page - should fill it despite the gaps
         final BrowserQuery query1 = BrowserQuery.builder()
                 .withHostOrFolderId(folder.getInode())
                 .ignoreSiteForFolders(true)
@@ -1977,38 +2002,46 @@ public class BrowserAPITest extends IntegrationTestBase {
         // Using reflection to access the package-private method for direct testing
         final BrowserAPIImpl browserAPIImpl = (BrowserAPIImpl) browserAPI;
 
-        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
-        assertEquals("Should return exactly 5 accessible contentlets", 5, results1.contentlets.size());
+        final int partialPage = 2;
+        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, partialPage);
+        assertEquals("Should return exactly " + partialPage + " accessible contentlets",
+                partialPage, results1.contentlets.size());
         assertTrue("Should indicate more pages available", results1.hasMore);
 
-        // Test Case 2: Request page size of 8 - should get exactly 8 accessible items
-        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, 8);
-        assertEquals("Should return exactly 8 accessible contentlets", 8, results2.contentlets.size());
+        // Test Case 2: Request one short of everything - should still fill the page
+        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, accessibleCount - 1);
+        assertEquals("Should return exactly " + (accessibleCount - 1) + " accessible contentlets",
+                accessibleCount - 1, results2.contentlets.size());
         assertTrue("Should indicate more pages available", results2.hasMore);
 
-        // Test Case 3: Request page size of 10 - should get all 10 accessible items
-        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, 10);
-        assertEquals("Should return exactly 10 accessible contentlets", 10, results3.contentlets.size());
+        // Test Case 3: Request exactly what is available - should get all, with no more
+        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, accessibleCount);
+        assertEquals("Should return exactly " + accessibleCount + " accessible contentlets",
+                accessibleCount, results3.contentlets.size());
         assertFalse("Should indicate no more pages available", results3.hasMore);
 
-        // Test Case 4: Request more than available - should get all 10 accessible items
-        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, 15);
-        assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
+        // Test Case 4: Request more than available - should get all accessible items
+        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, accessibleCount + 3);
+        assertEquals("Should return all " + accessibleCount + " accessible contentlets",
+                accessibleCount, results4.contentlets.size());
         assertFalse("Should indicate no more pages available", results4.hasMore);
 
-        // Test Case 5: Cursor-based pagination
-        // first page returns 5 items and a cursor,
-        // second page continues from that cursor and returns the remaining 5 items.
-        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
-        assertEquals("Should return exactly 5 accessible contentlets on page 1", 5, results5.contentlets.size());
+        // Test Case 5: Cursor-based pagination - the first page returns a cursor, and the
+        // second page continues from it and returns whatever is left.
+        final int firstPage = 3;
+        final int secondPage = accessibleCount - firstPage;
+        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, firstPage);
+        assertEquals("Should return exactly " + firstPage + " accessible contentlets on page 1",
+                firstPage, results5.contentlets.size());
         assertTrue("Should indicate more pages available after page 1", results5.hasMore);
 
         // Build query2 from query1, advancing only the contentCursor
         final BrowserQuery query2 = BrowserQuery.from(query1)
                 .contentCursor(results5.nextDbCursor)
                 .build();
-        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, 8);
-        assertEquals("Should return remaining 5 accessible contentlets on page 2", 5, results6.contentlets.size());
+        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, accessibleCount);
+        assertEquals("Should return the remaining " + secondPage + " accessible contentlets on page 2",
+                secondPage, results6.contentlets.size());
         assertFalse("Should indicate no more pages available after page 2", results6.hasMore);
  }
 
@@ -2075,8 +2108,8 @@ public class BrowserAPITest extends IntegrationTestBase {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
-     *     <li><b>Given Scenario:</b> A site contains 20 content items but
-     *     {@code BROWSER_DB_MAX_SCAN_ROWS} is intentionally set to 15, lower than the total row
+     *     <li><b>Given Scenario:</b> A site contains more content items than
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS}, which is intentionally set below the total row
      *     count. The scan loop must stop as soon as the number of rows scanned exceeds the limit,
      *     preventing runaway queries on large sites with heavily restricted users.</li>
      *     <li><b>Expected Result:</b> The request completes without hanging or throwing an
@@ -2086,8 +2119,10 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getPaginatedContents_scanLimitStopsLoop() throws Exception {
-        final int scanLimit = 15;
-        final int itemCount = 20;
+        // Only the relationship matters: itemCount must exceed scanLimit so the loop
+        // trips the limit. Each item costs a persist + index, so keep both small.
+        final int scanLimit = 3;
+        final int itemCount = 5;
 
         Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, scanLimit);
         try {
@@ -2114,7 +2149,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             final PaginatedContents result = browserAPI.getPaginatedContents(query);
 
             assertNotNull("Result must not be null when scan limit is reached", result);
-            // 20 items were accumulated before the scan limit fired (dbOffset 20 >= scanLimit 15)
+            // Items accumulated before the scan limit fired (dbOffset >= scanLimit)
             assertTrue("Should have returned items accumulated before the scan limit",
                     result.contentCount > 0);
             // Cursor must reflect how far into the DB the scan reached
