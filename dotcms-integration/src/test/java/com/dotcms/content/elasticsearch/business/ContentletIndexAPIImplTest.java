@@ -617,6 +617,15 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //names the engine actually holds — a logical name would be routed to Elasticsearch even in the
         //phases where the index only exists in OpenSearch.
         final List<String> indices = physicalNamesOf(workingIndex, liveIndex);
+        //Both names must have resolved before optimize() is asked anything: it returns true on an
+        //empty list, so an unresolved name would leave assertTrue(optimized) green without a single
+        //index having been force-merged. Asserted by logical identity rather than by count, since
+        //the dual-write phases list each index under both an ES and an OS physical name.
+        assertTrue("optimize must be handed the physical name of " + workingIndex + ", resolved: "
+                + indices, containsLogicalIndex(indices, workingIndex));
+        assertTrue("optimize must be handed the physical name of " + liveIndex + ", resolved: "
+                + indices, containsLogicalIndex(indices, liveIndex));
+
         boolean optimized = indexAPI.optimize(indices);
         //Validate
         assertTrue(optimized);

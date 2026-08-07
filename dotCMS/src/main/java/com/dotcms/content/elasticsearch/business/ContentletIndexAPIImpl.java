@@ -3274,8 +3274,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *   <li><strong>Phase 0</strong> — Only ES store is updated.</li>
      * </ul>
      *
-     * @param indexName a content index name (a {@code working_*} or {@code live_*} name, with or
-     *                  without the cluster prefix)
+     * @param indexName a content index name — a name <em>starting with</em> {@code working_} or
+     *                  {@code live_}, so cluster-stripped, as both callers hand it over
+     *                  ({@code ESIndexResource} normalizes with {@code removeClusterIdFromName}, and
+     *                  the maintenance JSP lists names from {@code getIndices()}, which already
+     *                  strips). A vendor tag is fine ({@code working_1.os}); a cluster prefix is not.
      * @throws DotStateException if {@code indexName} is not a content index name — including the
      *                           blank name that an absent store pointer degrades into
      */
