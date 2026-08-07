@@ -318,9 +318,9 @@ public class HostBundler implements IBundler {
 		if (Host.SYSTEM_HOST.equalsIgnoreCase(hostContentlet.getIdentifier())) {
 			return;
 		}
-		if (!hostContentlet.isHost()) {
-			Logger.debug(this, "Skipping non-Host contentlet '" + hostContentlet.getIdentifier() +
-					"' in HostBundler. Only Host content types should be written as .host.xml files.");
+		if (!hostContentlet.isHost() && !APILocator.getFileAssetAPI().isFileAsset(hostContentlet)) {
+			Logger.debug(this, "Skipping non-Host, non-FileAsset contentlet '" + hostContentlet.getIdentifier() +
+					"' in HostBundler. Only Host and FileAsset content types are written as .host.xml files.");
 			return;
 		}
 
