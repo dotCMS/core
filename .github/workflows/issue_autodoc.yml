@@ -434,10 +434,9 @@ jobs:
           # live==false → a draft exists on top of the published version.
           #   modUser == service account → automation owns the draft → safe.
           #   modUser == anyone else     → human has an outstanding draft → skip.
-          CONTENT_CHECK=$(curl -s --fail-with-body \
-            "$AUTODOC_DOTCMS_BASE_URL/api/v1/content/$IDENTIFIER" \
-            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING")
-          if [ $? -ne 0 ]; then
+          if ! CONTENT_CHECK=$(curl -s --fail-with-body \
+                "$AUTODOC_DOTCMS_BASE_URL/api/v1/content/$IDENTIFIER" \
+                -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING"); then
             echo "SKIP: content check request failed — cannot confirm draft ownership. Skipping to avoid clobbering a potential human edit."
             exit 0
           fi
