@@ -10,6 +10,38 @@ import java.util.Objects;
  * <p>{@code includePermissions} opts into per-folder permission computation: when {@code false}
  * (the default) the resulting views carry a {@code null} permission list and no extra permission
  * query is issued.
+ *
+ * <h2>Design note: this record carries eleven flat components</h2>
+ *
+ * <p>A record's canonical constructor is positional, and because this record is {@code public} the
+ * canonical constructor cannot be declared less accessible than the record itself. So there is always
+ * a callable eleven-argument entry point, and {@link #builder()} is a convenience rather than a
+ * gate.</p>
+ *
+ * <p>Three pairs of adjacent components share a type — {@code name} / {@code path},
+ * {@code limit} / {@code offset}, {@code orderBy} / {@code orderDirection} — and three more components
+ * are {@code boolean} ({@code recursive}, {@code respectFrontendRoles}, {@code includePermissions}). A
+ * transposed argument list therefore compiles and silently searches for the wrong thing, or quietly
+ * flips a permission behaviour. Validating inside the canonical constructor does not help with this:
+ * each transposed value is individually valid, so there is nothing for a check to reject.</p>
+ *
+ * <p>The components do fall into natural groups, which would remove the hazard by typing instead of by
+ * discipline — a {@code PageRequest} cannot be passed where a {@code FolderCriteria} is expected:</p>
+ *
+ * <pre>{@code
+ * public record FolderSearchParams(
+ *         FolderCriteria criteria,   // name, path, recursive
+ *         Requester requester,       // user, respectFrontendRoles, includePermissions
+ *         PageRequest page) {        // limit, offset, sortColumn, sortDirection
+ * }
+ * }</pre>
+ *
+ * <p>Not applied here: this type appears in the {@link FolderAPI#searchFolders} signature, so
+ * reshaping it is a public API change. Recorded so that keeping the flat shape stays a deliberate
+ * choice rather than an oversight — and note that the component count has already grown once.</p>
+ *
+ * <p>Related, and independent of the shape: the {@code siteId} and {@code user} null checks currently
+ * live in {@link Builder#build()}, which a direct call to the canonical constructor bypasses.</p>
  */
 public record FolderSearchParams(
         String name,
