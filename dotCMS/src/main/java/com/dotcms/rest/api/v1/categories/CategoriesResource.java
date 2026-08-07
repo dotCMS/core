@@ -66,7 +66,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -664,8 +663,9 @@ public class CategoriesResource {
     /**
      * Deletes Categories.
      * <p>
-     * This method receives a list of inodes and deletes all the children and the parent categories.
-     * To delete a category successfully the user needs to have Edit Permissions over it.
+     * This method receives a list of inodes and deletes each category along with all of its
+     * descendants at every depth. To delete a category successfully the user needs to have
+     * Edit Permissions over it.
      *
      * @param httpRequest        {@link HttpServletRequest}
      * @param httpResponse       {@link HttpServletResponse}
@@ -677,7 +677,9 @@ public class CategoriesResource {
     @Operation(
             operationId = "deleteCategories",
             summary = "Delete categories by inodes",
-            description = "Deletes one or more categories and all their children. Accepts a JSON array of category inodes."
+            description = "Deletes one or more categories and all their descendants at every depth. "
+                    + "Accepts a JSON array of category inodes. Inodes that could not be deleted "
+                    + "are reported in the `fails` list of the result."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bulk delete result returned",
@@ -690,47 +692,50 @@ public class CategoriesResource {
     @DELETE
     @JSONP
     @NoCache
+    @WrapInTransaction
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public final Response delete(@Context final HttpServletRequest httpRequest,
-                                 @Context final HttpServletResponse httpResponse,
-                                 @RequestBody(description = "JSON payload containing a list of the inodes of categories to delete.", required = true,
-                                         content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class)))
-                                 ) final List<String> categoriesToDelete) {
+    public Response delete(@Context final HttpServletRequest httpRequest,
+                           @Context final HttpServletResponse httpResponse,
+                           @RequestBody(description = "JSON payload containing a list of the inodes of categories to delete.", required = true,
+                                   content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class)))
+                           ) final List<String> categoriesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
         final PageMode pageMode = PageMode.get(httpRequest);
         final List<FailedResultView> failedToDelete = new ArrayList<>();
-        List<String> deletedIds = new ArrayList();
+        final List<String> deletedIds = new ArrayList<>();
 
         DotPreconditions.checkArgument(UtilMethods.isSet(categoriesToDelete),
                 "The body must send a collection of category inode such as: " +
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         try {
-            HashMap<String, Category> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(
+            final HashMap<String, Category> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(
                     categoriesToDelete, user, pageMode.respectAnonPerms);
-            List<String> undeletedIds = undeletedCategoryList.entrySet().stream()
-                    .map(k -> k.getKey()).collect(
-                            Collectors.toUnmodifiableList());
-            deletedIds = new ArrayList<>(categoriesToDelete);
-            deletedIds.removeAll(undeletedIds);
+
+            deletedIds.addAll(categoriesToDelete);
+            deletedIds.removeAll(undeletedCategoryList.keySet());
 
             ActivityLogger.logInfo(this.getClass(), "Delete Category Action", "User " +
                     user.getPrimaryKey() + " deleted category list: [" + String.join(",",
                     deletedIds) + "]");
 
-            if (!undeletedCategoryList.isEmpty()) {
-                for (final String categoryInode : undeletedIds) {
-                    Logger.error(this, "Category with Id: " + categoryInode + " does not exist");
-                    failedToDelete.add(new FailedResultView(categoryInode,
-                            "Category does not exist or failed to remove child category"));
-                }
+            for (final String categoryInode : undeletedCategoryList.keySet()) {
+                Logger.error(this, "Category with Id: " + categoryInode + " could not be deleted");
+                failedToDelete.add(new FailedResultView(categoryInode,
+                        "Category does not exist"));
             }
+        } catch (BadRequestException | ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
-            Logger.debug(this, e.getMessage(), e);
+            Logger.error(this, "Error deleting categories: " + e.getMessage(), e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
+            throw new DotRuntimeException(e);
         }
 
         return Response.ok(new ResponseEntityBulkResultView(

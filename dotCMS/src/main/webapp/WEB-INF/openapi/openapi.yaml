@@ -4676,8 +4676,9 @@ paths:
       - Cache Management
   /v1/categories:
     delete:
-      description: Deletes one or more categories and all their children. Accepts
-        a JSON array of category inodes.
+      description: Deletes one or more categories and all their descendants at every
+        depth. Accepts a JSON array of category inodes. Inodes that could not be deleted
+        are reported in the `fails` list of the result.
       operationId: deleteCategories
       requestBody:
         content:

@@ -713,56 +713,54 @@ public class CategoryAPIImpl implements CategoryAPI {
 			final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		final HashMap<String, Category> parentCategoryUnableToDelete = new HashMap<>();
+		final HashMap<String, Category> categoriesUnableToDelete = new HashMap<>();
+		final Set<String> deletedInodes = new HashSet<>();
 
 		for(final String parentCategoryInode : categoriesToDelete) {
 
 			final Category parentCategory = categoryFactory.find(parentCategoryInode);
 
-			if(parentCategory != null) {
-				if (!permissionAPI.doesUserHavePermission(parentCategory,
-						PermissionAPI.PERMISSION_EDIT,
-						user, respectFrontendRoles)) {
-					throw new DotSecurityException(
-							String.format("User '%s' doesn't have permission to edit Category '%s'",
-									null != user ? user.getUserId() : null,
-									parentCategory.getInode()));
+			if(parentCategory == null) {
+				// a batch can contain a category and its descendants (e.g. select-all on a
+				// filtered flat list); a descendant already removed by an earlier cascade
+				// is a success, not a missing inode
+				if (deletedInodes.contains(parentCategoryInode)) {
+					continue;
 				}
-
-				final List<Category> childrenCategoriesToDelete = getChildren(parentCategory, user,
-						false);
-				childrenCategoriesToDelete.forEach((category) -> {
-					try {
-						delete(category, user, false);
-					} catch (final DotDataException | DotSecurityException e) {
-						Logger.error(this, String.format(
-								"Child Category '%s' has dependencies. It couldn't be removed from "
-										+
-										"parent Category '%s'", category.getInode(),
-								parentCategory.getInode()));
-						parentCategoryUnableToDelete.put(parentCategory.getInode(),parentCategory);
-					}
-				});
-
-				try {
-					if (!parentCategoryUnableToDelete.containsKey(parentCategory.getInode())) {
-						categoryFactory.delete(parentCategory);
-					}
-				} catch (final DotDataException e) {
-					Logger.error(this, String.format(
-							"Parent Category '%s' couldn't be removed", parentCategory.getInode(),
-							parentCategory.getInode()));
-					parentCategoryUnableToDelete.put(parentCategory.getInode(), parentCategory);
-				}
-			}
-			else{
-				Category notFound = new Category();
+				final Category notFound = new Category();
 				notFound.setInode(parentCategoryInode);
-				parentCategoryUnableToDelete.put(parentCategoryInode, notFound);
+				categoriesUnableToDelete.put(parentCategoryInode, notFound);
+				continue;
 			}
+
+			if (!permissionAPI.doesUserHavePermission(parentCategory,
+					PermissionAPI.PERMISSION_EDIT,
+					user, respectFrontendRoles)) {
+				throw new DotSecurityException(
+						String.format("User '%s' doesn't have permission to edit Category '%s'",
+								null != user ? user.getUserId() : null,
+								parentCategory.getInode()));
+			}
+
+			// EDIT on the selected category grants delete over its whole subtree:
+			// descendants inherit permissions from their parent unless individually
+			// overridden, mirroring how FolderAPIImpl.delete treats subfolders.
+			final List<Category> descendants = categoryFactory.getAllChildren(parentCategory);
+			for (int i = descendants.size() - 1; i >= 0; i--) {
+				categoryFactory.delete(descendants.get(i));
+				deletedInodes.add(descendants.get(i).getInode());
+			}
+			categoryFactory.delete(parentCategory);
+			deletedInodes.add(parentCategory.getInode());
+
+			Logger.info(this, String.format(
+					"User '%s' deleted Category '%s' and its %d descendants: %s",
+					null != user ? user.getUserId() : null, parentCategory.getInode(),
+					descendants.size(),
+					descendants.stream().map(Category::getInode).collect(Collectors.toList())));
 		}
 
-		return parentCategoryUnableToDelete;
+		return categoriesUnableToDelete;
 	}
 
 	@CloseDBIfOpened

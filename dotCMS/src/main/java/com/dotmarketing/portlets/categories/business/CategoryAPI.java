@@ -394,9 +394,14 @@ public interface CategoryAPI {
 	 */
 	List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
-	 * Recursive Method that deletes all the parent categories along with their children
-	 * @param categoriesToDelete
-	 * @return The List of parent categories that could not be deleted
+	 * Deletes each of the given categories along with every descendant at every depth.
+	 * Requires EDIT permission on each selected category only; descendants are removed
+	 * without further permission checks since they inherit permissions from their parent
+	 * unless individually overridden.
+	 *
+	 * @param categoriesToDelete inodes of the categories to delete
+	 * @return The categories that could not be deleted, keyed by inode (e.g. inodes that don't exist)
+	 * @throws DotSecurityException if the user lacks EDIT permission on any selected category
 	 */
 	HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
