@@ -76,6 +76,14 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
 
     /**
+     * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
+     * navigating full-screen (Content Drive) or a centered dialog (UVE). On by default
+     * ({@code dotmarketing-config.properties} sets {@code FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL=true}).
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL}.
+     */
+    String FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = "FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL";
+
+    /**
      * Minifies rendered page HTML (collapses insignificant whitespace and strips comments) before
      * it is written to the response. Off by default.
      *

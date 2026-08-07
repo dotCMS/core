@@ -310,3 +310,10 @@ export const DROPZONE_STATE = {
     ACTIVE: 'active',
     INACTIVE: 'inactive'
 } as const;
+
+/**
+ * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
+ * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
+ * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ */
+export const NEW_CONTENT_MARKER = 'new';
