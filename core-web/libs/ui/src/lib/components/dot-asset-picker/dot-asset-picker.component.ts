@@ -32,6 +32,7 @@ import {
 import { DotAssetPickerSidebarComponent } from './components/dot-asset-picker-sidebar/dot-asset-picker-sidebar.component';
 import { DotAssetPickerToolbarComponent } from './components/dot-asset-picker-toolbar/dot-asset-picker-toolbar.component';
 import { ERROR_MESSAGE_LIFE, SUCCESS_MESSAGE_LIFE, WARNING_MESSAGE_LIFE } from './constants';
+import { writeLastAssetPath } from './last-asset-path';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
 
@@ -151,7 +152,27 @@ export class DotAssetPickerComponent implements OnInit {
         this.#contentletService
             .getContentletByInodeWithContent(asset.inode)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((hydrated) => this.#dialogRef.close(hydrated));
+            .subscribe((hydrated) => {
+                // Persist on confirm, not on selection: a row the user highlights and then cancels
+                // must not move a value shared by every picker in the system.
+                writeLastAssetPath(this.#resolveAssetFolder(hydrated));
+                this.#dialogRef.close(hydrated);
+            });
+    }
+
+    /**
+     * Folder the chosen asset lives in, so the next open lands there.
+     *
+     * Derived from `url` (`/images/logo.png` → `/images/`) rather than the folder being browsed,
+     * because a global search can return an asset from somewhere else entirely. Falls back to the
+     * browsed folder when the row carries no usable url.
+     *
+     * `DotCMSContentlet.folder` is the folder's *identifier*, not a path, so it is no help here.
+     */
+    #resolveAssetFolder(asset: DotCMSContentlet): string | undefined {
+        const lastSlash = asset.url?.lastIndexOf('/') ?? -1;
+
+        return lastSlash >= 0 ? asset.url.slice(0, lastSlash + 1) : this.store.path();
     }
 
     /** Closing with no argument is how the caller reads "cancelled". */

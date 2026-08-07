@@ -215,6 +215,10 @@ export class DotContentTypeFilterComponent implements OnInit {
     /**
      * Working copy of the base-type selection. Re-seeds whenever the host pushes a different set
      * (URL restore, "clear all").
+     *
+     * Note `allowedBaseTypes` gates what is *offered*, not what is *selected* — a host that seeds a
+     * disallowed base type here would see it in the chip. Today they always agree (the AssetPicker
+     * feeds both from the same config array), so this is a latent mismatch, not a live bug.
      */
     readonly $selectedBaseTypes = linkedSignal<string[]>(() => this.$baseTypes() ?? []);
 
@@ -510,6 +514,7 @@ export class DotContentTypeFilterComponent implements OnInit {
         this.#contentTypesService
             .getContentTypesWithPagination({
                 ensure,
+                type: this.#typeParam(),
                 per_page: ITEMS_PER_PAGE
             })
             .pipe(
@@ -576,7 +581,7 @@ export class DotContentTypeFilterComponent implements OnInit {
         return this.#contentTypesService
             .getContentTypesWithPagination({
                 filter,
-                type,
+                type: this.#typeParam(type),
                 ensure: this.#ensureParam(),
                 page,
                 per_page: ITEMS_PER_PAGE
@@ -602,11 +607,27 @@ export class DotContentTypeFilterComponent implements OnInit {
     }
 
     /**
+     * `type` for the content-type query.
+     *
+     * With a focused base type it is that one. Without a focus ("All content types") the query would
+     * otherwise be unbounded, and since `#filterContentTypes` drops everything outside
+     * `allowedBaseTypes` afterwards, a restricted host would page through mostly-discarded results —
+     * on a large install the right column renders one or two rows per page and `#hasMorePages`
+     * counts the unfiltered total. Narrowing the request server-side fixes both.
+     *
+     * The service splits this on commas into repeated `type` params, so the whole allowed set can
+     * travel in one string. Unrestricted hosts (Content Drive) get `undefined` and are unaffected.
+     */
+    #typeParam(focusedType?: string): string | undefined {
+        return focusedType ?? this.$allowedBaseTypes()?.join(',') ?? undefined;
+    }
+
+    /**
      * Gate for both columns: FORM is always excluded (deprecated), and when the host restricts the
      * catalog through `allowedBaseTypes` everything outside that set is excluded too.
      *
-     * Content types are gated client-side because the API takes a single `type` — filtering here
-     * costs at most one extra empty page fetch, which `onLazyLoad` already guards against.
+     * Still applied client-side even with {@link #typeParam} narrowing the query, because it also
+     * strips FORM and system types, which the server does return.
      */
     #isBaseTypeOffered(baseType: string): boolean {
         if (baseType === DotCMSBaseTypesContentTypes.FORM) {

@@ -8,6 +8,8 @@ export * from './lib/components/dot-action-menu-button/dot-action-menu-button.co
 export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-asset-picker/dot-asset-picker.component';
+export * from './lib/components/dot-asset-picker/asset-picker-config';
+export * from './lib/components/dot-asset-picker/last-asset-path';
 export * from './lib/components/dot-asset-picker/store/models';
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';

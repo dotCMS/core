@@ -22,6 +22,7 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAssetPickerComponent } from './dot-asset-picker.component';
+import { readLastAssetPath, writeLastAssetPath } from './last-asset-path';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
 
@@ -40,7 +41,7 @@ const SELECTED_ASSET = { inode: 'inode-1', title: 'logo.png' } as DotCMSContentl
 const HYDRATED_ASSET = {
     inode: 'inode-1',
     title: 'logo.png',
-    asset: '/logo.png'
+    url: '/images/logo.png'
 } as DotCMSContentlet;
 
 /** Folder that pins uploads to a base type, so the Asset/File prompt is skipped. */
@@ -123,6 +124,7 @@ describe('DotAssetPickerComponent', () => {
         spectator.query(byTestId(testId))?.querySelector('button') as HTMLButtonElement;
 
     beforeEach(() => {
+        window.localStorage.clear();
         store = createMockStore();
 
         // Swap the real SignalStore (and its HTTP deps) for a plain spy object.
@@ -149,6 +151,17 @@ describe('DotAssetPickerComponent', () => {
         dialogRef = spectator.inject(DynamicDialogRef);
         contentletService = spectator.inject(DotContentletService);
         uploadService = spectator.inject(DotUploadFileService);
+
+        // `mockProvider` builds one mock instance for the whole describe and `clearAllMocks` only
+        // clears calls, not implementations — so re-seed here or a test that overrides a return
+        // value leaks into every test after it.
+        (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+            of(HYDRATED_ASSET)
+        );
+        (uploadService.uploadFileByBaseType as jest.Mock).mockReturnValue(
+            of({ title: 'logo.png' })
+        );
+
         spectator.detectChanges();
     });
 
@@ -200,6 +213,32 @@ describe('DotAssetPickerComponent', () => {
             expect(dialogRef.close).toHaveBeenCalledWith(HYDRATED_ASSET);
         });
 
+        it("should remember the asset's own folder, derived from its url", () => {
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(readLastAssetPath()).toBe('/images/');
+        });
+
+        it('should fall back to the browsed folder when the asset has no url', () => {
+            (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+                of({ inode: 'inode-1' } as DotCMSContentlet)
+            );
+            store.path.set('/docs/');
+            spectator.detectChanges();
+
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(readLastAssetPath()).toBe('/docs/');
+        });
+
+        it('should overwrite the remembered folder when a different asset is confirmed', () => {
+            writeLastAssetPath('/old/');
+
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(readLastAssetPath()).toBe('/images/');
+        });
+
         it('should do nothing when called with no selection', () => {
             store.selectedAsset.set(null);
 
@@ -215,6 +254,17 @@ describe('DotAssetPickerComponent', () => {
             spectator.click(button('asset-picker-cancel'));
 
             expect(dialogRef.close).toHaveBeenCalledWith();
+        });
+
+        it('should leave the remembered folder untouched', () => {
+            // Highlighting a row and backing out must not move a system-wide value.
+            writeLastAssetPath('/old/');
+            store.selectedAsset.set(SELECTED_ASSET);
+            spectator.detectChanges();
+
+            spectator.click(button('asset-picker-cancel'));
+
+            expect(readLastAssetPath()).toBe('/old/');
         });
     });
 
@@ -351,6 +401,7 @@ describe('DotAssetPickerComponent — opened without dialog data', () => {
     });
 
     beforeEach(() => {
+        window.localStorage.clear();
         store = createMockStore();
         TestBed.overrideComponent(DotAssetPickerComponent, {
             set: {

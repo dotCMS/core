@@ -742,6 +742,49 @@ describe('DotContentTypeFilterComponent', () => {
             ]);
         });
 
+        describe('server-side narrowing', () => {
+            it('should leave the query unbounded when nothing is restricted', () => {
+                spectator.detectChanges();
+
+                expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: undefined })
+                );
+            });
+
+            it('should narrow the initial query to the allowed base types', () => {
+                restrictToAssets();
+
+                expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'DOTASSET,FILEASSET' })
+                );
+            });
+
+            it('should keep narrowing when the user searches with no base type focused', () => {
+                restrictToAssets();
+                openPopover();
+                contentTypeService.getContentTypesWithPagination.mockClear();
+
+                triggerSearchInput('logo');
+                jest.advanceTimersByTime(600);
+
+                expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'DOTASSET,FILEASSET', filter: 'logo' })
+                );
+            });
+
+            it('should send the focused base type instead of the whole allowed set', () => {
+                restrictToAssets();
+                openPopover();
+                contentTypeService.getContentTypesWithPagination.mockClear();
+
+                triggerFocusChange('FILEASSET');
+
+                expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'FILEASSET' })
+                );
+            });
+        });
+
         it('narrows the left column to the allowed base types', () => {
             restrictToAssets();
 
