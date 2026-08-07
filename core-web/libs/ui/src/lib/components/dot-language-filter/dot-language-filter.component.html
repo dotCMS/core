@@ -1,5 +1,5 @@
 <dot-chip-filter
-    [title]="'content-drive.language-selector.placeholder' | dm"
+    [title]="$title() | dm"
     [selections]="$selectedLanguageNames()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"

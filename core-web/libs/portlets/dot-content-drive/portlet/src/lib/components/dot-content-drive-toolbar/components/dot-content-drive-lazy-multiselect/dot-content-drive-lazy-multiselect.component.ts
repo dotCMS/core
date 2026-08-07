@@ -22,11 +22,7 @@ import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
 import { catchError, debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    DotFilterListItemComponent
-} from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import { CHIP_FILTER_LISTBOX_PT, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 

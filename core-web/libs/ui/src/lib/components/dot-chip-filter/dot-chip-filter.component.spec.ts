@@ -92,14 +92,14 @@ describe('DotChipFilterComponent', () => {
         it('should emit clicked on Enter keydown', () => {
             const handler = jest.fn();
             spectator.output('clicked').subscribe(handler);
-            spectator.dispatchKeyboardEvent(spectator.element, 'keydown', 'Enter');
+            spectator.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
             expect(handler).toHaveBeenCalled();
         });
 
         it('should emit clicked on Space keydown', () => {
             const handler = jest.fn();
             spectator.output('clicked').subscribe(handler);
-            spectator.dispatchKeyboardEvent(spectator.element, 'keydown', ' ');
+            spectator.element.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
             expect(handler).toHaveBeenCalled();
         });
 

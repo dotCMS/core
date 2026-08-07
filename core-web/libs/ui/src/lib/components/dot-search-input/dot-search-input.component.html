@@ -4,11 +4,13 @@
         pInputText
         type="text"
         name="search"
-        placeholder="Search"
+        [placeholder]="$placeholder() | dm"
+        [attr.aria-label]="$placeholder() | dm"
         autocomplete="off"
         class="w-full"
+        data-testId="search-input-field"
         [formControl]="searchControl" />
-    @if ($title().length) {
+    @if ($text().length) {
         <p-inputicon
             class="pi pi-times p-input-icon-right"
             data-testId="search-icon-clear"

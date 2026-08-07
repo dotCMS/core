@@ -1,5 +1,5 @@
 <dot-chip-filter
-    [title]="'content-drive.type-filter.title' | dm"
+    [title]="$title() | dm"
     [selections]="$chipSelections()"
     (clicked)="popover.toggle($event)"
     (removed)="onClearAll()"

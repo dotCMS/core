@@ -1,19 +1,11 @@
-import {
-    Spectator,
-    SpyObject,
-    byTestId,
-    createComponentFactory,
-    mockProvider
-} from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 
-import { fakeAsync, tick } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { InputTextModule } from 'primeng/inputtext';
-
+import { DotMessageService } from '@dotcms/data-access';
 import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+import { DotSearchInputComponent } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
 
@@ -21,172 +13,71 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 describe('DotContentDriveSearchInputComponent', () => {
     let spectator: Spectator<DotContentDriveSearchInputComponent>;
-    let mockStore: SpyObject<InstanceType<typeof DotContentDriveStore>>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSearchInputComponent,
-        imports: [ReactiveFormsModule, IconFieldModule, InputIconModule, InputTextModule],
         providers: [
             mockProvider(DotContentDriveStore, {
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn(),
+                getFilterValue: jest.fn().mockReturnValue(undefined),
                 setGlobalSearch: jest.fn(),
                 setSelectedNode: jest.fn()
-            })
+            }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({ search: 'Search' })
+            }
         ],
         detectChanges: false
     });
 
+    const searchInput = () =>
+        spectator.fixture.debugElement.query(By.directive(DotSearchInputComponent));
+
     beforeEach(() => {
         spectator = createComponent();
-        mockStore = spectator.inject(DotContentDriveStore);
-        mockStore.getFilterValue.mockReturnValue(undefined);
+        store = spectator.inject(DotContentDriveStore, true);
+        store.getFilterValue.mockReset().mockReturnValue(undefined);
     });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+    afterEach(() => jest.clearAllMocks());
+
+    it('should render the shared search input', () => {
+        spectator.detectChanges();
+
+        expect(searchInput()).toBeTruthy();
     });
 
-    describe('Component Initialization', () => {
-        it('should create successfully', () => {
-            expect(spectator.component).toBeTruthy();
-        });
+    it('should bind the store title filter as the value', () => {
+        store.getFilterValue.mockReturnValue('blog');
+        spectator.detectChanges();
 
-        it('should initialize with empty form control by default', () => {
-            spectator.detectChanges();
-
-            expect(spectator.component.searchControl.value).toBe('');
-        });
-
-        it('should load existing filter value from store on init', () => {
-            const existingValue = 'existing search term';
-            mockStore.getFilterValue.mockReturnValue(existingValue);
-
-            spectator.detectChanges();
-
-            expect(mockStore.getFilterValue).toHaveBeenCalledWith('title');
-            expect(spectator.component.searchControl.value).toBe(existingValue);
-        });
+        expect(searchInput().componentInstance.$value()).toBe('blog');
+        expect(store.getFilterValue).toHaveBeenCalledWith('title');
     });
 
-    describe('Template', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
+    it('should bind an empty value when no title filter is set', () => {
+        spectator.detectChanges();
 
-        it('should render search input element', () => {
-            const input = spectator.query('input');
-            expect(input).toBeTruthy();
-        });
-
-        it('should bind form control to input', () => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.component.searchControl.setValue('test value');
-            spectator.detectChanges();
-
-            expect(input.value).toBe('test value');
-        });
+        expect(searchInput().componentInstance.$value()).toBe('');
     });
 
-    describe('Global Search Action', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
+    it('should push the emitted term to the store and reset the folder scope', () => {
+        spectator.detectChanges();
 
-        it('should call patchFilters after debounce when input has value', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
+        spectator.triggerEventHandler(searchInput(), 'search', 'blog');
 
-            spectator.typeInElement('search term', input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should call removeFilter when input is empty', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('   ', input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should debounce input changes by 500ms', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('test', input);
-
-            expect(mockStore.patchFilters).not.toHaveBeenCalled();
-
-            tick(499);
-            expect(mockStore.patchFilters).not.toHaveBeenCalled();
-
-            tick(1);
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should trim whitespace from input values', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('  trimmed value  ', input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should handle special characters correctly', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-            const specialChars = 'test-search+term (with) special chars!';
-
-            spectator.typeInElement(specialChars, input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
+        expect(store.setGlobalSearch).toHaveBeenCalledWith('blog');
+        expect(store.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
     });
 
-    describe('OnDestroy', () => {
-        it('should not call store methods after component is destroyed', fakeAsync(() => {
-            spectator.detectChanges();
-            const input = spectator.query('input') as HTMLInputElement;
+    it('should clear the search in the store when an empty term is emitted', () => {
+        store.getFilterValue.mockReturnValue('blog');
+        spectator.detectChanges();
 
-            spectator.typeInElement('test', input);
-            spectator.fixture.destroy();
-            tick(500);
+        spectator.triggerEventHandler(searchInput(), 'search', '');
 
-            expect(mockStore.patchFilters).not.toHaveBeenCalled();
-        }));
-    });
-
-    describe('Clear Icon', () => {
-        it('should appear when input has value', () => {
-            mockStore.getFilterValue.mockReturnValue('test value');
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('search-icon-clear'))).toBeTruthy();
-        });
-
-        it('should not appear when input is empty', () => {
-            mockStore.getFilterValue.mockReturnValue('');
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('search-icon-clear'))).not.toBeTruthy();
-        });
-
-        it('should clear input when clear icon is clicked', () => {
-            mockStore.getFilterValue.mockReturnValue('test value');
-            spectator.detectChanges();
-
-            spectator.click(spectator.query(byTestId('search-icon-clear')));
-
-            expect(spectator.component.searchControl.value).toBe(null);
-        });
+        expect(store.setGlobalSearch).toHaveBeenCalledWith('');
+        expect(store.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
     });
 });
