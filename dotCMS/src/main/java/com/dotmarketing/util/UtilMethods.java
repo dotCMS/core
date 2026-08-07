@@ -1248,6 +1248,30 @@ public class UtilMethods {
     		System.setProperty("sun.net.client.defaultConnectTimeout","10000");
 			 java.net.URL pointer = new java.net.URL(URI);
 
+			 // Security: this method is reachable from the Velocity template context as
+			 // $UtilMethods.getURL by any design-layer (template/container) user. Restrict it to
+			 // http(s) and refuse non-routable targets so it cannot be abused for local file read
+			 // (file://, jar://, …) or SSRF to loopback / link-local (cloud metadata) / private
+			 // hosts. See dotCMS/private-issues#668.
+			 final String scheme = pointer.getProtocol() == null ? "" : pointer.getProtocol().toLowerCase();
+			 if (!"http".equals(scheme) && !"https".equals(scheme)) {
+				 SecurityLogger.logInfo(UtilMethods.class,
+						 "Blocked getURL: disallowed scheme '" + scheme + "' for " + URI);
+				 return html;
+			 }
+			 try {
+				 final InetAddress target = InetAddress.getByName(pointer.getHost());
+				 if (target.isLoopbackAddress() || target.isAnyLocalAddress()
+						 || target.isLinkLocalAddress() || target.isSiteLocalAddress()
+						 || target.isMulticastAddress()) {
+					 SecurityLogger.logInfo(UtilMethods.class,
+							 "Blocked getURL: internal/non-routable host '" + pointer.getHost() + "' for " + URI);
+					 return html;
+				 }
+			 } catch (java.net.UnknownHostException uhe) {
+				 return html;
+			 }
+
 			 java.net.URLConnection conn = pointer.openConnection();
 			 conn.setUseCaches(false);
 			 conn.setConnectTimeout(10000);
