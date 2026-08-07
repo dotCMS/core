@@ -48,13 +48,18 @@ export class DotAssetPickerToolbarComponent {
     );
 
     /**
-     * Restricts the content-type selector to what the entry point allows — an Image field must not
-     * offer Widget or Content. `null` means "no restriction" (the File field).
+     * Restricts the content-type selector to what the entry point allows — neither a File nor an
+     * Image field may offer Widget or Content. `null` means "no restriction".
+     *
+     * Reads `allowedBaseTypes`, never `baseTypes`: the latter is only the *pre-selection*, and a
+     * File field legitimately has none while still being restricted.
      */
     protected readonly $allowedBaseTypes = computed(() => {
-        const baseTypes = this.store.config()?.baseTypes;
+        const allowedBaseTypes = this.store.config()?.allowedBaseTypes;
 
-        return baseTypes?.length ? (baseTypes as DotCMSBaseTypesContentTypes[]) : null;
+        return allowedBaseTypes?.length
+            ? (allowedBaseTypes as DotCMSBaseTypesContentTypes[])
+            : null;
     });
 
     /** Folder-pinned upload preference, which drives the button's label. */

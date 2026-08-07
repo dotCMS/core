@@ -29,6 +29,7 @@ import {
 import {
     DotAssetPickerBrowseState,
     DotAssetPickerPagination,
+    DotAssetPickerSelectionState,
     DotAssetPickerSort,
     DotAssetPickerState
 } from '../models';
@@ -51,7 +52,9 @@ const initialState: DotAssetPickerBrowseState = {
  */
 export function withAssetBrowse() {
     return signalStoreFeature(
-        { state: type<DotAssetPickerState>() },
+        // Depends on the selection slot so a new result can drop a selection that is about to
+        // scroll out of existence — see `loadItems`.
+        { state: type<DotAssetPickerState & DotAssetPickerSelectionState>() },
         withState<DotAssetPickerBrowseState>(initialState),
         withComputed(({ config, path, filters, pagination, sort, pages }) => ({
             /**
@@ -117,7 +120,18 @@ export function withAssetBrowse() {
                 loadItems: rxMethod<DotContentDriveSearchRequest>(
                     pipe(
                         filter(() => store.$isBrowsable()),
-                        tap(() => patchState(store, { status: ComponentStatus.LOADING })),
+                        tap(() =>
+                            patchState(store, {
+                                status: ComponentStatus.LOADING,
+                                // The list silently forgets its own PrimeNG selection whenever
+                                // `items` change (DotFolderListViewComponent's $cleanSelectedItems
+                                // effect assigns `selectedItems` without emitting `selectionChange`),
+                                // so `onSelect` never fires and the store has to clear itself.
+                                // Otherwise Confirm stays enabled for a row that is no longer in the
+                                // list and returns that stale asset.
+                                selectedAsset: null
+                            })
+                        ),
                         switchMap((request) =>
                             contentDriveService.search(request).pipe(
                                 tap((response: DotContentDriveSearchResponse) => {

@@ -379,6 +379,33 @@ describe('DotAssetPickerStore', () => {
 
             expect(store.selectedNode()).toBe(node);
         });
+
+        describe('when the hierarchy request fails', () => {
+            beforeEach(() => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+                store.initPicker(FILE_FIELD_CONFIG);
+            });
+
+            it('should report through the shared HTTP error manager', () => {
+                expect(httpErrorManager.handle).toHaveBeenCalled();
+            });
+
+            it('should stay in error instead of looking like an empty tree', () => {
+                // The success path used to run for the error fallback too and patch LOADED back
+                // over ERROR, so a failed load was indistinguishable from a site with no folders.
+                expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+            });
+
+            it('should still accept a retry after failing', () => {
+                folderService.searchFolders.mockReturnValue(of({ folders: [], pagination: {} }));
+
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            });
+        });
     });
 
     describe('search term', () => {
@@ -400,6 +427,30 @@ describe('DotAssetPickerStore', () => {
             expect(store.filters().title).toBeUndefined();
             expect(store.$request().filters?.text).toBe('');
         });
+
+        it('should move the tree highlight back to the site root', () => {
+            // The highlight is not decoration: `$targetFolder` reads it to pick the upload
+            // destination. Leaving it on /docs/ while the list is site-wide sends uploads to a
+            // folder the user is no longer looking at.
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSelectedNode({ key: 'docs', label: '/docs/' } as TreeNodeItem);
+
+            store.setSearch('logo');
+
+            expect(store.selectedNode()).toBe(store.folders()[0]);
+            expect(store.selectedNode().data).toEqual(
+                expect.objectContaining({ id: SITE.identifier, path: '' })
+            );
+        });
+
+        it('should move the tree highlight back when the term is cleared too', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.setSelectedNode({ key: 'docs', label: '/docs/' } as TreeNodeItem);
+
+            store.setSearch('');
+
+            expect(store.selectedNode().key).toBe('ALL_FOLDER');
+        });
     });
 
     describe('selection', () => {
@@ -415,6 +466,44 @@ describe('DotAssetPickerStore', () => {
             store.clearSelection();
 
             expect(store.selectedAsset()).toBeNull();
+        });
+
+        describe('when a new browse result replaces the list', () => {
+            // The list drops its own PrimeNG selection silently on every `items` change, without
+            // emitting `selectionChange` — so nothing tells the store. Without this, Confirm stays
+            // enabled for a row that is no longer visible and returns that stale asset.
+            beforeEach(() => {
+                store.initPicker(FILE_FIELD_CONFIG);
+                spectator.flushEffects();
+                store.setSelectedAsset({ inode: 'a' });
+            });
+
+            it('should drop the selection when the folder changes', () => {
+                store.setPath('/docs/');
+                spectator.flushEffects();
+
+                expect(store.selectedAsset()).toBeNull();
+            });
+
+            it('should drop the selection when a filter changes', () => {
+                store.patchFilters({ title: 'logo' });
+                spectator.flushEffects();
+
+                expect(store.selectedAsset()).toBeNull();
+            });
+
+            it('should drop the selection when the sort changes', () => {
+                store.setSort({ field: 'title', order: 'desc' });
+                spectator.flushEffects();
+
+                expect(store.selectedAsset()).toBeNull();
+            });
+
+            it('should keep the selection while nothing re-queries', () => {
+                spectator.flushEffects();
+
+                expect(store.selectedAsset()).toEqual({ inode: 'a' });
+            });
         });
     });
 });

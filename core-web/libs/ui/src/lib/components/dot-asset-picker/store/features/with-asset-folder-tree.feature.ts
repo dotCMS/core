@@ -1,16 +1,15 @@
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, take, tap } from 'rxjs/operators';
 
 import {
     applyLoadMoreToHierarchy,
     buildTreeFolderNodes,
     DotFolderService,
     DotHttpErrorManagerService,
-    FolderTreeHierarchyLevel,
     getFolderHierarchyByPath,
     getFolderNodesByPath
 } from '@dotcms/data-access';
@@ -69,32 +68,43 @@ export function withAssetFolderTree() {
 
                     patchState(store, { foldersStatus: ComponentStatus.LOADING });
 
+                    // The success work lives in `tap`, BEFORE `catchError`, so a failure can never
+                    // reach it. Handling it in `subscribe` instead would run it for the error
+                    // fallback too, patching LOADED back over ERROR and making a failed load
+                    // indistinguishable from a successfully loaded empty tree.
                     getFolderHierarchyByPath(targetPath, site, dotFolderService)
                         .pipe(
                             take(1),
+                            tap((levels) => {
+                                const { rootNodes, selectedNode } = buildTreeFolderNodes({
+                                    folderHierarchyLevels: levels.map((level) => level.folders),
+                                    targetPath: targetPath || '/',
+                                    rootNode: siteRootNode
+                                });
+
+                                patchState(store, {
+                                    folders: [
+                                        siteRootNode,
+                                        ...applyLoadMoreToHierarchy(
+                                            rootNodes,
+                                            levels,
+                                            site.hostname
+                                        )
+                                    ],
+                                    selectedNode,
+                                    foldersStatus: ComponentStatus.LOADED
+                                });
+                            }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
                                 patchState(store, { foldersStatus: ComponentStatus.ERROR });
 
-                                return of([] as FolderTreeHierarchyLevel[]);
+                                // EMPTY, not `of([])`: there is nothing meaningful to emit, and a
+                                // fallback value would only give the success path something to run on.
+                                return EMPTY;
                             })
                         )
-                        .subscribe((levels) => {
-                            const { rootNodes, selectedNode } = buildTreeFolderNodes({
-                                folderHierarchyLevels: levels.map((level) => level.folders),
-                                targetPath: targetPath || '/',
-                                rootNode: siteRootNode
-                            });
-
-                            patchState(store, {
-                                folders: [
-                                    siteRootNode,
-                                    ...applyLoadMoreToHierarchy(rootNodes, levels, site.hostname)
-                                ],
-                                selectedNode,
-                                foldersStatus: ComponentStatus.LOADED
-                            });
-                        });
+                        .subscribe();
                 },
 
                 /**
@@ -122,6 +132,25 @@ export function withAssetFolderTree() {
 
                 setSelectedNode: (selectedNode: TreeNodeItem): void => {
                     patchState(store, { selectedNode });
+                },
+
+                /**
+                 * Snaps the highlight back to the site root, for whatever widens the list back to
+                 * site-wide (today: free-text search).
+                 *
+                 * The highlight is not cosmetic — `$targetFolder` derives the upload destination
+                 * from it — so leaving it on a folder the list is no longer scoped to would send
+                 * uploads somewhere the user is not looking.
+                 *
+                 * Reuses the per-site root already prepended to `folders` by `loadFolders`; the
+                 * generic `ALL_FOLDER` is only a fallback for before the tree has loaded.
+                 */
+                selectRootNode: (): void => {
+                    const rootNode =
+                        store.folders().find((folder) => folder.key === ALL_FOLDER.key) ??
+                        ALL_FOLDER;
+
+                    patchState(store, { selectedNode: rootNode });
                 },
 
                 /**

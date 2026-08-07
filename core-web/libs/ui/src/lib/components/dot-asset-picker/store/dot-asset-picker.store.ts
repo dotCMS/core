@@ -29,9 +29,11 @@ const initialState: DotAssetPickerState = {
  */
 export const DotAssetPickerStore = signalStore(
     withState(initialState),
+    // Selection comes first: `withAssetBrowse` clears `selectedAsset` when a new result replaces the
+    // list, so the slot has to exist before it is composed.
+    withAssetSelection(),
     withAssetBrowse(),
     withAssetFolderTree(),
-    withAssetSelection(),
     withMethods((store) => {
         /** Any filter change invalidates the cursor bookmarks and sends the user back to page 1. */
         const resetPaging = () => ({
@@ -109,6 +111,10 @@ export const DotAssetPickerStore = signalStore(
                 }
 
                 patchState(store, { filters, path: undefined, ...resetPaging() });
+
+                // The tree highlight has to follow the scope, not just the list: it is also what
+                // `$targetFolder` reads to decide where an upload lands.
+                store.selectRootNode();
             }
         };
     }),

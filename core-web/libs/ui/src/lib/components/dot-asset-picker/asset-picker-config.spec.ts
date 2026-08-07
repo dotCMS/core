@@ -20,10 +20,19 @@ describe('buildAssetPickerConfig', () => {
             expect(config.languageId).toBe('1');
         });
 
-        it('should not restrict base types', () => {
+        it('should not pre-select any base type', () => {
             const config = buildAssetPickerConfig({ mode: 'file', site: SITE, languageId: '1' });
 
             expect(config.baseTypes).toBeUndefined();
+        });
+
+        it('should still only offer the asset-bearing base types', () => {
+            // AC (#36836): the selector offers dotAsset + File Asset in BOTH modes. "Nothing
+            // pre-selected" must not degrade into "everything offered", or the File field lists
+            // Widget and Content.
+            const config = buildAssetPickerConfig({ mode: 'file', site: SITE, languageId: '1' });
+
+            expect(config.allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
         });
 
         it('should not apply a mimetype restriction', () => {
@@ -46,6 +55,12 @@ describe('buildAssetPickerConfig', () => {
             expect(config.baseTypes).toEqual(['DOTASSET', 'FILEASSET']);
         });
 
+        it('should offer only the asset-bearing base types', () => {
+            const config = buildAssetPickerConfig({ mode: 'image', site: SITE });
+
+            expect(config.allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+        });
+
         it('should apply the image mimetype restriction', () => {
             const config = buildAssetPickerConfig({ mode: 'image', site: SITE });
 
@@ -65,10 +80,12 @@ describe('buildAssetPickerConfig', () => {
             // Callers must not be able to mutate the shared constant through the config.
             const first = buildAssetPickerConfig({ mode: 'image', site: SITE });
             first.baseTypes?.push('WIDGET');
+            first.allowedBaseTypes?.push('WIDGET');
 
             const second = buildAssetPickerConfig({ mode: 'image', site: SITE });
 
             expect(second.baseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+            expect(second.allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
         });
     });
 

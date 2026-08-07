@@ -7,10 +7,13 @@ import { DotAssetPickerConfig } from './store/models';
 export type DotAssetPickerMode = 'file' | 'image';
 
 /**
- * An Image field can only hold an asset, so the picker is narrowed to the two base types that
- * carry one. A File field has no such restriction.
+ * The only two base types that carry an asset.
+ *
+ * Both entry points are restricted to these — neither a File nor an Image field can hold a Widget
+ * or a piece of Content. What differs is the *pre-selection*: Image starts with both selected,
+ * File starts with none.
  */
-export const ASSET_PICKER_IMAGE_BASE_TYPES: DotCMSBaseTypesContentTypes[] = [
+export const ASSET_PICKER_ASSET_BASE_TYPES: DotCMSBaseTypesContentTypes[] = [
     DotCMSBaseTypesContentTypes.DOTASSET,
     DotCMSBaseTypesContentTypes.FILEASSET
 ];
@@ -54,10 +57,13 @@ export function buildAssetPickerConfig({
     return {
         site,
         path: initialAssetPath ?? readLastAssetPath(),
+        // What the selector may offer — the same in both modes.
+        allowedBaseTypes: [...ASSET_PICKER_ASSET_BASE_TYPES],
         ...(languageId ? { languageId } : {}),
+        // What starts selected, plus the silent mimetype narrowing — Image only.
         ...(isImage
             ? {
-                  baseTypes: [...ASSET_PICKER_IMAGE_BASE_TYPES],
+                  baseTypes: [...ASSET_PICKER_ASSET_BASE_TYPES],
                   mimeTypes: [...ASSET_PICKER_IMAGE_MIME_TYPES]
               }
             : {})

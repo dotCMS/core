@@ -13,8 +13,10 @@ import {
  * what lets the picker run inside a dialog on top of a screen that owns its own routing.
  *
  * Two shapes matter today (AssetPicker 6/7 builds them):
- * - **File field**: `{ site, languageId }` — no type restriction at all.
- * - **Image field**: `{ site, languageId, baseTypes: [DOTASSET, FILEASSET], mimeTypes: ['image/*'] }`.
+ * - **File field**: `{ site, languageId, allowedBaseTypes: [DOTASSET, FILEASSET] }` — nothing
+ *   pre-selected.
+ * - **Image field**: the same, plus `baseTypes: [DOTASSET, FILEASSET]` pre-selected and
+ *   `mimeTypes: ['image/*']`.
  */
 export interface DotAssetPickerConfig {
     /** Site to browse. `SYSTEM_HOST` is not browsable and suppresses the search. */
@@ -30,10 +32,22 @@ export interface DotAssetPickerConfig {
     languageId?: string;
 
     /**
-     * Base types the editor may pick from, by name (`DOTASSET`, `FILEASSET`, …).
-     * Seeds the base-type filter and narrows the content-type selector.
+     * Base types that start **selected**, by name (`DOTASSET`, `FILEASSET`, …). Seeds the
+     * base-type filter, so it also narrows the first search.
+     *
+     * Not the same thing as {@link allowedBaseTypes}: this is a starting point the editor can
+     * clear, not a boundary.
      */
     baseTypes?: string[];
+
+    /**
+     * Base types the content-type selector may **offer**, by name. Omit for no restriction.
+     *
+     * Separate from {@link baseTypes} because the two questions are genuinely different: a File
+     * field starts with nothing selected but must still never offer Widget or Content. Deriving
+     * one from the other is what made the File field's selector list every base type.
+     */
+    allowedBaseTypes?: string[];
 
     /**
      * Mimetype restriction applied to every request — e.g. `['image/*']` for an Image field.
