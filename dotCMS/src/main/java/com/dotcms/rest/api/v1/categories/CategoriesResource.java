@@ -33,6 +33,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.business.CategoryDeleteResult;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
@@ -682,12 +683,14 @@ public class CategoriesResource {
                     + "before anything is deleted; a category that fails validation is skipped whole. "
                     + "Accepts a JSON array of category inodes. Inodes that could not be deleted are "
                     + "reported in the `fails` list of the result with the failure reason (category "
-                    + "does not exist, insufficient permissions, or a permission-protected descendant)."
+                    + "does not exist, insufficient permissions, or a permission-protected descendant). "
+                    + "`successCount` counts the requested inodes that were deleted, while "
+                    + "`deletedCount` counts every category actually removed, descendants included."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bulk delete result returned",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryBulkDeleteResultView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions")
@@ -715,16 +718,20 @@ public class CategoriesResource {
                 "The body must send a collection of category inode such as: " +
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
+        long deletedCount = 0L;
+
         try {
-            final Map<String, String> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(
+            final CategoryDeleteResult deleteResult = this.categoryAPI.deleteCategoryAndChildren(
                     categoriesToDelete, user, pageMode.respectAnonPerms);
+            final Map<String, String> undeletedCategoryList = deleteResult.getFailures();
+            deletedCount = deleteResult.getDeletedCount();
 
             deletedIds.addAll(categoriesToDelete);
             deletedIds.removeAll(undeletedCategoryList.keySet());
 
             ActivityLogger.logInfo(this.getClass(), "Delete Category Action", "User " +
-                    user.getPrimaryKey() + " deleted category list: [" + String.join(",",
-                    deletedIds) + "]");
+                    user.getPrimaryKey() + " deleted " + deletedCount +
+                    " categories from list: [" + String.join(",", deletedIds) + "]");
 
             for (final Map.Entry<String, String> failed : undeletedCategoryList.entrySet()) {
                 Logger.error(this, "Category with Id: " + failed.getKey()
@@ -741,8 +748,9 @@ public class CategoriesResource {
             throw new DotRuntimeException(e);
         }
 
-        return Response.ok(new ResponseEntityBulkResultView(
-                        new BulkResultView(Long.valueOf(deletedIds.size()), 0L, failedToDelete)))
+        return Response.ok(new ResponseEntityCategoryBulkDeleteResultView(
+                        new CategoryBulkDeleteResultView(Long.valueOf(deletedIds.size()), 0L,
+                                failedToDelete, deletedCount)))
                 .build();
     }
 

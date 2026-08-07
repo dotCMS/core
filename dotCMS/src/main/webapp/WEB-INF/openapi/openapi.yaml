@@ -4682,7 +4682,9 @@ paths:
         \ is skipped whole. Accepts a JSON array of category inodes. Inodes that could\
         \ not be deleted are reported in the `fails` list of the result with the failure\
         \ reason (category does not exist, insufficient permissions, or a permission-protected\
-        \ descendant)."
+        \ descendant). `successCount` counts the requested inodes that were deleted,\
+        \ while `deletedCount` counts every category actually removed, descendants\
+        \ included."
       operationId: deleteCategories
       requestBody:
         content:
@@ -4699,7 +4701,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityBulkResultView"
+                $ref: "#/components/schemas/ResponseEntityCategoryBulkDeleteResultView"
           description: Bulk delete result returned
         "400":
           description: Bad request
@@ -24620,6 +24622,22 @@ components:
           type: string
         vanityUrlId:
           type: string
+    CategoryBulkDeleteResultView:
+      type: object
+      properties:
+        deletedCount:
+          type: integer
+          format: int64
+        fails:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedResultView"
+        skippedCount:
+          type: integer
+          format: int64
+        successCount:
+          type: integer
+          format: int64
     CategoryEditForm:
       type: object
       properties:
@@ -31279,6 +31297,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/CacheStatsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCategoryBulkDeleteResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CategoryBulkDeleteResultView"
         errors:
           type: array
           items:

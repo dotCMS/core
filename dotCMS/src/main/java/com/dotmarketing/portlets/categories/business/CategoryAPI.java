@@ -415,10 +415,11 @@ public interface CategoryAPI {
 	 * batch are still processed.
 	 *
 	 * @param categoriesToDelete inodes of the categories to delete
-	 * @return failures keyed by inode; the value is the failure reason (one of the
-	 *         {@code DELETE_FAIL_REASON_*} constants). Empty when everything was deleted.
+	 * @return the total number of categories removed — descendants included, which is why it
+	 *         is normally larger than {@code categoriesToDelete.size()} — together with the
+	 *         failures keyed by inode. See {@link CategoryDeleteResult}.
 	 */
-	Map<String, String> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+	CategoryDeleteResult deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list all the line of parent categories of the given child category

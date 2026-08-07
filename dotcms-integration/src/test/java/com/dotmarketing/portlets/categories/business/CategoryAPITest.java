@@ -1844,10 +1844,12 @@ public class CategoryAPITest extends IntegrationTestBase {
             }
         }
 
-        final Map<String, String> unableToDelete = categoryAPI
+        final CategoryDeleteResult deleteResult = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode()), user, false);
 
-        assertTrue("No failures expected", unableToDelete.isEmpty());
+        assertTrue("No failures expected", deleteResult.getFailures().isEmpty());
+        assertEquals("The cascade total must count the root plus every descendant",
+                subtree.size(), deleteResult.getDeletedCount());
         assertSubtreeFullyRemoved(subtree);
     }
 
@@ -1866,10 +1868,12 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category grandchild = createCategory("grandchild", child);
         final Category greatGrandchild = createCategory("greatgrandchild", grandchild);
 
-        final Map<String, String> unableToDelete = categoryAPI
+        final CategoryDeleteResult deleteResult = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode()), user, false);
 
-        assertTrue("No failures expected", unableToDelete.isEmpty());
+        assertTrue("No failures expected", deleteResult.getFailures().isEmpty());
+        assertEquals("A 4-level chain must report all 4 categories as deleted",
+                4, deleteResult.getDeletedCount());
         assertSubtreeFullyRemoved(list(root, child, grandchild, greatGrandchild));
     }
 
@@ -1902,10 +1906,12 @@ public class CategoryAPITest extends IntegrationTestBase {
                     APILocator.getPermissionAPI().getPermissions(contentlet, false, true), user,
                     false);
 
-            final Map<String, String> unableToDelete = categoryAPI
+            final CategoryDeleteResult deleteResult = categoryAPI
                     .deleteCategoryAndChildren(list(root.getInode()), user, false);
 
-            assertTrue("Deleting an in-use category must succeed", unableToDelete.isEmpty());
+            assertTrue("Deleting an in-use category must succeed", deleteResult.getFailures().isEmpty());
+            assertEquals("An in-use descendant still counts towards the cascade total",
+                    3, deleteResult.getDeletedCount());
             assertSubtreeFullyRemoved(list(root, child, grandchild));
             assertTrue("Content must no longer reference the deleted category",
                     categoryAPI.getParents(contentlet, user, false).isEmpty());
@@ -1938,12 +1944,14 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category child = createCategory("child", root);
         final String missingInode = "nonexistent-" + System.currentTimeMillis();
 
-        final Map<String, String> unableToDelete = categoryAPI
+        final CategoryDeleteResult deleteResult = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode(), missingInode), user, false);
 
-        assertEquals(1, unableToDelete.size());
+        assertEquals(1, deleteResult.getFailures().size());
         assertEquals("The missing inode must be reported back with the not-found reason",
-                CategoryAPI.DELETE_FAIL_REASON_NOT_FOUND, unableToDelete.get(missingInode));
+                CategoryAPI.DELETE_FAIL_REASON_NOT_FOUND, deleteResult.getFailures().get(missingInode));
+        assertEquals("Only the existing tree counts towards the cascade total",
+                2, deleteResult.getDeletedCount());
         assertSubtreeFullyRemoved(list(root, child));
     }
 
@@ -1962,12 +1970,14 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category child = createCategory("child", root);
         final Category grandchild = createCategory("grandchild", child);
 
-        final Map<String, String> unableToDelete = categoryAPI
+        final CategoryDeleteResult deleteResult = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode(), grandchild.getInode()), user,
                         false);
 
         assertTrue("A descendant deleted by an earlier cascade must not be reported as failure",
-                unableToDelete.isEmpty());
+                deleteResult.getFailures().isEmpty());
+        assertEquals("The descendant listed twice in the batch must be counted once",
+                3, deleteResult.getDeletedCount());
         assertSubtreeFullyRemoved(list(root, child, grandchild));
     }
 
@@ -1986,14 +1996,16 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category child = createCategory("child", root);
         final User limitedUser = new UserDataGen().nextPersisted();
 
-        final Map<String, String> unableToDelete = categoryAPI
+        final CategoryDeleteResult deleteResult = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode()), limitedUser, false);
 
-        assertEquals(1, unableToDelete.size());
+        assertEquals(1, deleteResult.getFailures().size());
         assertEquals("The root must be reported back with the no-permission reason",
                 String.format(CategoryAPI.DELETE_FAIL_REASON_NO_PERMISSION,
                         root.getCategoryName()),
-                unableToDelete.get(root.getInode()));
+                deleteResult.getFailures().get(root.getInode()));
+        assertEquals("Nothing was deleted, so the cascade total must be zero",
+                0, deleteResult.getDeletedCount());
         assertEquals("Root category must survive", 1, dbCategoryCount(root.getInode()));
         assertEquals("Child category must survive", 1, dbCategoryCount(child.getInode()));
     }
@@ -2033,18 +2045,20 @@ public class CategoryAPITest extends IntegrationTestBase {
                 PermissionAPI.PERMISSION_READ, true);
         APILocator.getPermissionAPI().save(override, protectedGrandchild, user, false);
 
-        final Map<String, String> unableToDelete = categoryAPI.deleteCategoryAndChildren(
+        final CategoryDeleteResult deleteResult = categoryAPI.deleteCategoryAndChildren(
                 list(protectedRoot.getInode(), deletableRoot.getInode()), limitedUser, false);
 
-        assertEquals(1, unableToDelete.size());
+        assertEquals(1, deleteResult.getFailures().size());
         assertEquals("The protected tree's root must be reported with the descendant reason",
                 String.format(CategoryAPI.DELETE_FAIL_REASON_PROTECTED_DESCENDANT,
                         protectedGrandchild.getCategoryName()),
-                unableToDelete.get(protectedRoot.getInode()));
+                deleteResult.getFailures().get(protectedRoot.getInode()));
         assertEquals("Protected root must survive", 1, dbCategoryCount(protectedRoot.getInode()));
         assertEquals("Protected child must survive", 1, dbCategoryCount(protectedChild.getInode()));
         assertEquals("Protected grandchild must survive", 1,
                 dbCategoryCount(protectedGrandchild.getInode()));
+        assertEquals("Only the deletable tree counts; the skipped subtree contributes nothing",
+                2, deleteResult.getDeletedCount());
         assertSubtreeFullyRemoved(list(deletableRoot, deletableChild));
     }
 

@@ -709,7 +709,7 @@ public class CategoryAPIImpl implements CategoryAPI {
     }
 
 	@WrapInTransaction
-	public Map<String, String> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+	public CategoryDeleteResult deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
@@ -785,7 +785,9 @@ public class CategoryAPIImpl implements CategoryAPI {
 							.collect(Collectors.toList())));
 		}
 
-		return categoriesUnableToDelete;
+		// deletedInodes is a Set, so a category reached both directly and through an
+		// ancestor's cascade is counted once.
+		return new CategoryDeleteResult(deletedInodes.size(), categoriesUnableToDelete);
 	}
 
 	@CloseDBIfOpened
