@@ -1,0 +1,180 @@
+name: 'Remote Build Cache'
+description: |
+  Points the Apache Maven Build Cache Extension at the S3 build-cache bucket.
+
+  The extension speaks plain HTTP PUT/GET/HEAD, and S3 needs SigV4, so an
+  aws-sigv4-proxy container signs on the way out. Maven talks to 127.0.0.1.
+
+  Exports BUILD_CACHE_ARGS for the Maven job to append. If the bucket secrets
+  are absent (forks, or the feature is off) it exports an empty string and the
+  build runs exactly as it does today.
+
+inputs:
+  enabled:
+    description: |
+      Set false to build without the cache. The caller wires this to a global
+      kill switch (BUILD_CACHE_DISABLED) and a per-PR label, so a suspected bad
+      entry can be bypassed without editing a workflow.
+    required: false
+    default: 'true'
+  bucket:
+    description: 'S3 bucket name for the build cache'
+    required: false
+    default: ''
+  endpoint:
+    description: 'S3 endpoint URL, e.g. https://s3.gra.io.cloud.ovh.net'
+    required: false
+    default: ''
+  access-key:
+    description: 'S3 access key. Use the READ-ONLY key on untrusted refs.'
+    required: false
+    default: ''
+  secret-key:
+    description: 'S3 secret key'
+    required: false
+    default: ''
+  region:
+    description: 'Signing region. Derived from the endpoint host when empty.'
+    required: false
+    default: ''
+  save:
+    description: |
+      Whether this job may push to the shared cache. Only trusted refs
+      (trunk, merge queue) should ever set this true — a writable cache
+      reached from untrusted code is a supply-chain vector (CVE-2025-36852).
+      Defence in depth only: the real control is handing PR jobs a
+      GetObject-only key.
+    required: false
+    default: 'false'
+  prefix:
+    description: 'Key prefix inside the bucket'
+    required: false
+    default: 'maven-build-cache'
+  port:
+    description: 'Localhost port for the signing proxy'
+    required: false
+    default: '8079'
+
+outputs:
+  enabled:
+    description: 'true when the remote cache was wired up'
+    value: ${{ steps.setup.outputs.enabled }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: setup
+      name: Start build-cache signing proxy
+      shell: bash
+      env:
+        ENABLED: ${{ inputs.enabled }}
+        BUCKET: ${{ inputs.bucket }}
+        ENDPOINT: ${{ inputs.endpoint }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.access-key }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.secret-key }}
+        REGION_IN: ${{ inputs.region }}
+        SAVE: ${{ inputs.save }}
+        PREFIX: ${{ inputs.prefix }}
+        PORT: ${{ inputs.port }}
+      run: |
+        set -euo pipefail
+        echo "BUILD_CACHE_ARGS=" >> "$GITHUB_ENV"
+        echo "enabled=false" >> "$GITHUB_OUTPUT"
+
+        if [[ "$ENABLED" != "true" ]]; then
+          echo "Remote build cache turned off (BUILD_CACHE_DISABLED variable or PR label)."
+          exit 0
+        fi
+        if [[ -z "$BUCKET" || -z "$ENDPOINT" || -z "$AWS_ACCESS_KEY_ID" || -z "$AWS_SECRET_ACCESS_KEY" ]]; then
+          echo "Build-cache secrets not available; remote cache disabled."
+          exit 0
+        fi
+        if [[ "${RUNNER_OS}" != "Linux" ]]; then
+          echo "Remote cache only wired for Linux runners; skipping on ${RUNNER_OS}."
+          exit 0
+        fi
+
+        HOST="${ENDPOINT#*://}"; HOST="${HOST%%/*}"
+        SCHEME="${ENDPOINT%%://*}"; [[ "$SCHEME" == "$ENDPOINT" ]] && SCHEME=https
+
+        # OVH endpoints look like s3.<region>.io.cloud.ovh.net
+        REGION="$REGION_IN"
+        if [[ -z "$REGION" ]]; then
+          REGION=$(echo "$HOST" | cut -d. -f2)
+          echo "Derived signing region '${REGION}' from ${HOST}"
+        fi
+        if [[ -z "$REGION" ]]; then
+          echo "::warning::Could not derive a signing region from '${HOST}'; remote cache disabled."
+          exit 0
+        fi
+
+        docker run -d --name build-cache-sigv4 \
+          -p "127.0.0.1:${PORT}:8080" \
+          -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+          public.ecr.aws/aws-observability/aws-sigv4-proxy:latest \
+          --name s3 --region "$REGION" \
+          --host "$HOST" --sign-host "$HOST" \
+          --upstream-url-scheme "$SCHEME" \
+          --log-failed-requests
+
+        # A HEAD on a key that does not exist must answer 404, not 403 — the
+        # extension reads 403 as a hard error rather than a cache miss.
+        for i in $(seq 1 20); do
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -I \
+            "http://127.0.0.1:${PORT}/${BUCKET}/${PREFIX}/.probe" || echo 000)
+          case "$CODE" in
+            404|200) echo "Signing proxy ready (probe HTTP ${CODE})"; break ;;
+            403) echo "::warning::Bucket rejected the probe (403) — bad key or region. Remote cache disabled."
+                 docker rm -f build-cache-sigv4 >/dev/null 2>&1 || true
+                 exit 0 ;;
+          esac
+          sleep 1
+        done
+        if [[ "${CODE:-000}" != "404" && "${CODE:-000}" != "200" ]]; then
+          echo "::warning::Signing proxy did not become ready (last HTTP ${CODE:-000}). Remote cache disabled."
+          docker logs build-cache-sigv4 2>&1 | tail -20 || true
+          docker rm -f build-cache-sigv4 >/dev/null 2>&1 || true
+          exit 0
+        fi
+
+        # This job is not supposed to be able to write. That is the whole security
+        # boundary — client-side flags are not, since a job holding a writable key
+        # can bypass Maven entirely. Prove the key is really read-only instead of
+        # assuming it, because a silently-writable "read-only" key looks identical
+        # to a correct setup until someone abuses it.
+        if [[ "$SAVE" != "true" ]]; then
+          WCODE=$(curl -s -o /dev/null -w '%{http_code}' -X PUT --data-binary '' \
+            "http://127.0.0.1:${PORT}/${BUCKET}/${PREFIX}/_probe/readonly-check" || echo 000)
+          if [[ "$WCODE" == "403" ]]; then
+            echo "Verified: this job's credentials cannot write to the cache."
+          elif [[ "$WCODE" == "200" || "$WCODE" == "204" ]]; then
+            echo "::warning title=Build cache key is not read-only::A job that should only read \
+        from the build cache was able to WRITE to it (HTTP ${WCODE}). Untrusted code can poison \
+        entries that trusted builds later replay (CVE-2025-36852). Re-issue this key with \
+        GetObject-only permissions."
+          else
+            echo "Read-only write-probe returned HTTP ${WCODE}; could not confirm either way."
+          fi
+        fi
+
+        # alwaysRunPlugins is NOT optional. On a cache hit the extension skips
+        # every cached plugin execution, including install:install — measured:
+        # the module's jar then never lands in ~/.m2/repository, and this job
+        # exists to publish that repository as the `maven-repo` artifact ~25 test
+        # jobs consume. Same reasoning for docker-maven-plugin: a hit on
+        # dotcms-core would otherwise skip the execution that writes
+        # dotCMS/target/docker-build.tar, which the next step uploads.
+        # (Named goals, not globs — FINAL_ARGS is expanded unquoted in maven-job.)
+        ALWAYS_RUN="maven-install-plugin:install,docker-maven-plugin:build"
+
+        # remote.save.final: never let a later build overwrite an existing entry.
+        ARGS="-Dmaven.build.cache.remote.enabled=true"
+        ARGS="$ARGS -Dmaven.build.cache.remote.url=http://127.0.0.1:${PORT}/${BUCKET}/${PREFIX}"
+        ARGS="$ARGS -Dmaven.build.cache.remote.save.enabled=${SAVE}"
+        ARGS="$ARGS -Dmaven.build.cache.remote.save.final=true"
+        ARGS="$ARGS -Dmaven.build.cache.lazyRestore=true"
+        ARGS="$ARGS -Dmaven.build.cache.alwaysRunPlugins=${ALWAYS_RUN}"
+        echo "BUILD_CACHE_ARGS=$ARGS" >> "$GITHUB_ENV"
+        echo "BUILD_CACHE_SAVE=${SAVE}" >> "$GITHUB_ENV"
+        echo "enabled=true" >> "$GITHUB_OUTPUT"
+        echo "Remote build cache enabled (save=${SAVE})."
