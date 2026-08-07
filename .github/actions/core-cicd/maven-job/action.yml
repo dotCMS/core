@@ -168,6 +168,24 @@ runs:
         echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
         echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
+    # The Maven distribution itself, which mvnw downloads from Maven Central on a
+    # cold runner. Without this every job in a run fetches the same ~40MB zip --
+    # around 26 downloads per run -- and Maven Central eventually answers 429,
+    # killing the job before any dotCMS code runs (and, under fail-fast, taking
+    # the rest of the matrix with it).
+    #
+    # Unlike the caches below this uses the combined action rather than the
+    # restore/save split: the content is an immutable versioned download, so
+    # there is no risk of persisting a polluted cache, and letting every job save
+    # means the first one to run on a cold key repairs it for the rest.
+    - id: cache-maven-wrapper
+      name: Cache Maven Wrapper Distribution
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/wrapper
+        # Changes only when the Maven version does, so this key is ~always a hit.
+        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
       if: ${{ inputs.artifacts-from == '' }}
