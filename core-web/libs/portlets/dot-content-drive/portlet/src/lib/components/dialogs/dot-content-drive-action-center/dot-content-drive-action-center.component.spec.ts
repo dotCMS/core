@@ -245,11 +245,11 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeFalsy();
         });
 
-        it('should render the notice without p-message, so it has no entrance animation', () => {
-            // The notice is present the moment the dialog opens, and PrimeNG 21's Message animates
-            // its own height from zero over 300ms with no way to opt out — which read as the notice
-            // arriving late and shoving the action list down. Guards against a well-meaning revert
-            // to `p-message` for consistency with the other notices.
+        it('should render the notice statically, with no entrance animation', () => {
+            // The notice is present the moment the dialog opens, and PrimeNG's Message animates its
+            // own height from zero over 300ms with no way to opt out through the component — which
+            // read as the notice arriving late and shoving the action list down. `no-enter-motion` is
+            // what the component's styles hook onto to suppress it.
             mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
 
             spectator.detectChanges();
@@ -257,7 +257,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const notice = spectator.query('[data-testid="folders-ignored-message"]');
 
             expect(notice).toBeTruthy();
-            expect(notice?.tagName.toLowerCase()).toBe('div');
+            expect(notice?.classList.contains('no-enter-motion')).toBe(true);
         });
     });
 

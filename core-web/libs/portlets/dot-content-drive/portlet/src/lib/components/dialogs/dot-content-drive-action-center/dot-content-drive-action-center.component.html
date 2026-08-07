@@ -31,34 +31,16 @@
             class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
             data-testid="action-center">
             @if ($ignoredFolderCount() > 0) {
-                <!--
-                    A plain element rather than `p-message`, on purpose. This notice is present from
-                    the moment the dialog opens, simply because the selection contains a folder, so
-                    PrimeNG 21's unconditional entrance animation — 300ms of opacity *and*
-                    `grid-template-rows: 0fr → 1fr` — made it read as arriving late while shoving the
-                    action list down as it expanded.
-
-                    That animation is hardcoded on the Message host
-                    (`'[animate.enter]': '"p-message-enter-active"'`) with no way to opt out:
-                    `motionOptions` is declared but never consumed, `ptm('motion')` feeds only that
-                    dead computed, the 0.3s duration is not a design token, and `providePrimeNG` has
-                    no motion config. The only alternatives were a CSS override coupled to a
-                    PrimeNG-internal class name, or not using the component here.
-
-                    The other messages in this dialog appear in response to a user action, where an
-                    entrance animation is appropriate, so they stay `p-message`.
-                -->
-                <div
-                    class="flex items-start gap-3 rounded-lg bg-primary-50 px-4 py-3.5 text-sm text-surface-700"
+                <!-- `no-enter-motion` renders this notice statically; see the component's `styles`. -->
+                <p-message
+                    severity="info"
+                    styleClass="no-enter-motion"
                     data-testid="folders-ignored-message">
-                    <i class="pi pi-info-circle mt-0.5 text-surface-400" aria-hidden="true"></i>
-                    <span>
-                        {{
-                            'content-drive.action-center.folders-ignored'
-                                | dm: [$ignoredFolderCount().toString()]
-                        }}
-                    </span>
-                </div>
+                    {{
+                        'content-drive.action-center.folders-ignored'
+                            | dm: [$ignoredFolderCount().toString()]
+                    }}
+                </p-message>
             }
 
             <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->

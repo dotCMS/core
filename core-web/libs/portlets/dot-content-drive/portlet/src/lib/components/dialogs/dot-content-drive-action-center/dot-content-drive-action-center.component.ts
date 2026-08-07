@@ -107,17 +107,25 @@ type DotActionCenterView = 'actions' | 'preview';
         SkeletonModule,
         TooltipModule
     ],
-    // `DotWorkflowActionsFireService` is deliberately absent: firing moved to the store, which
-    // outlives this dialog. Providing it here would tie the service to a component that is destroyed
-    // the moment the dialog closes — mid-run.
     providers: [DotWorkflowsActionsService, ConfirmationService],
     templateUrl: './dot-content-drive-action-center.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // Sit in the shell's flex content box: without this the host ignores `flex-1`/`min-h-0` and
-    // the inner column grows with its content, pushing the footer out of view.
     host: {
         class: 'flex min-h-0 flex-1 flex-col'
-    }
+    },
+    styles: [
+        `
+            /*
+             * Folder notice is present at open, so PrimeNG Message's hardcoded enter/leave height
+             * animation (no API opt-out) reads as a late shove of the action list — kill both via CSS
+             * on \`.no-enter-motion\`; \`:host ::ng-deep\` so we don't rely on \`_ngcontent\` piercing.
+             */
+            :host ::ng-deep p-message.no-enter-motion.p-message-enter-active,
+            :host ::ng-deep p-message.no-enter-motion.p-message-leave-active {
+                animation: none;
+            }
+        `
+    ]
 })
 export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
