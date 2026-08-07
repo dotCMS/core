@@ -69,7 +69,10 @@ export const dotcmsContentTypeBasicMock = {
 } as unknown as DotCMSContentType;
 
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
-    ...EMPTY_SYSTEM_FIELD
+    ...EMPTY_SYSTEM_FIELD,
+    // `EMPTY_SYSTEM_FIELD` is `Omit<DotCMSContentTypeField, 'clazz'>` — a partial template — so a
+    // concrete class is supplied here. Callers that care override it.
+    clazz: DotCMSClazzes.TEXT
 };
 
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [

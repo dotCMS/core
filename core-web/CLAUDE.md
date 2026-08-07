@@ -124,10 +124,19 @@ Vite-based projects are the exception: their builds use esbuild and skip type ch
 Verify locally:
 
 ```bash
-pnpm exec tsc -p libs/<project>/tsconfig.lib.json --noEmit
+pnpm exec tsc -p <projectRoot>/tsconfig.lib.json --noEmit
 pnpm exec nx run <project>:build
 pnpm exec nx affected -t build,lint --base=origin/main   # check you didn't break consumers
 ```
+
+`<projectRoot>` is the path from `project.json`, which is often nested — e.g. `libs/sdk/create-app`, not `libs/create-app`. Two caveats on the tsconfig name:
+
+- **Apps** use `tsconfig.app.json`.
+- **Some projects have no `tsconfig.lib.json`** (`libs/sdk/create-app` is one); use their `tsconfig.json` instead.
+
+Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the spec config extends, so specs go strict too and their errors are yours to fix.
+
+> **Watch out for masked results.** If a tsconfig declares a `types` entry that is not installed, `tsc` reports `TS2688: Cannot find type definition file for '<name>'` and **stops before semantic checking** — you get one error and no type checking at all. A stable error count across a change proves nothing in that case. `libs/utils-testing` is affected today (`"types": ["jasmine"]`); check it with `--types node` to see real diagnostics.
 
 ## Portlet Development
 
