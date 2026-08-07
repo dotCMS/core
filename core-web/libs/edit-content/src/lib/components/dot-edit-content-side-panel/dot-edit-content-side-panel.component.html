@@ -1,0 +1,65 @@
+<!--
+    maskStyle forces a transparent mask (AC3: the area behind the panel stays visible). The
+    `!important` is required to override PrimeNG's default dimmed mask background, which the theme
+    and the `pt` API do not otherwise let us clear — it is deliberate, not a leftover.
+
+    The left-cast shadow on `pt.root.class` is an arbitrary Tailwind value on purpose: the drawer
+    uses `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
+    `:host ::ng-deep` cannot reach it, and no dotCMS `$shadow-*` token is left-directional (they all
+    cast downward, but a right-anchored drawer needs the shadow cast to the left).
+-->
+<p-drawer
+    [visible]="!!data()"
+    [modal]="true"
+    [dismissible]="false"
+    [closeOnEscape]="false"
+    [closable]="false"
+    appendTo="body"
+    [maskStyle]="{ background: 'transparent !important' }"
+    [pt]="{
+        root: {
+            class: '!shadow-[-12px_0_24px_rgb(0_0_0_/_20%)]',
+            style: { width: $expanded() ? '100%' : '70%', transition: 'width 250ms ease' }
+        },
+        content: { class: 'p-0!' }
+    }"
+    position="right">
+    <ng-template #header>
+        <div class="flex w-full items-center justify-between gap-4">
+            <span class="truncate text-lg font-semibold" data-testid="side-panel-title">
+                {{ data()?.title }}
+            </span>
+            <div class="flex items-center gap-1">
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [attr.aria-label]="
+                        $expanded()
+                            ? ('edit.content.side-panel.collapse' | dm)
+                            : ('edit.content.side-panel.expand' | dm)
+                    "
+                    (onClick)="toggleExpanded()"
+                    data-testid="side-panel-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [attr.aria-label]="'edit.content.side-panel.close' | dm"
+                    (onClick)="requestClose()"
+                    data-testid="side-panel-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
+            </div>
+        </div>
+    </ng-template>
+    @for (item of $items(); track item.contentletInode ?? item.contentTypeId) {
+        <dot-edit-content-form-layout />
+    }
+</p-drawer>

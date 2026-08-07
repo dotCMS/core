@@ -1,3 +1,23 @@
+// Stub the side panel so the flag-on "create new" branch can create it via `ViewContainerRef`
+// without pulling in the real editor (and its module cycle). Placed before the imports so jest
+// hoists it ahead of the dynamic `import()` the component performs. Kept as a real standalone
+// component so `createComponent`/`setInput('data')`/`instance.closed` all work.
+jest.mock(
+    '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
+    () => {
+        const { Component, input, output } = jest.requireActual('@angular/core');
+
+        @Component({ selector: 'dot-edit-content-side-panel', standalone: true, template: '' })
+        class MockDotEditContentSidePanelComponent {
+            data = input(null);
+            closed = output();
+            saved = output();
+        }
+
+        return { DotEditContentSidePanelComponent: MockDotEditContentSidePanelComponent };
+    }
+);
+
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -6,7 +26,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     createFakeContentlet,
     createFakeLanguage,
@@ -15,6 +35,8 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
+// Resolves to the mock declared in the jest.mock above (same module path the component imports).
+import { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
@@ -81,6 +103,8 @@ describe('DotRelationshipFieldComponent', () => {
         contentType: jest.fn().mockReturnValue({ id: 'ct-1' }),
         formattedRelationship: jest.fn().mockReturnValue('id-1'),
         lastChangeSource: jest.fn().mockReturnValue('load'),
+        // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
+        flags: jest.fn().mockReturnValue({}),
         initialize: jest.fn(),
         setData: jest.fn(),
         deleteItem: jest.fn(),
@@ -193,6 +217,82 @@ describe('DotRelationshipFieldComponent', () => {
             const dialogService = spectator.inject(DialogService);
             spectator.click(byTestId('relationship-empty-relate-link'));
             expect(dialogService.open).toHaveBeenCalled();
+        });
+
+        it('wires the "New content" menu item to the create-new action', () => {
+            // The menu item is the user-facing trigger; verify it calls the action (rather than
+            // only exercising the method directly elsewhere).
+            const createSpy = jest
+                .spyOn(spectator.component, 'showCreateNewContentDialog')
+                .mockResolvedValue();
+
+            spectator.component.$menuItems()[1].command?.(undefined as never);
+
+            expect(createSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('opens the create-new content in the centered dialog when the side panel flag is off', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+
+            await spectator.component.showCreateNewContentDialog();
+
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
+            expect(config.data).toEqual(
+                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            );
+        });
+
+        it('opens the create-new content in the side panel when the flag is on', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+            storeMock.flags.mockReturnValue({
+                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+            });
+
+            await spectator.component.showCreateNewContentDialog();
+            spectator.detectChanges();
+
+            // Flag on → the side panel is created imperatively, NOT the centered dialog.
+            expect(dialogService.open).not.toHaveBeenCalled();
+            expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+        });
+
+        it('falls back to the centered dialog when the flag slice has not resolved', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+            // Empty slice = withFlags degraded on a failed config read, or a click before it
+            // resolved. Either way the create-new action must not be a silent no-op: fall back to
+            // the centered dialog (previous behavior).
+            storeMock.flags.mockReturnValue({});
+
+            await spectator.component.showCreateNewContentDialog();
+
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
+            expect(config.data).toEqual(
+                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            );
+        });
+
+        it('destroys the side panel when it emits `closed`', async () => {
+            storeMock.flags.mockReturnValue({
+                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+            });
+
+            await spectator.component.showCreateNewContentDialog();
+            spectator.detectChanges();
+
+            const panel = spectator.query(DotEditContentSidePanelComponent);
+            expect(panel).toBeTruthy();
+
+            // Emitting `closed` must tear the panel down: its subscription calls #closeSidePanel,
+            // which destroys the ComponentRef. A broken/missing subscription would leave it mounted.
+            panel?.closed.emit();
+            spectator.detectChanges();
+
+            expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
         });
     });
 
