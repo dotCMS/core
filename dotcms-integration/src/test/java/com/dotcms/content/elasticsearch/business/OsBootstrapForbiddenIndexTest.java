@@ -16,14 +16,19 @@ import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.MigrationHaltReport;
 import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotcms.content.index.domain.IndexStartResult;
 import com.dotcms.content.index.opensearch.IndexStartupValidator;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
@@ -206,6 +211,79 @@ public class OsBootstrapForbiddenIndexTest extends IntegrationTestBase {
                     .delete(IndexType.REINDEX_WORKING.getPrefix() + "_" + timeStamp));
             Try.run(() -> APILocator.getContentletIndexAPI()
                     .delete(IndexType.REINDEX_LIVE.getPrefix() + "_" + timeStamp));
+        }
+    }
+
+    /**
+     * Given : Phase 1, a full reindex requested through {@code fullReindexStart()}, and an OS store
+     *         pointing at indices the restricted user may not even probe — so {@code indexReady()} is
+     *         false and the reindex branch is skipped.
+     * When  : the reindex is triggered.
+     * Then  : the OS failure is absorbed, the migration is halted, and the full reindex the caller
+     *         asked for still runs on Elasticsearch — new reindex slots and a real ES suffix.
+     *
+     * <p>Before the fix this returned a bootstrap result with an empty ES suffix and created no index
+     * at all: the UI showed a progress bar that completed, no error, and nothing had happened. The
+     * operator had to press Reindex a second time — which worked only because the first press had
+     * silently switched the migration off (issue #36222, QA round 3).</p>
+     */
+    @Test
+    public void phase1_forbiddenOsCreate_stillRunsTheFullReindexOnElasticsearch()
+            throws DotDataException {
+
+        setPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS);
+        warmUpOsClient();
+        Config.setProperty(OS_ENDPOINTS_KEY, new String[]{UNUSED_OS_ENDPOINT});
+
+        final IndiciesInfo originalEsIndices = APILocator.getIndiciesAPI().loadIndicies();
+        final Optional<VersionedIndices> originalOsStore =
+                APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices();
+        final String missingSuffix = "os_missing_" + System.currentTimeMillis();
+
+        try {
+            // An OS store that points at indices which do not exist makes indexReadyOS() false, which
+            // is exactly what a 403 on the exists-probe produces: unreadable is indistinguishable from
+            // absent (OSIndexAPIImpl.indexExists swallows and returns false).
+            APILocator.getVersionedIndicesAPI().saveIndices(VersionedIndicesImpl.builder()
+                    .working(IndexType.WORKING.getPrefix() + "_" + missingSuffix)
+                    .live(IndexType.LIVE.getPrefix() + "_" + missingSuffix)
+                    .version(VersionedIndices.OPENSEARCH_3X)
+                    .build());
+
+            final IndexStartResult result = newApiWithForbiddenOs().fullReindexStart();
+
+            assertTrue("The full reindex must still run on Elasticsearch: an empty ES suffix means"
+                            + " the request was silently downgraded to a bootstrap that did nothing",
+                    UtilMethods.isSet(result.indexSuffixES()));
+            assertEquals("With the migration halted there is no OpenSearch slot to advertise",
+                    "", result.indexSuffixOS());
+
+            final IndiciesInfo esAfter = APILocator.getIndiciesAPI().loadIndicies();
+            assertTrue("The ES reindex slots must be registered for the suffix the reindex reported."
+                            + " Got: " + esAfter.getReindexWorking(),
+                    esAfter.getReindexWorking() != null
+                            && esAfter.getReindexWorking().contains(result.indexSuffixES()));
+
+            assertEquals("The shadow-phase OS failure must still halt the migration (ES-only)",
+                    MigrationPhase.PHASE_0_MIGRATION_NOT_STARTED, MigrationPhase.current());
+
+            final Optional<MigrationHaltReport> halt = MigrationHaltReport.last();
+            assertTrue("The halt must leave a reason behind: without it the REST layer can say that"
+                            + " the migration stopped but never why", halt.isPresent());
+            assertEquals("A 403 on create must be classified as an authorization problem, so the"
+                            + " operator is told to fix the role instead of reindexing again",
+                    ConnectionFailureKind.AUTH_FORBIDDEN.name(), halt.get().cause());
+
+            Logger.info(this, "✅ Phase 1: forbidden OS create still produced an ES full reindex ("
+                    + result.indexSuffixES() + ") and reported " + halt.get().cause());
+        } finally {
+            Try.run(() -> APILocator.getIndiciesAPI().point(originalEsIndices));
+            Try.run(() -> APILocator.getContentletIndexAPI()
+                    .delete(IndexType.REINDEX_WORKING.getPrefix() + "_" + missingSuffix));
+            if (originalOsStore.isPresent()) {
+                Try.run(() -> APILocator.getVersionedIndicesAPI()
+                        .saveIndices(originalOsStore.get()));
+            }
         }
     }
 
