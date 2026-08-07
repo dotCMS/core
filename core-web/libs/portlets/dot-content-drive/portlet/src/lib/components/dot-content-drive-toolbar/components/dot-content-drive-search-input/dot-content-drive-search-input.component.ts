@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
-import { DotSearchInputComponent } from '@dotcms/ui';
+import { ALL_FOLDER, DotSearchInputComponent } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 

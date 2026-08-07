@@ -1,4 +1,4 @@
-import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER } from '@dotcms/ui';
 
 describe('ALL_FOLDER constant', () => {
     it('should have correct structure', () => {

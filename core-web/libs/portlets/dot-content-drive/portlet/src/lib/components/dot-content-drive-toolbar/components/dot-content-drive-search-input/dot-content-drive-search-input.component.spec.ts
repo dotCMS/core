@@ -3,8 +3,7 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ope
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
-import { DotSearchInputComponent } from '@dotcms/ui';
+import { ALL_FOLDER, DotSearchInputComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';

@@ -19,13 +19,13 @@ import type {
 import { appendLoadMoreNodes } from '@dotcms/data-access';
 import { TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
-    ALL_FOLDER,
     DotContentDriveMoveItems,
     DotContentDriveUploadFiles,
     DotFolderTreeNodeItem,
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';

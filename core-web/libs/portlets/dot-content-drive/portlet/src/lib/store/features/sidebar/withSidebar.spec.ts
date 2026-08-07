@@ -5,7 +5,8 @@ import { of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER } from '@dotcms/ui';
 import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';

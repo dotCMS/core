@@ -20,7 +20,8 @@ import {
     getFolderHierarchyByPath,
     getFolderNodesByPath
 } from '@dotcms/data-access';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER } from '@dotcms/ui';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
