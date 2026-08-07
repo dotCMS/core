@@ -361,6 +361,37 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
+    describe('confirmClose (chrome-agnostic close guard)', () => {
+        it('bypasses the prompt while the editor is loading/saving (form disabled, nothing to discard)', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(store, 'isLoading').mockReturnValue(true);
+            const onProceed = jest.fn();
+
+            spectator.component.confirmClose(onProceed);
+
+            expect(onProceed).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT bypass the prompt once loading has settled, even if the sidebar has not (isFullyLoaded no longer gates this)', () => {
+            const confirmationService = spectator.inject(ConfirmationService, true);
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(store, 'isLoading').mockReturnValue(false);
+            // A real edit made while `isFullyLoaded()` was still false (sidebar still settling)
+            // must still prompt once loading has finished — the previous `!isFullyLoaded()` bypass
+            // would have discarded it silently instead.
+            jest.spyOn(store, 'isFullyLoaded').mockReturnValue(false);
+            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const onProceed = jest.fn();
+
+            spectator.component.confirmClose(onProceed);
+
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(onProceed).not.toHaveBeenCalled();
+        });
+    });
+
     // Isolated to its own describe so that no other component mounted earlier
     // in the file can race the `window:beforeunload` listener registered via
     // the host metadata. The outer `spectator` fixture is destroyed and a
