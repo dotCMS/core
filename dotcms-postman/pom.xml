@@ -25,13 +25,6 @@
         <testdata.dir>${project.build.directory}/testdata</testdata.dir>
         <cleanup.before.tests>true</cleanup.before.tests>
         <postman.test.skip>true</postman.test.skip>
-        <!--
-          Serve rendered HTML minified for the duration of the run, so the existing collections
-          double as integrity checks on com.dotcms.rendering.util.HtmlMinifier. Off by default, so
-          every existing suite keeps testing un-minified delivery; a CI matrix entry turns it on for
-          one collection. See .github/test-matrix.yml.
-        -->
-        <postman.minify.html>false</postman.minify.html>
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
@@ -149,7 +142,6 @@
                                     <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
                                     <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
                                     <DOT_AI_MODELS_API_URL>http://wm:8080/m</DOT_AI_MODELS_API_URL>
-                                    <DOT_FEATURE_FLAG_MINIFY_HTML>${postman.minify.html}</DOT_FEATURE_FLAG_MINIFY_HTML>
                                 </env>
                                 <links combine.children="append">
                                     <link>wiremock:wm</link>

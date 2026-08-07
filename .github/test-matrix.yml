@@ -113,16 +113,6 @@ test_types:
         collection: "container"
       - name: "Postman Tests - Page"
         collection: "page"
-      # Same collection, but with rendered HTML served minified
-      # (DOT_FEATURE_FLAG_MINIFY_HTML=true, wired in dotcms-postman/pom.xml). The Page assertions
-      # already cover rendered output, so running them again this way checks that minification does
-      # not alter it, across every render path the collection touches rather than only the ones a
-      # bespoke test would think to try. stage_name_suffix keeps this job's build-reports artifact
-      # distinct from the un-minified run above.
-      - name: "Postman Tests - Page (HTML minified)"
-        collection: "page"
-        extra_maven_args: "-Dpostman.minify.html=true"
-        stage_name_suffix: "-minified"
       - name: "Postman Tests - Template"
         collection: "template"
       

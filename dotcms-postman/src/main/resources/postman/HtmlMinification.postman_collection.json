@@ -1,0 +1,620 @@
+{
+  "info": {
+    "name": "HTML Minification",
+    "description": "Checks that serving rendered HTML minified does not change what the page means.\n\n`FEATURE_FLAG_MINIFY_HTML` is toggled through `/api/v1/system-table` inside the run, so the same page is rendered with minification off, then on, then off again, and the three outputs are compared. The template body is deliberately awkward: indented, commented, with runs of whitespace inside attribute values, a literal `>` in text, adjacent inline elements, and `pre`/`textarea`/`script`/`style` regions whose contents must survive byte-for-byte.\n\nSee `com.dotcms.rendering.util.HtmlMinifier`. Unit coverage lives in `HtmlMinifierTest` and `HtmlMinifierIntegrityTest`; this collection covers the rendering seams those cannot reach.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Get default site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+                  "    pm.collectionVariables.set(\"siteId\", entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/site/defaultSite",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "site",
+                "defaultSite"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Minification Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Template created\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity.identifier).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set(\"templateId\", entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/templates",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "templates"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"siteId\": \"{{siteId}}\",\n    \"title\": \"HTML Minification Test Template {{$timestamp}}\",\n    \"friendlyName\": \"Indented markup with whitespace-sensitive regions\",\n    \"body\": \"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n    <head>\\n        <title>HTML Minification Test</title>\\n        <!-- STRIP_ME: a plain comment, must not survive minification -->\\n        <style>\\n.probe { color: red }\\n        </style>\\n    </head>\\n    <body>\\n        <div  class=\\\"two  spaces\\\"   id=\\\"probe\\\">\\n            <p>Alpha</p>\\n            <p>Beta   Gamma</p>\\n            <p>Home > About</p>\\n            <span>one</span> <span>two</span>\\n            <input type=\\\"hidden\\\" name=\\\"spaced\\\" value=\\\"two  spaces\\\">\\n            <div data-config='{\\\"key\\\": \\\"a   b\\\"}'>payload</div>\\n            <pre>pre line 1\\n   pre line 2</pre>\\n            <textarea>area line 1\\n  area line 2</textarea>\\n        </div>\\n        <script>\\nvar a = 1\\nvar b = 2\\n</script>\\n    </body>\\n</html>\\n\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Advanced template whose body carries the constructs minification can corrupt: indentation, a comment, attribute values with runs of whitespace, a literal '>', adjacent inline elements, and pre/textarea/script/style regions."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Test Page",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"pageUrl\", \"html-minification-\" + Date.now());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test page created\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.errors.length).to.eql(0);",
+                  "    pm.collectionVariables.set(\"pageIdentifier\", json.entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ],
+              "query": [
+                {
+                  "key": "indexPolicy",
+                  "value": "WAIT_FOR"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"HTML Minification Test Page {{$timestamp}}\",\n        \"url\": \"{{pageUrl}}\",\n        \"hostFolder\": \"{{hostname}}\",\n        \"template\": \"{{templateId}}\",\n        \"friendlyName\": \"HTML Minification Test Page\",\n        \"cachettl\": 0\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "cachettl 0 keeps the page out of the page cache so each render reflects the current flag state."
+          },
+          "response": []
+        }
+      ],
+      "description": "Creates a site-local advanced template and a page that uses it."
+    },
+    {
+      "name": "Minification Integrity",
+      "item": [
+        {
+          "name": "Render page with minification OFF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const entity = json.entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"Baseline is un-minified\", function () {",
+                  "    pm.expect(html).to.not.be.empty;",
+                  "    // The template is indented, so with the flag off that indentation must still be there.",
+                  "    pm.expect(html).to.match(/\\n\\s+<div/, 'expected indented markup with the flag off');",
+                  "    pm.expect(html).to.include('STRIP_ME', 'expected the comment to survive with the flag off');",
+                  "    pm.collectionVariables.set(\"unminifiedHtml\", html);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Baseline. Captured before the flag is touched so the two renders can be compared."
+          },
+          "response": []
+        },
+        {
+          "name": "Turn ON HTML Minification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_MINIFY_HTML is enabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_MINIFY_HTML saved/updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"FEATURE_FLAG_MINIFY_HTML\",\n    \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flush caches after enabling",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Caches flushed\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/caches/provider/all/flush",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "caches",
+                "provider",
+                "all",
+                "flush"
+              ]
+            },
+            "description": "Toggling the flag does not retroactively change anything already cached, so the cache is dropped between the two renders. Without this the second render can return the first one's output and the comparison passes for the wrong reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page with minification ON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const entity = json.entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "const unminified = pm.collectionVariables.get(\"unminifiedHtml\");",
+                  "// Crude stand-in for a DOM comparison: drop tags and comments, collapse whitespace.",
+                  "// Enough to catch words being joined or text disappearing, which is what matters here.",
+                  "const visibleText = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();",
+                  "",
+                  "pm.test(\"Markup is actually minified\", function () {",
+                  "    pm.expect(html.length).to.be.below(unminified.length);",
+                  "    // Indentation between block elements is gone.",
+                  "    pm.expect(html).to.include('<p>Alpha</p><p>Beta Gamma</p>');",
+                  "});",
+                  "",
+                  "pm.test(\"Comments are stripped\", function () {",
+                  "    pm.expect(html).to.not.include('STRIP_ME');",
+                  "});",
+                  "",
+                  "pm.test(\"Whitespace inside attribute values is preserved byte-for-byte\", function () {",
+                  "    pm.expect(html).to.include('value=\"two  spaces\"');",
+                  "    pm.expect(html).to.include('class=\"two  spaces\"');",
+                  "    pm.expect(html).to.include('\"key\": \"a   b\"');",
+                  "});",
+                  "",
+                  "pm.test(\"A literal '>' in text does not lose its surrounding space\", function () {",
+                  "    pm.expect(html).to.include('Home > About');",
+                  "});",
+                  "",
+                  "pm.test(\"Space between inline elements survives\", function () {",
+                  "    pm.expect(html).to.include('<span>one</span> <span>two</span>');",
+                  "});",
+                  "",
+                  "pm.test(\"Whitespace-sensitive regions are untouched\", function () {",
+                  "    pm.expect(html).to.include('<pre>pre line 1\\n   pre line 2</pre>');",
+                  "    pm.expect(html).to.include('area line 1\\n  area line 2');",
+                  "    // Newlines here carry meaning: JavaScript inserts semicolons at them.",
+                  "    pm.expect(html).to.include('var a = 1\\nvar b = 2');",
+                  "});",
+                  "",
+                  "pm.test(\"Visible text is unchanged\", function () {",
+                  "    pm.expect(visibleText(html)).to.eql(visibleText(unminified));",
+                  "});",
+                  "",
+                  "pm.test(\"Minification is idempotent at the seam\", function () {",
+                  "    // eval() can minify output that LIVE mode already minified, so a second pass",
+                  "    // through the same seam must not keep shrinking the page.",
+                  "    pm.collectionVariables.set(\"minifiedHtml\", html);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Same page, same request, flag on. Every assertion here compares against the baseline captured above."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page with minification ON again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const entity = json.entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"Repeated renders are byte-identical\", function () {",
+                  "    pm.expect(html).to.eql(pm.collectionVariables.get(\"minifiedHtml\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Guards idempotence: minifying an already-minified page must be a no-op."
+          },
+          "response": []
+        },
+        {
+          "name": "Turn OFF HTML Minification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_MINIFY_HTML is removed\", function () {",
+                  "    pm.expect(pm.response.json().entity).to.include('Deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/FEATURE_FLAG_MINIFY_HTML",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "FEATURE_FLAG_MINIFY_HTML"
+              ]
+            },
+            "description": "Removed rather than set to false, so the system table is left as it was found."
+          },
+          "response": []
+        },
+        {
+          "name": "Flush caches after disabling",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Caches flushed\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/caches/provider/all/flush",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "caches",
+                "provider",
+                "all",
+                "flush"
+              ]
+            },
+            "description": "Toggling the flag does not retroactively change anything already cached, so the cache is dropped between the two renders. Without this the second render can return the first one's output and the comparison passes for the wrong reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page with minification OFF again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "const entity = json.entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"Turning the flag off restores the original markup exactly\", function () {",
+                  "    pm.expect(html).to.eql(pm.collectionVariables.get(\"unminifiedHtml\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Proves the flag genuinely gates the behaviour, rather than the first render having differed for some other reason."
+          },
+          "response": []
+        }
+      ],
+      "description": "Renders the page with the flag off, on, and off again, comparing the output."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "hostname",
+      "value": ""
+    },
+    {
+      "key": "siteId",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "pageUrl",
+      "value": ""
+    },
+    {
+      "key": "pageIdentifier",
+      "value": ""
+    },
+    {
+      "key": "unminifiedHtml",
+      "value": ""
+    },
+    {
+      "key": "minifiedHtml",
+      "value": ""
+    }
+  ]
+}
