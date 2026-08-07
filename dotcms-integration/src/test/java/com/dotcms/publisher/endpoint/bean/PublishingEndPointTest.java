@@ -49,57 +49,57 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         Assert.assertTrue(exceptionCatched);
     }
 
+    /**
+     * A missing bucket ID is reported to the user as a system message, not raised to
+     * the caller, so validation must return normally.
+     * <p>
+     * This previously swallowed the exception and asserted {@code false} with the
+     * message "No Exception should be thrown", which reported nothing about what
+     * actually failed - four retries produced four identical, useless messages. Let
+     * the exception surface instead.
+     */
     @Test
-    public void validatePublishingEndPoint_whenAWSS3PublishWithoutBucketID_returnException() {
-
-        boolean exceptionCatched = false;
+    public void validatePublishingEndPoint_whenAWSS3PublishWithoutBucketID_returnsWithoutThrowing()
+            throws PublishingEndPointValidationException {
 
         final String noBucketID = "Key=Value";
 
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(AWSS3Publisher.PROTOCOL_AWS_S3);
         endPoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(noBucketID)));
 
-        try {
-            endPoint.validatePublishingEndPoint();
-        } catch (Exception e) {
-            Assert.assertTrue("No Exception should be thrown", false);
-        }
-
-        Assert.assertTrue("No Exception should be thrown", true);
+        endPoint.validatePublishingEndPoint();
     }
 
+    /**
+     * Invalid credentials are reported to the user as a system message, not raised to
+     * the caller, so validation must return normally. See the note on the sibling test
+     * about why the exception is no longer swallowed.
+     */
     @Test
-    public void validatePublishingEndPoint_whenAWSS3PublishWithoutValidCredentials_returnException() {
+    public void validatePublishingEndPoint_whenAWSS3PublishWithoutValidCredentials_returnsWithoutThrowing()
+            throws PublishingEndPointValidationException {
 
-        boolean exceptionCatched = false;
-
-        final String noBucketID = "aws_bucket_name=name\naws_access_key=value\naws_secret_access_key=value";
+        final String invalidCredentials =
+                "aws_bucket_name=name\naws_access_key=value\naws_secret_access_key=value";
 
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(AWSS3Publisher.PROTOCOL_AWS_S3);
-        endPoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(noBucketID)));
+        endPoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(invalidCredentials)));
 
-        try {
-            endPoint.validatePublishingEndPoint();
-        } catch (Exception e) {
-            Assert.assertTrue("No Exception should be thrown", false);
-        }
-
-        Assert.assertTrue("No Exception should be thrown", true);
+        endPoint.validatePublishingEndPoint();
     }
 
+    /**
+     * Same shape as the AWS S3 cases above: validation succeeds by returning, so the
+     * exception is allowed to surface rather than being swallowed behind an assertion
+     * message that hides the cause.
+     */
     @Test
-    public void validatePublishingEndPoint_whenStaticPublishWithWritePermission_returnOK() {
-
-        boolean exceptionCatched = false;
+    public void validatePublishingEndPoint_whenStaticPublishWithWritePermission_returnOK()
+            throws PublishingEndPointValidationException {
 
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(StaticPublisher.PROTOCOL_STATIC);
-        try {
-            endPoint.validatePublishingEndPoint();
-        } catch (Exception e) {
-            Assert.assertTrue("No Exception should be thrown", false);
-        }
 
-        Assert.assertTrue("No Exception should be thrown", true);
+        endPoint.validatePublishingEndPoint();
     }
 
 }
