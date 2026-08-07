@@ -85,41 +85,50 @@
                             data-testid="activities-input"
                             class="h-auto w-full resize-none text-sm leading-[1.4]"></textarea>
 
-                        <!-- Character Counter -->
-                        <div
-                            class="mt-1 text-left text-xs text-gray-600 transition-colors"
-                            [class.text-red-500!]="isAtMaxLength()"
-                            data-testid="activities-char-counter">
-                            @if (!isAtMaxLength()) {
-                                {{ commentLength() }}/{{ commentMaxLength }}
-                                {{ 'edit.content.sidebar.activities.characters' | dm }}
-                            } @else {
-                                <span>
-                                    {{
-                                        'edit.content.sidebar.activities.char.counter'
-                                            | dm
-                                                : [
-                                                      commentLength().toString(),
-                                                      commentMaxLength.toString()
-                                                  ]
-                                    }}
-                                </span>
-                            }
-                        </div>
-                    </div>
+                        <!--
+                            Meta row: validation error on the left, character counter on the
+                            right. Two constraints shape this markup:
 
-                    <!--
-                        Fixed-height slot: activities-footer is `sticky bottom-0`, so if this
-                        row's height changed when the error message mounts/unmounts, the whole
-                        footer would grow from its bottom anchor and shift the textarea upward.
-                        Reserving the space up front keeps the footer height constant regardless
-                        of whether dot-field-validation-message renders its <small> internally.
-                    -->
-                    <div class="h-3.5" data-testid="activities-error-slot">
-                        <dot-field-validation-message
-                            [field]="form.get('comment')"
-                            [requiredErrorMessage]="'edit.content.sidebar.activities.required'"
-                            class="block [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+                            1. The counter is pushed right with `flex-1` on the message + `shrink-0`
+                               on the counter, NOT with `justify-between`. When the field is valid
+                               dot-field-validation-message renders nothing, but its host element
+                               stays in the DOM; `justify-between` would then collapse and drag the
+                               counter back to the left.
+                            2. Fixed height (`min-h-4` + matching `leading-4` on both children):
+                               activities-footer is `sticky bottom-0`, so if this row grew when the
+                               error mounts, the whole footer would grow from its bottom anchor and
+                               shift the textarea upward.
+                        -->
+                        <div
+                            class="mt-1 flex min-h-4 items-start gap-2 py-3"
+                            data-testid="activities-meta-row">
+                            <dot-field-validation-message
+                                [field]="form.get('comment')"
+                                [requiredErrorMessage]="'edit.content.sidebar.activities.required'"
+                                class="block min-w-0 flex-1 leading-4 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+
+                            <!-- Character Counter -->
+                            <span
+                                class="shrink-0 text-xs leading-4 text-gray-600 transition-colors"
+                                [class.text-red-500!]="isAtMaxLength()"
+                                data-testid="activities-char-counter">
+                                @if (!isAtMaxLength()) {
+                                    {{ commentLength() }}/{{ commentMaxLength }}
+                                    {{ 'edit.content.sidebar.activities.characters' | dm }}
+                                } @else {
+                                    <span>
+                                        {{
+                                            'edit.content.sidebar.activities.char.counter'
+                                                | dm
+                                                    : [
+                                                          commentLength().toString(),
+                                                          commentMaxLength.toString()
+                                                      ]
+                                        }}
+                                    </span>
+                                }
+                            </span>
+                        </div>
                     </div>
 
                     <div class="flex justify-end gap-2">

@@ -28,7 +28,7 @@ GitHub API and CLI wrapper functions for fetching workflow, job, and issue data.
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 
 from github_api import extract_run_id, get_run_metadata
 
@@ -55,7 +55,7 @@ Diagnostic workspace management with caching and artifact organization.
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 
 from workspace import get_diagnostic_workspace, save_artifact
 
@@ -88,7 +88,7 @@ Evidence presentation for AI analysis - simple data extraction without classific
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 
 from evidence import present_complete_diagnostic, get_log_stats
 
@@ -121,7 +121,7 @@ Tiered evidence extraction - creates multiple levels of detail for progressive a
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 
 from tiered_extraction import auto_extract_tiered, analyze_retry_patterns
 
@@ -139,7 +139,7 @@ The main SKILL.md references these utilities throughout the diagnostic workflow:
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 
 from workspace import get_diagnostic_workspace
 from github_api import get_run_metadata

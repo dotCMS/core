@@ -1,5 +1,7 @@
 ---
-name: cicd-diagnostics
+name: dot-cicd-diagnose
+owner: "@dotcms/platform"
+status: active
 description: Use when a GitHub Actions workflow fails, PR build breaks, merge queue rejects, nightly reports failures, or user mentions CI/CD test failures in dotCMS/core. Also use for "check build", "diagnose run", "why did CI fail", "flaky test", "merge queue blocked".
 ---
 
@@ -52,16 +54,16 @@ All operations go through `diagnose.py`. It handles preflight, workspace, cachin
 
 ```bash
 # Full gather (default) — metadata, jobs, annotations, logs, error summary
-python3 .claude/skills/cicd-diagnostics/diagnose.py <RUN_ID_OR_URL>
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <RUN_ID_OR_URL>
 
 # Progressive subcommands — use when you need specific data or want to save tokens
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --metadata      # Metadata + jobs + step detail
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --jobs          # Jobs + step detail only
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --annotations   # Workflow annotations only
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --logs          # Download logs + error summary
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --logs <JOB_ID> # Single job log + errors
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --evidence      # Full evidence.py analysis
-python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --evidence <ID> # evidence.py on single job
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --metadata      # Metadata + jobs + step detail
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --jobs          # Jobs + step detail only
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --annotations   # Workflow annotations only
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --logs          # Download logs + error summary
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --logs <JOB_ID> # Single job log + errors
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --evidence      # Full evidence.py analysis
+python3 .claude/skills/dot-cicd-diagnose/diagnose.py <ID> --evidence <ID> # evidence.py on single job
 ```
 
 **Recommended progression:**
@@ -96,7 +98,7 @@ If match found → link to issue, assess if new information, and stop.
 
 ```python
 import sys; from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 from external_issues import extract_error_indicators, format_external_issue_report, generate_search_queries
 log_content = Path("$WORKSPACE/failed-job-$JOB_ID.txt").read_text(errors='ignore')
 indicators = extract_error_indicators(log_content)
@@ -109,7 +111,7 @@ Use `evidence.py` to extract structured failure data from logs:
 
 ```python
 import sys; from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/cicd-diagnostics/utils")))
+sys.path.insert(0, str(Path(".claude/skills/dot-cicd-diagnose/utils")))
 from evidence import present_complete_diagnostic, get_log_stats
 LOG = Path("$WORKSPACE/failed-job-$JOB_ID.txt")
 print(get_log_stats(LOG))
