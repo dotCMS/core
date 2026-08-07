@@ -49,7 +49,6 @@ runs:
         maven-args: "javadoc:javadoc -pl :dotcms-core"
         generate-docker: false
         cleanup-runner: true
-        restore-classes: true
         artifacts-from: ${{ inputs.artifact-run-id }}
         github-token: ${{ inputs.github-token }}
 

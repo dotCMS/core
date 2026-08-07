@@ -61,10 +61,6 @@ inputs:
   github-token:
     description: 'GitHub token for authentication'
     required: true
-  restore-classes:
-    description: 'Restore build classes'
-    required: false
-    default: 'false'
   stage-name:
     description: 'Stage name for the build'
     required: true
@@ -262,15 +258,6 @@ runs:
       if: ${{ inputs.needs-docker-image == 'true' }}
       run: docker load < /tmp/docker-image/image.tar
 
-    - id: restore-artifact-classes
-      name: Restore Classes
-      if: ${{ inputs.restore-classes == 'true' }}
-      uses: actions/download-artifact@v4
-      with:
-        run-id: ${{ inputs.artifacts-from }}
-        github-token: ${{ inputs.github-token }}
-        name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
-
     - name: Docker Hub Login
       if: ${{ inputs.docker-io-username != '' && inputs.docker-io-token != '' }}
       uses: docker/login-action@v3.0.0
@@ -382,18 +369,6 @@ runs:
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/image.tar
-
-    - id: persist-build-classes
-      name: Persist Build Classes
-      if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
-        path: |
-          **/target/classes/**/*.class
-          **/target/generated-sources/**/*.java
-          **/target/test-classes/**/*.class
-          LICENSE
 
     - id: delete-built-artifacts-from-cache
       name: Delete Built Artifacts From Cache
