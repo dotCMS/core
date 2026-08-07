@@ -1,6 +1,9 @@
-import type { TreeNode } from 'primeng/api';
-
-import type { TreeNodeContentData, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
+import type {
+    TreeNodeContentData,
+    TreeNodeData,
+    TreeNodeItem,
+    TreeNodeLoadMoreData
+} from '@dotcms/dotcms-models';
 
 /**
  * @export
@@ -20,29 +23,24 @@ export interface DotContentDriveUploadFiles {
 export type DotContentDriveMoveItems = Omit<DotContentDriveUploadFiles, 'files'>;
 
 /**
- * Content Drive site/folder node data — shared content fields plus drive-specific extras.
+ * Content Drive site/folder node data — alias of shared {@link TreeNodeContentData}
+ * (inode / defaultBaseType / fromTable live on the shared type).
  */
-export type DotFolderTreeNodeContentData = TreeNodeContentData & {
-    /** Folder inode — carried so the legacy content editor can pre-select this folder when creating content. */
-    inode?: string;
-    /**
-     * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
-     * Drives the folder-aware Upload button in the toolbar.
-     */
-    defaultBaseType?: string | null;
-    fromTable?: boolean;
-};
+export type DotFolderTreeNodeContentData = TreeNodeContentData;
 
 /**
  * @export
  * @interface DotFolderTreeNodeData
  * @description Discriminated tree node data (content vs load-more).
  */
-export type DotFolderTreeNodeData = DotFolderTreeNodeContentData | TreeNodeLoadMoreData;
+export type DotFolderTreeNodeData = TreeNodeData;
 
 /**
  * @export
  * @type DotFolderTreeNodeItem
- * @description Tree node item
+ * @description Tree node item (alias of shared {@link TreeNodeItem}).
  */
-export type DotFolderTreeNodeItem = TreeNode<DotFolderTreeNodeData>;
+export type DotFolderTreeNodeItem = TreeNodeItem;
+
+/** Re-export for consumers that import load-more data via content-drive/ui. */
+export type { TreeNodeLoadMoreData };

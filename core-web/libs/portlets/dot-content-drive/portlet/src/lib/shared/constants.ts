@@ -1,10 +1,10 @@
-import {
-    DOT_FOLDER_TREE_PAGE_SIZE,
-    DotCMSBaseTypesContentTypes,
-    DotSite
-} from '@dotcms/dotcms-models';
+import { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
+
+/** Re-export shared folder-tree page sizes for portlet consumers. */
+export { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE };
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: DotSite = {
@@ -20,20 +20,6 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     page: 1,
     offset: 0
 };
-
-/**
- * Page size for interactive folder-tree expand and load-more.
- * Re-exports the shared limit used by Host Folder Field so both stay in sync.
- */
-export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
-
-/**
- * Page size for the deep-link / initial hierarchy fetch only.
- * One request per ancestor level (parallel); large enough that path segments past
- * the interactive page of 40 still appear so {@link buildTreeFolderNodes} can select them.
- * Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
- */
-export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 10000;
 
 export const DEFAULT_SORT = {
     field: 'modDate',

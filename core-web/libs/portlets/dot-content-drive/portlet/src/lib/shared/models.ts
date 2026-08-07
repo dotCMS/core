@@ -1,14 +1,17 @@
+import { BuildTreeFolderNodesParams as SharedBuildTreeFolderNodesParams } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem,
-    DotFolder,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeData } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
 import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
+
+/** @deprecated Import {@link BuildTreeFolderNodesParams} from `@dotcms/data-access` instead. */
+export type BuildTreeFolderNodesParams = SharedBuildTreeFolderNodesParams;
 
 /**
  * Base types the upload selector can produce, derived from the selector options so the type and the
@@ -229,15 +232,3 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  * @interface DotContentDriveDecodeFunction
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
-
-/**
- * The parameters for the buildTreeFolderNodes function.
- *
- * @export
- * @interface buildTreeFolderNodesParams
- */
-export interface BuildTreeFolderNodesParams {
-    folderHierarchyLevels: DotFolder[][];
-    targetPath: string;
-    rootNode: DotFolderTreeNodeItem;
-}

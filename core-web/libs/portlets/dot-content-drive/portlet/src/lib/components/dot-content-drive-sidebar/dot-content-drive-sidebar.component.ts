@@ -16,6 +16,7 @@ import type {
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
+import { appendLoadMoreNodes } from '@dotcms/data-access';
 import { TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
     ALL_FOLDER,
@@ -27,7 +28,6 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { appendLoadMoreNodes } from '../../utils/functions';
 import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
