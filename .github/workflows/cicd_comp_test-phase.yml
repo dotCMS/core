@@ -232,7 +232,16 @@ jobs:
       # a comma-list subset like '1,2', or 'all') run every suite/phase to completion so
       # failures are attributable per phase. Derived from "phase off" rather than an
       # exact-match list so comma-list subsets are covered too.
-      fail-fast: ${{ inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0' }}
+      # !!! TEMPORARY - REVERT BEFORE MERGING THIS PR !!!
+      # Restore to:
+      #   fail-fast: ${{ inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0' }}
+      #
+      # This PR re-shards the integration suites, which exposes tests that were
+      # only passing because of which suite-mates ran before them. With fast-fail
+      # on, the first broken shard cancels the other 25 jobs, so each ~40 minute
+      # run reveals exactly one shard's worth of coupling. Off, a single run
+      # surfaces all of them at once.
+      fail-fast: false
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
     steps:          
