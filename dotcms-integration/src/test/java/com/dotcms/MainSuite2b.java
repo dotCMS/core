@@ -258,6 +258,19 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Reindex-heavy tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so a full
+        // reindex costs O(all content created so far). Scheduled late in a
+        // 297-class suite these reindex the entire accumulated dataset instead
+        // of just their own fixtures. Keep new full-reindex tests in this block.
+        ESMappingUtilHelperTest.class,
+        com.dotmarketing.common.reindex.ReindexThreadTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
+        com.dotmarketing.common.reindex.ReindexAPITest.class,
+        CleanUpFieldReferencesJobTest.class,
+        EMAWebInterceptorTest.class,
+
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
@@ -477,7 +490,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
         OSGIUtilTest.class,
-        CleanUpFieldReferencesJobTest.class,
         EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
@@ -489,9 +501,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
-        com.dotmarketing.common.reindex.ReindexThreadTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
-        com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,
         com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
@@ -543,10 +552,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
-        ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
-        EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
