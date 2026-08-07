@@ -406,6 +406,37 @@ export class DotEditContentLayoutComponent {
     }
 
     /**
+     * Chrome-agnostic close guard. Any presentation that can close the editor (side panel,
+     * dialog, etc.) should route its close through here so the unsaved-changes prompt is enforced
+     * consistently — instead of each chrome wiring its own check. Runs `onProceed` immediately when
+     * closing is safe — the form is clean, a save just succeeded, or the editor is still
+     * loading/saving (the form is disabled then, so nothing could have been edited) — otherwise it
+     * prompts and only proceeds on "Discard".
+     *
+     * @param onProceed Runs when it is safe to close (clean form, a save just succeeded, the editor
+     * is loading/saving, or the user discarded changes).
+     */
+    confirmClose(onProceed: () => void): void {
+        // While the content is still loading/saving the form is disabled, so the user cannot have
+        // edited anything — close without prompting. (Async field CVAs that transiently mark the
+        // form dirty during load are already handled by the form's `#userTouched` gate, which keeps
+        // it pristine until a real interaction.) Gated on `isLoading()` — NOT `isFullyLoaded()`,
+        // which also waits on the sidebar and would leave a window where the form is visible and
+        // editable but the guard is still bypassed, discarding a real edit silently.
+        if (
+            !this.hasUnsavedChanges() ||
+            this.$store.workflowActionSuccess() ||
+            this.$store.isLoading()
+        ) {
+            onProceed();
+
+            return;
+        }
+
+        this.#confirmIfDirty(onProceed, () => undefined);
+    }
+
+    /**
      * Triggers the browser's native unload-confirmation dialog when the form has
      * unsaved changes. Covers cases the Angular `CanDeactivate` guard cannot
      * intercept: tab close, refresh, window close, manual URL change, bookmarks

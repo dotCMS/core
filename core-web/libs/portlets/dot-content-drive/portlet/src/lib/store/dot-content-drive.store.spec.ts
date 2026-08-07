@@ -2,6 +2,7 @@ import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
 import { NEVER, of, throwError } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
@@ -9,6 +10,7 @@ import {
     DotContentDriveService,
     DotFolderService,
     DotHttpErrorManagerService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
@@ -49,6 +51,14 @@ describe('DotContentDriveStore', () => {
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -700,6 +710,14 @@ describe('DotContentDriveStore - onInit', () => {
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -718,6 +736,96 @@ describe('DotContentDriveStore - onInit', () => {
         });
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotHttpErrorManagerService),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    /** Invokes the popstate handler the store registered in onInit with the given restored URL. */
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as jest.Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    });
+
+    it('re-hydrates the store when Back changes the filters param (fixes the stale-list bug)', () => {
+        popstate('/c/content-drive?filters=contentType:Blog');
+
+        expect(store.filters()).toEqual({ contentType: ['Blog'] });
+        // Reset to LOADING is what the search effect turns into a fresh load.
+        expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+    });
+
+    it('re-hydrates the store when Back changes the path param', () => {
+        popstate('/c/content-drive?path=/foo/bar');
+
+        expect(store.path()).toBe('/foo/bar');
+    });
+
+    it('re-hydrates the tree-expanded preference from the URL on Back', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: {},
+            isTreeExpanded: true
+        });
+
+        popstate('/c/content-drive?isTreeExpanded=false');
+
+        expect(store.isTreeExpanded()).toBe(false);
+    });
+
+    it('does NOT re-hydrate when only the editContent param changed (closing the panel via Back)', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: { contentType: ['Blog'] },
+            isTreeExpanded: true
+        });
+        const initSpy = jest.spyOn(store, 'initContentDrive');
+
+        // Same browsing params — only editContent differs (here, absent). Must be a no-op so the
+        // list isn't reset/reloaded just because the side panel closed.
+        popstate('/c/content-drive?path=/keep&filters=contentType:Blog&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+        expect(store.path()).toBe('/keep');
+        expect(store.filters()).toEqual({ contentType: ['Blog'] });
     });
 });
 
@@ -746,6 +854,14 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -1019,6 +1135,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 bulkFire: jest.fn()
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
