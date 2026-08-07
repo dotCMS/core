@@ -11,6 +11,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
     DotCategoriesService,
     DotContentletService,
@@ -28,6 +30,7 @@ import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.com
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -51,12 +54,19 @@ describe('DotContentDriveToolbarComponent', () => {
     const isTreeExpandedSignal = signal(false);
     const filtersSignal = signal<Record<string, unknown>>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
+    const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
+        undefined
+    );
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
+                // The toolbar now renders from the visual (panel-aware) computed; reusing the same
+                // signal keeps these tests driving one value, since they don't need to distinguish
+                // the real preference from a panel-forced override.
+                isTreeVisuallyExpanded: isTreeExpandedSignal,
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -65,6 +75,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 filters: filtersSignal,
                 setDialog: jest.fn(),
                 selectedItems: selectedItemsSignal,
+                selectedNode: selectedNodeSignal,
                 userSearchableFields: signal([]),
                 userSearchableActive: signal<string[]>([]),
                 setUserSearchableFields: jest.fn(),
@@ -105,6 +116,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             },
+            // Needed once a selection exists: that mounts the workflow-actions child, which injects
+            // both of these.
+            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: jest.fn(),
+                editPage: jest.fn()
+            }),
             provideHttpClient()
         ],
         detectChanges: false
@@ -121,6 +139,7 @@ describe('DotContentDriveToolbarComponent', () => {
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
+        selectedNodeSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -304,10 +323,40 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     describe('Upload button', () => {
+        const uploadLabel = () =>
+            spectator
+                .query(byTestId('upload-asset-button'))
+                ?.querySelector('.p-button-label')
+                ?.textContent?.trim();
+
         it('should render the upload button when no items are selected', async () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+
+        it('should label the button "Upload" when the current folder has no preference', async () => {
+            selectedNodeSignal.set({ data: {} });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload');
+        });
+
+        it('should label the button "Upload Asset" when the folder defaults to Assets', async () => {
+            selectedNodeSignal.set({ data: { defaultBaseType: 'DOTASSET' } });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload-asset');
+        });
+
+        it('should label the button "Upload File" when the folder defaults to Files', async () => {
+            selectedNodeSignal.set({ data: { defaultBaseType: 'FILEASSET' } });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload-file');
         });
 
         it('should emit upload when the upload button is clicked', async () => {
@@ -369,6 +418,53 @@ describe('DotContentDriveToolbarComponent', () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+    });
+
+    describe('Workflow Center button', () => {
+        it('should not offer it with no selection', async () => {
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should offer it from the first selected contentlet', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should keep the workflow action buttons alongside it', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            await settleToolbarAnimation(spectator);
+
+            // The two are offered together, not one instead of the other.
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+            expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
+        });
+
+        it('should not offer it for a folder-only selection', async () => {
+            // Every bulk endpoint ignores folders, so there would be nothing to act on.
+            selectedItemsSignal.set([
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should open the ACTION_CENTER dialog when clicked', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            spectator.click(byTestId('action-center-button'));
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.ACTION_CENTER,
+                header: 'content-drive.action-center.header'
+            });
         });
     });
 

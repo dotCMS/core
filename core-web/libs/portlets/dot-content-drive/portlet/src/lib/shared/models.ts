@@ -82,9 +82,24 @@ export interface DotContentDriveInit {
  * @interface DotContentDriveContextMenu
  */
 export interface DotContentDriveContextMenu {
-    triggeredEvent: Event;
-    contentlet: DotContentDriveItem;
+    triggeredEvent: Event | null;
+    contentlet: DotContentDriveItem | null;
     showAddToBundle: boolean;
+}
+
+/**
+ * Header override for a dialog that has drilled into a sub-screen.
+ *
+ * The shared dialog's header lives in the shell, but a dialog body can navigate within itself — the
+ * Workflow Center drilling from its action list into an action's preview. Rather than the body
+ * rendering a second title (which reads as a duplicated header), it publishes the replacement here
+ * and the shell's one header renders it.
+ */
+export interface DotContentDriveDialogDrillDown {
+    /** Replaces the dialog title. Already-resolved text, not an i18n key. */
+    header: string;
+    /** Number of items the sub-screen is about to act on; rendered as the header's sub-line. */
+    itemCount: number;
 }
 
 export interface DotContentDriveDialog {
@@ -166,6 +181,20 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * hold the first search until fields load, instead of firing one that drops the `us.*` values.
      */
     userSearchableFieldsLoaded: boolean;
+    /**
+     * "Show In List" fields (`field.listed`) of the currently-selected single content type.
+     * Populated from the same content-type fetch as {@link userSearchableFields}; empty when 0 or
+     * >1 content types are selected. Consumed by the results table as extra columns.
+     */
+    showInListFields: DotCMSContentTypeField[];
+    /**
+     * Whether the Edit Content side panel is forcing the folder tree visually collapsed on a
+     * narrow viewport. Purely transient UI state — never persisted, never read from or written to
+     * the URL — kept separate from {@link DotContentDriveInit.isTreeExpanded} (the user's real,
+     * shareable preference) so the panel's temporary collapse can never overwrite it. See
+     * `isTreeVisuallyExpanded` (the computed both should render from) and `setTreeForceCollapsed`.
+     */
+    isTreeForceCollapsed: boolean;
 }
 
 /**

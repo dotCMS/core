@@ -1,4 +1,11 @@
-import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    HostBinding,
+    Input,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -8,6 +15,7 @@ import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-persona-selected-item',
     templateUrl: './dot-persona-selected-item.component.html',
     styleUrls: ['./dot-persona-selected-item.component.scss'],

@@ -6087,8 +6087,28 @@ paths:
       - Content
   /v1/content/_draft:
     put:
-      description: Creates or updates a draft version of a contentlet without triggering
-        workflow. Drafts allow content editors to save work in progress without publishing.
+      description: |-
+        Creates or updates a draft version of a contentlet without triggering workflow. Drafts allow content editors to save work in progress without publishing.
+
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: saveDraft
       parameters:
       - description: Content inode for existing content
@@ -7673,6 +7693,15 @@ paths:
         name: ensure
         schema:
           type: string
+      - description: |-
+          Whether to include system Content Types (e.g. Host, Favorite Page) in the response.
+
+          When `true` or omitted, system Content Types are included (default, backward-compatible). When `false`, they are excluded. Combines with `filter`.
+        in: query
+        name: system
+        schema:
+          type: boolean
+          default: true
       responses:
         "200":
           content:
@@ -10400,7 +10429,10 @@ paths:
       description: "Returns folders within a site matching an optional name filter\
         \ and/or path scope. Supports recursive depth control, standard pagination,\
         \ and sorting. With no 'name' and default path '/' + recursive=true, all site\
-        \ folders are returned."
+        \ folders are returned. Each folder carries the detail fields a folder-edit\
+        \ form needs (title, sortOrder, filesMasks, defaultFileType, showOnMenu, defaultBaseType).\
+        \ Set 'includePermissions=true' to also receive the permission types the requesting\
+        \ user holds on each folder; that flag caps 'perPage' (see the parameter description)."
       operationId: searchFolders
       parameters:
       - description: Optional case-insensitive partial match on folder name (minimum
@@ -10459,16 +10491,30 @@ paths:
           type: integer
           format: int32
           default: 40
+      - description: "When true, each returned folder includes a 'permissions' array\
+          \ with the permission types the requesting user holds on it (READ, EDIT,\
+          \ PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN). When false (the default)\
+          \ 'permissions' is null — meaning 'not requested', which is not the same\
+          \ as an empty array ('requested, no grants'). Because permissions are resolved\
+          \ per page, enabling this flag caps 'perPage' at the value of the 'content.drive.folder.search.permissions.max.per.page'\
+          \ configuration property (default 200); a larger 'perPage' is rejected with\
+          \ a 400."
+        in: query
+        name: includePermissions
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+                $ref: "#/components/schemas/ResponseEntityFolderSearchView"
           description: Paginated list of matching folders
         "400":
           description: '''siteId'' is required; ''name'' must be at least 2 characters
-            if provided'
+            if provided; ''perPage'' exceeds the maximum allowed when ''includePermissions''
+            is true'
         "401":
           description: User is not authenticated
         "500":
@@ -17979,7 +18025,8 @@ paths:
         with pagination support
       operationId: filterUsers
       parameters:
-      - description: Filter users by full name or parts of it
+      - description: "Filter users by user ID, first name, last name, email address,\
+          \ or full name -- or parts of any of them"
         in: query
         name: query
         schema:
@@ -18030,6 +18077,14 @@ paths:
         schema:
           type: integer
           format: int32
+      - description: "Role key(s) to restrict results to users holding any of them;\
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+        in: query
+        name: roleKey
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         "200":
           content:
@@ -18037,6 +18092,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityListUserView"
           description: Users retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - a provided roleKey does not match any existing
+            Role
         "401":
           content:
             application/json: {}
@@ -18781,7 +18841,25 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: putFireDefaultSystemAction
       parameters:
       - description: Inode of the target content.
@@ -18919,7 +18997,25 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: putFireDefaultActionMultipart
       parameters:
       - description: Inode of the target content.
@@ -19011,7 +19107,25 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: putFireActionByName
       parameters:
       - description: Inode of the target content.
@@ -19110,7 +19224,25 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: putFireActionByNameMultipart
       parameters:
       - description: Inode of the target content.
@@ -19543,7 +19675,25 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: putFireActionById
       parameters:
       - description: |-
@@ -19649,7 +19799,25 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are intended for plain content: if the field already holds rich blocks that they cannot represent (embedded contentlets, video or layout blocks), the value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+
+        **Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON object. Example — embed a contentlet:
+
+        ```dotcms-content\n{"identifier": "<contentlet-id>", "languageId": 1}\n```
+
+        Supported labels and payload fields (**bold** = required):
+        - `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). The server rebuilds the full embed data from the identifier on every read.
+        - `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional `alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external images need no fence — standard `![alt](url "title")` works.
+        - `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, `height`, `languageId`.
+        - `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`.
+        - `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON (`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[…two gridColumn nodes…]}`).
+        - `dotcms-node` → any other node type verbatim (`{"type": "<nodeType>", …}`) — the fallback for custom blocks.
+
+        **Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): `<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>`. `dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would swallow the content after it. Both carriers produce identical stored documents.
+
+        Block styling (e.g. text alignment) is set by an HTML comment on its own line immediately before the block it decorates, in Markdown and HTML alike: `<!-- dotcms:attrs {"textAlign":"center"} -->`.
+
+        A Markdown/HTML write **fully replaces** the stored document; when stored rich blocks are not carried over in the submitted value, the save still succeeds and an advisory warning listing the replaced blocks is returned in the response `messages` field — carry the blocks over as fences or elements to preserve them. An invalid payload degrades to an ordinary code block (or is dropped when it carries no text to keep), never an error.
       operationId: putFireActionByIdMultipart
       parameters:
       - description: |-
@@ -27173,6 +27341,8 @@ components:
     Folder:
       type: object
       properties:
+        defaultBaseType:
+          type: string
         defaultFileType:
           type: string
         filesMasks:
@@ -27234,6 +27404,15 @@ components:
           type: string
           description: Default asset type for files uploaded to this folder
           example: FileAsset
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference for this folder, recorded\
+            \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
+            \ also accepts the alternate names DotAsset/File and stored canonically\
+            \ in uppercase). Omit or set to null for no preference (\"ask each time\"\
+            ); on update, omitting/null clears any previously set preference. This\
+            \ is orthogonal to defaultAssetType and does not change FileAsset behavior."
+          example: DOTASSET
         fileMasks:
           type: array
           description: "List of file patterns that are allowed in this folder (e.g.,\
@@ -27282,6 +27461,65 @@ components:
           type: string
         path:
           type: string
+    FolderSearchView:
+      type: object
+      properties:
+        addChildrenAllowed:
+          type: boolean
+          description: True when the requesting user has CAN_ADD_CHILDREN on this
+            folder
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference as a BaseContentType\
+            \ name (e.g. DOTASSET, FILEASSET); null when the folder has no preference"
+        defaultFileType:
+          type: string
+          description: Velocity variable name of the Content Type used by default
+            for new files in this folder
+        filesMasks:
+          type: string
+          description: "Comma-separated file-name masks allowed in this folder, e.g.\
+            \ '*.jpg,*.png'"
+        hasChildren:
+          type: boolean
+          description: True when the folder has at least one child folder readable
+            by the requesting user
+        id:
+          type: string
+          description: Folder identifier
+        inode:
+          type: string
+          description: Folder inode
+        name:
+          type: string
+          description: Folder name (last path segment)
+        path:
+          type: string
+          description: "Parent path of the folder, e.g. '/application/' for '/application/blog/'"
+        permissions:
+          type: array
+          description: "Permission types the requesting user holds on this folder.\
+            \ Only populated when 'includePermissions=true'; null means the permissions\
+            \ were not requested, while an empty array means they were requested and\
+            \ the user holds none."
+          items:
+            type: string
+            enum:
+            - READ
+            - EDIT
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
+        showOnMenu:
+          type: boolean
+          description: True when the folder is shown on navigation menus
+        sortOrder:
+          type: integer
+          format: int32
+          description: Folder sort order used when ordering menu items
+        title:
+          type: string
+          description: Folder title
     FolderView:
       type: object
       properties:
@@ -29799,6 +30037,22 @@ components:
           type: object
           additionalProperties:
             type: object
+    PaginatedArrayListFolderSearchView:
+      type: array
+      items:
+        $ref: "#/components/schemas/FolderSearchView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/FolderSearchView"
+        last:
+          $ref: "#/components/schemas/FolderSearchView"
+        query:
+          type: string
+        totalResults:
+          type: integer
+          format: int64
     PaginatedArrayListMapStringObject:
       type: array
       items:
@@ -31796,6 +32050,43 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FolderSearchResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderSearchView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/FolderSearchView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/FolderSearchView"
+            last:
+              $ref: "#/components/schemas/FolderSearchView"
+            query:
+              type: string
+            totalResults:
+              type: integer
+              format: int64
         errors:
           type: array
           items:
@@ -36935,6 +37226,15 @@ components:
           type: string
           description: Default asset type for files uploaded to this folder
           example: FileAsset
+        defaultBaseType:
+          type: string
+          description: "Content Drive upload-mode preference for this folder, recorded\
+            \ as a base content type name (DOTASSET or FILEASSET; case-insensitive,\
+            \ also accepts the alternate names DotAsset/File and stored canonically\
+            \ in uppercase). Omit or set to null for no preference (\"ask each time\"\
+            ); on update, omitting/null clears any previously set preference. This\
+            \ is orthogonal to defaultAssetType and does not change FileAsset behavior."
+          example: DOTASSET
         fileMasks:
           type: array
           description: "List of file patterns that are allowed in this folder (e.g.,\

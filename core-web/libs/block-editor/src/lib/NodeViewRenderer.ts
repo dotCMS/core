@@ -1,6 +1,6 @@
 import { DecorationSet, type DecorationSource } from 'prosemirror-view';
 
-import { Component, Injector, Input, Type } from '@angular/core';
+import { Component, Injector, Input, Type, ChangeDetectionStrategy } from '@angular/core';
 
 import {
     DecorationWithType,
@@ -20,6 +20,7 @@ export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unkno
 
 @Component({
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AngularNodeViewComponent implements NodeViewProps {

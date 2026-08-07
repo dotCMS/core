@@ -1,13 +1,14 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { of, throwError } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
+    DotCMSContentlet,
     DotContentDriveFolder,
     DotContentDriveItem,
-    DotCMSContentlet,
     DotPagination,
-    FolderSearchView
+    FolderSearchView,
+    isTreeNodeContentData
 } from '@dotcms/dotcms-models';
 import {
     createFakeCheckboxField,
@@ -20,29 +21,54 @@ import {
 } from '@dotcms/utils-testing';
 
 import {
+    applyLoadMoreToHierarchy,
     buildLoadMoreNode,
+    buildUserSearchablePayload,
+    decodeByFilterKey,
     decodeFilters,
     encodeFilters,
-    decodeByFilterKey,
+    folderSearchViewToDotFolder,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
-    isFolder,
-    parseWorkflowToken,
-    workflowEntryToToken,
-    parseWorkflowFilter,
-    isDateFieldFilterType,
-    isMultiValueFieldFilterType,
+    getUserSearchableActive,
     isBinaryCheckboxField,
+    isDateFieldFilterType,
+    isFolder,
+    isMultiValueFieldFilterType,
     parseUserSearchableValue,
+    parseWorkflowFilter,
+    parseWorkflowToken,
     serializeUserSearchableValue,
-    buildUserSearchablePayload,
-    getUserSearchableActive
+    toLocalIsoString,
+    workflowEntryToToken
 } from './functions';
+import { createTreeNode } from './tree-folder.utils';
 
-import { FOLDER_TREE_PAGE_SIZE, FOLDER_TREE_SEARCH_PAGE_SIZE } from '../shared/constants';
+import { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE } from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
+    describe('toLocalIsoString', () => {
+        it('formats a Date as a no-offset local wall-clock ISO string (what the user sees)', () => {
+            // Built from LOCAL components, so the assertion is timezone-independent.
+            const date = new Date(2026, 6, 28, 9, 5, 3); // 2026-07-28 09:05:03 local
+
+            expect(toLocalIsoString(date)).toBe('2026-07-28T09:05:03');
+        });
+
+        it('zero-pads and never appends a Z/offset (so the backend keeps the wall-clock)', () => {
+            const result = toLocalIsoString(new Date(2026, 0, 1, 0, 0, 0));
+
+            expect(result).toBe('2026-01-01T00:00:00');
+            expect(result).not.toContain('Z');
+        });
+
+        it('returns an empty string for an Invalid Date (typeable picker can emit one)', () => {
+            // Guards the RangeError date-fns `format` would throw on an invalid instant.
+            expect(toLocalIsoString(new Date('not-a-date'))).toBe('');
+        });
+    });
+
     describe('decodeFilters', () => {
         it('should return an empty object when input is empty string', () => {
             const result = decodeFilters('');
@@ -158,11 +184,14 @@ describe('Utility Functions', () => {
         });
 
         it('should handle filters with null or undefined values', () => {
-            const result = encodeFilters({
+            // Runtime may still see null/undefined bag values; cast past the index signature.
+            const dirtyFilters = {
                 contentType: ['Blog'],
                 status: undefined,
-                title: null as unknown as string
-            });
+                title: null
+            } as unknown as DotContentDriveFilters;
+
+            const result = encodeFilters(dirtyFilters);
             expect(result).toBe('contentType:Blog');
         });
 
@@ -373,7 +402,7 @@ describe('Utility Functions', () => {
             } as unknown as jest.Mocked<DotFolderService>;
         });
 
-        it('should search the root and every parent path with an uncapped page size', (done) => {
+        it('should search the root and every parent path with the hierarchy page size', (done) => {
             const folderPath = '/main/sub-folder/inner-folder';
 
             getFolderHierarchyByPath(folderPath, SITE, mockDotFolderService).subscribe({
@@ -392,7 +421,8 @@ describe('Utility Functions', () => {
                                 siteId: SITE_ID,
                                 path,
                                 recursive: false,
-                                per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+                                page: 1,
+                                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
                             })
                         );
                     });
@@ -418,7 +448,7 @@ describe('Utility Functions', () => {
 
             getFolderHierarchyByPath('/main', SITE, mockDotFolderService).subscribe({
                 next: (levels) => {
-                    expect(levels[0][0]).toEqual({
+                    expect(levels[0].folders[0]).toEqual({
                         id: 'm',
                         inode: 'im',
                         hostName: HOSTNAME,
@@ -459,7 +489,7 @@ describe('Utility Functions', () => {
             });
         });
 
-        it('should return every folder in a level without a 40-item cap', (done) => {
+        it('should request the large hierarchy page size (not the interactive 40)', (done) => {
             const many = Array.from({ length: 45 }, (_, i) =>
                 createFakeFolderSearchView({ id: `f${i}`, name: `folder-${i}`, path: '/' })
             );
@@ -467,9 +497,60 @@ describe('Utility Functions', () => {
 
             getFolderHierarchyByPath('/', SITE, mockDotFolderService).subscribe({
                 next: (levels) => {
-                    expect(levels[0]).toHaveLength(45);
+                    expect(levels[0].folders).toHaveLength(45);
                     expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
-                        expect.objectContaining({ per_page: FOLDER_TREE_SEARCH_PAGE_SIZE })
+                        expect.objectContaining({ per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE })
+                    );
+                    expect(FOLDER_TREE_HIERARCHY_PAGE_SIZE).toBeGreaterThan(FOLDER_TREE_PAGE_SIZE);
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should include folders past interactive page position 40 for deep-link restore', (done) => {
+            // Simulates a level where the deep-linked name sorts after the first 40 siblings.
+            const siblings = Array.from({ length: 45 }, (_, i) =>
+                createFakeFolderSearchView({
+                    id: `f${i}`,
+                    name: `qa36151-child-${i}`,
+                    path: '/qa36151-many-parent/'
+                })
+            );
+            mockDotFolderService.searchFolders.mockReturnValue(
+                of({
+                    folders: siblings,
+                    pagination: {
+                        currentPage: 1,
+                        perPage: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+                        totalEntries: siblings.length
+                    }
+                })
+            );
+
+            getFolderHierarchyByPath(
+                '/qa36151-many-parent/qa36151-child-9/',
+                SITE,
+                mockDotFolderService
+            ).subscribe({
+                next: (levels) => {
+                    // Hierarchy returns every sibling in one large page so a late-sorted
+                    // name (string-sort: child-9 is past position 40) is still present.
+                    const parentLevel = levels.find(
+                        (level) => level.path === '/qa36151-many-parent/'
+                    );
+                    expect(parentLevel).toBeDefined();
+                    expect(parentLevel!.folders.length).toBeGreaterThan(FOLDER_TREE_PAGE_SIZE);
+                    expect(
+                        parentLevel!.folders.some(
+                            (folder) => folder.path === '/qa36151-many-parent/qa36151-child-9/'
+                        )
+                    ).toBe(true);
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            path: '/qa36151-many-parent/',
+                            per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
+                        })
                     );
                     done();
                 },
@@ -477,25 +558,22 @@ describe('Utility Functions', () => {
             });
         });
 
-        it('should warn (not silently truncate) when a level exceeds the page size', (done) => {
-            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        it('should expose totalEntries so callers can append load-more', (done) => {
             mockDotFolderService.searchFolders.mockReturnValue(
                 of({
                     folders: [createFakeFolderSearchView({ path: '/' })],
                     pagination: {
                         currentPage: 1,
-                        perPage: FOLDER_TREE_SEARCH_PAGE_SIZE,
-                        totalEntries: FOLDER_TREE_SEARCH_PAGE_SIZE + 1
+                        perPage: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+                        totalEntries: FOLDER_TREE_HIERARCHY_PAGE_SIZE + 10
                     }
                 })
             );
 
             getFolderHierarchyByPath('/', SITE, mockDotFolderService).subscribe({
-                next: () => {
-                    expect(warnSpy).toHaveBeenCalledWith(
-                        expect.stringContaining(String(FOLDER_TREE_SEARCH_PAGE_SIZE + 1))
-                    );
-                    warnSpy.mockRestore();
+                next: (levels) => {
+                    expect(levels[0].totalEntries).toBe(FOLDER_TREE_HIERARCHY_PAGE_SIZE + 10);
+                    expect(levels[0].path).toBe('/');
                     done();
                 },
                 error: done
@@ -619,9 +697,19 @@ describe('Utility Functions', () => {
 
             getFolderNodesByPath('/main/', SITE, mockDotFolderService).subscribe({
                 next: (result) => {
+                    const folder = result.folders[0];
+                    const data = folder?.data;
+
+                    // Guard before isTreeNodeContentData — `data` is optional on TreeNode.
+                    if (!data || !isTreeNodeContentData(data)) {
+                        done(new Error('Expected a content folder node with path data'));
+
+                        return;
+                    }
+
                     // '/main' (no trailing slash) + 'sub' must yield '/main/sub/', not '/mainsub/'
-                    expect(result.folders[0].data.path).toBe('/main/sub/');
-                    expect(result.folders[0].label).toBe('/main/sub/');
+                    expect(data.path).toBe('/main/sub/');
+                    expect(folder.label).toBe('/main/sub/');
                     done();
                 },
                 error: done
@@ -681,7 +769,8 @@ describe('Utility Functions', () => {
 
             expect(node).toEqual({
                 key: 'load-more:/main/',
-                label: 'content-drive.tree.load-more',
+                label: '',
+                type: 'load-more',
                 data: {
                     type: 'load-more',
                     path: '/main/',
@@ -693,6 +782,89 @@ describe('Utility Functions', () => {
                 leaf: true,
                 selectable: false
             });
+        });
+
+        it('should set node.type and data.type to the same load-more value', () => {
+            const node = buildLoadMoreNode('/main/', 'test.com', 2, 75);
+
+            expect(node.type).toBe('load-more');
+            expect(node.data?.type).toBe('load-more');
+            expect(node.type).toBe(node.data?.type);
+        });
+    });
+
+    describe('applyLoadMoreToHierarchy', () => {
+        it('should append a load-more sentinel with nextPage 2 when more entries remain', () => {
+            const rootFolder = createTreeNode({
+                id: 'root-1',
+                inode: 'inode-1',
+                hostName: 'test.com',
+                path: '/main/',
+                addChildrenAllowed: true
+            });
+
+            const roots = applyLoadMoreToHierarchy(
+                [rootFolder],
+                [
+                    {
+                        path: '/',
+                        folders: [
+                            {
+                                id: 'root-1',
+                                inode: 'inode-1',
+                                hostName: 'test.com',
+                                path: '/main/',
+                                addChildrenAllowed: true
+                            }
+                        ],
+                        totalEntries: 50
+                    }
+                ],
+                'test.com'
+            );
+
+            const loadMore = roots[roots.length - 1];
+            expect(loadMore.type).toBe('load-more');
+            expect(loadMore.data).toEqual(
+                expect.objectContaining({
+                    type: 'load-more',
+                    nextPage: 2,
+                    remaining: 49
+                })
+            );
+        });
+
+        it('should not append load-more when the hierarchy page already has all entries', () => {
+            const rootFolder = createTreeNode({
+                id: 'root-1',
+                inode: 'inode-1',
+                hostName: 'test.com',
+                path: '/main/',
+                addChildrenAllowed: true
+            });
+
+            const roots = applyLoadMoreToHierarchy(
+                [rootFolder],
+                [
+                    {
+                        path: '/',
+                        folders: [
+                            {
+                                id: 'root-1',
+                                inode: 'inode-1',
+                                hostName: 'test.com',
+                                path: '/main/',
+                                addChildrenAllowed: true
+                            }
+                        ],
+                        totalEntries: 1
+                    }
+                ],
+                'test.com'
+            );
+
+            expect(roots).toHaveLength(1);
+            expect(roots[0].type).not.toBe('load-more');
         });
     });
 
@@ -1023,5 +1195,28 @@ describe('User-searchable field helpers', () => {
 
             expect(payload).toBeUndefined();
         });
+    });
+});
+
+describe('folderSearchViewToDotFolder', () => {
+    it('should carry defaultBaseType through to the DotFolder', () => {
+        const view = createFakeFolderSearchView({
+            id: 'f1',
+            name: 'app',
+            path: '/',
+            defaultBaseType: 'DOTASSET'
+        });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.defaultBaseType).toBe('DOTASSET');
+    });
+
+    it('should leave defaultBaseType undefined when the view has no preference', () => {
+        const view = createFakeFolderSearchView({ id: 'f2', name: 'docs', path: '/' });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.defaultBaseType).toBeUndefined();
     });
 });

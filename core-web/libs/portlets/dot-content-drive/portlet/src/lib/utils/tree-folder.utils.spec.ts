@@ -17,6 +17,7 @@ describe('Sidebar Utils', () => {
                     id: '',
                     inode: ''
                 },
+                icon: 'pi pi-folder',
                 leaf: false,
                 expanded: true
             });
@@ -32,6 +33,10 @@ describe('Sidebar Utils', () => {
 
         it('should not be a leaf node', () => {
             expect(ALL_FOLDER.leaf).toBe(false);
+        });
+
+        it('should use a native PrimeNG folder icon', () => {
+            expect(ALL_FOLDER.icon).toBe('pi pi-folder');
         });
     });
 
@@ -155,6 +160,11 @@ describe('Sidebar Utils', () => {
         it('should use folder id as key', () => {
             const result = createTreeNode(mockFolder);
             expect(result.key).toBe(mockFolder.id);
+        });
+
+        it('should carry the folder defaultBaseType onto the node data', () => {
+            const result = createTreeNode({ ...mockFolder, defaultBaseType: 'FILEASSET' });
+            expect(result.data.defaultBaseType).toBe('FILEASSET');
         });
 
         it('should use folder path as label', () => {

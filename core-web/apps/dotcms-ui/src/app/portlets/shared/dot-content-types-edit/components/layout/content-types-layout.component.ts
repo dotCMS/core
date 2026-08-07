@@ -8,7 +8,8 @@ import {
     input,
     output,
     signal,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
@@ -38,6 +39,7 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
     selector: 'dot-content-type-layout',
     templateUrl: 'content-types-layout.component.html',
     providers: [DotClipboardUtil],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         TabsModule,
         SplitButtonModule,
@@ -77,7 +79,7 @@ export class ContentTypesLayoutComponent implements OnInit {
         this.#route.snapshot.data['tabPermissions']?.showPermissionsTab ?? false
     );
     readonly $activeTab = signal(this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields');
-    addToMenuContentType = false;
+    readonly $addToMenuContentType = signal(false);
 
     actions: MenuItem[];
 
@@ -211,6 +213,6 @@ export class ContentTypesLayoutComponent implements OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     addContentInMenu() {
-        this.addToMenuContentType = true;
+        this.$addToMenuContentType.set(true);
     }
 }

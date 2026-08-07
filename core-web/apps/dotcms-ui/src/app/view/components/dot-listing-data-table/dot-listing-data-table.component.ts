@@ -15,7 +15,8 @@ import {
     QueryList,
     signal,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -64,6 +65,7 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
     templateUrl: 'dot-listing-data-table.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ActionHeaderComponent,
         FormsModule,

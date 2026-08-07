@@ -6,6 +6,8 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import {
+    DotBulkActionRequest,
+    DotBulkActionView,
     DotCMSContentletWorkflowActions,
     DotCMSResponse,
     DotCMSWorkflow,
@@ -78,6 +80,29 @@ export class DotWorkflowsActionsService {
                 map((x) => x?.entity),
                 map((res) => res || [])
             );
+    }
+
+    /**
+     * Returns the workflow actions available for a set of contentlets, grouped by scheme and step,
+     * each with the number of selected contentlets it applies to.
+     *
+     * Backing endpoint: `POST /api/v1/workflow/contentlet/actions/bulk`. Supply either
+     * `contentletIds` (contentlet **inodes**, despite the property name) or a Lucene `query` for
+     * selections that span pages.
+     *
+     * Note that an action's `count` is an upper bound when `conditionPresent` is true — the backend
+     * does not evaluate the action's Velocity condition while aggregating.
+     *
+     * @param {DotBulkActionRequest} request
+     * @returns {Observable<DotBulkActionView>}
+     * @memberof DotWorkflowsActionsService
+     */
+    getBulkActions(request: DotBulkActionRequest): Observable<DotBulkActionView> {
+        return this.httpClient
+            .post<
+                DotCMSResponse<DotBulkActionView>
+            >(`${this.BASE_URL}/contentlet/actions/bulk`, request)
+            .pipe(map((response) => response?.entity ?? { schemes: [] }));
     }
 
     private getWorkFlowId(workflow: DotCMSWorkflow): string {

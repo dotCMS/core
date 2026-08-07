@@ -57,12 +57,15 @@ public class ESIndexHelperTest extends UnitTestBase {
 
 		Map<String,String> indexInfo = new HashMap<>();
 		indexInfo.put("alias", searchIndex);
-		List<String> aliasList = new ArrayList<>();
-		// add name to alias list
-		aliasList.add(searchIndex);
 
-		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
-		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(indexInfo);
+		// Alias resolution now goes through the phase-aware, .os-aware SiteSearchAPI#getAliasToIndexMap()
+		// (issue #36360), no longer ESIndexAPI#getAliasToIndexMap(List). The map is keyed by the alias
+		// VALUE ("dummyIndex") and returns the backing index name — matching the fixed lookup in
+		// ESIndexHelper#getIndexNameOrAlias, which previously looked up by the attribute KEY ("alias").
+		Map<String,String> aliasToIndex = new HashMap<>();
+		aliasToIndex.put(searchIndex, searchIndex);
+
+		when(siteSearchAPI.getAliasToIndexMap()).thenReturn(aliasToIndex);
 		when(LicenseService.getLevel()).thenReturn(LicenseLevel.STANDARD.level);
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);

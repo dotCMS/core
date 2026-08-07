@@ -1,4 +1,8 @@
-import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
+import {
+    DOT_FOLDER_TREE_PAGE_SIZE,
+    DotCMSBaseTypesContentTypes,
+    DotSite
+} from '@dotcms/dotcms-models';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
@@ -18,18 +22,18 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
 };
 
 /**
- * Page size used when loading the initial folder hierarchy (deep-link restore) via
- * `GET /api/v1/folder/search`. Each ancestor level of the target path is fetched in full so the
- * selected folder is always present and the tree can expand to it. Matches the backend's
- * `SUB_FOLDER_UNLIMITED_SAFETY_CAP` (10000) — the ceiling the server itself enforces.
+ * Page size for interactive folder-tree expand and load-more.
+ * Re-exports the shared limit used by Host Folder Field so both stay in sync.
  */
-export const FOLDER_TREE_SEARCH_PAGE_SIZE = 10000;
+export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
 
 /**
- * Page size used when a user expands a folder node. Children load one page at a time; if more
- * remain, a "Load more" node is appended so the DOM stays bounded on large levels.
+ * Page size for the deep-link / initial hierarchy fetch only.
+ * One request per ancestor level (parallel); large enough that path segments past
+ * the interactive page of 40 still appear so {@link buildTreeFolderNodes} can select them.
+ * Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
  */
-export const FOLDER_TREE_PAGE_SIZE = 50;
+export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 10000;
 
 export const DEFAULT_SORT = {
     field: 'modDate',
@@ -37,9 +41,9 @@ export const DEFAULT_SORT = {
 };
 
 // Sort order from PrimeNG to dotCMS
-export const SORT_ORDER = {
+export const SORT_ORDER: Record<number, DotContentDriveSortOrder> = {
     1: DotContentDriveSortOrder.ASC,
-    '-1': DotContentDriveSortOrder.DESC
+    [-1]: DotContentDriveSortOrder.DESC
 };
 
 // Default tree expanded
@@ -186,7 +190,43 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
     CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    UPLOAD_SELECTOR: 'UPLOAD_SELECTOR'
+    ACTION_CENTER: 'ACTION_CENTER'
+} as const;
+
+/**
+ * Root styles for the Action Center dialog.
+ *
+ * Fixed height so the content box has something to flex against — without it the column sizes to
+ * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
+ * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
+ * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
+ * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ */
+export const ACTION_CENTER_DIALOG_STYLE = {
+    width: '42rem',
+    maxWidth: '92vw',
+    height: '80vh',
+    maxHeight: '80vh',
+    display: 'flex',
+    'flex-direction': 'column',
+    overflow: 'hidden'
+} as const;
+
+/**
+ * Content-box styles for the Action Center dialog — the dialog's only scroll container.
+ *
+ * Applied as inline styles via `[contentStyle]` rather than utility classes: the theme sets
+ * `overflow-y: auto` on `.p-dialog-content` and its runtime-injected CSS outranks a Tailwind
+ * `overflow-hidden`. Inline styles win without needing `!` overrides. `min-height: 0` lets the box
+ * shrink inside the flex column; without it a flex item refuses to go below its content height.
+ */
+export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
+    display: 'flex',
+    'flex-direction': 'column',
+    flex: '1',
+    'min-height': '0',
+    overflow: 'hidden',
+    padding: '0'
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -212,6 +252,34 @@ export const UPLOAD_SELECTOR_OPTIONS = [
         recommended: false
     }
 ] as const;
+
+/**
+ * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
+ * folder's `defaultBaseType`: `null` means "ask each time" (the upload menu is shown on every
+ * upload), `DOTASSET`/`FILEASSET` force every upload to that base type. The backend routes the
+ * concrete content type by file type.
+ */
+export const FOLDER_UPLOAD_BEHAVIOR_OPTIONS: {
+    value: DotCMSBaseTypesContentTypes | null;
+    labelKey: string;
+    descriptionKey: string;
+}[] = [
+    {
+        value: null,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.ask-each-time.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.DOTASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-assets',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-assets.description'
+    },
+    {
+        value: DotCMSBaseTypesContentTypes.FILEASSET,
+        labelKey: 'content-drive.dialog.folder.upload-behavior.always-files',
+        descriptionKey: 'content-drive.dialog.folder.upload-behavior.always-files.description'
+    }
+];
 
 export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.jpg',
@@ -242,3 +310,10 @@ export const DROPZONE_STATE = {
     ACTIVE: 'active',
     INACTIVE: 'inactive'
 } as const;
+
+/**
+ * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
+ * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
+ * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ */
+export const NEW_CONTENT_MARKER = 'new';

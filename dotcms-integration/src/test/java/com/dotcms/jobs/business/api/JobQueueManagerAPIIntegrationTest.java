@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dotcms.jobs.business.detector.AbandonedJobDetector;
 import com.dotcms.jobs.business.error.ExponentialBackoffRetryStrategy;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -58,6 +59,9 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
 
     @Inject
     JobQueueManagerAPI jobQueueManagerAPI;
+
+    @Inject
+    AbandonedJobDetector abandonedJobDetector;
 
     /**
      * Sets up the test environment before all tests are run.
@@ -542,7 +546,11 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
             }
         });
 
-        boolean abandoned = latch.await(3, TimeUnit.MINUTES);
+        // Trigger detection directly instead of waiting up to a minute for the
+        // detector's scheduled tick (the inserted job is already past the threshold)
+        abandonedJobDetector.detectAbandonedJobs();
+
+        boolean abandoned = latch.await(30, TimeUnit.SECONDS);
         assertTrue(abandoned, "Job should be marked as abandoned within timeout period");
 
         // Verify the abandoned job state and error details
@@ -655,7 +663,11 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
             }
         });
 
-        boolean abandoned = latch.await(3, TimeUnit.MINUTES);
+        // Trigger detection directly instead of waiting up to a minute for the
+        // detector's scheduled tick (the inserted job is already past the threshold)
+        abandonedJobDetector.detectAbandonedJobs();
+
+        boolean abandoned = latch.await(30, TimeUnit.SECONDS);
         assertTrue(abandoned, "Job should be marked as abandoned within timeout period");
 
         // Verify the abandoned job state and error details

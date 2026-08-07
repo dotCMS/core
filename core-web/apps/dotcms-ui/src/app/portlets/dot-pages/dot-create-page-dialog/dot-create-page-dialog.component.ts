@@ -1,4 +1,12 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+    Component,
+    computed,
+    inject,
+    input,
+    output,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -26,6 +34,7 @@ import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
     ],
     providers: [DotPageTypesService],
     templateUrl: './dot-create-page-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./dot-create-page-dialog.component.scss']
 })
 export class DotCreatePageDialogComponent {

@@ -1,7 +1,14 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { AfterViewChecked, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import {
+    AfterViewChecked,
+    ChangeDetectorRef,
+    Component,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -32,6 +39,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-reset-password-component',
     styleUrls: ['./reset-password.component.scss'],
     templateUrl: 'reset-password.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         ReactiveFormsModule,

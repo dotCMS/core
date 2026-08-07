@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { TabsModule } from 'primeng/tabs';
@@ -19,6 +19,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-create',
     templateUrl: './dot-container-create.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotPortletBaseComponent,
         TabsModule,

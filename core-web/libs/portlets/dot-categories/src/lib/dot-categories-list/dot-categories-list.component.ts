@@ -87,7 +87,9 @@ export class DotCategoriesListComponent {
 
     #searchSubject = new Subject<string>();
 
-    readonly homeItem = { icon: 'pi pi-home' };
+    /** Empty config so PrimeNG's <p-breadcrumb> renders its default SVG house
+     * as the home segment. Removing this drops the home segment entirely. */
+    readonly homeItem = {};
     readonly $rowMenu = viewChild<ContextMenu>('rowMenu');
     readonly $toolbarMenu = viewChild.required<Menu>('toolbarMenu');
     rowMenuItems: MenuItem[] = [];

@@ -16,7 +16,11 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -31,6 +35,7 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { excludeFolders } from '../../utils/action-center';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -175,7 +180,28 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $upload = output<void>({ alias: 'upload' });
+    // Emits the click event so the shell can anchor the upload-type popover to the button.
+    $upload = output<MouseEvent>({ alias: 'upload' });
+
+    /**
+     * Upload button label, folder-aware: when the current folder pins uploads to a base type
+     * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
+     */
+    protected readonly $uploadLabelKey = computed(() => {
+        const data = this.#store.selectedNode()?.data;
+        const defaultBaseType =
+            data && data.type !== LOAD_MORE_NODE_TYPE
+                ? (data as DotFolderTreeNodeContentData).defaultBaseType
+                : undefined;
+        switch (defaultBaseType?.toUpperCase()) {
+            case DotCMSBaseTypesContentTypes.DOTASSET:
+                return 'content-drive.upload-asset';
+            case DotCMSBaseTypesContentTypes.FILEASSET:
+                return 'content-drive.upload-file';
+            default:
+                return 'content-drive.upload';
+        }
+    });
 
     readonly $items = signal<MenuItem[]>([
         {
@@ -215,7 +241,8 @@ export class DotContentDriveToolbarComponent {
         });
     }
 
-    readonly $treeExpanded = this.#store.isTreeExpanded;
+    /** The tree's VISUAL expanded state — see `isTreeVisuallyExpanded` on the store. */
+    readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
 
@@ -257,6 +284,29 @@ export class DotContentDriveToolbarComponent {
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
+
+    /**
+     * The "Action Center" button is offered from the first selected contentlet, *alongside* the flat
+     * action buttons rather than instead of them. The flat buttons cover the common per-item
+     * actions; the dialog adds what they cannot express — per-action eligibility counts and the
+     * workflow actions grouped by scheme — and that is just as useful for one item as for many.
+     *
+     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
+     * folders, so a folder-only selection offers no Action Center.
+     */
+    readonly $displayActionCenter = computed(
+        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
+    );
+
+    /**
+     * Opens the Action Center dialog for the current selection.
+     */
+    protected onOpenActionCenter(): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.ACTION_CENTER,
+            header: this.#dotMessageService.get('content-drive.action-center.header')
+        });
+    }
 
     readonly $togglerStyles = computed(() => ({
         opacity: this.$treeExpanded() ? '0' : '1',

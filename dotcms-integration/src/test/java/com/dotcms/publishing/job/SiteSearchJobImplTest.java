@@ -2,7 +2,6 @@ package com.dotcms.publishing.job;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -72,7 +71,6 @@ import static org.awaitility.Awaitility.await;
 @RunWith(DataProviderRunner.class)
 public class SiteSearchJobImplTest extends IntegrationTestBase {
 
-    static IndexAPI esIndexAPI;
     static long defaultLang;
     static SiteSearchAPI siteSearchAPI;
     static SiteSearchAuditAPI siteSearchAuditAPI;
@@ -95,7 +93,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         systemUser = APILocator.systemUser();
 
-        esIndexAPI = APILocator.getESIndexAPI();
         defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         siteSearchAPI = APILocator.getSiteSearchAPI();
         siteSearchAuditAPI = APILocator.getSiteSearchAuditAPI();
@@ -149,14 +146,30 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Clears every site-search index so each scenario starts from a known-empty state.
+     *
+     * <p>Deletes through {@link SiteSearchAPI#deleteIndex(String)} rather than the content-index
+     * router: {@code listIndices()} aggregates the ES and OpenSearch sets during the dual-write
+     * phases, so a name can exist on only one engine, and the content router's delete propagates
+     * that engine's {@code index_not_found} instead of skipping it — aborting this loop. The
+     * site-search delete is idempotent per engine. The active index is deactivated first, since
+     * deleting it is (correctly) rejected.</p>
+     */
+    private static void deleteAllSiteSearchIndices() throws DotDataException, IOException {
+        for (final String index : siteSearchAPI.listIndices()) {
+            if (siteSearchAPI.isDefaultIndex(index)) {
+                siteSearchAPI.deactivateIndex(index);
+            }
+            siteSearchAPI.deleteIndex(index);
+        }
+    }
+
     @Test
     public void Test_Non_Incremental_Create_Default_Index_Run_Non_Incrementally_Expect_New_Index_Keep_Alias_And_Default()
             throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException {
 
-        final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-        for(final String index:indicesBeforeTest) {
-            esIndexAPI.delete(index);
-        }
+        deleteAllSiteSearchIndices();
         final String jobId = UUIDUtil.uuid();
         final String alias = "any-alias-"+System.currentTimeMillis();
         final JobDataMap jobDataMap = new JobDataMap();
@@ -182,7 +195,11 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Assert.assertFalse(indicesAfterTest.isEmpty());
         final String newIndexName = indicesAfterTest.get(0);
 
-        Assert.assertEquals("New index is expected have same Alias", alias, esIndexAPI.getIndexAlias(newIndexName));
+        // Resolve the alias through the site-search API, not the content-index router: the latter keys
+        // OpenSearch entries by their .os-tagged physical name, so a logical name misses in the phases
+        // where OpenSearch serves reads (issue #36360, see #36797).
+        Assert.assertEquals("New index is expected have same Alias", newIndexName,
+                siteSearchAPI.getAliasToIndexMap().get(alias));
         final SiteSearchResults search = siteSearchAPI.search(newIndexName, "*",0, 10);
         Assert.assertTrue(search.getTotalResults() >= 1);
         final List<SiteSearchAudit> recentAudits = siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
@@ -201,10 +218,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         List<SiteSearchAudit> recentAudits;
         final SiteSearchJobImpl impl = new SiteSearchJobImpl();
 
-        final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-        for(final String index:indicesBeforeTest) {
-            esIndexAPI.delete(index);
-        }
+        deleteAllSiteSearchIndices();
 
         final long timeMillis1 = System.currentTimeMillis();
         final String defaultAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" + timeMillis1;
@@ -291,10 +305,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         final String jobName = "Any-Scheduled-Job-" + System.currentTimeMillis();
 
-        final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-        for(final String index:indicesBeforeTest) {
-            esIndexAPI.delete(index);
-        }
+        deleteAllSiteSearchIndices();
 
         final long timeMillis1 = System.currentTimeMillis();
         final String newIndexAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" + timeMillis1;
@@ -676,10 +687,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
             HTMLPageAsset pageDefaultLang = createHtmlPageAsset(defaultLang, contentToPassToPage);
 
-            final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-            for (final String index : indicesBeforeTest) {
-                esIndexAPI.delete(index);
-            }
+            deleteAllSiteSearchIndices();
             final String jobId = UUIDUtil.uuid();
             final String alias = "any-alias-" + System.currentTimeMillis();
             final JobDataMap jobDataMap = new JobDataMap();
