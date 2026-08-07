@@ -1,0 +1,68 @@
+name: 'Utility: Probe Runner Location'
+
+# Throwaway diagnostic. Answers "where do our GitHub-hosted runners actually run?"
+# so we can pick a region for a self-hosted remote build cache (see #36947)
+# instead of guessing from GitHub's global egress IP list, which covers all of
+# Actions worldwide and says nothing about where OUR jobs land.
+#
+# Two independent signals per runner:
+#   1. Azure IMDS  - authoritative (the VM's own region), but GitHub may block it
+#   2. egress geo  - always works, but reflects the NAT egress, not the VM
+#
+# Delete this workflow once the region question is settled.
+
+on:
+  workflow_dispatch:
+    inputs:
+      samples:
+        description: 'How many runners to sample (1-20)'
+        required: false
+        default: '12'
+  # Also runs on the PR that introduces it, so the numbers land without needing
+  # this file on the default branch first.
+  pull_request:
+    paths:
+      - '.github/workflows/utility_probe-runner-location.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: probe ${{ matrix.n }}
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        n: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    steps:
+      - name: Probe
+        run: |
+          set -uo pipefail
+
+          # 1. Azure IMDS - the VM's own view of where it is.
+          IMDS=$(curl -s -H 'Metadata:true' --max-time 5 \
+            "http://169.254.169.254/metadata/instance/compute?api-version=2021-02-01" 2>/dev/null || true)
+          if echo "$IMDS" | jq -e .location >/dev/null 2>&1; then
+            LOCATION=$(echo "$IMDS" | jq -r '.location // "?"')
+            ZONE=$(echo "$IMDS" | jq -r '.zone // "-"')
+            VMSIZE=$(echo "$IMDS" | jq -r '.vmSize // "?"')
+          else
+            LOCATION="imds-unavailable"; ZONE="-"; VMSIZE="?"
+          fi
+
+          # 2. Egress geolocation - always available, but this is the NAT exit,
+          #    which can differ from the VM's region.
+          GEO=$(curl -s --max-time 8 https://ipinfo.io/json 2>/dev/null || true)
+          IP=$(echo "$GEO"     | jq -r '.ip // "?"'      2>/dev/null || echo '?')
+          CITY=$(echo "$GEO"   | jq -r '.city // "?"'    2>/dev/null || echo '?')
+          REGION=$(echo "$GEO" | jq -r '.region // "?"'  2>/dev/null || echo '?')
+          CC=$(echo "$GEO"     | jq -r '.country // "?"' 2>/dev/null || echo '?')
+
+          echo "PROBE_RESULT azure_region=${LOCATION} zone=${ZONE} vm=${VMSIZE} egress=${CC}/${REGION}/${CITY} ip=${IP} cores=$(nproc) mem=$(free -g | awk '/^Mem:/{print $2}')G"
+
+          {
+            echo "| # | Azure region | zone | VM size | egress | cores |"
+            echo "|---|---|---|---|---|---|"
+            echo "| ${{ matrix.n }} | \`${LOCATION}\` | ${ZONE} | ${VMSIZE} | ${CC}/${REGION}/${CITY} | $(nproc) |"
+          } >> "$GITHUB_STEP_SUMMARY"
