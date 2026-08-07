@@ -15,11 +15,7 @@ import {
     DotUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import {
-    DotCMSContentTypeField,
-    DotCMSContentlet,
-    DotSite
-} from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAssetPickerComponent,

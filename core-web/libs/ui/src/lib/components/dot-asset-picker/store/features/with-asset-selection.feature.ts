@@ -1,8 +1,8 @@
-import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotAssetPickerSelectionState } from '../models';
+import { DotAssetPickerSelectionState, DotAssetPickerState } from '../models';
 
 const initialState: DotAssetPickerSelectionState = {
     selectedAsset: null
@@ -18,6 +18,11 @@ const initialState: DotAssetPickerSelectionState = {
  */
 export function withAssetSelection() {
     return signalStoreFeature(
+        // Declares the base state it sits on even though it reads none of it. A feature composed
+        // without an input constraint erases the accumulated state for every feature AFTER it, and
+        // this one is no longer last in the chain — `withAssetBrowse` needs `selectedAsset` to
+        // already exist, so it runs later and would otherwise lose `config`/`path`/`filters`.
+        { state: type<DotAssetPickerState>() },
         withState<DotAssetPickerSelectionState>(initialState),
         withMethods((store) => ({
             setSelectedAsset: (selectedAsset: DotCMSContentlet): void => {
