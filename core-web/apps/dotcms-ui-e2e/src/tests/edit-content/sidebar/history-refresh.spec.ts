@@ -153,8 +153,12 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
         });
 
         /**
-         * Opens the editor in a dialog through the relationship field's "New Content"
-         * item, saves once so the contentlet gains a version, and returns the dialog root.
+         * Opens the editor through the relationship field's "New Content" item, saves once
+         * so the contentlet gains a version, and returns the editor root.
+         *
+         * `FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL` defaults to `true`
+         * (dotmarketing-config.properties), so "New Content" opens the slide-in side panel,
+         * not the centered dialog — hence `edit-content-side-panel`, not `edit-content-dialog`.
          */
         async function openDialogWithSavedContent(
             page: Page,
@@ -220,7 +224,7 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
             await page.getByTestId('relationship-add-button').click();
             await page.getByRole('menuitem', { name: 'New Content' }).click();
 
-            const dialog = page.getByTestId('edit-content-dialog');
+            const dialog = page.getByTestId('edit-content-side-panel');
             await dialog.waitFor({ state: 'visible', timeout: 15000 });
 
             // Save once inside the dialog so there is a version to compare against.
