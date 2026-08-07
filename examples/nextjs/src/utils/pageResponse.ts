@@ -1,12 +1,12 @@
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-/** Either a composed page response or the `{ error }` shape on failure. */
+/** Either a composed page response or the `{ error, graphql }` shape on failure. */
 export type PageResponse = Awaited<ReturnType<typeof getDotCMSPage>>;
 
 /** Narrows a response to the error branch. */
 export function isPageError(
   pageContent: PageResponse,
-): pageContent is { error: unknown } {
+): pageContent is Extract<PageResponse, { error: unknown }> {
   return Boolean(pageContent && "error" in pageContent && pageContent.error);
 }
 
