@@ -40,8 +40,10 @@ import java.util.Objects;
  * reshaping it is a public API change. Recorded so that keeping the flat shape stays a deliberate
  * choice rather than an oversight — and note that the component count has already grown once.</p>
  *
- * <p>Related, and independent of the shape: the {@code siteId} and {@code user} null checks currently
- * live in {@link Builder#build()}, which a direct call to the canonical constructor bypasses.</p>
+ * <p>For the same reason, the required-field checks live in the canonical constructor and not in
+ * {@link Builder#build()}: a check in the builder only guards callers who happen to use the builder,
+ * while a check in the canonical constructor guards every construction path, including the builder's
+ * own.</p>
  */
 public record FolderSearchParams(
         String name,
@@ -55,6 +57,16 @@ public record FolderSearchParams(
         String orderBy,
         String orderDirection,
         boolean includePermissions) {
+
+    /**
+     * Canonical constructor. The required-field checks live here rather than in
+     * {@link Builder#build()} because this is the only construction path that cannot be bypassed: the
+     * builder delegates to it, and so does any direct {@code new FolderSearchParams(...)} call.
+     */
+    public FolderSearchParams {
+        Objects.requireNonNull(siteId, "siteId is required");
+        Objects.requireNonNull(user, "user is required");
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -87,9 +99,10 @@ public record FolderSearchParams(
         public Builder orderDirection(final String orderDirection) { this.orderDirection = orderDirection; return this; }
         public Builder includePermissions(final boolean includePermissions) { this.includePermissions = includePermissions; return this; }
 
+        /**
+         * Delegates to the canonical constructor, which enforces the required fields.
+         */
         public FolderSearchParams build() {
-            Objects.requireNonNull(siteId, "siteId is required");
-            Objects.requireNonNull(user,   "user is required");
             return new FolderSearchParams(name, path, recursive, siteId, user,
                     respectFrontendRoles, limit, offset, orderBy, orderDirection, includePermissions);
         }
