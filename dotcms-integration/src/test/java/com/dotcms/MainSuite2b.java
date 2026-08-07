@@ -109,6 +109,7 @@ import com.dotcms.rest.api.v1.folder.FolderResourceSearchTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
+import com.dotcms.rest.api.v1.portlet.ToolGroupResourceTest;
 import com.dotcms.rest.api.v1.publishing.BundleManagementResourceIntegrationTest;
 import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
@@ -138,6 +139,7 @@ import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.business.ajax.RoleAjaxSecurityTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -383,6 +385,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220606UpdatePushNowActionletNameTest.class,
         BundlerUtilTest.class,
         MenuResourceTest.class,
+        ToolGroupResourceTest.class,
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
         CSSPreProcessServletIT.class,
@@ -479,6 +482,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
         com.dotmarketing.business.RoleAPITest.class,
+        RoleAjaxSecurityTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
