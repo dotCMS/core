@@ -46,14 +46,24 @@ export interface DotActionCenterQuickAction {
      * When set the row is always non-selectable and shows this as its hint.
      */
     pendingHint?: string;
+    /**
+     * How many of the {@link eligibleInodes} are expected to fail, with {@link warningHint}
+     * explaining why. `0` for actions with nothing to warn about.
+     *
+     * These items are still fired — the count is a heads-up, not a filter. See the Unlock entry in
+     * {@link QUICK_ACTIONS} for why the client cannot decide this on its own.
+     */
+    warningCount: number;
+    /** i18n key describing what {@link warningCount} counts. Absent when it is `0`. */
+    warningHint?: string;
 }
 
 /**
  * Quick actions offered in the Action Center.
  *
- * **The order of this array is the display order and is fixed** — Publish, Unpublish, Archive,
- * Delete, Unarchive, Add to Bundle. Rows keep their position whether or not they are selectable, so
- * the list never reshuffles as the selection changes.
+ * **The order of this array is the display order and is fixed** — Lock, Unlock, Publish, Unpublish,
+ * Archive, Delete, Unarchive, Add to Bundle. Rows keep their position whether or not they are
+ * selectable, so the list never reshuffles as the selection changes.
  *
  * Scope notes for v1:
  * - Every entry except Add to Bundle is a `SystemAction` the multi-contentlet endpoint accepts
@@ -62,11 +72,12 @@ export interface DotActionCenterQuickAction {
  *   list of asset identifiers, so the endpoint is not the blocker: it needs a target bundle, which
  *   means a picker step (`DotAddToBundleComponent` takes a single identifier today) and an
  *   enterprise-license gate. Tracked separately.
- * - **Lock / Unlock are absent**: no bulk REST endpoint exists. The legacy JSP drives unlock through
- *   a Struts command (`full_unlock_list`) that loops server-side.
  *
  * `eligibleWhen` derives the count from row state the grid already has. It is a state heuristic,
  * not a permission check — an item can be counted and still fail at execution.
+ *
+ * `warnWhen` marks eligible items that are *likely* to fail, so the row can say so up front without
+ * dropping them from the payload.
  */
 const QUICK_ACTIONS: {
     id: DotActionCenterQuickActionId;
@@ -79,7 +90,51 @@ const QUICK_ACTIONS: {
     /** Confirmation message key. Set for actions destructive enough to warrant a prompt. */
     confirmMessage?: string;
     pendingHint?: string;
+    /** Counted among the eligible items to produce `warningCount`. */
+    warnWhen?: (item: DotCMSContentlet) => boolean;
+    /** Explains what `warnWhen` matched. Required whenever `warnWhen` is set. */
+    warningHint?: string;
 }[] = [
+    {
+        // Lock and Unlock lead the list: they are the least destructive actions here and the ones a
+        // user reaches for mid-edit, so they sit furthest from Archive and Delete.
+        id: WORKFLOW_ACTION_ID.LOCK,
+        nameKey: 'content-drive.context-menu.lock',
+        icon: 'lock',
+        danger: false,
+        // Archived content is a dead end until unarchived, and `deleteContentlets` honours
+        // `canLock`, so locking an archived item would quietly make it undeletable by anyone but
+        // the lock holder.
+        eligibleWhen: (item) => !item.locked && !item.archived
+    },
+    {
+        id: WORKFLOW_ACTION_ID.UNLOCK,
+        nameKey: 'content-drive.context-menu.unlock',
+        icon: 'lock_open',
+        danger: false,
+        // `locked` alone would do — archive refuses locked content — but the archived exclusion is
+        // spelled out so the pair reads the same way.
+        eligibleWhen: (item) => !!item.locked && !item.archived,
+        // A lock belonging to someone else can only be released by a CMS Administrator, and the
+        // grid has no idea whether the current user holds that role. So these items are counted,
+        // fired, and reported on rather than filtered out: `contentEditable` is false on a locked
+        // row the current user does not hold.
+        //
+        // Two known false positives, both of which over-warn rather than under-warn, and which is
+        // why the hint says "may require" instead of predicting failure:
+        //
+        // 1. **Administrators.** `contentEditable` comes from `BrowserAPIImpl.WfData`, which is
+        //    `lockedBy == currentUser` and never consults the role. `canLock` returns true for a
+        //    CMS Admin before it ever looks at the lock owner, so an admin is warned about rows
+        //    they will unlock successfully.
+        // 2. **Content-type-level EDIT.** `contentEditable` checks WRITE on the contentlet, while
+        //    `canLock` accepts EDIT on either the contentlet or its content type.
+        //
+        // Removing either means plumbing the caller's admin flag (`DotCurrentUser.admin`) down to
+        // here, which is also what the preview needs to mark the offending rows.
+        warnWhen: (item) => !item.contentEditable,
+        warningHint: 'content-drive.action-center.unlock.locked-by-others'
+    },
     {
         id: WORKFLOW_ACTION_ID.PUBLISH,
         nameKey: 'Default-Action-Publish',
@@ -175,9 +230,13 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
     return QUICK_ACTIONS.map((quickAction) => {
         // One filter pass feeds both the count and the inodes that get fired, so the row can never
         // advertise a different number of items than the action actually touches.
-        const eligibleInodes = contentlets
-            .filter(quickAction.eligibleWhen)
-            .map((item) => item.inode);
+        const eligible = contentlets.filter(quickAction.eligibleWhen);
+        const eligibleInodes = eligible.map((item) => item.inode);
+        // Counted over `eligible` rather than the whole selection: warning about items the action
+        // was never going to touch would make the number meaningless.
+        const warningCount = quickAction.warnWhen
+            ? eligible.filter(quickAction.warnWhen).length
+            : 0;
 
         return {
             id: quickAction.id,
@@ -187,7 +246,9 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
             eligibleInodes,
             count: eligibleInodes.length,
             confirmMessage: quickAction.confirmMessage,
-            pendingHint: quickAction.pendingHint
+            pendingHint: quickAction.pendingHint,
+            warningCount,
+            warningHint: warningCount > 0 ? quickAction.warningHint : undefined
         };
     });
 };

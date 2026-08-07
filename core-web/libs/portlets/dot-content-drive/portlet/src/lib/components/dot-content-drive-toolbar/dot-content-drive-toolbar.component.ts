@@ -247,6 +247,29 @@ export class DotContentDriveToolbarComponent {
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
 
     /**
+     * The action currently being applied, surfaced here because the run outlives the Action Center
+     * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
+     * so without this the work would continue with no indication until the completion toast fired.
+     */
+    readonly $actionExecution = this.#store.actionExecution;
+
+    /**
+     * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
+     * `string[]` arguments and the item count is a number.
+     */
+    readonly $actionExecutionLabel = computed(() => {
+        const execution = this.$actionExecution();
+
+        return execution
+            ? this.#dotMessageService.get(
+                  'content-drive.action-center.applying',
+                  execution.actionName,
+                  String(execution.total)
+              )
+            : '';
+    });
+
+    /**
      * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
      * in add order). Each variable is resolved to its field metadata, so chips render only once the
      * content type's fields have loaded — which also covers URL restore.

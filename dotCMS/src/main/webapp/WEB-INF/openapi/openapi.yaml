@@ -18671,6 +18671,8 @@ paths:
           - UNARCHIVE
           - DELETE
           - DESTROY
+          - LOCK
+          - UNLOCK
       requestBody:
         content:
           application/json:
@@ -18899,6 +18901,8 @@ paths:
           - UNARCHIVE
           - DELETE
           - DESTROY
+          - LOCK
+          - UNLOCK
       requestBody:
         content:
           application/json:
@@ -19049,6 +19053,8 @@ paths:
           - UNARCHIVE
           - DELETE
           - DESTROY
+          - LOCK
+          - UNLOCK
       requestBody:
         content:
           multipart/form-data:
@@ -35964,6 +35970,8 @@ components:
           - UNARCHIVE
           - DELETE
           - DESTROY
+          - LOCK
+          - UNLOCK
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
     TabDividerField:
@@ -37011,6 +37019,8 @@ components:
           - UNARCHIVE
           - DELETE
           - DESTROY
+          - LOCK
+          - UNLOCK
         _2:
           type: string
     UniqueBySessionResume:
@@ -38938,6 +38948,8 @@ components:
           - UNARCHIVE
           - DELETE
           - DESTROY
+          - LOCK
+          - UNLOCK
       required:
       - actionId
       - systemAction

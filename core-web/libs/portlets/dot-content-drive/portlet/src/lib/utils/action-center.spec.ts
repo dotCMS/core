@@ -144,6 +144,88 @@ describe('action-center utils', () => {
             expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
         });
 
+        it('should count Lock for items that are not locked', () => {
+            const items = [
+                contentlet({ inode: 'a', locked: false }),
+                contentlet({ inode: 'b', locked: true }),
+                contentlet({ inode: 'c', locked: false })
+            ];
+
+            const lock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
+            );
+
+            expect(lock?.count).toBe(2);
+            expect(lock?.eligibleInodes).toEqual(['a', 'c']);
+        });
+
+        it('should not count archived items as lockable or unlockable', () => {
+            // Archived content is a dead end until it is unarchived: locking it has no purpose and
+            // `deleteContentlets` honours `canLock`, so a stray lock quietly makes the item
+            // undeletable by anyone but the lock holder. Unlock is covered by `locked` alone
+            // (archive refuses locked content), but excluded explicitly so the pair reads the same.
+            const items = [contentlet({ inode: 'a', archived: true, locked: false })];
+
+            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
+
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)).toBe(0);
+        });
+
+        it('should count Unlock only for locked items', () => {
+            const items = [
+                contentlet({ inode: 'a', locked: true }),
+                contentlet({ inode: 'b', locked: false }),
+                contentlet({ inode: 'c', locked: true })
+            ];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.count).toBe(2);
+            expect(unlock?.eligibleInodes).toEqual(['a', 'c']);
+        });
+
+        it('should warn on Unlock about locks held by other users', () => {
+            // `contentEditable` is the server's answer to "is this locked by *me*?" — false on a
+            // locked row means someone else holds it, and only an administrator can release it.
+            const items = [
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false }),
+                contentlet({ inode: 'also-theirs', locked: true, contentEditable: false })
+            ];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            // Every locked item is still fired — the server is the authority on who may unlock.
+            expect(unlock?.count).toBe(3);
+            expect(unlock?.warningCount).toBe(2);
+            expect(unlock?.warningHint).toBeTruthy();
+        });
+
+        it('should not warn on Unlock when every lock is the current user’s own', () => {
+            const items = [contentlet({ inode: 'mine', locked: true, contentEditable: true })];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.warningCount).toBe(0);
+        });
+
+        it('should not warn on actions other than Unlock', () => {
+            const items = [contentlet({ inode: 'a', locked: true, contentEditable: false })];
+
+            for (const action of getQuickActions(items)) {
+                if (action.id !== WORKFLOW_ACTION_ID.UNLOCK) {
+                    expect(action.warningCount).toBe(0);
+                }
+            }
+        });
+
         it('should still list actions that apply to nothing, with a zero count', () => {
             // Nothing archived, so Delete applies to no item — but stays in the list so the dialog
             // can render it as non-selectable rather than dropping the row.
@@ -156,6 +238,8 @@ describe('action-center utils', () => {
 
         it('should keep a fixed display order regardless of the selection', () => {
             const expected = [
+                WORKFLOW_ACTION_ID.LOCK,
+                WORKFLOW_ACTION_ID.UNLOCK,
                 WORKFLOW_ACTION_ID.PUBLISH,
                 WORKFLOW_ACTION_ID.UNPUBLISH,
                 WORKFLOW_ACTION_ID.ARCHIVE,
@@ -171,6 +255,9 @@ describe('action-center utils', () => {
                 getQuickActions([contentlet({ inode: 'b', archived: true, live: true })]).map(
                     (a) => a.id
                 )
+            ).toEqual(expected);
+            expect(
+                getQuickActions([contentlet({ inode: 'c', locked: true })]).map((a) => a.id)
             ).toEqual(expected);
         });
 
