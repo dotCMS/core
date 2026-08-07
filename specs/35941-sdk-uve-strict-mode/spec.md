@@ -80,7 +80,8 @@ The same mechanism was **proven empirically** on the sibling project `sdk-types`
 
 - `project.json` has `"tags": []` — **no `skip:build` / `skip:lint` / `skip:test`.**
 - CI runs `nx run-many -t build --exclude=tag:skip:build` (`build-test` in `core-web/pom.xml`), so `sdk-uve` is built on every PR.
-- `@dotcms/uve` is a **published npm package** (v1.1.1) and matches the `sdk-*` glob in the SDK release pipeline, so the same type-checked build gates every release.
+- `@dotcms/uve` is a **published npm package** and matches the `sdk-*` glob in the SDK release pipeline, so the same type-checked build gates every release.
+  > The local `package.json` says `1.1.1`, but that is **not** what ships. The release action rewrites the version to the dotCMS release tag (ADR-0019 date lockstep); npm `latest` is **26.8.7-1** across 197 published versions.
 
 There are in fact **three** type-checking paths, two of which run in CI:
 
@@ -120,6 +121,17 @@ Nothing to widen, so no blast radius to manage.
 `sdk-uve` is the second project in the rollout that was already finished before the epic started.
 
 ---
+
+## Adjacent observation — committed artifact that CI never regenerates
+
+The `build:js` target emits a file that is **committed to git**, but the target is not invoked by `core-web/pom.xml` or any workflow:
+
+| Project | Committed artifact |
+|---|---|
+| `sdk-client` | `dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js` |
+| `sdk-uve` | `dotCMS/src/main/webapp/ext/uve/dot-uve.js` |
+
+If the source changes and nobody runs `build:js` by hand, the committed file silently drifts out of sync with it, and nothing in CI notices. Out of scope for the strict-mode rollout, but worth a ticket.
 
 ## Commands
 

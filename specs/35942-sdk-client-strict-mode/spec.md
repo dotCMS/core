@@ -67,16 +67,17 @@ Targets, all green on a fresh no-cache run:
 
 - `project.json` has `"tags": []` — no `skip:build` / `skip:lint` / `skip:test`.
 - CI runs `nx run-many -t build --exclude=tag:skip:build` via the `build-test` execution in `core-web/pom.xml`, which has **no `<skip>` element** — `-DskipTests` and `-Pvalidate` cannot disable it.
-- `@dotcms/client` **v1.2.0** is published to npm and matches the `sdk-*` glob in the SDK release pipeline (`cicd_release-sdk.yml` → `deploy-javascript-sdk`), so the same type-checked build gates every release.
+- `@dotcms/client` is published to npm and matches the `sdk-*` glob in the SDK release pipeline (`cicd_release-sdk.yml` → `deploy-javascript-sdk`), so the same type-checked build gates every release.
+  > The local `package.json` says `1.2.0`, but that is **not** what ships. The release action rewrites the version to the dotCMS release tag (ADR-0019 date lockstep); npm `latest` is **26.8.7-1** across 262 published versions. Do not quote the local version as the published one.
 
 ### 6. Consumers
 
-4 dependents; **3 already strict**:
+6 dependents; **5 already strict**:
 
 | Consumer | Strict? |
 |---|---|
-| `sdk-angular`, `sdk-react`, `sdk-vue` | **Yes** |
-| `portlets-edit-ema-portlet` | Inherits `false` |
+| `sdk-angular`, `sdk-react`, `sdk-vue`, `sdk-experiments`, `sdk-create-app` | **Yes** |
+| `portlets-edit-ema-portlet` | Inherits `false` — and it imports from `@dotcms/client/internal` (`dot-page-api.service.ts:8`) |
 
 Nothing is being widened, so there is no blast radius.
 
@@ -109,6 +110,17 @@ Emerging pattern worth noting for the remaining 35: **every `libs/sdk/*` project
 
 ---
 
+## Adjacent observation — committed artifact that CI never regenerates
+
+The `build:js` target emits a file that is **committed to git**, but the target is not invoked by `core-web/pom.xml` or any workflow:
+
+| Project | Committed artifact |
+|---|---|
+| `sdk-client` | `dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js` |
+| `sdk-uve` | `dotCMS/src/main/webapp/ext/uve/dot-uve.js` |
+
+If the source changes and nobody runs `build:js` by hand, the committed file silently drifts out of sync with it, and nothing in CI notices. Out of scope for the strict-mode rollout, but worth a ticket.
+
 ## Commands
 
 ```bash
@@ -130,7 +142,7 @@ No new tests. `sdk-client` has 15 spec files and its `test` target runs in CI wi
 
 **Always:** back the "already done" verdict with reproducible commands in the issue comment.
 
-**Ask first:** any change to `libs/sdk/client` source — published package, 3 strict consumers, and nothing needs changing.
+**Ask first:** any change to `libs/sdk/client` source — published package, 5 strict consumers, and nothing needs changing.
 
 **Never:** re-add flags that are already there, or make a cosmetic edit purely to produce a diff.
 
