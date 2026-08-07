@@ -4676,9 +4676,13 @@ paths:
       - Cache Management
   /v1/categories:
     delete:
-      description: Deletes one or more categories and all their descendants at every
-        depth. Accepts a JSON array of category inodes. Inodes that could not be deleted
-        are reported in the `fails` list of the result.
+      description: "Deletes one or more categories and all their descendants at every\
+        \ depth. EDIT permission is validated on each selected category and every\
+        \ descendant before anything is deleted; a category that fails validation\
+        \ is skipped whole. Accepts a JSON array of category inodes. Inodes that could\
+        \ not be deleted are reported in the `fails` list of the result with the failure\
+        \ reason (category does not exist, insufficient permissions, or a permission-protected\
+        \ descendant)."
       operationId: deleteCategories
       requestBody:
         content:

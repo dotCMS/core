@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
@@ -1843,7 +1844,7 @@ public class CategoryAPITest extends IntegrationTestBase {
             }
         }
 
-        final HashMap<String, Category> unableToDelete = categoryAPI
+        final Map<String, String> unableToDelete = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode()), user, false);
 
         assertTrue("No failures expected", unableToDelete.isEmpty());
@@ -1865,7 +1866,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category grandchild = createCategory("grandchild", child);
         final Category greatGrandchild = createCategory("greatgrandchild", grandchild);
 
-        final HashMap<String, Category> unableToDelete = categoryAPI
+        final Map<String, String> unableToDelete = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode()), user, false);
 
         assertTrue("No failures expected", unableToDelete.isEmpty());
@@ -1901,7 +1902,7 @@ public class CategoryAPITest extends IntegrationTestBase {
                     APILocator.getPermissionAPI().getPermissions(contentlet, false, true), user,
                     false);
 
-            final HashMap<String, Category> unableToDelete = categoryAPI
+            final Map<String, String> unableToDelete = categoryAPI
                     .deleteCategoryAndChildren(list(root.getInode()), user, false);
 
             assertTrue("Deleting an in-use category must succeed", unableToDelete.isEmpty());
@@ -1937,12 +1938,12 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category child = createCategory("child", root);
         final String missingInode = "nonexistent-" + System.currentTimeMillis();
 
-        final HashMap<String, Category> unableToDelete = categoryAPI
+        final Map<String, String> unableToDelete = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode(), missingInode), user, false);
 
         assertEquals(1, unableToDelete.size());
-        assertTrue("The missing inode must be reported back",
-                unableToDelete.containsKey(missingInode));
+        assertEquals("The missing inode must be reported back with the not-found reason",
+                CategoryAPI.DELETE_FAIL_REASON_NOT_FOUND, unableToDelete.get(missingInode));
         assertSubtreeFullyRemoved(list(root, child));
     }
 
@@ -1961,7 +1962,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category child = createCategory("child", root);
         final Category grandchild = createCategory("grandchild", child);
 
-        final HashMap<String, Category> unableToDelete = categoryAPI
+        final Map<String, String> unableToDelete = categoryAPI
                 .deleteCategoryAndChildren(list(root.getInode(), grandchild.getInode()), user,
                         false);
 
@@ -1974,21 +1975,77 @@ public class CategoryAPITest extends IntegrationTestBase {
      * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
      * Given Scenario: A limited user without EDIT permission on the selected category tries to
      * delete it
-     * ExpectedResult: DotSecurityException is thrown and nothing is deleted
+     * ExpectedResult: The category is reported back with the no-permission reason and nothing
+     * is deleted; no exception is thrown so the rest of a batch can still be processed
      */
     @Test
-    public void test_deleteCategoryAndChildren_asLimitedUserWithoutEditPermission_throwsAndDeletesNothing()
-            throws DotDataException {
+    public void test_deleteCategoryAndChildren_asLimitedUserWithoutEditPermission_reportsFailureAndDeletesNothing()
+            throws DotDataException, DotSecurityException {
 
         final Category root = createCategory("root", null);
         final Category child = createCategory("child", root);
         final User limitedUser = new UserDataGen().nextPersisted();
 
-        assertThrows(DotSecurityException.class, () -> categoryAPI
-                .deleteCategoryAndChildren(list(root.getInode()), limitedUser, false));
+        final Map<String, String> unableToDelete = categoryAPI
+                .deleteCategoryAndChildren(list(root.getInode()), limitedUser, false);
 
+        assertEquals(1, unableToDelete.size());
+        assertEquals("The root must be reported back with the no-permission reason",
+                String.format(CategoryAPI.DELETE_FAIL_REASON_NO_PERMISSION,
+                        root.getCategoryName()),
+                unableToDelete.get(root.getInode()));
         assertEquals("Root category must survive", 1, dbCategoryCount(root.getInode()));
         assertEquals("Child category must survive", 1, dbCategoryCount(child.getInode()));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A limited user with inherited EDIT over categories deletes two trees; one
+     * tree contains a grandchild protected by an individual permission override that excludes
+     * the user
+     * ExpectedResult: The protected tree is skipped whole (pre-flight, nothing in it deleted)
+     * and reported with the protected-descendant reason; the other tree is fully deleted
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_protectedDescendant_skipsThatTreeAndContinues()
+            throws DotDataException, DotSecurityException {
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final User otherUser = new UserDataGen().nextPersisted();
+
+        // limitedUser gets EDIT over all categories via host-level inheritable permission
+        final Permission inheritable = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(inheritable, APILocator.systemHost(), user, false);
+
+        final Category protectedRoot = createCategory("root", null);
+        final Category protectedChild = createCategory("child", protectedRoot);
+        final Category protectedGrandchild = createCategory("grandchild", protectedChild);
+        final Category deletableRoot = createCategory("root", null);
+        final Category deletableChild = createCategory("child", deletableRoot);
+
+        // individual override on the grandchild that excludes limitedUser
+        final Permission override = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                protectedGrandchild.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(otherUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(override, protectedGrandchild, user, false);
+
+        final Map<String, String> unableToDelete = categoryAPI.deleteCategoryAndChildren(
+                list(protectedRoot.getInode(), deletableRoot.getInode()), limitedUser, false);
+
+        assertEquals(1, unableToDelete.size());
+        assertEquals("The protected tree's root must be reported with the descendant reason",
+                String.format(CategoryAPI.DELETE_FAIL_REASON_PROTECTED_DESCENDANT,
+                        protectedGrandchild.getCategoryName()),
+                unableToDelete.get(protectedRoot.getInode()));
+        assertEquals("Protected root must survive", 1, dbCategoryCount(protectedRoot.getInode()));
+        assertEquals("Protected child must survive", 1, dbCategoryCount(protectedChild.getInode()));
+        assertEquals("Protected grandchild must survive", 1,
+                dbCategoryCount(protectedGrandchild.getInode()));
+        assertSubtreeFullyRemoved(list(deletableRoot, deletableChild));
     }
 
     private Category createCategory(final String prefix, final Category parent) {

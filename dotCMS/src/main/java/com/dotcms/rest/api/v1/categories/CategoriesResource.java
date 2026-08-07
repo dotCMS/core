@@ -678,8 +678,11 @@ public class CategoriesResource {
             operationId = "deleteCategories",
             summary = "Delete categories by inodes",
             description = "Deletes one or more categories and all their descendants at every depth. "
-                    + "Accepts a JSON array of category inodes. Inodes that could not be deleted "
-                    + "are reported in the `fails` list of the result."
+                    + "EDIT permission is validated on each selected category and every descendant "
+                    + "before anything is deleted; a category that fails validation is skipped whole. "
+                    + "Accepts a JSON array of category inodes. Inodes that could not be deleted are "
+                    + "reported in the `fails` list of the result with the failure reason (category "
+                    + "does not exist, insufficient permissions, or a permission-protected descendant)."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bulk delete result returned",
@@ -713,7 +716,7 @@ public class CategoriesResource {
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
         try {
-            final HashMap<String, Category> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(
+            final Map<String, String> undeletedCategoryList = this.categoryAPI.deleteCategoryAndChildren(
                     categoriesToDelete, user, pageMode.respectAnonPerms);
 
             deletedIds.addAll(categoriesToDelete);
@@ -723,10 +726,10 @@ public class CategoriesResource {
                     user.getPrimaryKey() + " deleted category list: [" + String.join(",",
                     deletedIds) + "]");
 
-            for (final String categoryInode : undeletedCategoryList.keySet()) {
-                Logger.error(this, "Category with Id: " + categoryInode + " could not be deleted");
-                failedToDelete.add(new FailedResultView(categoryInode,
-                        "Category does not exist"));
+            for (final Map.Entry<String, String> failed : undeletedCategoryList.entrySet()) {
+                Logger.error(this, "Category with Id: " + failed.getKey()
+                        + " could not be deleted: " + failed.getValue());
+                failedToDelete.add(new FailedResultView(failed.getKey(), failed.getValue()));
             }
         } catch (BadRequestException | ForbiddenException e) {
             throw e;

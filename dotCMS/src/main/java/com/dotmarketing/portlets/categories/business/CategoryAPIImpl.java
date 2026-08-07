@@ -709,11 +709,11 @@ public class CategoryAPIImpl implements CategoryAPI {
     }
 
 	@WrapInTransaction
-	public HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+	public Map<String, String> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		final HashMap<String, Category> categoriesUnableToDelete = new HashMap<>();
+		final Map<String, String> categoriesUnableToDelete = new HashMap<>();
 		final Set<String> deletedInodes = new HashSet<>();
 
 		for(final String parentCategoryInode : categoriesToDelete) {
@@ -727,25 +727,47 @@ public class CategoryAPIImpl implements CategoryAPI {
 				if (deletedInodes.contains(parentCategoryInode)) {
 					continue;
 				}
-				final Category notFound = new Category();
-				notFound.setInode(parentCategoryInode);
-				categoriesUnableToDelete.put(parentCategoryInode, notFound);
+				categoriesUnableToDelete.put(parentCategoryInode, DELETE_FAIL_REASON_NOT_FOUND);
 				continue;
 			}
 
 			if (!permissionAPI.doesUserHavePermission(parentCategory,
 					PermissionAPI.PERMISSION_EDIT,
 					user, respectFrontendRoles)) {
-				throw new DotSecurityException(
-						String.format("User '%s' doesn't have permission to edit Category '%s'",
-								null != user ? user.getUserId() : null,
-								parentCategory.getInode()));
+				Logger.warn(this, String.format(
+						"User '%s' doesn't have permission to delete Category '%s' (%s)",
+						null != user ? user.getUserId() : null,
+						parentCategory.getCategoryName(), parentCategoryInode));
+				categoriesUnableToDelete.put(parentCategoryInode, String.format(
+						DELETE_FAIL_REASON_NO_PERMISSION, parentCategory.getCategoryName()));
+				continue;
 			}
 
-			// EDIT on the selected category grants delete over its whole subtree:
-			// descendants inherit permissions from their parent unless individually
-			// overridden, mirroring how FolderAPIImpl.delete treats subfolders.
+			// pre-flight: EDIT must hold over the entire subtree before anything is deleted.
+			// A descendant without individual permissions resolves to its ancestors' (cached,
+			// same result as the root check); the validation only bites when a descendant
+			// carries an individual permission override.
 			final List<Category> descendants = categoryFactory.getAllChildren(parentCategory);
+			Category deniedDescendant = null;
+			for (final Category descendant : descendants) {
+				if (!permissionAPI.doesUserHavePermission(descendant,
+						PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
+					deniedDescendant = descendant;
+					break;
+				}
+			}
+			if (deniedDescendant != null) {
+				Logger.warn(this, String.format(
+						"Category '%s' (%s) not deleted: descendant Category '%s' (%s) denies EDIT to user '%s'",
+						parentCategory.getCategoryName(), parentCategoryInode,
+						deniedDescendant.getCategoryName(), deniedDescendant.getInode(),
+						null != user ? user.getUserId() : null));
+				categoriesUnableToDelete.put(parentCategoryInode, String.format(
+						DELETE_FAIL_REASON_PROTECTED_DESCENDANT,
+						deniedDescendant.getCategoryName()));
+				continue;
+			}
+
 			for (int i = descendants.size() - 1; i >= 0; i--) {
 				categoryFactory.delete(descendants.get(i));
 				deletedInodes.add(descendants.get(i).getInode());
@@ -754,10 +776,13 @@ public class CategoryAPIImpl implements CategoryAPI {
 			deletedInodes.add(parentCategory.getInode());
 
 			Logger.info(this, String.format(
-					"User '%s' deleted Category '%s' and its %d descendants: %s",
-					null != user ? user.getUserId() : null, parentCategory.getInode(),
-					descendants.size(),
-					descendants.stream().map(Category::getInode).collect(Collectors.toList())));
+					"User '%s' deleted Category '%s' (%s) and its %d descendants: %s",
+					null != user ? user.getUserId() : null, parentCategory.getCategoryName(),
+					parentCategory.getInode(), descendants.size(),
+					descendants.stream()
+							.map(descendant -> descendant.getCategoryName()
+									+ " (" + descendant.getInode() + ")")
+							.collect(Collectors.toList())));
 		}
 
 		return categoriesUnableToDelete;

@@ -12,6 +12,7 @@ import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 /**
  * 
  * This class defines the API contract of methods usable to control cms categories
@@ -394,16 +395,30 @@ public interface CategoryAPI {
 	 */
 	List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
+	 * Failure reasons reported by {@link #deleteCategoryAndChildren(List, User, boolean)}.
+	 * The {@code %s} placeholder is the name of the category that caused the failure.
+	 */
+	String DELETE_FAIL_REASON_NOT_FOUND = "Category does not exist";
+	String DELETE_FAIL_REASON_NO_PERMISSION =
+			"Insufficient permissions to delete Category '%s'";
+	String DELETE_FAIL_REASON_PROTECTED_DESCENDANT =
+			"Category '%s' in this subtree is protected by individual permissions";
+
+	/**
 	 * Deletes each of the given categories along with every descendant at every depth.
-	 * Requires EDIT permission on each selected category only; descendants are removed
-	 * without further permission checks since they inherit permissions from their parent
-	 * unless individually overridden.
+	 * For each selected category, EDIT permission is validated on the category and on every
+	 * descendant BEFORE anything is deleted. Descendants without individual permissions
+	 * inherit from their parent, so the descendant validation only differs from the root
+	 * check when a descendant carries an individual permission override.
+	 * A category that fails validation — or does not exist — is skipped whole (nothing in
+	 * its subtree is deleted) and reported in the result; the remaining categories in the
+	 * batch are still processed.
 	 *
 	 * @param categoriesToDelete inodes of the categories to delete
-	 * @return The categories that could not be deleted, keyed by inode (e.g. inodes that don't exist)
-	 * @throws DotSecurityException if the user lacks EDIT permission on any selected category
+	 * @return failures keyed by inode; the value is the failure reason (one of the
+	 *         {@code DELETE_FAIL_REASON_*} constants). Empty when everything was deleted.
 	 */
-	HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+	Map<String, String> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list all the line of parent categories of the given child category
