@@ -5,7 +5,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { FolderNamePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotFolderNamePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent } from './dot-tree-folder.component';
@@ -96,13 +96,15 @@ describe('DotTreeFolderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotTreeFolderComponent,
-        imports: [TreeModule, SkeletonModule, FolderNamePipe],
+        imports: [TreeModule, SkeletonModule, DotFolderNamePipe, DotFolderTreeComponent],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'content.drive.loading.folders.title': 'Loading folders...',
-                    'content-drive.tree.load-more': 'Load more'
+                    'content-drive.tree.load-more': 'Load more',
+                    'dot.file.field.host.folder.action.load.more': 'Load more',
+                    'content-drive.all-folder.label': 'All folders'
                 })
             }
         ],
@@ -117,7 +119,6 @@ describe('DotTreeFolderComponent', () => {
         spectator.fixture.componentRef.setInput('folders', mockFolders);
         spectator.fixture.componentRef.setInput('loading', false);
         spectator.fixture.componentRef.setInput('selectedNode', mockSelectedNode);
-        spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
 
         spectator.detectChanges();
     });
@@ -130,8 +131,7 @@ describe('DotTreeFolderComponent', () => {
         it('should have the correct inputs', () => {
             expect(component.$folders()).toEqual(mockFolders);
             expect(component.$loading()).toBe(false);
-            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
-            expect(component.$showFolderIconOnFirstOnly()).toBe(false);
+            expect(component.$selectedNode()).toEqual(mockSelectedNode);
         });
     });
 
@@ -158,55 +158,12 @@ describe('DotTreeFolderComponent', () => {
             expect(treeComponent.loadingMode).toBe('icon');
         });
 
-        it('should pass selectedNode to p-tree selection property', () => {
-            // Verify the component's signal has the correct value
-            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
+        it('should pass selectedNode to the wrapper input', () => {
+            expect(component.$selectedNode()).toEqual(mockSelectedNode);
         });
 
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
-        });
-
-        it('should have correct class when showFolderIconOnFirstOnly is false', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('folder-all')).toBe(true);
-        });
-
-        it('should have correct class when showFolderIconOnFirstOnly is true', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-        });
-    });
-
-    describe('showFolderIconOnFirstOnly Input', () => {
-        it('should compute treeStyleClasses correctly when showFolderIconOnFirstOnly is false', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            expect(component.treeStyleClasses()).toBe('w-full h-full folder-all');
-        });
-
-        it('should compute treeStyleClasses correctly when showFolderIconOnFirstOnly is true', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            expect(component.treeStyleClasses()).toBe('w-full h-full first-only');
-        });
-
-        it('should update p-tree class when showFolderIconOnFirstOnly changes', () => {
-            const treeElement = spectator.query('p-tree');
-
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-            expect(treeElement.classList.contains('folder-all')).toBe(false);
-
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            expect(treeElement.classList.contains('folder-all')).toBe(true);
-            expect(treeElement.classList.contains('first-only')).toBe(false);
         });
     });
 
@@ -221,13 +178,11 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('selectedNode', newSelectedNode);
             spectator.detectChanges();
 
-            // Verify the component's signal has the transformed value (array)
-            expect(component.$selectedNode()).toEqual([newSelectedNode]);
+            expect(component.$selectedNode()).toEqual(newSelectedNode);
         });
 
         it('should update component signal when selectedNode changes', () => {
-            // Initial value should be transformed to array
-            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
+            expect(component.$selectedNode()).toEqual(mockSelectedNode);
 
             const newSelectedNode: TreeNode = {
                 key: '1',
@@ -237,7 +192,7 @@ describe('DotTreeFolderComponent', () => {
 
             spectator.fixture.componentRef.setInput('selectedNode', newSelectedNode);
             spectator.detectChanges();
-            expect(component.$selectedNode()).toEqual([newSelectedNode]);
+            expect(component.$selectedNode()).toEqual(newSelectedNode);
         });
     });
 
@@ -313,13 +268,14 @@ describe('DotTreeFolderComponent', () => {
             expect(onNodeCollapseSpy).toHaveBeenCalledWith(mockCollapseEvent);
         });
 
-        it('should render a "Load more" button for a load-more node and emit loadMore on click without selecting', () => {
+        it('should render a "Load more" button with plus icon and emit loadMore on click without selecting', () => {
             const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
             const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
 
             const loadMoreNode: TreeNode = {
                 key: 'load-more:/application/',
-                label: 'content-drive.tree.load-more',
+                label: '',
+                type: 'load-more',
                 data: {
                     type: 'load-more',
                     path: '/application/',
@@ -337,6 +293,8 @@ describe('DotTreeFolderComponent', () => {
 
             const button = spectator.query('[data-testid="tree-load-more"]');
             expect(button).toBeTruthy();
+            expect(button?.querySelector('.pi-plus-circle')).toBeTruthy();
+            expect(button?.textContent).not.toContain('(40)');
 
             spectator.click(button as HTMLElement);
 

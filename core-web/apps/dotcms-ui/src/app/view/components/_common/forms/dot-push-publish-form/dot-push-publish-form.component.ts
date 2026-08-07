@@ -9,7 +9,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     FormsModule,
@@ -49,6 +50,7 @@ import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-sele
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
     styleUrls: ['./dot-push-publish-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         AutoFocusModule,
         FormsModule,

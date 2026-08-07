@@ -217,3 +217,11 @@ __pycache__/
 dist/
 *.egg
 .venv/
+
+# Spec-Kit working artifacts — process-only, kept local (see .specify/CUSTOMIZATIONS.md).
+# spec.md (and data-model.md / contracts/ when they carry verified contracts) stay tracked.
+specs/*/plan.md
+specs/*/research.md
+specs/*/tasks.md
+specs/*/quickstart.md
+specs/*/checklists/

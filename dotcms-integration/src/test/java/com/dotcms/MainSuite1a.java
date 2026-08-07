@@ -42,6 +42,16 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Data-scanning tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so anything
+        // that walks the whole dataset (executeUpgrade, findAll*) costs
+        // O(all content created so far). Scheduled late these pay for every
+        // preceding test's leftovers. Keep new full-scan tests in this block.
+        Task240306MigrateLegacyLanguageVariablesTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
+        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
+
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIntegrationTest.class,
@@ -96,7 +106,6 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleFactoryImplTest.class,
         ExperimentUrlPatternCalculatorIntegrationTest.class,
         JsEngineTest.class,
-        Task240306MigrateLegacyLanguageVariablesTest.class,
         EmailActionletTest.class,
         OpenAIGenerateImageActionletTest.class,
         RequestMatcherTest.class,
@@ -108,8 +117,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletTest.class,
         com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest.class,
         com.dotmarketing.portlets.rules.business.RulesCacheFTest.class,
-        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
-        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
         com.dotmarketing.portlets.folders.business.FolderAPITest.class,
         com.dotmarketing.portlets.containers.business.ContainerAPITest.class,
         com.dotmarketing.portlets.containers.business.FileAssetContainerUtilTest.class,

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -7,6 +7,7 @@ import { DynamicDialogProductsComponent } from './DynamicDialogProducts.componen
 import { Product } from './Product.interface';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-p-dialog-button',
     providers: [DialogService, MessageService],
     template: `

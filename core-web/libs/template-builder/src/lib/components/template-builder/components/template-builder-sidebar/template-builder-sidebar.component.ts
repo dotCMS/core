@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectModule } from 'primeng/select';
@@ -13,6 +13,7 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
     selector: 'dotcms-template-builder-sidebar',
     imports: [SelectModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipe],
     templateUrl: './template-builder-sidebar.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./template-builder-sidebar.component.css']
 })
 export class TemplateBuilderSidebarComponent {

@@ -21,14 +21,19 @@ import {
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    createLoadMoreTreeNode,
     CustomTreeNode,
+    DOT_FOLDER_TREE_PAGE_SIZE,
+    isTreeNodeContentData,
+    LOAD_MORE_NODE_TYPE,
     TreeNodeItem,
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
 import { DotBrowsingService, normalizeHostFolderBrowsePath, TREE_ROOT_NODE_KEY } from '@dotcms/ui';
 
 export const SITE_PAGE_LIMIT = 40;
-export const FOLDER_PAGE_LIMIT = 40;
+/** Re-export of the shared folder-tree page size (same limit as Content Drive). */
+export const FOLDER_PAGE_LIMIT = DOT_FOLDER_TREE_PAGE_SIZE;
 export const MIN_SEARCH_LENGTH = 2;
 export const SITE_SEARCH_THRESHOLD = 5;
 /** Re-export of TREE_ROOT_NODE_KEY for existing store consumers/tests. */
@@ -37,26 +42,15 @@ export const SEARCH_LOAD_MORE_KEY = 'search';
 
 export const SYSTEM_HOST_NAME = 'System Host';
 
-/**
- * Marks a synthetic tree node used as an in-tree "Load N more" trigger, since `p-tree`
- * has no per-node footer/slot. Injected as the last child of any level that still has
- * more pages (`nodePagination[key].hasMore`).
- */
-export const LOAD_MORE_NODE_TYPE = 'load-more';
+/** Re-export for existing store consumers/tests. */
+export { LOAD_MORE_NODE_TYPE };
 
 /**
  * Creates the synthetic "Load more" node appended as the last child of a level.
- * `selectable: false` makes `p-tree` skip selection on click, and `leaf: true` keeps
- * it from rendering a toggler. The key is namespaced per level to avoid collisions.
+ * Delegates to {@link createLoadMoreTreeNode} so `node.type` and `node.data.type` stay in sync.
  */
 function createLoadMoreNode(levelKey: string): TreeNodeItem {
-    return {
-        key: `load-more:${levelKey}`,
-        label: '',
-        type: LOAD_MORE_NODE_TYPE,
-        selectable: false,
-        leaf: true
-    } as TreeNodeItem;
+    return createLoadMoreTreeNode({ levelKey });
 }
 
 /**
@@ -320,7 +314,7 @@ export const HostFolderFiledStore = signalStore(
             const fullPath = computed(() => {
                 const node = confirmedNode();
 
-                if (!node?.data) {
+                if (!node?.data || !isTreeNodeContentData(node.data)) {
                     return '';
                 }
 
@@ -337,7 +331,7 @@ export const HostFolderFiledStore = signalStore(
             const displayPath = computed(() => {
                 const node = confirmedNode();
 
-                if (!node?.data) {
+                if (!node?.data || !isTreeNodeContentData(node.data)) {
                     return '';
                 }
 
@@ -396,11 +390,11 @@ export const HostFolderFiledStore = signalStore(
                 pathToSave: computed(() => {
                     const node = confirmedNode();
 
-                    if (node?.data) {
-                        const { data } = node;
-                        const newHostname = data.hostname.replace('//', '');
+                    if (node?.data && isTreeNodeContentData(node.data)) {
+                        const { hostname, path } = node.data;
+                        const newHostname = hostname.replace('//', '');
 
-                        return `${newHostname}:${data.path ? data.path : '/'}`;
+                        return `${newHostname}:${path ? path : '/'}`;
                     }
 
                     return null;
@@ -1314,7 +1308,7 @@ export const HostFolderFiledStore = signalStore(
                 }
 
                 const site = store.selectedSite();
-                if (!site) {
+                if (!site?.data || !isTreeNodeContentData(node.data)) {
                     return;
                 }
 
@@ -1333,17 +1327,18 @@ export const HostFolderFiledStore = signalStore(
              */
             loadMore: (node: TreeNodeItem | null) => {
                 const site = store.selectedSite();
-                if (!site) {
+                if (!site?.data) {
                     return;
                 }
 
                 const key = node ? node.key : ROOT_NODE_KEY;
                 const pagination = store.nodePagination()[key];
                 const nextPage = (pagination?.page ?? 1) + 1;
+                const path = node?.data && isTreeNodeContentData(node.data) ? node.data.path : '/';
 
                 store.loadFolders({
                     key,
-                    path: node ? node.data.path : '/',
+                    path,
                     siteId: site.data.id,
                     page: nextPage,
                     append: true,
