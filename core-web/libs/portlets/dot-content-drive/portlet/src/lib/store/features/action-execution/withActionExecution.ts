@@ -1,6 +1,7 @@
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { EMPTY } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
@@ -70,6 +71,28 @@ export function withActionExecution() {
                     });
                 };
 
+                /**
+                 * Abandons a run whose outcome cannot be known, routing it through the same error
+                 * path as a transport failure.
+                 *
+                 * The multi-contentlet endpoint streams `results` and then `summary`, and the writer
+                 * swallows an `IOException` mid-stream — so a 200 whose body has no `summary` is
+                 * reachable. There is no honest count to report in that case: substituting
+                 * `inodes.length` claims every item succeeded, and substituting `0` claims a total
+                 * failure. Both invent a number the server never sent, and the first does it in the
+                 * reassuring direction. Publishing no result at all leaves the user with an error
+                 * rather than a fabricated success.
+                 */
+                const onUnknownOutcome = (): void => {
+                    patchState(store, { actionExecution: undefined });
+                    httpErrorManagerService.handle(
+                        new HttpErrorResponse({
+                            status: 500,
+                            statusText: 'The action response carried no summary'
+                        })
+                    );
+                };
+
                 return {
                     /**
                      * Fires a quick action (publish, unpublish, archive, …) over the given inodes.
@@ -103,14 +126,22 @@ export function withActionExecution() {
                                     return EMPTY;
                                 })
                             )
-                            .subscribe((result) =>
+                            .subscribe((result) => {
+                                const summary = result?.summary;
+
+                                if (!summary) {
+                                    onUnknownOutcome();
+
+                                    return;
+                                }
+
                                 onSettled({
                                     actionName,
-                                    successCount: result?.summary?.successCount ?? inodes.length,
+                                    successCount: summary.successCount,
                                     skippedCount: 0,
-                                    failCount: result?.summary?.failCount ?? 0
-                                })
-                            );
+                                    failCount: summary.failCount
+                                });
+                            });
                     },
 
                     /**

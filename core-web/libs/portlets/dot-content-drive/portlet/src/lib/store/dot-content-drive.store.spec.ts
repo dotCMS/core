@@ -13,7 +13,12 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveItem,
+    DotContentDriveSearchResponse,
+    DotFireDefaultActionResult,
+    DotSite
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
 
@@ -1240,6 +1245,42 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.actionExecution()).toBeUndefined();
             expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not report a success when the response arrives without a summary', () => {
+            // The endpoint streams `results` then `summary`, and the writer swallows an IOException
+            // mid-stream — so a 200 with no summary is reachable. Counting the inodes sent would
+            // report every one of them as succeeded, which is the most reassuring possible message
+            // for the case where nothing is known to have succeeded.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({ results: [] } as unknown as DotFireDefaultActionResult)
+            );
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+        });
+
+        it('should still report a zeroed summary the endpoint actually sent', () => {
+            // A real `successCount: 0` is a fact, not a missing field, so it goes to the toast.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 0, failCount: 2, time: 1 }
+                })
+            );
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Publish',
+                successCount: 0,
+                skippedCount: 0,
+                failCount: 2
+            });
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
         });
     });
 

@@ -119,6 +119,19 @@ const QUICK_ACTIONS: {
         // grid has no idea whether the current user holds that role. So these items are counted,
         // fired, and reported on rather than filtered out: `contentEditable` is false on a locked
         // row the current user does not hold.
+        //
+        // Two known false positives, both of which over-warn rather than under-warn, and which is
+        // why the hint says "may require" instead of predicting failure:
+        //
+        // 1. **Administrators.** `contentEditable` comes from `BrowserAPIImpl.WfData`, which is
+        //    `lockedBy == currentUser` and never consults the role. `canLock` returns true for a
+        //    CMS Admin before it ever looks at the lock owner, so an admin is warned about rows
+        //    they will unlock successfully.
+        // 2. **Content-type-level EDIT.** `contentEditable` checks WRITE on the contentlet, while
+        //    `canLock` accepts EDIT on either the contentlet or its content type.
+        //
+        // Removing either means plumbing the caller's admin flag (`DotCurrentUser.admin`) down to
+        // here, which is also what the preview needs to mark the offending rows.
         warnWhen: (item) => !item.contentEditable,
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
     },
