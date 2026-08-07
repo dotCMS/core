@@ -142,6 +142,31 @@ public class HtmlMinifierTest {
     }
 
     /**
+     * Given: a removed comment sitting between content that whitespace separates.
+     * Expected: the separating space survives. A comment is transparent to whitespace collapsing, so
+     * what decides significance is the content on the far side of it, not the comment itself.
+     * <p>
+     * Getting this wrong joins words together: {@code <span>a</span> <!--c--><span>b</span>} renders
+     * as "a b" but would collapse to "ab".
+     */
+    @Test
+    public void test_minify_keeps_whitespace_across_a_removed_comment() {
+        assertEquals("<span>a</span> <span>b</span>",
+                HtmlMinifier.minify("<span>a</span> <!--c--><span>b</span>"));
+        assertEquals("<p>a <b>b</b></p>", HtmlMinifier.minify("<p>a <!--c--><b>b</b></p>"));
+        assertEquals("<span>a</span> <span>b</span>",
+                HtmlMinifier.minify("<span>a</span> <!--c--><!--d--><span>b</span>"));
+        // Whitespace on both sides of the comment must still collapse to a single space.
+        assertEquals("<span>a</span> <span>b</span>",
+                HtmlMinifier.minify("<span>a</span> <!--c--> <span>b</span>"));
+        // A comment before a block element keeps nothing alive: the block is what matters.
+        assertEquals("<div>a</div><div>b</div>",
+                HtmlMinifier.minify("<div>a</div> <!--c--><div>b</div>"));
+        assertEquals("<span>a</span><div>b</div>",
+                HtmlMinifier.minify("<span>a</span> <!--c--><div>b</div>"));
+    }
+
+    /**
      * Given: malformed markup with an unclosed preserved tag.
      * Expected: the content still round trips instead of being truncated or throwing.
      */

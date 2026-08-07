@@ -125,6 +125,22 @@ public class HtmlMinifierIntegrityTest {
             {"unclosed script", "<div>\n<script>\nvar a=1\nvar b=2\n"},
             {"style whose body contains a brace and a quote",
                     "<style>\n.a[data-x=\"1\"] { content: \"}\" }\n</style>"},
+
+            // A removed comment is transparent to whitespace collapsing: what decides whether the
+            // space before it survives is the content on the far side, not the comment. Getting
+            // this wrong joins words, which the visible-text comparison catches.
+            {"comment between inline elements, space before it only",
+                    "<span>a</span> <!--c--><span>b</span>"},
+            {"comment between text and inline markup",
+                    "<p>a <!--c--><b>b</b></p>"},
+            {"consecutive comments between inline elements",
+                    "<span>a</span> <!--c--><!--d--><span>b</span>"},
+            {"comment with whitespace on both sides",
+                    "<span>a</span> <!--c--> <span>b</span>"},
+            {"comment before a block element",
+                    "<span>a</span> <!--c--><div>b</div>"},
+            {"unterminated comment between inline elements",
+                    "<span>a</span> <!--c<span>b</span>"},
     };
 
     @BeforeClass

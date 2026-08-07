@@ -241,27 +241,45 @@ public class HtmlMinifier {
     /**
      * Decides whether whitespace is significant given what follows it. It is significant when the
      * following content is text, or the opening/closing tag of an inline element.
+     * <p>
+     * A comment that is about to be removed is <b>transparent</b>: it cannot keep a space alive on
+     * its own, but neither can it kill one, so the decision is made on whatever follows it. Judging
+     * the comment itself would drop the space in {@code <span>a</span> <!--c--><span>b</span>} and
+     * render "ab" where the source renders "a b".
      *
      * @return {@code true} when a separating space must be kept
      */
     private static boolean isSignificantAfter(final String html, final int index) {
 
-        if (index >= html.length()) {
-            // Trailing whitespace at end of document.
-            return false;
+        // Looping rather than recursing, so a run of consecutive comments cannot grow the stack.
+        int cursor = index;
+        while (cursor < html.length()) {
+
+            if (!isMarkupStart(html, cursor)) {
+                // Followed by text content, which includes a bare '<' such as in `a < b`.
+                return true;
+            }
+
+            if (!html.startsWith("<!--", cursor)) {
+                return isInlineTag(tagNameAt(html, cursor));
+            }
+
+            if (html.startsWith("<!--[if", cursor)) {
+                // Conditional comments are kept, so they count as markup in their own right.
+                return true;
+            }
+
+            final int commentEnd = html.indexOf("-->", cursor);
+            if (commentEnd < 0) {
+                // An unterminated comment runs to the end of the document, taking the space with it.
+                return false;
+            }
+
+            cursor = commentEnd + 3;
         }
 
-        if (!isMarkupStart(html, index)) {
-            // Followed by text content, which includes a bare '<' such as in `a < b`.
-            return true;
-        }
-
-        if (html.startsWith("<!--", index)) {
-            // A comment is about to be removed; it must not keep the space alive on its own.
-            return html.startsWith("<!--[if", index);
-        }
-
-        return isInlineTag(tagNameAt(html, index));
+        // Trailing whitespace at end of document.
+        return false;
     }
 
     /**
