@@ -14,8 +14,10 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotLanguage
+    DotLanguage,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 
 import { RelationshipFieldService } from './relationship-field.service';
 
@@ -72,6 +74,9 @@ const initialState: RelationshipFieldState = {
  */
 export const RelationshipFieldStore = signalStore(
     withState(initialState),
+    // Side-panel feature flag, batch-fetched once on init and exposed as `flags()`. The component
+    // reads it when creating related content to choose the slide-in panel vs. the centered dialog.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((state) => ({
         /**
          * Computes the total number of pages based on the number of items and the rows per page.

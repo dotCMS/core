@@ -3,6 +3,7 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    ComponentRef,
     computed,
     DestroyRef,
     forwardRef,
@@ -10,7 +11,8 @@ import {
     Injector,
     input,
     OnInit,
-    untracked
+    untracked,
+    ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, NgControl, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -25,7 +27,12 @@ import { TagModule } from 'primeng/tag';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotLanguage,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import {
     DotContentletStatusBadgeComponent,
     DotContentThumbnailComponent,
@@ -43,6 +50,11 @@ import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
+
+// Type-only import: the runtime class is loaded lazily via dynamic import() to avoid a static
+// cycle (side panel → layout → form → field → this component). `import type` is erased at compile
+// time, so it does not create that cycle.
+import type { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 
 @Component({
     selector: 'dot-relationship-field',
@@ -129,12 +141,18 @@ export class DotRelationshipFieldComponent
      */
     readonly #dialogService = inject(DialogService);
 
+    /** Used to create the Edit Content side panel imperatively (see {@link showCreateNewContentDialog}). */
+    readonly #viewContainerRef = inject(ViewContainerRef);
+
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /** Reference to the side panel component when open (side-panel mode), or `null`. */
+    #sidePanelRef: ComponentRef<DotEditContentSidePanelComponent> | null = null;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -411,7 +429,10 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Opens the new content dialog for creating content using the Angular editor
+     * Opens the new-content editor for creating content and relating it. When the side panel
+     * feature flag is on it opens the right slide-in panel; otherwise the centered dialog (the
+     * previous behavior). Both share the same {@link EditContentDialogData}: `onContentSaved`
+     * adds the created contentlet to this relationship.
      */
     async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
@@ -419,12 +440,13 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        const { DotEditContentDialogComponent } =
-            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
-
         const dialogData: EditContentDialogData = {
             mode: 'new',
             contentTypeId: contentType.id,
+            title: this.#dotMessageService.get(
+                'contenttypes.content.create.contenttype',
+                contentType.name
+            ),
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
@@ -436,6 +458,23 @@ export class DotRelationshipFieldComponent
                 this.store.setData([...currentData, contentlet]);
             }
         };
+
+        // Read the flag from the store's `withFlags` slice (batch-fetched once on store init).
+        // Read at click time, not construction: this component is created lazily and deep in the
+        // editor, but the store's init fetch has run long before the user clicks, so `flags()` is
+        // resolved by now. If it somehow isn't (empty slice ⇒ `undefined`), fall back to the dialog
+        // (previous behavior) — the safe default.
+        const sidePanelEnabled =
+            this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
+
+        if (sidePanelEnabled) {
+            await this.#openCreateContentSidePanel(dialogData);
+
+            return;
+        }
+
+        const { DotEditContentDialogComponent } =
+            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
@@ -452,8 +491,34 @@ export class DotRelationshipFieldComponent
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
             data: dialogData,
-            header: `Create ${contentType.name}`
+            header: dialogData.title
         });
+    }
+
+    /**
+     * Creates the Edit Content side panel imperatively. The component is loaded via dynamic
+     * `import()` (not a static template import) to avoid a module cycle — see the `import type`
+     * note at the top of this file. The panel fires `dialogData.onContentSaved` (last save) and
+     * `dialogData.onCancel` on close; `(closed)` tears the component down.
+     */
+    async #openCreateContentSidePanel(dialogData: EditContentDialogData): Promise<void> {
+        const { DotEditContentSidePanelComponent } =
+            await import('../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component');
+
+        this.#closeSidePanel();
+        this.#sidePanelRef = this.#viewContainerRef.createComponent(
+            DotEditContentSidePanelComponent
+        );
+        this.#sidePanelRef.setInput('data', dialogData);
+        // `closed` is an OutputEmitterRef (not an Observable) — subscribe directly. The
+        // subscription is cleaned up when the panel component is destroyed.
+        this.#sidePanelRef.instance.closed.subscribe(() => this.#closeSidePanel());
+    }
+
+    /** Destroys the side panel component if open. */
+    #closeSidePanel(): void {
+        this.#sidePanelRef?.destroy();
+        this.#sidePanelRef = null;
     }
 
     /**
