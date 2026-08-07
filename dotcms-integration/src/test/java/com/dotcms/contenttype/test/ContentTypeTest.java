@@ -42,7 +42,7 @@ public class ContentTypeTest extends ContentTypeBaseTest {
                 .nextPersisted();
 
        try { type.folderPath(); } catch (Exception e) {
-           fail("This should not throw exception");
+           throw new AssertionError("This should not throw exception", e);
        }
     }
 

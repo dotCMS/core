@@ -164,7 +164,7 @@ public class ResetPasswordTokenUtilTest {
             Assert.assertTrue("token is valid 19 minutes", true);
         }
         catch(DotInvalidTokenException e) {
-            Assert.assertTrue("token should be valid for 19 minutes", false);
+            throw new AssertionError("token should be valid for 19 minutes", e);
         }
     }
 

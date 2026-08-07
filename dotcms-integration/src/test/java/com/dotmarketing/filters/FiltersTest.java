@@ -707,7 +707,7 @@ public class FiltersTest {
                     response.getRedirectLocation());
             assertEquals(301, response.getStatus());
         } catch (ServletException e) {
-            Assert.fail();
+            throw new AssertionError("Unexpected exception", e);
         }
 
         Logger.info(this.getClass(),

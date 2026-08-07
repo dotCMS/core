@@ -48,17 +48,34 @@ public class RuleBundlerTest {
     public static Object[] rules() throws Exception {
         prepare();
 
-        final Rule rule = new RuleDataGen().nextPersisted();
+        // Deliberately creates no persisted data. A @DataProvider is evaluated when
+        // the suite is CONSTRUCTED - MainBaseSuite builds every runner up front - so
+        // anything persisted here exists long before this test runs, and the test
+        // classes scheduled in between can destroy it. That is exactly how this test
+        // used to fail ("rule is null") once it was scheduled late in a suite.
+        // Fixtures are created inside the test instead; keep this method stateless.
+        return new TestCase[]{
+                new TestCase(false),
+                new TestCase(true)
+        };
+    }
+
+    /**
+     * Creates the Rule under test immediately before it is used, so the fixture
+     * cannot be invalidated by unrelated tests running earlier in the suite.
+     *
+     * @param attachedToPage whether the Rule should be bound to an HTML page
+     * @return a freshly persisted Rule
+     */
+    private Rule createRule(final boolean attachedToPage) {
+        if (!attachedToPage) {
+            return new RuleDataGen().nextPersisted();
+        }
 
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-        final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).nextPersisted();
-
-        return new TestCase[]{
-                new TestCase(rule),
-                new TestCase(ruleWithPage)
-        };
+        return new RuleDataGen().page(htmlPageAsset).nextPersisted();
     }
 
 
@@ -73,7 +90,7 @@ public class RuleBundlerTest {
     public void addRuleInBundle(final TestCase testCase)
             throws DotBundleException, IOException, DotSecurityException, DotDataException {
 
-        final Rule rule =  testCase.rule;
+        final Rule rule = createRule(testCase.attachedToPage);
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final RuleBundler bundler = new RuleBundler();
@@ -104,16 +121,24 @@ public class RuleBundlerTest {
     }
 
     private static class TestCase{
-        Rule rule;
-        String expectedFilePath;
+        final boolean attachedToPage;
+        final String expectedFilePath;
 
-        public TestCase(final Rule rule, final String expectedFilePath) {
-            this.rule = rule;
+        public TestCase(final boolean attachedToPage, final String expectedFilePath) {
+            this.attachedToPage = attachedToPage;
             this.expectedFilePath = expectedFilePath;
         }
 
-        public TestCase(final Rule rule) {
-            this(rule, "/bundlers-test/rule/rule.rule.xml");
+        public TestCase(final boolean attachedToPage) {
+            this(attachedToPage, "/bundlers-test/rule/rule.rule.xml");
+        }
+
+        // Without this the parameterised test reports as
+        // "addRuleInBundle[0: RuleBundlerTest$TestCase@5c2004ac]", which says nothing
+        // about which case failed.
+        @Override
+        public String toString() {
+            return attachedToPage ? "rule attached to a page" : "standalone rule";
         }
     }
 }

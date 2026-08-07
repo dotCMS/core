@@ -123,6 +123,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static org.awaitility.Awaitility.await;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -517,19 +520,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //------------------------------------------------------------------------
 
             //Making sure the contentlets are in the indexes
-            List<ContentletSearch> contentletSearchResults;
-            int x = 0;
-            do {
-                Thread.sleep(30000);
-                //Verify if it was added to the index
-                contentletSearchResults = contentletAPI.searchIndex(
-                        "+structureName:" + contentType.getVelocityVarName()
-                                + " +working:true +deleted:false +" + contentType
-                                .getVelocityVarName() + ".title:Test1 +languageId:1", 0, -1, null,
-                        user, true);
-                x++;
-            } while ((contentletSearchResults == null || contentletSearchResults.isEmpty())
-                    && x < 100);
+            final String indexedTitleQuery =
+                    "+structureName:" + contentType.getVelocityVarName()
+                            + " +working:true +deleted:false +" + contentType
+                            .getVelocityVarName() + ".title:Test1 +languageId:1";
+            await().atMost(30, TimeUnit.SECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
+                    .until(() -> {
+                        final List<ContentletSearch> indexed = contentletAPI.searchIndex(
+                                indexedTitleQuery, 0, -1, null, user, true);
+                        return indexed != null && !indexed.isEmpty();
+                    });
 
             //Create the csv file to import
             reader = createTempFile(textFieldVarName + ", " + siteFieldVarName + "\r\n" +
@@ -1458,8 +1459,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             APILocator.getContentletIndexAPI().addContentToIndex(savedData);
 
-            //Update ContentType
-            Thread.sleep(1000);
+            //Update ContentType - wait for the content just pushed to be searchable
+            awaitIndexed(savedData);
 
             tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
@@ -1482,7 +1483,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, false, false, false);
 
-            Thread.sleep(2000);
+            // The import runs asynchronously; wait for all three contentlets to land
+            // rather than assuming a fixed delay is long enough.
+            final String importedTypeInode = contentType.inode();
+            await().atMost(30, TimeUnit.SECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
+                    .until(() -> contentletAPI
+                            .findByStructure(importedTypeInode, user, false, 0, 0).size() == 3);
 
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
@@ -5725,7 +5732,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 c.setIndexPolicy(IndexPolicy.FORCE);
             }
             APILocator.getContentletIndexAPI().addContentToIndex(afterFirst);
-            Thread.sleep(1000);
+            awaitIndexed(afterFirst);
 
             final String secondCsv = "title,hostFolder,tags\r\n" +
                     contentTitle + "," + defaultSite.getIdentifier() + ",\""
@@ -5794,6 +5801,37 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         } catch (Exception e) {
             Logger.warn(ImportUtilTest.class, "Error cleaning up content type", e);
         }
+    }
+
+    /**
+     * Waits until every given contentlet is retrievable from the index.
+     * <p>
+     * {@code addContentToIndex} returns before Elasticsearch has refreshed, so the
+     * content is not immediately searchable. This replaces a fixed sleep: it
+     * returns as soon as the index has caught up instead of always paying the
+     * worst case, and fails with a clear timeout if it never does.
+     *
+     * @param contentlets the contentlets that were just pushed to the index
+     */
+    private void awaitIndexed(final List<Contentlet> contentlets) {
+        if (contentlets == null || contentlets.isEmpty()) {
+            return;
+        }
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final List<String> inodes = contentlets.stream().map(Contentlet::getInode)
+                .collect(Collectors.toList());
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(200, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    for (final String inode : inodes) {
+                        final List<ContentletSearch> found = contentletAPI.searchIndex(
+                                "+inode:" + inode, 0, -1, null, user, false);
+                        if (found == null || found.isEmpty()) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
     }
 
     private void cleanUpTagsByName(final TagAPI tagAPI, final String tagName) {
