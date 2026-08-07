@@ -36,9 +36,11 @@ import {
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import { isImageFile } from '@dotcms/image-editor';
+import { GlobalStore } from '@dotcms/store';
 import {
+    buildAssetPickerConfig,
     DotAIImagePromptComponent,
-    DotBrowserSelectorComponent,
+    DotAssetPickerComponent,
     DotDropZoneComponent,
     DotMessagePipe,
     DotSpinnerComponent,
@@ -47,6 +49,7 @@ import {
 } from '@dotcms/ui';
 import { getFileMetadata } from '@dotcms/utils';
 
+import { DotEditContentStore } from './../../../../store/edit-content.store';
 import {
     LegacyDialogImageEditorLauncher,
     LegacyDojoImageEditorLauncher
@@ -150,6 +153,14 @@ export class DotFileFieldComponent
      * editor (SVGs), mirroring the store's editableAsText hydration.
      */
     readonly #http = inject(HttpClient);
+    /** Site the AssetPicker browses. Root-provided, so always available. */
+    readonly #globalStore = inject(GlobalStore);
+    /**
+     * Supplies the locale when there is no contentlet yet (creating). Injected as `{ optional: true }`
+     * because only the Angular edit-content layout provides it — the legacy web-component host
+     * ({@link DotBinaryFieldCeBridgeComponent}) builds this same component without it.
+     */
+    readonly #editContentStore = inject(DotEditContentStore, { optional: true });
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
@@ -285,6 +296,22 @@ export class DotFileFieldComponent
         }
 
         return '';
+    });
+
+    /**
+     * Locale the AssetPicker pre-selects.
+     *
+     * The contentlet's own language wins when editing. When creating there is no contentlet yet, so
+     * it falls back to the locale currently selected in the editor — without that fallback the
+     * picker would open unfiltered on every new contentlet.
+     *
+     * @returns {string | undefined} the language id as a string, or `undefined` when neither source has one
+     */
+    $pickerLanguageId = computed(() => {
+        const languageId =
+            this.$contentlet()?.languageId ?? this.#editContentStore?.currentLocale()?.id;
+
+        return languageId ? String(languageId) : undefined;
     });
 
     constructor() {
@@ -787,14 +814,15 @@ export class DotFileFieldComponent
             });
     }
     /**
-     * Shows the select existing file dialog.
+     * Opens the AssetPicker to choose an asset that already exists in the system.
      *
-     * If the field is disabled, nothing happens.
-     * Opens the dialog with the `DotSelectExistingFileComponent` component
-     * and passes the field type and accepted files as data to the component.
+     * The picker is a compact Content Drive scoped to what this field can hold: an Image field
+     * narrows it to the dotAsset / File Asset base types and silently to images, a File field
+     * doesn't narrow it at all. It browses `api/v1/drive/search`, unlike the browser selector the
+     * block editor and custom fields still use.
      *
-     * When the dialog is closed, gets the uploaded file from the component
-     * and sets it as the preview file in the store.
+     * Nothing happens when the field is disabled, or when no site has resolved yet — the picker
+     * would have nothing to browse.
      *
      * @memberof DotEditContentFileFieldComponent
      */
@@ -803,17 +831,22 @@ export class DotFileFieldComponent
             return;
         }
 
-        const fieldType = this.$field().fieldType;
-        const title =
-            fieldType === INPUT_TYPES.Image
-                ? 'dot.file.field.dialog.select.existing.image.header'
-                : 'dot.file.field.dialog.select.existing.file.header';
-        const mimeTypes = fieldType === INPUT_TYPES.Image ? ['image'] : [];
+        const site = this.#globalStore.siteDetails();
 
-        const header = this.#dotMessageService.get(title);
+        // Opening a picker that can't browse anything is worse than not opening it. In practice the
+        // site resolves long before the editor reaches a field, so this is a cold-start guard.
+        if (!site) {
+            return;
+        }
 
-        this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
-            header,
+        const isImage = this.$field().fieldType === INPUT_TYPES.Image;
+
+        this.#dialogRef = this.#dialogService.open(DotAssetPickerComponent, {
+            header: this.#dotMessageService.get(
+                isImage
+                    ? 'dot.file.field.dialog.select.existing.image.header'
+                    : 'dot.file.field.dialog.select.existing.file.header'
+            ),
             appendTo: 'body',
             closeOnEscape: true,
             closable: true,
@@ -825,20 +858,18 @@ export class DotFileFieldComponent
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
-            contentStyle: { overflow: 'auto', 'min-height': '45rem' },
-            data: {
-                mimeTypes,
-                showLinks: false,
-                showDotAssets: true,
-                showPages: false,
-                showFiles: true,
-                showFolders: false,
-                showWorking: true,
-                showArchived: false,
-                sortByDesc: true
-            }
+            // The picker sets its own height, so no min-height is imposed from here.
+            contentStyle: { overflow: 'auto' },
+            // No explicit path: the picker reopens on the globally remembered folder.
+            data: buildAssetPickerConfig({
+                mode: isImage ? 'image' : 'file',
+                site,
+                languageId: this.$pickerLanguageId()
+            })
         });
 
+        // Unchanged from the browser-selector era: both dialogs close with the same hydrated
+        // contentlet, so everything downstream of here keeps working as-is.
         this.#dialogRef.onClose
             .pipe(
                 filter((file) => !!file),
