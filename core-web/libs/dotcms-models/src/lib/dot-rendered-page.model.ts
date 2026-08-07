@@ -34,7 +34,7 @@ export class DotPageRender {
         return this._params;
     }
 
-    get layout(): DotLayout {
+    get layout(): DotLayout | undefined {
         return this._params.layout;
     }
 
@@ -42,25 +42,26 @@ export class DotPageRender {
         return this._params.page;
     }
 
-    get containers(): DotPageContainerStructure {
+    get containers(): DotPageContainerStructure | undefined {
         return this._params.containers;
     }
 
     get containerMap(): DotContainerMap {
-        return Object.keys(this.containers).reduce(
-            (prev, curr) => ({
-                ...prev,
-                [curr]: this.containers[curr].container
-            }),
-            {}
-        );
+        const containers = this.containers ?? {};
+        const containerMap: DotContainerMap = {};
+
+        for (const key of Object.keys(containers)) {
+            containerMap[key] = containers[key].container;
+        }
+
+        return containerMap;
     }
 
-    get site(): DotSite {
+    get site(): DotSite | undefined {
         return this._params.site;
     }
 
-    get template(): DotTemplate {
+    get template(): DotTemplate | undefined {
         return this._params.template;
     }
 

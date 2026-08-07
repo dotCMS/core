@@ -63,6 +63,10 @@ describe('DotContentDriveToolbarComponent', () => {
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
+                // The toolbar now renders from the visual (panel-aware) computed; reusing the same
+                // signal keeps these tests driving one value, since they don't need to distinguish
+                // the real preference from a panel-forced override.
+                isTreeVisuallyExpanded: isTreeExpandedSignal,
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
