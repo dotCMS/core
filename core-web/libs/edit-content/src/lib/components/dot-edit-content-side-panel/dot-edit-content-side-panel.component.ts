@@ -37,6 +37,14 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
 
 /**
+ * Class PrimeNG puts on the drawer's modal mask — the overlay covering everything outside the
+ * panel. The mask is built imperatively and appended to `document.body` by the drawer, so no
+ * template binding can reach it; the click-outside handler matches on this class instead (see
+ * {@link DotEditContentSidePanelComponent.onMaskClick}).
+ */
+const DRAWER_MASK_CLASS = 'p-drawer-mask';
+
+/**
  * Reads the persisted expanded preference. Best-effort: returns `false` when storage is
  * unavailable (SSR/tests) or the value is missing, so a read failure never breaks the panel.
  */
@@ -64,7 +72,7 @@ function writeExpandedPreference(expanded: boolean): void {
  * It reuses the overlay editor plumbing: it provides {@link OverlayEditContentHost} (identity from
  * the dialog config, in-place navigation, chrome no-ops) and, since it is not opened through
  * `DialogService`, supplies the {@link DynamicDialogConfig} the host reads identity from — built
- * from the {@link data} input. The header shows the content title plus an expand toggle (70% ↔
+ * from the {@link data} input. The header shows the content title plus an expand toggle (80% ↔
  * full width) and a close button.
  *
  * It also self-provides `DialogService` and {@link IMAGE_EDITOR_LAUNCHER} — the same pair
@@ -99,10 +107,13 @@ function writeExpandedPreference(expanded: boolean): void {
     ],
     templateUrl: './dot-edit-content-side-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // ESC closes the panel through the unsaved-changes guard. Bound at document level because
-    // `appendTo="body"` moves the drawer out of this component's DOM subtree, so a template
-    // `(keydown.escape)` on the drawer would never receive the event.
-    host: { '(document:keydown.escape)': 'onEscape()' }
+    // ESC and click-outside close the panel through the unsaved-changes guard. Both are bound at
+    // document level because `appendTo="body"` moves the drawer (and its mask) out of this
+    // component's DOM subtree, so template listeners would never receive the events.
+    host: {
+        '(document:keydown.escape)': 'onEscape()',
+        '(document:click)': 'onMaskClick($event)'
+    }
 })
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
@@ -122,7 +133,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly saved = output<DotCMSContentlet>();
 
     /**
-     * Whether the panel is expanded to the full viewport width (vs the default ~70%). Seeded from
+     * Whether the panel is expanded to the full viewport width (vs the default ~80%). Seeded from
      * the user's persisted preference so a panel opens in the mode last chosen (see
      * {@link toggleExpanded}).
      */
@@ -171,6 +182,31 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * instead of one panel at a time.
      */
     protected onEscape(): void {
+        if (this.#navController.isTop(this)) {
+            this.requestClose();
+        }
+    }
+
+    /**
+     * Click-outside handler: clicking the area behind the panel closes it with the exact same
+     * semantics as ESC and the X button — i.e. through the unsaved-changes guard.
+     *
+     * The drawer's own `dismissible` is deliberately left off: it hides the drawer and emits
+     * `visibleChange(false)` the moment the mask is clicked, which both bypasses the guard (unsaved
+     * edits lost silently) and desyncs the one-way `[visible]` binding. Matching the mask ourselves
+     * keeps the panel on screen until the guard says it is safe to close.
+     *
+     * The listener is document-wide, so it filters to the mask element itself — a click inside the
+     * panel, or a drag that starts inside and ends on the mask, resolves to a different target and
+     * is ignored. As with ESC, only the frontmost stacked panel reacts.
+     */
+    protected onMaskClick(event: MouseEvent): void {
+        const target = event.target as HTMLElement | null;
+
+        if (!target?.classList?.contains(DRAWER_MASK_CLASS)) {
+            return;
+        }
+
         if (this.#navController.isTop(this)) {
             this.requestClose();
         }

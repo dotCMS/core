@@ -440,14 +440,15 @@ describe('DotEditContentSidebarComponent', () => {
         });
 
         describe('sections', () => {
-            it('should carry the expected persistence keys on the three sections', () => {
+            it('should carry the expected persistence keys on the three sections, in display order', () => {
                 const sections = spectator.queryAll(DotEditContentSidebarSectionComponent);
                 // The History tab also renders sidebar-sections (history.*); scope to the Actions ones.
                 const keys = sections
                     .map((section) => section.key())
                     .filter((key) => key.startsWith('actions.'));
 
-                expect(keys).toEqual(['actions.locales', 'actions.workflow', 'actions.details']);
+                // queryAll returns DOM order, so this also pins the section order in the tab.
+                expect(keys).toEqual(['actions.details', 'actions.locales', 'actions.workflow']);
             });
         });
     });
