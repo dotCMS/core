@@ -1253,6 +1253,9 @@ public class UtilMethods {
 			 conn.setConnectTimeout(10000);
 			 if(conn instanceof java.net.HttpURLConnection){
 				 java.net.HttpURLConnection myConn = (java.net.HttpURLConnection)conn;
+				 // Disable redirect following so a 3xx response cannot redirect to an
+				 // internal host, bypassing the loopback/link-local address check.
+				 myConn.setInstanceFollowRedirects(false);
 				 myConn.setRequestMethod("POST");
 				 if(myConn.getResponseCode() != HttpServletResponse.SC_OK){
 					 return null;
