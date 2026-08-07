@@ -25,8 +25,8 @@ export class HttpRequestUtils {
      * it is based on the window.location.href.
      * @returns string
      */
-    getQueryStringParam(name: string): string {
-        let value = null;
+    getQueryStringParam(name: string): string | null {
+        let value: string | null = null;
         const regex = new RegExp('[?&]' + name.replace(/[\[\]]/g, '\\$&') + '(=([^&#]*)|&|#|$)');
         const results = regex.exec(window.location.href);
 
