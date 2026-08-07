@@ -180,7 +180,10 @@ runs:
     # means the first one to run on a cold key repairs it for the rest.
     - id: cache-maven-wrapper
       name: Cache Maven Wrapper Distribution
-      uses: actions/cache@v4
+      # Pinned to a commit SHA, not the mutable v4 tag: a tag can be repointed by
+      # the action owner, which is how the trivy-action and kics-github-action
+      # compromises worked. Bump deliberately when updating.
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ~/.m2/wrapper
         # Changes only when the Maven version does, so this key is ~always a hit.
