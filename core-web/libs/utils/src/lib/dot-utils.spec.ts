@@ -310,8 +310,8 @@ describe('Dot Utils', () => {
         it('should handle null currentUrl and requestHostName', () => {
             const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
             const params: DotPageToolUrlParams = {
-                currentUrl: null, // Handle null by substituting with empty string
-                requestHostName: null, // Handle null by substituting with empty string
+                currentUrl: null as unknown as string, // Handle null by substituting with empty string
+                requestHostName: null as unknown as string, // Handle null by substituting with empty string
                 siteId: '',
                 languageId: 1
             };
@@ -324,8 +324,8 @@ describe('Dot Utils', () => {
             const params: DotPageToolUrlParams = {
                 currentUrl: '',
                 requestHostName: '',
-                siteId: null, // Handle null by not appending the query parameter
-                languageId: null // Handle null by not appending the query parameter
+                siteId: null as unknown as string, // Handle null by not appending the query parameter
+                languageId: null as unknown as number // Handle null by not appending the query parameter
             };
 
             expect(getRunnableLink(url, params)).toEqual('https://example.com/page');
@@ -334,10 +334,10 @@ describe('Dot Utils', () => {
         it('should handle all parameters as null or empty', () => {
             const url = 'https://example.com/{requestHostName}{currentUrl}{urlSearchParams}';
             const params: DotPageToolUrlParams = {
-                currentUrl: null, // Handle null by substituting with empty string
-                requestHostName: null, // Handle null by substituting with empty string
-                siteId: null, // Handle null by not appending the query parameter
-                languageId: null // Handle null by not appending the query parameter
+                currentUrl: null as unknown as string, // Handle null by substituting with empty string
+                requestHostName: null as unknown as string, // Handle null by substituting with empty string
+                siteId: null as unknown as string, // Handle null by not appending the query parameter
+                languageId: null as unknown as number // Handle null by not appending the query parameter
             };
 
             expect(getRunnableLink(url, params)).toEqual('https://example.com/');
