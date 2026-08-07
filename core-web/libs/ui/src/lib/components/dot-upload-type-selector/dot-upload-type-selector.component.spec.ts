@@ -2,25 +2,24 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFolderTreeNodeData } from '@dotcms/portlets/content-drive/ui';
+import { TreeNodeData } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotContentDriveDialogUploadSelectorComponent } from './dot-content-drive-dialog-upload-selector.component';
-
-import { DotContentDriveUploadSelection } from '../../../shared/models';
+import { DotUploadTypeSelectorComponent } from './dot-upload-type-selector.component';
+import { DotUploadSelection } from './models';
 
 const TARGET_FOLDER = {
     id: 'folder-123',
     hostname: 'localhost',
     path: 'folder-123',
     type: 'folder'
-} as DotFolderTreeNodeData;
+} as TreeNodeData;
 
-describe('DotContentDriveDialogUploadSelectorComponent', () => {
-    let spectator: Spectator<DotContentDriveDialogUploadSelectorComponent>;
+describe('DotUploadTypeSelectorComponent', () => {
+    let spectator: Spectator<DotUploadTypeSelectorComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotContentDriveDialogUploadSelectorComponent,
+        component: DotUploadTypeSelectorComponent,
         providers: [
             {
                 provide: DotMessageService,
@@ -78,7 +77,7 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
             spectator.setInput('files', files);
             spectator.detectChanges();
 
-            let emitted: DotContentDriveUploadSelection | undefined;
+            let emitted: DotUploadSelection | undefined;
             spectator.component.selectUploadType.subscribe((selection) => (emitted = selection));
 
             clickOption('DOTASSET');
@@ -91,7 +90,7 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
         });
 
         it('should emit the FILEASSET selection when File is clicked', () => {
-            let emitted: DotContentDriveUploadSelection | undefined;
+            let emitted: DotUploadSelection | undefined;
             spectator.component.selectUploadType.subscribe((selection) => (emitted = selection));
 
             clickOption('FILEASSET');

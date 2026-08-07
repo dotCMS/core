@@ -1,0 +1,21 @@
+<dot-folder-tree
+    [folders]="store.folders()"
+    [loading]="$loading()"
+    [selectedNode]="store.selectedNode()"
+    selectionMode="single"
+    styleClass="size-full min-w-0"
+    [pt]="treePt"
+    treeTestId="asset-picker-folder-tree"
+    loadMoreTestId="asset-picker-load-more"
+    loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+    [showLoadMorePlusIcon]="true"
+    (onNodeSelect)="onNodeSelect($event)"
+    (onNodeExpand)="onNodeExpand($event)"
+    (onNodeCollapse)="onNodeCollapse($event)"
+    (loadMore)="onLoadMore($event)">
+    <ng-template #folderTreeNodeLabel let-node>
+        <span class="block min-w-0 truncate font-normal" data-testid="tree-node-label">
+            {{ node.label | dotFolderName }}
+        </span>
+    </ng-template>
+</dot-folder-tree>

@@ -5,20 +5,30 @@ import {
     HostBinding,
     HostListener,
     inject,
+    input,
     output,
     signal
 } from '@angular/core';
 
-import { DotContentDriveUploadFiles, DOT_DRAG_ITEM } from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import { TreeNodeData } from '@dotcms/dotcms-models';
 
-import { DROPZONE_STATE } from '../../shared/constants';
-import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { DROPZONE_STATE } from './constants';
 
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DOT_DRAG_ITEM } from '../dot-folder-list-view/constants';
+import { DotUploadFiles } from '../dot-upload-type-selector/models';
+
+/**
+ * Drop target for uploading files by dragging them from the OS. Wraps whatever content it is given
+ * and paints a full-surface overlay while a file drag is over it. Shared by Content Drive and the
+ * AssetPicker.
+ *
+ * Presentational: the host owns the target folder and what an upload means.
+ */
 @Component({
-    selector: 'dot-content-drive-dropzone',
+    selector: 'dot-upload-dropzone',
     imports: [DotMessagePipe],
-    templateUrl: './dot-content-drive-dropzone.component.html',
+    templateUrl: './dot-upload-dropzone.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'relative h-full w-full max-h-full min-h-0' },
     styles: `
@@ -43,14 +53,26 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
         }
     `
 })
-export class DotContentDriveDropzoneComponent {
-    readonly uploadFiles = output<DotContentDriveUploadFiles>();
+export class DotUploadDropzoneComponent {
+    /**
+     * Folder the dropped files land in. Carried straight into {@link uploadFiles}.
+     * @type {TreeNodeData | undefined}
+     * @alias targetFolder
+     */
+    readonly $targetFolder = input<TreeNodeData | undefined>(undefined, { alias: 'targetFolder' });
+
+    /** Emitted once files are dropped on the zone. */
+    readonly uploadFiles = output<DotUploadFiles>();
+
+    /**
+     * Emitted when an external file drag enters the zone. Content Drive uses it to dismiss its
+     * context menu; hosts without one can ignore it.
+     */
+    readonly dragEnter = output<void>();
 
     readonly elementRef = inject(ElementRef);
 
     readonly state = signal<string>(DROPZONE_STATE.INACTIVE);
-
-    readonly #store = inject(DotContentDriveStore);
 
     /**
      * @description Get the active state of the dropzone
@@ -62,7 +84,6 @@ export class DotContentDriveDropzoneComponent {
 
     /**
      * @description Set the dropzone as internal drag
-     * @memberof DotContentDriveDropzoneComponent
      */
     @HostListener('window:dragstart')
     onWindowDragStart() {
@@ -71,7 +92,6 @@ export class DotContentDriveDropzoneComponent {
 
     /**
      * @description Set the dropzone as not internal drag
-     * @memberof DotContentDriveDropzoneComponent
      */
     @HostListener('window:dragend')
     @HostListener('window:drop')
@@ -88,6 +108,7 @@ export class DotContentDriveDropzoneComponent {
         event.stopPropagation();
         event.preventDefault();
 
+        // Dragging rows around inside the host is not an upload.
         if (
             this.state() === DROPZONE_STATE.INTERNAL_DRAG ||
             event.dataTransfer?.types.includes(DOT_DRAG_ITEM)
@@ -96,9 +117,7 @@ export class DotContentDriveDropzoneComponent {
         }
 
         this.state.set(DROPZONE_STATE.ACTIVE);
-
-        // Reset the context menu
-        this.#store.resetContextMenu();
+        this.dragEnter.emit();
     }
 
     /**
@@ -144,7 +163,6 @@ export class DotContentDriveDropzoneComponent {
      * @description Set the dropzone as inactive when the drag ends on the dropzone
      * @param event - DragEvent
      */
-
     @HostListener('drop', ['$event'])
     onDrop(event: DragEvent) {
         event.stopPropagation();
@@ -155,7 +173,7 @@ export class DotContentDriveDropzoneComponent {
         this.state.set(DROPZONE_STATE.INACTIVE);
 
         if (files?.length) {
-            this.uploadFiles.emit({ files, targetFolder: this.#store.selectedNode()?.data });
+            this.uploadFiles.emit({ files, targetFolder: this.$targetFolder() });
         }
     }
 }

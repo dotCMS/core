@@ -5,19 +5,21 @@ import {
     DotContentDriveItem,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeData } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
-import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
+import { DIALOG_TYPE } from './constants';
 
 /** @deprecated Import {@link BuildTreeFolderNodesParams} from `@dotcms/data-access` instead. */
 export type BuildTreeFolderNodesParams = SharedBuildTreeFolderNodesParams;
 
 /**
- * Base types the upload selector can produce, derived from the selector options so the type and the
- * rendered choices never drift apart.
+ * Upload-flow types now live in `@dotcms/ui`, shared with the AssetPicker. Aliased here so the
+ * portlet keeps its own naming.
  */
-export type DotContentDriveUploadBaseType = (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
+export type DotContentDriveUploadBaseType = DotUploadBaseType;
+export type DotContentDriveUploadSelectorPayload = DotUploadSelectorPayload;
+export type DotContentDriveUploadSelection = DotUploadSelection;
 
 /**
  * The status of the content drive.
@@ -120,27 +122,6 @@ export interface DotContentDriveDialog {
  */
 export interface DotContentDriveContentTypeSelectorPayload {
     listType: DotUVEPaletteListTypes;
-}
-
-/**
- * Payload passed INTO the upload-type selector dialog. `files` is present for the drag-and-drop
- * flow (the dropped files are already known) and absent for the Upload-button flow (the OS file
- * picker opens after the user picks a type).
- */
-export interface DotContentDriveUploadSelectorPayload {
-    targetFolder?: DotFolderTreeNodeData;
-    files?: FileList;
-}
-
-/**
- * Object emitted BACK by the upload-type selector dialog. Carries everything needed to trigger the
- * upload (and, in the future, to remember the chosen type per folder — see epic #35436).
- * `targetFolder` is omitted when nothing is selected (uploads to the site root).
- */
-export interface DotContentDriveUploadSelection {
-    baseType: DotContentDriveUploadBaseType;
-    targetFolder?: DotFolderTreeNodeData;
-    files?: FileList;
 }
 
 export interface DotContentDrivePage {

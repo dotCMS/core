@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DOT_DRAG_ITEM } from '@dotcms/portlets/content-drive/ui';
+import { TreeNodeData } from '@dotcms/dotcms-models';
 
-import { DotContentDriveDropzoneComponent } from './dot-content-drive-dropzone.component';
+import { DROPZONE_STATE } from './constants';
+import { DotUploadDropzoneComponent } from './dot-upload-dropzone.component';
 
-import { DROPZONE_STATE } from '../../shared/constants';
-import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { DOT_DRAG_ITEM } from '../dot-folder-list-view/constants';
+
+const TARGET_FOLDER = { id: 'test-id' } as TreeNodeData;
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
@@ -44,18 +46,14 @@ function createDropEvent(files?: FileList | null): DragEvent {
     return event;
 }
 
-describe('DotContentDriveDropzoneComponent', () => {
-    let spectator: Spectator<DotContentDriveDropzoneComponent>;
-    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
+describe('DotUploadDropzoneComponent', () => {
+    let spectator: Spectator<DotUploadDropzoneComponent>;
+    let dragEnterSpyEmitter: ReturnType<typeof jest.spyOn>;
     let elementRefSpy: ReturnType<typeof jest.spyOn>;
     let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
     const createComponent = createComponentFactory({
-        component: DotContentDriveDropzoneComponent,
+        component: DotUploadDropzoneComponent,
         providers: [
-            mockProvider(DotContentDriveStore, {
-                resetContextMenu: jest.fn(),
-                selectedNode: jest.fn().mockReturnValue({ data: { id: 'test-id' } })
-            }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Drag and drop files here')
             })
@@ -65,8 +63,9 @@ describe('DotContentDriveDropzoneComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        store = spectator.inject(DotContentDriveStore, true);
+        spectator.setInput('targetFolder', TARGET_FOLDER);
         uploadFilesSpyEmitter = jest.spyOn(spectator.component.uploadFiles, 'emit');
+        dragEnterSpyEmitter = jest.spyOn(spectator.component.dragEnter, 'emit');
         // Spy on the component's elementRef nativeElement.contains method
         if (spectator.component.elementRef?.nativeElement) {
             elementRefSpy = jest
@@ -177,7 +176,7 @@ describe('DotContentDriveDropzoneComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.active).toBe(true);
-                expect(store.resetContextMenu).toHaveBeenCalled();
+                expect(dragEnterSpyEmitter).toHaveBeenCalled();
             });
 
             it('should not activate dropzone when internal drag enters', () => {
@@ -192,7 +191,7 @@ describe('DotContentDriveDropzoneComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.active).toBe(false);
-                expect(store.resetContextMenu).not.toHaveBeenCalled();
+                expect(dragEnterSpyEmitter).not.toHaveBeenCalled();
             });
 
             it('should not activate dropzone when drag contains DOT_DRAG_ITEM type', () => {
@@ -202,7 +201,7 @@ describe('DotContentDriveDropzoneComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.active).toBe(false);
-                expect(store.resetContextMenu).not.toHaveBeenCalled();
+                expect(dragEnterSpyEmitter).not.toHaveBeenCalled();
             });
 
             it('should activate dropzone when drag contains other types but not DOT_DRAG_ITEM', () => {
@@ -212,7 +211,7 @@ describe('DotContentDriveDropzoneComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.active).toBe(true);
-                expect(store.resetContextMenu).toHaveBeenCalled();
+                expect(dragEnterSpyEmitter).toHaveBeenCalled();
             });
 
             it('should prevent default and stop propagation for external drag', () => {
@@ -393,7 +392,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                 files: mockFiles,
-                targetFolder: { id: 'test-id' }
+                targetFolder: TARGET_FOLDER
             });
         });
 
@@ -471,7 +470,7 @@ describe('DotContentDriveDropzoneComponent', () => {
 
             expect(uploadFilesSpyEmitter).toHaveBeenCalledWith({
                 files: mockFiles,
-                targetFolder: { id: 'test-id' }
+                targetFolder: TARGET_FOLDER
             });
 
             expect(spectator.component.active).toBe(false);
@@ -566,7 +565,7 @@ describe('DotContentDriveDropzoneComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.active).toBe(false);
-            expect(store.resetContextMenu).not.toHaveBeenCalled();
+            expect(dragEnterSpyEmitter).not.toHaveBeenCalled();
 
             // 3. Trigger window drop event to reset
             const windowDrop = new DragEvent('drop');

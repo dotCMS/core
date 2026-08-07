@@ -1,0 +1,83 @@
+<div class="flex h-180 flex-col gap-4">
+    <dot-asset-picker-toolbar (upload)="onUpload($event)" />
+
+    <div class="flex min-h-0 flex-1 flex-row overflow-hidden rounded-md border border-gray-200">
+        <div class="h-full w-1/4 min-w-64 shrink-0 overflow-auto border-r border-gray-200">
+            <dot-asset-picker-sidebar data-testid="asset-picker-sidebar" />
+        </div>
+
+        <dot-upload-dropzone
+            class="h-full flex-1 overflow-auto"
+            data-testid="asset-picker-dropzone"
+            [targetFolder]="$targetFolder()"
+            (uploadFiles)="onRequestUpload($event)">
+            <dot-folder-list-view
+                selectionMode="single"
+                data-testid="asset-picker-list"
+                [items]="store.items()"
+                [loading]="$loading()"
+                [totalItems]="store.totalItems()"
+                [offset]="$offset()"
+                (selectionChange)="onSelect($event)"
+                (doubleClick)="onSelect([$event])"
+                (paginate)="onPaginate($event)"
+                (sort)="onSort($event)" />
+        </dot-upload-dropzone>
+    </div>
+
+    <div class="flex flex-none flex-wrap justify-end gap-4">
+        <p-button
+            data-testid="asset-picker-cancel"
+            [label]="'dot.common.dialog.reject' | dm"
+            [text]="true"
+            severity="primary"
+            (click)="cancel()" />
+        <p-button
+            data-testid="asset-picker-confirm"
+            [label]="'dot.common.dialog.accept' | dm"
+            severity="primary"
+            [disabled]="!store.selectedAsset()"
+            (click)="confirm()" />
+    </div>
+</div>
+
+<!-- One selector instance, rendered into whichever presentation is active: a popover for the
+     Upload button, a modal for drag-and-drop. -->
+<ng-template #uploadSelectorTpl>
+    @if ($uploadSelectorPayload(); as payload) {
+        <dot-upload-type-selector
+            class="block"
+            data-testid="asset-picker-upload-selector"
+            [targetFolder]="payload.targetFolder"
+            [files]="payload.files"
+            (selectUploadType)="onUploadTypeSelected($event)" />
+    }
+</ng-template>
+
+<p-popover
+    #uploadSelectorPopover
+    data-testid="asset-picker-upload-popover"
+    [pt]="{ content: { class: 'w-96 max-w-[92vw] p-0!' } }"
+    (onHide)="onUploadSelectorPopoverHide()">
+    <ng-container *ngTemplateOutlet="uploadSelectorTpl" />
+</p-popover>
+
+<p-dialog
+    [visible]="$uploadModalVisible()"
+    [header]="'content-drive.dialog.upload-selector.header' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
+    appendTo="body"
+    data-testid="asset-picker-upload-modal"
+    [style]="{ width: '26rem' }"
+    [pt]="{ content: { class: 'p-0!' } }"
+    (visibleChange)="onUploadModalVisibleChange($event)">
+    <ng-container *ngTemplateOutlet="uploadSelectorTpl" />
+</p-dialog>
+
+<input type="file" (change)="onFileChange($event)" #fileInput hidden />
+
+<p-toast position="top-center" data-testid="asset-picker-toast" />

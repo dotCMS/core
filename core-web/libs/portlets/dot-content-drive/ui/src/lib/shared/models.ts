@@ -4,16 +4,13 @@ import type {
     TreeNodeItem,
     TreeNodeLoadMoreData
 } from '@dotcms/dotcms-models';
+import type { DotUploadFiles } from '@dotcms/ui';
 
 /**
- * @export
- * @interface DotContentDriveUploadFiles
- * @description File and host folder for the drop zone
+ * File and host folder for the drop zone.
+ * Alias of the shared {@link DotUploadFiles}, which now lives in `@dotcms/ui` with the upload kit.
  */
-export interface DotContentDriveUploadFiles {
-    files: FileList;
-    targetFolder: DotFolderTreeNodeData;
-}
+export type DotContentDriveUploadFiles = DotUploadFiles;
 
 /**
  * @export
