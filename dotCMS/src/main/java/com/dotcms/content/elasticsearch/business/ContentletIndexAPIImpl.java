@@ -1249,30 +1249,48 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private void pointOS(final String working, final String live,
             final String reindexWorking, final String reindexLive) throws DotDataException {
-        final Optional<VersionedIndices> existingOpt =
-                versionedIndicesAPI.loadDefaultVersionedIndices();
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
+        // Starting from the existing record is what makes "null preserves the slot" true for every
+        // slot, including the ones this method takes no argument for (siteSearch, version).
+        final VersionedIndicesImpl.Builder builder =
+                rebuildOsStore(versionedIndicesAPI.loadDefaultVersionedIndices());
         if (working != null) {
             builder.working(working);
-        } else {
-            existingOpt.flatMap(VersionedIndices::working).ifPresent(builder::working);
         }
         if (live != null) {
             builder.live(live);
-        } else {
-            existingOpt.flatMap(VersionedIndices::live).ifPresent(builder::live);
         }
         if (reindexWorking != null) {
             builder.reindexWorking(reindexWorking);
-        } else {
-            existingOpt.flatMap(VersionedIndices::reindexWorking).ifPresent(builder::reindexWorking);
         }
         if (reindexLive != null) {
             builder.reindexLive(reindexLive);
-        } else {
-            existingOpt.flatMap(VersionedIndices::reindexLive).ifPresent(builder::reindexLive);
         }
         versionedIndicesAPI.saveIndices(builder.build());
+    }
+
+    /**
+     * Opens a builder for an update to the OpenSearch index store, pre-filled with every slot the
+     * store currently holds. <strong>Every rebuild in this class starts here</strong>, then overrides
+     * the slots it means to change and clears — with an explicit {@code Optional.empty()} — the ones
+     * it means to drop.
+     *
+     * <p>The alternative, building from scratch, is what issue #36360 was:
+     * {@code saveIndices()} is a delete-by-version followed by a re-insert, so a slot the builder
+     * omits is not left alone, it is <em>erased</em>. That put the burden on every rebuild to re-list
+     * slots it has no business touching — in particular {@code siteSearch}, which shares the version
+     * row with the content pointers but is owned by {@code SiteSearchAPI}. Six of them forgot, so a
+     * reindex, switchover, abort, activate or deactivate of a <em>content</em> index silently
+     * deactivated the active Site Search index. Starting from the existing record makes forgetting
+     * safe and clearing deliberate, so the next rebuild added here cannot reintroduce that bug.</p>
+     *
+     * @param existing the store as it stands, or empty on a first bootstrap
+     * @return a builder holding the current state, ready to be overridden slot by slot
+     */
+    private static VersionedIndicesImpl.Builder rebuildOsStore(
+            final Optional<VersionedIndices> existing) {
+        return existing.isPresent()
+                ? VersionedIndicesImpl.builder(existing.get())
+                : VersionedIndicesImpl.builder();
     }
 
 
@@ -1615,12 +1633,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                             osExisting.flatMap(VersionedIndices::reindexWorking);
                     final Optional<String> osLive =
                             osExisting.flatMap(VersionedIndices::reindexLive);
-                    final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                    // Promote OS reindex slots → active; omitting reindexWorking/reindexLive
-                    // from the builder clears them to Optional.empty() in the store.
-                    osWorking.ifPresent(osBuilder::working);
-                    osLive.ifPresent(osBuilder::live);
-                    versionedIndicesAPI.saveIndices(osBuilder.build());
+                    // Promote OS reindex slots → active and clear the reindex slots. working/live
+                    // are set from the Optionals rather than only when present, so an absent
+                    // reindex slot clears the active one it was going to replace — the same
+                    // wholesale replacement of the content pointers the ES record above does.
+                    versionedIndicesAPI.saveIndices(rebuildOsStore(osExisting)
+                            .working(osWorking)
+                            .live(osLive)
+                            .reindexWorking(Optional.empty())
+                            .reindexLive(Optional.empty())
+                            .build());
                     // Capture the promoted OS names (.os-tagged, from the OS store) so they can be
                     // optimized on the OS provider directly — see optimizeNewActiveIndicesAsync.
                     if (osWorking.isPresent() && osLive.isPresent()) {
@@ -1702,12 +1724,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 + existing.reindexLive().map(indexAPI::removeClusterIdFromName).orElse("none") + "]");
         Logger.info(this, "-------------------------------");
 
-        // Promote OS reindex slots → active; omitting reindexWorking/reindexLive from the
-        // builder clears them to Optional.empty() — there is no longer an ongoing reindex.
-        final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-        existing.reindexWorking().ifPresent(osBuilder::working);
-        existing.reindexLive().ifPresent(osBuilder::live);
-        versionedIndicesAPI.saveIndices(osBuilder.build());
+        // Promote OS reindex slots → active and clear the reindex slots: there is no longer an
+        // ongoing reindex. Both presence checks below already ran at the top of this method.
+        versionedIndicesAPI.saveIndices(rebuildOsStore(Optional.of(existing))
+                .working(existing.reindexWorking())
+                .live(existing.reindexLive())
+                .reindexWorking(Optional.empty())
+                .reindexLive(Optional.empty())
+                .build());
 
         // Purge leftover legacy ES content-index rows (NULL version) from the indicies table:
         // old live/working plus any transient reindex_live/reindex_working that predate Phase 3.
@@ -1764,12 +1788,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     + reindexLive.orElse("none") + "] so they can never be adopted as active"
                     + " (#36471)");
 
-            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-            osExisting.flatMap(VersionedIndices::siteSearch).ifPresent(osBuilder::siteSearch);
-            // reindexWorking / reindexLive intentionally omitted → cleared
-            final VersionedIndices rebuilt = osBuilder.build();
+            final VersionedIndices rebuilt = rebuildOsStore(osExisting)
+                    .reindexWorking(Optional.empty())
+                    .reindexLive(Optional.empty())
+                    .build();
             if (rebuilt.hasAnyIndex()) {
                 versionedIndicesAPI.saveIndices(rebuilt);
             } else {
@@ -2181,6 +2203,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 && logicalName.equals(IndexTag.OS.untag(indexAPI.removeClusterIdFromName(storedName)));
     }
 
+    /** {@link #matchesLogical(String, String)} for the {@link Optional} slots of the OS store. */
+    private boolean matchesLogical(final Optional<String> storedName, final String logicalName) {
+        return storedName.isPresent() && matchesLogical(storedName.get(), logicalName);
+    }
+
     /** Clears any legacy ES-store ({@link IndiciesInfo}) slot pointing at {@code logicalName}. */
     private void clearEsStorePointer(final String logicalName) throws DotDataException {
         final IndiciesInfo info = legacyIndiciesAPI.loadIndicies();
@@ -2203,29 +2230,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return;
         }
         final VersionedIndices existing = existingOpt.get();
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
+        final VersionedIndicesImpl.Builder builder = rebuildOsStore(existingOpt);
         boolean changed = false;
-        // Re-add every slot except the one(s) that resolve to the deleted logical name.
-        if (existing.working().isPresent()) {
-            if (matchesLogical(existing.working().get(), logicalName)) { changed = true; }
-            else { builder.working(existing.working().get()); }
-        }
-        if (existing.live().isPresent()) {
-            if (matchesLogical(existing.live().get(), logicalName)) { changed = true; }
-            else { builder.live(existing.live().get()); }
-        }
-        if (existing.reindexWorking().isPresent()) {
-            if (matchesLogical(existing.reindexWorking().get(), logicalName)) { changed = true; }
-            else { builder.reindexWorking(existing.reindexWorking().get()); }
-        }
-        if (existing.reindexLive().isPresent()) {
-            if (matchesLogical(existing.reindexLive().get(), logicalName)) { changed = true; }
-            else { builder.reindexLive(existing.reindexLive().get()); }
-        }
-        if (existing.siteSearch().isPresent()) {
-            if (matchesLogical(existing.siteSearch().get(), logicalName)) { changed = true; }
-            else { builder.siteSearch(existing.siteSearch().get()); }
-        }
+        // Clear only the slot(s) that resolve to the deleted logical name; the rest ride along.
+        // Unlike the other rebuilds here this one does consider siteSearch: the index being deleted
+        // may itself be the site-search one, and leaving a pointer at a deleted index is the very
+        // thing this method exists to prevent.
+        if (matchesLogical(existing.working(), logicalName))        { builder.working(Optional.empty());        changed = true; }
+        if (matchesLogical(existing.live(), logicalName))           { builder.live(Optional.empty());           changed = true; }
+        if (matchesLogical(existing.reindexWorking(), logicalName)) { builder.reindexWorking(Optional.empty()); changed = true; }
+        if (matchesLogical(existing.reindexLive(), logicalName))    { builder.reindexLive(Optional.empty());    changed = true; }
+        if (matchesLogical(existing.siteSearch(), logicalName))     { builder.siteSearch(Optional.empty());     changed = true; }
         if (changed) {
             final VersionedIndices rebuilt = builder.build();
             if (rebuilt.hasAnyIndex()) {
@@ -3215,14 +3230,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             if (isMigrationComplete()) {
                 // ── Phase 3: OS only ─────────────────────────────────────────
-                // Preserve active working/live; omit reindexWorking/reindexLive
-                // from the builder → they clear to Optional.empty().
-                final Optional<VersionedIndices> osExisting =
-                        versionedIndicesAPI.loadDefaultVersionedIndices();
-                final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                versionedIndicesAPI.saveIndices(osBuilder.build());
+                // Preserve every active pointer; clear only the two reindex slots.
+                versionedIndicesAPI.saveIndices(
+                        rebuildOsStore(versionedIndicesAPI.loadDefaultVersionedIndices())
+                                .reindexWorking(Optional.empty())
+                                .reindexLive(Optional.empty())
+                                .build());
                 return;
             }
 
@@ -3242,13 +3255,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // not roll back the ES abort — OS is a shadow copy.
             if (isMigrationStarted()) {
                 try {
-                    final Optional<VersionedIndices> osExisting =
-                            versionedIndicesAPI.loadDefaultVersionedIndices();
-                    final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                    osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                    osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                    // reindexWorking / reindexLive intentionally omitted → cleared
-                    versionedIndicesAPI.saveIndices(osBuilder.build());
+                    versionedIndicesAPI.saveIndices(
+                            rebuildOsStore(versionedIndicesAPI.loadDefaultVersionedIndices())
+                                    .reindexWorking(Optional.empty())
+                                    .reindexLive(Optional.empty())
+                                    .build());
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not clear OS reindex slots during abort", osEx);
                 }
@@ -3304,10 +3315,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       does not roll back the ES update.</li>
      *   <li><strong>Phase 0</strong> — Only ES store is updated.</li>
      * </ul>
+     *
+     * @param indexName a content index name — a name <em>starting with</em> {@code working_} or
+     *                  {@code live_}, so cluster-stripped, as both callers hand it over
+     *                  ({@code ESIndexResource} normalizes with {@code removeClusterIdFromName}, and
+     *                  the maintenance JSP lists names from {@code getIndices()}, which already
+     *                  strips). A vendor tag is fine ({@code working_1.os}); a cluster prefix is not.
+     * @throws DotStateException if {@code indexName} is not a content index name — including the
+     *                           blank name that an absent store pointer degrades into
      */
     public void activateIndex(final String indexName) throws DotDataException {
         if (indexName == null) {
             throw new DotRuntimeException("Index cannot be null");
+        }
+        // A name that matches no content slot used to fall through every branch below, leaving the
+        // store untouched: in phases 0/1/2 that was a silent no-op, and in Phase 3 it saved an EMPTY
+        // VersionedIndices, so the caller got "At least one index must be specified" from deep inside
+        // the store — an error naming neither the input nor the real problem (issue #36360). The
+        // blank case is easy to hit because removeClusterIdFromName(null) yields "", so an absent
+        // pointer read from the store turns into an index literally named the empty string.
+        if (!IndexType.WORKING.is(indexName) && !IndexType.LIVE.is(indexName)) {
+            throw new DotStateException(String.format(
+                    "Cannot activate '%s': a content index name must start with '%s' or '%s'"
+                            + " (site-search indices are activated through SiteSearchAPI).",
+                    indexName, IndexType.WORKING.getPrefix(), IndexType.LIVE.getPrefix()));
         }
 
         // Audit log: runs regardless of phase so the activation is always traceable.
@@ -3326,28 +3357,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // ── Phase 3: OS only ─────────────────────────────────────────────
             // legacyIndiciesAPI must not be consulted — ES is decommissioned.
             // Failure is fatal: this is the primary store, not a shadow copy.
-            final String osPhysical = operationsOS.toPhysicalName(indexName);
-            final Optional<VersionedIndices> osExisting =
-                    versionedIndicesAPI.loadDefaultVersionedIndices();
-            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-            if (IndexType.WORKING.is(indexName)) {
-                osBuilder.working(osPhysical);
-                osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                // Clear reindexWorking if it was the promoted index
-                osExisting.flatMap(VersionedIndices::reindexWorking)
-                        .filter(rw -> !rw.equals(osPhysical))
-                        .ifPresent(osBuilder::reindexWorking);
-                osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-            } else if (IndexType.LIVE.is(indexName)) {
-                osBuilder.live(osPhysical);
-                osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-                // Clear reindexLive if it was the promoted index
-                osExisting.flatMap(VersionedIndices::reindexLive)
-                        .filter(rl -> !rl.equals(osPhysical))
-                        .ifPresent(osBuilder::reindexLive);
-            }
-            versionedIndicesAPI.saveIndices(osBuilder.build());
+            mirrorActivateToOsStore(indexName);
             return;
         }
 
@@ -3372,31 +3382,44 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Failure is non-fatal: OS is a shadow copy during these phases.
         if (isMigrationStarted()) {
             try {
-                final String osPhysical = operationsOS.toPhysicalName(indexName);
-                final Optional<VersionedIndices> osExisting =
-                        versionedIndicesAPI.loadDefaultVersionedIndices();
-                final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-                if (IndexType.WORKING.is(indexName)) {
-                    osBuilder.working(osPhysical);
-                    osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
-                    osExisting.flatMap(VersionedIndices::reindexWorking)
-                            .filter(rw -> !rw.equals(osPhysical))
-                            .ifPresent(osBuilder::reindexWorking);
-                    osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
-                } else if (IndexType.LIVE.is(indexName)) {
-                    osBuilder.live(osPhysical);
-                    osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
-                    osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
-                    osExisting.flatMap(VersionedIndices::reindexLive)
-                            .filter(rl -> !rl.equals(osPhysical))
-                            .ifPresent(osBuilder::reindexLive);
-                }
-                versionedIndicesAPI.saveIndices(osBuilder.build());
+                mirrorActivateToOsStore(indexName);
             } catch (Exception e) {
                 Logger.warn(this, "Could not mirror index activation to OS store for index: "
                         + indexName, e);
             }
         }
+    }
+
+    /**
+     * Rebuilds the OS {@link VersionedIndices} store with {@code indexName} promoted into its
+     * matching active slot, and persists the result. Shared by the Phase 3 path (where this is the
+     * primary store) and the best-effort Phase 1/2 mirror — the two were byte-identical.
+     *
+     * <p>The reindex slot the promoted index was occupying is cleared, since it is now active
+     * rather than pending. Every other slot — including {@code siteSearch}, which this class does
+     * not own — is carried over by {@link #rebuildOsStore(Optional)}.</p>
+     *
+     * @param indexName a content index name; {@code activateIndex} has already rejected anything else
+     */
+    private void mirrorActivateToOsStore(final String indexName) throws DotDataException {
+        final String osPhysical = operationsOS.toPhysicalName(indexName);
+        final Optional<VersionedIndices> osExisting =
+                versionedIndicesAPI.loadDefaultVersionedIndices();
+        final VersionedIndicesImpl.Builder osBuilder = rebuildOsStore(osExisting);
+        if (IndexType.WORKING.is(indexName)) {
+            osBuilder.working(osPhysical);
+            if (osExisting.flatMap(VersionedIndices::reindexWorking)
+                    .filter(osPhysical::equals).isPresent()) {
+                osBuilder.reindexWorking(Optional.empty());
+            }
+        } else if (IndexType.LIVE.is(indexName)) {
+            osBuilder.live(osPhysical);
+            if (osExisting.flatMap(VersionedIndices::reindexLive)
+                    .filter(osPhysical::equals).isPresent()) {
+                osBuilder.reindexLive(Optional.empty());
+            }
+        }
+        versionedIndicesAPI.saveIndices(osBuilder.build());
     }
 
     /**
@@ -3453,7 +3476,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Rebuilds the OS {@link VersionedIndices} store, keeping every slot except the one that
      * matches {@code indexName}, and persists the result.
      *
-     * <p>When the deactivated slot was the last populated one the rebuilt record is empty, and
+     * <p>Only the matching <em>content</em> slot is cleared — {@code siteSearch} is not a candidate,
+     * so deactivating a content index never takes the site-search pointer with it (issue #36360).</p>
+     *
+     * <p>When the cleared slot was the last populated one the rebuilt record is empty, and
      * {@link com.dotcms.content.index.VersionedIndicesAPI#saveIndices} rejects it by contract
      * ("At least one index must be specified"). Persisting it naively would either throw
      * (phase 3, primary store) or — worse — leave a dangling/stale store row that
@@ -3462,20 +3488,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * {@link #clearOsStorePointer(String)} (issue #35640).</p>
      */
     private void mirrorDeactivateToOsStore(final String indexName) throws DotDataException {
-        final Optional<VersionedIndices> osExisting =
-                versionedIndicesAPI.loadDefaultVersionedIndices();
-        final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
-        if (!IndexType.WORKING.is(indexName)) {
-            osExisting.flatMap(VersionedIndices::working).ifPresent(osBuilder::working);
+        final VersionedIndicesImpl.Builder osBuilder =
+                rebuildOsStore(versionedIndicesAPI.loadDefaultVersionedIndices());
+        if (IndexType.WORKING.is(indexName)) {
+            osBuilder.working(Optional.empty());
         }
-        if (!IndexType.LIVE.is(indexName)) {
-            osExisting.flatMap(VersionedIndices::live).ifPresent(osBuilder::live);
+        if (IndexType.LIVE.is(indexName)) {
+            osBuilder.live(Optional.empty());
         }
-        if (!IndexType.REINDEX_WORKING.is(indexName)) {
-            osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::reindexWorking);
+        if (IndexType.REINDEX_WORKING.is(indexName)) {
+            osBuilder.reindexWorking(Optional.empty());
         }
-        if (!IndexType.REINDEX_LIVE.is(indexName)) {
-            osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::reindexLive);
+        if (IndexType.REINDEX_LIVE.is(indexName)) {
+            osBuilder.reindexLive(Optional.empty());
         }
         final VersionedIndices osRebuilt = osBuilder.build();
         if (osRebuilt.hasAnyIndex()) {
