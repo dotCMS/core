@@ -96,6 +96,28 @@ public class HtmlMinifierTest {
     }
 
     /**
+     * Given: preserved regions whose closing tag varies in case or carries trailing whitespace.
+     * Expected: the region's end is still found, so the markup <i>after</i> it is minified as normal.
+     * <p>
+     * This guards a failure mode nothing else here can see. A lookup that misses the closing tag
+     * falls back to the end of the document and copies the remainder verbatim, which is perfectly
+     * faithful -- so every integrity check still passes -- while silently minifying nothing from that
+     * point on. The only visible symptom is the whitespace after the region surviving, which is what
+     * these assertions pin down.
+     */
+    @Test
+    public void test_minify_finds_preserved_region_boundaries() {
+        assertEquals("<div><SCRIPT>\nvar a=1\n</SCRIPT><p>x</p></div>",
+                HtmlMinifier.minify("<div>\n  <SCRIPT>\nvar a=1\n</SCRIPT>\n  <p>x</p>\n</div>"));
+        assertEquals("<div><script>\nvar a=1\n</script ><p>x</p></div>",
+                HtmlMinifier.minify("<div>\n  <script>\nvar a=1\n</script >\n  <p>x</p>\n</div>"));
+        assertEquals("<div><PRE>a\n b</PRE><p>x</p></div>",
+                HtmlMinifier.minify("<div>\n  <PRE>a\n b</PRE>\n  <p>x</p>\n</div>"));
+        assertEquals("<div><StYlE>\n.a{color:red}\n</StYlE><p>x</p></div>",
+                HtmlMinifier.minify("<div>\n  <StYlE>\n.a{color:red}\n</StYlE>\n  <p>x</p>\n</div>"));
+    }
+
+    /**
      * Given: a tag that merely starts with a preserved tag name.
      * Expected: it is not mistaken for the preserved element.
      */

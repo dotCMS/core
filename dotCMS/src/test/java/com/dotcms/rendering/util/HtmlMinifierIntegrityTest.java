@@ -1,6 +1,5 @@
 package com.dotcms.rendering.util;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -12,6 +11,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
@@ -29,7 +29,7 @@ import org.junit.Test;
  * <i>semantically identical</i> to what went in. Anything that changes what a browser would render
  * is a failure, whether or not we anticipated it.
  * <p>
- * The oracle in {@link #assertIntegrity(String, String)} compares four things, each of which maps to
+ * The oracle in {@link #integrityFailures(String, String)} compares four things, each of which maps to
  * a way minification is known to go wrong:
  * <ol>
  *   <li><b>Attribute values</b>, byte-for-byte. Collapsing whitespace inside a quoted value
@@ -95,6 +95,36 @@ public class HtmlMinifierIntegrityTest {
             {"nested inline inside block", "<ul>\n <li>a <em>b</em> c</li>\n <li>d</li>\n</ul>"},
             {"table markup", "<table>\n <tr>\n  <td>a</td>\n  <td>b</td>\n </tr>\n</table>"},
             {"entity adjacent to whitespace", "<p>a &amp; b</p>"},
+
+            // Weak-lookup cases. Finding a preserved region means finding two boundaries, and
+            // anything that merely *looks* like one is a chance to get it wrong -- the same shape of
+            // bug as a body-tag search that matched a commented-out <body>. Every entry below holds
+            // a script body whose newlines are load bearing (automatic semicolon insertion), so
+            // misjudging either boundary corrupts JavaScript rather than just losing bytes.
+            {"script with attributes",
+                    "<script type=\"text/javascript\">\nvar a=1\nvar b=2\n</script>"},
+            {"script tag name in upper case",
+                    "<SCRIPT>\nvar a=1\nvar b=2\n</SCRIPT>"},
+            {"greater-than inside the script's own attribute",
+                    "<script data-tpl=\"a>b\">\nvar a=1\nvar b=2\n</script>"},
+            {"opening script tag broken across lines",
+                    "<script\n    type=\"text/javascript\">\nvar a=1\nvar b=2\n</script>"},
+            {"whitespace inside the closing script tag",
+                    "<script>\nvar a=1\nvar b=2\n</script >"},
+            {"script markup inside an attribute value, not real markup",
+                    "<div data-tpl=\"<script>x</script>\">\n  <p>y</p>\n</div>"},
+            {"commented-out script",
+                    "<div>\n  <!-- <script>\nvar a=1\nvar b=2\n</script> -->\n  <p>real</p>\n</div>"},
+            {"script inside a retained conditional comment",
+                    "<!--[if IE]><script>\nvar a=1\nvar b=2\n</script><![endif]-->"},
+            {"text that resembles a closing tag inside a script",
+                    "<script>\nvar s = \"</div>\"\nvar b=2\n</script>"},
+            {"two adjacent scripts",
+                    "<script>\nvar a=1\nvar b=2\n</script>\n<script>\nvar c=3\nvar d=4\n</script>"},
+            {"empty script with a src attribute", "<div>\n<script src=\"a.js\"></script>\n</div>"},
+            {"unclosed script", "<div>\n<script>\nvar a=1\nvar b=2\n"},
+            {"style whose body contains a brace and a quote",
+                    "<style>\n.a[data-x=\"1\"] { content: \"}\" }\n</style>"},
     };
 
     @BeforeClass
@@ -108,9 +138,11 @@ public class HtmlMinifierIntegrityTest {
      */
     @Test
     public void test_minify_preserves_integrity_of_fixtures() {
+        final List<String> failures = new ArrayList<>();
         for (final String[] fixture : FIXTURES) {
-            assertIntegrity(fixture[0], fixture[1]);
+            failures.addAll(integrityFailures(fixture[0], fixture[1]));
         }
+        assertNoFailures(FIXTURES.length + " fixtures", failures);
     }
 
     /**
@@ -121,11 +153,13 @@ public class HtmlMinifierIntegrityTest {
      */
     @Test
     public void test_minify_preserves_integrity_of_real_pages() throws IOException {
+        final List<String> failures = new ArrayList<>();
         for (final String name : CORPUS) {
             final String html = readCorpus(name);
             assertTrue(name + " should be a substantial page", html.length() > 5000);
-            assertIntegrity(name, html);
+            failures.addAll(integrityFailures(name, html));
         }
+        assertNoFailures(CORPUS.length + " real pages", failures);
     }
 
     /**
@@ -163,12 +197,18 @@ public class HtmlMinifierIntegrityTest {
     }
 
     /**
-     * Asserts that minifying {@code original} changes its formatting but not its meaning.
+     * Reports every way in which minifying {@code original} changed its meaning rather than just its
+     * formatting.
+     * <p>
+     * Returns the mismatches instead of asserting on the first one, so that a run over many inputs
+     * reports all of them at once. Stopping at the first failure hides how widespread a regression
+     * is, and hides whether the later inputs would have caught it too.
      *
-     * @param label a description used in assertion messages
+     * @param label a description used in failure messages
      * @param original the markup to check
+     * @return one entry per mismatch, empty when the markup survived intact
      */
-    private static void assertIntegrity(final String label, final String original) {
+    private static List<String> integrityFailures(final String label, final String original) {
 
         final String minified = HtmlMinifier.minify(original);
 
@@ -177,16 +217,40 @@ public class HtmlMinifierIntegrityTest {
         final Document before = parse(original);
         final Document after = parse(minified);
 
-        assertEquals(label + ": attribute values must be byte-for-byte identical",
-                attributeValues(before), attributeValues(after));
-        assertEquals(label + ": whitespace-sensitive regions must be byte-for-byte identical",
-                rawRegions(before), rawRegions(after));
-        assertEquals(label + ": visible text must be unchanged once whitespace is normalised",
-                visibleText(before), visibleText(after));
-        assertEquals(label + ": element structure must be unchanged",
-                structure(before), structure(after));
-        assertEquals(label + ": minifying again must be a no-op",
-                minified, HtmlMinifier.minify(minified));
+        final List<String> failures = new ArrayList<>();
+        compare(failures, label, "attribute values", attributeValues(before), attributeValues(after));
+        compare(failures, label, "whitespace-sensitive regions", rawRegions(before), rawRegions(after));
+        compare(failures, label, "visible text", visibleText(before), visibleText(after));
+        compare(failures, label, "element structure", structure(before), structure(after));
+        compare(failures, label, "idempotence", minified, HtmlMinifier.minify(minified));
+        return failures;
+    }
+
+    /**
+     * Records a mismatch between what went in and what came out, if there is one.
+     */
+    private static void compare(final List<String> failures, final String label,
+            final String aspect, final Object expected, final Object actual) {
+        failures.addAll(Objects.equals(expected, actual) ? List.of()
+                : List.of(String.format("[%s] %s changed%n     expected: %s%n     actual  : %s",
+                        label, aspect, abbreviate(expected), abbreviate(actual))));
+    }
+
+    /**
+     * @return the value as a string, shortened so one failure cannot bury the others
+     */
+    private static String abbreviate(final Object value) {
+        final String text = String.valueOf(value).replace("\n", "\\n");
+        return text.length() <= 220 ? text : text.substring(0, 220) + "... (" + text.length() + " chars)";
+    }
+
+    /**
+     * Fails with every mismatch listed, rather than only the first.
+     */
+    private static void assertNoFailures(final String scope, final List<String> failures) {
+        assertTrue(String.format("minification altered content in %d place(s) across %s:%n%n%s%n",
+                        failures.size(), scope, String.join(System.lineSeparator(), failures)),
+                failures.isEmpty());
     }
 
     /**
