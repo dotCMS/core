@@ -70,6 +70,8 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
                     // libvips-only capabilities with no legacy equivalent
                     .put("smartcrop", VipsSmartCropImageFilter.class)
                     .put("avif", VipsAvifImageFilter.class)
+                    .put("jxl", VipsJpegXlImageFilter.class)
+                    .put("jpegxl", VipsJpegXlImageFilter.class)
                     .build();
 
     public VipsImageFilterApiImpl() {
