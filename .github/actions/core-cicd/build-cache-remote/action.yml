@@ -108,10 +108,15 @@ runs:
           exit 0
         fi
 
+        # Pinned by digest, not :latest. This container is handed the bucket
+        # credentials and proxies every cache read and write, so a repointed tag
+        # would be a credential-stealing position. The digest below is the one
+        # validated end-to-end against the OVH bucket; it is an OCI index
+        # covering linux/amd64 and linux/arm64. Bump deliberately.
         docker run -d --name build-cache-sigv4 \
           -p "127.0.0.1:${PORT}:8080" \
           -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-          public.ecr.aws/aws-observability/aws-sigv4-proxy:latest \
+          public.ecr.aws/aws-observability/aws-sigv4-proxy@sha256:6cd48ff272e30b6c3c01c02eac42dc3376bc3efa6ed3377bccd484e1c1b389df \
           --name s3 --region "$REGION" \
           --host "$HOST" --sign-host "$HOST" \
           --upstream-url-scheme "$SCHEME" \
