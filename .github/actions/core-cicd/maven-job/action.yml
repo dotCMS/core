@@ -307,7 +307,8 @@ runs:
           echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
-        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+        # Set by the build-cache-remote action when the S3 cache is wired up; empty otherwise.
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS ${BUILD_CACHE_ARGS:-} $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
           echo "Building Maven with args $FINAL_ARGS"
