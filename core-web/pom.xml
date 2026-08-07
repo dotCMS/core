@@ -392,15 +392,6 @@
             </properties>
         </profile>
 
-<!--
-        The `is_pr` profile lived here, auto-activated by -Dgithub.event.name=pull_request.
-        Its three properties duplicated the defaults above verbatim; the only live effect was
-        skip.validate=false, i.e. running lint/format inside the artifact build on PRs and
-        nowhere else. That made the PR effective pom differ from trunk's, so the build cache
-        could never reuse this module across the two — for a check that gates nothing the
-        build consumes. Lint and format now run under -Pvalidate in the Frontend Unit Tests
-        job (.github/test-matrix.yml), off the critical path.
-        -->
 
         <profile>
             <id>format</id>
