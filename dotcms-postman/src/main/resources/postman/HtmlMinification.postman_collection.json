@@ -9,6 +9,27 @@
       "name": "Setup",
       "item": [
         {
+          "name": "Ensure HTML Minification is OFF",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/FEATURE_FLAG_MINIFY_HTML",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "FEATURE_FLAG_MINIFY_HTML"
+              ]
+            },
+            "description": "Best effort, and deliberately without assertions. Newman runs with bail:true, so a failure anywhere aborts the run before the trailing clean-up request, leaving the flag set for whatever runs next. Clearing it here means a previous aborted run cannot make this one start from a minified baseline."
+          },
+          "response": []
+        },
+        {
           "name": "Get default site",
           "event": [
             {
@@ -406,9 +427,16 @@
                   "const entity = pm.response.json().entity || {};",
                   "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
                   "const unminified = pm.collectionVariables.get(\"unminifiedHtml\");",
-                  "// Crude stand-in for a DOM comparison: drop tags and comments, collapse whitespace.",
+                  "// Crude stand-in for a DOM comparison: drop comments, then tags, then collapse whitespace.",
                   "// Enough to catch words being joined or text disappearing, which is what matters here.",
-                  "const visibleText = (s) => s.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();",
+                  "// Comments must go FIRST. A comment can contain tags -- this template has a commented-out",
+                  "// script -- and stripping tags first would leave the comment's insides behind as text on the",
+                  "// un-minified side while the minified side has dropped the comment entirely.",
+                  "const visibleText = (s) => s",
+                  "    .replace(/<!--[\\s\\S]*?-->/g, ' ')",
+                  "    .replace(/<[^>]*>/g, ' ')",
+                  "    .replace(/\\s+/g, ' ')",
+                  "    .trim();",
                   "",
                   "pm.test(\"Markup is actually minified\", function () {",
                   "    pm.expect(html.length).to.be.below(unminified.length);",
@@ -565,9 +593,16 @@
                   "",
                   "const html = pm.response.text();",
                   "const unminified = pm.collectionVariables.get(\"unminifiedLiveHtml\");",
-                  "// Crude stand-in for a DOM comparison: drop tags and comments, collapse whitespace.",
+                  "// Crude stand-in for a DOM comparison: drop comments, then tags, then collapse whitespace.",
                   "// Enough to catch words being joined or text disappearing, which is what matters here.",
-                  "const visibleText = (s) => s.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();",
+                  "// Comments must go FIRST. A comment can contain tags -- this template has a commented-out",
+                  "// script -- and stripping tags first would leave the comment's insides behind as text on the",
+                  "// un-minified side while the minified side has dropped the comment entirely.",
+                  "const visibleText = (s) => s",
+                  "    .replace(/<!--[\\s\\S]*?-->/g, ' ')",
+                  "    .replace(/<[^>]*>/g, ' ')",
+                  "    .replace(/\\s+/g, ' ')",
+                  "    .trim();",
                   "",
                   "pm.test(\"LIVE output is minified\", function () {",
                   "    pm.expect(html.length).to.be.below(unminified.length);",
