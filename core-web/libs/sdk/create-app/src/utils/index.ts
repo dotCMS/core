@@ -119,8 +119,9 @@ export async function fetchWithRetry(
 
     // Only reachable when retries < 1, in which case the loop never runs. Throwing keeps the
     // return type free of `undefined` and surfaces the bad argument instead of hiding it.
+    // Note `retries` is the total attempt count, not the number of retries after the first try.
     throw new Error(
-        chalk.red(`\n❌ fetchWithRetry requires at least 1 retry, received ${retries}\n`)
+        chalk.red(`\n❌ fetchWithRetry requires at least 1 attempt, received ${retries}\n`)
     );
 }
 
