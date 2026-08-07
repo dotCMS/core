@@ -458,15 +458,22 @@ describe('DotFormComponent', () => {
                 expect(toggleSidebarSpy).toHaveBeenCalled();
             });
 
-            it('should render both open and close sidebar icons, hiding one per state', () => {
-                const openIcon = spectator.query(byTestId('sidebar-open-icon'));
-                const closeIcon = spectator.query(byTestId('sidebar-close-icon'));
-                expect(openIcon).toBeTruthy();
-                expect(closeIcon).toBeTruthy();
-                // One of the two icons must be hidden at any given time
-                const openHidden = openIcon?.classList.contains('hidden');
-                const closeHidden = closeIcon?.classList.contains('hidden');
-                expect(openHidden).not.toBe(closeHidden);
+            it('should render a single dock_to_left sidebar icon', () => {
+                const icon = spectator.query(byTestId('sidebar-toggle-icon'));
+
+                expect(icon).toBeTruthy();
+                // Material Symbols renders the glyph from the ligature text, so the exact content
+                // matters — a typo would silently render as plain words.
+                expect(icon?.textContent?.trim()).toBe('dock_to_left');
+                expect(icon?.classList.contains('material-symbols-outlined')).toBe(true);
+                // Rendered as-is: the flip the previous SVG pair carried pointed it the wrong way.
+                expect(icon?.classList.contains('-scale-x-100')).toBe(false);
+                // The glyph is decorative; the accessible name lives on the button.
+                expect(icon?.getAttribute('aria-hidden')).toBe('true');
+
+                // The previous two-icon (open/close SVG) markup is gone.
+                expect(spectator.query(byTestId('sidebar-open-icon'))).toBeFalsy();
+                expect(spectator.query(byTestId('sidebar-close-icon'))).toBeFalsy();
             });
 
             describe('TabView Styling', () => {

@@ -39,7 +39,7 @@ function clearPrevNavCollapsed(): void {
 }
 
 /** Collapse the navs for the side panel when the viewport is narrower than this (px). */
-const COLLAPSE_MAX_WIDTH = 1800;
+const COLLAPSE_MAX_WIDTH = 2560;
 
 /**
  * Collapses the main navigation (logo + menus) while an Edit Content side panel is open, and

@@ -124,7 +124,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.query(byTestId('side-panel-expand'), { root: true })?.getAttribute('aria-label');
 
     /**
-     * Drawer width from the `pt.root.style` binding (`70%` collapsed / `100%` expanded). The drawer
+     * Drawer width from the `pt.root.style` binding (`80%` collapsed / `100%` expanded). The drawer
      * is teleported to `document.body`, so query from the document root.
      */
     const drawerWidth = (): string =>
@@ -136,7 +136,7 @@ describe('DotEditContentSidePanelComponent', () => {
 
         expect(expandIcon()).toBe('open_in_full');
         expect(expandAriaLabel()).toBe('edit.content.side-panel.expand');
-        expect(drawerWidth()).toBe('70%');
+        expect(drawerWidth()).toBe('80%');
 
         clickButton('side-panel-expand');
         spectator.detectChanges();
@@ -149,7 +149,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
         expect(expandIcon()).toBe('open_in_full');
         expect(expandAriaLabel()).toBe('edit.content.side-panel.expand');
-        expect(drawerWidth()).toBe('70%');
+        expect(drawerWidth()).toBe('80%');
         expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('false');
     });
 
@@ -202,6 +202,91 @@ describe('DotEditContentSidePanelComponent', () => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
         // A panel beneath the top one must not react to the shared document-level ESC.
+        expect(confirmClose).not.toHaveBeenCalled();
+        expect(closedSpy).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Simulates a click on the drawer's modal mask (the area behind the panel). PrimeNG builds that
+     * mask imperatively during the drawer's show animation, which jsdom does not run — so the test
+     * stands in a real element carrying the class the handler matches on, and dispatches a bubbling
+     * click from it just as the browser would.
+     */
+    const clickOutside = (): void => {
+        const mask = document.createElement('div');
+        mask.classList.add('p-drawer-mask');
+        document.body.appendChild(mask);
+        mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        mask.remove();
+    };
+
+    it('should close through the editor guard when clicking outside the panel', () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest
+            .spyOn(layout, 'confirmClose')
+            .mockImplementation((onProceed: () => void) => onProceed());
+
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        clickOutside();
+
+        // Same contract as ESC / the X button: the guard runs first, close only follows it.
+        expect(confirmClose).toHaveBeenCalledWith(expect.any(Function));
+        expect(closedSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should NOT emit `closed` when the guard cancels a click-outside (unsaved changes kept)', () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        jest.spyOn(layout, 'confirmClose').mockImplementation(() => {
+            /* user chose "Keep editing" → never calls onProceed */
+        });
+
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        clickOutside();
+
+        expect(closedSpy).not.toHaveBeenCalled();
+    });
+
+    it('should ignore a click outside when not the frontmost stacked panel (isTop === false)', () => {
+        (spectator.inject(DotSidePanelNavController).isTop as jest.Mock).mockReturnValue(false);
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest.spyOn(layout, 'confirmClose');
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        clickOutside();
+
+        // A panel beneath the top one must not react to the shared document-level click.
+        expect(confirmClose).not.toHaveBeenCalled();
+        expect(closedSpy).not.toHaveBeenCalled();
+    });
+
+    it('should NOT close on a click inside the panel', () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest.spyOn(layout, 'confirmClose');
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        // Bubbles up to the same document listener, but its target is not the mask.
+        spectator
+            .query(byTestId('side-panel-title'), { root: true })
+            ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
         expect(confirmClose).not.toHaveBeenCalled();
         expect(closedSpy).not.toHaveBeenCalled();
     });
@@ -372,7 +457,7 @@ describe('DotEditContentSidePanelComponent — persisted expanded preference', (
         buildAndAssertOpenState({
             icon: 'open_in_full',
             ariaLabel: 'edit.content.side-panel.expand',
-            width: '70%'
+            width: '80%'
         });
     });
 });
