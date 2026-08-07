@@ -625,12 +625,21 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
                         "+contentType:" + languageVariableContentType.variable(),
                         0, 0, null, APILocator.systemUser(), false);
 
-                for (Contentlet contentlet : existingVariables) {
+                if (!existingVariables.isEmpty()) {
+                    // Batched for the same reason as cleanup() - see destroyQuietly.
                     try {
-                        contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
-                    } catch (Exception e) {
-                        Logger.warn(this, "Failed to delete existing language variable: " +
-                                contentlet.getIdentifier(), e);
+                        contentletAPI.destroy(existingVariables, APILocator.systemUser(), false);
+                    } catch (Exception batchFailure) {
+                        Logger.debug(this, "Batch destroy failed, falling back to one at a time: "
+                                + batchFailure.getMessage(), batchFailure);
+                        for (final Contentlet contentlet : existingVariables) {
+                            try {
+                                contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                            } catch (Exception e) {
+                                Logger.warn(this, "Failed to delete existing language variable: " +
+                                        contentlet.getIdentifier(), e);
+                            }
+                        }
                     }
                 }
 
@@ -681,9 +690,41 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      * @param summary the migration summary
      */
     private void cleanup(final ImmutableMigrationSummary summary) {
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         //Clean up required to avoid side effects
-        summary.success().forEach((language, inodes) -> {
+        final List<String> inodes = summary.success().values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        destroyQuietly(inodes);
+    }
+
+    /**
+     * Destroys the given contentlets by inode, batching the work.
+     * <p>
+     * A migration run produces well over a hundred Language Variables, and both
+     * {@code find} and {@code destroy} are per-contentlet round trips -
+     * {@code destroy} is {@code @WrapInTransaction}, so destroying one at a time
+     * costs one transaction (plus an ES delete and cache invalidation) each. The
+     * batch overloads collapse that into a single query and a single transaction.
+     * <p>
+     * Teardown must never leave content behind for the next test, so if the batch
+     * fails for any reason this falls back to the original per-contentlet loop,
+     * which tolerates individual failures.
+     *
+     * @param inodes inodes of the contentlets to destroy
+     */
+    private void destroyQuietly(final List<String> inodes) {
+        if (inodes.isEmpty()) {
+            return;
+        }
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        try {
+            final List<Contentlet> contentlets = contentletAPI.findContentlets(inodes);
+            if (!contentlets.isEmpty()) {
+                contentletAPI.destroy(contentlets, APILocator.systemUser(), false);
+            }
+        } catch (Exception batchFailure) {
+            Logger.debug(this, "Batch destroy failed, falling back to one at a time: "
+                    + batchFailure.getMessage(), batchFailure);
             inodes.forEach(inode -> {
                 try {
                     final Contentlet contentlet = contentletAPI.find(inode, APILocator.systemUser(), false);
@@ -692,7 +733,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
                     Logger.debug(this, e.getMessage(), e);
                 }
             });
-        });
+        }
     }
 
     /**
