@@ -64,14 +64,14 @@ describe('utils', () => {
             };
 
             const result = getFileMetadata(contentlet);
-            expect(result).toEqual(contentlet.metaData);
+            expect(result).toEqual(contentlet['metaData']);
         });
 
         it('should return assetMetaData if metaData is not present', () => {
             const contentlet: DotCMSContentlet = NEW_FILE_MOCK.entity;
 
             const result = getFileMetadata(contentlet);
-            expect(result).toEqual(contentlet.assetMetaData);
+            expect(result).toEqual(contentlet['assetMetaData']);
         });
 
         it('should return an empty object if neither metaData nor assetMetaData is present', () => {
@@ -97,7 +97,7 @@ describe('utils', () => {
             const contentlet: DotCMSContentlet = {
                 ...NEW_FILE_MOCK.entity
             };
-            delete contentlet.assetVersion;
+            delete contentlet['assetVersion'];
 
             const result = getFileVersion(contentlet);
             expect(result).toBeNull();
@@ -141,7 +141,7 @@ describe('utils', () => {
                 ...TEMP_FILE_MOCK,
                 mimeType: 'image/jpeg'
             };
-            const acceptedFiles = [];
+            const acceptedFiles: string[] = [];
             expect(checkMimeType(file, acceptedFiles)).toBe(true);
         });
 
@@ -166,7 +166,7 @@ describe('utils', () => {
         it('returns false for file with no mime type', () => {
             const file = {
                 ...TEMP_FILE_MOCK,
-                mimeType: null
+                mimeType: null as unknown as string
             };
             const acceptedFiles = ['image/jpeg'];
             expect(checkMimeType(file, acceptedFiles)).toBe(false);

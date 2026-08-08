@@ -98,6 +98,46 @@ Always wrap form fields with this structure for consistent styling:
 </form>
 ```
 
+## TypeScript Strict Mode
+
+Strict mode is being rolled out **one project at a time** (epic #35932), bottom-up through the dependency graph. `tsconfig.base.json` stays at `"strict": false` — never flip it globally.
+
+To make a project strict:
+
+1. Add the flags to the **project's own** `tsconfig.json` (not `tsconfig.spec.json`, not the base):
+
+    ```json
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+    ```
+
+2. Fix every error. No new `any` — use explicit types. To silence something unavoidable, use `@ts-expect-error` with a `// TODO(#issue):` note, never a blanket `@ts-ignore`.
+
+**What enforces this:** for Rollup libs that emit declarations (`"declaration": true`), `@rollup/plugin-typescript` is in the build chain and reports type errors, so the `build` target is the gate — CI runs `nx run-many -t build` (the `build-test` execution in `core-web/pom.xml`). Do **not** add a separate `typecheck` target to those projects; it is redundant. `lint` does not catch type errors — ESLint reports lint rules, not TS diagnostics.
+
+Vite-based projects are the exception: their builds use esbuild and skip type checking, which is why the Nx Vite plugin infers a separate `typecheck` target for them.
+
+Verify locally:
+
+```bash
+pnpm exec tsc -p <projectRoot>/tsconfig.lib.json --noEmit
+pnpm exec nx run <project>:build
+pnpm exec nx affected -t build,lint --base=origin/main   # check you didn't break consumers
+```
+
+`<projectRoot>` is the path from `project.json`, which is often nested — e.g. `libs/sdk/create-app`, not `libs/create-app`. Two caveats on the tsconfig name:
+
+- **Apps** use `tsconfig.app.json`.
+- **Some projects have no `tsconfig.lib.json`** (`libs/sdk/create-app` is one); use their `tsconfig.json` instead.
+
+Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the spec config extends, so specs go strict too and their errors are yours to fix.
+
+> **Watch out for masked results.** If a tsconfig declares a `types` entry that is not installed, `tsc` reports `TS2688: Cannot find type definition file for '<name>'` and **stops before semantic checking** — you get one error and no type checking at all. A stable error count across a change proves nothing in that case. `libs/utils-testing` is affected today (`"types": ["jasmine"]`); check it with `--types node` to see real diagnostics.
+
 ## Portlet Development
 
 New portlets go in `libs/portlets/`. For full patterns, architecture, testing, and Nx generator setup:
@@ -110,8 +150,8 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 
 - Use `dot-content-drive` portlet as reference for test config
 - `tsconfig.spec.json` tsconfig.spec.json must have "isolatedModules": true in compilerOptions
-- `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
-- `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
+- `tsconfig.json` — do NOT add `"module": "preserve"`
+- `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`); do NOT add `"strict": true` here, it belongs in the project's `tsconfig.json` (see [TypeScript Strict Mode](#typescript-strict-mode))
 - Import `mockProvider` from `@openng/spectator/jest` (not `@openng/spectator`)
 
 ### SignalStore Tests

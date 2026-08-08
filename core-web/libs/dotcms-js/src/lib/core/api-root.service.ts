@@ -12,9 +12,9 @@ export class ApiRoot {
     hideFireOn = false;
     hideRulePushOptions = false;
 
-    static parseQueryParam(query: string, token: string): string {
+    static parseQueryParam(query: string, token: string): string | null {
         let idx = -1;
-        let result = null;
+        let result: string | null = null;
         token = token + '=';
         if (query && query.length) {
             idx = query.indexOf(token);

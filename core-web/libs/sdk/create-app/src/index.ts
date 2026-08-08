@@ -390,7 +390,7 @@ program
             if (error instanceof Error) {
                 console.error(error.message);
                 // Preserve stack trace for debugging when DEBUG mode is enabled
-                if (process.env.DEBUG) {
+                if (process.env['DEBUG']) {
                     console.error('\n' + chalk.gray('Stack trace:'));
                     console.error(chalk.gray(error.stack || 'No stack trace available'));
                 }
