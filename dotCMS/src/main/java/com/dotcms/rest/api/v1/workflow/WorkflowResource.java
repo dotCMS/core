@@ -227,11 +227,52 @@ public class WorkflowResource {
             "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
             "leave the default.";
 
-    private static final String BLOCK_EDITOR_FIELD_NOTE =
-            "\n\n**Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — " +
-            "do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and " +
-            "converted to the Block Editor structure when the contentlet is opened in the editor. " +
-            "Example: `\"body\": \"<h2>Intro</h2><p>Hello <strong>world</strong>.</p>\"`.";
+    /**
+     * OpenAPI note describing how Story Block fields accept Markdown/HTML — including the
+     * {@code dotcms-*} rich-node vocabulary (#36658 fences, #36659 elements). Public so every
+     * endpoint that funnels through the same populator seam (e.g.
+     * {@code ContentResource#saveDraft}) documents the identical contract from one source.
+     */
+    public static final String BLOCK_EDITOR_FIELD_NOTE =
+            "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — " +
+            "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
+            "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
+            "back as structured content with no editor round-trip required. A value that is already a " +
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`." +
+            "\n\n**Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as " +
+            "fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON " +
+            "object. Example — embed a contentlet:" +
+            "\n\n```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n```" +
+            "\n\nSupported labels and payload fields (**bold** = required):" +
+            "\n- `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). " +
+            "The server rebuilds the full embed data from the identifier on every read." +
+            "\n- `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional " +
+            "`alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external " +
+            "images need no fence — standard `![alt](url \"title\")` works." +
+            "\n- `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, " +
+            "`height`, `languageId`." +
+            "\n- `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`." +
+            "\n- `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON " +
+            "(`{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[n,n]},\"content\":[…two gridColumn nodes…]}`)." +
+            "\n- `dotcms-node` → any other node type verbatim (`{\"type\": \"<nodeType>\", …}`) — the " +
+            "fallback for custom blocks." +
+            "\n\n**Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar " +
+            "payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, " +
+            "so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): " +
+            "`<dotcms-content identifier=\"<contentlet-id>\" language-id=\"1\"></dotcms-content>`. " +
+            "`dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's " +
+            "text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an " +
+            "explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would " +
+            "swallow the content after it. Both carriers produce identical stored documents." +
+            "\n\nBlock styling (e.g. text alignment) is set by an HTML comment on its own line " +
+            "immediately before the block it decorates, in Markdown and HTML alike: " +
+            "`<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
+            "\n\nA Markdown/HTML write **fully replaces** the stored document; when stored rich blocks " +
+            "are not carried over in the submitted value, the save still succeeds and an advisory warning " +
+            "listing the replaced blocks is returned in the response `messages` field — carry the blocks " +
+            "over as fences or elements to preserve them. An invalid payload degrades to an ordinary " +
+            "code block (or is dropped when it carries no text to keep), never an error.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
@@ -625,7 +666,7 @@ public class WorkflowResource {
                     .map(String::trim)
                     .filter(UtilMethods::isSet)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (ids.isEmpty()) {
                 throw new IllegalArgumentException("contentTypeIds must not be empty");
@@ -665,7 +706,7 @@ public class WorkflowResource {
 
             if (!errors.isEmpty()) {
                 Logger.warn(this, "Completed with " + errors.size() + " error(s): " +
-                        errors.stream().map(ErrorEntity::getFieldName).collect(Collectors.toList()));
+                        errors.stream().map(ErrorEntity::getFieldName).toList());
             }
 
             return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
@@ -3029,7 +3070,7 @@ public class WorkflowResource {
             throw new DoesNotExistException("contentlet-was-not-found");
         }
 
-        validateFireActionForm(fireActionForm, actionId);
+        final Set<String> ignoredSystemFields = validateFireActionForm(fireActionForm, actionId);
 
         final PageMode pageMode = PageMode.get(request);
         final IndexPolicy indexPolicy = contentlet.getIndexPolicy()!=null
@@ -3078,29 +3119,59 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
+        // Advisory warnings only — the save itself succeeded with 200. Story Block conversion
+        // warnings (e.g. rich blocks replaced by a Markdown write, see #36658) are popped off
+        // the contentlets BEFORE the entity map is built so the transient key never leaks.
+        final List<MessageEntity> messages = mergeMessages(
+                ignoredSystemFieldsMessages(ignoredSystemFields),
+                MapToContentletPopulator.popStoryBlockConversionMessages(
+                        contentlet, basicContentlet, hydratedContentlet));
+        final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
-                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
+                null != messages
+                        ? new ResponseEntityView<>(entity, messages)
+                        : new ResponseEntityView<>(entity)
         ).build(); // 200
+    }
+
+    /** Null-tolerant concat: returns {@code null} when both lists are null/empty. */
+    private static List<MessageEntity> mergeMessages(final List<MessageEntity> first,
+                                                     final List<MessageEntity> second) {
+        if (null == first || first.isEmpty()) {
+            return (null == second || second.isEmpty()) ? null : second;
+        }
+        if (null == second || second.isEmpty()) {
+            return first;
+        }
+        final List<MessageEntity> merged = new ArrayList<>(first.size() + second.size());
+        merged.addAll(first);
+        merged.addAll(second);
+        return merged;
     }
 
     /**
      * Validates fields on the {@link FireActionForm} that the workflow engine would otherwise
-     * silently ignore, turning them into actionable {@link BadRequestException} responses.
+     * silently ignore.
      *
      * <ul>
      *   <li>{@code pathToMove} is meaningful only when the resolved workflow action wires a
      *       Move actionlet. Without it, the value is set on the contentlet's
-     *       {@link Contentlet#PATH_TO_MOVE} property but never read.</li>
-     *   <li>{@code host} / {@code folder} keys in the {@code contentlet} body are dropped by
-     *       {@code MapToContentletPopulator} because they are system fields, not content-type
-     *       fields. The only path that mutates a contentlet's location is the Move actionlet.</li>
+     *       {@link Contentlet#PATH_TO_MOVE} property but never read, so we reject it as a
+     *       {@link BadRequestException} to surface the misconfiguration.</li>
+     *   <li>{@code host} / {@code hostId} / {@code hostname} / {@code folder} keys in the
+     *       {@code contentlet} body are not applied by this endpoint. {@code MapToContentletPopulator}
+     *       silently ignores any key that is not a content-type field, so payloads carrying these
+     *       keys have always saved fine for content types without a matching Site-or-Folder field.
+     *       We preserve that long-standing contract by logging a warning instead of rejecting; the
+     *       only path that relocates a contentlet is a workflow action wired with the Move actionlet
+     *       (see {@code pathToMove}).</li>
      * </ul>
      */
-    private void validateFireActionForm(final FireActionForm fireActionForm,
+    private Set<String> validateFireActionForm(final FireActionForm fireActionForm,
                                         final String actionId) throws DotDataException, DotSecurityException {
 
         if (null == fireActionForm) {
-            return;
+            return Set.of();
         }
 
         if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
@@ -3129,13 +3200,44 @@ public class WorkflowResource {
 
             if (!protectedFields.isEmpty()) {
 
-                throw new BadRequestException(String.format(
-                        "System fields %s cannot be set via this endpoint. "
-                                + "To change a contentlet's location, fire a workflow action that includes "
-                                + "the Move actionlet (see 'pathToMove').",
+                // These system keys are not applied by this endpoint. Historically
+                // MapToContentletPopulator silently ignores any key that does not map to a
+                // content-type field, so payloads carrying these keys saved fine for content
+                // types without a matching Site-or-Folder field. We preserve that contract by
+                // warning instead of rejecting; the returned set is surfaced back to the caller
+                // (e.g. an MCP agent) so it learns its location intent was ignored. To actually
+                // relocate a contentlet, fire a workflow action wired with the Move actionlet
+                // (see 'pathToMove').
+                Logger.warn(this, String.format(
+                        "Fire action payload contains system field(s) %s; these are ignored by "
+                                + "this endpoint. To change a contentlet's location, fire a workflow "
+                                + "action that includes the Move actionlet (see 'pathToMove').",
                         protectedFields));
+
+                return protectedFields;
             }
         }
+
+        return Set.of();
+    }
+
+    /**
+     * Builds a single advisory {@link MessageEntity} explaining that the given system fields were
+     * ignored by the fire endpoint, so callers (notably MCP agents) do not silently assume the
+     * contentlet was relocated. Returns {@code null} when there is nothing to report.
+     */
+    private List<MessageEntity> ignoredSystemFieldsMessages(final Set<String> ignoredFields) {
+
+        if (null == ignoredFields || ignoredFields.isEmpty()) {
+            return null;
+        }
+
+        return List.of(new MessageEntity(String.format(
+                "System field(s) %s were ignored: this endpoint does not set a contentlet's "
+                        + "location. The content was saved at its existing/default location. To "
+                        + "place or move content, fire a workflow action that includes the Move "
+                        + "actionlet and pass 'pathToMove'.",
+                ignoredFields)));
     }
 
     private void processPermissions(final FireActionForm fireActionForm,
@@ -3939,9 +4041,10 @@ public class WorkflowResource {
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
 
-        // host/folder in the contentlet body are silently dropped by MapToContentletPopulator
-        // (they are system fields, not content-type fields). Reject up front so callers learn
-        // their request is wrong. pathToMove is validated per-contentlet downstream in fireAction.
+        // host/folder in the contentlet body are not applied by this endpoint (they are system
+        // fields, not content-type fields). We warn rather than reject so long-standing callers are
+        // not broken; this streaming merge path cannot carry a per-response message, so the warning
+        // is logged only. pathToMove misconfiguration is still rejected per-contentlet downstream.
         validateFireActionForm(fireActionForm, null);
 
         final String query = null != fireActionForm? fireActionForm.getQuery():StringPool.BLANK;

@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -75,8 +75,7 @@ describe('DotEditContentBlockEditorComponent', () => {
                 }
             },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
-                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             })
         ],
         detectChanges: false

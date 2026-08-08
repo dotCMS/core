@@ -674,18 +674,18 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         return [startDate, endDate];
     }
 
+    // Relative ranges resolve to whole, completed days ending YESTERDAY — today is still in
+    // progress and is excluded. Mirrors the upstream `last_7_days` / `last_30_days` semantics
+    // used by toApiRangeParams, so the client-side fill window lines up exactly with the data
+    // the API returns (otherwise chart labels drift +1 day and today shows as an empty bucket).
+    const yesterday = endOfDay(subDays(today, 1));
+
     switch (timeRange) {
-        case TIME_RANGE_OPTIONS.last7days: {
-            const sevenDaysAgo = subDays(today, 6);
+        case TIME_RANGE_OPTIONS.last7days:
+            return [startOfDay(subDays(today, 7)), yesterday];
 
-            return [startOfDay(sevenDaysAgo), endOfDay(today)];
-        }
-
-        case TIME_RANGE_OPTIONS.last30days: {
-            const thirtyDaysAgo = subDays(today, 29);
-
-            return [startOfDay(thirtyDaysAgo), endOfDay(today)];
-        }
+        case TIME_RANGE_OPTIONS.last30days:
+            return [startOfDay(subDays(today, 30)), yesterday];
 
         default:
             return [startOfDay(today), endOfDay(today)];

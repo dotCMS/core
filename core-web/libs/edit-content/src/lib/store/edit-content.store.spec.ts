@@ -1,9 +1,9 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -33,19 +33,28 @@ import {
 import { DotEditContentStore } from './edit-content.store';
 
 import { DotEditContentService } from '../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../services/host/edit-content-host.model';
 
 describe('DotEditContentStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotEditContentStore>>;
     let store: InstanceType<typeof DotEditContentStore>;
-    let mockActivatedRoute: Partial<ActivatedRoute>;
+
+    // The host resolves which content to open. Tests set its return value to
+    // drive `initialize()` (route params in prod are the host's concern, not the
+    // store's).
+    const mockHost = {
+        resolveIdentity: jest.fn().mockReturnValue({}),
+        reportSaved: jest.fn(),
+        reloadContent: jest.fn(),
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn()
+    };
 
     const createService = createServiceFactory({
         service: DotEditContentStore,
         providers: [
-            {
-                provide: ActivatedRoute,
-                useFactory: () => mockActivatedRoute
-            },
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotEditContentService),
             mockProvider(DotContentTypeService),
@@ -67,17 +76,15 @@ describe('DotEditContentStore', () => {
             }),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
+            { provide: EDIT_CONTENT_HOST, useValue: mockHost },
             provideHttpClient(),
             provideHttpClientTesting()
         ]
     });
 
     beforeEach(() => {
-        mockActivatedRoute = {
-            snapshot: {
-                params: {}
-            } as ActivatedRouteSnapshot
-        };
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
+        mockHost.resolveIdentity.mockReturnValue({});
         spectator = createService();
         store = spectator.service;
     });
@@ -85,7 +92,6 @@ describe('DotEditContentStore', () => {
     it('should create store with initial state', () => {
         expect(store.state()).toBe(ComponentStatus.INIT);
         expect(store.error()).toBeNull();
-        expect(store.isDialogMode()).toBe(false);
     });
 
     it('should initialize push publish history state correctly', () => {
@@ -121,44 +127,18 @@ describe('DotEditContentStore', () => {
         expect(store.pushPublishHistoryPagination).toBeDefined();
         expect(store.pushPublishHistoryStatus).toBeDefined();
         // Methods
-        expect(store.enableDialogMode).toBeDefined();
         expect(store.initializeNewContent).toBeDefined();
         expect(store.initializeExistingContent).toBeDefined();
-        expect(store.initializeDialogMode).toBeDefined();
-        expect(store.initializeAsPortlet).toBeDefined();
+        expect(store.initialize).toBeDefined();
         expect(store.loadPushPublishHistory).toBeDefined();
         expect(store.clearPushPublishHistory).toBeDefined();
         expect(store.deletePushPublishHistory).toBeDefined();
     });
 
-    describe('initializeDialogMode', () => {
-        it('should enable dialog mode and initialize new content when contentTypeId is provided', () => {
-            // Arrange
-            const options = { contentTypeId: 'test-content-type-id' };
+    describe('initialize', () => {
+        it('should initialize existing content when the host resolves an inode', () => {
+            mockHost.resolveIdentity.mockReturnValue({ inode: 'test-inode-123' });
 
-            // Mock the services that initializeNewContent would call
-            const mockContentType: Partial<DotCMSContentType> = {
-                id: 'test-content-type-id',
-                name: 'Test Type'
-            };
-            spectator
-                .inject(DotContentTypeService)
-                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
-            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
-
-            // Act
-            store.initializeDialogMode(options);
-
-            // Assert - check state changes instead of method calls
-            expect(store.isDialogMode()).toBe(true);
-            // The actual initialization is asynchronous, but we can verify dialog mode was enabled
-        });
-
-        it('should enable dialog mode and initialize existing content when contentletInode is provided', () => {
-            // Arrange
-            const options = { contentletInode: 'test-inode-123' };
-
-            // Mock the services that initializeExistingContent would call
             const mockContentlet: Partial<DotCMSContentlet> = {
                 inode: 'test-inode-123',
                 contentType: 'testType'
@@ -175,106 +155,17 @@ describe('DotEditContentStore', () => {
                 .inject(DotWorkflowService)
                 .getWorkflowStatus.mockReturnValue(of({} as DotCMSWorkflowStatus));
 
-            // Act
-            store.initializeDialogMode(options);
+            store.initialize();
 
-            // Assert - check state changes
-            expect(store.isDialogMode()).toBe(true);
-        });
-
-        it('should enable dialog mode when both contentTypeId and contentletInode are provided but prioritize contentTypeId', () => {
-            // Arrange
-            const options = {
-                contentTypeId: 'test-content-type-id',
-                contentletInode: 'test-inode-123'
-            };
-
-            // Mock the services for new content
-            const mockContentType: Partial<DotCMSContentType> = {
-                id: 'test-content-type-id',
-                name: 'Test Type'
-            };
-            spectator
-                .inject(DotContentTypeService)
-                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
-            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
-
-            // Act
-            store.initializeDialogMode(options);
-
-            // Assert
-            expect(store.isDialogMode()).toBe(true);
-            // Since contentTypeId is prioritized, existing content services should not be called
-            expect(spectator.inject(DotEditContentService).getContentById).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('initializeAsPortlet', () => {
-        it('should skip initialization when in dialog mode', () => {
-            // Arrange
-            store.enableDialogMode();
-            if (mockActivatedRoute.snapshot) {
-                mockActivatedRoute.snapshot.params = {
-                    contentType: 'test-content-type',
-                    id: 'test-inode'
-                };
-            }
-
-            // Act
-            store.initializeAsPortlet();
-
-            // Assert - services should not be called when in dialog mode
-            expect(
-                spectator.inject(DotContentTypeService).getContentTypeWithRender
-            ).not.toHaveBeenCalled();
-            expect(spectator.inject(DotEditContentService).getContentById).not.toHaveBeenCalled();
-        });
-
-        it('should initialize existing content when inode parameter is present', () => {
-            // Arrange
-            expect(store.isDialogMode()).toBe(false);
-            if (mockActivatedRoute.snapshot) {
-                mockActivatedRoute.snapshot.params = {
-                    id: 'test-inode-123',
-                    contentType: 'test-content-type'
-                };
-            }
-
-            // Mock services
-            const mockContentlet: Partial<DotCMSContentlet> = {
-                inode: 'test-inode-123',
-                contentType: 'testType'
-            };
-            spectator
-                .inject(DotEditContentService)
-                .getContentById.mockReturnValue(of(mockContentlet as DotCMSContentlet));
-            spectator
-                .inject(DotContentTypeService)
-                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
-            spectator.inject(DotWorkflowsActionsService).getByInode.mockReturnValue(of([]));
-            spectator.inject(DotWorkflowsActionsService).getWorkFlowActions.mockReturnValue(of([]));
-            spectator
-                .inject(DotWorkflowService)
-                .getWorkflowStatus.mockReturnValue(of({} as DotCMSWorkflowStatus));
-
-            // Act
-            store.initializeAsPortlet();
-
-            // Assert - verify the correct service is called with correct parameters
             expect(spectator.inject(DotEditContentService).getContentById).toHaveBeenCalledWith({
                 id: 'test-inode-123',
                 depth: DotContentletDepths.TWO
             });
         });
 
-        it('should initialize new content when only contentType parameter is present', () => {
-            // Arrange
-            expect(store.isDialogMode()).toBe(false);
-            if (mockActivatedRoute.snapshot) {
-                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
-            }
+        it('should initialize new content when the host resolves a contentTypeId', () => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'test-content-type' });
 
-            // Mock services
             const mockContentType: Partial<DotCMSContentType> = {
                 id: 'test-content-type',
                 name: 'Test Type'
@@ -284,81 +175,67 @@ describe('DotEditContentStore', () => {
                 .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
-            // Act
-            store.initializeAsPortlet();
+            store.initialize();
 
-            // Assert - verify the correct service is called
             expect(
                 spectator.inject(DotContentTypeService).getContentTypeWithRender
             ).toHaveBeenCalledWith('test-content-type');
+            // An inode was not resolved, so existing-content loading is not triggered.
+            expect(spectator.inject(DotEditContentService).getContentById).not.toHaveBeenCalled();
         });
 
-        it('should store folderPath from query params', () => {
-            if (mockActivatedRoute.snapshot) {
-                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
-                mockActivatedRoute.snapshot.queryParams = {
-                    folderPath: 'default/level1/level2/'
-                };
-            }
+        it('should prioritize inode over contentTypeId when the host resolves both', () => {
+            mockHost.resolveIdentity.mockReturnValue({
+                inode: 'test-inode-123',
+                contentTypeId: 'test-content-type'
+            });
 
-            const mockContentType: Partial<DotCMSContentType> = {
-                id: 'test-content-type',
-                name: 'Test Type'
-            };
+            spectator
+                .inject(DotEditContentService)
+                .getContentById.mockReturnValue(
+                    of({ inode: 'test-inode-123' } as DotCMSContentlet)
+                );
             spectator
                 .inject(DotContentTypeService)
-                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getByInode.mockReturnValue(of([]));
+            spectator.inject(DotWorkflowsActionsService).getWorkFlowActions.mockReturnValue(of([]));
+            spectator
+                .inject(DotWorkflowService)
+                .getWorkflowStatus.mockReturnValue(of({} as DotCMSWorkflowStatus));
+
+            store.initialize();
+
+            expect(spectator.inject(DotEditContentService).getContentById).toHaveBeenCalled();
+        });
+
+        it('should store folderPath resolved by the host', () => {
+            mockHost.resolveIdentity.mockReturnValue({
+                contentTypeId: 'test-content-type',
+                folderPath: 'default/level1/level2/'
+            });
+
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
-            store.initializeAsPortlet();
+            store.initialize();
 
             expect(store.queryParams()).toEqual({ folderPath: 'default/level1/level2/' });
         });
 
-        it('should keep default empty queryParams when no query params are present', () => {
-            if (mockActivatedRoute.snapshot) {
-                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
-                mockActivatedRoute.snapshot.queryParams = {};
-            }
+        it('should keep default empty queryParams when the host resolves no folderPath', () => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'test-content-type' });
 
-            const mockContentType: Partial<DotCMSContentType> = {
-                id: 'test-content-type',
-                name: 'Test Type'
-            };
             spectator
                 .inject(DotContentTypeService)
-                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
-            store.initializeAsPortlet();
+            store.initialize();
 
             expect(store.queryParams()).toEqual({});
-        });
-
-        it('should set queryParams before calling initializeNewContent', () => {
-            if (mockActivatedRoute.snapshot) {
-                mockActivatedRoute.snapshot.params = { contentType: 'test-content-type' };
-                mockActivatedRoute.snapshot.queryParams = {
-                    folderPath: 'default/folder1/'
-                };
-            }
-
-            const mockContentType: Partial<DotCMSContentType> = {
-                id: 'test-content-type',
-                name: 'Test Type'
-            };
-            spectator
-                .inject(DotContentTypeService)
-                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
-            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
-
-            store.initializeAsPortlet();
-
-            // queryParams should be set and content type service should also be called
-            expect(store.queryParams()).toEqual({ folderPath: 'default/folder1/' });
-            expect(
-                spectator.inject(DotContentTypeService).getContentTypeWithRender
-            ).toHaveBeenCalledWith('test-content-type');
         });
     });
 });

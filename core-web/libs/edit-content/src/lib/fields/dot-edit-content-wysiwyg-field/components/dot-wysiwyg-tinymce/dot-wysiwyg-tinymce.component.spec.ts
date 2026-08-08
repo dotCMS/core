@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
 import { BehaviorSubject, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

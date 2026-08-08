@@ -1,0 +1,184 @@
+<div class="canvas" data-testid="image-editor-canvas">
+    <dot-image-editor-address-bar
+        class="canvas__address-bar"
+        [zoomLevel]="$displayZoom()"
+        (zoomIn)="zoomIn()"
+        (zoomOut)="zoomOut()"
+        (fit)="fit()" />
+
+    <div class="canvas__viewport">
+        <div
+            #stage
+            class="canvas__stage"
+            [class.canvas__stage--pannable]="$canPan()"
+            [class.canvas__stage--panning]="$panning()"
+            [style.transform]="$stageTransform()"
+            (pointerdown)="onStagePointerDown($event)">
+            @if (store.previewStatus() === 'idle' && !$displayedUrl()) {
+                <p-skeleton
+                    class="canvas__skeleton"
+                    width="60%"
+                    height="60%"
+                    data-testid="image-editor-skeleton" />
+            }
+
+            <!-- Layer A: last successfully-loaded preview, never blanked. -->
+            <img
+                #displayImg
+                class="canvas__img canvas__img--displayed"
+                [class.canvas__img--loading]="store.previewStatus() === 'loading'"
+                [src]="$displayedSrc()"
+                [hidden]="!$displayedSrc()"
+                alt=""
+                (load)="onDisplayLoaded()"
+                data-testid="image-editor-display-img" />
+
+            <!-- Layer B: queued preview (a verified, fully-fetched blob), crossfaded in once it loads. -->
+            @if ($pendingSrc(); as pending) {
+                <img
+                    class="canvas__img canvas__img--pending"
+                    [src]="pending"
+                    alt=""
+                    aria-hidden="true"
+                    (load)="onPendingLoaded($event)"
+                    (error)="onPendingError()"
+                    data-testid="image-editor-pending-img" />
+            }
+
+            <dot-image-editor-crop-overlay
+                [imageRect]="$imageRect()"
+                [initialRect]="$capturedCropRect()"
+                [naturalSize]="$displayedNaturalSize()"
+                [aspect]="$cropAspect()" />
+
+            <dot-image-editor-focal-overlay
+                [imageRect]="$imageRect()"
+                [scale]="$zoomLevel() / 100" />
+        </div>
+
+        @if (store.previewStatus() === 'loading') {
+            <div class="canvas__loading" aria-live="polite" data-testid="image-editor-loading">
+                <p-progressSpinner
+                    strokeWidth="4"
+                    [style]="{ width: '2.5rem', height: '2.5rem' }" />
+            </div>
+        }
+
+        @if (store.previewStatus() === 'error') {
+            <div class="canvas__error" role="alert" data-testid="image-editor-error">
+                <i class="material-symbols-outlined canvas__error-icon" aria-hidden="true">
+                    warning
+                </i>
+                <p class="canvas__error-message">
+                    {{ 'edit.content.image-editor.canvas.error.message' | dm }}
+                </p>
+                <p-button
+                    [label]="'edit.content.image-editor.canvas.error.retry' | dm"
+                    (onClick)="retry()"
+                    data-testid="image-editor-retry-btn">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined">refresh</i>
+                    </ng-template>
+                </p-button>
+            </div>
+        }
+        @if (store.activeTool() === 'crop') {
+            <!-- Floating action bar: the crop tool's aspect presets, the natural-pixel
+                 width/height readout/editor and apply/cancel actions, centered at the
+                 bottom of the viewport and revealed on hover (like the tool rail). -->
+            <div class="canvas__actions" data-testid="image-editor-canvas-footer">
+                <!-- Aspect-ratio preset dropdown (Free / 1:1 / 16:9 / 4:3). -->
+                <p-select
+                    appendTo="body"
+                    styleClass="canvas__aspect-select"
+                    [options]="aspectPresets"
+                    [ngModel]="$cropPreset()"
+                    optionLabel="label"
+                    optionValue="key"
+                    [attr.aria-label]="'edit.content.image-editor.crop.aspects' | dm"
+                    data-testid="image-editor-aspect-select"
+                    (onChange)="$cropPreset.set($event.value)" />
+
+                <span class="canvas__separator" aria-hidden="true"></span>
+
+                <!-- Orientation: landscape / portrait. Flips a ratio'd preset
+                     (16:9 -> 9:16); disabled for Free and 1:1, where it has no effect. -->
+                <div
+                    class="canvas__orient"
+                    role="group"
+                    [attr.aria-label]="'edit.content.image-editor.crop.orientation' | dm">
+                    <button
+                        type="button"
+                        class="canvas__orient-btn"
+                        [class.canvas__orient-btn--active]="$cropOrientation() === 'landscape'"
+                        [disabled]="$orientationDisabled()"
+                        [attr.aria-pressed]="$cropOrientation() === 'landscape'"
+                        [attr.aria-label]="'edit.content.image-editor.crop.landscape' | dm"
+                        [pTooltip]="'edit.content.image-editor.crop.landscape' | dm"
+                        tooltipPosition="top"
+                        (click)="$cropOrientation.set('landscape')"
+                        data-testid="image-editor-orient-landscape">
+                        <i class="material-symbols-outlined">crop_landscape</i>
+                    </button>
+                    <button
+                        type="button"
+                        class="canvas__orient-btn"
+                        [class.canvas__orient-btn--active]="$cropOrientation() === 'portrait'"
+                        [disabled]="$orientationDisabled()"
+                        [attr.aria-pressed]="$cropOrientation() === 'portrait'"
+                        [attr.aria-label]="'edit.content.image-editor.crop.portrait' | dm"
+                        [pTooltip]="'edit.content.image-editor.crop.portrait' | dm"
+                        tooltipPosition="top"
+                        (click)="$cropOrientation.set('portrait')"
+                        data-testid="image-editor-orient-portrait">
+                        <i class="material-symbols-outlined">crop_portrait</i>
+                    </button>
+                </div>
+
+                <span class="canvas__separator" aria-hidden="true"></span>
+
+                <!-- Live crop size in natural image pixels. Read-only when Free
+                     (a pure readout); editable and ratio-locked under a preset. -->
+                <div class="canvas__size">
+                    <p-inputNumber
+                        styleClass="canvas__size-input"
+                        [ngModel]="$cropSize().width"
+                        [min]="1"
+                        [useGrouping]="false"
+                        [disabled]="$cropAspect() === null"
+                        [attr.aria-label]="'edit.content.image-editor.crop.width' | dm"
+                        (onInput)="onCropWidthChange($event.value)"
+                        (onBlur)="onCropWidthChange($cropSize().width)"
+                        data-testid="image-editor-crop-width-input" />
+                    <span class="canvas__size-glyph" aria-hidden="true">×</span>
+                    <p-inputNumber
+                        styleClass="canvas__size-input"
+                        [ngModel]="$cropSize().height"
+                        [min]="1"
+                        [useGrouping]="false"
+                        [disabled]="$cropAspect() === null"
+                        [attr.aria-label]="'edit.content.image-editor.crop.height' | dm"
+                        (onInput)="onCropHeightChange($event.value)"
+                        (onBlur)="onCropHeightChange($cropSize().height)"
+                        data-testid="image-editor-crop-height-input" />
+                    <span class="canvas__size-unit">px</span>
+                </div>
+
+                <span class="canvas__separator" aria-hidden="true"></span>
+
+                <p-button
+                    size="small"
+                    [text]="true"
+                    severity="secondary"
+                    [label]="'edit.content.image-editor.crop.cancel' | dm"
+                    (onClick)="cancelCrop()"
+                    data-testid="image-editor-crop-cancel-btn" />
+                <p-button
+                    size="small"
+                    [label]="'edit.content.image-editor.crop.apply' | dm"
+                    (onClick)="applyCrop()"
+                    data-testid="image-editor-crop-apply-btn" />
+            </div>
+        }
+    </div>
+</div>

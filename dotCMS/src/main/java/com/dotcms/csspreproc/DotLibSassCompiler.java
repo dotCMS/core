@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.csspreproc.dartsass.CompilerOptions;
 import com.dotcms.csspreproc.dartsass.DartSassCompiler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -38,10 +39,27 @@ import java.util.Optional;
 public class DotLibSassCompiler extends DotCSSCompiler {
 
     final boolean live;
+    private final boolean sourceMap;
 
     public DotLibSassCompiler(final Host host, final String uri, final boolean live, final HttpServletRequest req) {
+        this(host, uri, live, false, req);
+    }
+
+    /**
+     * Creates a Dart SASS compiler that can optionally emit an inline (embedded) source map in the compiled CSS.
+     *
+     * @param host      The {@link Host} the SCSS file belongs to.
+     * @param uri       The URI of the SCSS file being compiled.
+     * @param live      Whether the live version of the file must be compiled.
+     * @param sourceMap When {@code true}, an inline source map is appended to the compiled CSS. When {@code false},
+     *                  the output is byte-identical to the historical default.
+     * @param req       The current {@link HttpServletRequest}.
+     */
+    public DotLibSassCompiler(final Host host, final String uri, final boolean live, final boolean sourceMap,
+            final HttpServletRequest req) {
         super(host, uri, live, req);
         this.live = live;
+        this.sourceMap = sourceMap;
     }
 
     @Override
@@ -83,7 +101,8 @@ public class DotLibSassCompiler extends DotCSSCompiler {
                 throw new RuntimeException(errorMsg);
             }
             final File compileDestinationFile = new File(compileTargetFile.getAbsoluteFile() + ".css");
-            final DartSassCompiler compiler = new DartSassCompiler(compileTargetFile, compileDestinationFile);
+            final CompilerOptions options = new CompilerOptions.Builder().sourceMap(this.sourceMap).build();
+            final DartSassCompiler compiler = new DartSassCompiler(options, compileTargetFile, compileDestinationFile);
             final Optional<String> out = compiler.compile();
             handleOutput(compiler.terminalOutput());
             this.output = out.isPresent() ? out.get().getBytes() : null;

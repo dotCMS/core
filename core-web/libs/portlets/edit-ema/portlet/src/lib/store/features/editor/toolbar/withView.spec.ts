@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withComputed, withFeature, withState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { computed } from '@angular/core';
@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotDevice } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
@@ -25,7 +26,6 @@ import {
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 import { createInitialUVEState } from '../../../testing/mocks';
-import { withFlags } from '../../flags/withFlags';
 import { withPage } from '../../page/withPage';
 
 const pageParams = {

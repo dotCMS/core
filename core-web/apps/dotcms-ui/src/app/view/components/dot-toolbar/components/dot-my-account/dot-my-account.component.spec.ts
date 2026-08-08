@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';

@@ -1,4 +1,5 @@
 import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotFeatureFlags } from '@dotcms/store';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { StyleEditorFieldType } from '@dotcms/types/internal';
 
@@ -8,6 +9,19 @@ import { CommonErrorsInfo } from './models';
 export const LAYOUT_URL = '/c/portal/layout';
 
 export const PERSONA_KEY = 'com.dotmarketing.persona.id';
+
+/**
+ * Default relationship expansion depth sent to the Page API.
+ *
+ * The backend (`ContentUtils.addRelationships`) only expands relationship
+ * fields on the page's contentlets when the `depth` query param is present
+ * at all — omitting it skips relationship expansion entirely rather than
+ * falling back to a default. UVE's REST page fetch (used for the editor's
+ * own state on every page type, and as the pre-CLIENT_READY fetch for
+ * headless pages) must always send a value so relationship data isn't
+ * silently dropped from the page response.
+ */
+export const DEFAULT_PAGE_DEPTH = '0';
 
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
@@ -101,8 +115,18 @@ export const UVE_FEATURE_FLAGS = [
     FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
     FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
     FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER,
-    FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION
-];
+    FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
+    // Gates the Edit Content side panel (create/edit contentlet in a slide-in over the editor).
+    FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+] as const;
+
+/**
+ * Type of the `flags` slice `withFlags(UVE_FEATURE_FLAGS)` contributes to the store — derived from
+ * the list above so it can never drift from the flags actually fetched. Features that read
+ * individual flags (not just contribute to the list) extend their `state` type constraint with
+ * this, since `UVEState` itself does not declare `flags` (`withFlags` owns that slice).
+ */
+export type UVEFeatureFlags = DotFeatureFlags<(typeof UVE_FEATURE_FLAGS)[number]>;
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',

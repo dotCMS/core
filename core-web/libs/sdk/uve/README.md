@@ -2,7 +2,7 @@
 
 The `@dotcms/uve` SDK adds live editing to your JavaScript app using the dotCMS Universal Visual Editor (UVE). It provides low-level tools that power our framework-specific SDKs, such as [@dotcms/react](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md) and [@dotcms/angular](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/angular/README.md).
 
-> ⚠️ We **do not recommend using this SDK directly** for most use cases, you should use a [framework SDK that handles setup](#getting-started-recommended-examples), rendering, and event wiring for you.
+> ⚠️ We **do not recommend using this SDK directly** for most use cases; you should use a [framework SDK that handles setup](#getting-started-recommended-examples), rendering, and event wiring for you.
 
 With `@dotcms/uve`, framework SDKs are able to:
 - Make pages and contentlets editable
@@ -17,11 +17,11 @@ With `@dotcms/uve`, framework SDKs are able to:
     -   [🚩 Custom Setup: Manual Rendering (Not Recommended)](#-custom-setup-manual-rendering-not-recommended)
 -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Get a dotCMS Environment](#get-a-dotcms-environment)
-    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
+    -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
     -   [Installation](#installation)
     -   [Using the SDK with TypeScript](#using-the-sdk-with-typescript)
 -   [SDK Reference](#sdk-reference)
-    -   [`initUVE()`](#inituveconfig-dotcmsuveconfig)
+    -   [`initUVE()`](#inituveconfig-dotcmspageresponse)
     -   [`getUVEState()`](#getuvestate)
     -   [`createUVESubscription()`](#createuvesubscriptioneventtype-callback)
     -   [`editContentlet()`](#editcontentletcontentlet)
@@ -49,7 +49,7 @@ With `@dotcms/uve`, framework SDKs are able to:
 We strongly recommend using one of our official framework SDKs, which are designed to handle UVE integration, routing, rendering, and more—out of the box. These examples are the best way to get started:
 
 -   [dotCMS Angular SDK: Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular) – Ideal for Angular apps 🅰️
--   [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/react) – Ideal for NextJS projects ⚛️
+-   [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/nextjs) – Ideal for NextJS projects ⚛️
 -   [dotCMS React SDK: Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro) – Ideal for Astro projects 🌌
 
 These examples handle UVE integration, routing, rendering, and more—out of the box. **If you're building a headless dotCMS front-end, start there.**
@@ -66,7 +66,7 @@ You can use `@dotcms/uve` directly, but **it’s not recommended or supported** 
 
 Here's a minimal setup using `@dotcms/client` and `@dotcms/uve`:
 
-1. Initializa the Client and get the page response:
+1. Initialize the Client and get the page response:
 
 ```ts
 // getPage.ts
@@ -94,12 +94,13 @@ const getPage = async () => {
 
 ```ts
 import { initUVE, createUVESubscription } from '@dotcms/uve';
+import { UVEEventType } from '@dotcms/types';
 import { getPage } from './getPage';
 
 const pageResponse = await getPage();
 
 initUVE(pageResponse);
-createUVESubscription('changes', (newPageResponse) => {
+createUVESubscription(UVEEventType.CONTENT_CHANGES, (newPageResponse) => {
     // Handle page updates (e.g. re-render)
 });
 ```
@@ -118,7 +119,7 @@ createUVESubscription('changes', (newPageResponse) => {
 #### 🔄 How to Render a dotCMS Page
 
 > 📚 For a complete guide, here is a full tutorial:
-> 👉 [dotCMS Page Rendering Architecture]( https://dev.dotcms.com/docs/dotcms-page-rendering-architecture)
+> 👉 [dotCMS Page Rendering Architecture](https://dev.dotcms.com/docs/dotcms-page-rendering-architecture)
 
 dotCMS pages are structured as nested layout objects:
 
@@ -218,7 +219,6 @@ The SDK uses several key types from `@dotcms/types`:
 import {
     DotCMSBasicContentlet,
     DotCMSPageResponse,
-    DotCMSUVEConfig,
     DotCMSInlineEditingType,
     UVEEventType,
     UVEState
@@ -229,7 +229,7 @@ For a complete reference of all available types and interfaces, please refer to 
 
 ## SDK Reference
 
-### `initUVE(config?: DotCMSUVEConfig)`
+### `initUVE(config?: DotCMSPageResponse)`
 
 `initUVE` is a function that initializes the Universal Visual Editor (UVE). It sets up the necessary communication between your app and the editor, enabling seamless integration and interaction.
 
@@ -243,7 +243,7 @@ For a complete reference of all available types and interfaces, please refer to 
 const { destroyUVESubscriptions } = initUVE(pageResponse);
 ```
 
-> ⚠️ If you don't provide a `pageResponse`, we can't assure that the UVE will be initialized correctly.
+> ⚠️ If you don't provide a `pageResponse`, we cannot guarantee that the UVE will be initialized correctly.
 
 ### `getUVEState()`
 
@@ -303,14 +303,16 @@ sub.unsubscribe();
 
 -   `UVEEventType.CONTENT_CHANGES`: Triggered when the content of the page changes.
 -   `UVEEventType.PAGE_RELOAD`: Triggered when the page is reloaded.
--   `UVEEventType.REQUEST_BOUNDS`: Triggered when the editor requests the bounds of the page.
--   `UVEEventType.IFRAME_SCROLL`: Triggered when the iframe is scrolled.
--   `UVEEventType.IFRAME_SCROLL_END`: Triggered when the iframe has stopped scrolling.
+-   `UVEEventType.IFRAME_SCROLL`: Triggered when scroll action is needed inside the iframe (`'up'` or `'down'`).
 -   `UVEEventType.CONTENTLET_HOVERED`: Triggered when a contentlet is hovered.
+-   `UVEEventType.CONTENTLET_CLICKED`: Triggered when a contentlet is clicked.
+-   `UVEEventType.AUTO_BOUNDS`: Triggered when the SDK syncs page bounds after layout changes (internal SDK use).
+-   `UVEEventType.SCROLL_TO_SECTION`: Triggered when the editor requests a scroll to a specific page section (internal).
+-   `UVEEventType.SELECTION_CLEARED`: Triggered when the editor clears its selection (internal).
 
 ### `editContentlet(contentlet)`
 
-`editContentlet` is a function that opens the dotCMS modal editor for any contentlet in or out of page area.
+`editContentlet` is a function that opens the dotCMS modal editor for any contentlet in or out of the page area.
 
 | Input        | Type               | Required | Description                      |
 | ------------ | ------------------ | -------- | -------------------------------- |
@@ -340,7 +342,7 @@ const myEditButton = ({ contentlet }) => {
 | Input       | Type                         | Required | Description                                                                    |
 | ----------- | ---------------------------- | -------- | ------------------------------------------------------------------------------ |
 | `type`      | `DotCMSInlineEditingType`    | ✅       | `'BLOCK_EDITOR'` or `'WYSIWYG'`                                                |
-| `fieldData` | `DotCMSInlineEditingPayload` | ✅       | [Field content required to enable inline editing](#dotcmsinlineeditingpayload) |
+| `data`      | `DotCMSInlineEditingPayload` | ✅       | [Field content required to enable inline editing](#dotcmsinlineeditingpayload) |
 
 #### Usage
 
@@ -449,7 +451,7 @@ reorderMenu({ startLevel: 2, depth: 3 });
 
 | Input     | Type                                       | Required | Description                  |
 | --------- | ------------------------------------------ | -------- | ---------------------------- |
-| `message` | [`DotCMSUVEMessage<T>`](#dotcmsuvemessage) | ✅       | Object with action + payload |
+| `message` | [`DotCMSUVEMessage<T>`](#dotcmsuvemessaget) | ✅       | Object with action + payload |
 
 #### Usage
 
@@ -488,7 +490,7 @@ Style editor schemas are configured in the DotCMS admin UI under **Content Types
 **Key Benefits:**
 
 -   **Real-Time Visual Editing**: Modify component styles and see changes instantly in the editor
--   **Content-Specific Customization**: Different content types can have unique style schemas, and the same contentlet could have different styles depending on if it is located in a different container or page
+-   **Content-Specific Customization**: Different content types can have unique style schemas, and the same contentlet could have different styles depending on whether it is located in a different container or page
 -   **Admin-Managed**: Style schemas are defined in the DotCMS admin UI under Content Types and fetched automatically by the SDK
 
 **Use Cases:**
@@ -627,7 +629,7 @@ When **defining styles** for a contentlet within a page using **Style Editor**, 
 
 > **NOTE:** (🎨 Styles are different) means the capability to define distinct styles, even when utilizing the identical Contentlet.
 
-The only known limitation is that moving a contentlet with defined styles between different container types (5th scenario), results in the loss of those styles. See the [technical details document](https://docs.google.com/document/d/1UiuJlIn8ZjybIB-0oHeoTLXZo1k-YExITEqEMfyvVlU/edit?tab=t.0) for our planned solution.
+The only known limitation is that moving a contentlet with defined styles between different container types (5th scenario) results in the loss of those styles. A fix for this scenario is on our roadmap.
 
 ## Troubleshooting
 
@@ -713,7 +715,7 @@ We offer multiple channels to get help with the dotCMS UVE SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
 -   **Stack Overflow**: Use the tag `dotcms-uve` when posting questions
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support)
 
 When reporting issues, please include:
 

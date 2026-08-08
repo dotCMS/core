@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Treeable;
@@ -622,6 +624,20 @@ import java.util.function.Predicate;
 	int getContentTypeCount(final Folder folder, final User user,
 							final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Searches for folders within a site, with optional name filtering and optional path scoping.
+	 * Results are permission-filtered and returned as a paginated list.
+	 * Allowed values for {@code params.orderBy()}: {@code "folder.name"}, {@code "folder.mod_date"}.
+	 * Invalid values fall back to {@code folder.name}.
+	 *
+	 * @param params all search parameters; build via {@link FolderSearchParams#builder()}
+	 * @return paginated list with {@code totalResults} reflecting the full filtered count
+	 * @throws DotDataException     on database error
+	 * @throws DotSecurityException if the user lacks permissions
+	 */
+	PaginatedArrayList<FolderSearchView> searchFolders(FolderSearchParams params)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * Determines if the folder IDs in the current context require fixing.

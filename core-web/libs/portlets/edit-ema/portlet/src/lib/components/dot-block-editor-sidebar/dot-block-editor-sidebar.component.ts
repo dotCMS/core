@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, output, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    inject,
+    input,
+    output,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -40,6 +48,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     selector: 'dot-block-editor-sidebar',
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         DotCMSEditorComponent,
@@ -59,16 +68,12 @@ export class DotBlockEditorSidebarComponent {
 
     /**
      * Resolves the `FEATURE_FLAG_NEW_BLOCK_EDITOR` flag — `undefined` while the HTTP request
-     * is in flight, then `true` / `false` once it returns. The template uses a truthy check
-     * so the legacy editor renders for **everything except an explicit `true`** (false, missing
-     * key, in-flight). That defaults to the safer, known-good editor whenever the flag's
-     * answer isn't yet a definite "on".
+     * is in flight, then `true` / `false` once it returns. Per the project-wide rule, a missing
+     * flag resolves to `true` (`getFeatureFlag`), so the new editor renders unless the flag is
+     * explicitly `false`. The template's truthy check still keeps the legacy editor in-flight.
      */
     readonly isNewBlockEditorEnabled = toSignal(
-        this.#dotPropertiesService.getFeatureFlagWithDefault(
-            FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR,
-            false
-        )
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR)
     );
 
     readonly drawerRef = viewChild<Drawer>('drawerRef');

@@ -6,7 +6,7 @@
 # Key features:
 # - Triggered on push to main or manual dispatch
 # - Configurable options for reusing previous builds and running all tests
-# - Comprehensive checks including build, tests, Semgrep analysis, and CLI artifact building
+# - Comprehensive checks including build, tests, and CLI artifact building
 # - Deployment to the trunk environment
 # - Final reporting of the workflow status
 
@@ -30,14 +30,6 @@ on:
         default: false
       run-all-tests:
         description: 'Run all tests'
-        type: boolean
-        default: false
-      publish-npm-sdk-libs:
-        description: 'Publish NPM SDKs'
-        type: boolean
-        default: false
-      disable-semgrep:
-        description: 'Disable Semgrep job'
         type: boolean
         default: false
       java-version:
@@ -78,6 +70,12 @@ jobs:
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
+    secrets:
+      # Read-write: trunk is trusted.
+      build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY }}
+      build-cache-secret-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_SECRET_KEY }}
+      build-cache-endpoint: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ENDPOINT }}
+      build-cache-bucket: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_NAME }}
     permissions:
       contents: read
       packages: write
@@ -101,16 +99,6 @@ jobs:
       contents: read
       packages: write
 
-  semgrep:
-    name: Trunk Semgrep
-    needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
-    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-    with:
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-    secrets:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
   # CLI Build job - builds CLI artifacts
   # Skipped when java-version is overridden due to GraalVM/Quarkus compatibility requirements
   build-cli:
@@ -125,13 +113,12 @@ jobs:
 
   # Deployment job - deploys to the trunk environment
   deployment:
-    needs: [ initialize,build-cli,semgrep,test ]
+    needs: [ initialize,build-cli,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       deploy-cli: true
-      publish-npm-sdk-libs: ${{ fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
       # tag-identifier intentionally omitted: trunk uses only the environment name as its tag
       java-version: ${{ github.event.inputs.java-version || '' }}
@@ -144,11 +131,109 @@ jobs:
       NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
+  # Publish SDK packages to the `next` npm dist-tag — internal dev/QA use only, never
+  # date-lockstep-shaped, never recommended to customers (see issue #36701). Kept as its
+  # own job (not folded into cicd_comp_deployment-phase.yml) so this trunk-only concern
+  # can't affect nightly/manual/release, which don't opt into it.
+  #
+  # Version = the currently-published `latest` npm version, plus a `-next.<run_number>`
+  # suffix — computed live on every run, no local VERSION file. Gated on the existing
+  # sdk_libs change-detection filter (only publish when SDK files actually changed) and
+  # skipped for manual workflow_dispatch runs.
+  publish-sdk-next:
+    name: Publish SDK (next)
+    needs: [ initialize, test ]
+    # Same always()/!failure()/!cancelled() idiom as sibling jobs (build-cli, deployment).
+    # A prior version of this gate required needs.test.result == 'success', but on an
+    # ordinary push cicd_3-trunk.yml never wires any per-suite flag (jvm_unit_test, cli,
+    # frontend, postman, karate) into the reusable test phase — only run-all-tests, which
+    # is only ever true on a manual workflow_dispatch. So the test matrix is always empty
+    # (0 configurations) on a regular push, `test` always resolves to "skipped", and that
+    # stricter gate meant this job silently never ran on ordinary merges — defeating its
+    # whole purpose (any SDK-touching merge must publish a `next` version). This still
+    # blocks if `test` genuinely ran and failed (e.g. a manual run-all-tests dispatch).
+    if: >-
+      always() && !failure() && !cancelled() &&
+      fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' &&
+      github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      # Required before referencing any local (./) action below — the runner's
+      # workspace is otherwise empty, so GitHub can't locate deploy-javascript-sdk's or
+      # notify-slack's action.yml (same gap already hit and fixed once in
+      # cicd_release-sdk.yml's publish job).
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Compute next version'
+        id: next-version
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+
+          LATEST_VERSION=$(npm view @dotcms/client version)
+          NEXT_VERSION="${LATEST_VERSION}-next.${{ github.run_number }}"
+
+          echo "::notice:: Currently published latest version: $LATEST_VERSION"
+          echo "::notice:: Publishing next version: $NEXT_VERSION"
+
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: 'Publish SDK packages to NPM (next)'
+        id: deploy-javascript-sdk
+        # Notify-but-don't-fail: cicd_comp_finalize-phase.yml scans every job in the run
+        # via the GitHub API (not just finalize's own `needs`), so without this a
+        # transient npm/registry failure here would mark the whole trunk workflow red
+        # over an internal dev/QA publish. The failure Slack step below still fires
+        # (it checks the step's own outcome, not the job-level failure()/success()
+        # context functions, which continue-on-error would otherwise mask).
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
+        with:
+          ref: ${{ github.sha }}
+          version: ${{ steps.next-version.outputs.version }}
+          npm-tag: next
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Slack Notification (SDK next announcement)'
+        if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* SDK libs published to `next`!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.next-version.outputs.version }}` ] is now available on the `NPM` registry under the `next` tag :package:. This is an internal dev/QA build, not an official release — do not recommend it to customers.
+            > `npm install @dotcms/client@next`
+            > <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View commit> · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: 'Slack Notification (SDK next failure)'
+        # Checks the publish step's own outcome directly rather than the job-level
+        # failure()/success() context functions — those reflect conclusion (which
+        # continue-on-error masks to "success"), not outcome, so failure() would never
+        # fire here once the step above has continue-on-error: true.
+        if: steps.deploy-javascript-sdk.outcome == 'failure'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *SDK `next` publish FAILED!*
+            >
+            > The automated SDK `next` publish failed while trying to publish version `${{ steps.next-version.outputs.version || 'unknown — the version-compute step itself failed' }}`.
+            > <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View commit> · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, semgrep, deployment]
+    needs: [ initialize, build, build-cli, test, deployment, publish-sdk-next ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

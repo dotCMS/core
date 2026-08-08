@@ -12,12 +12,11 @@ import org.mockito.MockedStatic;
 
 import java.io.Writer;
 
+import static com.dotmarketing.util.WebKeys.DOTCMS_STARTED_UP;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link VelocityHealthCheck}. Exercises the probe via a mocked
@@ -28,15 +27,26 @@ import static org.mockito.Mockito.mockStatic;
 public class VelocityHealthCheckTest {
 
     private MockedStatic<VelocityUtil> velocityUtilMock;
+    private String previousStartedUpProperty;
 
     @Before
     public void setUp() {
+        // The probe defers until dotCMS startup completes, which InitServlet signals via this
+        // property in production. Set it here so the probe logic under test actually runs
+        // instead of short-circuiting on every test.
+        previousStartedUpProperty = System.getProperty(DOTCMS_STARTED_UP);
+        System.setProperty(DOTCMS_STARTED_UP, "true");
         velocityUtilMock = mockStatic(VelocityUtil.class);
     }
 
     @After
     public void tearDown() {
         velocityUtilMock.close();
+        if (previousStartedUpProperty == null) {
+            System.clearProperty(DOTCMS_STARTED_UP);
+        } else {
+            System.setProperty(DOTCMS_STARTED_UP, previousStartedUpProperty);
+        }
     }
 
     @Test
@@ -46,6 +56,18 @@ public class VelocityHealthCheckTest {
         final HealthCheckResult result = new VelocityHealthCheck().check();
 
         assertEquals(HealthStatus.UP, result.status());
+    }
+
+    @Test
+    public void returnsDownWhenStartupNotComplete() {
+        // Even a healthy-looking engine shouldn't matter: the probe must defer before touching
+        // VelocityUtil.getEngine() at all until InitServlet marks startup complete.
+        System.clearProperty(DOTCMS_STARTED_UP);
+        stubEngineToWrite("<span class=\"editor-marks\"></span>");
+
+        final HealthCheckResult result = new VelocityHealthCheck().check();
+
+        assertEquals(HealthStatus.DOWN, result.status());
     }
 
     @Test

@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlets-dot-analytics',
     preset: '../../../../jest.preset.js',
@@ -13,8 +12,9 @@ export default {
             }
         ]
     },
-    /* d3 ships ESM in .js entrypoints; internmap etc. nest under node_modules — allow Jest to transform */
-    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|d3(/|-)|internmap/)'],
+    /* d3 ships ESM in .js entrypoints; internmap etc. nest under node_modules — allow Jest to transform.
+       The `.*` before each package matches pnpm's nested `.pnpm/<pkg>@<ver>/node_modules/<pkg>` layout. */
+    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|.*(d3(/|-)|internmap/))'],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

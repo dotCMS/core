@@ -29,6 +29,12 @@ public interface SearchAPI {
      * <p>Equivalent to {@code ESSeachAPI.esSearch()} but returns a vendor-neutral
      * {@link ContentSearchResults} instead of {@code ESSearchResults}.</p>
      *
+     * <p><b>Query normalization:</b> this path <i>lowercases the entire query string</i> (every
+     * token except the Lucene operators {@code OR|AND|NOT|TO}) before executing it. Field names
+     * such as {@code contentType} are folded to their physical index form {@code contenttype}, so
+     * mixed-case field names still resolve. {@link #searchRaw(String, boolean, User, boolean)}
+     * applies the same normalization, so both paths behave consistently.</p>
+     *
      * @param query                the JSON search query
      * @param live                 {@code true} to query the live index
      * @param user                 the user performing the action (may be {@code null} when
@@ -49,6 +55,12 @@ public interface SearchAPI {
      *
      * <p>Equivalent to {@code ESSeachAPI.esSearchRaw()} but returns a vendor-neutral
      * {@link ContentSearchResponse} instead of {@code SearchResponse}.</p>
+     *
+     * <p><b>Query normalization:</b> like {@link #search(String, boolean, User, boolean)}, this path
+     * lowercases the entire query string (every token except {@code OR|AND|NOT|TO}) before executing
+     * it, so a mixed-case field such as {@code contentType} resolves to the physical lower-case index
+     * field {@code contenttype}. The two paths are kept consistent on purpose; note the folding also
+     * lowercases query <i>values</i>, so neither path supports case-sensitive exact matches.</p>
      *
      * @param query                the JSON search query
      * @param live                 {@code true} to query the live index

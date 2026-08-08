@@ -12,6 +12,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -146,9 +147,16 @@ public class OSSearchAPIImpl implements SearchAPI {
             throw new DotStateException("Search query is null");
         }
 
+        // Normalize the query the same way search() does, so the raw path resolves mixed-case
+        // field names (e.g. "contentType" -> the physical lower-case index field "contenttype").
+        // Reuses the existing lowercasing helper for parity; idempotent when the caller already
+        // lowercased (search() delegates here after lowercasing). Symmetric with the ES raw path.
+        final String normalizedQuery = StringUtils.lowercaseStringExceptMatchingTokens(
+                query, com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX);
+
         final JSONObject completeQueryJSON;
         try {
-            completeQueryJSON = new JSONObject(query);
+            completeQueryJSON = new JSONObject(normalizedQuery);
             completeQueryJSON.put("_source", new JSONArray("[identifier, inode]"));
         } catch (final JSONException e) {
             throw new DotStateException("Unable to parse the given query.", e);
@@ -290,8 +298,13 @@ public class OSSearchAPIImpl implements SearchAPI {
 
         final StringBuffer perms = new StringBuffer();
         if (!isAdmin && !queryJson.has("permissions:")) {
-            APILocator.getContentletAPIImpl()
-                    .addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+            final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
+            contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+            // Secondary category-permission filter: mirror the ES path
+            // (ESContentletAPIImpl.applyPermissionsToQuery). Without this the categoryperms:
+            // clause is never added under OS, so content restricted by category read permissions
+            // leaks to users who lack the category role (Phase 3 permission-filter gap).
+            contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
         }
 
         if (perms.length() > 0) {

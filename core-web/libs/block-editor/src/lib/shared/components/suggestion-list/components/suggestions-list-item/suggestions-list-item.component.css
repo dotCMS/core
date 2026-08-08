@@ -28,9 +28,7 @@
     width: 32px;
 }
 
-.icon-wrapper dot-contentlet-thumbnail {
-    align-items: center;
-    display: block;
+.icon-wrapper dot-content-thumbnail {
     position: relative;
     width: 42px;
     height: 42px;
@@ -43,7 +41,7 @@
 }
 
 .icon-wrapper.page,
-.icon-wrapper.page dot-contentlet-thumbnail {
+.icon-wrapper.page dot-content-thumbnail {
     flex-basis: 64px;
     height: 64px;
     width: 64px;

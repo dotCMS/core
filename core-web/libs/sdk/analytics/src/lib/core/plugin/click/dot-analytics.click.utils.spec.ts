@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { handleContentletClick } from './dot-analytics.click.utils';
 
 import {

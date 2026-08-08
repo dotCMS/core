@@ -1,16 +1,17 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     inject,
-    input,
     model,
-    output,
+    signal,
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { ConfirmationService, ConfirmEventType } from 'primeng/api';
+import { ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import {
@@ -31,11 +32,16 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
+import { DotCollapseBreadcrumbComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import {
+    EDIT_CONTENT_HOST,
+    InPlaceNavigationRequest
+} from '../../services/host/edit-content-host.model';
+import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotEditContentCompareComponent } from '../dot-edit-content-compare/dot-edit-content-compare.component';
 import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
@@ -44,47 +50,19 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 /**
  * Edit Content Layout Component
  *
- * A flexible component that provides the main layout for content editing functionality.
- * Supports both route-based and dialog-based usage patterns with automatic mode detection.
+ * The main layout for content editing. It is **presentation-agnostic**: it does
+ * not know whether it is shown full-screen, in a dialog, or in a side panel.
+ * Everything that used to branch on a "dialog mode" now goes through the injected
+ * {@link EditContentHost} port:
  *
- * ## Features
- * - **Dual Mode Support**: Works in both route and dialog contexts
- * - **Automatic Mode Detection**: Intelligently switches modes based on input parameters
- * - **Isolated State Management**: Each instance maintains its own store
- * - **Workflow Integration**: Handles content workflow actions and notifications
+ * - **Identity** — the store calls `host.resolveIdentity()` to know which content
+ *   to open (route params in full-screen, dialog config in overlay).
+ * - **Navigation / chrome** — related-content navigation, locale switch, title and
+ *   breadcrumb are delegated to the host.
+ * - **Result** — a successful save is reported via `host.reportSaved()`.
  *
- * ## Usage Modes
- *
- * ### Route Mode
- * Used when embedded in route-based pages. Initializes from route parameters.
- * ```html
- * <dot-edit-content-form-layout></dot-edit-content-form-layout>
- * ```
- *
- * ### Dialog Mode - New Content
- * Used in dialogs to create new content of a specific type.
- * ```html
- * <dot-edit-content-form-layout
- *   [contentTypeId]="'blog-post'"
- *   (contentSaved)="onContentSaved($event)">
- * </dot-edit-content-form-layout>
- * ```
- *
- * ### Dialog Mode - Edit Existing Content
- * Used in dialogs to edit existing content by inode.
- * ```html
- * <dot-edit-content-form-layout
- *   [contentletInode]="'abc123'"
- *   (contentSaved)="onContentSaved($event)">
- * </dot-edit-content-form-layout>
- * ```
- *
- * ## Inputs
- * - `contentTypeId`: String identifier for content type (dialog mode only)
- * - `contentletInode`: String identifier for existing content (dialog mode only)
- *
- * ## Outputs
- * - `contentSaved`: Emitted when content is successfully saved (dialog mode only)
+ * To mount it in a new presentation, provide an `EDIT_CONTENT_HOST` adapter above
+ * this component; the component itself does not change.
  */
 @Component({
     selector: 'dot-edit-content-form-layout',
@@ -97,7 +75,8 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,
-        DotEditContentCompareComponent
+        DotEditContentCompareComponent,
+        DotCollapseBreadcrumbComponent
     ],
     providers: [
         DotContentletService,
@@ -126,24 +105,6 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 })
 export class DotEditContentLayoutComponent {
     /**
-     * Content type ID for dialog mode initialization.
-     * When provided, enables dialog mode and initializes new content for the specified type.
-     */
-    readonly $contentTypeId = input<string>('', { alias: 'contentTypeId' });
-
-    /**
-     * Contentlet inode for dialog mode initialization.
-     * When provided, enables dialog mode and loads existing content for editing.
-     */
-    readonly $contentletInode = input<string>('', { alias: 'contentletInode' });
-
-    /**
-     * Emitted when content is successfully saved through workflow actions.
-     * Only fires in dialog mode to notify parent components of content changes.
-     */
-    readonly contentSaved = output<DotCMSContentlet>();
-
-    /**
      * Controls the visibility of the workflow selection dialog.
      */
     readonly $showDialog = model<boolean>(false);
@@ -167,8 +128,69 @@ export class DotEditContentLayoutComponent {
     readonly #dotMessageService = inject(DotMessageService);
 
     /**
-     * Present when rendered inside a PrimeNG DynamicDialog; null in route mode.
-     * Used to intercept dialog close events for the dirty-content guard.
+     * Related-content navigation trail store. The trail is URL-driven in
+     * full-screen and in-memory in the dialog; the breadcrumb below is
+     * presentation-agnostic and reads it the same way in both.
+     */
+    readonly #relatedNav = inject(DotRelatedContentNavigationStore);
+
+    /**
+     * Presentation port. Decides how navigation happens (router vs in-place) and
+     * whether chrome side-effects apply. The breadcrumb and the in-place reload
+     * subscription below are driven by it instead of by an `isDialogMode` check.
+     */
+    readonly #host = inject(EDIT_CONTENT_HOST);
+
+    /**
+     * Keeps the in-place reload overlay up until BOTH the new content and the
+     * sidebar's data have finished loading — so navigating related content never
+     * reveals the new content while the sidebar is still loading (the "two
+     * loading timings" problem). Armed when a reload starts (`isReloading`) and
+     * disarmed only once everything has settled (`isFullyLoaded`). Only affects
+     * in-place reloads; the initial load is unchanged.
+     */
+    readonly #reloadWait = signal(false);
+
+    /** Whether the in-place reload overlay should be shown. */
+    readonly $showReloadOverlay = computed(() => this.#reloadWait());
+
+    /**
+     * "Relating content" breadcrumb model built from the navigation trail.
+     *
+     * The current (last) crumb is a plain label. Earlier crumbs are a `command`
+     * that asks the host to navigate to that crumb, in both presentations:
+     * - Full-screen: the host updates the URL (`rc` query param) and the reused
+     *   route reloads via `identityChanges$`.
+     * - Dialog: the host reloads the editor in place (a router link would
+     *   navigate the host page behind the dialog).
+     *
+     * A `command` (not a declarative `routerLink`) is used even full-screen so the
+     * unsaved-changes prompt runs at the source — a reused route no longer fires
+     * `canDeactivate` on `:id → :id`, which a `routerLink` would silently bypass.
+     */
+    readonly $relatedNavItems = computed<MenuItem[]>(() => {
+        const trail = this.#host.trail();
+
+        return trail.map((crumb, index) => {
+            const isCurrent = index === trail.length - 1;
+            if (isCurrent) {
+                return { label: crumb.title };
+            }
+
+            // Trail trimmed to (and including) this crumb.
+            const inodes = trail.slice(0, index + 1).map((c) => c.inode);
+
+            return {
+                label: crumb.title,
+                styleClass: 'cursor-pointer',
+                command: () => this.#host.goToCrumb(crumb.inode, inodes)
+            };
+        });
+    });
+
+    /**
+     * Present when rendered inside a PrimeNG DynamicDialog; null otherwise (e.g.
+     * full-screen). Used to intercept dialog close events for the dirty-content guard.
      */
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
 
@@ -186,39 +208,66 @@ export class DotEditContentLayoutComponent {
             this.#interceptDirtyClose();
         }
 
-        // When switchLocale sets a pendingLocaleInode, ask the user to confirm
-        // discarding unsaved changes before reloading for the new locale.
-        // If the form is clean, switch immediately without prompting.
-        effect(() => {
-            const pendingInode = this.$store.pendingLocaleInode();
-            if (!pendingInode) return;
+        // In-place hosts (dialog) request related-content navigation without a
+        // route change; reload the editor here, confirming unsaved changes first.
+        const inPlaceNavigation$ = this.#host.inPlaceNavigation$;
+        if (inPlaceNavigation$) {
+            inPlaceNavigation$
+                .pipe(takeUntilDestroyed())
+                .subscribe((request) => this.#reloadInPlace(request));
+        }
 
-            untracked(() => {
-                if (this.hasUnsavedChanges()) {
-                    this.#confirmIfDirty(
-                        () => this.$store.confirmPendingLocaleSwitch(),
-                        () => this.$store.cancelPendingLocaleSwitch()
-                    );
-                } else {
-                    this.$store.confirmPendingLocaleSwitch();
-                }
-            });
+        // URL-driven hosts (full-screen) reuse the component across content
+        // navigations, so re-run initialization on each identity change instead of
+        // relying on a fresh component per navigation. The previous content stays
+        // rendered until the new one loads (see the `isReloading` gate + overlay in
+        // the template). This also covers browser back/forward and deep links.
+        const identityChanges$ = this.#host.identityChanges$;
+        if (identityChanges$) {
+            identityChanges$.pipe(takeUntilDestroyed()).subscribe(() => this.$store.initialize());
+        }
+
+        // A reused route no longer fires `canDeactivate` on `:id → :id`, so enforce
+        // the unsaved-changes prompt before the host performs such a navigation
+        // (breadcrumb, locale switch, version restore, related content). In-place
+        // hosts leave this unset — their reload path already confirms via
+        // `#reloadInPlace`.
+        this.#host.setNavigationGuard?.((proceed) => {
+            if (this.hasUnsavedChanges()) {
+                this.#confirmIfDirty(proceed, () => undefined);
+            } else {
+                proceed();
+            }
         });
 
-        // Initialize component based on input parameters
+        // Cache the current content's title so the "Relating content" breadcrumb
+        // can label its crumb. The trail itself lives in the URL (rc query param)
+        // or in memory (dialog), so there is nothing to reconcile.
         effect(() => {
-            const contentTypeId = this.$contentTypeId();
-            const contentletInode = this.$contentletInode();
+            const contentlet = this.$store.contentlet();
+            if (!contentlet?.inode) {
+                return;
+            }
 
-            if (contentTypeId || contentletInode) {
-                // Dialog mode: Initialize with provided parameters
-                this.$store.initializeDialogMode({
-                    contentTypeId,
-                    contentletInode
-                });
-            } else {
-                // Route mode: Initialize from route parameters
-                this.$store.initializeAsPortlet();
+            untracked(() => this.#relatedNav.registerTitle(contentlet.inode, contentlet.title));
+        });
+
+        // Initialize from the identity resolved by the host (route params in
+        // full-screen, dialog config in overlay). Presentation-agnostic — the
+        // editor no longer branches on a "dialog mode".
+        this.$store.initialize();
+
+        // Hold the in-place reload overlay until BOTH the new content and the
+        // sidebar's data have loaded. Arm when a reload starts (`isReloading`), and
+        // disarm only once everything has settled (`isFullyLoaded`) — the window in
+        // between (content loaded, sidebar still loading) keeps the overlay up so
+        // the new content is not revealed before the sidebar. Only the in-place
+        // reload path arms this; the initial load never sets `isReloading`.
+        effect(() => {
+            if (this.$store.isReloading()) {
+                untracked(() => this.#reloadWait.set(true));
+            } else if (this.$store.isFullyLoaded()) {
+                untracked(() => this.#reloadWait.set(false));
             }
         });
 
@@ -233,16 +282,16 @@ export class DotEditContentLayoutComponent {
 
             this.markFormPristine();
 
-            if (this.$store.isDialogMode()) {
-                this.contentSaved.emit(success);
-            }
+            // Report the save to the host: full-screen ignores it (URL is the
+            // source of truth), the dialog forwards it to whoever opened it.
+            this.#host.reportSaved(success);
 
             this.$store.clearWorkflowActionSuccess();
         });
     }
 
     /**
-     * Sets up two intercepts for dirty-content confirmation in dialog mode:
+     * Sets up two intercepts for dirty-content confirmation when rendered inside a dialog:
      *
      * 1. pDialog.close override — catches all UI-triggered closes (X button, ESC
      *    key, mask click). p-dialog.close() sets _visible = false synchronously
@@ -321,12 +370,70 @@ export class DotEditContentLayoutComponent {
         });
     }
 
+    /**
+     * Reloads the editor in place with a different content (in-place navigation
+     * hosts only), prompting to discard unsaved changes first. Full-screen hosts
+     * never call this — they reload through a route change.
+     *
+     * The request's `trail` (when present) is committed to the host **only if the
+     * reload actually proceeds** — so choosing "Keep editing" leaves the breadcrumb
+     * untouched rather than showing a content that never opened.
+     */
+    #reloadInPlace(request: InPlaceNavigationRequest): void {
+        const reload = () => {
+            if (request.trail) {
+                this.#host.setTrail(request.trail);
+            }
+            this.$store.initializeExistingContent({
+                inode: request.inode,
+                depth: DotContentletDepths.TWO
+            });
+        };
+
+        if (this.hasUnsavedChanges()) {
+            this.#confirmIfDirty(reload, () => undefined);
+        } else {
+            reload();
+        }
+    }
+
     hasUnsavedChanges(): boolean {
         return this.$editContentForm()?.form?.dirty ?? false;
     }
 
     markFormPristine(): void {
         this.$editContentForm()?.form?.markAsPristine();
+    }
+
+    /**
+     * Chrome-agnostic close guard. Any presentation that can close the editor (side panel,
+     * dialog, etc.) should route its close through here so the unsaved-changes prompt is enforced
+     * consistently — instead of each chrome wiring its own check. Runs `onProceed` immediately when
+     * closing is safe — the form is clean, a save just succeeded, or the editor is still
+     * loading/saving (the form is disabled then, so nothing could have been edited) — otherwise it
+     * prompts and only proceeds on "Discard".
+     *
+     * @param onProceed Runs when it is safe to close (clean form, a save just succeeded, the editor
+     * is loading/saving, or the user discarded changes).
+     */
+    confirmClose(onProceed: () => void): void {
+        // While the content is still loading/saving the form is disabled, so the user cannot have
+        // edited anything — close without prompting. (Async field CVAs that transiently mark the
+        // form dirty during load are already handled by the form's `#userTouched` gate, which keeps
+        // it pristine until a real interaction.) Gated on `isLoading()` — NOT `isFullyLoaded()`,
+        // which also waits on the sidebar and would leave a window where the form is visible and
+        // editable but the guard is still bypassed, discarding a real edit silently.
+        if (
+            !this.hasUnsavedChanges() ||
+            this.$store.workflowActionSuccess() ||
+            this.$store.isLoading()
+        ) {
+            onProceed();
+
+            return;
+        }
+
+        this.#confirmIfDirty(onProceed, () => undefined);
     }
 
     /**
@@ -354,6 +461,29 @@ export class DotEditContentLayoutComponent {
      */
     selectWorkflow() {
         this.$showDialog.set(true);
+    }
+
+    /**
+     * Handles a workflow action fired from the sidebar by delegating to the form.
+     *
+     * Builds the workflow action params from the current store state and forwards
+     * them to the embedded form via the `$editContentForm` viewChild. The optional
+     * chaining guards the compare view, where the form is not rendered.
+     *
+     * @param workflow - The workflow action to execute
+     */
+    onWorkflowActionFired(workflow: DotCMSWorkflowAction): void {
+        const currentLocale = this.$store.currentLocale();
+        // NOTE: inode is intentionally optional — new (unsaved) content has no inode yet and
+        // the create flow relies on that. Do NOT add an `if (!inode) return` guard here: it
+        // silently blocks saving brand-new content (the workflow action never fires).
+        this.$editContentForm()?.fireWorkflowAction({
+            workflow,
+            inode: this.$store.contentlet()?.inode,
+            contentType: this.$store.contentType().variable,
+            languageId: currentLocale ? currentLocale.id.toString() : '',
+            identifier: this.$store.currentIdentifier()
+        });
     }
 
     /**

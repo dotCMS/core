@@ -11,7 +11,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotEventsSocket } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotNotificationItemComponent } from './components/dot-notification-item/dot-notification-item.component';
@@ -34,7 +35,7 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
 export class DotToolbarNotificationsComponent implements OnInit {
     readonly #notificationService = inject(NotificationsService);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #dotcmsEventsService = inject(DotcmsEventsService);
+    readonly #dotEventsSocket = inject(DotEventsSocket);
     readonly #loginService = inject(LoginService);
 
     readonly $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
@@ -93,11 +94,12 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     #subscribeToNotifications(): void {
-        this.#dotcmsEventsService
-            .subscribeTo<INotification>('NOTIFICATION')
+        this.#dotEventsSocket
+            .on<INotification>('NOTIFICATION')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((data: INotification) => {
                 this.$notifications.update((state) => ({
-                    data: [data, ...state.data],
+                    data: [data, ...state.data].slice(0, 25),
                     unreadCount: state.unreadCount + 1,
                     hasMore: false
                 }));

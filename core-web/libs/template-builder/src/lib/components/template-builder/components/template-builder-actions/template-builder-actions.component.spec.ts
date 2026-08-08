@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -8,10 +8,9 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotCurrentUserServiceMock, DotcmsEventsServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
 
@@ -41,10 +40,6 @@ describe('TemplateBuilderActionsComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
-            },
-            {
-                provide: DotcmsEventsService,
-                useClass: DotcmsEventsServiceMock
             },
             DotTemplateBuilderStore
         ],

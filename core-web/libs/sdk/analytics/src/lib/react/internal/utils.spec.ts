@@ -16,7 +16,6 @@ jest.mock('../../core/dot-analytics.content', () => ({
 
 // Helpers to load a fresh copy of the utils module (resets singletons)
 const loadUtils = () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const utils = require('./utils') as typeof import('./utils');
     return utils;
 };

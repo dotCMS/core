@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider, byTestId } from '@openng/spectator/jest';
 import { of, NEVER } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

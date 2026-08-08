@@ -557,7 +557,9 @@ public class Config {
 
             _refreshProperties();
 
-            Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
+            final Integer value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getInt(envKey)).getOrNull()
+                            : null;
             if (value != null) {
                 return value;
             }
@@ -585,7 +587,9 @@ public class Config {
 
             _refreshProperties();
 
-            Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
+            final Long value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getLong(envKey)).getOrNull()
+                            : null;
             if (value != null) {
                 return value;
             }
@@ -617,7 +621,9 @@ public class Config {
 
             _refreshProperties();
 
-            Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
+            final Integer value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getInt(envKey)).getOrNull()
+                            : null;
             if (value != null) {
                 return value;
             }
@@ -649,7 +655,9 @@ public class Config {
 
             _refreshProperties();
 
-            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            final Float value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getFloat(envKey)).getOrNull()
+                            : null;
             if (value != null) {
                 return value;
             }
@@ -682,7 +690,9 @@ public class Config {
 
             _refreshProperties();
 
-            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            final Float value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getFloat(envKey)).getOrNull()
+                            : null;
             if (value != null) {
                 return value;
             }
@@ -716,7 +726,9 @@ public class Config {
 
             _refreshProperties();
 
-            Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
+            final Boolean value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey)).getOrNull()
+                            : null;
             if (value != null) {
                 return value;
             }

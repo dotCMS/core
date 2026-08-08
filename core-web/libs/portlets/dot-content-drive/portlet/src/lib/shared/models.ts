@@ -1,12 +1,20 @@
 import {
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotFolder,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
-import { DIALOG_TYPE } from './constants';
+import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
+
+/**
+ * Base types the upload selector can produce, derived from the selector options so the type and the
+ * rendered choices never drift apart.
+ */
+export type DotContentDriveUploadBaseType = (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
 
 /**
  * The status of the content drive.
@@ -74,15 +82,62 @@ export interface DotContentDriveInit {
  * @interface DotContentDriveContextMenu
  */
 export interface DotContentDriveContextMenu {
-    triggeredEvent: Event;
-    contentlet: DotContentDriveItem;
+    triggeredEvent: Event | null;
+    contentlet: DotContentDriveItem | null;
     showAddToBundle: boolean;
+}
+
+/**
+ * Header override for a dialog that has drilled into a sub-screen.
+ *
+ * The shared dialog's header lives in the shell, but a dialog body can navigate within itself — the
+ * Workflow Center drilling from its action list into an action's preview. Rather than the body
+ * rendering a second title (which reads as a duplicated header), it publishes the replacement here
+ * and the shell's one header renders it.
+ */
+export interface DotContentDriveDialogDrillDown {
+    /** Replaces the dialog title. Already-resolved text, not an i18n key. */
+    header: string;
+    /** Number of items the sub-screen is about to act on; rendered as the header's sub-line. */
+    itemCount: number;
 }
 
 export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
-    payload?: DotContentDriveFolder;
+    payload?:
+        | DotContentDriveFolder
+        | DotContentDriveContentTypeSelectorPayload
+        | DotContentDriveUploadSelectorPayload;
+}
+
+/**
+ * Payload for the content-type selector dialog: the palette list type that
+ * encodes which base type(s) to show (e.g. ALL_CONTENT_TYPES or a single base type).
+ */
+export interface DotContentDriveContentTypeSelectorPayload {
+    listType: DotUVEPaletteListTypes;
+}
+
+/**
+ * Payload passed INTO the upload-type selector dialog. `files` is present for the drag-and-drop
+ * flow (the dropped files are already known) and absent for the Upload-button flow (the OS file
+ * picker opens after the user picks a type).
+ */
+export interface DotContentDriveUploadSelectorPayload {
+    targetFolder?: DotFolderTreeNodeData;
+    files?: FileList;
+}
+
+/**
+ * Object emitted BACK by the upload-type selector dialog. Carries everything needed to trigger the
+ * upload (and, in the future, to remember the chosen type per folder — see epic #35436).
+ * `targetFolder` is omitted when nothing is selected (uploads to the site root).
+ */
+export interface DotContentDriveUploadSelection {
+    baseType: DotContentDriveUploadBaseType;
+    targetFolder?: DotFolderTreeNodeData;
+    files?: FileList;
 }
 
 export interface DotContentDrivePage {
@@ -107,6 +162,39 @@ export interface DotContentDriveState extends DotContentDriveInit {
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
     pages: DotContentDrivePage[];
+    /**
+     * Eligible searchable fields of the currently-selected single content type. Populated by the
+     * field-filter menu after fetching the content type; empty when 0 or >1 content types are
+     * selected. Used to render field-filter chips and to reshape the `us.*` filter values into the
+     * `userSearchable` payload.
+     */
+    userSearchableFields: DotCMSContentTypeField[];
+    /**
+     * Field variables the user has added as chips, in add order. Kept separate from `filters` so
+     * adding an (empty) chip doesn't mutate the search request and re-trigger a reload; a `us.*`
+     * entry only lands in `filters` once the chip has a value.
+     */
+    userSearchableActive: string[];
+    /**
+     * Whether the field metadata for the active content type has been resolved (even to an empty
+     * set). Distinguishes "not fetched yet" from "fetched, none eligible" so a cold URL restore can
+     * hold the first search until fields load, instead of firing one that drops the `us.*` values.
+     */
+    userSearchableFieldsLoaded: boolean;
+    /**
+     * "Show In List" fields (`field.listed`) of the currently-selected single content type.
+     * Populated from the same content-type fetch as {@link userSearchableFields}; empty when 0 or
+     * >1 content types are selected. Consumed by the results table as extra columns.
+     */
+    showInListFields: DotCMSContentTypeField[];
+    /**
+     * Whether the Edit Content side panel is forcing the folder tree visually collapsed on a
+     * narrow viewport. Purely transient UI state — never persisted, never read from or written to
+     * the URL — kept separate from {@link DotContentDriveInit.isTreeExpanded} (the user's real,
+     * shareable preference) so the panel's temporary collapse can never overwrite it. See
+     * `isTreeVisuallyExpanded` (the computed both should render from) and `setTreeForceCollapsed`.
+     */
+    isTreeForceCollapsed: boolean;
 }
 
 /**

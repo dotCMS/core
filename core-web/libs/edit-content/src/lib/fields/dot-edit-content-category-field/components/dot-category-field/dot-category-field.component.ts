@@ -136,6 +136,20 @@ export class DotCategoryFieldComponent
         this.onTouched();
     }
 
+    /**
+     * Clear all selected categories from the field without opening the dialog.
+     *
+     * @memberof DotEditContentCategoryFieldComponent
+     */
+    clearAllSelected(): void {
+        if (this.$isDisabled()) {
+            return;
+        }
+
+        this.store.removeRootSelected(this.store.selected().map((category) => category.key));
+        this.onTouched();
+    }
+
     override writeValue(value: string[]): void {
         super.writeValue(value);
 

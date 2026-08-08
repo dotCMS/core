@@ -115,7 +115,10 @@ export interface DotCMSAnalyticsConfig {
     logLevel?: LogLevel;
 
     /**
-     * Automatically track page views when set to true.
+     * Automatically track page views. Defaults to `true` (opt-out).
+     * Set explicitly to `false` to disable automatic page view tracking.
+     * Via the HTML `data-analytics-auto-page-view` attribute, only the literal string "false"
+     * disables it (any other value, including "", enables it).
      */
     autoPageView?: boolean;
 

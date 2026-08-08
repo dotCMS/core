@@ -13,11 +13,27 @@ import {
     UVE_MODE
 } from '@dotcms/types';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    mapContentResponse,
+    removeUndefinedValues
+} from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
 
+/**
+ * Logs a verbose DotCMS GraphQL error with rich contextual information.
+ *
+ * @param {string} url - The page or API URL associated with the error.
+ * @param {string} message - The main error message to log.
+ * @param {Object} details - Additional error details for debugging.
+ * @param {number} [details.status] - Optional status code associated with the error.
+ * @param {string} [details.code] - Optional error code describing the error type.
+ * @param {Record<string, unknown>} details.variables - The GraphQL variables used in the query.
+ */
 function logVerboseError(
     url: string,
     message: string,
@@ -143,12 +159,10 @@ export class PageClient extends BaseApiClient {
             verbose
         });
 
-        const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
-        const requestVariables: Record<string, unknown> = {
-            // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
-            url: normalizedUrl,
-            // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
-            mode: UVE_MODE[mode],
+        const newURL = url.startsWith('/') ? url : `/${url}`;
+        const requestVariables: Record<string, unknown> = removeUndefinedValues({
+            url: newURL,
+            mode: UVE_MODE[mode], // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
             languageId,
             personaId,
             fireRules,
@@ -156,7 +170,7 @@ export class PageClient extends BaseApiClient {
             siteId,
             variantName,
             ...variables
-        };
+        });
 
         const requestHeaders = this.requestOptions.headers;
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
@@ -175,14 +189,11 @@ export class PageClient extends BaseApiClient {
                     .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
                     .forEach((error: { message: string }) => {
                         if (verbose) {
-                            logVerboseError(normalizedUrl, error.message, {
+                            logVerboseError(newURL, error.message, {
                                 variables: requestVariables
                             });
                         } else {
-                            consola.error(
-                                `[DotCMS GraphQL Error] ${normalizedUrl}: `,
-                                error.message
-                            );
+                            consola.error(`[DotCMS GraphQL Error] ${newURL}: `, error.message);
                         }
                     });
             }
@@ -222,19 +233,19 @@ export class PageClient extends BaseApiClient {
                         (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
                     const message =
                         code === 'NOT_FOUND'
-                            ? `Page '${normalizedUrl}' was not found`
+                            ? `Page '${newURL}' was not found`
                             : code === 'PERMISSION_DENIED'
-                              ? `Permission denied: you do not have access to page '${normalizedUrl}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
-                              : `Page '${normalizedUrl}' could not be loaded (${code})`;
+                              ? `Permission denied: you do not have access to page '${newURL}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
+                              : `Page '${newURL}' could not be loaded (${code})`;
 
                     if (verbose) {
-                        logVerboseError(normalizedUrl, message, {
+                        logVerboseError(newURL, message, {
                             status,
                             code,
                             variables: requestVariables
                         });
                     } else {
-                        consola.error(`[DotCMS GraphQL Error] ${normalizedUrl}: `, message);
+                        consola.error(`[DotCMS GraphQL Error] ${newURL}: `, message);
                     }
 
                     throw new DotErrorPage(message, status, code, undefined, {
@@ -253,13 +264,13 @@ export class PageClient extends BaseApiClient {
 
             if (!pageResponse) {
                 throw new DotErrorPage(
-                    `Page '${normalizedUrl}' was not found`,
+                    `Page '${newURL}' was not found`,
                     404,
                     'NOT_FOUND',
                     new DotHttpError({
                         status: 404,
                         statusText: 'Not Found',
-                        message: `Page '${normalizedUrl}' was not found`,
+                        message: `Page '${newURL}' was not found`,
                         data: response.errors
                     }),
                     { query: completeQuery, variables: requestVariables }
@@ -276,7 +287,9 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                errors: response.errors?.length ? response.errors : undefined,
+                // Always return an array (never `undefined`) so the response stays JSON-serializable
+                // for consumers like Next.js Pages Router (getServerSideProps/getStaticProps throw on undefined).
+                errors: response.errors?.length ? response.errors : [],
                 ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {
@@ -286,7 +299,7 @@ export class PageClient extends BaseApiClient {
 
             if (error instanceof DotHttpError) {
                 throw new DotErrorPage(
-                    `Page request failed for URL '${normalizedUrl}': ${error.message}`,
+                    `Page request failed for URL '${newURL}': ${error.message}`,
                     error.status,
                     'UNKNOWN',
                     error,
@@ -295,7 +308,7 @@ export class PageClient extends BaseApiClient {
             }
 
             throw new DotErrorPage(
-                `Page request failed for URL '${normalizedUrl}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                `Page request failed for URL '${newURL}': ${error instanceof Error ? error.message : 'Unknown error'}`,
                 500,
                 'UNKNOWN',
                 undefined,

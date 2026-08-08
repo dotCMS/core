@@ -8,6 +8,7 @@
             "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "defaultConfiguration": "production",
+            "dependsOn": [{ "target": "generate-spec", "projects": ["sdk-ai"] }],
             "options": {
                 "platform": "node",
                 "outputPath": "dist/apps/ai-evals",
@@ -42,7 +43,7 @@
             "executor": "@nx/js:prune-lockfile",
             "outputs": [
                 "{workspaceRoot}/dist/apps/ai-evals/package.json",
-                "{workspaceRoot}/dist/apps/ai-evals/yarn.lock"
+                "{workspaceRoot}/dist/apps/ai-evals/pnpm-lock.yaml"
             ],
             "options": {
                 "buildTarget": "build"

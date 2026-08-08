@@ -92,6 +92,34 @@ public record AggregationBucket(
                 .build();
     }
 
+    /**
+     * Creates a bucket from an Elasticsearch histogram bucket (date or numeric), including its
+     * sub-aggregations. The key is normalized to its numeric form so {@link #getKeyAsNumber()}
+     * returns the epoch-millis (date histogram) or the numeric interval (numeric histogram):
+     * a date-histogram key is a {@code java.time.ZonedDateTime} in ES 7.x, not a number, so it is
+     * converted to epoch-millis here rather than via {@code getKeyAsString()} (which yields a
+     * formatted date).
+     */
+    public static AggregationBucket fromHistogram(
+            final org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Bucket esBucket) {
+        return builder()
+                .key(histogramKey(esBucket.getKey()))
+                .docCount(esBucket.getDocCount())
+                .subAggregations(Aggregation.from(esBucket.getAggregations()))
+                .build();
+    }
+
+    /** Normalizes a histogram bucket key to a numeric String ({@link #getKeyAsNumber()}-friendly). */
+    private static String histogramKey(final Object key) {
+        if (key instanceof java.time.ZonedDateTime) {
+            return String.valueOf(((java.time.ZonedDateTime) key).toInstant().toEpochMilli());
+        }
+        if (key instanceof Number) {
+            return String.valueOf(((Number) key).longValue());
+        }
+        return String.valueOf(key);
+    }
+
     // -------------------------------------------------------------------------
     // OS factories
     // -------------------------------------------------------------------------
@@ -121,6 +149,35 @@ public record AggregationBucket(
             final org.opensearch.client.opensearch._types.aggregations.DoubleTermsBucket osBucket) {
         return builder()
                 .key(String.valueOf(osBucket.key()))
+                .docCount(osBucket.docCount())
+                .subAggregations(Aggregation.fromOS(osBucket.aggregations()))
+                .build();
+    }
+
+    /**
+     * Creates a bucket from an OpenSearch date-histogram bucket, including its sub-aggregations. The
+     * OpenSearch date-histogram key is epoch-milliseconds as a {@code long}; it is stored as a
+     * numeric String so {@link #getKeyAsNumber()} returns the epoch-millis, matching the
+     * Elasticsearch date-histogram normalization in {@link #fromHistogram}.
+     */
+    public static AggregationBucket fromOS(
+            final org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket osBucket) {
+        return builder()
+                .key(String.valueOf(osBucket.key()))
+                .docCount(osBucket.docCount())
+                .subAggregations(Aggregation.fromOS(osBucket.aggregations()))
+                .build();
+    }
+
+    /**
+     * Creates a bucket from an OpenSearch numeric-histogram bucket, including its sub-aggregations.
+     * The key ({@code double}) is normalized to its {@code long} form so it matches the Elasticsearch
+     * numeric-histogram normalization in {@link #fromHistogram} (which calls {@code longValue()}).
+     */
+    public static AggregationBucket fromOS(
+            final org.opensearch.client.opensearch._types.aggregations.HistogramBucket osBucket) {
+        return builder()
+                .key(String.valueOf((long) osBucket.key()))
                 .docCount(osBucket.docCount())
                 .subAggregations(Aggregation.fromOS(osBucket.aggregations()))
                 .build();

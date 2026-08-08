@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { Observable, of as observableOf, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -97,23 +97,10 @@ describe('DotPushPublishDialogComponent', () => {
     });
 
     function openDialogAndStabilize(data: DotPushPublishDialogData = publishData): void {
+        // Subscribe before emitting so Subject delivery is not missed (detectChanges: false).
+        spectator.detectChanges();
         dotPushPublishDialogService.open(data);
-        spectator.fixture.detectChanges(false);
-        if (!comp.dialogActions) {
-            comp.eventData = data;
-            comp.dialogShow = true;
-            comp.dialogActions = {
-                accept: {
-                    action: () => comp.submitPushAction(),
-                    label: 'Push',
-                    disabled: !comp.formValid
-                },
-                cancel: {
-                    action: () => comp.close(),
-                    label: 'Cancel'
-                }
-            };
-        }
+        spectator.detectChanges();
     }
 
     beforeEach(() => {
@@ -130,6 +117,24 @@ describe('DotPushPublishDialogComponent', () => {
             expect(comp.dialogShow).toBe(true);
             expect(comp.dialogActions).toBeDefined();
             expect(comp.eventData?.title).toEqual(publishData.title);
+        });
+
+        it('should run detectChanges when opened so PrimeNG OnPush dialog receives visible', () => {
+            spectator.detectChanges();
+            const detectSpy = jest.spyOn(comp['cdr'], 'detectChanges');
+            dotPushPublishDialogService.open(publishData);
+            expect(detectSpy).toHaveBeenCalled();
+            expect(comp.dialogShow).toBe(true);
+        });
+
+        it('should append dialog to body', () => {
+            openDialogAndStabilize();
+            const dialogCmp = spectator.debugElement.query(By.css('p-dialog')).componentInstance;
+            const appendTo =
+                typeof dialogCmp.appendTo === 'function'
+                    ? dialogCmp.appendTo()
+                    : dialogCmp.appendTo;
+            expect(appendTo).toBe('body');
         });
 
         it('should hide buttons if there is custom code', () => {
@@ -149,6 +154,18 @@ describe('DotPushPublishDialogComponent', () => {
             expect(comp.cancel.emit).toHaveBeenCalled();
             expect(comp.dialogShow).toEqual(false);
             expect(comp.eventData).toEqual(null);
+        });
+
+        it('should close only when visibleChange emits false', () => {
+            openDialogAndStabilize();
+            jest.clearAllMocks();
+            comp.onVisibleChange(true);
+            expect(comp.cancel.emit).not.toHaveBeenCalled();
+            expect(comp.dialogShow).toBe(true);
+
+            comp.onVisibleChange(false);
+            expect(comp.cancel.emit).toHaveBeenCalled();
+            expect(comp.dialogShow).toBe(false);
         });
     });
 

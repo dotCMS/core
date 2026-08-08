@@ -7280,6 +7280,181 @@
       "response": []
     },
     {
+      "name": "_render-sources [api/v1/page/_render-sources]",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Target the same host the suite created its test pages on: {{firstPageUrl}} is",
+              "// created and rendered with {{defaultSiteId}} in an earlier folder. The live",
+              "// 'default site' can be switched by sibling tests, so do NOT re-query it here.",
+              "pm.collectionVariables.set('renderSourcesHostId', pm.collectionVariables.get('defaultSiteId'));"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "Happy path: render-sources for a page via host_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"render-sources host and page were resolved by an earlier folder\", function () {",
+                  "    pm.expect(pm.collectionVariables.get('renderSourcesHostId'), 'defaultSiteId must be set by an earlier folder').to.be.a('string').and.not.empty;",
+                  "    pm.expect(pm.collectionVariables.get('firstPageUrl'), 'firstPageUrl must be set by an earlier folder').to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response has entity with page, containers and widgets keys\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('entity');",
+                  "    var entity = jsonData.entity;",
+                  "    pm.expect(entity).to.have.property('page');",
+                  "    pm.expect(entity).to.have.property('containers');",
+                  "    pm.expect(entity).to.have.property('widgets');",
+                  "    pm.expect(entity.page).to.have.property('identifier');",
+                  "    pm.expect(entity.page.identifier).to.be.a('string').and.not.empty;",
+                  "    pm.expect(entity.page).to.have.property('uri');",
+                  "    pm.expect(entity.page).to.have.property('languageId');",
+                  "    pm.expect(entity.page.uri).to.match(/^\\/\\//, 'page.uri must be host-qualified (starts with //)');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/_render-sources/{{firstPageUrl}}?host_id={{renderSourcesHostId}}",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "page", "_render-sources", "{{firstPageUrl}}"],
+              "query": [
+                { "key": "host_id", "value": "{{renderSourcesHostId}}" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Error: 404 no URI segment (bare endpoint)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 when no URI segment is provided\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/_render-sources",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "page", "_render-sources"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Error: 404 unknown path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/_render-sources/this-page-does-not-exist-xyz-99999?host_id={{renderSourcesHostId}}",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "page", "_render-sources", "this-page-does-not-exist-xyz-99999"],
+              "query": [
+                { "key": "host_id", "value": "{{renderSourcesHostId}}" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "URL-mapped page: render-sources for /blog/post/*",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This exercises the URL-mapped path. It depends on the demo starter blog",
+                  "// content being present. When it is, validate the urlContentMap block; when the",
+                  "// starter content is absent in this environment the endpoint returns 404 — accept",
+                  "// that rather than making CI depend on optional seed data.",
+                  "pm.test(\"Status code is 200 (URL-mapped) or 404 (no starter blog content)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"urlContentMap block is present for URL-mapped request\", function () {",
+                  "        var entity = pm.response.json().entity;",
+                  "        pm.expect(entity).to.have.property('urlContentMap');",
+                  "        pm.expect(entity.urlContentMap).to.not.be.null;",
+                  "        pm.expect(entity.urlContentMap).to.have.property('contentTypeVar');",
+                  "        pm.expect(entity.urlContentMap).to.have.property('contentletId');",
+                  "        pm.expect(entity.urlContentMap).to.have.property('contentletInode');",
+                  "        pm.expect(entity.urlContentMap.contentletId).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    pm.test(\"page.uri is host-qualified and contains the requested blog path\", function () {",
+                  "        var uri = pm.response.json().entity.page.uri;",
+                  "        pm.expect(uri).to.match(/^\\/\\//, 'page.uri must start with //');",
+                  "        pm.expect(uri).to.include('/blog/post/');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/_render-sources/blog/post/easy-snowboard-tricks-you-can-start-using-right-away?host_id={{renderSourcesHostId}}&language_id=1",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "page", "_render-sources", "blog", "post", "easy-snowboard-tricks-you-can-start-using-right-away"],
+              "query": [
+                { "key": "host_id", "value": "{{renderSourcesHostId}}" },
+                { "key": "language_id", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "invalidateSession",
       "event": [
         {
@@ -7507,6 +7682,10 @@
     },
     {
       "key": "hostIdentifier",
+      "value": ""
+    },
+    {
+      "key": "renderSourcesHostId",
       "value": ""
     }
   ]

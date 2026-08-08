@@ -145,10 +145,9 @@
                     <td colspan="2">
                         <div class="flex items-center gap-3">
                             <div class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                                <dot-contentlet-thumbnail
-                                    [iconSize]="'24px'"
+                                <dot-content-thumbnail
                                     [contentlet]="item"
-                                    [playableVideo]="false"
+                                    iconSize="24px"
                                     data-testId="contentlet-thumbnail" />
                             </div>
                             <p class="truncate-text">{{ item.title }}</p>
@@ -163,8 +162,7 @@
                         <p class="truncate-text">{{ item.language | language }}</p>
                     </td>
                     <td class="w-24 min-w-24">
-                        @let status = item | contentletStatus;
-                        <p-chip [class]="status.classes" [label]="status.label" />
+                        <dot-contentlet-status-badge [state]="item" />
                     </td>
                     <td class="w-44 min-w-44">
                         <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>

@@ -16,7 +16,7 @@ declare global {
     // Check if critical attribute is missing (server is auto-detected)
     if (!config.siteAuth) {
         // Don't initialize if siteAuth is missing
-        // eslint-disable-next-line no-console
+
         console.warn(
             'DotCMS Analytics [Standalone]: Cannot initialize without required configuration: missing data-analytics-auth'
         );
@@ -50,7 +50,6 @@ declare global {
             window[ANALYTICS_WINDOWS_KEY] = null;
         }
     } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('DotCMS Analytics [Standalone]: Failed to initialize:', error);
         window[ANALYTICS_WINDOWS_KEY] = null;
     }

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CharMatcher;
 
@@ -32,11 +33,17 @@ public class TextFieldStrategy implements FieldStrategy {
             fieldValue = CharMatcher.is('\"').trimFrom(fieldValue).trim();
         }
         final String finalWildcard = wildcard;
+        // Escape Lucene query-syntax characters in the user's term (a hyphen, colon, slash, etc.
+        // would otherwise fail to parse and break the whole search) — but only for the wildcard
+        // contains case; an explicitly quoted phrase is left as-is. The `*` wildcards we add
+        // ourselves stay outside the escaped token.
+        final boolean isWildcard = "*".equals(finalWildcard);
         final String luceneQuery;
         if (this.isFieldInURLMapPattern(fieldContext.contentType(), fieldName)) {
             luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                     .map(String::trim)
                     .filter(token -> !token.isEmpty())
+                    .map(token -> isWildcard ? LuceneQueryUtils.escape(token) : token)
                     .map(token -> String.format("+%s_dotraw:%s%s%s",
                             fieldName, finalWildcard, token, finalWildcard))
                     .collect(Collectors.joining(SPACE));
@@ -44,6 +51,7 @@ public class TextFieldStrategy implements FieldStrategy {
             luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                     .map(String::trim)
                     .filter(token -> !token.isEmpty())
+                    .map(token -> isWildcard ? LuceneQueryUtils.escape(token) : token)
                     .map(token -> String.format("+(%s:%s%s%s %s_dotraw:%s%s%s)",
                             fieldName, finalWildcard, token, finalWildcard,
                             fieldName, finalWildcard, token, finalWildcard))

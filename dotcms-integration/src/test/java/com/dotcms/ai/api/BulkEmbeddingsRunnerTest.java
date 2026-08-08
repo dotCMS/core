@@ -1,10 +1,10 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiTest;
+import com.dotcms.ai.rest.forms.EmbeddingsForm;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.ai.rest.forms.EmbeddingsForm;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
@@ -22,25 +22,27 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.dotmarketing.util.ThreadUtils.sleep;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for {@link BulkEmbeddingsRunner}.
  *
- * <p>The setup intentionally configures AI secrets only on the site host, not on System Host.
- * This validates that the runner resolves the host per-contentlet and uses the correct
- * site config rather than falling back to System Host.
+ * <p>Validates that the runner uses the requesting site's dotAI config for all
+ * contentlets in a batch, regardless of which site each contentlet belongs to.
+ * This ensures consistent embedding model usage within a single index and
+ * allows indexing content from sites that have no dotAI config of their own.
  */
 public class BulkEmbeddingsRunnerTest {
 
     private static final int MAX_ATTEMPTS = 30;
 
     private static User user;
-    private static Host host;
+    private static Host configuredSite;
     private static LanguageAPI languageApi;
     private static WireMockServer wireMockServer;
     private static ContentType blogContentType;
-    private static Contentlet contentlet;
+    private static Contentlet contentletOnSystemHost;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -48,20 +50,20 @@ public class BulkEmbeddingsRunnerTest {
         IPUtils.disabledIpPrivateSubnet(true);
         user = APILocator.getUserAPI().getSystemUser();
         languageApi = APILocator.getLanguageAPI();
-        host = new SiteDataGen().nextPersisted();
+        configuredSite = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
-        // Configure AI only on the site host — intentionally NOT on System Host
-        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
+        // Only the requesting site has dotAI configured — System Host does NOT
+        AiTest.aiAppSecretsWithProviderConfig(configuredSite, AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
         wireMockServer.stop();
         IPUtils.disabledIpPrivateSubnet(false);
-        if (contentlet != null) {
+        if (contentletOnSystemHost != null) {
             try {
-                APILocator.getContentletAPI().archive(contentlet, user, false);
-                APILocator.getContentletAPI().delete(contentlet, user, false);
+                APILocator.getContentletAPI().archive(contentletOnSystemHost, user, false);
+                APILocator.getContentletAPI().delete(contentletOnSystemHost, user, false);
             } catch (DotDataException | DotSecurityException e) {
                 // ignore
             }
@@ -73,54 +75,101 @@ public class BulkEmbeddingsRunnerTest {
                 // ignore
             }
         }
-        AiTest.removeAiAppSecrets(host);
+        AiTest.removeAiAppSecrets(configuredSite);
     }
 
     /**
-     * Given a contentlet published on a site that has AI configured,
-     * and System Host does NOT have AI configured,
+     * Given a contentlet on System Host (which has no dotAI config),
+     * and a form with requestHostId pointing to a site that has dotAI configured,
      * When BulkEmbeddingsRunner processes that contentlet,
-     * Then embeddings should be generated using the site config.
+     * Then embeddings should be generated using the requesting site's config.
      */
     @Test
-    public void test_run_generatesEmbeddings_withSiteOnlyConfig() throws Exception {
+    public void test_run_usesRequestHostConfig_whenContentletHostHasNoConfig() throws Exception {
         DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(
                 new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
 
-        blogContentType = TestDataUtils.getBlogLikeContentType("blog", host);
-        final String text = "BulkEmbeddingsRunner should resolve the host from the contentlet "
-                + "and use the site config rather than falling back to System Host.";
-        contentlet = TestDataUtils.withEmbeddings(
+        blogContentType = TestDataUtils.getBlogLikeContentType("blog", APILocator.systemHost());
+        final String text = "BulkEmbeddingsRunner should use the requesting site config "
+                + "when the contentlet's host has no dotAI configuration.";
+        contentletOnSystemHost = TestDataUtils.withEmbeddings(
                 true,
-                host,
+                APILocator.systemHost(),
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),
                 text);
-        APILocator.getContentletAPI().publish(contentlet, user, false);
+        APILocator.getContentletAPI().publish(contentletOnSystemHost, user, false);
 
         final EmbeddingsForm form = new EmbeddingsForm.Builder()
                 .indexName("default")
+                .requestHostId(configuredSite.getIdentifier())
                 .build();
-        new BulkEmbeddingsRunner(List.of(contentlet.getInode()), form).run();
+        new BulkEmbeddingsRunner(List.of(contentletOnSystemHost.getInode()), form).run();
 
         assertTrue(
-                "Expected embeddings after BulkEmbeddingsRunner.run() with site-only AI config",
-                waitForEmbeddings(contentlet, text));
+                "Expected embeddings when requestHostId points to a site with dotAI config",
+                waitForEmbeddings(contentletOnSystemHost, text));
+    }
+
+    /**
+     * Given the same contentlet on System Host,
+     * and a form WITHOUT requestHostId (falls back to System Host which has no config),
+     * When BulkEmbeddingsRunner processes that contentlet,
+     * Then no embeddings should be generated.
+     */
+    @Test
+    public void test_run_noEmbeddings_whenRequestHostHasNoConfig() throws Exception {
+        DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(
+                new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
+
+        final ContentType ct = TestDataUtils.getBlogLikeContentType("blogNoConfig", APILocator.systemHost());
+        final String text = "This contentlet should not be embedded because neither its host "
+                + "nor the request host has dotAI configured.";
+        final Contentlet contentlet = TestDataUtils.withEmbeddings(
+                true,
+                APILocator.systemHost(),
+                languageApi.getDefaultLanguage().getId(),
+                ct.id(),
+                text);
+        try {
+            APILocator.getContentletAPI().publish(contentlet, user, false);
+
+            // No requestHostId — falls back to System Host, which has no dotAI config
+            final EmbeddingsForm form = new EmbeddingsForm.Builder()
+                    .indexName("default")
+                    .build();
+            new BulkEmbeddingsRunner(List.of(contentlet.getInode()), form).run();
+
+            assertFalse(
+                    "Expected no embeddings when neither contentlet host nor request host has dotAI config",
+                    embeddingExists(contentlet, text));
+        } finally {
+            try {
+                APILocator.getContentletAPI().archive(contentlet, user, false);
+                APILocator.getContentletAPI().delete(contentlet, user, false);
+                APILocator.getContentTypeAPI(user).delete(ct);
+            } catch (DotDataException | DotSecurityException e) {
+                // ignore
+            }
+        }
     }
 
     private static boolean waitForEmbeddings(final Contentlet contentlet, final String text) {
         int count = 0;
-        boolean exists = APILocator.getDotAIAPI().getEmbeddingsAPI(host)
-                .embeddingExists(contentlet.getInode(), "default", text);
+        boolean exists = embeddingExists(contentlet, text);
         while (!exists) {
             if (count++ > MAX_ATTEMPTS) {
                 break;
             }
             sleep(500);
-            exists = APILocator.getDotAIAPI().getEmbeddingsAPI(host)
-                    .embeddingExists(contentlet.getInode(), "default", text);
+            exists = embeddingExists(contentlet, text);
         }
         return exists;
+    }
+
+    private static boolean embeddingExists(final Contentlet contentlet, final String text) {
+        return APILocator.getDotAIAPI().getEmbeddingsAPI(configuredSite)
+                .embeddingExists(contentlet.getInode(), "default", text);
     }
 
 }

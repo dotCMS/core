@@ -1,8 +1,8 @@
 import 'dotenv/config';
 
-import path from 'node:path';
-
 import { anthropic } from '@ai-sdk/anthropic';
+
+import path from 'node:path';
 
 import { runTask } from './harness';
 import { loadTask, loadTasksFromDir } from './loader';

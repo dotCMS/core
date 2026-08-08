@@ -1,0 +1,16 @@
+# dotCMS Spec-Kit extension hooks
+#
+# Read by the /speckit-* skills. Schema mirrors the shipped core extensions
+# (e.g. the `git` extension's extension.yml `hooks:` block). Command names use
+# dots; skills map them to slash commands by replacing dots with hyphens
+# (speckit.adr-context -> /speckit-adr-context).
+#
+# Purpose: make ADR consultation an AUTOMATIC, mandatory step at the start of the
+# plan phase, so every plan treats relevant dotCMS/platform-adrs decisions as input.
+# See .specify/CUSTOMIZATIONS.md for the full rationale.
+
+hooks:
+  before_plan:
+    command: speckit.adr-context
+    optional: false
+    description: "Consult dotCMS/platform-adrs for ADRs relevant to this work before planning (binding input; never creates ADRs)"

@@ -168,6 +168,27 @@ runs:
         echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
         echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
+    # The Maven distribution itself, which mvnw downloads from Maven Central on a
+    # cold runner. Without this every job in a run fetches the same ~40MB zip --
+    # around 26 downloads per run -- and Maven Central eventually answers 429,
+    # killing the job before any dotCMS code runs (and, under fail-fast, taking
+    # the rest of the matrix with it).
+    #
+    # Unlike the caches below this uses the combined action rather than the
+    # restore/save split: the content is an immutable versioned download, so
+    # there is no risk of persisting a polluted cache, and letting every job save
+    # means the first one to run on a cold key repairs it for the rest.
+    - id: cache-maven-wrapper
+      name: Cache Maven Wrapper Distribution
+      # Pinned to a commit SHA, not the mutable v4 tag: a tag can be repointed by
+      # the action owner, which is how the trivy-action and kics-github-action
+      # compromises worked. Bump deliberately when updating.
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/.m2/wrapper
+        # Changes only when the Maven version does, so this key is ~always a hit.
+        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
       if: ${{ inputs.artifacts-from == '' }}
@@ -184,28 +205,51 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: installs
-        key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+        # hash nodejs-parent/pom.xml so the pnpm-era layout (install-node-and-npm
+        # + corepack shim) is not mixed with the yarn-era layout from cached
+        # builds of the previous toolchain.
+        key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
-    - name: Get yarn cache directory path
-      id: yarn-info
+    - name: Verify pnpm version is in sync between package.json and nodejs-parent/pom.xml
       if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
-        echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-        echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
-      
+        set -euo pipefail
+        pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
+        pkg_json_version="${pkg_json_pm#pnpm@}"
+        pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
+        if [ "$pkg_json_version" != "$pom_version" ]; then
+          echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
+          exit 1
+        fi
+        echo "pnpm version in sync: $pom_version"
 
-    - id: restore-cache-yarn
-      name: Restore Yarn Cache
+    - name: Set up pnpm
+      if: ${{ inputs.requires-node == 'true' }}
+      uses: pnpm/action-setup@v4
+      with:
+        package_json_file: core-web/package.json
+        run_install: false
+
+    - name: Get pnpm store directory path
+      id: pnpm-info
+      if: ${{ inputs.requires-node == 'true' }}
+      shell: bash
+      run: |
+        echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        echo "version=$(pnpm -v)" >> $GITHUB_OUTPUT
+
+    - id: restore-cache-pnpm
+      name: Restore pnpm Store Cache
       if: ${{ inputs.requires-node == 'true' }}
       uses: actions/cache/restore@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
-          ${{ runner.os }}-yarn-
-          
+          ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}
+          ${{ runner.os }}-pnpm-
+
 
     - id: cache-sonar
       name: Cache SonarQube Packages
@@ -284,7 +328,8 @@ runs:
           echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
-        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+        # Set by the build-cache-remote action when the S3 cache is wired up; empty otherwise.
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS ${BUILD_CACHE_ARGS:-} $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
           echo "Building Maven with args $FINAL_ARGS"
@@ -394,13 +439,13 @@ runs:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
 
-    - id: save-cache-yarn
-      name: Save Yarn Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-yarn.outputs.cache-hit != 'true' }}
+    - id: save-cache-pnpm
+      name: Save pnpm Store Cache
+      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ steps.restore-cache-yarn.outputs.cache-primary-key }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
 
     - id: save-cache-sonar
       name: Save SonarQube Cache

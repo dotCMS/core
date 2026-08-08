@@ -444,6 +444,130 @@ public class ContentletIndexAPIImplPhaseTest {
     }
 
     // =========================================================================
+    // Site-search slot preservation — issue #36360
+    //
+    // The siteSearch slot shares the OS version row with the content pointers but is
+    // owned by SiteSearchAPI, and saveIndices() is a delete-by-version followed by a
+    // re-insert: a rebuild that omits the slot ERASES it. Every content-side write below
+    // must therefore hand it back untouched, or a content operation silently deactivates
+    // the active Site Search index.
+    // =========================================================================
+
+    /** The active site-search pointer, as SiteSearchAPI leaves it in the shared version row. */
+    private static final String OS_SITE_SEARCH = "sitesearch_T1";
+
+    /** OS store holding the given content pointers plus an active site-search index. */
+    private static FakeVersionedIndicesAPI osStoreWithSiteSearch(
+            final String working, final String live) {
+        final FakeVersionedIndicesAPI fakeVersioned = new FakeVersionedIndicesAPI();
+        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder()
+                .siteSearch(CLUSTER_PREFIX + OS_SITE_SEARCH);
+        if (working != null) {
+            builder.working(working);
+        }
+        if (live != null) {
+            builder.live(live);
+        }
+        fakeVersioned.stored = builder.build();
+        return fakeVersioned;
+    }
+
+    private static void assertSiteSearchSurvived(final FakeVersionedIndicesAPI fakeVersioned) {
+        assertEquals("The site-search pointer must survive a CONTENT-index operation",
+                CLUSTER_PREFIX + OS_SITE_SEARCH,
+                fakeVersioned.stored.siteSearch().orElse(null));
+    }
+
+    /**
+     * Given Scenario: Phase 3 (OS is the primary store) with an active site-search index.
+     * When : activateIndex promotes a content working index.
+     * Then : the working pointer is updated and the site-search pointer is still there.
+     */
+    @Test
+    public void test_activateIndex_phase3_preservesSiteSearchSlot() throws DotDataException {
+        setPhase(3);
+        final FakeVersionedIndicesAPI fakeVersioned =
+                osStoreWithSiteSearch(null, CLUSTER_PREFIX + OS_LIVE);
+
+        buildApi(new FakeIndexAPI(List.of()), new FakeIndiciesAPI(), fakeVersioned)
+                .activateIndex(OS_WORKING);
+
+        assertEquals("OS store must record the promoted working name",
+                CLUSTER_PREFIX + OS_WORKING, fakeVersioned.stored.working().orElse(null));
+        assertSiteSearchSurvived(fakeVersioned);
+    }
+
+    /**
+     * Given Scenario: Phase 2 (dual-write), where the OS store is mirrored best-effort and an
+     *          active site-search index already lives in it.
+     * When : activateIndex promotes a content working index.
+     * Then : the mirror keeps the site-search pointer — the mirror path rebuilds the same row.
+     */
+    @Test
+    public void test_activateIndex_phase2_mirrorPreservesSiteSearchSlot() throws DotDataException {
+        setPhase(2);
+        final FakeVersionedIndicesAPI fakeVersioned = osStoreWithSiteSearch(null, null);
+
+        buildApi(new FakeIndexAPI(List.of()), new FakeIndiciesAPI(), fakeVersioned)
+                .activateIndex(ES_WORKING);
+
+        assertEquals("OS mirror must record the promoted working name",
+                CLUSTER_PREFIX + ES_WORKING, fakeVersioned.stored.working().orElse(null));
+        assertSiteSearchSurvived(fakeVersioned);
+    }
+
+    /**
+     * Given Scenario: Phase 3 with an active site-search index and both content pointers set.
+     * When : deactivateIndex clears the content working slot.
+     * Then : only that slot is cleared — live and site-search are untouched.
+     */
+    @Test
+    public void test_deactivateIndex_phase3_preservesSiteSearchSlot()
+            throws DotDataException, IOException {
+        setPhase(3);
+        final FakeVersionedIndicesAPI fakeVersioned =
+                osStoreWithSiteSearch(CLUSTER_PREFIX + OS_WORKING, CLUSTER_PREFIX + OS_LIVE);
+
+        buildApi(new FakeIndexAPI(List.of()), new FakeIndiciesAPI(), fakeVersioned)
+                .deactivateIndex(OS_WORKING);
+
+        assertNull("OS working slot must be cleared",
+                fakeVersioned.stored.working().orElse(null));
+        assertEquals("OS live slot must be preserved",
+                CLUSTER_PREFIX + OS_LIVE, fakeVersioned.stored.live().orElse(null));
+        assertSiteSearchSurvived(fakeVersioned);
+    }
+
+    /**
+     * Given Scenario: Phase 3 where the content working index is the ONLY content pointer, next to
+     *          an active site-search index.
+     * When : deactivateIndex clears that last content slot.
+     * Then : the record is saved with the site-search pointer, NOT treated as empty. Before the fix
+     *          the rebuild dropped site-search, {@code hasAnyIndex()} went false, and the whole
+     *          version row was removed — taking the active Site Search index with it. The fake's
+     *          {@code removeVersion} throws, so that regression fails this test loudly.
+     */
+    @Test
+    public void test_deactivateIndex_phase3_lastContentSlot_keepsRowForSiteSearch()
+            throws DotDataException, IOException {
+        setPhase(3);
+        final FakeVersionedIndicesAPI fakeVersioned =
+                osStoreWithSiteSearch(CLUSTER_PREFIX + OS_WORKING, null);
+
+        buildApi(new FakeIndexAPI(List.of()), new FakeIndiciesAPI(), fakeVersioned)
+                .deactivateIndex(OS_WORKING);
+
+        assertNull("OS working slot must be cleared",
+                fakeVersioned.stored.working().orElse(null));
+        assertSiteSearchSurvived(fakeVersioned);
+    }
+
+    // The reindex-abort and switchover rebuilds go through the same builder helper as the four
+    // cases above; they are exercised end-to-end by ESSiteSearchAPITest, which asserts the
+    // site-search default survives a fullReindexStart/fullReindexAbort. They are not unit-tested
+    // here because both paths reach ReindexQueueAPI, which this fake harness does not wire.
+
+    // =========================================================================
     // Factory and helpers
     // =========================================================================
 
@@ -576,10 +700,17 @@ public class ContentletIndexAPIImplPhaseTest {
     static class FakeVersionedIndicesAPI implements VersionedIndicesAPI {
 
         VersionedIndices stored = null;
+        int removeLegacyIndicesCalls = 0;
 
         @Override
         public Optional<VersionedIndices> loadDefaultVersionedIndices() {
             return Optional.ofNullable(stored);
+        }
+
+        @Override
+        public int removeLegacyIndices() {
+            removeLegacyIndicesCalls++;
+            return 0;
         }
 
         @Override

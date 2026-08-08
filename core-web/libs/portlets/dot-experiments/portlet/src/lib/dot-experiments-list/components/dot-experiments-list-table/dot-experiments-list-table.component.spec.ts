@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 

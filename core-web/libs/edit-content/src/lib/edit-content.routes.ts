@@ -25,8 +25,17 @@ export const dotEditContentRoutes: Route[] = [
                 path: ':id',
                 title: 'Edit Content',
                 component: DotEditContentLayoutComponent,
-                canDeactivate: [unsavedChangesGuard],
-                data: { reuseRoute: false }
+                canDeactivate: [unsavedChangesGuard]
+                // No `reuseRoute: false` here (unlike `new/:contentType`): the editor
+                // REUSES its component across `:id → :id` navigations (breadcrumb,
+                // locale switch, version restore, related content) so the previous
+                // content stays on screen until the new one loads instead of blanking.
+                // The layout re-runs initialization from the URL via
+                // `host.identityChanges$`. Because a reused route no longer triggers
+                // `canDeactivate` on same-route navigation, the unsaved-changes prompt
+                // for those in-editor moves is handled at the source by the host's
+                // navigation guard. `canDeactivate` still fires when LEAVING the editor
+                // (a different route config is not reused), so exiting stays guarded.
             }
         ]
     }

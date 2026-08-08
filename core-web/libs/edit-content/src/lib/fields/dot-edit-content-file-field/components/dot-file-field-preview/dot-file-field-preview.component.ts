@@ -1,7 +1,6 @@
 import { of } from 'rxjs';
 
 import {
-    CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -12,22 +11,29 @@ import {
     OnInit
 } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError } from 'rxjs/operators';
 
-import { DotResourceLinksService } from '@dotcms/data-access';
+import { DotMessageService, DotResourceLinksService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotFileMetadata
 } from '@dotcms/dotcms-models';
 import {
-    DotTempFileThumbnailComponent,
+    DotContentThumbnail,
+    DotContentThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotCopyButtonComponent
+    DotCopyButtonComponent,
+    buildFallbackTempFileMetadata,
+    contentletToThumbnailModel,
+    tempFileToThumbnailModel
 } from '@dotcms/ui';
 import { getFileMetadata } from '@dotcms/utils';
 
@@ -39,29 +45,42 @@ import { CONTENT_TYPES, DEFAULT_CONTENT_TYPE } from '../../dot-edit-content-file
 
 type FileInfo = UploadedFile & {
     contentType: string;
-    downloadLink: string;
+    /** Binary inline field variable when hydrated from contentlet metadata. */
+    fieldVariable: string;
+    downloadLink: string | null;
     content: string | null;
     metadata: DotFileMetadata;
+    /** Resolved model for the thumbnail viewer, built from either origin. */
+    thumbnail: DotContentThumbnail;
+};
+
+const buildTempDownloadLink = (referenceUrl: string): string => {
+    const separator = referenceUrl.includes('?') ? '&' : '?';
+
+    return `${referenceUrl}${separator}force_download=true`;
 };
 
 @Component({
     selector: 'dot-file-field-preview',
     imports: [
-        DotTempFileThumbnailComponent,
+        DotContentThumbnailComponent,
         DotFileSizeFormatPipe,
         DotMessagePipe,
         ButtonModule,
+        ConfirmPopupModule,
         DialogModule,
+        TooltipModule,
         DotCopyButtonComponent
     ],
-    providers: [],
+    providers: [ConfirmationService],
     templateUrl: './dot-file-field-preview.component.html',
     styleUrls: ['./dot-file-field-preview.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldPreviewComponent implements OnInit {
     readonly #dotResourceLinksService = inject(DotResourceLinksService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
     /**
      * Preview file
      *
@@ -77,11 +96,35 @@ export class DotFileFieldPreviewComponent implements OnInit {
     $disabled = input<boolean>(false, { alias: 'disabled' });
 
     /**
+     * Whether the "Edit image" action should be shown for the current file.
+     * Driven by the parent based on field type, metadata and launcher availability.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    $canEditImage = input<boolean>(false, { alias: 'canEditImage' });
+
+    $showInfoButton = input<boolean>(true, { alias: 'showInfoButton' });
+
+    /**
      * Remove file
      *
      * @memberof DotFileFieldPreviewComponent
      */
     removeFile = output();
+
+    /**
+     * Edit image. Emitted when the user triggers the image editor action.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    editImage = output();
+
+    /**
+     * Edit file. Emitted when the user clicks the text file preview to open the editor.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    editFile = output();
     /**
      * Show dialog
      *
@@ -98,26 +141,37 @@ export class DotFileFieldPreviewComponent implements OnInit {
 
         if (previewFile.source === 'contentlet') {
             const file = previewFile.file;
-
+            const inlineFieldVariable =
+                typeof file['fieldVariable'] === 'string' ? file['fieldVariable'] : undefined;
             const contentType = CONTENT_TYPES[file.contentType] || DEFAULT_CONTENT_TYPE;
+            const fieldVariable = inlineFieldVariable ?? contentType;
 
             return {
                 source: previewFile.source,
                 file,
                 content: file.content,
                 contentType,
-                downloadLink: `/contentAsset/raw-data/${file.inode}/${contentType}?byInode=true&force_download=true`,
-                metadata: getFileMetadata(file)
+                fieldVariable,
+                downloadLink: `/contentAsset/raw-data/${file.inode}/${fieldVariable}?byInode=true&force_download=true`,
+                metadata: getFileMetadata(file),
+                // Videos preview as a static first frame (no player controls), like
+                // every other surface
+                thumbnail: contentletToThumbnailModel(file, { fieldVariable })
             };
         }
 
+        const file = previewFile.file;
+
         return {
             source: previewFile.source,
-            file: previewFile.file,
-            content: null,
+            file,
+            content: file.content ?? null,
             contentType: DEFAULT_CONTENT_TYPE,
-            downloadLink: null,
-            metadata: previewFile.file.metadata
+            fieldVariable: DEFAULT_CONTENT_TYPE,
+            downloadLink: file.referenceUrl ? buildTempDownloadLink(file.referenceUrl) : null,
+            // Temp files fresh from the image editor may lack the metadata block
+            metadata: file.metadata ?? buildFallbackTempFileMetadata(file),
+            thumbnail: tempFileToThumbnailModel(file)
         };
     });
 
@@ -139,7 +193,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
         const fileInfo = this.$fileInfo();
 
         if (fileInfo.source === 'contentlet') {
-            this.fetchResourceLinks(fileInfo.file, fileInfo.contentType);
+            this.fetchResourceLinks(fileInfo.file, fileInfo.fieldVariable);
         }
     }
 
@@ -157,6 +211,32 @@ export class DotFileFieldPreviewComponent implements OnInit {
     }
 
     /**
+     * Asks for confirmation before removing the file, displaying a ConfirmPopup
+     * anchored to the triggering button. Emits {@link removeFile} only on accept.
+     *
+     * @param {Event} event The click event from the remove button.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    confirmRemove(event: Event): void {
+        if (this.$disabled()) {
+            return;
+        }
+
+        this.#confirmationService.confirm({
+            target: event.currentTarget as EventTarget,
+            message: this.#dotMessageService.get('dot.file.field.action.remove.confirm'),
+            icon: 'pi pi-info-circle',
+            closeOnEscape: true,
+            acceptLabel: this.#dotMessageService.get('dot.common.remove'),
+            rejectLabel: this.#dotMessageService.get('dot.common.cancel'),
+            acceptButtonStyleClass: 'p-button-sm p-button-danger',
+            rejectButtonStyleClass: 'p-button-sm p-button-text p-button-secondary',
+            accept: () => this.removeFile.emit()
+        });
+    }
+
+    /**
      * Downloads the file at the given link.
      *
      * @param {string} link The link to the file to download.
@@ -168,7 +248,12 @@ export class DotFileFieldPreviewComponent implements OnInit {
             return;
         }
 
-        window.open(link, '_self');
+        const a = document.createElement('a');
+        a.href = link;
+        a.setAttribute('download', '');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     /**

@@ -1,7 +1,7 @@
+import { parse } from 'yaml';
+
 import fs from 'node:fs';
 import path from 'node:path';
-
-import { parse } from 'yaml';
 
 import type { TaskDefinition } from './types';
 

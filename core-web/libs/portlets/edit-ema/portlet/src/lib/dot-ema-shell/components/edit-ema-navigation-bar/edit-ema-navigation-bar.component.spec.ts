@@ -1,5 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import { byTestId, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
+import { byTestId, createRoutingFactory, SpectatorRouting } from '@openng/spectator/jest';
 
 import { Router } from '@angular/router';
 

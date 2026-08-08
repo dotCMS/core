@@ -1,4 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
+import com.dotcms.tiptap.TiptapMarkdown;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.json.JSONObject;
 import java.io.StringWriter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -123,10 +126,45 @@ public class MarkdownTool implements ViewTool {
 		}
 
 	}
-	
-	
-	
-	
+
+	/**
+	 * parse a block of json to markdown
+	 * @param parse
+	 * @return
+	 * @throws Throwable
+	 */
+	public String blockToMarkdown(String parse) throws Throwable {
+		return blockToMarkdown(parse, null);
+	}
+
+	/**
+	 * parse a block of json to markdown in the given flavor: {@code "READABLE"} (default,
+	 * human-first output) or {@code "ROUNDTRIP"} (lossless — rich blocks emitted as
+	 * {@code dotcms-*} fences). Case-insensitive; unknown values fall back to READABLE.
+	 * @param parse the Tiptap/ProseMirror JSON document
+	 * @param flavor emission flavor name
+	 * @return the markdown output
+	 * @throws Throwable
+	 */
+	public String blockToMarkdown(String parse, String flavor) throws Throwable {
+		if (parse == null || parse.isEmpty()) {
+			return "";
+		}
+		if (JsonUtil.isValidJSON(parse)) {
+			return TiptapMarkdown.toMarkdown(parse, TiptapMarkdown.flavorOf(flavor));
+		}
+		return parse;
+	}
+
+	/**
+	 * parse a block of json to markdown
+	 * @param parse
+	 * @return
+	 * @throws Throwable
+	 */
+	public String blockToMarkdown(JSONObject parse) throws Throwable {
+		return TiptapMarkdown.toMarkdown(parse);
+	}
 	
 	
 }

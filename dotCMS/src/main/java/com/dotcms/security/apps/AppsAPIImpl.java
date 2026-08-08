@@ -974,15 +974,27 @@ public class AppsAPIImpl implements AppsAPI {
                 final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
-                        final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
-                        if (optional.isPresent()) {
-                            final AppSecrets appSecrets = optional.get();
-                            exportedSecrets
-                                    .computeIfAbsent(siteId, list -> new LinkedList<>())
-                                    .add(appSecrets);
-                        } else {
-                            throw new IllegalArgumentException(String.format("Unable to find secret identified by key `%s` under site `%s` ",appKey, site.getIdentifier()));
+                        // Export persisted secrets only. Read the stored blob directly rather than
+                        // through getSecrets(), which (since #35859) overlays env-var tiers onto the
+                        // result. Env overrides belong to the target environment, not the export, and a
+                        // locked (tier-1) env value masks the stored value with a null, which would
+                        // corrupt the round-trip. Reading the raw blob preserves the real stored value.
+                        final Map<String, Secret> stored = readStoredSecrets(internalKey(appKey, site));
+                        if (stored.isEmpty()) {
+                            // Nothing persisted for this app on this site — it's provisioned purely from
+                            // env vars (appKeysByHost() lists env-backed apps too). There is nothing to
+                            // export; skip it. If every selection is skipped the empty-result guard below
+                            // raises a clear error.
+                            Logger.debug(AppsAPIImpl.class, () -> String.format(
+                                    "No stored secrets for app `%s` on site `%s`; skipping export (env-only).",
+                                    appKey, site.getIdentifier()));
+                            continue;
                         }
+                        final AppSecrets.Builder builder = AppSecrets.builder().withKey(appKey);
+                        stored.forEach(builder::withSecret);
+                        exportedSecrets
+                                .computeIfAbsent(siteId, list -> new LinkedList<>())
+                                .add(builder.build());
                     }
                 }
             } else {

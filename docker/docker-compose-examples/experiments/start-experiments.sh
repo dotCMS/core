@@ -64,8 +64,12 @@ for arg in "$@"; do
     esac
 done
 
-# Build docker-compose command
-COMPOSE_CMD="docker-compose"
+# Build docker compose command (v2 plugin; fallback to legacy docker-compose)
+if docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD="docker compose"
+else
+    COMPOSE_CMD="docker-compose"
+fi
 if [[ "$EXPERIMENTS_ONLY" == "false" ]]; then
     COMPOSE_CMD="$COMPOSE_CMD --profile full"
 fi
@@ -97,7 +101,7 @@ eval $COMPOSE_CMD
 echo "✅ Stack started successfully!"
 echo ""
 echo "📋 Services running:"
-docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+$COMPOSE_CMD ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 echo "🌐 Access URLs:"
 echo "  - Keycloak Admin: http://localhost:61111 (admin:keycloak)"

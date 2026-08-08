@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     UntypedFormBuilder,
     UntypedFormGroup,
@@ -15,7 +15,6 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
@@ -34,6 +33,7 @@ import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet
     host: {
         class: 'flex flex-col h-full'
     },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
         DotApiLinkComponent,
@@ -49,7 +49,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);
-    private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotTemplateStore);
     readonly #globalStore = inject(GlobalStore);
@@ -246,9 +245,12 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private setSwitchSiteListener(): void {
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.#store.goToTemplateList();
-        });
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.#store.goToTemplateList();
+            });
     }
 
     private formatTemplateItem({ layout, body, themeId }: DotTemplate): DotTemplateItem {

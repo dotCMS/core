@@ -22,7 +22,7 @@ core/
 
 ```bash
 sdk env install   # Java 25 via SDKMAN (.sdkmanrc) — build fails with wrong version
-nvm use           # Node 22.15+ via nvm (.nvmrc) — frontend build fails with wrong version
+nvm use           # Node 22.22.3+ via nvm (.nvmrc) — frontend build fails with wrong version
 ```
 
 ## Build & Test Commands
@@ -59,6 +59,8 @@ import com.dotmarketing.util.UtilMethods;   // UtilMethods.isSet(value)
 UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 ```
 
+> **Batch permission filtering**: prefer `permissionAPI.filterCollection(Collection<P>, int, User, boolean)` over per-item `doesUserHavePermission` loops — one SQL round-trip vs N. See [Java Standards → Permission Checks](docs/backend/JAVA_STANDARDS.md#permission-checks--batch-vs-scalar).
+
 ## Critical Rules
 
 - **Config/Logger only**: Never `System.out`, `System.getProperty`, or `System.getenv`
@@ -84,10 +86,20 @@ When editing ANY code, improve incrementally:
 - Modern Angular: `@if` not `*ngIf`, `input()` not `@Input()`
 - Add missing annotations: `@Override`, `@Nullable`
 
+## Spec-Driven Development (Spec-Kit)
+
+This repo uses [GitHub Spec-Kit](https://github.com/github/spec-kit) for spec-driven work,
+customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
+
+- **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
+- **Constitution**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — legacy-awareness + Critical Rules; loaded by every skill.
+- **TDD (Principle V, non-negotiable)**: no implementation code before tests are written, **dev-approved**, and confirmed **failing (Red)**. If a test type can't be done, the dev must say so and why. Enforced in the constitution + `tasks-template` `[GATE]` tasks + plan Test Strategy.
+- **ADRs**: live only in the private repo `dotCMS/platform-adrs`. `/speckit-plan` **always consults** relevant ADRs (auto `before_plan` hook → `/speckit-adr-context`, read-only via `gh`). Spec-Kit **never creates ADRs** — it only *proposes* them; ADRs are authored in `platform-adrs` via its `new-adr.sh`.
+
 ## Tech Stack
 
 - **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
-- **Frontend**: Angular 19+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Frontend**: Angular 21+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ## Documentation (Load On-Demand)
@@ -102,6 +114,7 @@ When editing ANY code, improve incrementally:
 
 ### Backend Development (Java/Maven)
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities
+- [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) — Socket I/O yes, file I/O no; carrier pinning
 - [REST API Patterns](docs/backend/REST_API_PATTERNS.md) — JAX-RS, Swagger, @Schema rules
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage

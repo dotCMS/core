@@ -11,6 +11,7 @@ export class EditorToolbarStore {
 
     readonly isBold = signal(false);
     readonly isItalic = signal(false);
+    readonly isUnderline = signal(false);
     readonly isStrike = signal(false);
     readonly isCode = signal(false);
     readonly isBulletList = signal(false);
@@ -24,6 +25,9 @@ export class EditorToolbarStore {
     readonly canIndent = signal(false);
     readonly canOutdent = signal(false);
     readonly isImageSelected = signal(false);
+    /** True when the selected `dotImage` node carries a link (`href`) — drives the toolbar
+     *  Link button's active state for linked images, mirroring `isLink` for text links. */
+    readonly isImageLinked = signal(false);
     readonly imageTextWrap = signal<string | null>(null);
     readonly imageTextAlign = signal<string | null>(null);
     readonly textAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
@@ -39,6 +43,7 @@ export class EditorToolbarStore {
             this.zone.run(() => {
                 this.isBold.set(editor.isActive('bold'));
                 this.isItalic.set(editor.isActive('italic'));
+                this.isUnderline.set(editor.isActive('underline'));
                 this.isStrike.set(editor.isActive('strike'));
                 this.isCode.set(editor.isActive('code'));
                 this.isBulletList.set(editor.isActive('bulletList'));
@@ -47,6 +52,9 @@ export class EditorToolbarStore {
                 this.isCodeBlock.set(editor.isActive('codeBlock'));
                 this.isLink.set(editor.isActive('link'));
                 this.isImageSelected.set(editor.isActive('dotImage'));
+                this.isImageLinked.set(
+                    editor.isActive('dotImage') && !!editor.getAttributes('dotImage').href
+                );
                 this.imageTextWrap.set(
                     editor.isActive('dotImage')
                         ? (editor.getAttributes('dotImage').textWrap ?? null)

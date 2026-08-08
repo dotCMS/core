@@ -1,7 +1,7 @@
 ---
 name: gh-issue-troubleshoot
 description: Fix a dotCMS GitHub issue end-to-end — fetches the issue, researches the codebase, proposes a concrete code fix with before/after diffs, iterates on developer feedback, then applies the approved fix to a new git branch.
-argument-hint: <issue-number|issue-url>
+argument-hint: <issue-number|issue-url> [--review=balanced|minimal|exhaustive]
 allowed-tools: Bash(gh issue view:*), Bash(gh api:*), Bash(gh auth status:*), Bash(gh repo view:*), Bash(git checkout -b:*), Bash(git checkout:*), Bash(git pull:*), Bash(git show-ref:*), Bash(git diff:*), Bash(git log:*), Bash(git blame:*), Bash(./mvnw *), Read, Edit, Write, Grep, Glob, Agent, WebFetch
 ---
 
@@ -35,6 +35,18 @@ Extract the issue number from $ARGUMENTS:
 - `https://github.com/dotCMS/core/pull/12345` → stop with a clear error: "That looks like a PR URL, not an issue. Provide an issue number or issues/ URL."
 - Any other unrecognised format → stop with: "Could not parse an issue number from '<input>'. Provide a number, #N, or a dotCMS/core issues URL."
 
+### Review verbosity flag (optional)
+
+`$ARGUMENTS` may also carry an optional `--review=<mode>` flag alongside the issue reference. Parse and remove it before resolving the issue number, then store the result as the **review mode** for Step 4a:
+
+| Mode | Behavior |
+|---|---|
+| `balanced` *(default when the flag is omitted)* | Auto-fix safe issues (Stage A), report significant improvements, and list deferred recommendations in `Reviewer Notes`. |
+| `minimal` | Still apply Stage A auto-fixes, but `Reviewer Notes` reports **only** findings that require a user decision (*Recommended (needs approval)* and *Open risks*). |
+| `exhaustive` | Full review report — include all categories and enumerate even trivial auto-fixes. Useful for auditing; verbose for everyday use. |
+
+An unrecognised value falls back to `balanced` with a one-line note: "Unknown review mode '<value>' — using balanced." The critical-change alert (Step 4b) is shown in **all** modes.
+
 ---
 
 ## Step 2 — Fetch the issue
@@ -63,6 +75,8 @@ Read carefully. Identify:
 ---
 
 ## Step 3 — Research the codebase
+
+Research operates on the currently checked-out working tree. The fix will be applied on a fresh branch off up-to-date `main` (Step 6a), so the proposed diff's line context should reflect `main`. If the current branch has diverged from `main`, note this to the developer — the proposed diff may need re-basing against `main` before it applies cleanly.
 
 Use the Agent tool to spawn the `dotcms-code-researcher` sub-agent.
 
@@ -107,15 +121,90 @@ If the docs clarify something that changes the researcher's hypothesis, update y
 
 ---
 
-## Step 4 — Read files and generate fix proposal
+## Step 4 — Read files and generate the candidate fix
 
 Read the relevant files from Step 3. Trace the code path to the defect location.
 
-Then generate a **concrete fix** — actual code changes, not descriptions.
-
-Present the proposal in this exact format:
+Then generate a **concrete fix** — actual code changes, not descriptions. This is the **candidate diff**: do **not** present it yet. First run the self-review (Step 4a) and critical-change detection (Step 4b), then present it in Step 4c.
 
 ---
+
+## Step 4a — Self-review the candidate diff (two stages)
+
+Review the candidate diff **as if you were the code reviewer**, applying this lens:
+
+- Unnecessary / unrelated changes
+- Missing null checks
+- Race conditions & thread safety
+- Resource leaks
+- Performance regressions
+- API compatibility
+- Safe exception handling
+- Possible vulnerabilities — unvalidated user input, hardcoded secret keys, SQL built via string concatenation
+
+The review runs in two stages.
+
+### Stage A — Internal quality review (automatic fixes, low risk)
+
+Silently fix low-risk problems you introduced, updating the candidate diff in place. Auto-fix candidates:
+
+- Compile errors, failing tests
+- Obvious null-safety gaps
+- Dead code introduced by the change
+- Duplicated logic
+- Lint warnings
+- Missing tests
+- Inconsistent naming
+
+Apply the dotCMS-specific rules at the end of this document while doing so.
+
+### Stage B — Human-facing review summary (`Reviewer Notes`)
+
+Summarize the review **at the level of intent** (what was done and why) — not line-by-line — into these categories, to be rendered in the proposal (Step 4c):
+
+| Category | Contents |
+|---|---|
+| **Resolved automatically** | Noteworthy Stage-A fixes worth mentioning: missing null checks, missing test assertions / fixed scenarios, resource leaks, exception-handling fixes. |
+| **Recommended (needs approval)** | Changes you recommend but that need the developer's decision before applying. |
+| **Additional options / out of scope** | Out-of-scope recommendations or changes that would require significant refactoring. |
+| **Open risks** | Behavior changes that could not be verified — e.g. no existing test scenario covers them. |
+
+**Noise control (balanced mode):** trivial auto-fixes are applied but **not** listed — specifically missing imports, formatting fixes, and removal of unused variables. Do not enumerate every tiny change.
+
+**Mode differences:**
+- `balanced` *(default)* — show all four categories, trivial fixes omitted.
+- `minimal` — show only *Recommended (needs approval)* and *Open risks*.
+- `exhaustive` — show all four categories and enumerate even trivial auto-fixes.
+
+If a category has nothing to report, omit it (in `exhaustive` mode, show it as "None").
+
+---
+
+## Step 4b — Critical-change detection
+
+Scan the (post-Stage-A) candidate diff for any of these **critical categories**:
+
+- Database schema changes
+- Public API changes
+- Dependency upgrades
+- Build configuration changes
+- Security-sensitive code
+- Authentication / authorization changes
+- Encryption
+- Deleting or refactoring large portions of code
+
+If any are matched, the proposal (Step 4c) must display a prominent **⚠️ CRITICAL CHANGE** banner naming the specific category(ies). This is **warn-only** — it does not add an extra confirmation gate; the normal `approve` still applies the fix. Shown in all review modes. If none match, omit the banner entirely.
+
+---
+
+## Step 4c — Present the fix proposal
+
+Present the proposal in this exact format. Include the ⚠️ banner only when Step 4b matched, and the `Reviewer Notes` section per the review mode from Step 1.
+
+---
+
+<!-- Only when Step 4b matched a critical category: -->
+> ⚠️ **CRITICAL CHANGE DETECTED** — this fix touches: <category>[, <category>...]. Review carefully before approving.
 
 ### Fix Proposal: #<N> — <Issue Title>
 
@@ -142,6 +231,13 @@ Present the proposal in this exact format:
 ```
 *Why:* one sentence.
 
+**Reviewer Notes:** *(populated from Step 4a Stage B; omit a category with nothing to report)*
+
+- **Resolved automatically:** <intent-level summary of noteworthy auto-fixes>
+- **Recommended (needs approval):** <changes needing a developer decision>
+- **Additional options / out of scope:** <out-of-scope or large-refactor recommendations>
+- **Open risks:** <unverified behavior changes and why>
+
 **Test to verify:**
 ```
 <test command from researcher>
@@ -158,7 +254,7 @@ Present the proposal in this exact format:
 After presenting the proposal:
 
 - If the developer types **`approve`** → proceed to Step 6
-- If the developer provides any other text → treat it as feedback, revise the proposal accordingly, and re-present it using the same format from Step 4
+- If the developer provides any other text → treat it as feedback, revise the candidate fix, re-run the self-review (Step 4a) and critical-change detection (Step 4b), and re-present it using the same format from Step 4c
 - Repeat until approved. There is no round limit.
 
 **Do NOT apply any changes to the filesystem until you receive `approve`.**

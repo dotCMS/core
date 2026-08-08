@@ -47,6 +47,7 @@
                             <p-checkbox
                                 [ngModel]="isSchemeSelected(item.id)"
                                 (onChange)="onSchemeToggle(item.id)"
+                                (mousedown)="$event.stopPropagation()"
                                 (click)="$event.stopPropagation()"
                                 [ngModelOptions]="{ standalone: true }"
                                 [binary]="true"

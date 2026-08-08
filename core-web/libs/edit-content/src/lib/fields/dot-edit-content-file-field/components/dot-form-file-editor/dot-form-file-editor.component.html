@@ -1,55 +1,102 @@
-<form
-    (ngSubmit)="onSubmit()"
-    [formGroup]="form"
-    class="flex h-full flex-col items-start justify-center">
-    @if (store.allowFileNameEdit()) {
-        <div class="flex w-full flex-col gap-2">
-            <label class="p-label-input-required" data-testid="editor-label" for="file-name">
-                {{ 'dot.file.field.action.create.new.file.label' | dm }}
-            </label>
-            <input
-                id="file-name"
-                autocomplete="off"
-                formControlName="name"
-                pInputText
-                placeholder="Ex. template.html"
-                type="text"
-                data-testid="editor-file-name" />
-            <div class="flex min-h-6 justify-start">
-                @let error = store.error();
-                @if (error) {
-                    <small class="p-invalid" data-testid="error-msg">
-                        {{ error | dm: [store.allowFiles()] }}
-                    </small>
-                } @else {
-                    <dot-field-validation-message
-                        [field]="nameField"
-                        [patternErrorMessage]="'dot.file.field.error.type.file.not.extension'"
-                        data-testid="error-message" />
-                }
-            </div>
-        </div>
-    }
-    <div class="flex w-full flex-1 flex-col gap-2">
-        <ngx-monaco-editor
-            class="relative block min-h-120 w-full grow overflow-auto rounded-md border border-gray-400"
-            [class.bg-gray-200]="form.disabled"
-            [class.opacity-50]="form.disabled"
-            [class.code-editor-disabled]="form.disabled"
-            [options]="store.monacoConfig()"
-            (init)="onEditorInit($event)"
-            data-testid="code-editor"
-            formControlName="content" />
-
-        @let file = store.file();
-        <div
-            class="flex items-center gap-2 text-sm text-gray-700"
-            [class.invisible]="!file.mimeType">
-            <i class="pi pi-info-circle"></i>
-            <small>Mime Type: {{ file.mimeType }}</small>
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="dot-form-file-editor__form">
+    <div class="dot-form-file-editor__header" data-testid="editor-header">
+        <h2 class="dot-form-file-editor__title">{{ $header() }}</h2>
+        <div class="dot-form-file-editor__header-actions">
+            <p-button
+                (onClick)="toggleFullscreen()"
+                [text]="true"
+                [rounded]="true"
+                [attr.aria-pressed]="$isFullscreen()"
+                [attr.aria-label]="
+                    ($isFullscreen()
+                        ? 'edit.content.image-editor.fullscreen.exit.aria'
+                        : 'edit.content.image-editor.fullscreen.enter.aria'
+                    ) | dm
+                "
+                [pTooltip]="
+                    ($isFullscreen()
+                        ? 'edit.content.image-editor.fullscreen.exit.aria'
+                        : 'edit.content.image-editor.fullscreen.enter.aria'
+                    ) | dm
+                "
+                tooltipPosition="bottom"
+                type="button"
+                data-testid="fullscreen-button">
+                <ng-template #icon>
+                    <i class="material-symbols-outlined">{{ $fullscreenIcon() }}</i>
+                </ng-template>
+            </p-button>
+            <p-button
+                (onClick)="cancelUpload()"
+                [text]="true"
+                [rounded]="true"
+                [attr.aria-label]="'Close' | dm"
+                [pTooltip]="'Close' | dm"
+                tooltipPosition="bottom"
+                type="button"
+                data-testid="close-button">
+                <ng-template #icon>
+                    <i class="material-symbols-outlined">close</i>
+                </ng-template>
+            </p-button>
         </div>
     </div>
-    <div class="flex w-full items-center justify-end gap-2">
+    <div class="dot-form-file-editor__body">
+        @if (store.allowFileNameEdit()) {
+            <div class="dot-form-file-editor__name-field">
+                <label class="p-label-input-required" data-testid="editor-label" for="file-name">
+                    {{ 'dot.file.field.action.create.new.file.label' | dm }}
+                </label>
+                <input
+                    id="file-name"
+                    autocomplete="off"
+                    formControlName="name"
+                    pInputText
+                    placeholder="Ex. template.html"
+                    type="text"
+                    data-testid="editor-file-name" />
+                <div class="dot-form-file-editor__error-slot">
+                    @let error = store.error();
+                    @if (error) {
+                        <small class="p-invalid" data-testid="error-msg">
+                            {{ error | dm: [store.allowFiles()] }}
+                        </small>
+                    } @else {
+                        <dot-field-validation-message
+                            [field]="nameField"
+                            [patternErrorMessage]="'dot.file.field.error.type.file.not.extension'"
+                            data-testid="error-message" />
+                    }
+                </div>
+            </div>
+        }
+        <div class="dot-form-file-editor__editor-section">
+            <ngx-monaco-editor
+                class="dot-form-file-editor__editor"
+                [class.dot-form-file-editor__editor--disabled]="form.disabled"
+                [class.dot-form-file-editor__editor--error]="$hasSyntaxError()"
+                [class.code-editor-disabled]="form.disabled"
+                [options]="store.monacoConfig()"
+                (init)="onEditorInit($event)"
+                data-testid="code-editor"
+                formControlName="content" />
+
+            @if ($hasSyntaxError()) {
+                <small class="p-invalid" data-testid="content-error-msg">
+                    {{ 'dot.file.field.error.syntax' | dm }}
+                </small>
+            } @else {
+                @let file = store.file();
+                <div
+                    class="dot-form-file-editor__mime-type"
+                    [class.dot-form-file-editor__mime-type--hidden]="!file.mimeType">
+                    <i class="pi pi-info-circle"></i>
+                    <small>Mime Type: {{ file.mimeType }}</small>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="dot-form-file-editor__actions">
         <p-button
             (click)="cancelUpload()"
             [label]="'dot.common.cancel' | dm"

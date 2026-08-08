@@ -7,9 +7,6 @@ import {
     ApiRoot,
     BrowserUtil,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -18,13 +15,6 @@ import {
 
 import { DotNavigationComponent } from '../view/components/dot-navigation/dot-navigation.component';
 import { DotNavigationService } from '../view/components/dot-navigation/services/dot-navigation.service';
-
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
 
 @NgModule({
     declarations: [],
@@ -45,11 +35,8 @@ export class SharedModule {
                 DotEventsService,
                 DotNavigationService,
                 DotcmsConfigService,
-                DotcmsEventsService,
                 LoggerService,
                 LoginService,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                DotEventsSocket,
                 StringUtils,
                 UserModel
             ]

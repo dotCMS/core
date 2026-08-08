@@ -1,16 +1,16 @@
 import { DragulaModule } from 'ng2-dragula';
 
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, inject, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
+import { DotFieldService } from '@dotcms/data-access';
 import { DotCMSClazz, DotCMSClazzes } from '@dotcms/dotcms-models';
 import { FieldUtil } from '@dotcms/utils';
 
 import { FIELD_ICONS } from './content-types-fields-icon-map';
 
 import { FieldType } from '..';
-import { FieldService } from '../service';
 /**
  * Show all the Field Types
  *
@@ -20,6 +20,7 @@ import { FieldService } from '../service';
 @Component({
     selector: 'dot-content-types-fields-list',
     templateUrl: './content-types-fields-list.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
@@ -45,7 +46,7 @@ export class ContentTypesFieldsListComponent implements OnInit {
 
     #backListFields = ['relationships_tab', 'permissions_tab', 'tab_divider'];
 
-    readonly #fieldService = inject(FieldService);
+    readonly #fieldService = inject(DotFieldService);
 
     ngOnInit(): void {
         this.#fieldService

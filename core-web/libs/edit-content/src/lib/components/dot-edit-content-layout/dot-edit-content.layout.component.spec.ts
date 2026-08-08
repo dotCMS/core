@@ -4,12 +4,13 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -33,7 +34,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -45,6 +46,14 @@ import { DotEditContentLayoutComponent } from './dot-edit-content.layout.compone
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import {
+    EDIT_CONTENT_HOST,
+    InPlaceNavigationRequest
+} from '../../services/host/edit-content-host.model';
+import {
+    DotRelatedContentCrumb,
+    DotRelatedContentNavigationStore
+} from '../../store/dot-related-content-navigation.store';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
@@ -58,6 +67,29 @@ const MOCK_FORM_VALUES: FormValues = {
     title: 'Test Title',
     content: 'Test Content',
     language: 'en-us'
+};
+
+// Controllable trail for the host mock. A real signal so the component's
+// `$relatedNavItems` computed reacts when it changes.
+const relatedTrailSignal = signal<DotRelatedContentCrumb[]>([]);
+
+// Full-screen host mock: no in-place navigation, identity resolved as empty (the
+// store's initialize() is spied per-test where it matters). `trail` is the host's
+// own signal now (the layout reads host.trail(), not the nav store directly).
+const mockEditContentHost = {
+    inPlaceNavigation: false,
+    inPlaceNavigation$: undefined,
+    trail: relatedTrailSignal,
+    setTrail: jest.fn(),
+    resolveIdentity: jest.fn().mockReturnValue({}),
+    reportSaved: jest.fn(),
+    reloadContent: jest.fn(),
+    setContentTitle: jest.fn(),
+    addBreadcrumb: jest.fn(),
+    goToSavedContent: jest.fn(),
+    goToRestoredVersion: jest.fn(),
+    goToRelatedContent: jest.fn(),
+    goToCrumb: jest.fn()
 };
 
 describe('EditContentLayoutComponent', () => {
@@ -87,7 +119,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
             mockProvider(DotVersionableService),
-            ConfirmationService
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: mockEditContentHost }
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -132,11 +165,20 @@ describe('EditContentLayoutComponent', () => {
                 get: jest.fn((key: string, ...args: unknown[]) =>
                     key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
                 )
+            }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: relatedTrailSignal,
+                registerTitle: jest.fn(),
+                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
             })
         ]
     });
 
     beforeEach(() => {
+        mockEditContentHost.resolveIdentity.mockReturnValue({});
+        mockEditContentHost.reportSaved.mockClear();
+        mockEditContentHost.reloadContent.mockClear();
+
         spectator = createComponent({
             detectChanges: false
         });
@@ -168,160 +210,48 @@ describe('EditContentLayoutComponent', () => {
         expect(spectator.query(ConfirmDialog)).toBeTruthy();
     });
 
-    describe('Route Mode Initialization', () => {
-        it('should initialize from route when no dialog inputs are provided', () => {
-            // Create a fresh component to test route mode initialization
-            const routeSpectator = createComponent({ detectChanges: false });
-            const routeStore = routeSpectator.inject(DotEditContentStore, true);
-            const initializeFromRouteSpy = jest.spyOn(routeStore, 'initializeAsPortlet');
+    describe('Initialization', () => {
+        it('should initialize the editor from the host identity on creation', () => {
+            // initialize() runs in the constructor and asks the host who to open.
+            mockEditContentHost.resolveIdentity.mockClear();
 
-            // Component is created without any inputs (route mode)
-            routeSpectator.detectChanges();
+            createComponent({ detectChanges: false });
 
-            expect(initializeFromRouteSpy).toHaveBeenCalled();
-        });
-
-        it('should not initialize dialog mode when no inputs provided', () => {
-            // Create a fresh component to test route mode initialization
-            const routeSpectator = createComponent({ detectChanges: false });
-            const routeStore = routeSpectator.inject(DotEditContentStore, true);
-            const initializeDialogModeSpy = jest.spyOn(routeStore, 'initializeDialogMode');
-
-            // Component is created without any inputs (route mode)
-            routeSpectator.detectChanges();
-
-            expect(initializeDialogModeSpy).not.toHaveBeenCalled();
+            expect(mockEditContentHost.resolveIdentity).toHaveBeenCalled();
         });
     });
 
-    describe('Dialog Mode Initialization', () => {
-        it('should initialize dialog mode when contentTypeId input is provided', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeAsPortlet');
+    describe('Save reporting', () => {
+        it('should report the save to the host and mark pristine on workflow success', () => {
+            const freshSpectator = createComponent({ detectChanges: false });
+            const freshStore = freshSpectator.inject(DotEditContentStore, true);
+            const host = freshSpectator.inject(EDIT_CONTENT_HOST, true);
 
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
+            const markFormPristineSpy = jest.spyOn(freshSpectator.component, 'markFormPristine');
+            jest.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            jest.spyOn(freshStore, 'clearWorkflowActionSuccess');
 
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'blog-post',
-                contentletInode: ''
-            });
-            expect(initializeFromRouteSpy).not.toHaveBeenCalled();
-        });
+            freshSpectator.detectChanges();
 
-        it('should initialize dialog mode when contentletInode input is provided', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const dialogEditContentService = dialogSpectator.inject(DotEditContentService, true);
-
-            // Mock the service method for this specific component instance
-            dialogEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
-
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeAsPortlet');
-
-            dialogSpectator.setInput('contentletInode', 'abc123');
-
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: '',
-                contentletInode: 'abc123'
-            });
-            expect(initializeFromRouteSpy).not.toHaveBeenCalled();
-        });
-
-        it('should re-initialize when input values change', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-
-            // Set initial input
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'blog-post',
-                contentletInode: ''
-            });
-
-            // Change input
-            dialogSpectator.setInput('contentTypeId', 'news-article');
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'news-article',
-                contentletInode: ''
-            });
-
-            expect(initializeDialogModeSpy).toHaveBeenCalledTimes(2);
-        });
-    });
-
-    describe('Content Saved Output Emission', () => {
-        it('should emit contentSaved when workflow action succeeds in dialog mode', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-
-            // Mock store signals before setting up the component
-            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
-            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
-
-            const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
-
-            // Set input to trigger dialog mode and initialize effects
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-
-            expect(contentSavedSpy).toHaveBeenCalledWith(MOCK_CONTENTLET_1_TAB);
-            expect(dialogStore.clearWorkflowActionSuccess).toHaveBeenCalled();
-        });
-
-        it('should mark the form pristine after a successful workflow action', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-
-            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
-
-            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
-            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-
+            expect(host.reportSaved).toHaveBeenCalledWith(MOCK_CONTENTLET_1_TAB);
             expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should mark pristine and clear success but not emit in route mode', () => {
-            const routeSpectator = createComponent({ detectChanges: false });
-            const routeStore = routeSpectator.inject(DotEditContentStore, true);
-
-            const markFormPristineSpy = jest.spyOn(routeSpectator.component, 'markFormPristine');
-            jest.spyOn(routeStore, 'isDialogMode').mockReturnValue(false);
-            jest.spyOn(routeStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-            jest.spyOn(routeStore, 'clearWorkflowActionSuccess');
-
-            const contentSavedSpy = jest.spyOn(routeSpectator.component.contentSaved, 'emit');
-
-            // Initialize component in route mode (no inputs)
-            routeSpectator.detectChanges();
-
-            expect(contentSavedSpy).not.toHaveBeenCalled();
-            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
-            expect(routeStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
+            expect(freshStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
         });
 
         it('should be a no-op when there is no workflow action success', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
+            const freshSpectator = createComponent({ detectChanges: false });
+            const freshStore = freshSpectator.inject(DotEditContentStore, true);
+            const host = freshSpectator.inject(EDIT_CONTENT_HOST, true);
 
-            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
-            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
-            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(null);
-            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
+            const markFormPristineSpy = jest.spyOn(freshSpectator.component, 'markFormPristine');
+            jest.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(freshStore, 'clearWorkflowActionSuccess');
 
-            const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
+            freshSpectator.detectChanges();
 
-            // Set input to trigger dialog mode
-            dialogSpectator.setInput('contentTypeId', 'blog-post');
-
-            expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(host.reportSaved).not.toHaveBeenCalled();
             expect(markFormPristineSpy).not.toHaveBeenCalled();
-            expect(dialogStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
+            expect(freshStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
         });
     });
 
@@ -343,6 +273,41 @@ describe('EditContentLayoutComponent', () => {
                 spectator.component.onFormChange(MOCK_FORM_VALUES);
 
                 expect(onFormChangeSpy).toHaveBeenCalledWith(MOCK_FORM_VALUES);
+            });
+        });
+
+        describe('onWorkflowActionFired()', () => {
+            it('should delegate to the form with params built from the store', () => {
+                const fireWorkflowActionSpy = jest.fn();
+                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                    fireWorkflowAction: fireWorkflowActionSpy
+                } as unknown as DotEditContentFormComponent);
+
+                jest.spyOn(store, 'currentLocale').mockReturnValue(MOCK_LANGUAGES[0]);
+                jest.spyOn(store, 'contentlet').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+                jest.spyOn(store, 'contentType').mockReturnValue(CONTENT_TYPE_MOCK);
+                jest.spyOn(store, 'currentIdentifier').mockReturnValue(
+                    MOCK_CONTENTLET_1_TAB.identifier
+                );
+
+                const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
+                spectator.component.onWorkflowActionFired(workflow);
+
+                expect(fireWorkflowActionSpy).toHaveBeenCalledWith({
+                    workflow,
+                    inode: MOCK_CONTENTLET_1_TAB.inode,
+                    contentType: CONTENT_TYPE_MOCK.variable,
+                    languageId: MOCK_LANGUAGES[0].id.toString(),
+                    identifier: MOCK_CONTENTLET_1_TAB.identifier
+                });
+            });
+
+            it('should not throw when the form ref is undefined (compare view)', () => {
+                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue(undefined);
+
+                const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
+
+                expect(() => spectator.component.onWorkflowActionFired(workflow)).not.toThrow();
             });
         });
 
@@ -392,6 +357,37 @@ describe('EditContentLayoutComponent', () => {
         it('should not crash markFormPristine when the form ref is undefined', () => {
             // No content has been initialized, so the inner form viewChild is empty.
             expect(() => spectator.component.markFormPristine()).not.toThrow();
+        });
+    });
+
+    describe('confirmClose (chrome-agnostic close guard)', () => {
+        it('bypasses the prompt while the editor is loading/saving (form disabled, nothing to discard)', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(store, 'isLoading').mockReturnValue(true);
+            const onProceed = jest.fn();
+
+            spectator.component.confirmClose(onProceed);
+
+            expect(onProceed).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT bypass the prompt once loading has settled, even if the sidebar has not (isFullyLoaded no longer gates this)', () => {
+            const confirmationService = spectator.inject(ConfirmationService, true);
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            jest.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(store, 'isLoading').mockReturnValue(false);
+            // A real edit made while `isFullyLoaded()` was still false (sidebar still settling)
+            // must still prompt once loading has finished — the previous `!isFullyLoaded()` bypass
+            // would have discarded it silently instead.
+            jest.spyOn(store, 'isFullyLoaded').mockReturnValue(false);
+            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const onProceed = jest.fn();
+
+            spectator.component.confirmClose(onProceed);
+
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(onProceed).not.toHaveBeenCalled();
         });
     });
 
@@ -570,91 +566,6 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
-    describe('Pending Locale Switch', () => {
-        it('should call confirmPendingLocaleSwitch directly when the form is clean', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            const confirmSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
-            const cancelSpy = jest.spyOn(dsStore, 'cancelPendingLocaleSwitch');
-
-            ds.detectChanges();
-
-            expect(confirmSpy).toHaveBeenCalledTimes(1);
-            expect(cancelSpy).not.toHaveBeenCalled();
-        });
-
-        it('should open the confirm dialog when the form is dirty', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const confirmDialogSpy = jest.spyOn(dsConfirmService, 'confirm');
-
-            ds.detectChanges();
-
-            expect(confirmDialogSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should call confirmPendingLocaleSwitch when the user discards changes', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const confirmSwitchSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
-
-            let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
-            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                rejectFn = opts.reject as (type?: ConfirmEventType) => void;
-            });
-
-            ds.detectChanges();
-            rejectFn!(ConfirmEventType.REJECT);
-
-            expect(confirmSwitchSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should call cancelPendingLocaleSwitch when the user keeps editing', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue('abc123');
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const cancelSwitchSpy = jest.spyOn(dsStore, 'cancelPendingLocaleSwitch');
-
-            let acceptFn: (() => void) | undefined;
-            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                acceptFn = opts.accept;
-            });
-
-            ds.detectChanges();
-            acceptFn!();
-
-            expect(cancelSwitchSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should not trigger confirm or switch when pendingLocaleInode is null', () => {
-            const ds = createComponent({ detectChanges: false });
-            const dsStore = ds.inject(DotEditContentStore, true);
-            const dsConfirmService = ds.inject(ConfirmationService, true);
-
-            jest.spyOn(dsStore, 'pendingLocaleInode').mockReturnValue(null);
-            const confirmSwitchSpy = jest.spyOn(dsStore, 'confirmPendingLocaleSwitch');
-            const confirmDialogSpy = jest.spyOn(dsConfirmService, 'confirm');
-
-            ds.detectChanges();
-
-            expect(confirmDialogSpy).not.toHaveBeenCalled();
-            expect(confirmSwitchSpy).not.toHaveBeenCalled();
-        });
-    });
-
     describe('Warning Messages', () => {
         beforeEach(() => {
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -740,6 +651,207 @@ describe('EditContentLayoutComponent', () => {
             }));
         });
     });
+
+    describe('relatedNavItems (Relating content breadcrumb)', () => {
+        const A: DotRelatedContentCrumb = { inode: 'iA', title: 'TA' };
+        const B: DotRelatedContentCrumb = { inode: 'iB', title: 'TB' };
+        const C: DotRelatedContentCrumb = { inode: 'iC', title: 'TC' };
+
+        afterEach(() => relatedTrailSignal.set([]));
+
+        it('returns an empty model when there is no trail', () => {
+            relatedTrailSignal.set([]);
+
+            expect(spectator.component.$relatedNavItems()).toEqual([]);
+        });
+
+        it('builds `command` crumbs that navigate via the host with the trimmed trail; the current (last) crumb is a plain label', () => {
+            mockEditContentHost.goToCrumb.mockClear();
+            relatedTrailSignal.set([A, B, C]);
+
+            const items = spectator.component.$relatedNavItems();
+
+            // Every crumb is a command (not a declarative routerLink) even
+            // full-screen, so the unsaved-changes prompt runs at the source now
+            // that the reused route no longer fires canDeactivate on :id → :id.
+            expect(items.map((i) => i.label)).toEqual(['TA', 'TB', 'TC']);
+            expect(items[0].routerLink).toBeUndefined();
+            expect(items[1].routerLink).toBeUndefined();
+
+            // First crumb trims the trail to the origin; second to [iA, iB].
+            items[0].command!({} as never);
+            expect(mockEditContentHost.goToCrumb).toHaveBeenLastCalledWith('iA', ['iA']);
+
+            items[1].command!({} as never);
+            expect(mockEditContentHost.goToCrumb).toHaveBeenLastCalledWith('iB', ['iA', 'iB']);
+
+            // Current content — plain label, no navigation.
+            expect(items[2].command).toBeUndefined();
+        });
+    });
+});
+
+// Separate top-level describe (fresh TestBed) for the in-place host path: the
+// default mock above is full-screen (inPlaceNavigation false, inPlaceNavigation$
+// undefined), so the layout's in-place reload subscription and the breadcrumb's
+// `command` branch are only reachable with a dedicated in-place host.
+describe('EditContentLayoutComponent - In-place (dialog) host', () => {
+    const A: DotRelatedContentCrumb = { inode: 'iA', title: 'TA' };
+    const B: DotRelatedContentCrumb = { inode: 'iB', title: 'TB' };
+
+    let navigation$: Subject<InPlaceNavigationRequest>;
+    const inPlaceTrail = signal<DotRelatedContentCrumb[]>([]);
+    const inPlaceHost = {
+        inPlaceNavigation: true,
+        inPlaceNavigation$: undefined as unknown as Subject<InPlaceNavigationRequest>,
+        trail: inPlaceTrail,
+        setTrail: jest.fn(),
+        resolveIdentity: jest.fn().mockReturnValue({}),
+        reportSaved: jest.fn(),
+        reloadContent: jest.fn(),
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn(),
+        goToRelatedContent: jest.fn(),
+        goToCrumb: jest.fn()
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentLayoutComponent,
+        imports: [
+            MessageModule,
+            ButtonModule,
+            MockComponent(DotEditContentFormComponent),
+            MockComponent(DotEditContentSidebarComponent),
+            DotMessagePipe
+        ],
+        componentProviders: [
+            DotEditContentStore,
+            mockProvider(DotWorkflowsActionsService),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotEditContentService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService),
+            mockProvider(DotContentletService),
+            mockProvider(DotVersionableService),
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: inPlaceHost }
+        ],
+        providers: [
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(MessageService),
+            mockProvider(DialogService),
+            mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest
+                    .fn()
+                    .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
+            }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: jest.fn().mockReturnValue(of({}))
+            }),
+            GlobalStore,
+            {
+                provide: DotCurrentUserService,
+                useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
+            },
+            { provide: ActivatedRoute, useValue: { snapshot: { params: {} } } },
+            mockProvider(Router, { navigate: jest.fn(), url: '/test-url', events: of() }),
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: inPlaceTrail,
+                registerTitle: jest.fn()
+            })
+        ]
+    });
+
+    let spectator: Spectator<DotEditContentLayoutComponent>;
+    let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
+
+    beforeEach(() => {
+        navigation$ = new Subject<InPlaceNavigationRequest>();
+        inPlaceHost.inPlaceNavigation$ = navigation$;
+        inPlaceTrail.set([]);
+        Object.values(inPlaceHost).forEach((v) => (v as jest.Mock)?.mockClear?.());
+        inPlaceHost.resolveIdentity.mockReturnValue({});
+
+        spectator = createComponent({ detectChanges: false });
+        store = spectator.inject(DotEditContentStore, true);
+        jest.spyOn(store, 'initializeExistingContent').mockImplementation(() => undefined);
+        jest.spyOn(store, 'initialize').mockImplementation(() => undefined);
+        spectator.detectChanges();
+    });
+
+    it('builds a `command` crumb (not routerLink) that calls goToCrumb with the trimmed trail', () => {
+        inPlaceTrail.set([A, B, { inode: 'iC', title: 'TC' }]);
+        const items = spectator.component.$relatedNavItems();
+
+        // Earlier crumb uses command, not routerLink.
+        expect(items[0].routerLink).toBeUndefined();
+        expect(typeof items[0].command).toBe('function');
+
+        items[0].command!({} as never);
+        expect(inPlaceHost.goToCrumb).toHaveBeenCalledWith('iA', ['iA']);
+    });
+
+    it('reloads immediately (committing the trail) when the form is clean', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+
+        navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
+
+        expect(inPlaceHost.setTrail).toHaveBeenCalledWith(['iA', 'iB']);
+        expect(store.initializeExistingContent).toHaveBeenCalledWith(
+            expect.objectContaining({ inode: 'iB' })
+        );
+    });
+
+    it('does NOT commit the trail or reload when the user keeps editing (dirty)', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+        const confirm = spectator.inject(ConfirmationService, true);
+        // "Keep editing" == accept → onCancel (no-op). Simulate by invoking accept.
+        jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            opts.accept?.();
+
+            return confirm;
+        });
+
+        navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
+
+        expect(inPlaceHost.setTrail).not.toHaveBeenCalled();
+        expect(store.initializeExistingContent).not.toHaveBeenCalled();
+    });
+
+    it('commits the trail and reloads when the user discards changes (dirty)', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+        const confirm = spectator.inject(ConfirmationService, true);
+        // "Discard" == reject with REJECT type → onConfirm (reload).
+        jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            (opts.reject as (t: ConfirmEventType) => void)?.(ConfirmEventType.REJECT);
+
+            return confirm;
+        });
+
+        navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
+
+        expect(inPlaceHost.setTrail).toHaveBeenCalledWith(['iA', 'iB']);
+        expect(store.initializeExistingContent).toHaveBeenCalledWith(
+            expect.objectContaining({ inode: 'iB' })
+        );
+    });
+
+    it('reloads without touching the trail for a locale switch (request has no trail)', () => {
+        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+
+        navigation$.next({ inode: 'iLocale' });
+
+        expect(inPlaceHost.setTrail).not.toHaveBeenCalled();
+        expect(store.initializeExistingContent).toHaveBeenCalledWith(
+            expect.objectContaining({ inode: 'iLocale' })
+        );
+    });
 });
 
 // Separate top-level describe so the outer beforeEach above (which creates a component and
@@ -768,7 +880,8 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
             mockProvider(DotVersionableService),
-            ConfirmationService
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: mockEditContentHost }
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -813,6 +926,11 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
                 get: jest.fn((key: string, ...args: unknown[]) =>
                     key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
                 )
+            }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: relatedTrailSignal,
+                registerTitle: jest.fn(),
+                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
             })
         ]
     });

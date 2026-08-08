@@ -3,29 +3,41 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    ComponentRef,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     forwardRef,
     inject,
+    Injector,
     input,
-    OnInit
+    OnInit,
+    untracked,
+    ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { AbstractControl, NgControl, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule, TableRowReorderEvent } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotLanguage,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
@@ -34,27 +46,32 @@ import { PaginationComponent } from './../pagination/pagination.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
+import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
+
+// Type-only import: the runtime class is loaded lazily via dynamic import() to avoid a static
+// cycle (side panel → layout → form → field → this component). `import type` is erased at compile
+// time, so it does not create that cycle.
+import type { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 
 @Component({
     selector: 'dot-relationship-field',
     imports: [
         TableModule,
+        TagModule,
         ButtonModule,
         MenuModule,
         DotMessagePipe,
-        ChipModule,
-        ContentletStatusPipe,
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         LanguagePipe,
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
         RelationshipFieldStore,
         {
@@ -93,11 +110,39 @@ export class DotRelationshipFieldComponent
     readonly #destroyRef = inject(DestroyRef);
 
     /**
+     * Injector used to resolve this control's `NgControl` lazily (in an effect,
+     * not the constructor) so we can reset its dirty state after programmatic
+     * value syncs — resolving `NgControl` in the constructor would create a
+     * circular dependency with the `formControlName` directive.
+     */
+    readonly #injector = inject(Injector);
+    #ngControl: NgControl | null | undefined;
+
+    /**
+     * The form control backing this field, or null if not yet available.
+     * Resolved on first use and cached.
+     */
+    #control(): AbstractControl | null {
+        this.#ngControl ??= this.#injector.get(NgControl, null);
+
+        return this.#ngControl?.control ?? null;
+    }
+
+    /**
+     * Presentation port. Related-content navigation is delegated to it so it works
+     * the same in full-screen (router) and dialog (in-place reload).
+     */
+    readonly #host = inject(EDIT_CONTENT_HOST);
+
+    /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
      * It is used to manage dialog interactions within the component.
      */
     readonly #dialogService = inject(DialogService);
+
+    /** Used to create the Edit Content side panel imperatively (see {@link showCreateNewContentDialog}). */
+    readonly #viewContainerRef = inject(ViewContainerRef);
 
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
@@ -105,6 +150,9 @@ export class DotRelationshipFieldComponent
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /** Reference to the side panel component when open (side-panel mode), or `null`. */
+    #sidePanelRef: ComponentRef<DotEditContentSidePanelComponent> | null = null;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -191,6 +239,16 @@ export class DotRelationshipFieldComponent
     $totalColumns = computed(() => this.store.columns().length + this.store.staticColumns());
 
     /**
+     * Whether related content can be navigated to by clicking its title. Enabled
+     * whenever the field is enabled — the host decides how navigation happens
+     * (router in full-screen, in-place reload in a dialog). A disabled/read-only
+     * field renders plain (non-link) titles.
+     *
+     * @memberof DotRelationshipFieldComponent
+     */
+    $canNavigate = computed(() => !this.$isDisabled());
+
+    /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
      * It sets the value of the field to the formatted relationship.
      *
@@ -226,6 +284,53 @@ export class DotRelationshipFieldComponent
         }
 
         this.store.deleteItem(inode);
+    }
+
+    /**
+     * Opens the editor for a related content, restoring the legacy editor's
+     * related-content navigation. The current content is seeded as the origin of
+     * the navigation trail so the "Relating content" banner shows the full path.
+     * The host performs the navigation: a route change in full-screen, an in-place
+     * reload in a dialog.
+     *
+     * No-op when navigation is disabled (a disabled field), when the item has no
+     * inode, or when it points at the content already open.
+     *
+     * @param item The related contentlet whose title was clicked.
+     */
+    openRelated(item: DotCMSContentlet): void {
+        if (!this.$canNavigate() || !item?.inode) {
+            return;
+        }
+
+        const current = this.#editContentStore.contentlet();
+        // Navigating to the content already open is a no-op.
+        if (current?.inode === item.inode) {
+            return;
+        }
+
+        // The current content may have no inode yet — an unsaved new translation
+        // (locale switch → populate/manual). In that case seed the trail with the
+        // version we came from (translationSourceInode) as the origin.
+        const originInode = current?.inode ?? this.#editContentStore.translationSourceInode();
+
+        // No usable origin (or it is the target itself): start a fresh trail.
+        if (!originInode || originInode === item.inode) {
+            this.#host.goToCrumb(item.inode, [item.inode]);
+            return;
+        }
+
+        // Only label the origin crumb with the current content's title when the
+        // origin IS the current content. For a new translation the origin is the
+        // source version (translationSourceInode), a different content, so don't
+        // relabel it with the translation's title — pass '' and let the source's
+        // already-cached title stand (registerTitle ignores empty titles).
+        const originTitle = originInode === current?.inode ? (current?.title ?? '') : '';
+
+        this.#host.goToRelatedContent(
+            { inode: originInode, title: originTitle },
+            { inode: item.inode, title: item.title ?? '' }
+        );
     }
 
     /**
@@ -324,7 +429,10 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Opens the new content dialog for creating content using the Angular editor
+     * Opens the new-content editor for creating content and relating it. When the side panel
+     * feature flag is on it opens the right slide-in panel; otherwise the centered dialog (the
+     * previous behavior). Both share the same {@link EditContentDialogData}: `onContentSaved`
+     * adds the created contentlet to this relationship.
      */
     async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
@@ -332,12 +440,13 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        const { DotEditContentDialogComponent } =
-            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
-
         const dialogData: EditContentDialogData = {
             mode: 'new',
             contentTypeId: contentType.id,
+            title: this.#dotMessageService.get(
+                'contenttypes.content.create.contenttype',
+                contentType.name
+            ),
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
@@ -349,6 +458,23 @@ export class DotRelationshipFieldComponent
                 this.store.setData([...currentData, contentlet]);
             }
         };
+
+        // Read the flag from the store's `withFlags` slice (batch-fetched once on store init).
+        // Read at click time, not construction: this component is created lazily and deep in the
+        // editor, but the store's init fetch has run long before the user clicks, so `flags()` is
+        // resolved by now. If it somehow isn't (empty slice ⇒ `undefined`), fall back to the dialog
+        // (previous behavior) — the safe default.
+        const sidePanelEnabled =
+            this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
+
+        if (sidePanelEnabled) {
+            await this.#openCreateContentSidePanel(dialogData);
+
+            return;
+        }
+
+        const { DotEditContentDialogComponent } =
+            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
@@ -365,12 +491,50 @@ export class DotRelationshipFieldComponent
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
             data: dialogData,
-            header: `Create ${contentType.name}`
+            header: dialogData.title
         });
     }
 
     /**
-     * Updates the value of the field.
+     * Creates the Edit Content side panel imperatively. The component is loaded via dynamic
+     * `import()` (not a static template import) to avoid a module cycle — see the `import type`
+     * note at the top of this file. The panel fires `dialogData.onContentSaved` (last save) and
+     * `dialogData.onCancel` on close; `(closed)` tears the component down.
+     */
+    async #openCreateContentSidePanel(dialogData: EditContentDialogData): Promise<void> {
+        const { DotEditContentSidePanelComponent } =
+            await import('../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component');
+
+        this.#closeSidePanel();
+        this.#sidePanelRef = this.#viewContainerRef.createComponent(
+            DotEditContentSidePanelComponent
+        );
+        this.#sidePanelRef.setInput('data', dialogData);
+        // `closed` is an OutputEmitterRef (not an Observable) — subscribe directly. The
+        // subscription is cleaned up when the panel component is destroyed.
+        this.#sidePanelRef.instance.closed.subscribe(() => this.#closeSidePanel());
+    }
+
+    /** Destroys the side panel component if open. */
+    #closeSidePanel(): void {
+        this.#sidePanelRef?.destroy();
+        this.#sidePanelRef = null;
+    }
+
+    /**
+     * Syncs the formatted relationship value to the form control.
+     *
+     * `onChange` marks the control dirty and touched. That is correct for genuine
+     * user edits (relate/unrelate/reorder), but NOT for programmatic population —
+     * the initial load and locale re-init both flow through here, and the
+     * relationship items are fetched asynchronously, so a load-driven sync can
+     * re-dirty the form AFTER the editor's pristine-after-init window and make the
+     * unsaved-changes guard fire on a content the user never touched.
+     *
+     * We therefore drive dirty/touched off the store's `lastChangeSource`:
+     * - `'user'`: keep the control dirty and mark it touched.
+     * - `'load'`: revert the dirty state `onChange` just set (mark pristine), and
+     *   never mark touched (so a required empty field shows no error on render).
      *
      * @param value - The value to update.
      */
@@ -380,7 +544,16 @@ export class DotRelationshipFieldComponent
         }
 
         this.onChange(value);
-        this.onTouched();
+
+        // Read the source untracked: it is patched together with the data that
+        // drives this method, so it must not add itself as a reactive dependency.
+        const isUserChange = untracked(() => this.store.lastChangeSource()) === 'user';
+
+        if (isUserChange) {
+            this.onTouched();
+        } else {
+            this.#control()?.markAsPristine();
+        }
     });
 
     /**

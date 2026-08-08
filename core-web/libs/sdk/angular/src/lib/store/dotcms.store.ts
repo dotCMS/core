@@ -1,8 +1,16 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { fromEvent, map } from 'rxjs';
+
+import { computed, Injectable, Signal, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
-import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '@dotcms/uve/internal';
+import {
+    ANALYTICS_READY_EVENT,
+    DEVELOPMENT_MODE,
+    isDotAnalyticsActive,
+    PRODUCTION_MODE
+} from '@dotcms/uve/internal';
 
 import { DotCMSPageStore } from '../models';
 
@@ -24,6 +32,27 @@ export const EMPTY_DOTCMS_PAGE_STORE: DotCMSPageStore = {
 })
 export class DotCMSStore {
     private $store = signal<DotCMSPageStore>(EMPTY_DOTCMS_PAGE_STORE);
+
+    /**
+     * @description Get whether DotCMS Analytics is active on the page. Used in
+     * live mode to decide if the minimal contentlet attributes Analytics needs
+     * should be kept.
+     *
+     * Analytics may initialize after the page renders, so we track its `ready`
+     * event as a stream and project it into a signal. `fromEvent` registers via
+     * zone-patched `addEventListener`, so change detection is scheduled without
+     * any manual `NgZone` handling.
+     * @readonly
+     * @type {Signal<boolean>}
+     * @memberof DotCMSStore
+     */
+    $isAnalyticsActive: Signal<boolean> =
+        typeof window === 'undefined'
+            ? signal(false)
+            : toSignal(
+                  fromEvent(window, ANALYTICS_READY_EVENT).pipe(map(() => isDotAnalyticsActive())),
+                  { initialValue: isDotAnalyticsActive() }
+              );
 
     /**
      * @description Get the store

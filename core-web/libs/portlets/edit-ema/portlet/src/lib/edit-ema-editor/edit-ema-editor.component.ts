@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -31,6 +32,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -43,6 +45,7 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotRouterService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -57,8 +60,12 @@ import {
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
-import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DotEditContentDialogComponent,
+    DotEditContentSidePanelComponent,
+    EditContentDialogData
+} from '@dotcms/edit-content';
+import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -74,7 +81,6 @@ import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-
 import { DotUveIframeSizeInputComponent } from './components/dot-uve-iframe-size-input/dot-uve-iframe-size-input.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
-import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
 import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
@@ -171,7 +177,9 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent
+        DotUveDeviceControlsComponent,
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
     providers: [
         DotPaletteListStore,
@@ -249,6 +257,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     });
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotRouterService = inject(DotRouterService);
+    private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
@@ -270,6 +280,22 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    /**
+     * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
+     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     */
+    protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
+     * dialog (previous behavior). Read from the UVE store's `withFlags` slice (batch-fetched once on
+     * init, degrades to `false` on a failed config read) — defaults to `false` until it resolves, so
+     * the dialog is used meanwhile.
+     */
+    protected readonly $sidePanelEnabled = computed(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
+    );
 
     // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
@@ -365,10 +391,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const isLockedByCurrentUser = lockOptions?.isLockedByCurrentUser;
         const canLock = lockOptions?.canLock;
 
-        // For feature flag, we force the user to lock pages to edit
-        // So we show the lock overlay if the page is not locked
+        // For feature flag, we force the user to lock pages to edit, so the
+        // overlay stays up unless the current user is the one holding the lock —
+        // a page locked by someone else must be unlocked and re-locked by this
+        // user first, not just "any" lock.
         if (lockFeatureEnabled) {
-            return !isLocked;
+            return !isLockedByCurrentUser;
         }
 
         // Without feature flag, we show the lock overlay if the page is locked
@@ -420,9 +448,14 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+        const status = this.uveStore.uveStatus();
 
-        if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
+        // Guard: only act on a freshly-loaded page. Without the LOADED check the effect
+        // could fire while a previous pageLoad is still in-flight (stale translated:false data).
+        // untracked: confirmationService.confirm reads PrimeNG-internal signals; tracking them
+        // would cause the effect to re-fire every time the dialog opens/closes.
+        if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+            untracked(() => this.createNewTranslation(currentLanguage, page));
         }
     });
 
@@ -433,6 +466,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
+        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -440,6 +474,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
 
         if (pageType === PageType.TRADITIONAL || !isClientReady) {
+            return;
+        }
+
+        // Headless pages are driven entirely by the client's own GraphQL
+        // query. Never push a REST-sourced pageAsset into the iframe — it
+        // never carries the relationships that query defines, and the
+        // client already has its own correct render. Skip until a
+        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
+        // is available; this effect re-fires once that happens.
+        if (pageType === PageType.HEADLESS && !hasClientQuery) {
             return;
         }
 
@@ -615,31 +659,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.dragDropService.setupDragEvents(
-            this.uveStore,
-            this.iframe,
-            this.customDragImage,
-            this.contentWindow,
-            this.host,
-            {
-                onDrop: (event) => this.handleDrop(event),
-                onDragEnter: () => {
-                    // Handled in dragDropService
-                },
-                onDragOver: () => {
-                    // Handled in dragDropService
-                },
-                onDragLeave: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragEnd: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragStart: () => {
-                    // Handled in dragDropService
-                }
+        this.dragDropService.setupDragEvents(this.uveStore, this.iframe, this.customDragImage, {
+            onDrop: (event) => this.handleDrop(event),
+            onDragEnter: () => {
+                // Handled in dragDropService
+            },
+            onDragOver: () => {
+                // Handled in dragDropService
+            },
+            onDragLeave: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragEnd: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragStart: () => {
+                // Handled in dragDropService
             }
-        );
+        });
     }
 
     private handleUveMessage(message: PostMessage): void {
@@ -1258,7 +1295,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.#openContentForEdit(contentlet);
+        this.openContentForEdit(contentlet);
     }
 
     /**
@@ -1305,10 +1342,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
-     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy
+     * dialog. Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision — and,
+     * since it's public, also by DotEmaShellComponent for the "Properties" nav action (editing the
+     * page's own contentlet), captured via the router-outlet `(activate)` reference to this component.
      */
-    #openContentForEdit(contentlet: DotCMSContentlet): void {
+    openContentForEdit(contentlet: DotCMSContentlet): void {
         const contentTypeVariable = contentlet.contentType;
         if (!contentTypeVariable) {
             this.dialog?.editContentlet(contentlet);
@@ -1367,9 +1406,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     * Opens the new Edit Content editor with the given header and dialog data — in the side panel
+     * when the feature flag is on, otherwise in the centered dialog (previous behavior).
      */
     #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        if (this.$sidePanelEnabled()) {
+            // Side panel: shows `title` in its header (the dialog used `header`) and fires
+            // `dialogData.onContentSaved`/`onCancel` on close — so palette-drop / edit flows work
+            // unchanged.
+            this.$editContentPanel.set({ ...dialogData, title: header });
+
+            return;
+        }
+
+        // Side panel disabled: open the centered dialog (previous behavior).
         this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
@@ -1410,7 +1460,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
+            this.openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1433,7 +1483,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         this.uveStore.pageReload();
                     }
 
-                    this.#openContentForEdit(target);
+                    this.openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
@@ -1446,13 +1496,31 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file.
+     * Handles the edit of a VTL file. `VTLFile` only carries `inode`/`name` (it comes from the
+     * client's postMessage payload), not `contentType`, so `openContentForEdit`'s flag check can't
+     * run on it directly — the full contentlet is resolved by inode first. Falls back to the legacy
+     * dialog if that lookup fails (network/permissions), matching this codebase's established
+     * "swallow the error, keep editing working via the legacy editor" fallback pattern.
      *
      * @param {VTLFile} vtlFile - The VTL file to be edited.
      * @memberof EditEmaEditorComponent
      */
     handleEditVTL(vtlFile: VTLFile) {
-        this.dialog.editVTLContentlet(vtlFile);
+        this.dotContentletService
+            .getContentletByInode(vtlFile.inode)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentlet) => {
+                if (!contentlet) {
+                    this.dialog?.editVTLContentlet(vtlFile);
+                    return;
+                }
+
+                this.openContentForEdit(contentlet);
+            });
     }
 
     /**
@@ -1705,8 +1773,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.translatePage({ page, newLanguage: language.id });
             },
             reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.#goBackToCurrentLanguage();
+                // The user declined creating the translation, so there is no page to show
+                // in this language. Take them out of the dead-end instead of reloading the
+                // same untranslated URL (which would re-open this dialog — see #36661).
+                this.#redirectAfterTranslationRejected();
             }
         });
     }
@@ -1716,13 +1786,46 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Use the Page Language to navigate back to the current language
+     * Navigate the user away from an untranslated page after they decline creating a
+     * translation for it.
      *
-     * @memberof DotEmaShellComponent
+     * Redirects to the last different dotCMS URL the user was on before entering this
+     * UVE session; if there is no usable previous URL, falls back to the Pages portlet.
+     *
+     * Why `DotRouterService.previousUrl` is the right source:
+     * - Intra-UVE navigation (page/language/persona changes) is done with `pageLoad()` +
+     *   a silent `Location.go()` in the shell, which does NOT emit a router `NavigationEnd`.
+     *   So `previousUrl` is not polluted by same-page language switches — it holds the URL
+     *   from before the editor opened (e.g. the Pages portlet, or another portlet).
+     * - It is always an internal Angular route, never an external referrer, so the
+     *   "only follow dotCMS URLs" requirement is satisfied by construction.
+     *
+     * We deliberately skip previous URLs that are:
+     * - empty (no history — user opened the editor directly),
+     * - public routes (e.g. the login page),
+     * - any `/edit-page` route, which could resolve to the same untranslated page and
+     *   re-open this dialog (the #36661 loop).
+     *
+     * In all skipped cases we fall back to the Pages portlet so the user always lands on
+     * a valid page and is never left stuck on the untranslated one.
+     *
+     * @memberof EditEmaEditorComponent
      */
-    #goBackToCurrentLanguage(): void {
-        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: currentLanguageId });
+    #redirectAfterTranslationRejected(): void {
+        const previousUrl = this.dotRouterService.previousUrl;
+
+        const canUsePreviousUrl =
+            !!previousUrl &&
+            !this.dotRouterService.isPublicUrl(previousUrl) &&
+            !previousUrl.startsWith('/edit-page');
+
+        if (canUsePreviousUrl) {
+            this.router.navigateByUrl(previousUrl);
+
+            return;
+        }
+
+        this.dotRouterService.gotoPortlet('/pages');
     }
 
     #clientPayload() {

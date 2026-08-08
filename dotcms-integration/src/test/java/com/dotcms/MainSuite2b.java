@@ -38,12 +38,13 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.FileAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
-import com.dotcms.csspreproc.CSSPreProcessServletTest;
+import com.dotcms.csspreproc.CSSPreProcessServletIT;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
@@ -104,6 +105,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceSearchTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -114,6 +116,7 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
@@ -149,6 +152,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
+import com.dotmarketing.portlets.folders.business.FolderAPIImplFilterTest;
+import com.dotmarketing.portlets.folders.business.FolderFactoryImplFilterTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
@@ -199,6 +204,7 @@ import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
 import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
+import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldTypeTest;
 import com.dotmarketing.startup.runonce.Task220401CreateClusterLockTableTest;
@@ -254,6 +260,19 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Reindex-heavy tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so a full
+        // reindex costs O(all content created so far). Scheduled late in a
+        // 297-class suite these reindex the entire accumulated dataset instead
+        // of just their own fixtures. Keep new full-reindex tests in this block.
+        ESMappingUtilHelperTest.class,
+        com.dotmarketing.common.reindex.ReindexThreadTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
+        com.dotmarketing.common.reindex.ReindexAPITest.class,
+        CleanUpFieldReferencesJobTest.class,
+        EMAWebInterceptorTest.class,
+
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
@@ -350,6 +369,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
+        Task260720AddDefaultBaseTypeToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
         Task220330ChangeVanityURLSiteFieldTypeTest.class,
         Task220402UpdateDateTimezonesTest.class,
@@ -367,7 +387,7 @@ import org.junit.runners.Suite.SuiteClasses;
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
-        CSSPreProcessServletTest.class,
+        CSSPreProcessServletIT.class,
         VariantFactoryTest.class,
         VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
@@ -398,6 +418,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
+        WebAssetResourceV2IntegrationTest.class,
         SystemTableFactoryTest.class,
         Task230707CreateSystemTableTest.class,
         SystemAPITest.class,
@@ -471,7 +492,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
         OSGIUtilTest.class,
-        CleanUpFieldReferencesJobTest.class,
         EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
@@ -483,8 +503,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
-        com.dotmarketing.common.reindex.ReindexThreadTest.class,
-        com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,
         com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
@@ -520,6 +538,9 @@ import org.junit.runners.Suite.SuiteClasses;
         HashBuilderTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
+        FolderResourceSearchTest.class,
+        FolderAPIImplFilterTest.class,
+        FolderFactoryImplFilterTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
@@ -535,10 +556,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
-        ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
-        EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
@@ -547,6 +566,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CustomAttributeAPIImplTest.class,
         CustomAttributeFactoryTest.class,
         PermissionResourceIntegrationTest.class,
+        FileAssetBaseTypeToContentTypeStrategyImplTest.class,
 })
 
 public class MainSuite2b {

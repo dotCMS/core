@@ -355,6 +355,64 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
+     * How far (in px) the top toolbar row (add-top button + actions) must shift
+     * down from the hovered contentlet's own top edge to stay inside the visible
+     * iframe area. `null` (no override) when the top edge is already visible —
+     * the contentlet's top can scroll above the iframe's internal viewport,
+     * which would otherwise push the toolbar off-screen along with it.
+     */
+    protected readonly hoverTopClipOffset = computed<number | null>(() => {
+        const area = this.contentletArea();
+        if (!area || area.y >= 0) {
+            return null;
+        }
+
+        return Math.min(-area.y, area.height);
+    });
+
+    /**
+     * How far (in px) the add-bottom button must shift up from the hovered
+     * contentlet's own bottom edge to stay inside the visible iframe area.
+     * `null` (no override) when the bottom edge is already visible.
+     */
+    protected readonly hoverBottomClipOffset = computed<number | null>(() => {
+        const area = this.contentletArea();
+        if (!area) {
+            return null;
+        }
+
+        const overflow = area.y + area.height - this.#uveStore.viewIframeHeight();
+
+        return overflow > 0 ? Math.min(overflow, area.height) : null;
+    });
+
+    /**
+     * The drag handle sits at the vertical center of the hovered contentlet
+     * (`top: 50%` in CSS). On a tall contentlet, that center point can itself
+     * be scrolled outside the visible iframe area even while the handle's
+     * default position would otherwise be off-screen. This clamps the
+     * handle's `top` to the closest visible point along the contentlet's own
+     * height, keeping the CSS `translate(-50%, -50%)` centering unchanged.
+     * `null` (no override) when the natural center is already visible.
+     */
+    protected readonly hoverDragButtonTopOffset = computed<number | null>(() => {
+        const area = this.contentletArea();
+        if (!area) {
+            return null;
+        }
+
+        const iframeHeight = this.#uveStore.viewIframeHeight();
+        const center = area.y + area.height / 2;
+        const clampedCenter = Math.min(Math.max(center, 0), iframeHeight);
+
+        if (clampedCenter === center) {
+            return null;
+        }
+
+        return Math.min(Math.max(clampedCenter - area.y, 0), area.height);
+    });
+
+    /**
      * Inline styles that bound the floating toolbar to the visual rectangle of the selected contentlet.
      * The toolbar is absolutely positioned based on `editorSelected.bounds`.
      */

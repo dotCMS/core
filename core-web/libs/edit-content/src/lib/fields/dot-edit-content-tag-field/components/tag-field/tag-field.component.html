@@ -19,10 +19,13 @@
     [minLength]="AUTO_COMPLETE_MIN_LENGTH"
     [delay]="AUTO_COMPLETE_DELAY"
     [disabled]="$isDisabled()"
+    [placeholder]="'edit.content.form.field.tags.placeholder' | dm"
     (ngModelChange)="onTagsChange($event)"
     (completeMethod)="onSearch($event)"
     (keydown.enter)="onEnterKey($event)">
     <ng-template pTemplate="removetokenicon">
-        <i class="pi pi-times"></i>
+        <span class="flex items-center leading-none">
+            <i class="pi pi-times text-xs"></i>
+        </span>
     </ng-template>
 </p-autoComplete>

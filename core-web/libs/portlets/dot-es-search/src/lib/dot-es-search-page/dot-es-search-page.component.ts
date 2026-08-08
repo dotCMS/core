@@ -37,7 +37,7 @@ import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
     DotClipboardUtil,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
     PrincipalConfiguration
@@ -108,7 +108,7 @@ const QUERY_EDITOR_OPTIONS = {
         SkeletonModule,
         MessageModule,
         TagModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         DotEmptyContainerComponent,
         DotMessagePipe
     ],
@@ -146,7 +146,8 @@ export class DotEsSearchPageComponent {
     readonly noHitsConfig: PrincipalConfiguration = {
         title: this.#messageService.get('esSearch.results.noHits'),
         subtitle: this.#messageService.get('esSearch.results.noHits.subtitle'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     readonly $parsedAggregations = computed<ParsedAggregation[]>(() => {

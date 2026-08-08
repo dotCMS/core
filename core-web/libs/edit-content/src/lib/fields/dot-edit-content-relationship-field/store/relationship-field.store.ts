@@ -14,8 +14,10 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotLanguage
+    DotLanguage,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 
 import { RelationshipFieldService } from './relationship-field.service';
 
@@ -37,6 +39,16 @@ export interface RelationshipFieldState {
         currentPage: number;
         rowsPerPage: number;
     };
+    /**
+     * Origin of the current `data`:
+     * - `'load'`: populated programmatically (initial load / locale re-init). The
+     *   field must sync the value to the form control WITHOUT marking it dirty,
+     *   otherwise the async load re-dirties the form after the pristine window and
+     *   the unsaved-changes guard fires on a content the user never touched.
+     * - `'user'`: changed by an explicit user action (relate/unrelate/reorder).
+     *   The field marks the control dirty so the guard correctly protects the edit.
+     */
+    lastChangeSource: 'load' | 'user';
 }
 
 const initialState: RelationshipFieldState = {
@@ -52,7 +64,8 @@ const initialState: RelationshipFieldState = {
         offset: 0,
         currentPage: 1,
         rowsPerPage: 6
-    }
+    },
+    lastChangeSource: 'load'
 };
 
 /**
@@ -61,6 +74,9 @@ const initialState: RelationshipFieldState = {
  */
 export const RelationshipFieldStore = signalStore(
     withState(initialState),
+    // Side-panel feature flag, batch-fetched once on init and exposed as `flags()`. The component
+    // reads it when creating related content to choose the slide-in panel vs. the centered dialog.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((state) => ({
         /**
          * Computes the total number of pages based on the number of items and the rows per page.
@@ -124,7 +140,8 @@ export const RelationshipFieldStore = signalStore(
             setData(data: DotCMSContentlet[]) {
                 patchState(store, {
                     data: [...data],
-                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 }
+                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 },
+                    lastChangeSource: 'user'
                 });
             },
             /**
@@ -206,7 +223,9 @@ export const RelationshipFieldStore = signalStore(
                                                 selectionMode: newState.selectionMode,
                                                 columns: newState.columns,
                                                 data: newState.data,
-                                                field
+                                                field,
+                                                // Programmatic population — must not dirty the form.
+                                                lastChangeSource: 'load'
                                             });
                                         },
                                         error: (error) => {
@@ -241,7 +260,8 @@ export const RelationshipFieldStore = signalStore(
                             ...store.pagination(),
                             offset: newOffset,
                             currentPage: lastPage
-                        }
+                        },
+                        lastChangeSource: 'user'
                     });
                 } else if (newData.length === 0) {
                     patchState(store, {
@@ -250,10 +270,11 @@ export const RelationshipFieldStore = signalStore(
                             ...store.pagination(),
                             offset: 0,
                             currentPage: 1
-                        }
+                        },
+                        lastChangeSource: 'user'
                     });
                 } else {
-                    patchState(store, { data: newData });
+                    patchState(store, { data: newData, lastChangeSource: 'user' });
                 }
             },
             /**
@@ -262,7 +283,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {DotCMSContentlet[]} data - The reordered data array.
              */
             reorderData(data: DotCMSContentlet[]) {
-                patchState(store, { data: [...data] });
+                patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
              * Advances the pagination to the next page and updates the state accordingly.

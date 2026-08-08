@@ -6,52 +6,15 @@
     "prefix": "dotcms",
     "tags": ["skip:test", "skip:lint"],
     "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/libs/block-editor"],
             "options": {
-                "jestConfig": "libs/block-editor/jest.config.ts",
-                "tsConfig": "libs/block-editor/tsconfig.spec.json"
-            }
-        },
-        "storybook": {
-            "executor": "@storybook/angular:start-storybook",
-            "options": {
-                "port": 4400,
-                "configDir": "libs/block-editor/.storybook",
-                "browserTarget": "block-editor:build-storybook",
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                },
-                "styles": [
-                    "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeicons/primeicons.css"
-                ]
+                "passWithNoTests": true
             },
             "configurations": {
                 "ci": {
-                    "quiet": true
-                }
-            }
-        },
-        "build-storybook": {
-            "executor": "@storybook/angular:build-storybook",
-            "outputs": ["{options.outputDir}"],
-            "options": {
-                "outputDir": "dist/storybook/block-editor",
-                "configDir": "libs/block-editor/.storybook",
-                "browserTarget": "block-editor:build-storybook",
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                }
-            },
-            "configurations": {
-                "ci": {
-                    "quiet": true
+                    "ci": true,
+                    "coverage": true
                 }
             }
         }

@@ -1,16 +1,21 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
+import { DotLocalstorageService } from '@dotcms/data-access';
+
 import { DotEditContentSidebarSectionComponent } from './dot-edit-content-sidebar-section.component';
+
+const STORAGE_KEY = 'dot-edit-content.section.workflow';
 
 describe('DotEditContentSidebarSectionComponent', () => {
     let spectator: SpectatorHost<DotEditContentSidebarSectionComponent>;
 
     const createHost = createHostFactory({
         component: DotEditContentSidebarSectionComponent,
+        providers: [mockProvider(DotLocalstorageService)],
         template: `
-            <dot-edit-content-sidebar-section [title]="title">
+            <dot-edit-content-sidebar-section [title]="title" [key]="key">
                 <ng-template #sectionAction>
                     <div data-testid="action-content">Action Content</div>
                 </ng-template>
@@ -22,7 +27,8 @@ describe('DotEditContentSidebarSectionComponent', () => {
     beforeEach(() => {
         spectator = createHost(null, {
             hostProps: {
-                title: 'Test Section'
+                title: 'Test Section',
+                key: ''
             }
         });
     });
@@ -38,7 +44,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
 
         it('should render main structure and title', () => {
             const section = spectator.query(byTestId('dot-section'));
-            const header = spectator.query(byTestId('dot-section-header'));
+            const header = spectator.query(byTestId('dot-section-toggle'));
             const title = spectator.query(byTestId('dot-section-title'));
 
             expect(section).toBeTruthy();
@@ -63,12 +69,12 @@ describe('DotEditContentSidebarSectionComponent', () => {
         beforeEach(() => {
             // Create fresh host with title: null to avoid ExpressionChangedAfterItHasBeenCheckedError
             spectator = createHost(null, {
-                hostProps: { title: null }
+                hostProps: { title: null, key: '' }
             });
         });
 
         it('should not render header section', () => {
-            const header = spectator.query(byTestId('dot-section-header'));
+            const header = spectator.query(byTestId('dot-section-toggle'));
             expect(header).toBeFalsy();
         });
 
@@ -89,5 +95,114 @@ describe('DotEditContentSidebarSectionComponent', () => {
         expect(contentSection).toBeTruthy();
         expect(projectedContent).toBeTruthy();
         expect(projectedContent).toHaveText('Projected Content');
+    });
+
+    describe('Without key (backward-compatible)', () => {
+        let localStorageService: jest.Mocked<DotLocalstorageService>;
+
+        beforeEach(() => {
+            localStorageService = spectator.inject(DotLocalstorageService);
+        });
+
+        it('should not read from storage on init', () => {
+            expect(localStorageService.getItem).not.toHaveBeenCalled();
+        });
+
+        it('should collapse in-memory but not persist on toggle', () => {
+            // Starts expanded
+            expect(spectator.component.$collapsed()).toBe(false);
+
+            // Collapses in-memory...
+            spectator.click(byTestId('dot-section-toggle'));
+            expect(spectator.component.$collapsed()).toBe(true);
+
+            // ...but never writes to storage
+            expect(localStorageService.setItem).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('With key (collapsible + persistent)', () => {
+        let localStorageService: jest.Mocked<DotLocalstorageService>;
+
+        beforeEach(() => {
+            spectator = createHost(null, {
+                hostProps: { title: 'Workflow', key: 'workflow' },
+                detectChanges: false
+            });
+            localStorageService = spectator.inject(DotLocalstorageService);
+        });
+
+        it('should toggle the collapsed state on header click', () => {
+            localStorageService.getItem.mockReturnValue(false);
+            spectator.detectChanges();
+
+            // Starts expanded
+            expect(spectator.component.$collapsed()).toBe(false);
+
+            // Collapse
+            spectator.click(byTestId('dot-section-toggle'));
+            expect(spectator.component.$collapsed()).toBe(true);
+
+            // Expand again
+            spectator.click(byTestId('dot-section-toggle'));
+            expect(spectator.component.$collapsed()).toBe(false);
+        });
+
+        it('should toggle on Enter key', () => {
+            localStorageService.getItem.mockReturnValue(false);
+            spectator.detectChanges();
+
+            const header = spectator.query(byTestId('dot-section-toggle')) as HTMLElement;
+            // PrimeNG's accordion header switches on `event.code`, not `event.key`.
+            header.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true })
+            );
+            spectator.detectChanges();
+
+            expect(spectator.component.$collapsed()).toBe(true);
+        });
+
+        it('should persist the collapsed state on toggle', () => {
+            localStorageService.getItem.mockReturnValue(false);
+            spectator.detectChanges();
+
+            spectator.click(byTestId('dot-section-toggle'));
+
+            expect(localStorageService.setItem).toHaveBeenCalledWith(STORAGE_KEY, true);
+        });
+
+        it('should seed the initial collapsed state from storage', () => {
+            localStorageService.getItem.mockReturnValue(true);
+            spectator.detectChanges();
+
+            expect(localStorageService.getItem).toHaveBeenCalledWith(STORAGE_KEY);
+            expect(spectator.component.$collapsed()).toBe(true);
+        });
+
+        it('should mark the header aria-expanded when expanded', () => {
+            localStorageService.getItem.mockReturnValue(false);
+            spectator.detectChanges();
+
+            const header = spectator.query(byTestId('dot-section-toggle'));
+            expect(header).toHaveAttribute('aria-expanded', 'true');
+        });
+
+        it('should mark the header aria-expanded false when collapsed', () => {
+            localStorageService.getItem.mockReturnValue(true);
+            spectator.detectChanges();
+
+            const header = spectator.query(byTestId('dot-section-toggle'));
+            expect(header).toHaveAttribute('aria-expanded', 'false');
+        });
+
+        it('should not collapse when clicking the action slot', () => {
+            localStorageService.getItem.mockReturnValue(false);
+            spectator.detectChanges();
+
+            spectator.click(byTestId('dot-section-action'));
+
+            expect(spectator.component.$collapsed()).toBe(false);
+            expect(localStorageService.setItem).not.toHaveBeenCalled();
+        });
     });
 });

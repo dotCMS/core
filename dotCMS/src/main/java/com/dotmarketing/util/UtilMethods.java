@@ -1520,7 +1520,8 @@ public class UtilMethods {
 
     public static String escapeHTMLCodeFromJSON(String json) {
         json = json.replace("&#58;",":")
-                .replace("&#44;",",");
+                .replace("&#44;",",")
+                .replace("&#36;","$");
         return json;
     }
 

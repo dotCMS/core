@@ -147,12 +147,55 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
+                const contentArea = uveStore.editorContentArea();
+                const { contentlet, container } = contentArea.payload;
+
+                // Move focus to an inline field that has already cleared (or does
+                // not need) the copy/edit decision: headless via postMessage,
+                // traditional via TinyMCE init.
+                const focusInlineField = (data: {
+                    oldInode: string;
+                    inode: string;
+                    fieldName: string;
+                    mode: string;
+                    language: string;
+                }) => {
+                    if (uveStore.pageType() === PageType.HEADLESS) {
+                        contentWindow?.postMessage(
+                            {
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: data
+                            },
+                            host
+                        );
+
+                        return;
+                    }
+
+                    inlineEditingService.setTargetInlineMCEDataset(data);
+                    inlineEditingService.initEditor();
+                };
+
                 if (uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
+                    // Already inline-editing. When the click targets another field
+                    // on the SAME contentlet, the copy/edit decision was already
+                    // made for it — just move focus to the new field instead of
+                    // re-opening the dialog. Without this the guard silently drops
+                    // the click and the user cannot edit any other field on a
+                    // content that has many inline-editable fields.
+                    if (contentlet?.inode === payload.dataset.inode) {
+                        focusInlineField({
+                            oldInode: payload.dataset.inode,
+                            inode: payload.dataset.inode,
+                            fieldName: payload.dataset.fieldName,
+                            mode: payload.dataset.mode,
+                            language: payload.dataset.language
+                        });
+                    }
+
                     return;
                 }
 
-                const contentArea = uveStore.editorContentArea();
-                const { contentlet, container } = contentArea.payload;
                 const currentTreeNode = uveStore.getCurrentTreeNode(container, contentlet);
 
                 this.dotCopyContentModalService

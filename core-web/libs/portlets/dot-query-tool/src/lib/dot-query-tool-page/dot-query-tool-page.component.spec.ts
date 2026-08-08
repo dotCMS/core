@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -6,12 +7,14 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import {
     DotContentletEditUrlService,
+    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
 import { DotClipboardUtil } from '@dotcms/ui';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
@@ -50,9 +53,14 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
     limitWasCapped: jest.fn().mockReturnValue(false),
-    emptyStateConfig: jest
-        .fn()
-        .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
+    // `withFlags` slice — side panel off by default (empty map ⇒ `flags()[FLAG] ?? false` is false).
+    flags: jest.fn().mockReturnValue({}),
+    emptyStateConfig: jest.fn().mockReturnValue({
+        title: 'Empty',
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded',
+        subtitle: ''
+    }),
     setQuery: jest.fn(),
     setSort: jest.fn(),
     setOffset: jest.fn(),
@@ -87,11 +95,16 @@ describe('DotQueryToolPageComponent', () => {
             mockProvider(DotQueryToolService),
             mockProvider(DotContentletEditUrlService, {
                 resolveEditUrl: jest.fn()
+            }),
+            // Deep-link resolve for `?editContent=`; empty by default (no panel opens on load).
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             })
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
             DotClipboardUtil
+            // Flag off by default (store mock's `flags()` returns `{}`) → results open in a new tab.
         ]
     });
 
@@ -107,7 +120,15 @@ describe('DotQueryToolPageComponent', () => {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
                 },
-                { provide: Location, useValue: { replaceState: locationReplaceStateSpy } }
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: locationReplaceStateSpy,
+                        go: jest.fn(),
+                        path: jest.fn().mockReturnValue(''),
+                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    }
+                }
             ]
         });
         return spectator.inject(DotQueryToolStore, true);
@@ -344,5 +365,266 @@ describe('DotQueryToolPageComponent', () => {
             expect(snippet).toContain(`credentials: 'include'`);
             expect(snippet).toContain(`"query": "+live:true"`);
         });
+    });
+});
+
+// Sibling top-level describe (own TestBed): the side panel feature flag is ON. New-editor results
+// open in the in-page panel instead of a new tab; legacy/page results still open in a new tab.
+describe('DotQueryToolPageComponent (side panel enabled)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    let windowOpenSpy: jest.SpyInstance;
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                {
+                    // Stub the side panel so setting `$editPanelRequest` renders a light element we
+                    // can drive its `(saved)`/`(closed)` outputs on, instead of the real editor.
+                    remove: {
+                        providers: [DotQueryToolStore, DotCurrentUserService],
+                        imports: [DotEditContentSidePanelComponent]
+                    },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotQueryToolService),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+            })
+        ],
+        componentProviders: [
+            // Flag on (store mock's `flags()` reports the side panel enabled) → new-editor results
+            // open in the side panel instead of a new tab.
+            {
+                provide: DotQueryToolStore,
+                useFactory: () =>
+                    buildStoreMock({
+                        flags: jest.fn().mockReturnValue({
+                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+                        })
+                    })
+            },
+            DotClipboardUtil
+        ]
+    });
+
+    beforeEach(() => {
+        windowOpenSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap({}) } }
+                },
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: jest.fn(),
+                        go: jest.fn(),
+                        path: jest.fn().mockReturnValue(''),
+                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    }
+                }
+            ]
+        });
+    });
+
+    afterEach(() => windowOpenSpy.mockRestore());
+
+    it('opens the new-editor result in the side panel (no new tab)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+        expect(windowOpenSpy).not.toHaveBeenCalled();
+        expect(spectator.component.$editPanelRequest()).toEqual({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'Home'
+        });
+    });
+
+    it('reflects the open panel in the URL via editContent (history push, so Back can pop it)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        const location = spectator.inject(Location);
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+        spectator.flushEffects();
+
+        expect(location.go).toHaveBeenCalledWith(expect.stringContaining('editContent=id-1'));
+    });
+
+    it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        const location = spectator.inject(Location);
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+        spectator.flushEffects();
+        (location.go as jest.Mock).mockClear();
+        (location.replaceState as jest.Mock).mockClear();
+
+        spectator.component.$editPanelRequest.set(null);
+        spectator.flushEffects();
+
+        expect(location.replaceState).toHaveBeenCalledTimes(1);
+        expect(location.go).not.toHaveBeenCalled();
+    });
+
+    it('routes browser Back through the panel close guard (does not clear silently)', () => {
+        const requestClose = jest.fn();
+        jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+            requestClose
+        } as unknown as DotEditContentSidePanelComponent);
+        spectator.component.$editPanelRequest.set({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1'
+        });
+        const location = spectator.inject(Location);
+        const popstate = (location.subscribe as jest.Mock).mock.calls[0][0] as (event: {
+            url: string;
+        }) => void;
+
+        popstate({ url: '/query-tool?q=x' });
+
+        expect(requestClose).toHaveBeenCalledTimes(1);
+        expect(location.replaceState).toHaveBeenCalled();
+    });
+
+    it('opens legacy-editor results in a new tab (not the panel)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+        expect(windowOpenSpy).toHaveBeenCalledWith('/dotAdmin/#/c/content/inode-1', '_blank');
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+
+    it('reloads results on the panel (saved) output and clears the request on (closed)', async () => {
+        const store = spectator.inject(DotQueryToolStore, true);
+        spectator.component.$editPanelRequest.set({ mode: 'edit', contentletInode: 'inode-1' });
+        spectator.detectChanges();
+        // The panel is behind `@defer`; its dynamic import resolves as a microtask, so the element
+        // isn't in the DOM until the fixture settles.
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+
+        // Drive the real template bindings (saved)/(closed), not the handlers directly.
+        const panelSelector = '[data-testid="query-tool-edit-panel"]';
+        spectator.triggerEventHandler(panelSelector, 'saved', undefined);
+        expect(store.runSearch).toHaveBeenCalledTimes(1);
+
+        spectator.triggerEventHandler(panelSelector, 'closed', undefined);
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+});
+
+// Sibling top-level describe (own TestBed): the `?editContent=` deep link is read in `ngOnInit`,
+// so — unlike the shell's constructor-time read — it CAN share this factory's shape, but each test
+// still needs its own `ActivatedRoute`/flag value before construction, hence a dedicated describe.
+describe('DotQueryToolPageComponent (editContent deep link)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    // Side-panel flag as reported by the store's `withFlags` slice; set per test before mounting.
+    let flagsValue: Partial<Record<FeaturedFlags, boolean>>;
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                {
+                    remove: {
+                        providers: [DotQueryToolStore, DotCurrentUserService],
+                        imports: [DotEditContentSidePanelComponent]
+                    },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotQueryToolService),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() })
+        ],
+        componentProviders: [
+            {
+                provide: DotQueryToolStore,
+                useFactory: () => buildStoreMock({ flags: jest.fn(() => flagsValue) })
+            },
+            DotClipboardUtil
+        ]
+    });
+
+    beforeEach(() => {
+        flagsValue = { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true };
+    });
+
+    const mount = (editContent: string) =>
+        createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap({ editContent }) } }
+                },
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: jest.fn(),
+                        go: jest.fn(),
+                        path: jest.fn().mockReturnValue(''),
+                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    }
+                },
+                mockProvider(DotContentSearchService, {
+                    get: jest
+                        .fn()
+                        .mockReturnValue(
+                            of({ jsonObjectView: { contentlets: [SAMPLE_CONTENTLET] } })
+                        )
+                })
+            ]
+        });
+
+    it('resolves and opens the panel from a shared link when the side panel flag is on', () => {
+        spectator = mount('id-1');
+
+        expect(spectator.component.$editPanelRequest()).toEqual({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'Home'
+        });
+    });
+
+    it('ignores the deep link when the side panel flag is off (no in-page editor to open it in)', () => {
+        flagsValue = {};
+
+        spectator = mount('id-1');
+
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+
+    it('ignores the deep link when the flag never resolved (empty slice ⇒ off, same as #3)', () => {
+        // withFlags degrades to an empty slice on a failed config read; the deep link must not throw
+        // and must not open the panel — same safe outcome as the flag being explicitly off.
+        flagsValue = {};
+
+        expect(() => (spectator = mount('id-1'))).not.toThrow();
+        expect(spectator.component.$editPanelRequest()).toBeNull();
     });
 });

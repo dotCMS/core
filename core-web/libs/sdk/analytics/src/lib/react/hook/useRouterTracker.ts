@@ -19,14 +19,16 @@ const computeNextKey = (
  *
  * @param analytics Analytics singleton instance; if null, does nothing
  * @param debug When true, logs which tracking path is used
+ * @param enabled When false, tracking is disabled even if analytics is present (defaults to true)
  */
-export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = false) {
+export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = false, enabled = true) {
     const lastKeyRef = useRef<string | null>(null);
 
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
     useEffect(() => {
+        if (!enabled) return;
         if (!analytics) return;
 
         const fireIfChanged = (key: string) => {
@@ -40,5 +42,5 @@ export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = fals
             console.info('DotCMS Analytics [React]: using Next.js App Router tracking');
         }
         fireIfChanged(computeNextKey(pathname, searchParams));
-    }, [analytics, pathname, searchParams, debug]);
+    }, [analytics, pathname, searchParams, debug, enabled]);
 }

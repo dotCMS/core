@@ -44,6 +44,16 @@ public record TotalHits(
     }
 
     /**
+     * Velocity/back-compat alias for {@link #value()}. Elasticsearch's {@code TotalHits.value} was a
+     * public field, so legacy VTL walked {@code $r.hits.totalHits.value}; that resolves via this
+     * getter on the record. Returns the same value as the {@code value} component, so Jackson merges
+     * it into the existing {@code value} field and the JSON shape is unchanged.
+     */
+    public long getValue() {
+        return value;
+    }
+
+    /**
      * Creates a new TotalHits builder.
      *
      * @return a new builder instance

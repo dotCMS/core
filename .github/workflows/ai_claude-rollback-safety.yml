@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+# Reviewing a commit that has already been superseded helps nobody, and the run
+# holds a runner slot the rest of the pipeline is queueing for.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Security gate: Check if user is dotCMS organization member
   #
@@ -86,11 +92,18 @@ jobs:
       id-token: write
       pull-requests: write
       issues: write
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
+      # No progress comment: claude-code-action finds the comment to reuse by
+      # "authored by the Claude app bot" with no per-workflow marker, so this
+      # check would grab — and overwrite — the code review comment posted by
+      # ai_claude-orchestrator.yml (#36761). This check reports through a label,
+      # plus its own comment when the change is unsafe, so it needs no comment
+      # of its own. Only the code-review orchestrator owns a sticky comment.
+      track_progress: false
       prompt: |
         You are a dotCMS rollback-safety analyst. Determine whether the changes in this PR are safe to roll back to the previous release.
 
@@ -129,5 +142,3 @@ jobs:
       timeout_minutes: 15
       runner: ubuntu-latest
       enable_mention_detection: false
-    secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

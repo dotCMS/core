@@ -6,16 +6,22 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, SubscriptionLike } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentDriveService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
+import {
+    DotCMSContentTypeField,
+    DotContentDriveItem,
+    DotContentDriveSearchRequest,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
+import { GlobalStore, withFlags } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
@@ -29,7 +35,8 @@ import {
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
-    SYSTEM_HOST
+    SYSTEM_HOST,
+    USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
     DotContentDriveFilters,
@@ -39,7 +46,13 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { decodeFilters, parseWorkflowFilter } from '../utils/functions';
+import {
+    buildUserSearchablePayload,
+    decodeFilters,
+    encodeFilters,
+    getUserSearchableActive,
+    parseWorkflowFilter
+} from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -51,47 +64,93 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
-    pages: [DEFAULT_PAGE]
+    isTreeForceCollapsed: false,
+    pages: [DEFAULT_PAGE],
+    userSearchableFields: [],
+    userSearchableActive: [],
+    userSearchableFieldsLoaded: false,
+    showInListFields: []
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite, pagination, sort, pages }) => {
-        return {
-            $request: computed<DotContentDriveSearchRequest>(() => {
-                const paginationSignal = pagination();
-                const page = untracked(() => pages()[paginationSignal?.page - 1]);
+    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
+    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
+    // vs full-screen editor.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
+    withComputed(
+        ({
+            path,
+            filters,
+            currentSite,
+            pagination,
+            sort,
+            pages,
+            userSearchableFields,
+            isTreeExpanded,
+            isTreeForceCollapsed
+        }) => {
+            return {
+                /**
+                 * The tree's VISUAL expanded state — the user's real preference (`isTreeExpanded`,
+                 * persisted/shareable via the URL) minus any transient collapse the side panel is
+                 * forcing on a narrow viewport (`isTreeForceCollapsed`, never persisted). Kept
+                 * separate so the panel's temporary collapse can never leak into the shareable
+                 * state — see `setTreeForceCollapsed`.
+                 */
+                isTreeVisuallyExpanded: computed(() => isTreeExpanded() && !isTreeForceCollapsed()),
+                $request: computed<DotContentDriveSearchRequest>(
+                    () => {
+                        const paginationSignal = pagination();
+                        const page = untracked(() => pages()[paginationSignal?.page - 1]);
+                        const userSearchable = buildUserSearchablePayload(
+                            filters(),
+                            userSearchableFields()
+                        );
 
-                return {
-                    assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                    includeSystemHost: true,
-                    filters: {
-                        text: filters()?.title || '',
-                        filterFolders: true
+                        return {
+                            assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                            includeSystemHost: true,
+                            filters: {
+                                text: filters()?.title || '',
+                                filterFolders: true
+                            },
+                            language: filters()?.languageId,
+                            contentTypes: filters()?.contentType,
+                            baseTypes: filters()?.baseType?.map(
+                                (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                            ),
+                            workflow: filters()?.workflow?.length
+                                ? parseWorkflowFilter(filters()?.workflow)
+                                : undefined,
+                            userSearchable,
+                            contentCursor: page.contentCursor ?? 0,
+                            folderCursor: page.folderCursor ?? 0,
+                            maxResults: paginationSignal?.limit,
+                            sortBy: sort()?.field + ':' + sort()?.order,
+                            archived: false,
+                            showFolders:
+                                page.hasMoreFolders &&
+                                !filters()?.baseType?.length &&
+                                !filters()?.contentType?.length &&
+                                !filters()?.languageId?.length &&
+                                !filters()?.workflow?.length &&
+                                // A field-based filter narrows to content, so hide folders too —
+                                // consistent with the other filters above.
+                                !userSearchable
+                        };
                     },
-                    language: filters()?.languageId,
-                    contentTypes: filters()?.contentType,
-                    baseTypes: filters()?.baseType?.map(
-                        (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                    ),
-                    workflow: filters()?.workflow?.length
-                        ? parseWorkflowFilter(filters()?.workflow)
-                        : undefined,
-                    contentCursor: page.contentCursor ?? 0,
-                    folderCursor: page.folderCursor ?? 0,
-                    maxResults: paginationSignal?.limit,
-                    sortBy: sort()?.field + ':' + sort()?.order,
-                    archived: false,
-                    showFolders:
-                        page.hasMoreFolders &&
-                        !filters()?.baseType?.length &&
-                        !filters()?.contentType?.length &&
-                        !filters()?.languageId?.length &&
-                        !filters()?.workflow?.length
-                };
-            })
-        };
-    }),
+                    {
+                        // Dedupe structurally-identical requests so the search effect doesn't re-fire on
+                        // no-op recomputes — e.g. selecting a content type loads its fields
+                        // (setUserSearchableFields), which changes `userSearchableFields` but not the
+                        // payload when no `us.*` value is set. A real payload change still differs here.
+                        equal: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+                    }
+                )
+            };
+        }
+    ),
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
         return {
@@ -107,7 +166,14 @@ export const DotContentDriveStore = signalStore(
                         page: 1,
                         offset: 0
                     },
-                    pages: [DEFAULT_PAGE]
+                    pages: [DEFAULT_PAGE],
+                    // Which field-filter chips to show — parsed from the `us.*` value keys at the
+                    // decode layer (getUserSearchableActive), keeping this method free of that logic.
+                    userSearchableActive: getUserSearchableActive(filters),
+                    // Field metadata for the restored type isn't loaded yet; loadItems waits on this
+                    // so a restored `us.*` filter isn't dropped from the first search request.
+                    userSearchableFields: [],
+                    userSearchableFieldsLoaded: false
                 });
             },
             setItems(items: DotContentDriveItem[]) {
@@ -197,8 +263,70 @@ export const DotContentDriveStore = signalStore(
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
             },
+            /**
+             * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
+             * Never touches `isTreeExpanded` — the real, shareable preference — so a panel-forced
+             * collapse can never be persisted to the URL or survive a refresh as if it were the
+             * user's own choice.
+             */
+            setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
+                patchState(store, { isTreeForceCollapsed });
+            },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
+            },
+            /**
+             * Caches the eligible searchable fields of the active single content type. Consumed by
+             * the field-filter chips (to render controls) and by `$request` (to reshape values).
+             */
+            setUserSearchableFields(fields: DotCMSContentTypeField[]) {
+                patchState(store, {
+                    userSearchableFields: fields,
+                    userSearchableFieldsLoaded: true
+                });
+            },
+            /**
+             * Sets the "Show In List" fields of the active content type (empty when 0 or >1 are
+             * selected). Consumed by the results table to render extra columns after the Type column.
+             */
+            setShowInListFields(fields: DotCMSContentTypeField[]) {
+                patchState(store, { showInListFields: fields });
+            },
+            /**
+             * Shows a field-filter chip by adding it to the active list only — NOT to `filters`.
+             * This keeps the search request unchanged (no reload/flicker); a `us.*` entry lands in
+             * `filters` only once the chip has a value.
+             */
+            addUserSearchableField(variable: string) {
+                if (store.userSearchableActive().includes(variable)) {
+                    return;
+                }
+
+                patchState(store, {
+                    userSearchableActive: [...store.userSearchableActive(), variable]
+                });
+            },
+            /**
+             * Drops every `us.*` field filter, the active chip list, and the cached field metadata.
+             * Called when the active content type changes (removed / another added / switched to a
+             * different single type). The reactive URL write-back removes these entries from the URL.
+             */
+            clearUserSearchableFilters() {
+                const restFilters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(
+                        ([key]) => !key.startsWith(USER_SEARCHABLE_PREFIX)
+                    )
+                );
+
+                patchState(store, {
+                    filters: restFilters,
+                    userSearchableFields: [],
+                    userSearchableActive: [],
+                    userSearchableFieldsLoaded: false,
+                    showInListFields: [],
+                    pagination: { ...store.pagination(), offset: 0, page: 1 },
+                    pages: [DEFAULT_PAGE]
+                });
             },
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });
@@ -210,6 +338,24 @@ export const DotContentDriveStore = signalStore(
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier == SYSTEM_HOST.identifier) {
+                    return;
+                }
+
+                // Hold the search while a restored `us.*` filter has no field metadata yet: the
+                // payload builder can only shape values it has a field for, so searching now would
+                // drop them and briefly show unfiltered results.
+                //
+                // `userSearchableFieldsLoaded` is read TRACKED so the effect re-runs the moment
+                // field metadata arrives — even when the resulting `$request` is structurally
+                // identical and its dedupe guard would otherwise suppress the re-run (e.g. a
+                // restored `us.*` key for an ineligible/removed field yields no payload either
+                // way, which would otherwise leave the portlet stuck in LOADING). It flips
+                // false→true exactly once per content-type field load and is never touched by
+                // adding a chip. `userSearchableActive` stays untracked so adding an empty chip
+                // (which changes it but not `loaded`) does not re-fire a search.
+                const fieldsLoaded = store.userSearchableFieldsLoaded();
+                const hasActiveFields = untracked(() => store.userSearchableActive().length > 0);
+                if (hasActiveFields && !fieldsLoaded) {
                     return;
                 }
 
@@ -278,8 +424,10 @@ export const DotContentDriveStore = signalStore(
     withHooks((store) => {
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
+        const location = inject(Location);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
+        let locationSub: SubscriptionLike;
 
         return {
             onInit() {
@@ -300,6 +448,43 @@ export const DotContentDriveStore = signalStore(
                 });
 
                 /**
+                 * Browser Back/Forward re-hydration. The browsing params (path/filters/tree) are
+                 * written to the URL via `Location.go` (bypassing the router, so no content reload
+                 * fires on every filter change), and the init effect above hydrates from a one-time
+                 * `route.snapshot` read. Together that means a Back/Forward changes the URL but never
+                 * re-hydrates the store, leaving the list stale. `Location.subscribe` fires on
+                 * popstate (not on our own `go`/`replaceState`), so re-run the same hydration from
+                 * the restored URL — `initContentDrive` resets to LOADING, which the search effect
+                 * turns into a fresh load.
+                 */
+                locationSub = location.subscribe((event) => {
+                    const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+                    const path = params.get('path') || DEFAULT_PATH;
+                    const filtersRaw = params.get('filters') || '';
+                    const isTreeExpanded =
+                        (params.get('isTreeExpanded') ?? DEFAULT_TREE_EXPANDED.toString()) ===
+                        'true';
+
+                    // Only re-hydrate when a browsing param actually changed. A popstate that only
+                    // flips `editContent` (e.g. closing the side panel via Back) must NOT reset and
+                    // reload the list — that param is owned by the shell's own popstate handler.
+                    if (
+                        path === store.path() &&
+                        filtersRaw === encodeFilters(store.filters()) &&
+                        isTreeExpanded === store.isTreeExpanded()
+                    ) {
+                        return;
+                    }
+
+                    store.initContentDrive({
+                        currentSite: globalStore.siteDetails(),
+                        path,
+                        filters: decodeFilters(filtersRaw),
+                        isTreeExpanded
+                    });
+                });
+
+                /**
                  * Effect that triggers a content reload when search parameters change.
                  * loadItems internally uses $searchParams signal, so it will be triggered
                  * whenever query, pagination or sort changes.
@@ -311,6 +496,7 @@ export const DotContentDriveStore = signalStore(
             onDestroy() {
                 initEffect?.destroy();
                 searchEffect?.destroy();
+                locationSub?.unsubscribe();
             }
         };
     }),

@@ -1,7 +1,9 @@
 package com.dotmarketing.business;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
@@ -335,5 +337,21 @@ public abstract class PermissionFactory {
 	abstract <P extends Permissionable> List<P> filterCollectionByDBPermissionReference(List<P> permissionables, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException;
 
 	abstract boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
+
+	/**
+	 * Returns the subset of {@code inodeIds} for which at least one of the supplied roles holds
+	 * the required permission, checked against both direct ({@code permission} table) and
+	 * inherited ({@code permission_reference} table) permissions.
+	 * Processed in chunks of 500 to avoid excessively long SQL IN clauses.
+	 *
+	 * @param inodeIds   permissionable IDs to check (e.g. folder inodes)
+	 * @param permission required permission bit mask (e.g. {@code PermissionAPI.PERMISSION_READ})
+	 * @param roleIds    already-resolved role IDs for the user
+	 * @return set of IDs from {@code inodeIds} for which permission is granted
+	 */
+	Set<String> getPermittedIds(Collection<String> inodeIds, int permission, List<String> roleIds)
+			throws DotDataException {
+		return Set.of();
+	}
 
 }

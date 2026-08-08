@@ -6,7 +6,10 @@ import {
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { EditContentQueryParams } from '../../store/edit-content.store';
-import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+import {
+    getSingleSelectableFieldOptions,
+    parseCalendarTimestamp
+} from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
@@ -171,55 +174,19 @@ const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) =
     }
 
     const value = contentlet[field.variable];
+    const timestamp = parseCalendarTimestamp(value);
 
-    // If field doesn't exist in contentlet or is explicitly null/undefined/empty
-    if (value === null || value === undefined || value === '') {
-        return null;
-    }
-
-    // Backend should always return number timestamps
-    if (typeof value === 'number') {
-        // Validate it's a reasonable timestamp (not NaN or invalid)
-        return isNaN(value) || !isFinite(value) ? null : value;
-    }
-
-    // Handle edge cases where backend might return string timestamps
-    if (typeof value === 'string') {
-        const numericValue = Number(value);
-        if (!isNaN(numericValue) && isFinite(numericValue)) {
-            return numericValue;
-        }
-
-        console.warn(`Calendar field received unexpected string value from backend:`, {
+    // Preserve diagnostics: backend should always return numeric timestamps, so a
+    // non-empty value that fails to parse signals an unexpected payload worth logging.
+    if (timestamp == null && value != null && value !== '') {
+        console.warn('Calendar field received unexpected value from backend:', {
             fieldVariable: field.variable,
-            value: value,
+            value,
             type: typeof value
         });
-        return null;
     }
 
-    // Handle unexpected Date objects (shouldn't happen from backend)
-    if (value instanceof Date) {
-        const timestamp = value.getTime();
-        if (!isNaN(timestamp)) {
-            console.warn(`Calendar field received Date object instead of timestamp from backend:`, {
-                fieldVariable: field.variable,
-                value: value,
-                convertedTimestamp: timestamp
-            });
-            return timestamp;
-        }
-        return null;
-    }
-
-    // Log unexpected value types
-    console.error(`Calendar field received unexpected value type from backend:`, {
-        fieldVariable: field.variable,
-        value: value,
-        type: typeof value
-    });
-
-    return null;
+    return timestamp ?? null;
 };
 
 /**

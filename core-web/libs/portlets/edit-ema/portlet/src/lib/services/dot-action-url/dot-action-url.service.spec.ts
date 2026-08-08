@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';

@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'mcp-server',
     preset: '../../jest.preset.js',

@@ -8,3 +8,9 @@ export * from './lib/dot-content-compare/dot-content-compare.component';
 export * from './lib/dot-content-compare/components/dot-content-compare-dialog/dot-content-compare-dialog.component';
 export * from './lib/dot-page-scanner-report/dot-page-scanner-report.component';
 export * from './lib/dot-page-scanner-report/dot-page-scanner.service';
+
+// Reusable content-type palette list (shared with Content Drive)
+export * from './lib/palette/components/dot-uve-palette-list/dot-uve-palette-list.component';
+export * from './lib/palette/components/dot-uve-palette-list/store/store';
+export * from './lib/palette/models';
+export * from './lib/palette/utils';

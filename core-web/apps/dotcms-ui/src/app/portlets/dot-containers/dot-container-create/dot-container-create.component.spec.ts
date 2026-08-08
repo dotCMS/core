@@ -17,19 +17,11 @@ import {
     DotMessageDisplayService,
     DotRouterService
 } from '@dotcms/data-access';
-import {
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContainerCreateComponent } from './dot-container-create.component';
-
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 
 @Pipe({
     name: 'dm'
@@ -91,12 +83,9 @@ describe('ContainerCreateComponent', () => {
                 DotGlobalMessageService,
                 DotHttpErrorManagerService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 LoggerService,
                 StringUtils,
-                DotContentTypeService,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory }
+                DotContentTypeService
             ]
         })
             .overrideComponent(DotContainerCreateComponent, {

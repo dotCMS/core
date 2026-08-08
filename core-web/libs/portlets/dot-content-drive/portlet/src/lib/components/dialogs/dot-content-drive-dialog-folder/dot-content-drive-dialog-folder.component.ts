@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
@@ -15,6 +23,7 @@ import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -25,7 +34,8 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     SUGGESTED_ALLOWED_FILE_EXTENSIONS,
-    DEFAULT_FILE_ASSET_TYPES
+    DEFAULT_FILE_ASSET_TYPES,
+    FOLDER_UPLOAD_BEHAVIOR_OPTIONS
 } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 interface FolderForm {
@@ -33,6 +43,7 @@ interface FolderForm {
     sortOrder: FormControl<number | null>;
     allowedFileExtensions: FormControl<string[]>;
     defaultFileAssetType: FormControl<string>;
+    defaultBaseType: FormControl<string | null>;
     showOnMenu: FormControl<boolean>;
     name: FormControl<string>;
 }
@@ -50,9 +61,11 @@ interface FolderForm {
         InputNumberModule,
         AutoCompleteModule,
         AutoFocusModule,
+        RadioButtonModule,
         DotFieldRequiredDirective
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: { class: 'block' }
 })
 export class DotContentDriveDialogFolderComponent {
@@ -71,6 +84,9 @@ export class DotContentDriveDialogFolderComponent {
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
     );
 
+    /** Options for the "Upload Behavior" radio group (bound to the `defaultBaseType` control). */
+    protected readonly uploadBehaviorOptions = FOLDER_UPLOAD_BEHAVIOR_OPTIONS;
+
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
         sortOrder: this.#fb.control<number | null>(1),
@@ -78,6 +94,7 @@ export class DotContentDriveDialogFolderComponent {
         defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[0].id, {
             nonNullable: true
         }),
+        defaultBaseType: this.#fb.control<string | null>(null),
         showOnMenu: this.#fb.control(false, { nonNullable: true }),
         name: this.#fb.control('', { validators: [Validators.required], nonNullable: true })
     });
@@ -117,6 +134,11 @@ export class DotContentDriveDialogFolderComponent {
                     ? folder.filesMasks.split(',')
                     : [],
                 defaultFileAssetType: assetType.variable,
+                // Normalize to the uppercase enum the radio options use (DOTASSET/FILEASSET),
+                // matching the defensive `.toUpperCase()` in the shell (#resolvePreferredBaseType)
+                // and toolbar ($uploadLabelKey) — otherwise a non-uppercase backend value would
+                // leave the radio on "Ask each time" while the toolbar/upload flow treat it as pinned.
+                defaultBaseType: folder.defaultBaseType?.toUpperCase() ?? null,
                 showOnMenu: folder.showOnMenu,
                 name: cleanName
             });
@@ -157,17 +179,25 @@ export class DotContentDriveDialogFolderComponent {
      * @param {Event} event - The keyboard event from the input element
      */
     onEnterKey(event: Event) {
+        // Stop the AutoComplete/form from also handling Enter (double-add) and keep the typed
+        // text from persisting into the next entry, which was resetting the current selection.
+        event.preventDefault();
+
         const input = event.target as HTMLInputElement;
         const value = input.value.trim();
 
         if (value) {
-            const currentExtensions = this.folderForm.get('allowedFileExtensions')?.value;
-            const isDuplicate = currentExtensions?.includes(value);
+            const currentExtensions = this.folderForm.get('allowedFileExtensions')?.value ?? [];
+            const isDuplicate = currentExtensions.includes(value);
 
             if (!isDuplicate) {
-                const newValue = [...currentExtensions, value];
-                this.folderForm.get('allowedFileExtensions')?.setValue(newValue);
+                this.folderForm
+                    .get('allowedFileExtensions')
+                    ?.setValue([...currentExtensions, value]);
             }
+
+            // Clear the input so the next extension starts fresh and existing chips are preserved.
+            input.value = '';
         }
     }
 
@@ -297,6 +327,11 @@ export class DotContentDriveDialogFolderComponent {
             data.defaultAssetType = formValue.defaultFileAssetType;
         }
 
+        // Always send defaultBaseType, including null for "Ask each time". Sending an explicit
+        // null (rather than omitting the field) lets the backend clear a previously pinned
+        // preference when the user reverts to "Ask each time".
+        data.defaultBaseType = formValue.defaultBaseType;
+
         const assetPath = this.#getAssetPath(this.$originalName() ?? formValue.name);
 
         return {
@@ -351,15 +386,19 @@ export class DotContentDriveDialogFolderComponent {
     #getAssetPath(name: string) {
         const slugName = this.#getSlugTitle(name);
 
-        if (!slugName) {
-            return `//${this.#hostName}/`;
-        }
-
+        // Always anchor on the currently opened folder (store.path()) so the preview reflects where
+        // the folder will actually be created — even before a name is typed. This reads a signal in
+        // a pure computed only; it never writes a form control, so it can't re-introduce the
+        // form-control-write feedback loop that the old title→name `urlEffect` caused.
         const path = this.#store.path();
         let finalPath = this.#hostName;
 
         if (path) {
             finalPath += `${path.replace(/\/$/, '')}`;
+        }
+
+        if (!slugName) {
+            return `//${finalPath}/`;
         }
 
         return `//${finalPath}/${slugName}/`;

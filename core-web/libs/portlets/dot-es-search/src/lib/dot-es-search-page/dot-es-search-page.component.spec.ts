@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import {
     DotCurrentUserService,
@@ -35,9 +35,12 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     returnedCount: jest.fn().mockReturnValue(0),
     hasPartialResults: jest.fn().mockReturnValue(false),
     queryWasCapped: jest.fn().mockReturnValue(false),
-    emptyStateConfig: jest
-        .fn()
-        .mockReturnValue({ title: 'No results', icon: 'pi-search', subtitle: '' }),
+    emptyStateConfig: jest.fn().mockReturnValue({
+        title: 'No results',
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded',
+        subtitle: ''
+    }),
     setQuery: jest.fn(),
     setParam: jest.fn(),
     setWrapCode: jest.fn(),

@@ -1,6 +1,7 @@
 package com.dotcms.content.index;
 
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -12,8 +13,11 @@ import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +25,9 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -131,7 +137,75 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public boolean optimize(final List<String> indexNames) {
-        return router.read(impl -> impl.optimize(indexNames));
+        // Tag-dispatch: each index name declares its owning provider via its vendor tag
+        // (OS names carry the .os suffix; untagged names are legacy ES). The list handed in
+        // comes from getIndices(), which in dual-write phases aggregates BOTH providers, so a
+        // mixed list (ES bare names + OS .os-tagged names) routed to a single provider via
+        // router.read() would hit index_not_found_exception on the foreign-tagged names —
+        // the exact Phase 2 optimize misrouting reported against the /optimize endpoint.
+        // Force-merge each provider only with the names it actually holds; skip a provider
+        // when its subset is empty so Phase 0 never contacts OS and Phase 3 never contacts ES.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return true;
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        boolean result = true;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            result &= router.esImpl().optimize(esNames);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            // While OS is only the shadow store its force-merge failure is logged instead of failing
+            // a maintenance action whose ES half already succeeded; from Phase 2 on it propagates.
+            result &= isolateOsSubsetFailure("optimize", osNames,
+                    () -> router.osImpl().optimize(osNames)).orElse(true);
+        }
+        return result;
+    }
+
+    /**
+     * Runs the OS half of a tag-dispatched operation, keeping an OS-only failure from aborting an
+     * operation whose ES half already succeeded (issue #36222).
+     *
+     * <p>{@link #optimize} and {@link #flushCaches} dispatch <em>by index-name tag</em> instead of
+     * going through {@link PhaseRouter}, so they never got the router's shadow-failure handling: any
+     * exception from the OS provider propagated straight to the caller. The failure mode that
+     * motivated this is an OS role scoped to {@code cluster_&lt;customer&gt;*} rejecting names built
+     * from a different {@code DOT_DOTCMS_CLUSTER_ID} with {@code HTTP 403} — an OS-only
+     * misconfiguration that surfaced as a 500 on a maintenance action while ES was perfectly fine.</p>
+     *
+     * <p>Phase-aware, matching {@link PhaseRouter}'s rule that only the <em>shadow</em> provider's
+     * failures are absorbed: the OS failure is swallowed while OS is the shadow store (Phase 1 — and
+     * Phase 0 never dispatches OS names), and re-thrown once OS serves reads (phases 2 and 3), where
+     * silently reporting success would tell the operator that the store their searches hit was
+     * optimized / flushed when it was not.</p>
+     *
+     * @param operation operation name, for the log message
+     * @param osNames   the OS-tagged names the operation was dispatched with, for the log message
+     * @param action    the OS-side call
+     * @return the OS result, or empty when an OS failure was absorbed
+     */
+    private <R> Optional<R> isolateOsSubsetFailure(final String operation,
+            final List<String> osNames, final Supplier<R> action) {
+        try {
+            // ofNullable, not of: a provider returning null must not become an NPE inside the
+            // isolation wrapper — an absent value is handled by the caller's default.
+            return Optional.ofNullable(action.get());
+        } catch (final RuntimeException e) {
+            if (isReadEnabled()) {
+                // Phases 2 and 3: OS serves reads — the caller must see the failure.
+                throw e;
+            }
+            final OSIndexAPIImpl.ConnectionFailureKind kind =
+                    OSIndexAPIImpl.classifyConnectionError(e);
+            Logger.warn(this, "OpenSearch " + operation + " failed for " + osNames
+                    + " — likelyCause=" + kind.name() + " (" + kind.remediation() + ")."
+                    + " The Elasticsearch side of this operation is unaffected; only the OpenSearch"
+                    + " indices were skipped. Cause: " + e.getMessage(), e);
+            return java.util.Optional.empty();
+        }
     }
 
     @Override
@@ -329,7 +403,38 @@ public class IndexAPIImpl implements IndexAPI {
      */
     @Override
     public Map<String, Integer> flushCaches(final List<String> indexNames) {
-        return router.writeReturning(impl -> impl.flushCaches(indexNames));
+        // Tag-dispatch (mirrors optimize): flush each provider only with the names it owns
+        // (OS → .os-tagged, ES → untagged). The list handed in comes from getIndices(), which in
+        // dual-write phases aggregates BOTH providers; passing that mixed list to a single
+        // provider made each hit index_not_found_exception on the other engine's names, so the
+        // OS cache flush depended on the .os names being present and was cross-contaminated with
+        // ES names (issue #35640). Skip a provider whose subset is empty so Phase 0 never
+        // contacts OS and Phase 3 never contacts ES. Shard counts are aggregated across the
+        // providers actually contacted.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return ImmutableMap.of("failedShards", 0, "successfulShards", 0);
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        int failedShards = 0;
+        int successfulShards = 0;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            final Map<String, Integer> esResult = router.esImpl().flushCaches(esNames);
+            failedShards += esResult.getOrDefault("failedShards", 0);
+            successfulShards += esResult.getOrDefault("successfulShards", 0);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            // While OS is only the shadow store, its failure must not fail the flush for the ES
+            // indices that already succeeded; the returned shard counts then cover only the
+            // providers actually contacted. From Phase 2 on (OS serves reads) it propagates.
+            final Map<String, Integer> osResult = isolateOsSubsetFailure("cache flush", osNames,
+                    () -> router.osImpl().flushCaches(osNames)).orElse(Map.of());
+            failedShards += osResult.getOrDefault("failedShards", 0);
+            successfulShards += osResult.getOrDefault("successfulShards", 0);
+        }
+        return ImmutableMap.of("failedShards", failedShards, "successfulShards", successfulShards);
     }
 
     // -------------------------------------------------------------------------
@@ -380,11 +485,29 @@ public class IndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * The physical name each write provider should receive for a single-name fan-out so it targets
+     * its OWN real index: the OpenSearch provider gets the {@code .os}-tagged name, every other
+     * provider gets the bare name. This is what makes lifecycle ops (clear/open/close/replicas)
+     * a faithful mirror across both engines instead of silently hitting only ES.
+     *
+     * <p>Applies uniformly, including site-search indices: their OpenSearch copy is now
+     * {@code .os}-tagged like every other migrated index (issue #36672), so no carve-out is needed.</p>
+     */
+    private String providerName(final IndexAPI provider, final String indexName) {
+        final String logical = IndexTag.OS.untag(indexName);
+        return provider == router.osImpl() ? IndexTag.OS.tag(logical) : logical;
+    }
+
     @Override
     public void clearIndex(final String indexName)
             throws DotStateException, IOException, DotDataException {
+        // clearIndex is delete + recreate-empty, so it is as destructive as delete: guard the
+        // active/building index here too (issue #35640, TC-018, swicken review). Covers every
+        // clear entry point — REST modIndex, legacy PUT /clear, and IndexAjaxAction.clearIndex.
+        APILocator.getContentletIndexAPI().assertIndexNotActive(indexName, "cleared");
         try {
-            router.writeChecked(impl -> impl.clearIndex(indexName));
+            router.writeChecked(impl -> impl.clearIndex(providerName(impl, indexName)));
         } catch (DotStateException | IOException | DotDataException e) {
             throw e;
         } catch (Exception e) {
@@ -408,7 +531,7 @@ public class IndexAPIImpl implements IndexAPI {
     public void updateReplicas(final String indexName, final int replicas)
             throws DotDataException {
         try {
-            router.writeChecked(impl -> impl.updateReplicas(indexName, replicas));
+            router.writeChecked(impl -> impl.updateReplicas(providerName(impl, indexName), replicas));
         } catch (DotDataException e) {
             throw e;
         } catch (Exception e) {
@@ -423,11 +546,11 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public void closeIndex(final String indexName) {
-        router.write(impl -> impl.closeIndex(indexName));
+        router.write(impl -> impl.closeIndex(providerName(impl, indexName)));
     }
 
     @Override
     public void openIndex(final String indexName) {
-        router.write(impl -> impl.openIndex(indexName));
+        router.write(impl -> impl.openIndex(providerName(impl, indexName)));
     }
 }

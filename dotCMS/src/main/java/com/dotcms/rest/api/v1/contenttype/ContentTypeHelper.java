@@ -3,7 +3,13 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.exception.BadRequestException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
@@ -52,6 +58,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -987,4 +994,161 @@ public class ContentTypeHelper implements Serializable {
                         .collect(Collectors.toList());
     }
 
+    /**
+     * Atomically merges the given metadata patch into the specified Content Type's metadata and
+     * persists the result.
+     * <p>
+     * The operation is serialized per Content Type using a JVM-local striped lock keyed on the
+     * content type ID. This prevents lost updates when two concurrent PATCH requests target the
+     * same Content Type: the second request waits until the first has committed, then re-reads the
+     * freshest metadata before applying its own changes.
+     * <p>
+     * Note: the lock is JVM-local. Concurrent writes across cluster nodes are still subject to
+     * last-write-wins; true multi-node safety requires either optimistic locking on {@code modDate}
+     * or an atomic DB-level JSON merge, and should be addressed in a follow-up.
+     *
+     * @param idOrVar        ID or velocity variable name of the Content Type to patch
+     * @param metadataPatch  keys to merge; a {@code null} value removes the key from the map
+     * @param contentTypeAPI the API instance to use for reading and saving the Content Type
+     * @return the saved Content Type with the merged metadata
+     * @throws DotDataException     if a database error occurs
+     * @throws DotSecurityException if the user does not have permission to edit the Content Type
+     * @throws BadRequestException  if {@code DOT_STYLE_EDITOR_SCHEMA} is present but cannot be
+     *                              serialized to a JSON string
+     */
+    public ContentType mergeAndSaveMetadata(
+            final String idOrVar,
+            final Map<String, Object> metadataPatch,
+            final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+
+        // Defensive copy — protects against callers passing immutable maps (e.g. Map.of(...)),
+        // which would cause UnsupportedOperationException inside normalizeStyleEditorSchemaToString
+        final Map<String, Object> patch = new HashMap<>(metadataPatch);
+
+        // Validate/normalize before acquiring the lock — fail fast on bad input
+        normalizeStyleEditorSchemaToString(patch);
+
+        final IdentifierStripedLock lockManager =
+                DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+        try {
+            // Initial find to obtain the stable ID used as the lock key
+            final ContentType initial = contentTypeAPI.find(idOrVar);
+
+            return lockManager.tryLock("ct-metadata-" + initial.id(), () -> {
+                // Re-read inside the lock to pick up any writes committed before we acquired it
+                final ContentType current = contentTypeAPI.find(initial.id());
+                final Map<String, Object> merged = new HashMap<>(
+                        current.metadata() != null ? current.metadata() : Map.of());
+                patch.forEach((k, v) -> {
+                    if (v == null) {
+                        merged.remove(k);
+                    } else {
+                        merged.put(k, v);
+                    }
+                });
+                return contentTypeAPI.save(
+                        ContentTypeBuilder.builder(current).metadata(merged).build());
+            });
+        } catch (final DotDataException | DotSecurityException e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new DotDataException(
+                    "Error patching metadata for Content Type '" + idOrVar + "': " + t.getMessage(), t);
+        }
+    }
+
+    /**
+     * Normalizes the {@code DOT_STYLE_EDITOR_SCHEMA} entry in the given metadata patch map so that
+     * its value is always stored as a JSON string rather than a raw JSON object.
+     * <p>
+     * When a client sends the schema as a JSON object (e.g. a deserialized {@link java.util.Map}),
+     * Jackson binds it as a {@code LinkedHashMap}. Page-rendering code downstream casts the stored
+     * value directly to {@code String}, so tolerating a non-String value would cause a
+     * {@link ClassCastException} at render time. This method serializes any non-String, non-null
+     * value back to a compact JSON string and writes it in-place into {@code metadataPatch}.
+     * <p>
+     * Keys other than {@code DOT_STYLE_EDITOR_SCHEMA}, and a {@code null} value for that key
+     * (which signals "remove the key"), are left untouched.
+     *
+     * @param metadataPatch the mutable metadata patch map; modified in place when normalization
+     *                      is needed
+     * @throws BadRequestException if the value cannot be serialized to a JSON string
+     */
+    private static void normalizeStyleEditorSchemaToString(final Map<String, Object> metadataPatch) {
+        final Object rawSchema = metadataPatch.get("DOT_STYLE_EDITOR_SCHEMA");
+        if (rawSchema == null || rawSchema instanceof String) {
+            return;
+        }
+
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final String schemaStr;
+        try {
+            schemaStr = mapper.writeValueAsString(rawSchema);
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeHelper.class,
+                    "Could not serialize DOT_STYLE_EDITOR_SCHEMA to JSON string: " + e.getMessage());
+            throw new BadRequestException(
+                    "DOT_STYLE_EDITOR_SCHEMA must be a serializable JSON value");
+        }
+        metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
+    }
+
+    /**
+     * Preserves the existing Content Type metadata when the request body did not include a
+     * {@code metadata} key at all (i.e. the client is unaware of metadata and did not intend to
+     * clear it). Sending {@code "metadata": null} in the request body still clears it explicitly.
+     * <p>
+     * Because {@link ContentTypeBuilder#builder(ContentType)} does not copy the {@code innerFields}
+     * list (it is a plain private field, not an Immutables {@code @Value} property), this method
+     * re-attaches the field list via {@link ContentType#constructWithFields} after rebuilding the
+     * object so that the caller's field changes are not silently discarded.
+     *
+     * @param contentType    the Content Type produced from the request body, with fields already
+     *                       set via {@code constructWithFields}
+     * @param requestJson    the raw JSON body of the request, used to detect whether
+     *                       {@code metadata} was explicitly present
+     * @param contentTypeAPI the API instance used to fetch the current persisted state
+     * @return the original {@code contentType} if no metadata preservation was needed, or a new
+     *         instance with the existing metadata merged in (and the original fields re-attached)
+     * @throws DotDataException     if a database error occurs while fetching the existing type
+     * @throws DotSecurityException if the user lacks permission to read the existing type
+     */
+    public ContentType preserveMetadataIfAbsent(
+            final ContentType contentType,
+            final Object requestJson,
+            final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+
+        if (contentType.metadata() != null || requestContainsKey(requestJson, "metadata")) {
+            return contentType;
+        }
+        final ContentType existing = contentTypeAPI.find(contentType.id());
+        if (existing.metadata() == null) {
+            return contentType;
+        }
+        final List<Field> fields = contentType.fields();
+        final ContentType rebuilt = ContentTypeBuilder.builder(contentType)
+                .metadata(existing.metadata())
+                .build();
+        rebuilt.constructWithFields(fields);
+        return rebuilt;
+    }
+
+    /**
+     * Returns {@code true} if the raw request JSON contains the given top-level key, regardless of
+     * whether its value is {@code null} or a non-null object. Used to distinguish "key absent"
+     * (preserve server-side value) from "key explicitly set to null" (clear server-side value).
+     */
+    public static boolean requestContainsKey(final Object requestJson, final String key) {
+        if (requestJson == null) {
+            return false;
+        }
+        try {
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .readTree(requestJson.toString()).has(key);
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeResource.class,
+                    "Could not parse request JSON to check for key '" + key + "': " + e.getMessage());
+            return false;
+        }
+    }
 } // E:O:F:ContentTypeHelper.

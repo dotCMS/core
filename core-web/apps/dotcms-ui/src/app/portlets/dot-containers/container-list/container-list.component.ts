@@ -1,7 +1,15 @@
 import { Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, ElementRef, inject, OnDestroy, viewChild, viewChildren } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    inject,
+    OnDestroy,
+    viewChild,
+    viewChildren,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -19,7 +27,6 @@ import {
     DotMessageService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
@@ -30,9 +37,10 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -62,9 +70,10 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotRelativeDatePipe,
         ActionHeaderComponent,
         InputTextModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         DotContainerListStore,
         DotContainerListResolver,
@@ -77,7 +86,7 @@ export class ContainerListComponent implements OnDestroy {
     private dotMessageService = inject(DotMessageService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dialogService = inject(DialogService);
-    private siteService = inject(SiteService);
+    readonly #globalStore = inject(GlobalStore);
 
     actionsMenu = viewChild<Menu>('actionsMenu');
     rowContextMenu = viewChild<ContextMenu>('rowContextMenu');
@@ -99,9 +108,10 @@ export class ContainerListComponent implements OnDestroy {
             this.selectedContainers = [];
         });
 
-        this.siteService.switchSite$.subscribe(({ identifier }) =>
-            this.#store.getContainersByHost(identifier)
-        );
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(({ identifier }) => this.#store.getContainersByHost(identifier));
     }
 
     ngOnDestroy(): void {

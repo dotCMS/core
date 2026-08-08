@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -33,9 +33,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -52,7 +49,7 @@ import {
 
 import { DotCustomEventHandlerService } from './dot-custom-event-handler.service';
 
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../dot-menu.service';
@@ -94,10 +91,7 @@ describe('DotCustomEventHandlerService', () => {
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 UserModel,
                 StringUtils,
-                DotcmsEventsService,
                 LoggerService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 DotCurrentUserService,
@@ -340,6 +334,31 @@ describe('DotCustomEventHandlerService', () => {
         );
 
         expect<any>(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
+    });
+
+    it('should open push publish dialog even when feature-flag lookup has not resolved', () => {
+        setup({
+            getKeys: () => NEVER
+        });
+
+        const dataMock = {
+            assetIdentifier: '456',
+            dateFilter: false,
+            removeOnly: false,
+            isBundle: false
+        };
+
+        jest.spyOn(dotPushPublishDialogService, 'open');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'push-publish',
+                    data: dataMock
+                }
+            })
+        );
+
+        expect(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
     });
 
     it('should notify to open download bundle dialog', () => {

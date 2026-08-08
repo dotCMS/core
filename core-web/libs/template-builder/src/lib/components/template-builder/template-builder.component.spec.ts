@@ -1,5 +1,5 @@
 import { expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -17,11 +17,10 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
-    DotcmsEventsServiceMock,
     DotContainersServiceMock,
     DotCurrentUserServiceMock,
     LoginServiceMock,
@@ -100,10 +99,6 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: { currentSiteId: () => null }
-            },
-            {
-                provide: DotcmsEventsService,
-                useClass: DotcmsEventsServiceMock
             },
             DotEventsService
         ]

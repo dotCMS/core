@@ -3,7 +3,7 @@ import { Observable, of as observableOf } from 'rxjs';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotFieldService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
@@ -14,7 +14,6 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FieldPropertyService } from './field-properties.service';
-import { FieldService } from './field.service';
 import { validateDateDefaultValue } from './validators';
 
 import { FieldType } from '..';
@@ -52,7 +51,7 @@ describe('FieldPropertyService', () => {
         TestBed.configureTestingModule({
             providers: [
                 FieldPropertyService,
-                { provide: FieldService, useClass: TestFieldService },
+                { provide: DotFieldService, useClass: TestFieldService },
                 { provide: DotPropertiesService, useValue: dotPropertiesService }
             ]
         });
@@ -176,7 +175,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useValue: customFieldService },
+                    { provide: DotFieldService, useValue: customFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -209,7 +208,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -228,7 +227,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -247,7 +246,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -441,7 +440,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });

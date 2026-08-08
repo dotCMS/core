@@ -1,13 +1,19 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
+import {
+    DotContentDriveService,
+    DotFolderService,
+    DotPropertiesService
+} from '@dotcms/data-access';
 import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
@@ -39,6 +45,14 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotContentDriveService),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ]
@@ -313,6 +327,21 @@ describe('DotContentDriveStore', () => {
 
                 const request = store.$request();
 
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to false when a field filter is active', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { 'us.body': 'hello' },
+                    isTreeExpanded: false
+                });
+                store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+
+                const request = store.$request();
+
+                expect(request.userSearchable).toEqual({ body: 'hello' });
                 expect(request.showFolders).toBe(false);
             });
 
@@ -673,6 +702,14 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -691,6 +728,89 @@ describe('DotContentDriveStore - onInit', () => {
         });
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    /** Invokes the popstate handler the store registered in onInit with the given restored URL. */
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as jest.Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    });
+
+    it('re-hydrates the store when Back changes the filters param (fixes the stale-list bug)', () => {
+        popstate('/c/content-drive?filters=contentType:Blog');
+
+        expect(store.filters()).toEqual({ contentType: ['Blog'] });
+        // Reset to LOADING is what the search effect turns into a fresh load.
+        expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+    });
+
+    it('re-hydrates the store when Back changes the path param', () => {
+        popstate('/c/content-drive?path=/foo/bar');
+
+        expect(store.path()).toBe('/foo/bar');
+    });
+
+    it('re-hydrates the tree-expanded preference from the URL on Back', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: {},
+            isTreeExpanded: true
+        });
+
+        popstate('/c/content-drive?isTreeExpanded=false');
+
+        expect(store.isTreeExpanded()).toBe(false);
+    });
+
+    it('does NOT re-hydrate when only the editContent param changed (closing the panel via Back)', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: { contentType: ['Blog'] },
+            isTreeExpanded: true
+        });
+        const initSpy = jest.spyOn(store, 'initContentDrive');
+
+        // Same browsing params — only editContent differs (here, absent). Must be a no-op so the
+        // list isn't reset/reloaded just because the side panel closed.
+        popstate('/c/content-drive?path=/keep&filters=contentType:Blog&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+        expect(store.path()).toBe('/keep');
+        expect(store.filters()).toEqual({ contentType: ['Blog'] });
     });
 });
 
@@ -716,6 +836,14 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
             provideHttpClient()
         ]
     });
@@ -724,6 +852,11 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         spectator = createService();
         store = spectator.service;
         contentDriveService = spectator.inject(DotContentDriveService);
+        // Reset the shared ActivatedRoute mock so a test that seeds queryParams doesn't leak
+        // into the next (the mock's snapshot object is created once by the factory).
+        (
+            spectator.inject(ActivatedRoute).snapshot as { queryParams: Record<string, string> }
+        ).queryParams = {};
     });
 
     beforeEach(() => {
@@ -736,6 +869,57 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         expect(contentDriveService.search).toHaveBeenCalled();
         expect(store.items()).toEqual(MOCK_ITEMS);
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should defer the search while a restored us.* filter has no field metadata yet', () => {
+        // Cold URL restore: a us.* value is present but the field metadata hasn't loaded.
+        // Drive loadItems() directly (the init effect would overwrite state from empty queryParams).
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: { 'us.body': 'hello' },
+            isTreeExpanded: false
+        });
+
+        store.loadItems();
+
+        // No search yet — searching now would drop the us.* value from the payload.
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Once the field metadata arrives, the search fires with the value shaped in.
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        store.loadItems();
+
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({ userSearchable: { body: 'hello' } })
+        );
+    });
+
+    it('should release the deferred search once field metadata loads even when the request is unchanged', () => {
+        // Cold restore of a us.* key whose field is NOT among the type's searchable fields
+        // (removed / flag turned off / tampered URL). The payload builder drops it, so the
+        // request is structurally identical before and after the metadata loads. Without a
+        // tracked release, the $request dedupe guard would suppress the effect re-run and the
+        // portlet would stay stuck in LOADING forever. The search must still fire.
+        const route = spectator.inject(ActivatedRoute);
+        (route.snapshot as { queryParams: Record<string, string> }).queryParams = {
+            filters: 'us.ghost:x'
+        };
+
+        // First cycle: init restores the ghost chip, the search is deferred (no metadata yet).
+        spectator.flushEffects();
+        expect(store.userSearchableActive()).toEqual(['ghost']);
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Metadata loads but does NOT include 'ghost' → payload stays undefined (request unchanged).
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        spectator.flushEffects();
+
+        // The search fires anyway; the ineligible us.* value is simply not sent.
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.not.objectContaining({ userSearchable: expect.anything() })
+        );
     });
 
     it('should clear selected items when loading items', () => {
@@ -827,5 +1011,84 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         const lastPage = store.pages().at(-1);
         expect(lastPage?.hasMoreContent).toBe(false);
         expect(lastPage?.hasMoreFolders).toBe(false);
+    });
+
+    describe('User-searchable field filters', () => {
+        it('should add a chip to the active list without touching the filter bag', () => {
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+            // No us.* entry until it has a value — so the search request is unchanged.
+            expect(store.filters()['us.title']).toBeUndefined();
+        });
+
+        it('should not add the same field twice', () => {
+            store.addUserSearchableField('title');
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+        });
+
+        it('should clear all field filters, the active list and the cached fields', () => {
+            store.setUserSearchableFields([createFakeTextField({ variable: 'title' })]);
+            store.addUserSearchableField('title');
+            store.patchFilters({ 'us.title': 'review', baseType: ['1'] });
+
+            store.clearUserSearchableFilters();
+
+            expect(store.userSearchableActive()).toEqual([]);
+            expect(store.userSearchableFields()).toEqual([]);
+            expect(store.filters()['us.title']).toBeUndefined();
+            // Non us.* filters are preserved.
+            expect(store.filters()['baseType']).toEqual(['1']);
+        });
+
+        it('should reshape us.* values into the userSearchable payload by field type', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setUserSearchableFields([
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' })
+            ]);
+            store.patchFilters({ 'us.title': 'review', 'us.tags': 'angular,cms' });
+
+            expect(store.$request().userSearchable).toEqual({
+                title: 'review',
+                tags: ['angular', 'cms']
+            });
+        });
+
+        it('should restore the active list from us.* keys in the URL filters on init', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: { 'us.title': 'review', 'us.tags': 'angular', contentType: ['Blog'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.userSearchableActive()).toEqual(['title', 'tags']);
+        });
+    });
+
+    describe('Show In List fields', () => {
+        it('should set and expose the Show In List fields', () => {
+            const fields = [createFakeTextField({ variable: 'summary' })];
+
+            store.setShowInListFields(fields);
+
+            expect(store.showInListFields()).toEqual(fields);
+        });
+
+        it('should clear the Show In List fields when field filters are cleared', () => {
+            store.setShowInListFields([createFakeTextField({ variable: 'summary' })]);
+
+            store.clearUserSearchableFilters();
+
+            expect(store.showInListFields()).toEqual([]);
+        });
     });
 });

@@ -112,3 +112,23 @@ export interface DotContentletAttributes {
     'data-dot-on-number-of-pages': string;
     'data-dot-style-properties'?: string;
 }
+
+/**
+ *
+ * Minimal subset of contentlet data attributes required by DotCMS Analytics
+ * (impression & click tracking) to identify contentlets in live mode.
+ *
+ * In live mode the SDKs strip editor-only metadata, but Analytics still needs
+ * these attributes to resolve the contentlet behind an impression/click.
+ *
+ * @see DotContentletAttributes
+ * @interface DotAnalyticsContentletAttributes
+ */
+export type DotAnalyticsContentletAttributes = Pick<
+    DotContentletAttributes,
+    | 'data-dot-identifier'
+    | 'data-dot-inode'
+    | 'data-dot-title'
+    | 'data-dot-type'
+    | 'data-dot-basetype'
+>;

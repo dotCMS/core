@@ -1,4 +1,4 @@
-import { buildPageQuery, buildQuery, mapContentResponse } from './utils';
+import { buildPageQuery, buildQuery, mapContentResponse, removeUndefinedValues } from './utils';
 
 describe('buildPageQuery()', () => {
     it('generates a query containing the PageContent operation', () => {
@@ -122,5 +122,36 @@ describe('mapContentResponse()', () => {
 
     it('returns an empty object when keys array is empty', () => {
         expect(mapContentResponse({ blogs: [] }, [])).toEqual({});
+    });
+});
+
+describe('removeUndefinedValues()', () => {
+    it('removes keys whose value is undefined', () => {
+        const result = removeUndefinedValues({ a: 1, b: undefined, c: 'x' });
+        expect(result).toEqual({ a: 1, c: 'x' });
+        expect(result).not.toHaveProperty('b');
+    });
+
+    it('preserves null and other falsy values', () => {
+        expect(removeUndefinedValues({ a: null, b: 0, c: '', d: false })).toEqual({
+            a: null,
+            b: 0,
+            c: '',
+            d: false
+        });
+    });
+
+    it('returns an empty object when all values are undefined', () => {
+        expect(removeUndefinedValues({ a: undefined, b: undefined })).toEqual({});
+    });
+
+    it('returns an equivalent object when nothing is undefined', () => {
+        const input = { a: 1, b: 'x' };
+        expect(removeUndefinedValues(input)).toEqual(input);
+    });
+
+    it('produces a JSON-serializable object', () => {
+        const result = removeUndefinedValues({ a: 1, b: undefined });
+        expect(JSON.parse(JSON.stringify(result))).toEqual(result);
     });
 });

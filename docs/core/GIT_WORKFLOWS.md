@@ -85,110 +85,17 @@ chore(deps): update dependency versions
    - Security and quality checks
    - Documentation updates
 
-## Pre-Commit Hook System
+## Local Quality Checks
 
-The dotCMS project uses a sophisticated pre-commit hook system that ensures code quality and consistency before commits are made. The system includes both Maven-based and Husky-based hooks.
+Linting, formatting, and build validation run in CI on every PR (`.github/workflows/cicd_1-pr.yml`). There is no pre-commit hook — run checks locally when you want them:
 
-### Main Pre-Commit Hook (`.git/hooks/pre-commit`)
 ```bash
-#!/usr/bin/env bash
-echo "Running Maven pre-commit hook"
-./mvnw generate-resources -Pauto-format
-```
-
-This hook:
-- Runs Maven resource generation with auto-formatting
-- Ensures generated files are up-to-date
-- Applies consistent formatting across the codebase
-
-### Husky Pre-Commit Hook (`core-web/.husky/pre-commit`)
-The frontend uses a comprehensive Husky-based pre-commit hook that:
-
-#### Environment Setup
-- **SDKMAN Integration**: Ensures correct Java version via `.sdkmanrc`
-- **Node Version Management**: Uses `.nvmrc` for Node.js version consistency
-- **Yarn Installation**: Manages dependencies and lockfile updates
-
-#### Intelligent Build Detection
-- **Maven Analysis**: Determines if Maven compile is needed based on staged files
-- **OpenAPI Generation**: Automatically regenerates OpenAPI specs when REST endpoints change
-- **Conditional Execution**: Skips unnecessary builds for performance
-
-#### Code Quality Enforcement
-- **ESLint**: Runs `nx affected -t lint` with automatic fixing
-- **Prettier**: Runs `nx format:write` for consistent code formatting
-- **Dependency Updates**: Automatically updates `yarn.lock` when `package.json` changes
-
-#### File Management
-- **Generated Files**: Automatically stages generated files (OpenAPI specs, compiled assets)
-- **Backup System**: Creates backups of untracked files during processing
-- **Cleanup**: Removes temporary files and restores workspace state
-
-#### Error Handling
-- **ENOBUFS Auto-Fix**: Automatically handles Node.js buffer issues
-- **Cache Management**: Resets Nx cache when needed
-- **Graceful Degradation**: Continues processing even if non-critical steps fail
-
-### Pre-Commit Hook Workflow
-
-#### For Backend Changes
-1. **Java Environment**: Sets up correct Java version via SDKMAN
-2. **Maven Compile**: Runs if REST API files are modified
-3. **OpenAPI Update**: Regenerates and stages OpenAPI specifications
-4. **Resource Generation**: Ensures all generated resources are current
-
-#### For Frontend Changes
-1. **Node Environment**: Sets up correct Node.js and Yarn versions
-2. **Dependency Check**: Validates and updates `yarn.lock`
-3. **Linting**: Runs ESLint with auto-fix on affected files
-4. **Formatting**: Applies Prettier formatting to all code
-5. **SDK Build**: Builds SDK-UVE components if affected
-
-#### For Mixed Changes
-1. **Full Environment Setup**: Configures both Java and Node environments
-2. **Maven Processing**: Handles backend compilation and resource generation
-3. **Frontend Processing**: Runs full frontend quality checks
-4. **File Coordination**: Ensures all generated files are properly staged
-
-### Pre-Commit Hook Configuration
-
-#### Required Environment
-- **SDKMAN**: For Java version management
-- **Node.js**: Project-specific version in `installs/node`
-- **Yarn**: Project-specific version in `installs/node/yarn`
-
-#### Key Files
-- `.git/hooks/pre-commit`: Main Maven hook
-- `core-web/.husky/pre-commit`: Frontend hook
-- `.sdkmanrc`: Java version specification
-- `core-web/.nvmrc`: Node.js version specification
-
-### Bypassing Pre-Commit Hooks
-In exceptional cases, pre-commit hooks can be bypassed:
-```bash
-git commit --no-verify -m "commit message"
-```
-
-**⚠️ Warning**: Only use `--no-verify` for emergency fixes. All bypassed commits must be fixed in follow-up commits.
-
-### Troubleshooting Pre-Commit Issues
-
-#### Common Issues
-1. **SDKMAN Not Found**: Install SDKMAN from https://github.com/dotCMS/dotcms-utilities
-2. **Node Version Mismatch**: Run `nvm use` in project root
-3. **Yarn Lock Conflicts**: Run `yarn install` to update lockfile
-4. **ENOBUFS Errors**: Hook auto-fixes, but manual `yarn nx reset` may be needed
-
-#### Manual Fix Commands
-```bash
-# Reset environment
 cd core-web
-yarn nx reset
-yarn install
-
-# Run checks manually
-yarn nx affected -t lint --fix=true
-yarn nx format:write
+pnpm install                                    # refresh deps after pulling
+pnpm exec nx affected -t lint --fix=true        # lint changed projects
+pnpm exec nx format:write                       # apply prettier
+pnpm exec nx affected -t test                   # run tests for changed projects
+pnpm exec nx affected -t build                  # build changed projects
 ```
 
 ## CI/CD Pipeline Architecture

@@ -2435,21 +2435,40 @@
       "name": "Traditional Style Editor",
       "item": [
         {
-          "name": "Build Content Type Schema",
+          "name": "Save Content Type Schema",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "const entity = pm.response.json().entity;",
-                  "pm.expect(entity).to.not.be.null;",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
                   "",
                   "const SCHEMA = {",
-                  "    \"contentType\": entity.name,",
+                  "    \"contentType\": contentTypeName,",
                   "    \"sections\": [",
                   "        {",
                   "            \"title\": \"Layout\",",
@@ -2475,9 +2494,61 @@
                   "    ]",
                   "};",
                   "",
-                  "pm.test(\"Append SCHEMA in the contentType metadata\", function () {",
-                  "    const contentTypeInfo = { ...entity, metadata: { \"DOT_STYLE_EDITOR_SCHEMA\": JSON.stringify(SCHEMA) } };",
-                  "    pm.expect(contentTypeInfo.metadata.DOT_STYLE_EDITOR_SCHEMA).to.exist;",
+                  "pm.collectionVariables.set(\"styleSchema\", JSON.stringify(SCHEMA));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}/metadata",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}",
+                "metadata"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Build Content Type Schema without metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "pm.expect(entity).to.not.be.null;",
+                  "",
+                  "pm.test(\"remove metadata from the content type\", function () {",
+                  "    const { metadata, ...contentTypeInfo } = entity;",
+                  "    pm.expect(contentTypeInfo).to.not.have.property(\"metadata\");",
+                  "    ",
                   "    pm.collectionVariables.set(\"contentTypeInfo\", JSON.stringify(contentTypeInfo));",
                   "});"
                 ],
@@ -2517,7 +2588,7 @@
           "response": []
         },
         {
-          "name": "Save Content Type Schema",
+          "name": "Save Content Type Schema preserves metadata",
           "event": [
             {
               "listen": "test",
@@ -2533,9 +2604,9 @@
                   "});",
                   "",
                   "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(entity).to.have.property(\"metadata\");",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
                   "    const schema = JSON.parse(schemaStr);",
-                  "",
                   "    pm.expect(schema.contentType).to.eql(contentTypeName);",
                   "});"
                 ],
@@ -2547,72 +2618,7 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "*/*"
-              },
-              {
-                "key": "Accept-Language",
-                "value": "en-US,en;q=0.9"
-              },
-              {
-                "key": "Cache-Control",
-                "value": "no-cache"
-              },
-              {
-                "key": "Connection",
-                "value": "keep-alive"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Origin",
-                "value": "http://localhost:8082"
-              },
-              {
-                "key": "Pragma",
-                "value": "no-cache"
-              },
-              {
-                "key": "Referer",
-                "value": "http://localhost:8082/dotAdmin/"
-              },
-              {
-                "key": "Sec-Fetch-Dest",
-                "value": "empty"
-              },
-              {
-                "key": "Sec-Fetch-Mode",
-                "value": "cors"
-              },
-              {
-                "key": "Sec-Fetch-Site",
-                "value": "same-origin"
-              },
-              {
-                "key": "User-Agent",
-                "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
-              },
-              {
-                "key": "sec-ch-ua",
-                "value": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\""
-              },
-              {
-                "key": "sec-ch-ua-mobile",
-                "value": "?0"
-              },
-              {
-                "key": "sec-ch-ua-platform",
-                "value": "\"macOS\""
-              },
-              {
-                "key": "Cookie",
-                "value": "dmid=cc4b4ba4-72d9-472c-8b50-d38bf309f281; sitevisitscookie=2; DWRSESSIONID=KdOAyjjhQWi5OYiSuV3Dp7lGTPp; rme=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI3MTgxNjdjOC1jN2ZmLTQyYzAtOWY1MC1mMjdlMjI4NWU2ZTMiLCJ4bW9kIjoxNzc0MDE3NjQ0Njk3LCJzdWIiOiIwdmR4bkVDdk9KVVgyS1ROQVhRUmp3PT0iLCJpYXQiOjE3NzQwMTc2NDQsImlzcyI6ImRvdGNtcy1wcm9kdWN0aW9uIiwiZXhwIjoxNzc0MTA0MDQ0fQ.b3HPe5r-xHdZ7C8IPQsRYH4WAmpXmuHKIg0mJpZAx5s; JSESSIONID=77500842A9AA7F63A230C5705D2A0D0E"
-              }
-            ],
+            "header": [],
             "body": {
               "mode": "raw",
               "raw": "{{contentTypeInfo}}",
@@ -2633,6 +2639,177 @@
                 "contenttype",
                 "id",
                 "{{contentTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Content Type metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    pm.expect(entity).to.have.property(\"metadata\");",
+                  "    pm.expect(entity.metadata).to.eql({});",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+                  "const jsonContentTypeInfo = JSON.parse(contentTypeInfo);",
+                  "",
+                  "// Crear una copia con metadata en null",
+                  "const contentTypeInfoEmptyMetadata = { ...jsonContentTypeInfo, metadata: null };",
+                  "",
+                  "pm.collectionVariables.set(",
+                  "  \"contentTypeInfoEmptyMetadata\", JSON.stringify(contentTypeInfoEmptyMetadata)",
+                  ");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{{contentTypeInfoEmptyMetadata}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Content Type Schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const SCHEMA = {",
+                  "    \"contentType\": contentTypeName,",
+                  "    \"sections\": [",
+                  "        {",
+                  "            \"title\": \"Layout\",",
+                  "            \"fields\": [",
+                  "                {",
+                  "                    \"type\": \"input\",",
+                  "                    \"label\": \"New Field\",",
+                  "                    \"id\": \"newField\",",
+                  "                    \"config\": {",
+                  "                        \"inputType\": \"text\"",
+                  "                    }",
+                  "                },",
+                  "                {",
+                  "                    \"type\": \"input\",",
+                  "                    \"label\": \"New Field\",",
+                  "                    \"id\": \"newField\",",
+                  "                    \"config\": {",
+                  "                        \"inputType\": \"text\"",
+                  "                    }",
+                  "                }",
+                  "            ]",
+                  "        }",
+                  "    ]",
+                  "};",
+                  "",
+                  "pm.collectionVariables.set(\"styleSchema\", JSON.stringify(SCHEMA));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}/metadata",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype",
+                "id",
+                "{{contentTypeId}}",
+                "metadata"
               ]
             }
           },
@@ -3040,21 +3217,40 @@
           "response": []
         },
         {
-          "name": "Build Content Type Schema 2",
+          "name": "Save Content Type Schema 2",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "const entity = pm.response.json().entity;",
-                  "pm.expect(entity).to.not.be.null;",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
                   "",
                   "const SCHEMA = {",
-                  "    \"contentType\": entity.name,",
+                  "    \"contentType\": contentTypeName,",
                   "    \"sections\": [",
                   "        {",
                   "            \"title\": \"Typography\",",
@@ -3081,11 +3277,7 @@
                   "    ]",
                   "};",
                   "",
-                  "pm.test(\"Append SCHEMA in the contentType metadata\", function () {",
-                  "    const contentTypeInfo = { ...entity, metadata: { \"DOT_STYLE_EDITOR_SCHEMA\": JSON.stringify(SCHEMA) } };",
-                  "    pm.expect(contentTypeInfo.metadata.DOT_STYLE_EDITOR_SCHEMA).to.exist;",
-                  "    pm.collectionVariables.set(\"contentTypeInfo_2\", JSON.stringify(contentTypeInfo));",
-                  "});"
+                  "pm.collectionVariables.set(\"styleSchema_2\", JSON.stringify(SCHEMA));"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -3094,134 +3286,11 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
+            "method": "PATCH",
             "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "contenttype",
-                "id",
-                "{{contentTypeId_2}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Save Content Type Schema 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo_2\");",
-                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
-                  "",
-                  "const entity = pm.response.json().entity;",
-                  "",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                  "    const schema = JSON.parse(schemaStr);",
-                  "",
-                  "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "*/*"
-              },
-              {
-                "key": "Accept-Language",
-                "value": "en-US,en;q=0.9"
-              },
-              {
-                "key": "Cache-Control",
-                "value": "no-cache"
-              },
-              {
-                "key": "Connection",
-                "value": "keep-alive"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Origin",
-                "value": "http://localhost:8082"
-              },
-              {
-                "key": "Pragma",
-                "value": "no-cache"
-              },
-              {
-                "key": "Referer",
-                "value": "http://localhost:8082/dotAdmin/"
-              },
-              {
-                "key": "Sec-Fetch-Dest",
-                "value": "empty"
-              },
-              {
-                "key": "Sec-Fetch-Mode",
-                "value": "cors"
-              },
-              {
-                "key": "Sec-Fetch-Site",
-                "value": "same-origin"
-              },
-              {
-                "key": "User-Agent",
-                "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
-              },
-              {
-                "key": "sec-ch-ua",
-                "value": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\""
-              },
-              {
-                "key": "sec-ch-ua-mobile",
-                "value": "?0"
-              },
-              {
-                "key": "sec-ch-ua-platform",
-                "value": "\"macOS\""
-              },
-              {
-                "key": "Cookie",
-                "value": "dmid=cc4b4ba4-72d9-472c-8b50-d38bf309f281; sitevisitscookie=2; DWRSESSIONID=KdOAyjjhQWi5OYiSuV3Dp7lGTPp; rme=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI3MTgxNjdjOC1jN2ZmLTQyYzAtOWY1MC1mMjdlMjI4NWU2ZTMiLCJ4bW9kIjoxNzc0MDE3NjQ0Njk3LCJzdWIiOiIwdmR4bkVDdk9KVVgyS1ROQVhRUmp3PT0iLCJpYXQiOjE3NzQwMTc2NDQsImlzcyI6ImRvdGNtcy1wcm9kdWN0aW9uIiwiZXhwIjoxNzc0MTA0MDQ0fQ.b3HPe5r-xHdZ7C8IPQsRYH4WAmpXmuHKIg0mJpZAx5s; JSESSIONID=77500842A9AA7F63A230C5705D2A0D0E"
-              }
-            ],
             "body": {
               "mode": "raw",
-              "raw": "{{contentTypeInfo_2}}",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema_2}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3229,7 +3298,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}",
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}/metadata",
               "host": [
                 "{{serverURL}}"
               ],
@@ -3238,7 +3307,8 @@
                 "v1",
                 "contenttype",
                 "id",
-                "{{contentTypeId_2}}"
+                "{{contentTypeId_2}}",
+                "metadata"
               ]
             }
           },
@@ -3400,16 +3470,16 @@
                   "    pm.expect(schemaScript).to.include(\"dotUVE.registerStyleEditorSchemas\");",
                   "});",
                   "",
-                  "// We have 2 contentlets rendered in the page, but both have the same Content Type so we expect only one SCHEMA",
-                  "pm.test(\"Validate SCHEMA is not duplicated in registerStyleEditorSchemas\", function () {",
-                  "    // Regular expression to find the script that contains 'initDotUVE'",
+                  "// We have 2 contentlets of different Content Types in the page, so we expect 2 distinct SCHEMAs",
+                  "pm.test(\"Validate 2 distinct schemas are present in registerStyleEditorSchemas\", function () {",
+                  "    // Regular expression to find all contentType entries in the registerStyleEditorSchemas call",
                   "    const contentTypeRegex = /\"contentType\":\"(.*?)\"/g;",
                   "",
-                  "    // Gets all schemas pased to the registerStyleEditorSchemas",
+                  "    // Gets all schemas passed to the registerStyleEditorSchemas",
                   "    const schemas = pageRendered.match(contentTypeRegex);",
                   "    ",
                   "    pm.expect(schemas).to.exist;",
-                  "    pm.expect(schemas.length).to.equal(2, `Expected 2 schema but found ${schemas.length}`);",
+                  "    pm.expect(schemas.length).to.equal(2, `Expected 2 schemas but found ${schemas.length}`);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -3641,19 +3711,11 @@
       "value": ""
     },
     {
-      "key": "contentTypeInfo",
-      "value": ""
-    },
-    {
       "key": "contentTypeId_2",
       "value": ""
     },
     {
       "key": "contentTypeVarName_2",
-      "value": ""
-    },
-    {
-      "key": "contentTypeInfo_2",
       "value": ""
     },
     {
@@ -3666,6 +3728,22 @@
     },
     {
       "key": "contentTypeName_2",
+      "value": ""
+    },
+    {
+      "key": "styleSchema",
+      "value": ""
+    },
+    {
+      "key": "styleSchema_2",
+      "value": ""
+    },
+    {
+      "key": "contentTypeInfo",
+      "value": ""
+    },
+    {
+      "key": "contentTypeInfoEmptyMetadata",
       "value": ""
     }
   ]

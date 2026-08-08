@@ -13,12 +13,16 @@ import { inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotFolder } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
-import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
+import {
+    applyLoadMoreToHierarchy,
+    FolderTreeHierarchyLevel,
+    getFolderHierarchyByPath,
+    getFolderNodesByPath
+} from '../../../utils/functions';
 import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
@@ -58,9 +62,8 @@ export function withSidebar() {
                 };
 
                 const urlFolderPath = store.path() || '';
-                const fullPath = `${currentSite.hostname}${urlFolderPath}`;
 
-                getFolderHierarchyByPath(fullPath, dotFolderService)
+                getFolderHierarchyByPath(urlFolderPath, currentSite, dotFolderService)
                     .pipe(
                         take(1),
                         catchError((response) => {
@@ -71,19 +74,25 @@ export function withSidebar() {
                                 console.error('Error loading folders:', response);
                             }
 
-                            return of([[realAllFolder as DotFolder]]);
+                            return of([] as FolderTreeHierarchyLevel[]);
                         })
                     )
-                    .subscribe((folders) => {
+                    .subscribe((levels) => {
                         const { rootNodes, selectedNode } = buildTreeFolderNodes({
-                            folderHierarchyLevels: folders,
+                            folderHierarchyLevels: levels.map((level) => level.folders),
                             targetPath: urlFolderPath || '/',
                             rootNode: realAllFolder
                         });
 
+                        const rootsWithLoadMore = applyLoadMoreToHierarchy(
+                            rootNodes,
+                            levels,
+                            currentSite.hostname
+                        );
+
                         patchState(store, {
                             sidebarLoading: false,
-                            folders: [realAllFolder, ...rootNodes],
+                            folders: [realAllFolder, ...rootsWithLoadMore],
                             selectedNode: selectedNode
                         });
                     });
@@ -94,12 +103,23 @@ export function withSidebar() {
              */
             loadChildFolders: (
                 path: string,
-                hostname?: string
-            ): Observable<{ parent: DotFolder; folders: DotFolderTreeNodeItem[] }> => {
-                const host = hostname || store.currentSite()?.hostname;
-                const fullPath = `${host}${path}`;
+                hostname?: string,
+                page = 1
+            ): Observable<{ folders: DotFolderTreeNodeItem[]; totalEntries: number }> => {
+                const currentSite = store.currentSite();
 
-                return getFolderNodesByPath(fullPath, dotFolderService);
+                if (!currentSite) {
+                    return of({ folders: [], totalEntries: 0 });
+                }
+
+                const host = hostname || currentSite.hostname;
+
+                return getFolderNodesByPath(
+                    path,
+                    { ...currentSite, hostname: host },
+                    dotFolderService,
+                    page
+                );
             },
             /**
              * Sets the selected node

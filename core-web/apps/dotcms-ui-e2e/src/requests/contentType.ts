@@ -1,5 +1,6 @@
 import { APIRequestContext, expect } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
+import { createFakePayloadTextField } from '@utils/dot-content-types.mock';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
 export const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
@@ -12,6 +13,13 @@ export interface ContentTypeField {
     sortOrder: number;
     [key: string]: unknown;
 }
+
+/**
+ * Field payload accepted when creating a content type via POST /api/v1/contenttype.
+ * Only the properties needed by the API are required; extra props (e.g. `relationships`,
+ * `required`) are allowed via the index signature.
+ */
+export type ContentTypeFieldInput = ContentTypeField;
 
 export interface ContentType {
     id: string;
@@ -31,7 +39,9 @@ export interface ContentType {
     systemActionMappings: Record<string, string>;
 }
 
-export type CreateContentTypePayload = Partial<Omit<ContentType, 'id'>>;
+export type CreateContentTypePayload = Partial<Omit<ContentType, 'id' | 'fields'>> & {
+    fields?: ContentTypeFieldInput[];
+};
 
 function authHeaders() {
     return {
@@ -53,7 +63,14 @@ export async function createFakeContentType(
         folder: 'SYSTEM_FOLDER',
         name: 'New content type',
         metadata: { CONTENT_EDITOR2_ENABLED: true },
-        workflow: [SYSTEM_WORKFLOW_ID]
+        workflow: [SYSTEM_WORKFLOW_ID],
+        fields: [
+            createFakePayloadTextField({
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            })
+        ]
     };
 
     return createContentType(request, { ...defaults, ...data });

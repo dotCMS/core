@@ -1,4 +1,6 @@
-import { DotCMSContentType, DotPageContainer, DotPageContent } from '@dotcms/dotcms-models';
+import { DotCMSContentType } from './dot-content-types.model';
+import { DotPageContainer } from './dot-page-container.model';
+import { DotPageContent } from './dot-page-content.model';
 
 export interface DotContentletEvent<T = Record<string, unknown>> {
     name: string;

@@ -77,6 +77,40 @@ Custom SCSS is only allowed for:
 - **Flat SCSS structure** — no deeply nested selectors (max 3 levels).
 - **No `!important`** unless justified with a comment.
 
+## Tags vs Chips
+
+PrimeNG ships two visually similar but semantically different components. Pick by intent, not appearance.
+
+- **`p-tag`** — informative, read-only status display. Use it for anything that communicates state the user does not interact with directly: content status badges, locale labels, etc. Tags carry a `severity`, so colors come from native severity states (configured once in the `tag` block of the theme preset), never from per-template classes.
+- **`p-chip`** — interactive or removable elements: filters, removable selections, anything the user can click or dismiss. Chips are mostly neutral gray and do not express severity.
+
+### Decision rule
+
+1. **Showing a contentlet status?** Use the shared **`<dot-contentlet-status-badge>`** component (`libs/ui`). It takes the `DotContentState` and resolves the label, severity, and translation internally — do not hand-roll a `p-tag` for contentlet statuses.
+
+   ```html
+   <dot-contentlet-status-badge [state]="contentlet" />
+   ```
+
+2. **Showing any other status / read-only state?** Use `p-tag` with the matching `severity` (see mapping below). Example: the version-history timeline shows *per-version* states — not a contentlet `DotContentState` — so it uses raw tags: this version is live → `success`, working copy → `warn`, experiment variant → `info`.
+3. **Anything without a status** — interactive, removable, or clickable items (filters, selections) — use `p-chip`.
+
+### Severity mapping convention
+
+| Severity  | Status |
+|-----------|--------|
+| `success` | Published / live |
+| `danger`  | Archived / deleted |
+| `info`    | Revision / new |
+| `warn`    | Draft |
+
+### Rules
+
+- **Always use `<dot-contentlet-status-badge>` for contentlet statuses** — never a raw `p-tag` or `p-chip`.
+- **Locale/language labels use `p-tag severity="info"`** — locales are informative, never chips (e.g. the Locale column in Content Drive, the asset card language label). This applies to read-only locale *display*; interactive locale *selectors* are designed per area.
+- **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
+- **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
+
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Component rules, templates
 - [docs/frontend/README.md](./README.md) — Index of all frontend docs

@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -14,15 +14,13 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
-import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotPagesTableComponent } from './dot-pages-table.component';
 
@@ -152,7 +150,7 @@ describe('DotPagesTableComponent', () => {
             TableModule,
             TooltipModule,
             DotAutofocusDirective,
-            DotContentletStatusChipComponent,
+            DotContentletStatusBadgeComponent,
             DotMessagePipe,
             DotRelativeDatePipe,
             ReactiveFormsModule
@@ -162,11 +160,7 @@ describe('DotPagesTableComponent', () => {
             MockProvider(DotFormatDateService),
             MockProvider(DotPageActionsService, {
                 getItems: jest.fn().mockReturnValue(of([]))
-            }),
-            {
-                provide: DotcmsEventsService,
-                useClass: DotcmsEventsServiceMock
-            }
+            })
         ]
     });
 

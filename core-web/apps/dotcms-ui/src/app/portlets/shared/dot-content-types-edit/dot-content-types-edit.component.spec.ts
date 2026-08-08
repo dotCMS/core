@@ -21,6 +21,7 @@ import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
+    DotFieldService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
@@ -49,12 +50,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-
-// eslint-disable-next-line max-len
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -187,7 +185,7 @@ describe('DotContentTypesEditComponent', () => {
                 DotHttpErrorManagerService,
                 DotMenuService,
                 DotEventsService,
-                FieldService,
+                DotFieldService,
                 Location,
                 { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
             ]
@@ -278,6 +276,18 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should have create title create mode', () => {
             expect(comp.templateInfo.header).toEqual('Create Content');
+        });
+
+        it('should disable the dialog focusOnShow while leaving focus trap and closable alone', () => {
+            // PrimeNG focuses the first focusable element in DOM order once the open transition
+            // ends, which would steal focus from the Name input. See dialogFocusOnShow.
+            // The real focus outcome is asserted in
+            // content-types-form-dialog-focus.integration.spec.ts.
+            expect(dialog.componentInstance.focusOnShow).toBe(false);
+            expect(dialog.componentInstance.closable).toBe(false);
+            // focusTrap is never bound by us -- this asserts PrimeNG's default as a tripwire, so
+            // disabling focusOnShow can never be mistaken for disabling the trap too.
+            expect(dialog.componentInstance.focusTrap).toBe(true);
         });
 
         describe('create', () => {
@@ -498,7 +508,7 @@ describe('DotContentTypesEditComponent', () => {
     };
 
     describe('edit mode', () => {
-        let fieldService: FieldService;
+        let fieldService: DotFieldService;
         let queryParams: Subject<any>;
 
         beforeEach(waitForAsync(() => {
@@ -532,7 +542,7 @@ describe('DotContentTypesEditComponent', () => {
                     DotHttpErrorManagerService,
                     DotMenuService,
                     DotEventsService,
-                    FieldService,
+                    DotFieldService,
                     Location
                 ]
             });
@@ -541,7 +551,7 @@ describe('DotContentTypesEditComponent', () => {
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 
-            fieldService = de.injector.get(FieldService);
+            fieldService = de.injector.get(DotFieldService);
             crudService = fixture.debugElement.injector.get(DotCrudService);
             location = fixture.debugElement.injector.get(Location);
             dotRouterService = fixture.debugElement.injector.get(DotRouterService);
@@ -565,12 +575,9 @@ describe('DotContentTypesEditComponent', () => {
             expect(dropZone.componentInstance.contentType.name).toBe('name');
         });
 
-        it('should set data, fields and  cache', () => {
+        it('should set data and fields', () => {
             expect(comp.data).toBe(fakeContentType);
             expect(comp.layout).toBe(fakeContentType.layout);
-
-            const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-            expect(dotEditContentTypeCacheService.get()).toEqual(fakeContentType);
         });
 
         it('should have dot-content-type-layout', () => {
@@ -593,6 +600,17 @@ describe('DotContentTypesEditComponent', () => {
 
             expect(dialog).not.toBeNull();
             expect(comp.show()).toBeTruthy();
+        });
+
+        it('should disable the dialog focusOnShow while leaving focus trap and closable alone', () => {
+            clickEditButton();
+
+            // Same reason as create mode: PrimeNG would steal focus from the Name input after the
+            // open transition. focusTrap is an independent input and stays enabled.
+            expect(dialog.componentInstance.focusOnShow).toBe(false);
+            expect(dialog.componentInstance.closable).toBe(true);
+            // See the create-mode counterpart: asserting PrimeNG's own focusTrap default.
+            expect(dialog.componentInstance.focusTrap).toBe(true);
         });
 
         it('should send notifications to add rows & tab divider', () => {
@@ -622,6 +640,40 @@ describe('DotContentTypesEditComponent', () => {
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        }));
+
+        it('should close the dialog when cancel button is clicked in edit mode', fakeAsync(() => {
+            clickEditButton();
+            tick();
+            fixture.detectChanges();
+            expect(comp.show()).toBe(true);
+
+            const cancelButton = de.query(By.css('[data-testId="dotDialogCancelAction"]'));
+            expect(cancelButton).toBeTruthy();
+
+            cancelButton.nativeElement.click();
+            fixture.detectChanges();
+            tick();
+
+            // Edit-mode Cancel must flip show() to false (regression fix for #36298);
+            // routing stays on the edit URL — onDialogHide clears the open-config query param
+            // instead of routing back to the portlet list.
+            expect(comp.show()).toBe(false);
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        }));
+
+        it('should mount the form on open and unmount it on dialog hide', fakeAsync(() => {
+            // The "form stays mounted through the close fade" guarantee depends on p-dialog's
+            // post-animation onHide timing, which jsdom doesn't simulate. We assert the unit-
+            // testable invariants: form is mounted while open, unmounted after onDialogHide.
+            clickEditButton();
+            tick();
+            fixture.detectChanges();
+            expect(comp.$renderForm()).toBe(true);
+
+            comp.onDialogHide();
+            fixture.detectChanges();
+            expect(comp.$renderForm()).toBe(false);
         }));
 
         it('should update fields attribute when a field is edit', () => {
@@ -841,13 +893,10 @@ describe('DotContentTypesEditComponent', () => {
             };
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
-            contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+            contentTypeFieldsDropZone.componentInstance.removeFields.emit([fieldToRemove]);
 
-            // then: the saveFields method has to be called in FileService ...
-            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith(
-                '1234567890',
-                fieldToRemove
-            );
+            // then: the saveFields method has to be called in FileService with the field ids ...
+            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith('1234567890', ['3']);
             // ...and the comp.data.fields has to be set to the fields return by the service
             expect(comp.layout).toEqual(layout);
         });
@@ -869,7 +918,7 @@ describe('DotContentTypesEditComponent', () => {
             };
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
-            contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+            contentTypeFieldsDropZone.componentInstance.removeFields.emit([fieldToRemove]);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         });
@@ -1016,6 +1065,8 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
 
                 expect(comp.startFormDialog).toHaveBeenCalled();
+                // Opening via query param gets the same focus handling as every other trigger.
+                expect(comp.dialogFocusOnShow).toBe(false);
             }));
 
             it('should not open form dialog when open-config is false', (done) => {

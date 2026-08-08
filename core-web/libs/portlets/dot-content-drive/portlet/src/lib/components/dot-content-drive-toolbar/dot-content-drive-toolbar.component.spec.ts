@@ -1,21 +1,50 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
+    DotCategoriesService,
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotMessageService,
+    DotTagsService
 } from '@dotcms/data-access';
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { createFakeTextField, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
-import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES } from '../../shared/mocks';
+import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+
+/**
+ * The creation buttons (Upload + "Add New") are driven by an animation state machine that hides
+ * them for {@link ANIMATION_DELAY} ms on init and whenever a selection toggles. Wait past that
+ * window before asserting they are visible. Mirrors the delay used in the component.
+ */
+const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolbarComponent>) => {
+    // First detection runs the selection effect so the "show" timer gets scheduled; then we wait
+    // past the delay and render the settled state.
+    spectator.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    spectator.detectChanges();
+};
 
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
@@ -24,12 +53,20 @@ describe('DotContentDriveToolbarComponent', () => {
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
     const filtersSignal = signal<Record<string, unknown>>({});
+    const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
+    const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
+        undefined
+    );
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
+                // The toolbar now renders from the visual (panel-aware) computed; reusing the same
+                // signal keeps these tests driving one value, since they don't need to distinguish
+                // the real preference from a panel-forced override.
+                isTreeVisuallyExpanded: isTreeExpandedSignal,
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -37,7 +74,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 clearFilters: jest.fn(),
                 filters: filtersSignal,
                 setDialog: jest.fn(),
-                selectedItems: jest.fn().mockReturnValue([])
+                selectedItems: selectedItemsSignal,
+                selectedNode: selectedNodeSignal,
+                userSearchableFields: signal([]),
+                userSearchableActive: signal<string[]>([]),
+                setUserSearchableFields: jest.fn(),
+                addUserSearchableField: jest.fn(),
+                clearUserSearchableFilters: jest.fn()
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -57,6 +100,29 @@ describe('DotContentDriveToolbarComponent', () => {
                 get: jest.fn().mockReturnValue(of())
             }),
             mockProvider(DotHttpErrorManagerService),
+            // Field-filter chips render inside the toolbar; provide their dependencies.
+            mockProvider(DotTagsService, {
+                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
+            }),
+            mockProvider(DotCategoriesService, {
+                getChildrenPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
+                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
+                getCategory: jest.fn().mockReturnValue(of(null))
+            }),
+            mockProvider(DotContentletService, {
+                getContentletByInode: jest.fn().mockReturnValue(of(null))
+            }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            },
+            // Needed once a selection exists: that mounts the workflow-actions child, which injects
+            // both of these.
+            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: jest.fn(),
+                editPage: jest.fn()
+            }),
             provideHttpClient()
         ],
         detectChanges: false
@@ -72,6 +138,8 @@ describe('DotContentDriveToolbarComponent', () => {
         jest.clearAllMocks();
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
+        selectedItemsSignal.set([]);
+        selectedNodeSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -158,6 +226,86 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     describe('$items', () => {
+        it('should open the content type selector for "All Content Types"', () => {
+            const items = spectator.component.$items();
+
+            const allContentTypesItem = items.find(
+                (item) => item.label === 'content-drive.add-new.all-content-types'
+            );
+
+            expect(allContentTypesItem).toBeTruthy();
+
+            allContentTypesItem?.command?.({});
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+                header: 'content-drive.dialog.content-type-selector.header',
+                payload: { listType: DotUVEPaletteListTypes.ALL_CONTENT_TYPES }
+            });
+        });
+
+        it('should NOT render the removed "Asset" menu item', () => {
+            const items = spectator.component.$items();
+
+            const assetItem = items.find(
+                (item) => item.label === 'content-drive.add-new.context-menu.asset'
+            );
+
+            expect(assetItem).toBeUndefined();
+        });
+
+        it.each([
+            {
+                labelKey: 'content-drive.base-type.content',
+                listType: DotUVEPaletteListTypes.ALL_CONTENT
+            },
+            {
+                labelKey: 'content-drive.base-type.widget',
+                listType: DotUVEPaletteListTypes.ALL_WIDGET
+            },
+            {
+                labelKey: 'content-drive.base-type.fileasset',
+                listType: DotUVEPaletteListTypes.ALL_FILEASSET
+            },
+            {
+                labelKey: 'content-drive.base-type.dotasset',
+                listType: DotUVEPaletteListTypes.ALL_DOTASSET
+            },
+            {
+                labelKey: 'content-drive.base-type.persona',
+                listType: DotUVEPaletteListTypes.ALL_PERSONA
+            },
+            {
+                labelKey: 'content-drive.base-type.vanity_url',
+                listType: DotUVEPaletteListTypes.ALL_VANITY_URL
+            },
+            {
+                labelKey: 'content-drive.base-type.key_value',
+                listType: DotUVEPaletteListTypes.ALL_KEY_VALUE
+            },
+            {
+                labelKey: 'content-drive.base-type.htmlpage',
+                listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+            }
+        ])(
+            'should open the content type selector for base type "$labelKey" with listType "$listType"',
+            ({ labelKey, listType }) => {
+                const items = spectator.component.$items();
+
+                const baseTypeItem = items.find((item) => item.label === labelKey);
+
+                expect(baseTypeItem).toBeTruthy();
+
+                baseTypeItem?.command?.({});
+
+                expect(store.setDialog).toHaveBeenCalledWith({
+                    type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+                    header: 'content-drive.dialog.content-type-selector.header',
+                    payload: { listType }
+                });
+            }
+        );
+
         it('should call setDialog for folders', () => {
             const items = spectator.component.$items();
 
@@ -171,6 +319,169 @@ describe('DotContentDriveToolbarComponent', () => {
                 type: DIALOG_TYPE.FOLDER,
                 header: 'content-drive.dialog.folder.header'
             });
+        });
+    });
+
+    describe('Upload button', () => {
+        const uploadLabel = () =>
+            spectator
+                .query(byTestId('upload-asset-button'))
+                ?.querySelector('.p-button-label')
+                ?.textContent?.trim();
+
+        it('should render the upload button when no items are selected', async () => {
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+
+        it('should label the button "Upload" when the current folder has no preference', async () => {
+            selectedNodeSignal.set({ data: {} });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload');
+        });
+
+        it('should label the button "Upload Asset" when the folder defaults to Assets', async () => {
+            selectedNodeSignal.set({ data: { defaultBaseType: 'DOTASSET' } });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload-asset');
+        });
+
+        it('should label the button "Upload File" when the folder defaults to Files', async () => {
+            selectedNodeSignal.set({ data: { defaultBaseType: 'FILEASSET' } });
+            spectator.detectChanges();
+            await settleToolbarAnimation(spectator);
+
+            expect(uploadLabel()).toBe('content-drive.upload-file');
+        });
+
+        it('should emit upload when the upload button is clicked', async () => {
+            await settleToolbarAnimation(spectator);
+
+            const emitSpy = jest.fn();
+            spectator.component.$upload.subscribe(emitSpy);
+
+            const uploadButton = spectator
+                .query(byTestId('upload-asset-button'))
+                ?.querySelector('button');
+            spectator.click(uploadButton as HTMLElement);
+
+            expect(emitSpy).toHaveBeenCalledTimes(1);
+        });
+
+        // Hiding is synchronous: the selection effect sets `addNewButton: false` immediately, so
+        // a single detectChanges() removes the button. We deliberately assert before the delayed
+        // workflow-actions transition fires — mounting that child pulls in providers (MessageService)
+        // outside this toolbar unit test's scope.
+        it('should hide the upload button when a single item is selected', async () => {
+            await settleToolbarAnimation(spectator);
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeNull();
+        });
+
+        it('should hide the upload button when multiple items are selected', async () => {
+            await settleToolbarAnimation(spectator);
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeNull();
+        });
+
+        it('should hide the upload button alongside the "Add New" button on selection', async () => {
+            await settleToolbarAnimation(spectator);
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+            expect(spectator.query(byTestId('add-new-button'))).toBeTruthy();
+
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeNull();
+            expect(spectator.query(byTestId('add-new-button'))).toBeNull();
+        });
+
+        it('should show the upload button again when the selection is cleared', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeNull();
+
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+    });
+
+    describe('Workflow Center button', () => {
+        it('should not offer it with no selection', async () => {
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should offer it from the first selected contentlet', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should keep the workflow action buttons alongside it', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            await settleToolbarAnimation(spectator);
+
+            // The two are offered together, not one instead of the other.
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+            expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
+        });
+
+        it('should not offer it for a folder-only selection', async () => {
+            // Every bulk endpoint ignores folders, so there would be nothing to act on.
+            selectedItemsSignal.set([
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should open the ACTION_CENTER dialog when clicked', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            spectator.click(byTestId('action-center-button'));
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.ACTION_CENTER,
+                header: 'content-drive.action-center.header'
+            });
+        });
+    });
+
+    describe('field-filter chips', () => {
+        it('should render a chip only for active variables resolved against loaded fields', () => {
+            store.userSearchableFields.set([
+                createFakeTextField({ variable: 'body', name: 'Body' })
+            ]);
+            // 'ghost' has no matching loaded field (the URL-restore / stale case) and must be dropped.
+            store.userSearchableActive.set(['body', 'ghost']);
+            spectator.detectChanges();
+
+            expect(spectator.component.$activeFieldFilters().map((f) => f.variable)).toEqual([
+                'body'
+            ]);
+            expect(spectator.query(byTestId('field-filter-chip-body'))).toBeTruthy();
+            expect(spectator.query(byTestId('field-filter-chip-ghost'))).toBeNull();
         });
     });
 });

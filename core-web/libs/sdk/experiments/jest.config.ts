@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'sdk-experiments',
     preset: '../../../jest.preset.js',

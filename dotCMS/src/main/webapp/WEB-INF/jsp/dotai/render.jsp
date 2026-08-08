@@ -2,6 +2,7 @@
 <script>
     dojo.addOnLoad(function () {
         setUpValuesFromPreferences();
+        loadSitesDropdown();
         refreshIndexes()
             .then(() => {
                 writeIndexesToDropdowns();
@@ -189,7 +190,9 @@
                                 Site:
                             </th>
                             <td>
-                                <input type="text" value="" name="site"><br>
+                                <select name="site" id="siteFilterSelect" style="min-width:200px;">
+                                    <option value="">All sites</option>
+                                </select><br>
                                 Limit search to content on this site - leave blank for all.
                             </td>
                         </tr>

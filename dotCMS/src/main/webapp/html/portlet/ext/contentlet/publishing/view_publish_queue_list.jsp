@@ -115,6 +115,17 @@
 
 <script type="text/javascript">
 
+	function openContentEditor(inode, contentType) {
+		var customEvent = document.createEvent("CustomEvent");
+		customEvent.initCustomEvent("ng-event", false, false, {
+			name: "edit-contentlet",
+			data: {
+				inode: inode,
+				contentType: contentType
+			}
+		});
+		document.dispatchEvent(customEvent);
+	}
 
 	dojo.require("dijit.Tooltip");
 
@@ -322,8 +333,10 @@
 
 							final Object structureObject = asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY);
 							structureName =  UtilMethods.isSet(structureObject) ? structureObject.toString() : StringPool.BLANK;
+							final Object contentTypeVariableObject = asset.get(PublishQueueElementTransformer.CONTENT_TYPE_VARIABLE_KEY);
+							final String contentTypeVariable = UtilMethods.isSet(contentTypeVariableObject) ? contentTypeVariableObject.toString() : StringPool.BLANK;
                         %>
-						    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
+						    <a href="javascript:void(0)" onclick="openContentEditor('<%=inode%>', '<%=contentTypeVariable%>')">
 						        <%=StringEscapeUtils.escapeHtml(title)%>
                             </a>
 						<% } else {

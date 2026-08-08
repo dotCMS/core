@@ -59,7 +59,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * It is used to parse the data to a DotKeyValue array.
      */
     private parseToDotKeyValue(data: Record<string, string | null>): DotKeyValue[] {
-        if (!data) {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
             return [];
         }
 

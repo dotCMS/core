@@ -1,0 +1,156 @@
+@let listStyle = $layoutMode() === 'list' || $isContentletsView();
+@let currentView = $currentView();
+@let actionBtn = $actionButton();
+
+<div
+    class="flex shrink-0 items-center gap-2 py-4"
+    [class.px-4]="!$selectionMode()"
+    [class.px-8]="$selectionMode()">
+    @if ($isContentletsView()) {
+        <p-button
+            data-testid="back-to-content-types-button"
+            icon="pi pi-chevron-left"
+            [text]="true"
+            [rounded]="true"
+            (onClick)="onBackToContentTypes()" />
+    }
+
+    @if (!$shouldHideControls()) {
+        <p-iconField iconPosition="left" class="w-full">
+            <p-inputIcon class="pi pi-search" />
+            <input
+                pInputText
+                data-testid="palette-search-input"
+                [formControl]="searchControl"
+                [placeholder]="'search' | dm"
+                class="w-full" />
+        </p-iconField>
+
+        @if ($isContentTypesView()) {
+            <p-button
+                [pt]="{
+                    icon: {
+                        class: 'rotate-90'
+                    }
+                }"
+                [attr.data-testid]="actionBtn.testId"
+                [icon]="actionBtn.icon"
+                [text]="true"
+                [rounded]="true"
+                (onClick)="actionBtn.onClick($event)" />
+        }
+    }
+</div>
+<div
+    class="grid min-h-0 flex-1 overflow-x-hidden"
+    [class.pl-4]="!$selectionMode()"
+    [class.pl-8]="$selectionMode()">
+    @if ($isEmpty()) {
+        <div class="grid h-full grid-cols-1 place-items-center overflow-hidden">
+            <ng-container *ngTemplateOutlet="emptyStateTemplate" />
+        </div>
+    } @else {
+        <div
+            class="grid h-full auto-rows-max gap-2"
+            [class]="{
+                'grid-cols-3': !listStyle && $selectionMode(),
+                'grid-cols-2': !listStyle && !$selectionMode(),
+                'auto-rows-[7.5rem]!': !listStyle,
+                'grid-cols-1': listStyle,
+                'overflow-auto': !$isLoading(),
+                'pr-4': !$selectionMode(),
+                'pr-8': $selectionMode()
+            }">
+            @if ($isLoading()) {
+                <ng-container *ngTemplateOutlet="loadingTemplate" />
+            } @else {
+                <ng-container *ngTemplateOutlet="contentTemplate" />
+            }
+        </div>
+    }
+</div>
+
+<!-- Loading State Template -->
+<ng-template #loadingTemplate>
+    @let skeletonHeight = $showListLayout() ? '4rem' : '6.875rem';
+    @for (i of LOADING_ROWS; track i) {
+        <p-skeleton width="100%" [height]="skeletonHeight" />
+    }
+</ng-template>
+
+<!-- Empty State Template -->
+<ng-template #emptyStateTemplate>
+    <div class="flex size-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full p-6">
+            <i class="text-[5rem]! text-gray-300" [class]="$emptyState().icon"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="font-bold text-gray-900">
+                {{ $emptyState().title | dm }}
+            </div>
+            <p
+                data-testid="empty-state-message"
+                class="m-0 text-sm text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-(--color-palette-primary-500) [&_span]:underline hover:[&_span]:text-(--color-palette-primary-600)"
+                [innerHTML]="$emptyState().message | dm"
+                (click)="onEmptyStateClick($event)"></p>
+        </div>
+    </div>
+</ng-template>
+
+<!-- Content Template -->
+<ng-template #contentTemplate>
+    @switch (currentView) {
+        @case (DotUVEPaletteListView.CONTENTLETS) {
+            @for (contentlet of $contentlets(); track contentlet.identifier) {
+                <dot-uve-palette-contentlet [contentlet]="contentlet" />
+            }
+        }
+        @case (DotUVEPaletteListView.CONTENT_TYPES) {
+            @for (contentType of $contenttypes(); track contentType.id) {
+                <dot-uve-palette-contenttype
+                    [contentType]="contentType"
+                    [view]="$layoutMode()"
+                    [selectable]="$selectionMode()"
+                    [selected]="contentType.variable === $selectedVariable()"
+                    (onSelectContentType)="onSelectContentType($event)"
+                    (contextMenu)="onCardContextMenu(contentType, $event)" />
+            }
+        }
+    }
+</ng-template>
+
+@let totalRecords = $pagination.totalEntries();
+@if (!$isLoading() && totalRecords > 0) {
+    <div class="border-t border-gray-200">
+        <p-paginator
+            (onPageChange)="onPageChange($event)"
+            [showPageLinks]="false"
+            [showJumpToPageDropdown]="false"
+            [showCurrentPageReport]="true"
+            [showFirstLastIcon]="false"
+            [first]="$start()"
+            [rows]="$pagination.perPage()"
+            [totalRecords]="$pagination.totalEntries()"
+            [currentPageReportTemplate]="'uve.palette.pagination.template' | dm" />
+    </div>
+}
+
+<p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body">
+    <ng-template #submenuheader let-item>
+        <span>{{ item.label | dm }}</span>
+    </ng-template>
+    <ng-template #item let-item>
+        <span
+            class="inline-block w-full cursor-pointer p-2 pl-5"
+            [class.bg-gray-100]="item.isActive">
+            {{ item.label | dm }}
+        </span>
+    </ng-template>
+</p-menu>
+
+<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" />
+
+<!-- Favorites are not used in selection mode (e.g. Content Drive); avoid its init fetch. -->
+@if (!$selectionMode()) {
+    <dot-favorite-selector #favoritesPanel (hideControls)="$shouldHideControls.set($event)" />
+}

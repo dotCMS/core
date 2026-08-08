@@ -144,3 +144,28 @@ export const CUSTOM_NO_COMPONENT = 'CustomNoComponent';
  * @internal
  */
 export const DOT_SECTION_ID_PREFIX = 'dot-section-';
+
+/**
+ * Window flag set by `@dotcms/analytics` when content analytics is initialized
+ * and active on the page.
+ *
+ * @important This value is intentionally duplicated from `@dotcms/analytics`
+ * (`ANALYTICS_WINDOWS_ACTIVE_KEY` in dot-analytics.constants.ts). The SDKs read
+ * it in live mode to decide whether to keep the minimal contentlet attributes
+ * Analytics depends on. Both constants MUST stay in sync.
+ *
+ * @internal
+ */
+export const ANALYTICS_ACTIVE_WINDOW_KEY = '__dotAnalyticsActive__';
+
+/**
+ * Event dispatched by `@dotcms/analytics` once analytics is ready. The SDKs
+ * listen for it so live-mode contentlets can re-render with the attributes
+ * Analytics needs, regardless of initialization order.
+ *
+ * @important Kept in sync with the `dotcms:analytics:ready` event dispatched by
+ * `@dotcms/analytics` (initializeContentAnalytics).
+ *
+ * @internal
+ */
+export const ANALYTICS_READY_EVENT = 'dotcms:analytics:ready';

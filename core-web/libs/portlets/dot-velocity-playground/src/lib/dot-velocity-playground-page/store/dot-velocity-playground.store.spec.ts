@@ -1,9 +1,9 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { buildPersistedQueryKey, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { DotVelocityPlaygroundStore } from './dot-velocity-playground.store';
@@ -248,7 +248,8 @@ describe('DotVelocityPlaygroundStore onInit', () => {
         expect(spectator.service.history()).toEqual(['$a', '$b']);
         expect(spectator.service.splitterRatio()).toEqual([60, 40]);
         expect(spectator.service.wrapCode()).toBe(false);
-        expect(spectator.service.code()).toBe('$a');
+        // History no longer pre-populates `code`; the persisted-query key does.
+        expect(spectator.service.code()).toBe('');
     });
 
     it('ignores malformed history payloads', () => {
@@ -258,5 +259,29 @@ describe('DotVelocityPlaygroundStore onInit', () => {
         spectator.flushEffects();
 
         expect(spectator.service.history()).toEqual([]);
+    });
+
+    it('hydrates code from the persisted-query storage key', () => {
+        const persistedKey = buildPersistedQueryKey('velocity-playground');
+        window.localStorage.setItem(persistedKey, JSON.stringify('$restored'));
+
+        const spectator = createService();
+        spectator.flushEffects();
+
+        expect(spectator.service.code()).toBe('$restored');
+    });
+
+    it('clearPersistedQuery empties code and removes the persisted key', () => {
+        const persistedKey = buildPersistedQueryKey('velocity-playground');
+        window.localStorage.setItem(persistedKey, JSON.stringify('$restored'));
+
+        const spectator = createService();
+        spectator.flushEffects();
+        expect(spectator.service.code()).toBe('$restored');
+
+        spectator.service.clearPersistedQuery();
+
+        expect(spectator.service.code()).toBe('');
+        expect(window.localStorage.getItem(persistedKey)).toBeNull();
     });
 });

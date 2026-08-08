@@ -12,9 +12,6 @@
   "devDependencies": {
     "@dotcms/types": "latest"
   },
-  "scripts": {
-    "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
-  },
   "keywords": [
     "dotCMS",
     "CMS",

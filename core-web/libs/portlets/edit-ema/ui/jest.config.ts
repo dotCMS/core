@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'edit-ema-ui',
     preset: '../../../../jest.preset.js',

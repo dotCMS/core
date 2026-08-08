@@ -128,6 +128,7 @@ node_modules/
 /core-web/connect.lock
 /core-web/coverage
 /core-web/libpeerconnection.log
+/core-web/libs/agentic-tools/src/generated
 npm-debug.log
 yarn-error.log
 testem.log
@@ -139,7 +140,6 @@ dotsecure
 /core-web/e2e/*.js
 /core-web/e2e/*.map
 
-/core-web/storybook
 /core-web/out*/
 dist-docs/
 **/test-reports/
@@ -217,3 +217,11 @@ __pycache__/
 dist/
 *.egg
 .venv/
+
+# Spec-Kit working artifacts — process-only, kept local (see .specify/CUSTOMIZATIONS.md).
+# spec.md (and data-model.md / contracts/ when they carry verified contracts) stay tracked.
+specs/*/plan.md
+specs/*/research.md
+specs/*/tasks.md
+specs/*/quickstart.md
+specs/*/checklists/

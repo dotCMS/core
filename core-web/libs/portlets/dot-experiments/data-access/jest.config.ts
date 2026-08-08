@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'DotExperiments Data Access',
     preset: '../../../../jest.preset.js',

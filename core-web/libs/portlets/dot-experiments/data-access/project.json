@@ -7,17 +7,19 @@
     "tags": ["type:data-access", "scope:dotcms-ui", "portlet:experiments"],
     "targets": {
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
-                "jestConfig": "libs/portlets/dot-experiments/data-access/jest.config.ts",
-                "passWithNoTests": false,
-                "tsConfig": "libs/portlets/dot-experiments/data-access/tsconfig.spec.json"
+                "passWithNoTests": false
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
         }
     }
 }

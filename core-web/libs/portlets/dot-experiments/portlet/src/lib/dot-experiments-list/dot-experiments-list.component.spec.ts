@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { BehaviorSubject, of } from 'rxjs';
 
@@ -17,7 +17,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotPushPublishDialogService,
-    DotcmsEventsService,
     LoginService,
     DotcmsConfigService,
     LoggerService
@@ -68,7 +67,6 @@ describe('DotExperimentsListComponent', () => {
             DotHttpErrorManagerService,
             mockProvider(DotExperimentsService),
             mockProvider(DotPushPublishDialogService),
-            mockProvider(DotcmsEventsService),
             mockProvider(LoginService),
             mockProvider(LoggerService),
             mockProvider(DotFormatDateService),

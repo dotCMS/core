@@ -241,6 +241,32 @@ public abstract class PublisherAPI {
 	public abstract List<Map<String,Object>> getQueueBundleIds(int limit, int offest) throws DotPublisherException ;
 
 	/**
+	 * Counts distinct bundles in the "scheduled" tier: bundles pushed with a future publish date
+	 * that the {@code PublisherQueueJob} cron has not picked up yet (a row exists in
+	 * {@code publishing_queue} with a non-null {@code publish_date} but no row in
+	 * {@code publishing_queue_audit}). Drafts (null publish_date) are intentionally excluded.
+	 *
+	 * @param filter case-insensitive partial match on bundle id and bundle name, or null/empty for all
+	 * @return number of scheduled bundles matching the filter
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract Integer countScheduledBundleIds(String filter) throws DotPublisherException;
+
+	/**
+	 * Returns a paginated page of the "scheduled" tier (see {@link #countScheduledBundleIds(String)}),
+	 * one row per bundle ordered by publish date ascending. Each row map contains the keys:
+	 * {@code bundle_id}, {@code bundle_name}, {@code filter_key}, {@code publish_date},
+	 * {@code entered_date}, {@code asset_count} and {@code environment_count}.
+	 *
+	 * @param limit  max rows for the page
+	 * @param offset row offset of the page
+	 * @param filter case-insensitive partial match on bundle id and bundle name, or null/empty for all
+	 * @return list of scheduled bundle row maps
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract List<Map<String,Object>> getScheduledBundleIds(int limit, int offset, String filter) throws DotPublisherException;
+
+	/**
 	 * Get the queue bundles to process
 	 * @return
 	 * @throws DotPublisherException

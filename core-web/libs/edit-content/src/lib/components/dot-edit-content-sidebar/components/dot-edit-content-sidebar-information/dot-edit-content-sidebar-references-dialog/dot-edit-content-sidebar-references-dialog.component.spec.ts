@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { Subject, of, throwError } from 'rxjs';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';

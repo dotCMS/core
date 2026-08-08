@@ -1,4 +1,12 @@
-import { Component, forwardRef, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import {
+    Component,
+    forwardRef,
+    Input,
+    OnInit,
+    ViewEncapsulation,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -22,6 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
             useExisting: forwardRef(() => PushPublishEnvSelectorComponent)
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [FormsModule, ButtonModule, MultiSelectModule, DotMessagePipe]
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {

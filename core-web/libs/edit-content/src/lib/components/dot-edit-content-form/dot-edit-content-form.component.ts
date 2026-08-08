@@ -11,6 +11,7 @@ import {
     DestroyRef,
     DOCUMENT,
     effect,
+    ElementRef,
     inject,
     OnInit,
     output,
@@ -21,7 +22,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
-    FormsModule,
     ReactiveFormsModule,
     ValidatorFn,
     Validators
@@ -31,7 +31,6 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
-import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -41,14 +40,17 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
+    DotContentState,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
+import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
@@ -59,9 +61,11 @@ import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
+    generatePageEditUrl,
     generatePreviewUrl,
     getFinalCastedValue,
     isFilteredType,
+    isSingleColumnLayout,
     processFieldValue
 } from '../../utils/functions.util';
 import { blockEditorRequiredValidator } from '../../utils/validators';
@@ -80,7 +84,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  * - Custom field type handling (calendar fields, flattened fields)
  * - Workflow action integration with push publish support
  * - Form validation (required fields, regex patterns)
- * - Content locking mechanism
+ * - Command bar with status, preview and overflow actions
  * - Preview functionality for content types
  * - Tab-based field organization
  *
@@ -92,16 +96,17 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
+    styleUrl: './dot-edit-content-form.component.scss',
     imports: [
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
         TabsModule,
-        DotWorkflowActionsComponent,
+        DotContentletStatusBadgeComponent,
         TabViewInsertDirective,
         DotMessagePipe,
-        ToggleSwitchModule,
-        FormsModule,
+        DotRelativeDatePipe,
+        DotEditContentCommandBarActionsComponent,
         MessageModule,
         NgTemplateOutlet
     ],
@@ -123,6 +128,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #elementRef = inject(ElementRef);
     readonly #fb = inject(FormBuilder);
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
@@ -155,13 +161,41 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Computed property that determines if the preview link should be shown.
      *
+     * Shown for existing content that is either an HTML page or has a URL map.
+     *
      * @memberof DotEditContentFormComponent
      */
     $showPreviewLink = computed(() => {
         const contentlet = this.$store.contentlet();
 
-        return contentlet?.baseType === 'CONTENT' && !!contentlet.URL_MAP_FOR_CONTENT;
+        return (
+            !this.$store.isNew() &&
+            (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
+                !!contentlet?.URL_MAP_FOR_CONTENT)
+        );
     });
+
+    /**
+     * Computed property that returns true when the contentlet has at least one page reference.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $hasReferences = computed(() => {
+        const relatedContent = this.$store.information.relatedContent();
+
+        return !!relatedContent && relatedContent !== '0';
+    });
+
+    /**
+     * Publish state passed to the shared status badge in the command bar. A brand-new
+     * contentlet has no state yet, so it resolves to `null` and the badge renders the
+     * translated "New" label; otherwise the current contentlet drives the badge.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $statusState = computed<DotContentState | null>(() =>
+        this.$store.isNew() ? null : this.$store.contentlet()
+    );
 
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
@@ -173,6 +207,14 @@ export class DotEditContentFormComponent implements OnInit {
 
     protected readonly $shouldRenderFields = signal(true);
     protected readonly $shouldRenderPreservedFields = signal(true);
+
+    /**
+     * True once the user has genuinely interacted with a field (see the capture-phase listeners set
+     * up in the constructor). While false, any form value change is async-CVA populate noise, so
+     * {@link initializeFormListener} re-marks the form pristine — decoupling "the user edited
+     * something" from load timing. Reset on each (re)build of the form in {@link initializeForm}.
+     */
+    #userTouched = false;
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
@@ -207,29 +249,37 @@ export class DotEditContentFormComponent implements OnInit {
     $tabs = this.$store.tabs;
 
     /**
-     * Context for the append template passed to TabViewInsertDirective.
-     * Required for embedded view to access component variables.
+     * Determines whether a given tab's layout is single-column, so the template can pick the
+     * form's max-width per tab (720px vs 1000px).
+     *
+     * @memberof DotEditContentFormComponent
      */
-    get $appendContext() {
+    protected readonly isSingleColumnLayout = isSingleColumnLayout;
+
+    /**
+     * Context for the append template passed to TabViewInsertDirective.
+     * Required for embedded view to access component variables. A computed (not a getter) so
+     * the object reference is memoized and only changes when its signal dependencies change —
+     * otherwise every change-detection cycle would produce a new object and re-render the
+     * embedded view.
+     */
+    $appendContext = computed(() => {
         const currentLocale = this.$store.currentLocale();
+
         return {
             $store: this.$store,
             showSidebar: this.$store.isSidebarOpen(),
-            canLock: this.$store.canLock(),
-            isContentLocked: this.$store.isContentLocked(),
-            lockSwitchLabel: this.$store.lockSwitchLabel(),
-            actions: this.$store.getActions(),
             $showPreviewLink: this.$showPreviewLink,
-            showWorkflowActions: this.$store.showWorkflowActions(),
+            $isPage: this.$store.isPage,
+            $hasReferences: this.$hasReferences,
             contentlet: this.$store.contentlet(),
             contentType: this.$store.contentType(),
             currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
             currentIdentifier: this.$store.currentIdentifier(),
-            onContentLockChange: (e: ToggleSwitchChangeEvent) => this.onContentLockChange(e),
-            showPreview: () => this.showPreview(),
-            fireWorkflowAction: (e: DotWorkflowActionParams) => this.fireWorkflowAction(e)
+            $statusState: this.$statusState,
+            showPreview: () => this.showPreview()
         };
-    }
+    });
 
     changeDetectorRef = inject(ChangeDetectorRef);
 
@@ -251,6 +301,30 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     constructor() {
+        // Detect the first REAL user interaction (pointer/keyboard/input from any field) in the
+        // CAPTURE phase, so `#userTouched` is set BEFORE the field's value-accessor emits
+        // `valueChanges` (which runs in the target/bubble phase) — only then can
+        // initializeFormListener tell a genuine edit apart from async-CVA populate noise.
+        // Programmatic `writeValue` on load never dispatches these DOM events, so it never trips it.
+        const host = this.#elementRef.nativeElement as HTMLElement;
+        const markTouched = () => {
+            this.#userTouched = true;
+        };
+        // `drop` is included because dragging a file in from the OS (e.g. onto the binary/file
+        // field) sets the control value programmatically via `(fileDropped)` — the drag starts
+        // outside the window, so no `pointerdown` precedes it. Without latching here, that first
+        // interaction would look like async-CVA populate and the edit would be marked pristine.
+        const interactionEvents = ['pointerdown', 'keydown', 'input', 'drop'] as const;
+        const listenerOptions: AddEventListenerOptions = { capture: true };
+        interactionEvents.forEach((type) =>
+            host.addEventListener(type, markTouched, listenerOptions)
+        );
+        this.#destroyRef.onDestroy(() =>
+            interactionEvents.forEach((type) =>
+                host.removeEventListener(type, markTouched, listenerOptions)
+            )
+        );
+
         /**
          * Effect that reinitializes the form when contentlet changes (e.g., when viewing historical versions)
          *
@@ -384,7 +458,12 @@ export class DotEditContentFormComponent implements OnInit {
         race(this.#appRef.isStable.pipe(filter(Boolean)), timer(500))
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
-                this.form?.markAsPristine();
+                // Gate on `#userTouched` for the same reason `initializeFormListener` does: if the
+                // user genuinely edited a field within the isStable/500ms window, clearing dirty
+                // here would silently drop that edit. Only clear load-time (untouched) CVA noise.
+                if (!this.#userTouched) {
+                    this.form?.markAsPristine();
+                }
             });
     }
 
@@ -414,6 +493,13 @@ export class DotEditContentFormComponent implements OnInit {
         this.formValueSubscription = this.form.valueChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
+                // Until the user has actually interacted, a value change is async-CVA populate,
+                // not an edit — keep the form pristine so the unsaved-changes guard never fires
+                // for load-time noise (independent of how slow the fields load).
+                if (!this.#userTouched) {
+                    this.form.markAsPristine();
+                }
+
                 this.onFormChange(value);
             });
     }
@@ -584,6 +670,10 @@ export class DotEditContentFormComponent implements OnInit {
      * @private
      */
     private initializeForm() {
+        // A fresh (re)build starts a new populate window: until the user interacts, changes are
+        // programmatic CVA noise, not edits.
+        this.#userTouched = false;
+
         const controls = this.$formFields().reduce(
             (acc, field) => ({
                 ...acc,
@@ -717,14 +807,24 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Opens the content preview in a new browser tab.
      *
-     * Generates a preview URL based on the current contentlet's URL_MAP_FOR_CONTENT
-     * and opens it in a new tab. Logs a warning if the URL cannot be generated.
+     * For HTML pages the edit-page URL is generated from the contentlet's `url`,
+     * otherwise the preview URL is generated from `URL_MAP_FOR_CONTENT`.
+     * Opens the resulting URL in a new tab. Logs a warning if the URL cannot be generated.
      *
      * @memberof DotEditContentFormComponent
      */
     showPreview(): void {
         const contentlet = this.$store.contentlet();
-        const realUrl = generatePreviewUrl(contentlet);
+        // Guard against a contentlet cleared by a concurrent state change between the button
+        // rendering and the click — the URL generators dereference the contentlet directly.
+        if (!contentlet) {
+            return;
+        }
+
+        const realUrl =
+            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+                ? generatePageEditUrl(contentlet)
+                : generatePreviewUrl(contentlet);
 
         if (!realUrl) {
             console.warn(
@@ -752,19 +852,6 @@ export class DotEditContentFormComponent implements OnInit {
             return;
         }
         this.$store.setActiveTab(numberValue);
-    }
-
-    /**
-     * Handles the content lock toggle.
-     *
-     * This method is triggered when the user toggles the content lock switch.
-     * It updates the content lock state in the store based on the switch value.
-     *
-     * @param {ToggleSwitchChangeEvent} event - The switch change event containing the new checked state
-     * @memberof DotEditContentFormComponent
-     */
-    onContentLockChange(event: ToggleSwitchChangeEvent) {
-        event.checked ? this.$store.lockContent() : this.$store.unlockContent();
     }
 
     /**

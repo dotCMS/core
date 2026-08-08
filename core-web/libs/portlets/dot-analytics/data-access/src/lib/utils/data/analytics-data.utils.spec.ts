@@ -10,6 +10,7 @@ import {
     extractPageViews,
     extractSessions,
     extractTopPageValue,
+    fillMissingApiDates,
     fillMissingDates,
     getDateRange,
     getPreviousPeriod,
@@ -593,20 +594,21 @@ describe('Analytics Data Utils', () => {
         });
 
         describe('success cases', () => {
-            it('should return last 7 days range correctly', () => {
+            it('should return last 7 complete days ending yesterday', () => {
                 const result = getDateRange('last7days');
                 const [startDate, endDate] = result;
 
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-09 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+                // Today (2024-01-15) is excluded; range is the 7 complete days ending yesterday
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-08 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
             });
 
-            it('should return last 30 days range correctly', () => {
+            it('should return last 30 complete days ending yesterday', () => {
                 const result = getDateRange('last30days');
                 const [startDate, endDate] = result;
 
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-17 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
+                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-16 00:00:00');
+                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
             });
 
             it('should handle custom date range array correctly', () => {
@@ -627,6 +629,54 @@ describe('Analytics Data Utils', () => {
         });
     });
 
+    describe('fillMissingApiDates + transformPageViewTimeLineData (relative range regression)', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+            // Reproduces the reported bug: today = Jun 10, API returns Jun 03 … Jun 09.
+            jest.setSystemTime(new Date('2026-06-10T12:00:00.000'));
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('keeps the earliest day and does not append today for a last7days range', () => {
+            // Sparse API rows for the 7 complete days ending yesterday (Jun 03 … Jun 09).
+            const apiData: TotalEventsByDayData[] = [
+                { day: '2026-06-03', totalEvents: 993 },
+                { day: '2026-06-04', totalEvents: 1136 },
+                { day: '2026-06-05', totalEvents: 1558 },
+                { day: '2026-06-06', totalEvents: 718 },
+                { day: '2026-06-07', totalEvents: 721 },
+                { day: '2026-06-08', totalEvents: 1107 },
+                { day: '2026-06-09', totalEvents: 2424 }
+            ];
+
+            const filled = fillMissingApiDates(apiData, 'last7days', 'day', (date) => ({
+                day: format(date, 'yyyy-MM-dd'),
+                totalEvents: 0
+            }));
+
+            // Window must match the API data exactly: Jun 03 … Jun 09 — no Jun 10 (today) bucket.
+            expect(filled.map((item) => item.day)).toEqual([
+                '2026-06-03',
+                '2026-06-04',
+                '2026-06-05',
+                '2026-06-06',
+                '2026-06-07',
+                '2026-06-08',
+                '2026-06-09'
+            ]);
+            // Earliest real day is retained with its value (previously dropped).
+            expect(filled[0]).toEqual({ day: '2026-06-03', totalEvents: 993 });
+
+            const chart = transformPageViewTimeLineData(filled);
+            expect(chart.labels?.[0]).toBe('Jun 03');
+            expect(chart.labels?.[chart.labels.length - 1]).toBe('Jun 09');
+            expect(chart.datasets[0].data).toEqual([993, 1136, 1558, 718, 721, 1107, 2424]);
+        });
+    });
+
     describe('getPreviousPeriod', () => {
         it('should return previous period of same length for custom date range', () => {
             const result = getPreviousPeriod(['2026-02-01', '2026-02-06']);
@@ -643,9 +693,9 @@ describe('Analytics Data Utils', () => {
             jest.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
             const result = getPreviousPeriod('last7days');
             jest.useRealTimers();
-            // last7days: Jan 9 - Jan 15 (7 days). Previous: Jan 2 - Jan 8
-            expect(result[0]).toBe('2024-01-02');
-            expect(result[1]).toBe('2024-01-08');
+            // last7days: Jan 8 - Jan 14 (7 complete days ending yesterday). Previous: Jan 1 - Jan 7
+            expect(result[0]).toBe('2024-01-01');
+            expect(result[1]).toBe('2024-01-07');
         });
     });
 

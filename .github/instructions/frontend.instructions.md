@@ -68,13 +68,13 @@ All frontend code lives in **`core-web/`**. It is an Nx monorepo with TypeScript
 ### Nx commands (run from repo root or from `core-web/`)
 
 ```bash
-cd core-web && yarn nx show projects
-cd core-web && yarn nx run dotcms-ui:serve
-cd core-web && yarn nx run <project>:test
-cd core-web && yarn nx run <project>:test -t MyComponent
-cd core-web && yarn nx affected -t build --exclude='tag:skip:build'
-cd core-web && yarn nx affected -t lint --exclude='tag:skip:lint'
-cd core-web && yarn nx affected -t test --exclude='tag:skip:test'
+cd core-web && pnpm nx show projects
+cd core-web && pnpm nx run dotcms-ui:serve
+cd core-web && pnpm nx run <project>:test
+cd core-web && pnpm nx run <project>:test -t MyComponent
+cd core-web && pnpm nx affected -t build --exclude='tag:skip:build'
+cd core-web && pnpm nx affected -t lint --exclude='tag:skip:lint'
+cd core-web && pnpm nx affected -t test --exclude='tag:skip:test'
 ```
 
 ## File structure

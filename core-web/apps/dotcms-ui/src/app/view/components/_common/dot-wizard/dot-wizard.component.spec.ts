@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -26,13 +26,7 @@ import {
     DotWizardService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -148,7 +142,6 @@ describe('DotWizardComponent', () => {
             DotPushPublishFiltersService,
             DotParseHtmlService,
             DotcmsConfigService,
-            DotcmsEventsService,
             DotWizardService
         ]
     });

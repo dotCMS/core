@@ -52,13 +52,26 @@ const MAX_INLINE_ACTIONS = 4;
  * @example
  * <!-- Grouped/split-button mode (UVE) -->
  * <dot-workflow-actions [actions]="workflowActions" [groupActions]="true" (actionFired)="onAction($event)" />
+ *
+ * ## Stacked mode (`stacked=true`)
+ * Renders ALL actions as full-width buttons stacked vertically (top to bottom), with no overflow
+ * menu and no breakpoint-based cap. The first action is the solid/primary button; the rest are
+ * outlined. Used in the narrow edit-content sidebar where actions must list one above another.
+ *
+ * @example
+ * <!-- Stacked mode (edit-content sidebar) -->
+ * <dot-workflow-actions [actions]="workflowActions" [stacked]="true" (actionFired)="onAction($event)" />
  */
 @Component({
     selector: 'dot-workflow-actions',
     imports: [ButtonModule, MenuModule, SplitButtonModule, DotMessagePipe],
     templateUrl: './dot-workflow-actions.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-row-reverse gap-2' }
+    host: {
+        class: 'flex gap-2',
+        '[class.flex-col]': 'stacked()',
+        '[class.flex-row-reverse]': '!stacked()'
+    }
 })
 export class DotWorkflowActionsComponent {
     /**
@@ -109,6 +122,17 @@ export class DotWorkflowActionsComponent {
      * When false (default), renders actions as inline buttons with an overflow menu.
      */
     groupActions = input<boolean>(false);
+
+    /**
+     * When true, renders ALL actions as full-width buttons stacked vertically (top to bottom),
+     * with no overflow menu and no breakpoint-based cap. The first action is solid/primary, the
+     * rest are outlined. Takes precedence over the flat overflow layout; ignored when
+     * `groupActions` is true. Use this in the narrow edit-content sidebar.
+     *
+     * NOTE: stacked mode iterates the SEPARATOR-filtered action list, so any SEPARATOR actions
+     * sent by the backend are dropped — it cannot render visual dividers between action groups.
+     */
+    stacked = input<boolean>(false);
 
     /**
      * Button size passed through to PrimeNG.
@@ -197,14 +221,14 @@ export class DotWorkflowActionsComponent {
 
     /**
      * Returns the PrimeNG button variant for a given position index among visible inline buttons.
-     * - 0 → null (no variant — default solid button)
+     * - 0 → undefined (no variant — default solid button)
      * - 1+ → 'outlined'
      *
-     * null is intentional for index 0: Angular drops null bindings entirely,
+     * undefined is intentional for index 0: Angular drops undefined bindings entirely,
      * so PrimeNG receives no variant and renders its default button style.
      */
-    protected getVariant(index: number): 'outlined' | null {
-        return index > 0 ? 'outlined' : null;
+    protected getVariant(index: number): 'outlined' | undefined {
+        return index > 0 ? 'outlined' : undefined;
     }
 
     protected fireAction(action: DotCMSWorkflowAction): void {

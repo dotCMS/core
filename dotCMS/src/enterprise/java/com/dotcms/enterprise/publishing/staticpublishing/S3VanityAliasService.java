@@ -1,6 +1,5 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.publishing.DotPublishingException;
@@ -8,10 +7,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
@@ -42,13 +44,17 @@ public class S3VanityAliasService {
     private final S3VanityAliasRepository repository;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final S3VanityTargetResolver targetResolver;
+    private final UserAPI userAPI;
+    private final HostAPI hostAPI;
+    private final LanguageAPI languageAPI;
 
     /**
      * Creates the service with system dependencies.
      */
     public S3VanityAliasService() {
         this(APILocator.getVanityUrlAPI(), new S3VanityAliasSupport(), new S3VanityAliasRepository(),
-                APILocator.getHTMLPageAssetAPI(), new S3VanityTargetResolver());
+                APILocator.getHTMLPageAssetAPI(), new S3VanityTargetResolver(), APILocator.getUserAPI(),
+                APILocator.getHostAPI(), APILocator.getLanguageAPI());
     }
 
     /**
@@ -61,7 +67,8 @@ public class S3VanityAliasService {
     public S3VanityAliasService(final VanityUrlAPI vanityUrlAPI, final S3VanityAliasSupport aliasSupport,
                                 final S3VanityAliasRepository repository) {
         this(vanityUrlAPI, aliasSupport, repository, APILocator.getHTMLPageAssetAPI(),
-                new S3VanityTargetResolver());
+                new S3VanityTargetResolver(), APILocator.getUserAPI(), APILocator.getHostAPI(),
+                APILocator.getLanguageAPI());
     }
 
     /**
@@ -77,11 +84,37 @@ public class S3VanityAliasService {
                                 final S3VanityAliasRepository repository,
                                 final HTMLPageAssetAPI htmlPageAssetAPI,
                                 final S3VanityTargetResolver targetResolver) {
+        this(vanityUrlAPI, aliasSupport, repository, htmlPageAssetAPI, targetResolver, APILocator.getUserAPI(),
+                APILocator.getHostAPI(), APILocator.getLanguageAPI());
+    }
+
+    /**
+     * Creates the service with explicit dependencies for tests.
+     *
+     * @param vanityUrlAPI Vanity URL API
+     * @param aliasSupport alias support component
+     * @param repository alias mapping repository
+     * @param htmlPageAssetAPI HTML page rendering API
+     * @param targetResolver dotCMS target resolver
+     * @param userAPI user API
+     * @param hostAPI host API
+     * @param languageAPI language API
+     */
+    S3VanityAliasService(final VanityUrlAPI vanityUrlAPI, final S3VanityAliasSupport aliasSupport,
+                         final S3VanityAliasRepository repository,
+                         final HTMLPageAssetAPI htmlPageAssetAPI,
+                         final S3VanityTargetResolver targetResolver,
+                         final UserAPI userAPI,
+                         final HostAPI hostAPI,
+                         final LanguageAPI languageAPI) {
         this.vanityUrlAPI = vanityUrlAPI;
         this.aliasSupport = aliasSupport;
         this.repository = repository;
         this.htmlPageAssetAPI = htmlPageAssetAPI;
         this.targetResolver = targetResolver;
+        this.userAPI = userAPI;
+        this.hostAPI = hostAPI;
+        this.languageAPI = languageAPI;
     }
 
     /**
@@ -104,7 +137,7 @@ public class S3VanityAliasService {
             return;
         }
 
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final User systemUser = userAPI.getSystemUser();
         final Optional<String> canonicalPath = aliasSupport.normalizeCanonicalPath(
                 aliasSupport.getForwardTo(vanityContentlet));
         final Optional<S3VanityResolvedTarget> target;
@@ -442,7 +475,7 @@ public class S3VanityAliasService {
     private Optional<S3VanityRestoreResult> restoreLiveResource(final S3VanityAliasCleanupContext context,
                                                                final S3VanityAlias alias)
             throws DotDataException, DotSecurityException, DotPublishingException {
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final User systemUser = userAPI.getSystemUser();
         final Optional<S3VanityAliasPublishContext> restoreContext =
                 buildRestoreContext(context, alias, systemUser);
         if (restoreContext.isEmpty()) {
@@ -478,8 +511,8 @@ public class S3VanityAliasService {
                                                                      final S3VanityAlias alias,
                                                                      final User systemUser)
             throws DotDataException, DotSecurityException {
-        final Host host = APILocator.getHostAPI().find(alias.hostId, systemUser, false);
-        final Language language = APILocator.getLanguageAPI().getLanguage(alias.languageId);
+        final Host host = hostAPI.find(alias.hostId, systemUser, false);
+        final Language language = languageAPI.getLanguage(alias.languageId);
         if (host == null || language == null) {
             return Optional.empty();
         }
@@ -551,13 +584,18 @@ public class S3VanityAliasService {
      */
     public void unpublishAliases(final S3VanityAliasContext context) throws DotDataException {
         final List<S3VanityAlias> persistedAliases = repository.findByLookup(context.lookup);
-        final List<S3VanityAlias> deletedNow = new ArrayList<>();
+        final S3VanityAliasCleanupContext cleanupContext =
+                new S3VanityAliasCleanupContext(context.lookup.endpointId, context.endpointPublisher);
+        final List<S3VanityAlias> removedNow = new ArrayList<>();
 
         try {
-            deleteAliases(context, persistedAliases, deletedNow::add);
+            for (final S3VanityAlias alias : persistedAliases) {
+                removeMaterializedAlias(cleanupContext, alias);
+                removedNow.add(alias);
+            }
             repository.deleteByLookup(context.lookup);
         } catch (final Exception e) {
-            restoreAliases(context, deletedNow);
+            restoreAliases(context, removedNow);
             throw wrapAsDotDataException(e);
         }
     }

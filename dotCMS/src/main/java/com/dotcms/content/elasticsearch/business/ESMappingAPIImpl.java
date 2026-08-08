@@ -1,20 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
-import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
-import static com.liferay.util.StringPool.PERIOD;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.business.ContentMappingAPI;
@@ -52,6 +37,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -79,6 +65,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,6 +74,9 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -96,9 +86,11 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -107,8 +99,20 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
+
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERIOD;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -1233,72 +1237,86 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return mapper.writeValueAsString(map);
 	}
 
+	/**
+	 * Returns the identifiers of the contentlets whose search index documents became stale
+	 * because of changes to the given contentlet's relationships — i.e., the contents that must
+	 * be re-indexed along with it.
+	 *
+	 * <p>The method compares the relationships referencing this contentlet in the search index
+	 * (the state previous to the current save) against the rows in the {@code tree} table (the
+	 * just-saved state). The symmetric difference of both sets — relationships that were removed
+	 * plus relationships that were added — is the complete set of stale documents: only PARENT
+	 * documents store relationship references (see
+	 * {@link #loadRelationshipFields(Contentlet, Map, StringWriter)}), so contents whose
+	 * relationship to this contentlet did not change never need re-indexing.</p>
+	 *
+	 * @param contentlet The {@link Contentlet} being re-indexed
+	 * @return Identifiers of the related contents that must be re-indexed along with it
+	 */
 	@CloseDBIfOpened
 	public List<String> dependenciesLeftToReindex(final Contentlet contentlet) throws DotStateException, DotDataException, DotSecurityException {
 		final List<String> dependenciesToReindex = new ArrayList<>();
-
-
 		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
 		db.addParam(contentlet.getIdentifier());
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
-
-		if(relatedContentlets.size()>0) {
+		if (!relatedContentlets.isEmpty()) {
 
 			final List<Relationship> relationships = relationshipAPI
 					.byContentType(contentlet.getContentType());
 
-			for(final Relationship relationship : relationships) {
+			for (final Relationship relationship : relationships) {
+				// Both sides are collected into Sets of identifiers: the index holds one
+				// document per language/variant of the same identifier, and only deduped
+				// collections make the disjunction below a true symmetric difference
+				final Collection<String> oldRelatedIds = new LinkedHashSet<>();
+				final Collection<String> newRelatedIds = new LinkedHashSet<>();
 
-				final List<Contentlet> oldDocs;
-				final List<String> oldRelatedIds = new ArrayList<>();
-				final List<String> newRelatedIds = new ArrayList<>();
-
-                oldDocs = contentletAPI.getRelatedContent(contentlet, relationship,
-                        userAPI.getSystemUser(), false);
-
-                if(oldDocs.size() > 0) {
-					for(Contentlet oldDoc : oldDocs) {
-						oldRelatedIds.add(oldDoc.getIdentifier());
-					}
+				final String relatedQuery = "+" + relationship.getRelationTypeValue()
+						+ ":" + contentlet.getIdentifier();
+				List<ContentletSearch> oldSearchResults = contentletAPI.searchIndex(
+						relatedQuery, ESContentletAPIImpl.MAX_LIMIT, 0, null,
+						userAPI.getSystemUser(), false);
+				if (oldSearchResults instanceof PaginatedArrayList
+						&& ((PaginatedArrayList<?>) oldSearchResults).getTotalResults()
+								> oldSearchResults.size()) {
+					// More documents reference this contentlet than a single search page can
+					// return; a limit above MAX_LIMIT makes searchIndex switch to a scroll
+					// search that returns them all
+					Logger.warn(this, () -> "More than " + ESContentletAPIImpl.MAX_LIMIT
+							+ " index documents reference '" + contentlet.getIdentifier()
+							+ "' through '" + relationship.getRelationTypeValue()
+							+ "'. Falling back to a scroll search");
+					oldSearchResults = contentletAPI.searchIndex(relatedQuery,
+							ESContentletAPIImpl.MAX_LIMIT + 1, 0, null,
+							userAPI.getSystemUser(), false);
+				}
+				for (final ContentletSearch result : oldSearchResults) {
+					oldRelatedIds.add(result.getIdentifier());
 				}
 
-				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
-						.equals(relationship.getRelationTypeValue())).forEach(
-						entry -> replaceExistingRelatedContent(entry, contentlet,
-								oldRelatedIds, newRelatedIds));
+				relatedContentlets.stream()
+						.filter(map -> map.get(ESMappingConstants.RELATION_TYPE).equals(relationship.getRelationTypeValue()))
+						.forEach(entry -> {
+							final String childId = entry.get(ESMappingConstants.CHILD);
+							final String parentId = entry.get(ESMappingConstants.PARENT);
+							newRelatedIds.add(contentlet.getIdentifier().equalsIgnoreCase(childId)
+									? parentId
+									: childId);
+						});
 
-				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
-				//re-indexation and the list of new dependencies no re-indexed yet
+				// The symmetric difference of both Sets is the actual dependency delta: the
+				// contents that lost the relationship (their index document still references
+				// this contentlet) plus the ones that just gained it (not indexed yet).
+				// Contents whose relationship did NOT change are excluded — re-indexing them
+				// on every save is what made saves with heavily related content so expensive
 				dependenciesToReindex.addAll(
 						CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
 			}
 		}
 		return dependenciesToReindex;
-	}
-
-	/**
-	 *
-	 * @param relatedEntry
-	 * @param con
-	 * @param oldRelatedIds
-	 * @param newRelatedIds
-	 */
-	private void replaceExistingRelatedContent(final Map<String, String> relatedEntry,
-			final Contentlet con, final List<String> oldRelatedIds,
-			final List<String> newRelatedIds) {
-
-		final String childId = relatedEntry.get(ESMappingConstants.CHILD);
-		final String parentId = relatedEntry.get(ESMappingConstants.PARENT);
-		if (con.getIdentifier().equalsIgnoreCase(childId)) {
-			newRelatedIds.add(parentId);
-			oldRelatedIds.remove(parentId);
-		} else {
-			newRelatedIds.add(childId);
-			oldRelatedIds.remove(childId);
-		}
 	}
 
     /**

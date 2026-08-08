@@ -48,6 +48,7 @@
                                     [indeterminate]="partial"
                                     [pt]="partial ? partialCheckboxPt : null"
                                     (onChange)="onBaseTypeToggle(item.name)"
+                                    (mousedown)="$event.stopPropagation()"
                                     (click)="$event.stopPropagation()"
                                     [ngModelOptions]="{ standalone: true }"
                                     [binary]="true"

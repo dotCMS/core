@@ -1549,7 +1549,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             throws DotSecurityException, DotDataException, IOException {
 
         //Creates content type
-        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType");
+        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType" + new Date().getTime());
         final Structure structure = new StructureTransformer(type).asStructure();
 
         try {
@@ -1610,8 +1610,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
             final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
             final Structure childStructure = new StructureTransformer(childContentType).asStructure();
 
@@ -1676,6 +1676,72 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Given Scenario: A parent contentlet is imported with a relationship field that references an
+     *                 existing, unlocked child contentlet.
+     * Expected Result: After the import the related child contentlet must NOT remain locked.
+     *                  Regression test for #35222 — related content was being checked out (and
+     *                  therefore locked) during relationship resolution and never unlocked.
+     */
+    @Test
+    public void importFile_relatedContent_shouldNotRemainLocked()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
+
+        try {
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
+
+            com.dotcms.contenttype.model.field.Field field = FieldBuilder
+                    .builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(childContentType.variable()).build();
+            field = fieldAPI.save(field, user);
+
+            //Creates an unlocked child contentlet
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            assertFalse("Child must start unlocked", childContentlet.isLocked());
+
+            //CSV relating the existing child to a new parent row
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + field.variable()
+                            + "\r\n" +
+                            "Import related content test, Import related content test, "
+                            + childContentlet.getIdentifier());
+
+            importContentWithRelationships(parentContentType, reader,
+                    new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                            parentContentType.fieldMap().get(BODY_FIELD_NAME).inode(),
+                            field.inode()});
+
+            //The related child must not remain locked after the import (#35222)
+            final Contentlet childAfterImport = contentletAPI.findContentletByIdentifier(
+                    childContentlet.getIdentifier(), false, defaultLanguage.getId(), user, false);
+            assertFalse("Related child contentlet must not remain locked after import",
+                    childAfterImport.isLocked());
+        } finally {
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Test
     public void importFile_updateRelatedContentWithEmptyColumn_shouldWipeOutRelatedContentList()
             throws DotSecurityException, DotDataException, IOException {
@@ -1687,8 +1753,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1759,8 +1825,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1831,8 +1897,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1905,7 +1971,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
 
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
 
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1963,7 +2029,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
 
         try {
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
 
             //child field
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")

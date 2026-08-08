@@ -3,7 +3,7 @@
 <!-- Auto Generated Below -->
 
 
-> **[DEPRECATED]** Use dot-contentlet-status-chip instead
+> **[DEPRECATED]** Use dot-contentlet-status-badge instead
 
 ## Properties
 

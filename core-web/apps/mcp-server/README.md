@@ -200,7 +200,7 @@ AI: [Analyzes your Product fields and generates a complete component]
 
 ## Available Tools
 
-The dotCMS MCP Server provides two core tools that enable comprehensive content management through AI:
+The dotCMS MCP Server provides tools that enable comprehensive content management through AI:
 
 ### Search
 
@@ -241,6 +241,42 @@ return pick(result.contentlets, ['identifier', 'title', 'modDate'])
 ```
 
 **Helper utilities available**: `pick(arr, fields)`, `table(arr)`, `count(arr, field)`, `sum(arr, field)`, `first(arr, n)`
+
+### Download Assets
+
+**Tool**: `download_assets`
+
+**Purpose**: Download a dotCMS asset folder to the MCP server filesystem while returning only a small JSON manifest.
+
+```json
+{
+    "path": "/application/themes/travel",
+    "dest": "/absolute/local/path/themes/travel",
+    "recursive": true,
+    "overwrite": "skip",
+    "include": "*.vtl,*.scss"
+}
+```
+
+The tool enumerates file assets with `/api/content/_search`, downloads bytes with `/api/v2/assets/{identifier}` through the server-side runtime, writes files under `dest`, and preserves relative folder structure. File bytes are not returned to the model.
+
+### Upload Assets
+
+**Tool**: `upload_assets`
+
+**Purpose**: Upload a local directory to dotCMS file assets using `/api/v2/assets/publish` or `/api/v2/assets/save`.
+
+```json
+{
+    "src": "/absolute/local/path/themes/travel",
+    "dest": "//demo.dotcms.com/application/themes/travel",
+    "include": "*.vtl,*.scss",
+    "publish": true,
+    "verify": true
+}
+```
+
+The upload destination must be host-qualified. When `publish` and `verify` are true, the tool checks live status with `/api/v1/content/{identifier}` and retries publish for files that did not become live.
 
 ### Pre-loaded Instance Context
 
@@ -291,28 +327,61 @@ git clone https://github.com/dotCMS/core.git
 cd core/core-web
 
 # Install dependencies
-yarn install
+pnpm install
 
-# Build the server (spec.json is already committed — no live dotCMS instance needed)
-yarn nx build mcp-server
+# Build the server. The build regenerates the OpenAPI spec first (via dependsOn) — by
+# default from https://demo.dotcms.com; see "Building against a local dotCMS instance" below.
+pnpm nx build mcp-server
 ```
 
 > [!NOTE]
-> Files are located in `core-web/apps/mcp-server` (tools/config) and `core-web/libs/agentic-tools` (runtime primitives + spec). We use [Nx monorepo](https://nx.dev/).
+> Files are located in `core-web/apps/mcp-server` (tools/config) and `core-web/libs/sdk/ai` (runtime primitives + spec). We use [Nx monorepo](https://nx.dev/).
 
 #### Refreshing the OpenAPI Spec
 
-The processed spec lives in `libs/agentic-tools/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes:
+The processed spec lives at `libs/sdk/ai/src/generated/spec.json`. It is **build-generated and git-ignored** — the `build`/`serve`/`test` targets regenerate it via `dependsOn`, so you rarely run this by hand. The source is resolved in this order: an explicit CLI arg, then `DOTCMS_SPEC_URL`, then `${DOTCMS_URL}/api/openapi.json`, then the demo instance.
 
 ```bash
 # Defaults to https://demo.dotcms.com/api/openapi.json
-yarn nx run agentic-tools:generate-spec
+pnpm nx run sdk-ai:generate-spec
 
-# Override with a different instance (e.g. local):
-yarn nx run agentic-tools:generate-spec -- http://localhost:8080/api/openapi.json
+# Override with a different instance — CLI arg (URL or local file path):
+pnpm nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
+pnpm nx run sdk-ai:generate-spec -- ./openapi.json
 ```
 
-Then commit the updated `spec.json`. CI does not need a live dotCMS instance to build.
+There is nothing to commit — the spec is regenerated at build time. CI builds it from the demo instance by default.
+
+#### Building against a local dotCMS instance
+
+The `search` tool exposes whatever endpoints are in the bundled `spec.json`, so to describe your
+**local** instance you must regenerate the spec as part of the build.
+
+> [!IMPORTANT]
+> Don't run `generate-spec` and then `build` as two separate steps. The `build` target re-runs
+> `generate-spec` itself (via `dependsOn`), and with no source set it falls back to the demo
+> instance — overwriting the spec you just generated. Pass the source so the build's own
+> `generate-spec` uses it.
+
+Set `DOTCMS_SPEC_URL` — it's an environment variable, so it flows into the `generate-spec` task
+that `build` runs automatically (a CLI `--` arg would not). One command:
+
+```bash
+# Regenerate the spec from your local instance AND build, in one step
+DOTCMS_SPEC_URL=http://localhost:8080/api/openapi.json pnpm nx build mcp-server
+
+# Then run it against the same instance (provide a local API token)
+npx @modelcontextprotocol/inspector \
+  -e DOTCMS_URL=http://localhost:8080 \
+  -e AUTH_TOKEN=your-local-api-token \
+  node dist/apps/mcp-server/stdio.js
+```
+
+> [!NOTE]
+> The spec source (what `search` describes) and `DOTCMS_URL` (where the tools send requests at
+> runtime) are separate. Point them at the same instance so the spec matches what the API serves.
+> If `DOTCMS_URL` is already exported in your shell, `generate-spec` will reuse it
+> (`${DOTCMS_URL}/api/openapi.json`) and you can drop `DOTCMS_SPEC_URL` entirely.
 
 #### 2. Use MCP Inspector for debug
 
@@ -365,13 +434,17 @@ apps/mcp-server/                         # MCP server (thin xmcp wrappers)
 ├── src/
 │   ├── tools/
 │   │   ├── search.ts       # API spec exploration tool
-│   │   └── execute.ts      # API execution tool
+│   │   ├── execute.ts      # API execution tool
+│   │   ├── download_assets.ts
+│   │   └── upload_assets.ts
+│   ├── lib/
+│   │   └── assets-transfer.ts
 │   └── prompts/            # Prompt templates (xmcp convention)
 ├── xmcp.config.ts          # xmcp bundler configuration
 ├── jest.config.ts          # Test configuration
 └── project.json            # Nx project configuration
 
-libs/agentic-tools/                      # Portable runtime primitives
+libs/sdk/ai/                      # Portable runtime primitives
 ├── scripts/
 │   └── generate-spec.ts    # OpenAPI spec processor (run manually to refresh)
 ├── src/
@@ -413,24 +486,24 @@ libs/agentic-tools/                      # Portable runtime primitives
 ### Development Commands
 
 ```bash
-# Build for production (spec.json already committed — no live dotCMS needed)
-yarn nx build mcp-server
+# Build for production (regenerates the spec from demo by default; see local-build section)
+pnpm nx build mcp-server
 
 # Development mode (with hot reload)
-yarn nx serve mcp-server
+pnpm nx serve mcp-server
 
 # Lint the code
-yarn nx lint mcp-server
+pnpm nx lint mcp-server
 
 # Run all tests
-yarn nx test mcp-server
+pnpm nx test mcp-server
 
 # Run tests in watch mode
-yarn nx test mcp-server --watch
+pnpm nx test mcp-server --watch
 
 # Refresh the OpenAPI spec (run when dotCMS API changes, then commit spec.json)
 # Defaults to https://demo.dotcms.com/api/openapi.json
-yarn nx run agentic-tools:generate-spec
+pnpm nx run sdk-ai:generate-spec
 ```
 
 ### Contributing Guidelines
@@ -478,7 +551,7 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 2. Create a feature branch (`git checkout -b feature/amazing-mcp-feature`)
 3. Make your changes in the `apps/mcp-server` directory
 4. Add tests for new functionality
-5. Run the test suite (`yarn nx test mcp-server`)
+5. Run the test suite (`pnpm nx test mcp-server`)
 6. Commit your changes (`git commit -m 'Add amazing MCP feature'`)
 7. Push to the branch (`git push origin feature/amazing-mcp-feature`)
 8. Open a Pull Request

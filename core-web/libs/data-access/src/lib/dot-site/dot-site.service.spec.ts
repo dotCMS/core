@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { DotSiteService, SiteParams, BASE_SITE_URL } from './dot-site.service';
 

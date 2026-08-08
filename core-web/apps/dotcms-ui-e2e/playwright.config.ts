@@ -45,8 +45,8 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
-    /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : undefined,
+    /* Parallelize CI (2 workers); local keeps Playwright default. */
+    workers: process.env.CI ? 2 : undefined,
     timeout: 60000,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter:
@@ -72,7 +72,7 @@ export default defineConfig({
     webServer:
         currentEnv === 'dev'
             ? {
-                  command: 'yarn nx run dotcms-ui:serve',
+                  command: 'pnpm exec nx run dotcms-ui:serve',
                   url: `${baseURL}/dotAdmin/#/public/login`,
                   reuseExistingServer: reuseExistingServer,
                   cwd: workspaceRoot

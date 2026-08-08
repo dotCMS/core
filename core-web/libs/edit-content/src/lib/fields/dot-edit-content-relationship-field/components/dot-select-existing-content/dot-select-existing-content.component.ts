@@ -3,7 +3,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     effect,
     inject,
     model,
@@ -14,7 +13,6 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -28,12 +26,15 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { InitLoadParams } from '../../models/relationship.models';
 
@@ -57,18 +58,17 @@ const STATIC_COLUMNS = 6;
         InputTextModule,
         InputGroupModule,
         PopoverModule,
-        ContentletStatusPipe,
+        DotContentletStatusBadgeComponent,
         LanguagePipe,
         DatePipe,
-        ChipModule,
         FormsModule,
         TooltipModule,
         SearchComponent,
-        ToggleSwitchModule
+        ToggleSwitchModule,
+        DotContentThumbnailComponent
     ],
     templateUrl: './dot-select-existing-content.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSelectExistingContentComponent implements OnInit {
     /**

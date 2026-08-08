@@ -20,12 +20,15 @@ import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -87,6 +90,51 @@ public class FolderFactoryImplTest extends IntegrationTestBase {
         assertNotNull(result);
         assertEquals(childFolder.getInode(), result.getInode());
         assertEquals(childFolder.getTitle(), result.getTitle());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link FolderFactoryImpl#save(Folder)} + the Folder DB
+     *     transformer read path.</li>
+     *     <li><b>Given Scenario:</b> Save a folder with {@code defaultBaseType} set to
+     *     {@code DOTASSET}, then {@code FILEASSET}, then {@code null}, clearing the cache and
+     *     re-reading from the DB each time.</li>
+     *     <li><b>Expected Result:</b> Each value round-trips through the upsert and the transformer;
+     *     a freshly-created folder reads back {@code null} (no preference).</li>
+     * </ul>
+     */
+    @Test
+    public void test_DefaultBaseType_Persistence_RoundTrip() throws DotDataException {
+        final FolderFactoryImpl folderFactory = new FolderFactoryImpl();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().name("dbt-" + System.currentTimeMillis())
+                .site(host).nextPersisted();
+
+        // A freshly-created folder has no preference
+        CacheLocator.getFolderCache().clearCache();
+        Folder read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertNull(read.getDefaultBaseType());
+
+        // DOTASSET round-trips
+        folder.setDefaultBaseType("DOTASSET");
+        folderFactory.save(folder);
+        CacheLocator.getFolderCache().clearCache();
+        read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertEquals("DOTASSET", read.getDefaultBaseType());
+
+        // FILEASSET round-trips
+        folder.setDefaultBaseType("FILEASSET");
+        folderFactory.save(folder);
+        CacheLocator.getFolderCache().clearCache();
+        read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertEquals("FILEASSET", read.getDefaultBaseType());
+
+        // null clears the preference
+        folder.setDefaultBaseType(null);
+        folderFactory.save(folder);
+        CacheLocator.getFolderCache().clearCache();
+        read = folderFactory.findFolderByPath(folder.getPath(), host);
+        assertNull(read.getDefaultBaseType());
     }
 
     /**
@@ -224,6 +272,70 @@ public class FolderFactoryImplTest extends IntegrationTestBase {
                 folderAPI.delete(testFolder, user, false);
             }
         }
+    }
+
+    // ── findDirectChildFolders ────────────────────────────────────────────────
+
+    /**
+     * Method to test: {@link FolderFactoryImpl#findDirectChildFolders} <br>
+     * Given Scenario: Two parent folders each have one direct child; both parent paths are queried. <br>
+     * Expected Result: Both children are returned; an unrelated folder is not included.
+     */
+    @Test
+    public void test_findDirectChildFolders_returnsDirectChildren()
+            throws DotDataException {
+        final FolderFactoryImpl factory = new FolderFactoryImpl();
+        final Host site        = new SiteDataGen().nextPersisted();
+        final Folder p1        = new FolderDataGen().site(site).name("parent-a").nextPersisted();
+        final Folder p2        = new FolderDataGen().site(site).name("parent-b").nextPersisted();
+        final Folder c1        = new FolderDataGen().site(site).parent(p1).name("child-a").nextPersisted();
+        final Folder c2        = new FolderDataGen().site(site).parent(p2).name("child-b").nextPersisted();
+        new FolderDataGen().site(site).name("unrelated").nextPersisted();
+
+        final List<Folder> result = factory.findDirectChildFolders(
+                site.getIdentifier(), Set.of(p1.getPath(), p2.getPath()));
+
+        final List<String> ids = result.stream().map(Folder::getIdentifier).toList();
+        assertTrue("child-a should be returned", ids.contains(c1.getIdentifier()));
+        assertTrue("child-b should be returned", ids.contains(c2.getIdentifier()));
+        assertEquals("only 2 direct children expected", 2, result.size());
+    }
+
+    /**
+     * Method to test: {@link FolderFactoryImpl#findDirectChildFolders} <br>
+     * Given Scenario: An empty path collection is passed. <br>
+     * Expected Result: Empty list returned immediately without hitting the database.
+     */
+    @Test
+    public void test_findDirectChildFolders_emptyPaths_returnsEmpty()
+            throws DotDataException {
+        final FolderFactoryImpl factory = new FolderFactoryImpl();
+        final List<Folder> result = factory.findDirectChildFolders("any-host", Set.of());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link FolderFactoryImpl#findDirectChildFolders} <br>
+     * Given Scenario: Parent has a direct child and a grandchild; only the parent path is queried. <br>
+     * Expected Result: Only the direct child is returned; the grandchild is not included.
+     */
+    @Test
+    public void test_findDirectChildFolders_doesNotReturnGrandchildren()
+            throws DotDataException {
+        final FolderFactoryImpl factory = new FolderFactoryImpl();
+        final Host site         = new SiteDataGen().nextPersisted();
+        final Folder parent     = new FolderDataGen().site(site).name("gp-parent").nextPersisted();
+        final Folder child      = new FolderDataGen().site(site).parent(parent).name("gp-child").nextPersisted();
+        final Folder grandchild = new FolderDataGen().site(site).parent(child).name("gp-grandchild").nextPersisted();
+
+        final List<Folder> result = factory.findDirectChildFolders(
+                site.getIdentifier(), Set.of(parent.getPath()));
+
+        final List<String> ids = result.stream().map(Folder::getIdentifier).toList();
+        assertTrue("direct child should be returned", ids.contains(child.getIdentifier()));
+        assertTrue("grandchild must not be returned",
+                ids.stream().noneMatch(id -> id.equals(grandchild.getIdentifier())));
     }
 
 }

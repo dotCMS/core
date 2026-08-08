@@ -41,8 +41,6 @@ export class LoginService {
     private urls: Record<string, string>;
 
     constructor() {
-        const dotcmsEventsService = this.dotcmsEventsService;
-
         this._loginAsUsersList$ = new Subject<User[]>();
 
         this.urls = {
@@ -57,13 +55,12 @@ export class LoginService {
             current: '/api/v1/users/current/'
         };
 
-        // when the session is expired/destroyed
-        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => {
+        this.dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => {
             this.logOutUser();
             this.clearExperimentPersistence();
         });
 
-        dotcmsEventsService.subscribeTo('SESSION_LOGOUT').subscribe(() => {
+        this.dotcmsEventsService.subscribeTo('SESSION_LOGOUT').subscribe(() => {
             this.clearExperimentPersistence();
         });
     }
@@ -299,8 +296,6 @@ export class LoginService {
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
             this._logout$.next();
-        } else {
-            this.dotcmsEventsService.start();
         }
     }
 

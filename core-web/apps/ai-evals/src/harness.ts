@@ -1,5 +1,7 @@
 import { generateText, stepCountIs } from 'ai';
 
+import { makeTools } from './tools';
+
 import type {
     AssertionResult,
     CleanupStep,
@@ -10,7 +12,6 @@ import type {
     RunTaskOptions,
     TaskResult
 } from './types';
-import { makeTools } from './tools';
 
 // ── Pricing (claude-sonnet-4-5, $/MTok) ──────────────────────────────────────
 

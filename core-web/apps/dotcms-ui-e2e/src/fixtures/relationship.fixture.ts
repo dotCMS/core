@@ -1,13 +1,20 @@
-import { type APIRequestContext, test as base, expect, type Page } from '@playwright/test';
+import { type APIRequestContext, expect } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
+
+import { test as base } from './base.fixture';
 
 import {
     type ContentType,
     type CreateContentTypePayload,
-    createFakeContentType
+    createFakeContentType,
+    deleteContentType
 } from '../requests/contentType';
 import { createFieldVariable } from '../requests/field-variables';
+import {
+    createFakePayloadRelationshipField,
+    createFakePayloadTextField
+} from '../utils/dot-content-types.mock';
 
 export type TestContentType = ContentType;
 
@@ -172,18 +179,16 @@ function authorContentTypePayload(suffix: string): CreateContentTypePayload {
         name: `E2E_Author_${suffix}`,
         variable: `E2EAuthor${suffix}`,
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            }),
+            createFakePayloadTextField({
                 name: 'Bio',
                 variable: 'bio',
                 sortOrder: 2
-            }
+            })
         ]
     };
 }
@@ -194,12 +199,11 @@ function tagContentTypePayload(suffix: string): CreateContentTypePayload {
         variable: `E2ETag${suffix}`,
         metadata: {},
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Name',
                 variable: 'name',
                 sortOrder: 1
-            }
+            })
         ]
     };
 }
@@ -216,14 +220,12 @@ function blogContentTypePayload(
         name: `${name}_${suffix}`,
         variable: `${variable}${suffix}`,
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+            }),
+            createFakePayloadRelationshipField({
                 name:
                     relationshipFieldVariable.charAt(0).toUpperCase() +
                     relationshipFieldVariable.slice(1),
@@ -233,7 +235,7 @@ function blogContentTypePayload(
                     velocityVar: relatedContentTypeVariable,
                     cardinality
                 }
-            }
+            })
         ]
     };
 }
@@ -262,10 +264,9 @@ export interface RelationshipTestData {
 // ─── Fixture ─────────────────────────────────────────────────────
 
 export const test = base.extend<{
-    adminPage: Page;
-    testSuffix: string;
     apiHelpers: {
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
+        deleteContentType: (id: string) => Promise<void>;
         createContentlet: (ct: string, fields: Record<string, unknown>) => Promise<TestContentlet>;
         /** Bulk create; returned array sorted by `title` (API completion order is not guaranteed). */
         createContentlets: (
@@ -297,18 +298,10 @@ export const test = base.extend<{
         CARDINALITY: typeof CARDINALITY;
     };
 }>({
-    adminPage: async ({ page }, use) => {
-        await use(page);
-    },
-
-    // eslint-disable-next-line no-empty-pattern
-    testSuffix: async ({}, use) => {
-        await use(crypto.randomUUID().slice(0, 8));
-    },
-
     apiHelpers: async ({ request }, use) => {
         await use({
             createContentType: (payload) => createFakeContentType(request, payload),
+            deleteContentType: (id) => deleteContentType(request, id),
             createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
             createContentlets: (ct, fieldsList) => fireContentlets(request, ct, fieldsList),
             createContentletWithRelationship: (ct, fields, rels) =>
@@ -331,5 +324,5 @@ export const test = base.extend<{
     }
 });
 
-export { expect } from '@playwright/test';
 export { SYSTEM_WORKFLOW_ID } from '../requests/contentType';
+export { expect } from './base.fixture';

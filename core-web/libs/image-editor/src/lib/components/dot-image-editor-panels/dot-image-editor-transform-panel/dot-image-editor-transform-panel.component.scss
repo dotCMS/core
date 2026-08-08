@@ -1,0 +1,105 @@
+.ie-transform {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ie-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ie-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+// Editable value (number field + unit), mirroring the Adjust panel: borderless
+// until hover/focus, right-aligned, native spinners hidden.
+.ie-field__value-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
+.ie-field__value {
+    width: 2.75rem;
+    padding: 1px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+
+    &:hover {
+        border-color: var(--surface-200, #e2e8f0);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--primary-color, #6366f1);
+    }
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+}
+
+.ie-field__unit {
+    color: var(--text-color-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.ie-transform__flip {
+    display: flex;
+    gap: 0.5rem;
+}
+
+// The flip toggles project their icon + label into PrimeNG's toggle button, so
+// pierce its content slot with ::ng-deep to size the Material Symbol down to the
+// previous icon footprint and keep the glyph and label on one centered row.
+:host ::ng-deep {
+    .p-togglebutton-content {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .ie-transform__flip .material-symbols-outlined {
+        font-size: 1.125rem;
+    }
+
+    // Vertical flip reuses the `flip` glyph rotated a quarter turn.
+    .icon-rotate-90 {
+        transform: rotate(90deg);
+    }
+}
+
+.ie-transform__dimensions {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.ie-transform__dimension {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ie-transform__dimension-separator {
+    padding-top: 0.5rem;
+    color: var(--text-color-secondary);
+}
+
+.ie-transform__error {
+    color: var(--red-500);
+}

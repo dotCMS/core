@@ -14,6 +14,8 @@
         "lib": ["es2017", "es2020", "dom", "dom.iterable"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
+        "strict": false,
+        "ignoreDeprecations": "6.0",
         "baseUrl": ".",
         "paths": {
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
@@ -73,11 +75,15 @@
             ],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
+            "@dotcms/portlets/dot-publishing-queue/portlet": [
+                "libs/portlets/dot-publishing-queue/src/index.ts"
+            ],
             "@dotcms/portlets/dot-query-tool/portlet": [
                 "libs/portlets/dot-query-tool/src/index.ts"
             ],
             "@dotcms/portlets/dot-tags/portlet": ["libs/portlets/dot-tags/src/index.ts"],
             "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
+            "@dotcms/portlets/dot-users/portlet": ["libs/portlets/dot-users/src/index.ts"],
             "@dotcms/portlets/dot-velocity-playground/portlet": [
                 "libs/portlets/dot-velocity-playground/src/index.ts"
             ],
@@ -103,7 +109,13 @@
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
             "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
-            "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"]
+            "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"],
+            "@dotcms/image-editor": ["libs/image-editor/src/index.ts"],
+            "@dotcms/ai/runtime": ["libs/sdk/ai/src/runtime.ts"],
+            "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
+            "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
+            "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
+            "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

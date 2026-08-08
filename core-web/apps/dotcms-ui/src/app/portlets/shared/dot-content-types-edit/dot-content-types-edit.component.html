@@ -22,10 +22,11 @@
     [header]="templateInfo.header"
     [modal]="true"
     [closable]="dialogCloseable"
+    [focusOnShow]="dialogFocusOnShow"
     [style]="{ width: '50rem' }"
     (visibleChange)="show.set($event)"
     (onHide)="onDialogHide()">
-    @if (show()) {
+    @if ($renderForm()) {
         <dot-content-types-form
             ($valid)="setDialogOkButtonState($event)"
             ($send)="handleFormSubmit($event)"

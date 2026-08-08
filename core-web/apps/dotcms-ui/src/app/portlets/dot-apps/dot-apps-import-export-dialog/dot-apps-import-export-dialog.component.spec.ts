@@ -1,5 +1,5 @@
 import { expect, it, describe, beforeEach } from '@jest/globals';
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { signal, WritableSignal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';

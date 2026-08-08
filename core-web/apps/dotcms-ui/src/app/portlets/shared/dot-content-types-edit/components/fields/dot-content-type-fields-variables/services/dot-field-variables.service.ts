@@ -10,7 +10,7 @@ import { DotCMSContentTypeField, DotCMSResponse, DotFieldVariable } from '@dotcm
 /**
  * Provide method to handle with the Field Variables
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotFieldVariablesService {
     private http = inject(HttpClient);
 

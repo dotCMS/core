@@ -7,7 +7,6 @@ import { filter, map, skip, startWith, switchMap, take, tap } from 'rxjs/operato
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
-import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
 import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
@@ -48,25 +47,12 @@ export class SiteService {
 
     constructor() {
         const loginService = inject(LoginService);
-        const dotcmsEventsService = inject(DotcmsEventsService);
 
         this.urls = {
             currentSiteUrl: '/api/v1/site/currentSite',
             sitesUrl: '/api/v1/site',
             switchSiteUrl: '/api/v1/site/switch'
         };
-
-        dotcmsEventsService
-            .subscribeToEvents<Site>(['ARCHIVE_SITE', 'UPDATE_SITE'])
-            .subscribe((event: DotEventTypeWrapper<Site>) => this.eventResponse(event));
-
-        dotcmsEventsService
-            .subscribeToEvents<Site>(this.events)
-            .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.siteEventsHandler(data));
-
-        dotcmsEventsService
-            .subscribeToEvents<Site>(['SWITCH_SITE'])
-            .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
         loginService.watchUser(() => this.loadCurrentSite());
     }

@@ -40,6 +40,37 @@ describe('DotCurrentUserService', () => {
         req.flush(mockCurrentUserResponse);
     });
 
+    it('should return true when portlet is found in the user menu', () => {
+        const mockMenuResponse = {
+            entity: [
+                { menuItems: [{ id: 'sites' }, { id: 'locales' }] },
+                { menuItems: [{ id: 'content' }] }
+            ]
+        };
+
+        dotCurrentUserService.isPortletInMenu('locales').subscribe((result) => {
+            expect(result).toBe(true);
+        });
+
+        const req = httpMock.expectOne('/api/v1/menu');
+        expect(req.request.method).toBe('GET');
+        req.flush(mockMenuResponse);
+    });
+
+    it('should return false when portlet is not found in the user menu', () => {
+        const mockMenuResponse = {
+            entity: [{ menuItems: [{ id: 'sites' }, { id: 'content' }] }]
+        };
+
+        dotCurrentUserService.isPortletInMenu('locales').subscribe((result) => {
+            expect(result).toBe(false);
+        });
+
+        const req = httpMock.expectOne('/api/v1/menu');
+        expect(req.request.method).toBe('GET');
+        req.flush(mockMenuResponse);
+    });
+
     it('should get user has access to specific Portlet', () => {
         const portlet = 'test';
         dotCurrentUserService.hasAccessToPortlet(portlet).subscribe((hasAccess: boolean) => {

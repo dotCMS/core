@@ -1,73 +1,76 @@
-<div data-testid="history-item" class="block pb-3">
+<div data-testid="history-item" class="block pb-2">
     <div
         data-testid="content-wrapper"
-        class="group flex cursor-pointer items-stretch justify-between gap-2 rounded-md border py-2.5 pr-2.5 pl-3 transition-colors"
-        [class.bg-white]="!$isActive()"
+        class="group flex cursor-pointer flex-col gap-0.5 rounded-md border px-3 py-1.5 transition-colors"
+        [class.bg-surface-50]="!$isActive()"
         [class.border-transparent]="!$isActive()"
         [class.hover:bg-gray-100]="!$isActive()"
         [class.bg-primary-50]="$isActive()"
-        [class.border-primary-200]="$isActive()"
-        [pTooltip]="tooltipContent"
-        tooltipPosition="bottom"
-        [tooltipOptions]="{
-            showDelay: 100,
-            hideDelay: 100,
-            escape: false,
-            positionStyle: 'absolute',
-            appendTo: 'body'
-        }">
-        <ng-template #tooltipContent>
-            <div class="max-w-[280px] min-w-0 py-1">
-                <h4 data-testid="overlay-title" class="mb-2 text-sm leading-snug font-semibold">
-                    {{ $item().title }}
-                </h4>
-                <ul class="m-0 list-none space-y-1 pl-0 text-xs">
-                    <li>{{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}</li>
-                    <li>{{ $item().languageFlag }}</li>
-                    @if ($item().experimentVariant) {
-                        <li>
-                            {{ 'edit.content.sidebar.history.variant' | dm }}:
-                            {{ $item().experimentVariant }}
-                        </li>
-                    }
-                </ul>
+        [class.border-primary-200]="$isActive()">
+        <!-- Row 1: title (left) | chips + 3-dot (right) -->
+        <div class="flex items-center justify-between gap-2">
+            <span
+                data-testid="time-display"
+                class="min-w-0 truncate text-sm leading-tight font-bold text-gray-900">
+                {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
+            </span>
+
+            <div class="flex shrink-0 items-center gap-2">
+                @if ($isLoadingVersion()) {
+                    <i
+                        class="pi pi-spinner pi-spin text-sm text-primary"
+                        data-testid="version-loading-spinner"
+                        aria-hidden="true"></i>
+                }
+                @if ($item().live) {
+                    <p-tag
+                        severity="success"
+                        [value]="'edit.content.sidebar.history.published' | dm"
+                        data-testid="state-live" />
+                } @else if ($item().working) {
+                    <p-tag
+                        severity="warn"
+                        [value]="'edit.content.sidebar.history.draft' | dm"
+                        data-testid="state-draft" />
+                }
+                @if ($item().experimentVariant) {
+                    <p-tag
+                        severity="info"
+                        [value]="'edit.content.sidebar.history.variant.tag' | dm"
+                        data-testid="state-variant" />
+                }
+
+                <!-- 3-dot: outlined + circular, visible only on hover or while menu is open -->
+                @if ($menuItems().length > 0) {
+                    <div
+                        [class]="
+                            'transition-opacity ' +
+                            ($isMenuOpen() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
+                        "
+                        (mouseenter)="cancelHideMenu()"
+                        (mouseleave)="scheduleHideMenu()">
+                        <p-button
+                            icon="pi pi-ellipsis-v"
+                            [outlined]="true"
+                            [rounded]="true"
+                            size="small"
+                            (click)="versionMenu.toggle($event); $event.stopPropagation()"
+                            data-testid="version-menu-button" />
+                        <p-menu
+                            #versionMenu
+                            [appendTo]="'body'"
+                            [model]="$menuItems()"
+                            [popup]="true"
+                            (onShow)="onMenuShown()"
+                            (onHide)="onMenuHidden()" />
+                    </div>
+                }
             </div>
-        </ng-template>
+        </div>
 
-        <div class="flex min-w-0 flex-1 flex-col gap-2">
-            <div class="flex flex-wrap items-center gap-2">
-                <span
-                    data-testid="time-display"
-                    class="text-sm leading-tight font-bold text-gray-900">
-                    @if ($item().working) {
-                        {{ 'edit.content.sidebar.history.menu.current' | dm }}
-                    } @else {
-                        {{ $item().modDate | dotRelativeDate }}
-                    }
-                </span>
-                <div class="flex items-center gap-1">
-                    @if ($item().live) {
-                        <p-chip
-                            styleClass="bg-green-100! text-green-700! border-green-100! text-xs"
-                            [label]="'edit.content.sidebar.history.published' | dm"
-                            data-testid="state-live" />
-                    } @else if ($item().working) {
-                        <p-chip
-                            styleClass="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
-                            [label]="'edit.content.sidebar.history.draft' | dm"
-                            data-testid="state-draft" />
-                    }
-
-                    @if ($item().experimentVariant) {
-                        <p-chip
-                            styleClass="bg-blue-100! text-blue-700! border-blue-100! text-xs"
-                            [label]="'edit.content.sidebar.history.variant.tag' | dm"
-                            data-testid="state-variant" />
-                    }
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2">
+        <!-- Row 2: avatar + username (left) | inode hover-only (right) -->
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex min-w-0 items-center gap-2">
                 <div
                     class="size-6 shrink-0 overflow-hidden rounded-full [&_img]:size-full [&_img]:object-cover">
                     <p-avatar
@@ -81,40 +84,17 @@
                     {{ $item().modUserName }}
                 </span>
             </div>
-        </div>
 
-        <!-- Right column: kebab pinned top, inode copy pinned bottom -->
-        <div class="flex shrink-0 flex-col items-end gap-1">
-            @if ($menuItems().length > 0) {
-                <div
-                    [class]="
-                        'transition-opacity ' +
-                        ($isActive() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
-                    "
-                    (mouseenter)="cancelHideMenu()"
-                    (mouseleave)="scheduleHideMenu()">
-                    <p-button
-                        icon="pi pi-ellipsis-v"
-                        styleClass="p-button-rounded p-button-sm p-button-text p-button-tertiary"
-                        (click)="versionMenu.toggle($event); $event.stopPropagation()"
-                        data-testid="version-menu-button" />
-                    <p-menu
-                        #versionMenu
-                        [appendTo]="'body'"
-                        [model]="$menuItems()"
-                        [popup]="true"
-                        (onShow)="onMenuShown()"
-                        (onHide)="onMenuHidden()" />
-                </div>
-            }
-            <dot-copy-button
-                class="mt-auto"
-                [copy]="$item().inode"
-                [label]="$inodeShort()"
-                [tooltipText]="'edit.content.sidebar.history.copy.inode' | dm"
-                customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case [&_.p-button-label]:font-mono"
-                (click)="$event.stopPropagation()"
-                data-testid="copy-inode" />
+            <div
+                class="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                (click)="$event.stopPropagation()">
+                <dot-copy-button
+                    [copy]="$item().inode"
+                    [label]="$inodeShort()"
+                    [tooltipText]="'edit.content.sidebar.history.copy.inode' | dm"
+                    customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case [&_.p-button-label]:font-mono"
+                    data-testid="copy-inode" />
+            </div>
         </div>
     </div>
 </div>

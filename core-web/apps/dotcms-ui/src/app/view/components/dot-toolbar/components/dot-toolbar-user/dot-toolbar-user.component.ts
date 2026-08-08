@@ -52,9 +52,10 @@ export class DotToolbarUserComponent implements OnInit {
     readonly vm$ = combineLatest([
         this.store.vm$,
         this.#dotPropertiesService
-            .getFeatureFlagWithDefault(FeaturedFlags.FEATURE_FLAG_REPORT_ISSUE_ENABLED, false)
-            // startWith renders the toolbar immediately at flag=off; catchError keeps it
-            // visible if /api/v1/configuration/config errors instead of taking it down.
+            .getFeatureFlag(FeaturedFlags.FEATURE_FLAG_REPORT_ISSUE_ENABLED)
+            // startWith renders the toolbar immediately while the flag resolves; catchError keeps
+            // it visible if /api/v1/configuration/config errors instead of taking it down. A
+            // missing flag resolves to `true` (project-wide rule), so the item shows by default.
             .pipe(
                 startWith(false),
                 catchError(() => of(false))

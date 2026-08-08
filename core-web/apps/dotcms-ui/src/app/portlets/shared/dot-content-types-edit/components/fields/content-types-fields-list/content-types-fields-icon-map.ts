@@ -32,3 +32,15 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableJSONField': 'data_object',
     [COLUMN_BREAK.clazz]: 'view_column'
 };
+
+/** Fallback icon used when a field clazz has no dedicated entry in {@link FIELD_ICONS}. */
+const DEFAULT_FIELD_ICON = 'label';
+
+/**
+ * Get the field icon by the field's class.
+ *
+ * @param {string} fieldClazz
+ * @returns {string}
+ */
+export const getFieldIcon = (fieldClazz: string): string =>
+    FIELD_ICONS[fieldClazz] ?? DEFAULT_FIELD_ICON;

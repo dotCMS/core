@@ -79,6 +79,10 @@ class OpenSearchClient:
             "cluster:monitor/nodes/stats",
             "indices:data/read/scroll",
             "indices:data/read/scroll/clear",
+            # GET / — required by IndexStartupValidator's OS version/reachability
+            # probe (client.info()). Without it OS 3.x is misclassified as
+            # unreachable and dotCMS silently falls back to ES-only. See spike #35922.
+            "cluster:monitor/main",
         ]
         self.all_index_permissions = [
             "indices:monitor/stats",

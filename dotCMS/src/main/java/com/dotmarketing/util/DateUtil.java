@@ -780,6 +780,18 @@ public class DateUtil {
 	}
 
 	/**
+	 * Coerces a value that may already be a {@link Date} (e.g. a JDBC {@code Timestamp} returned
+	 * in a SQL result row) to a {@link Date}. Returns null when the value is not a Date.
+	 *
+	 * @param value the value to coerce
+	 * @return the Date, or null
+	 */
+	public static Date asDate (final Object value) {
+
+		return value instanceof Date ? (Date) value : null;
+	}
+
+	/**
 	 * Formats duration to a friendly format.
 	 *
 	 * @param duration duration object

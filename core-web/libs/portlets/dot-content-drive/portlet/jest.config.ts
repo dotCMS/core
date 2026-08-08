@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlet',
     preset: '../../../../jest.preset.js',
@@ -14,7 +13,11 @@ export default {
             }
         ]
     },
-    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+    // The content-type selector dialog reuses the UVE palette from @dotcms/portlets/dot-ema/ui,
+    // whose barrel transitively pulls ESM-only deps (lib0/@tiptap/etc.) that must be transformed.
+    transformIgnorePatterns: [
+        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked|lowlight|devlop))'
+    ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

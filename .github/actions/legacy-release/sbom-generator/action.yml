@@ -41,7 +41,10 @@ runs:
     - name: Scan Docker Image with Syft
       shell: bash
       run: |
-        pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-json > core/sbom-cyclonedx.json
+        # --spec + explicit `syft` app: upstream renamed its exposed scripts and an
+        # unpinned `pipx run anchore_syft` stopped resolving (#36755). Version pinned
+        # so a future packaging change can't silently break releases again.
+        pipx run --spec anchore_syft==1.18.1 syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-json > core/sbom-cyclonedx.json
 
     - name: Rename SBOM file with dotCMS version
       shell: bash

@@ -1,0 +1,25 @@
+@let contentlet = $contentlet();
+
+<!-- Thumbnail fills full height -->
+<div
+    class="flex h-full w-20 shrink-0 items-center justify-center overflow-hidden"
+    [class]="
+        $isIconThumbnail()
+            ? 'bg-gray-100 group-hover:bg-(--color-palette-primary-200) group-hover:[--dot-content-thumbnail-icon-color:var(--color-palette-primary-600)]'
+            : ''
+    ">
+    <dot-content-thumbnail
+        data-testid="contentlet-thumbnail"
+        class="pointer-events-none"
+        iconSize="32px"
+        [thumbnail]="$thumbnail()" />
+</div>
+
+<!-- Title -->
+<div
+    data-testid="contentlet-title"
+    [pTooltip]="contentlet.title"
+    tooltipPosition="top"
+    class="line-clamp-2 min-w-0 flex-1 pr-2 pl-3 text-sm leading-tight wrap-break-word text-gray-800 group-hover:text-(--color-palette-primary-700)">
+    {{ contentlet.title }}
+</div>

@@ -23,12 +23,16 @@
         <p-button
             (click)="setPositionFlag('before'); menuHover.toggle($event)"
             class="add-button-top"
+            [style.top.px]="hoverTopClipOffset()"
+            [style.transform]="hoverTopClipOffset() ? 'translate(-50%, 0)' : null"
             data-testId="hover-add-top-button"
             icon="pi pi-plus" />
         @if (!hoverIsEmpty) {
             <p-button
                 (click)="setPositionFlag('after'); menuHover.toggle($event)"
                 class="add-button-bottom"
+                [style.bottom.px]="hoverBottomClipOffset()"
+                [style.transform]="hoverBottomClipOffset() ? 'translate(-50%, 0)' : null"
                 data-testId="hover-add-bottom-button"
                 icon="pi pi-plus" />
         }
@@ -38,7 +42,8 @@
                  outside `.actions` so it's visible at every container
                  size (drag is the one action that has no menu equivalent). -->
             <div
-                class="drag-button absolute flex pointer-events-[all] z-1 bg-white rounded-md border border-solid border-gray-300">
+                class="drag-button pointer-events-[all] absolute z-1 flex rounded-md border border-solid border-gray-300 bg-white"
+                [style.top.px]="hoverDragButtonTopOffset()">
                 <p-button
                     [attr.data-item]="hoverDragItem | json"
                     [attr.data-use-custom-drag-image]="useCustomDragImage"
@@ -54,7 +59,9 @@
             <!-- Full actions row: rendered when the contentlet is wide
                  enough. Hidden by container query below 600px. -->
             <div
-                class="actions actions-full absolute right-2 top-0 transform-[translate(0,-50%)] flex justify-end gap-1 pointer-events-[all] z-1 bg-white rounded-md border border-solid border-gray-300"
+                class="actions actions-full pointer-events-[all] absolute top-0 right-2 z-1 flex transform-[translate(0,-50%)] justify-end gap-1 rounded-md border border-solid border-gray-300 bg-white"
+                [style.top.px]="hoverTopClipOffset()"
+                [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
                 data-testId="hover-actions">
                 @if (hasVtlFiles()) {
                     <p-button
@@ -109,7 +116,9 @@
                  a menu with the same actions. Hidden by container query
                  above 600px. VTL files appear as a nested submenu. -->
             <div
-                class="actions actions-collapsed absolute right-2 top-0 transform-[translate(0,-50%)] flex pointer-events-[all] z-1 bg-white rounded-md border border-solid border-gray-300"
+                class="actions actions-collapsed pointer-events-[all] absolute top-0 right-2 z-1 flex transform-[translate(0,-50%)] rounded-md border border-solid border-gray-300 bg-white"
+                [style.top.px]="hoverTopClipOffset()"
+                [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
                 data-testId="hover-actions-collapsed">
                 <p-button
                     (click)="menuHoverActions.toggle($event)"

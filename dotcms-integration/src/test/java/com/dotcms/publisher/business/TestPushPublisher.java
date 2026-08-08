@@ -16,6 +16,7 @@ import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFai
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsSuccessEvent;
 import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointFailureEvent;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import org.apache.commons.io.IOUtils;
@@ -23,10 +24,17 @@ import org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.*;
 
 public class TestPushPublisher extends PushPublisher {
+
+    /**
+     * Config flag (off by default) that makes this test publisher simulate a completely unreachable
+     * receiver endpoint, so tests can reproduce the failed-send / retry-until-terminal scenario.
+     */
+    public static final String SIMULATE_UNREACHABLE_ENDPOINT = "TEST_PP_SIMULATE_UNREACHABLE_ENDPOINT";
 
     public TestPushPublisher() {
     }
@@ -102,6 +110,12 @@ public class TestPushPublisher extends PushPublisher {
                     EndpointDetail detail = new EndpointDetail();
 
                     try (InputStream bundleStream = new BufferedInputStream(Files.newInputStream(bundle.toPath()));) {
+
+                        // Opt-in failure mode (off by default): simulates a receiver endpoint that
+                        // cannot be reached, mirroring the UnknownHostException seen in #35999.
+                        if (Config.getBooleanProperty(SIMULATE_UNREACHABLE_ENDPOINT, false)) {
+                            throw new UnknownHostException(endpoint.getAddress());
+                        }
 
                         Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 

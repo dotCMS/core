@@ -1,14 +1,15 @@
 package com.dotmarketing.business;
 
 import com.dotcms.variant.model.Variant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Provides access to information regarding the different versions (working,
@@ -276,6 +277,19 @@ public abstract class VersionableFactory {
 
 	protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier, String variantName)
 			throws DotDataException, DotStateException ;
+
+	/**
+	 * Returns ALL the {@link ContentletVersionInfo} rows — every language and variant — for the
+	 * given set of identifiers, reading them from the database in batches of bound parameters.
+	 * Unlike {@link #findAllContentletVersionInfos(String)}, results are NOT cached: this method
+	 * is meant for bulk read-only operations, such as collecting the working versions of related
+	 * content that must be re-indexed.
+	 *
+	 * @param identifiers Identifiers of the contentlets whose version info rows are returned
+	 * @return The {@link ContentletVersionInfo} rows found for the given identifiers
+	 */
+	public abstract List<ContentletVersionInfo> findAllContentletVersionInfos(
+			Collection<String> identifiers) throws DotDataException;
 
 	/**
 	 * Return all versions of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet}

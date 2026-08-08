@@ -5,6 +5,7 @@
 # - Creating release branch
 # - Setting release version in maven.config
 # - Updating LICENSE file Change Date
+# - Optionally bumping MinSdkVersion.VALUE on the release branch (see #36609/#36698)
 # - Creating initial GitHub release
 # - Caching build artifacts for subsequent phases
 #
@@ -29,6 +30,15 @@ on:
         required: false
         type: string
         default: ''
+      bump_min_sdk_version:
+        description: >-
+          Does this release include a change that breaks SDK compatibility? If true, bumps
+          MinSdkVersion.VALUE on the release branch itself (see #36609/#36698) so this
+          release advertises the new compatibility floor from the moment it ships, rather
+          than starting with some future release. Ignored for LTS releases.
+        required: false
+        type: boolean
+        default: false
     secrets:
       CI_MACHINE_TOKEN:
         required: false
@@ -162,6 +172,31 @@ jobs:
           if ! git diff --quiet HEAD -- LICENSE; then
             echo "LICENSE file was updated, adding to commit"
             git add LICENSE
+          fi
+
+          # Bump MinSdkVersion.VALUE on the release branch itself (see #36609/#36698): a
+          # release that breaks SDK compatibility must advertise the new floor from the
+          # moment IT ships, not starting with some future release. This only ever lives on
+          # this disposable release branch (never merged to main), so a downstream
+          # build/deployment failure still can't leave main advertising a floor for a
+          # version that never actually shipped. Persisting the bump forward to main, so
+          # future releases inherit it, is still handled separately by the post-success
+          # bump-min-sdk-version job in cicd_6-release.yml.
+          if [[ "${{ inputs.bump_min_sdk_version }}" == "true" && "${{ steps.set-version.outputs.is_lts }}" != "true" ]]; then
+            MIN_SDK_FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+            sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${release_version}\"/" "${MIN_SDK_FILE}"
+
+            # Verify the substitution actually landed, same guard as the post-release bump
+            # job — if the VALUE = "..." literal is ever reformatted, fail loudly instead of
+            # silently shipping a release that doesn't actually advertise the new floor.
+            NEW_MIN_SDK_VALUE=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
+            if [ "${NEW_MIN_SDK_VALUE}" != "${release_version}" ]; then
+              echo "::error::Failed to bump MinSdkVersion.VALUE on the release branch — expected '${release_version}' but found '${NEW_MIN_SDK_VALUE}'. The VALUE = \"...\" literal in ${MIN_SDK_FILE} may have been reformatted."
+              exit 1
+            fi
+
+            echo "MinSdkVersion.VALUE bumped to ${release_version} on the release branch"
+            git add "${MIN_SDK_FILE}"
           fi
 
           git status

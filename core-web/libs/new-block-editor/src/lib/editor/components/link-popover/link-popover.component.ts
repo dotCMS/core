@@ -32,6 +32,8 @@ import { DotContentSearchService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { FULLSCREEN_AWARE_OVERLAY_OPTIONS } from '../../config.utils';
+import { DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
 import { LINK_SELECTION_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
@@ -89,6 +91,14 @@ export class LinkPopoverComponent {
 
     protected readonly relOptions = REL_OPTIONS;
 
+    /**
+     * Overlay options for the URL `<p-autoComplete>` and rel `<p-select>` panels, both of which
+     * append to `document.body`. Lifts them above the fullscreen editor shell's `z-[9998]`
+     * backdrop so the suggestion/dropdown panels stay clickable in fullscreen.
+     * See {@link FULLSCREEN_AWARE_OVERLAY_OPTIONS}.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
+
     /** AutoComplete instance — used to force-hide the overlay when an external URL is typed. */
     protected readonly autoComplete = viewChild<AutoComplete>(AutoComplete);
 
@@ -129,6 +139,26 @@ export class LinkPopoverComponent {
     protected readonly isEditing = computed(
         () => this.manager.linkPayload()?.initialValues != null
     );
+
+    /**
+     * True when the popover targets a selected `dotImage` node. Hides the text-only fields (Text,
+     * Advanced) and routes {@link onInsert} to update the image node's `href`/`target` attributes
+     * instead of inserting a text node with a link mark.
+     */
+    protected readonly isImageLink = computed(
+        () => this.manager.linkPayload()?.isImageLink === true
+    );
+
+    /**
+     * True when there's an existing link to remove — drives the trash (Remove link) button.
+     * For images: the node already has an `href`. For text: the popover was opened on a real
+     * anchor (`linkEl` set), not while creating a new link over plain selected text.
+     */
+    protected readonly canRemoveLink = computed(() => {
+        const payload = this.manager.linkPayload();
+        if (!payload) return false;
+        return payload.isImageLink ? !!payload.initialValues?.href : !!payload.linkEl;
+    });
 
     /**
      * Tracks whether the Advanced (Title / Aria Label / Rel) section is visible.
@@ -265,6 +295,8 @@ export class LinkPopoverComponent {
         effect((onCleanup) => {
             if (!this.manager.isOpen('link')) return;
             if (this.manager.linkPayload()?.linkEl) return;
+            // Image-link mode is a NodeSelection — there is no text range to paint.
+            if (this.manager.linkPayload()?.isImageLink) return;
             const view = this.editor().view;
             view.dispatch(view.state.tr.setMeta(LINK_SELECTION_KEY, { active: true }));
             onCleanup(() =>
@@ -355,6 +387,21 @@ export class LinkPopoverComponent {
             rel: (rel ?? '').trim() || null
         };
 
+        if (payload?.isImageLink) {
+            // Image-link mode — set the link on the selected image node's attributes. The node's
+            // renderHTML/nodeView wrap the <img> in <a href target>, so the image is preserved.
+            editor
+                .chain()
+                .focus()
+                .updateAttributes(DOT_IMAGE_NODE_NAME, {
+                    href,
+                    target: openInNewTab ? '_blank' : null
+                })
+                .run();
+            this.manager.close();
+            return;
+        }
+
         if (payload?.linkEl) {
             // Edit mode — update the link in place using the pre-computed anchor position.
             const linkEl = payload.linkEl;
@@ -390,6 +437,44 @@ export class LinkPopoverComponent {
                 .run();
         }
 
+        this.manager.close();
+    }
+
+    /**
+     * Removes the existing link. For an image, clears the node's `href`/`target`; for text,
+     * unsets the `link` mark over its full range (anchored at the captured edit position).
+     */
+    protected onRemoveLink(): void {
+        const payload = this.manager.linkPayload();
+        const editor = this.editor();
+
+        if (payload?.isImageLink) {
+            editor
+                .chain()
+                .focus()
+                .updateAttributes(DOT_IMAGE_NODE_NAME, { href: null, target: null })
+                .run();
+            this.manager.close();
+            return;
+        }
+
+        const linkEl = payload?.linkEl;
+        const anchorPos =
+            payload?.anchorPos ??
+            (() => {
+                try {
+                    return linkEl ? editor.view.posAtDOM(linkEl, 0) : editor.state.selection.from;
+                } catch {
+                    return editor.state.selection.from;
+                }
+            })();
+        editor
+            .chain()
+            .focus()
+            .setTextSelection(anchorPos)
+            .extendMarkRange('link')
+            .unsetMark('link')
+            .run();
         this.manager.close();
     }
 }

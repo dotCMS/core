@@ -56,7 +56,7 @@ export class EmojiPickerComponent {
                     // Lazy chunk fetch failed (offline / network blip / asset hosting issue).
                     // Close the popover so the user gets a click-out signal instead of an
                     // empty box; surface enough info in the console for support.
-                    // eslint-disable-next-line no-console
+
                     console.error('[emoji-picker] failed to load emoji-mart', err);
                     this.zone.run(() => this.manager.close());
                 });

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { hasUTMChanged } from './dot-analytics.identity.utils';

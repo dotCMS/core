@@ -1,11 +1,10 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { NgTemplateOutlet } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    CUSTOM_ELEMENTS_SCHEMA,
     effect,
     inject,
     input,
@@ -18,9 +17,9 @@ import {
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
 
@@ -32,28 +31,31 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
 
 import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
+import { DOT_FOLDER_LIST_VIEW_COLUMN_TYPE, DotFolderListViewColumn } from '../shared/models';
 
 @Component({
     selector: 'dot-folder-list-view',
     imports: [
         ButtonModule,
-        ChipModule,
-        DotContentletStatusChipComponent,
+        TagModule,
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
         TableModule,
         DotLocaleTagPipe,
-        NgTemplateOutlet
+        NgTemplateOutlet,
+        DatePipe
     ],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrls: ['./dot-folder-list-view.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -96,6 +98,15 @@ export class DotFolderListViewComponent implements OnInit {
      * @alias offset
      */
     $offset = input<number>(0, { alias: 'offset' });
+
+    /**
+     * Extra, caller-provided columns appended after the fixed "type" column. Agnostic of how they
+     * are sourced (Content Drive derives them from the selected content type's "Show In List" fields).
+     *
+     * @type {InputSignal<DotFolderListViewColumn[]>}
+     * @alias extraColumns
+     */
+    $extraColumns = input<DotFolderListViewColumn[]>([], { alias: 'extraColumns' });
 
     /**
      * An output that emits the selected items.
@@ -179,8 +190,81 @@ export class DotFolderListViewComponent implements OnInit {
 
     readonly MIN_ROWS_PER_PAGE = 20;
     protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
-    protected readonly HEADER_COLUMNS = HEADER_COLUMNS;
-    protected readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
+
+    /**
+     * Extra columns after de-duplication by `field` key: drops any that collide with a fixed column
+     * (e.g. a "title" field) or repeat another extra. Header, body and colspan all consume this so
+     * they never drift. De-dupe is by field key, not label.
+     */
+    protected readonly $safeExtraColumns = computed<DotFolderListViewColumn[]>(() => {
+        const seen = new Set(HEADER_COLUMNS.map((column) => column.field));
+
+        return this.$extraColumns().filter((column) => {
+            if (seen.has(column.field)) {
+                return false;
+            }
+            seen.add(column.field);
+
+            return true;
+        });
+    });
+
+    /** Character-count clamps for content-based (text/number) column widths, in `ch`. */
+    private readonly EXTRA_COL_MIN_CH = 8;
+    private readonly EXTRA_COL_MAX_CH = 32;
+    private readonly EXTRA_COL_PAD_CH = 3;
+    /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
+    protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
+
+    /** Fixed widths per non-text column type (predictable, so no measuring needed). */
+    private readonly EXTRA_COL_TYPE_WIDTH: Partial<
+        Record<DotFolderListViewColumn['type'], string>
+    > = {
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE]: '12rem',
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME]: '16rem',
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME]: '9rem',
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.BOOLEAN]: '7rem',
+        // Fixed thumbnail column — wider than the 4.5rem thumbnail box so a sortable header
+        // (label + sort icon) fits on one line; never measured from content.
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE]: '9rem'
+    };
+
+    /**
+     * De-duplicated extra columns with a resolved width. The table sizes them itself so consumers
+     * only pass field/header/type: an explicit `width` wins; otherwise text/number columns size to
+     * their content (from the current rows), and other types use a fixed per-type width.
+     */
+    protected readonly $sizedExtraColumns = computed<DotFolderListViewColumn[]>(() => {
+        const items = this.$items();
+
+        return this.$safeExtraColumns().map((column) => ({
+            ...column,
+            width: this.#resolveExtraColumnWidth(column, items)
+        }));
+    });
+
+    /**
+     * Full column set the header/skeleton render: the fixed columns with the (de-duplicated, sized)
+     * extra columns spliced in right after the "type" column. The body keeps its hardcoded cells and
+     * renders only the extra cells generically in the same position.
+     */
+    protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
+        const extras = this.$sizedExtraColumns();
+        if (!extras.length) {
+            return HEADER_COLUMNS;
+        }
+
+        const columns = [...HEADER_COLUMNS];
+        const typeIndex = columns.findIndex((column) => column.field === 'contentType');
+        const insertAt = typeIndex === -1 ? columns.length : typeIndex + 1;
+        columns.splice(insertAt, 0, ...extras);
+
+        return columns;
+    });
+
+    /** Total column count including the leading checkbox column — drives colspan/skeleton span. */
+    protected readonly $columnSpan = computed(() => this.$columns().length + 1);
+
     protected readonly $showPagination = computed(
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
@@ -190,14 +274,24 @@ export class DotFolderListViewComponent implements OnInit {
     /**
      * Computed pass-through configuration for empty table.
      */
-    readonly $ptConfig = computed(() => ({
-        table: {
-            style: {
-                'table-layout': 'fixed',
-                ...(this.$items().length === 0 && { height: '100%', width: '100%' })
+    readonly $ptConfig = computed(() => {
+        const extras = this.$sizedExtraColumns();
+
+        return {
+            table: {
+                style: {
+                    'table-layout': 'fixed',
+                    // Grow the table past the container by the sum of the extra columns' widths, so
+                    // each keeps its readable width and the results scroll horizontally instead of
+                    // squeezing every column.
+                    ...(extras.length > 0 && {
+                        'min-width': `calc(100% + ${extras.map((column) => column.width).join(' + ')})`
+                    }),
+                    ...(this.$items().length === 0 && { height: '100%', width: '100%' })
+                }
             }
-        }
-    }));
+        };
+    });
 
     /**
      * State of the component.
@@ -220,6 +314,46 @@ export class DotFolderListViewComponent implements OnInit {
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
      */
     private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
+    /**
+     * Resolves an extra column's width. Explicit width wins; otherwise text/number columns size to
+     * their content — the average value length across the current rows (never narrower than the
+     * header), padded and clamped, in `ch` so it scales with the cell font. Other types use a fixed
+     * per-type width. Average (not max) keeps one long outlier from blowing the column out; overflow
+     * truncates and the table scrolls horizontally.
+     */
+    #resolveExtraColumnWidth(
+        column: DotFolderListViewColumn,
+        items: DotContentDriveItem[]
+    ): string {
+        if (column.width) {
+            return column.width;
+        }
+
+        const fixed = column.type && this.EXTRA_COL_TYPE_WIDTH[column.type];
+        if (fixed) {
+            return fixed;
+        }
+
+        const lengths = items
+            .map((item) => (item as Record<string, unknown>)?.[column.field])
+            .filter((value) => value !== null && value !== undefined && value !== '')
+            .map((value) => String(value).length);
+
+        const averageLength = lengths.length
+            ? Math.round(lengths.reduce((sum, length) => sum + length, 0) / lengths.length)
+            : 0;
+
+        const chars = Math.min(
+            Math.max(
+                Math.max(column.header?.length ?? 0, averageLength) + this.EXTRA_COL_PAD_CH,
+                this.EXTRA_COL_MIN_CH
+            ),
+            this.EXTRA_COL_MAX_CH
+        );
+
+        return `${chars}ch`;
+    }
 
     ngOnInit(): void {
         // We should be getting this from the Global Store

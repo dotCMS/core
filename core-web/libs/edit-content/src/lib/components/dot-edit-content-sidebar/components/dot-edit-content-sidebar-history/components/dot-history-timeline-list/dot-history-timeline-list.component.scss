@@ -1,6 +1,10 @@
 /* Tighten PrimeNG timeline event padding so cards extend closer to the
  * right edge of the sidebar (compact density layout).
  */
+:host ::ng-deep .p-timeline-event {
+    --p-timeline-vertical-event-content-padding: 0 0.75rem;
+}
+
 :host ::ng-deep .p-timeline-event-content {
     padding-right: 0 !important;
 }

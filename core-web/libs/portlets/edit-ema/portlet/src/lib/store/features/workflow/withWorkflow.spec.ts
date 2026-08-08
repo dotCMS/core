@@ -1,11 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { of, Subject } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -17,6 +17,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
 
@@ -27,7 +28,6 @@ import { PERSONA_KEY } from '../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../shared/mocks';
 import { UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 
 const pageParams = {

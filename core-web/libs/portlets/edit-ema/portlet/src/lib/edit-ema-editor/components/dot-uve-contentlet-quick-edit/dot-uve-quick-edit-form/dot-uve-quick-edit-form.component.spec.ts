@@ -1,5 +1,5 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
@@ -10,7 +10,6 @@ import { MessageService } from 'primeng/api';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
-    DotEditContentBinaryFieldComponent,
     DotEditContentService,
     DotFileFieldComponent,
     DotTagFieldComponent
@@ -70,16 +69,11 @@ describe('DotUveQuickEditFormComponent', () => {
                 DotUveQuickEditFormComponent,
                 {
                     remove: {
-                        imports: [
-                            DotEditContentBinaryFieldComponent,
-                            DotFileFieldComponent,
-                            DotTagFieldComponent
-                        ],
+                        imports: [DotFileFieldComponent, DotTagFieldComponent],
                         providers: [UveOptimisticSaveService, DotEditContentService]
                     },
                     add: {
                         imports: [
-                            MockComponent(DotEditContentBinaryFieldComponent),
                             MockComponent(DotFileFieldComponent),
                             MockComponent(DotTagFieldComponent)
                         ]

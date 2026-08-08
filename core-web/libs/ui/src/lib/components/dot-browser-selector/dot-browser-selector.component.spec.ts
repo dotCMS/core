@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -24,6 +24,7 @@ const createMockStore = () => ({
     loadContent: jest.fn(),
     loadFolders: jest.fn(),
     loadChildren: jest.fn(),
+    loadMore: jest.fn(),
     setSelectedContent: jest.fn(),
     uploadFile: jest.fn()
 });
@@ -32,8 +33,8 @@ const mockNode = (id: string): TreeNodeItem => ({
     key: id,
     label: id,
     data: { id, hostname: id, path: '', type: 'site' },
-    expandedIcon: 'pi pi-folder-open',
-    collapsedIcon: 'pi pi-folder'
+    expandedIcon: 'pi pi-globe',
+    collapsedIcon: 'pi pi-globe'
 });
 
 const mockNodeSelectEvent = (id: string): TreeNodeSelectItem => ({

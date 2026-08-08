@@ -4,6 +4,7 @@
   "description": "newman test runner",
   "main": "index.js",
   "license": "MIT",
+  "packageManager": "pnpm@10.17.1",
   "dependencies": {
     "newman": "^6.2.1",
     "xml2js": "^0.6.2",
