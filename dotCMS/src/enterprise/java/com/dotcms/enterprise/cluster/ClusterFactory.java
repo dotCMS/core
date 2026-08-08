@@ -56,6 +56,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.elasticsearch.common.settings.Settings.Builder;
 
@@ -361,14 +362,17 @@ public class ClusterFactory {
     public static void rewireCluster() throws Exception {
 
         if(clusterReady()) {
-            addMeToCacheIfNeeded();
-            KNOWN_SERVERS  = APILocator.getServerAPI().getAliveServers();
+            if (addMeToCacheIfNeeded()) {
+                // only remember the alive-server set when the rewire actually succeeded,
+                // otherwise a failed transport init would never be retried
+                KNOWN_SERVERS = APILocator.getServerAPI().getAliveServers();
+            }
         }else {
             Logger.info(ClusterFactory.class, "Cluster not yet active. Not rewiring");
         }
     }
 
-     private static void addMeToCacheIfNeeded() throws DotDataException  {
+     private static boolean addMeToCacheIfNeeded() throws DotDataException  {
          if(isEnterprise()) {
 
              final Server localServer = APILocator.getServerAPI().getOrCreateMyServer();
@@ -378,15 +382,31 @@ public class ClusterFactory {
                      getImplementationObject()).setCluster(localServer);
                  ((ChainableCacheAdministratorImpl) CacheLocator.getCacheAdministrator().
                      getImplementationObject()).testCluster();
+                 REWIRE_FAILURES.set(0);
+                 return true;
              } catch (Exception e) {
-                 Logger.error(ClusterFactory.class, e.getMessage(), e);
+                 final long failures = REWIRE_FAILURES.incrementAndGet();
+                 Logger.error(ClusterFactory.class, "Unable to (re)initialize the cluster cache transport"
+                         + " (consecutive failures: " + failures
+                         + "). Cache invalidations are NOT reaching other nodes: " + e.getMessage(), e);
+                 return false;
              }
 
-                 
-             
          } else {
-             CacheLocator.getCacheAdministrator().getTransport().shutdown(); 
+             CacheLocator.getCacheAdministrator().getTransport().shutdown();
+             return true;
          }
+    }
+
+    /**
+     * Consecutive cluster cache-transport rewire failures. Reset to zero on the first
+     * successful rewire. Surfaced by the cache-transport health check and metrics so a
+     * persistently failing rewire is visible instead of being logged and forgotten.
+     */
+    private static final AtomicLong REWIRE_FAILURES = new AtomicLong(0);
+
+    public static long getRewireFailures() {
+        return REWIRE_FAILURES.get();
     }
      
      private static boolean isEnterprise() {

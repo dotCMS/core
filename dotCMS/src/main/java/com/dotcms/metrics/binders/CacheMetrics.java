@@ -40,6 +40,7 @@ public class CacheMetrics implements MeterBinder {
             if (cacheAdmin != null) {
                 registerProviderLevelMetrics(registry, cacheAdmin);
                 registerRegionLevelMetrics(registry, cacheAdmin);
+                registerTransportMetrics(registry);
             }
             
             Logger.info(this, "Comprehensive cache metrics registered successfully");
@@ -49,6 +50,38 @@ public class CacheMetrics implements MeterBinder {
         }
     }
     
+    /**
+     * Register cluster cache-transport metrics (issue #36803): silent invalidation drops
+     * and persistent rewire failures were previously invisible to monitoring.
+     */
+    private void registerTransportMetrics(MeterRegistry registry) {
+
+        Gauge.builder(METRIC_PREFIX + ".transport.invalidations.dropped", this,
+                        m -> getTransport().map(t -> (double) t.getDroppedMessages()).orElse(0.0))
+                .description("Cluster cache invalidations dropped because the transport was not initialized")
+                .register(registry);
+
+        Gauge.builder(METRIC_PREFIX + ".transport.initialized", this,
+                        m -> getTransport().map(t -> t.isInitialized() ? 1.0 : 0.0).orElse(1.0))
+                .description("Whether the cluster cache transport is initialized (1) or dropping invalidations (0)")
+                .register(registry);
+
+        Gauge.builder(METRIC_PREFIX + ".transport.rewire.failures", this,
+                        m -> (double) com.dotcms.enterprise.cluster.ClusterFactory.getRewireFailures())
+                .description("Consecutive cluster cache-transport rewire failures (reset on success)")
+                .register(registry);
+    }
+
+    private java.util.Optional<com.dotmarketing.business.cache.transport.CacheTransport> getTransport() {
+        try {
+            return java.util.Optional.ofNullable(
+                    ((com.dotmarketing.business.ChainableCacheAdministratorImpl) CacheLocator
+                            .getCacheAdministrator().getImplementationObject()).getTransport());
+        } catch (Exception e) {
+            return java.util.Optional.empty();
+        }
+    }
+
     /**
      * Register provider-level aggregate metrics.
      */
