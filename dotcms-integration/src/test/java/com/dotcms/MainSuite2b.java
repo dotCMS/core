@@ -152,6 +152,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
+import com.dotmarketing.portlets.folders.business.FolderAPIImplFilterTest;
+import com.dotmarketing.portlets.folders.business.FolderFactoryImplFilterTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
@@ -537,6 +539,8 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         FolderResourceSearchTest.class,
+        FolderAPIImplFilterTest.class,
+        FolderFactoryImplFilterTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
