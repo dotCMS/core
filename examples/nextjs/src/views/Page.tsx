@@ -13,7 +13,7 @@ interface PageProps {
 }
 
 export function Page({ pageContent }: PageProps) {
-    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent) ?? {};
     const pageContentData = content as PageExtraContent;
     const navigation = pageContentData.navigation;
 

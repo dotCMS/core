@@ -29,7 +29,7 @@ Instead of a single extraction level, we now create **three progressively detail
 
 ### Implementation
 
-**New File:** `.claude/skills/cicd-diagnostics/utils/tiered-extraction.sh`
+**New File:** `.claude/skills/dot-cicd-diagnose/utils/tiered-extraction.sh`
 
 #### Level 1: Test Summary (~1,500 tokens)
 ```bash
@@ -126,7 +126,7 @@ This distinction is **critical** for proper diagnosis and prioritization.
 
 ### Solution
 
-**New File:** `.claude/skills/cicd-diagnostics/utils/retry-analyzer.sh`
+**New File:** `.claude/skills/dot-cicd-diagnose/utils/retry-analyzer.sh`
 
 ```bash
 analyze_simple_retry_patterns LOG_FILE
@@ -210,7 +210,7 @@ cat .claude/diagnostics/run-19147272508/evidence-level3-full.txt
 
 **Retry Analysis:** Automated classification
 ```bash
-source .claude/skills/cicd-diagnostics/utils/retry-analyzer.sh
+source .claude/skills/dot-cicd-diagnose/utils/retry-analyzer.sh
 analyze_simple_retry_patterns "$LOG_FILE"
 # Instant deterministic vs flaky distinction
 ```
@@ -224,8 +224,8 @@ analyze_simple_retry_patterns "$LOG_FILE"
 ```bash
 # Initialize and extract
 RUN_ID=19147272508
-bash .claude/skills/cicd-diagnostics/init-diagnostic.sh "$RUN_ID"
-source .claude/skills/cicd-diagnostics/utils/tiered-extraction.sh
+bash .claude/skills/dot-cicd-diagnose/init-diagnostic.sh "$RUN_ID"
+source .claude/skills/dot-cicd-diagnose/utils/tiered-extraction.sh
 
 WORKSPACE="/path/to/.claude/diagnostics/run-$RUN_ID"
 LOG_FILE="$WORKSPACE/failed-job-*.txt"
@@ -246,7 +246,7 @@ cat "$WORKSPACE/evidence-level1-summary.txt"
 cat "$WORKSPACE/evidence-level2-unique.txt"
 
 # Get retry pattern analysis
-source .claude/skills/cicd-diagnostics/utils/retry-analyzer.sh
+source .claude/skills/dot-cicd-diagnose/utils/retry-analyzer.sh
 analyze_simple_retry_patterns "$LOG_FILE"
 
 # Result: Know exact error messages and whether failures are deterministic or flaky

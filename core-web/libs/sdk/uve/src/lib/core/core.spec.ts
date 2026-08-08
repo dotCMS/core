@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/gl
 import { UVE_MODE, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
-import { createUVESubscription, getUVEState } from './core.utils';
+import { createUVESubscription, getUVEState, isRequestFromUVE } from './core.utils';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -439,5 +439,19 @@ describe('createUVESubscription', () => {
             'message',
             messageCallback
         );
+    });
+});
+
+describe('isRequestFromUVE', () => {
+    it('should return true when dotCMSHost is present', () => {
+        expect(isRequestFromUVE({ dotCMSHost: 'https://demo.dotcms.com' })).toBe(true);
+    });
+
+    it('should return false when dotCMSHost is absent', () => {
+        expect(isRequestFromUVE({})).toBe(false);
+    });
+
+    it('should return false when dotCMSHost is an empty string', () => {
+        expect(isRequestFromUVE({ dotCMSHost: '' })).toBe(false);
     });
 });

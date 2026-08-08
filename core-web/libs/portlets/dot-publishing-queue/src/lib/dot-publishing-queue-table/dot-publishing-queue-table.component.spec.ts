@@ -89,7 +89,14 @@ describe('DotPublishingQueueTableComponent', () => {
             })
         ],
         providers: [
-            { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'publishing-queue.asset-list.items-count.singular': '{0} item',
+                    'publishing-queue.asset-list.items-count.plural': '{0} items',
+                    'publishing-queue.column.items.view': 'View items'
+                })
+            },
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
             mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
             mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
@@ -141,6 +148,63 @@ describe('DotPublishingQueueTableComponent', () => {
         expect(spectator.query(byTestId('pq-bundles-col-created'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-bundles-col-modified'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-bundles-col-status'))).toBeTruthy();
+    });
+
+    describe('Items column', () => {
+        it('renders the count as a "N items" link', () => {
+            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            spectator.detectChanges();
+
+            const link = spectator.query(byTestId('pq-bundles-items-btn'));
+            expect(link?.textContent?.trim()).toBe('20 items');
+        });
+
+        it('underlines on hover only, so the column stays quiet at rest', () => {
+            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            spectator.detectChanges();
+
+            const link = spectator.query(byTestId('pq-bundles-items-btn'));
+            expect(link?.classList).toContain('hover:underline');
+            expect(link?.classList).not.toContain('underline');
+        });
+
+        it('carries a "View items" tooltip and aria-label so the click target reads as an action', () => {
+            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('pq-bundles-items-btn'))?.getAttribute('aria-label')
+            ).toBe('View items');
+        });
+
+        it('opens the asset list without also triggering the row-detail dialog', () => {
+            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            spectator.detectChanges();
+
+            spectator.click(byTestId('pq-bundles-items-btn'));
+
+            expect(store.openAssetList).toHaveBeenCalledWith('b1');
+            expect(store.openDetail).not.toHaveBeenCalled();
+        });
+
+        it('uses the singular wording for exactly one item', () => {
+            bundlesRows.set([{ ...row('b1'), assetCount: 1 }]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-bundles-items-btn'))?.textContent?.trim()).toBe(
+                '1 item'
+            );
+        });
+
+        it('renders an empty bundle as plain text — there is nothing to open', () => {
+            bundlesRows.set([{ ...row('b1'), assetCount: 0 }]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-bundles-items-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-bundles-items'))?.textContent?.trim()).toBe(
+                '0 items'
+            );
+        });
     });
 
     it('row click opens the detail dialog', () => {

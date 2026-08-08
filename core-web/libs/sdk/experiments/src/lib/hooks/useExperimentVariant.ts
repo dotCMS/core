@@ -15,15 +15,19 @@ import DotExperimentsContext from '../contexts/DotExperimentsContext';
  * Similarly, if the assigned variant matches the requested one, it signals not to wait for the variant.
  * By default, the hook signals to wait for the variant.
  *
- * @param {Object} data - An object containing the runningExperimentId and viewAs (containing variantId).
+ * @param {Object} [data] - An object containing the runningExperimentId and viewAs (containing
+ * variantId). Can be `undefined` while `useEditableDotCMSPage` is still waiting on the UVE editor
+ * to resolve a draft/non-live page - treated the same as "no running experiment" (don't wait).
  * @returns {Object} An object with a function `shouldWaitForVariant` that, when called, returns `true` if it should wait for the correct variant, `false` otherwise.
  */
-export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVariant: boolean } => {
+export const useExperimentVariant = (
+    data: DotCMSPageAsset | undefined
+): { shouldWaitForVariant: boolean } => {
     const dotExperimentInstance = useContext(DotExperimentsContext);
 
-    const { runningExperimentId, viewAs } = data;
+    const runningExperimentId = data?.runningExperimentId;
 
-    const variantId = viewAs?.variantId;
+    const variantId = data?.viewAs?.variantId;
 
     // By default, wait for the variant
     const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);

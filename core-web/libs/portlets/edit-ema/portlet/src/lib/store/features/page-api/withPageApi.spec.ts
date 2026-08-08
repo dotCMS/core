@@ -13,6 +13,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
@@ -25,7 +26,6 @@ import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
 import { IframeAccessMode, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 
 const pageParamsBase = {
