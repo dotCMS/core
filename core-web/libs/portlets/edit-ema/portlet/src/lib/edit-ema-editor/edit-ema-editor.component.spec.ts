@@ -3215,6 +3215,41 @@ describe('EditEmaEditorComponent', () => {
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
 
+                it('should open a same-host PDF link in a new tab instead of loading it as a page', () => {
+                    const pdfUrl = 'http://localhost:3000/application/files/report.pdf';
+                    const mockEvent = createMockEvent(pdfUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).toHaveBeenCalledWith(pdfUrl, '_blank');
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should open a /dA/ asset link in a new tab instead of loading it as a page', () => {
+                    const assetUrl = 'http://localhost:3000/dA/abc123/asset/report.pdf';
+                    const mockEvent = createMockEvent(assetUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).toHaveBeenCalledWith(assetUrl, '_blank');
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should still load a page when the URL uses the page extension', () => {
+                    const pageUrl = 'http://localhost:3000/test-page/index.html';
+                    const mockEvent = createMockEvent(pageUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
+                        url: '/test-page/index.html'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
                 it('should extract and pass query parameters from URL', () => {
                     const urlWithParams =
                         'http://localhost:3000/test-page?param1=value1&param2=value2';

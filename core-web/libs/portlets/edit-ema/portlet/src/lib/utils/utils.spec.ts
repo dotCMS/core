@@ -31,7 +31,8 @@ import {
     normalizeQueryParams,
     convertUTCToLocalTime,
     escapeHtmlAttributeValue,
-    isSamePageNavigation
+    isSamePageNavigation,
+    isAssetPath
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -1646,6 +1647,43 @@ describe('utils functions', () => {
             expect(result.getMonth()).toBe(1); // February (0-indexed)
             expect(result.getDate()).toBe(29);
             expect(result.getHours()).toBe(12);
+        });
+    });
+
+    describe('isAssetPath', () => {
+        it.each([
+            ['/dA/abc123/asset/report.pdf', true],
+            ['/dA/abc123/asset/no-extension', true],
+            ['/dotAsset/abc123', true],
+            ['/contentAsset/raw-data/abc123/asset', true],
+            ['/application/files/report.pdf', true],
+            ['/files/quarterly.docx', true],
+            ['/media/promo.mp4', true],
+            ['/backups/site.tar.gz', true],
+            ['/files/REPORT.PDF', true]
+        ])('should treat %s as a file asset', (pathname, expected) => {
+            expect(isAssetPath(pathname as string)).toBe(expected);
+        });
+
+        it.each([
+            ['/about-us/index', false],
+            ['/about-us/index.html', false],
+            ['/about-us/index.htm', false],
+            ['/legacy/index.dot', false],
+            ['/blog/', false],
+            ['/', false],
+            ['/blog/release-v1.2', false],
+            ['/news/2024.10', false]
+        ])('should treat %s as a page', (pathname, expected) => {
+            expect(isAssetPath(pathname as string)).toBe(expected);
+        });
+
+        it('should return false for an empty pathname', () => {
+            expect(isAssetPath('')).toBe(false);
+        });
+
+        it('should return false for a nullish pathname', () => {
+            expect(isAssetPath(undefined as unknown as string)).toBe(false);
         });
     });
 });

@@ -1168,3 +1168,57 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/** dotCMS path prefixes that stream a binary asset instead of rendering a page. */
+const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];
+
+/**
+ * Extensions that still resolve to an HTMLPage. `html` is the default
+ * `VELOCITY_PAGE_EXTENSION`; `dot` is the legacy fallback the backend uses
+ * (see `Identifier#setURI`).
+ */
+const PAGE_PATH_EXTENSIONS = new Set(['html', 'htm', 'dot']);
+
+/**
+ * Matches a plausible file extension: letter-initial, up to 8 alphanumerics.
+ * Guards URL-map slugs such as `/blog/release-v1.2`, whose trailing `2` must
+ * not be mistaken for a file extension.
+ */
+const FILE_EXTENSION_PATTERN = /^[a-z][a-z0-9]{0,7}$/;
+
+/**
+ * Checks whether a pathname targets a file asset rather than an HTMLPage.
+ *
+ * Mirrors the backend's own extension heuristic: no extension (or the page
+ * extension) means a page; any other real extension means a file.
+ *
+ * @param {string} pathname - The pathname to check (query and hash excluded)
+ * @returns {boolean} True when the pathname points at a file asset
+ *
+ * @example
+ * isAssetPath('/application/files/doc.pdf')  // true
+ * isAssetPath('/dA/abc123/asset/doc.pdf')    // true
+ * isAssetPath('/about-us/index')             // false
+ * isAssetPath('/about-us/index.html')        // false
+ * isAssetPath('/blog/release-v1.2')          // false
+ */
+export const isAssetPath = (pathname: string): boolean => {
+    if (!pathname) {
+        return false;
+    }
+
+    if (ASSET_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+        return true;
+    }
+
+    const lastSegment = pathname.slice(pathname.lastIndexOf('/') + 1);
+    const dotIndex = lastSegment.lastIndexOf('.');
+
+    if (dotIndex === -1) {
+        return false;
+    }
+
+    const extension = lastSegment.slice(dotIndex + 1).toLowerCase();
+
+    return FILE_EXTENSION_PATTERN.test(extension) && !PAGE_PATH_EXTENSIONS.has(extension);
+};
