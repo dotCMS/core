@@ -538,7 +538,18 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
       final String packageName = ContentType.class.getPackageName();
       if( !id.contains(".") && !id.startsWith(packageName)){
-        final String className = String.format("%s.Immutable%s",packageName,id);
+        // Accept ergonomic short forms for the `clazz` discriminator so callers (e.g. AI agents)
+        // don't have to know the fully-qualified Immutable* class name:
+        //   - a base-type name or alias -> "CONTENT"/"Content", "WIDGET", "FORM"/"Form",
+        //     "FILEASSET"/"File", "HTMLPAGE"/"Page", "PERSONA", "VANITY_URL"/"VanityURL",
+        //     "KEY_VALUE"/"KeyValue", "DOTASSET"/"DotAsset"
+        //   - the concrete simple class name -> "SimpleContentType", "WidgetContentType", ...
+        // In every case we resolve to the generated Immutable* class Jackson expects.
+        final String simpleName = Try.of(() -> BaseContentType.getBaseContentType(id))
+                .filter(baseType -> baseType != BaseContentType.ANY)
+                .map(baseType -> baseType.immutableClass().getSimpleName())
+                .getOrElse(id);
+        final String className = String.format("%s.Immutable%s", packageName, simpleName);
         return super.typeFromId(context, className);
       }
       return super.typeFromId(context, id);

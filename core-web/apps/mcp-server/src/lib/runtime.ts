@@ -1,6 +1,4 @@
-import { createRuntime } from '@dotcms/ai/runtime';
-
-type DotCMSRuntime = ReturnType<typeof createRuntime>;
+import { createRuntime, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
 /**
  * Build a runtime from the MCP server's environment. One place owns the `DOTCMS_URL` /

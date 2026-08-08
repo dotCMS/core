@@ -1590,7 +1590,13 @@ public class WorkflowResource {
     @Operation(operationId = "getSystemActionMappingsByContentType", summary = "Find default system actions mapped to a content type",
             description = "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-" +
                     "workflows#DefaultActions) associated with a specified [content type](https://www.dotcms.com" +
-                    "/docs/latest/content-types).",
+                    "/docs/latest/content-types).\n\n" +
+                    "An empty list means only that no *default system-action mappings* (e.g. NEW, PUBLISH) are " +
+                    "configured for this content type — it does **not** mean the content type lacks a workflow or " +
+                    "that publishing will fail. You can still fire actions on its content by ID via " +
+                    "`PUT /api/v1/workflow/actions/{actionId}/fire`, or fire a default system action via " +
+                    "`PUT /api/v1/workflow/actions/default/fire/{systemAction}` (which resolves the action from " +
+                    "the scheme attached to the content type). Do not treat an empty response as a blocker.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully from content type",
@@ -3210,7 +3216,8 @@ public class WorkflowResource {
                 // (see 'pathToMove').
                 Logger.warn(this, String.format(
                         "Fire action payload contains system field(s) %s; these are ignored by "
-                                + "this endpoint. To change a contentlet's location, fire a workflow "
+                                + "this endpoint. Did you mean 'contentHost' (host id) or 'hostFolder' "
+                                + "(folder id)? To change a contentlet's location, fire a workflow "
                                 + "action that includes the Move actionlet (see 'pathToMove').",
                         protectedFields));
 
@@ -3234,9 +3241,10 @@ public class WorkflowResource {
 
         return List.of(new MessageEntity(String.format(
                 "System field(s) %s were ignored: this endpoint does not set a contentlet's "
-                        + "location. The content was saved at its existing/default location. To "
-                        + "place or move content, fire a workflow action that includes the Move "
-                        + "actionlet and pass 'pathToMove'.",
+                        + "location. Did you mean 'contentHost' (host id) or 'hostFolder' (folder "
+                        + "id)? The content was saved at its existing/default location. To place or "
+                        + "move content, fire a workflow action that includes the Move actionlet and "
+                        + "pass 'pathToMove'.",
                 ignoredFields)));
     }
 
@@ -3290,6 +3298,12 @@ public class WorkflowResource {
                     "by name on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Use `PUT` for a single contentlet.** This path also accepts `POST`, but that is a " +
+                    "**different** operation that fires over *multiple* contentlets and returns a different envelope " +
+                    "(`entity.results[]`, a list). Sending a single-contentlet body via `POST` will not return the " +
+                    "created contentlet's `identifier` where you expect it, even though the record may still be " +
+                    "(half-)created by the content type's default workflow — a common silent trap. For one item, " +
+                    "always use `PUT`.\n\n" +
                     "**Request body** — wrap field values in a `contentlet` key:\n\n" +
                     "```json\n" +
                     "{\n" +
@@ -3579,7 +3593,10 @@ public class WorkflowResource {
             description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
             "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-            "services that handle automatically assigning workflow schemes to content with none.",
+            "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+            "This is the **multi-contentlet** variant and returns a list envelope (`entity.results[]`). " +
+            "To fire on a **single** contentlet, use `PUT` on this same path instead — it returns the single " +
+            "resultant contentlet map (with its `identifier`) directly.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",

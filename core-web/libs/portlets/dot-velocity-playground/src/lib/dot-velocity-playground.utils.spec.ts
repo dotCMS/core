@@ -1,15 +1,23 @@
+import { HttpErrorResponse } from '@angular/common/http';
+
 import {
     DEFAULT_SPLITTER_RATIO,
     dedupeAndCap,
+    firstLine,
     formatBody,
+    formatErrorTrace,
     formatHistoryLabel,
+    formatWarnings,
     getDownloadParams,
     HISTORY_MAX_ENTRIES,
     HISTORY_STORAGE_KEY,
     isValidHistory,
     isValidRatio,
     JSON_PRETTY_PRINT_MAX_BYTES,
+    parseVelocityError,
+    parseWarningsHeader,
     SPLITTER_STORAGE_KEY,
+    UNKNOWN_ERROR_KEY,
     VELOCITY_HELP_EXAMPLES
 } from './dot-velocity-playground.utils';
 
@@ -145,6 +153,290 @@ describe('dot-velocity-playground.utils', () => {
 
         it('keeps the default splitter ratio centered', () => {
             expect(DEFAULT_SPLITTER_RATIO).toEqual([50, 50]);
+        });
+    });
+
+    describe('parseVelocityError', () => {
+        const makeError = (body: unknown, status = 400): HttpErrorResponse =>
+            new HttpErrorResponse({ error: body, status, statusText: 'error' });
+
+        it('parses the structured 400 body from a JSON string (responseType: text)', () => {
+            const detail = {
+                message: 'Encountered "#end" — expected #if',
+                errorType: 'ParseErrorException',
+                templateName: 'dynamic velocity',
+                line: 12,
+                column: 3
+            };
+
+            const result = parseVelocityError(makeError(JSON.stringify({ errors: [detail] })));
+
+            expect(result.isVelocityError).toBe(true);
+            expect(result.error).toEqual({
+                message: detail.message,
+                structured: detail,
+                warnings: []
+            });
+        });
+
+        it('includes warnings from the structured 400 body', () => {
+            const detail = { message: 'boom', errorType: 'ParseErrorException' };
+            const warning = {
+                type: 'UNDEFINED_REFERENCE',
+                message: "Undefined reference '$x'",
+                reference: '$x',
+                line: 2
+            };
+
+            const result = parseVelocityError(
+                makeError(JSON.stringify({ errors: [detail], warnings: [warning] }))
+            );
+
+            expect(result.error.warnings).toEqual([warning]);
+        });
+
+        it('parses the structured body when it arrives already as an object', () => {
+            const detail = { message: 'boom', errorType: 'MethodInvocationException' };
+
+            const result = parseVelocityError(makeError({ errors: [detail] }));
+
+            expect(result.isVelocityError).toBe(true);
+            expect(result.error.structured).toEqual(detail);
+        });
+
+        it('takes only the first error when several are returned', () => {
+            const first = { message: 'first', line: 1 };
+            const result = parseVelocityError(
+                makeError(JSON.stringify({ errors: [first, { message: 'second' }] }))
+            );
+
+            expect(result.error.structured).toEqual(first);
+        });
+
+        it('falls back to the raw text body for unstructured errors (not a velocity error)', () => {
+            const result = parseVelocityError(makeError('Something went wrong', 500));
+
+            expect(result.isVelocityError).toBe(false);
+            expect(result.error).toEqual({
+                message: 'Something went wrong',
+                structured: null,
+                warnings: []
+            });
+        });
+
+        it('falls back to a nested error.message when there is no errors array', () => {
+            const result = parseVelocityError(makeError({ message: 'nested detail' }, 500));
+
+            expect(result.isVelocityError).toBe(false);
+            expect(result.error).toEqual({
+                message: 'nested detail',
+                structured: null,
+                warnings: []
+            });
+        });
+
+        it('falls back to the unknown i18n key when nothing usable is present', () => {
+            const result = parseVelocityError(makeError(null, 0));
+
+            expect(result.isVelocityError).toBe(false);
+            expect(result.error.structured).toBeNull();
+            // HttpErrorResponse synthesizes a generic message for status 0; when the body is
+            // empty we still guarantee a non-empty message for the banner.
+            expect(result.error.message.length).toBeGreaterThan(0);
+        });
+
+        it('does not treat an empty errors array as a velocity error', () => {
+            const result = parseVelocityError(makeError(JSON.stringify({ errors: [] })));
+
+            expect(result.isVelocityError).toBe(false);
+        });
+
+        it('ignores a malformed JSON string body and does not throw', () => {
+            const result = parseVelocityError(makeError('{ not valid json', 500));
+
+            expect(result.isVelocityError).toBe(false);
+            expect(result.error.message).toBe('{ not valid json');
+        });
+
+        it('uses the unknown key constant for a null error', () => {
+            const result = parseVelocityError(null);
+
+            expect(result.error.message).toBe(UNKNOWN_ERROR_KEY);
+            expect(result.error.structured).toBeNull();
+        });
+    });
+
+    describe('firstLine', () => {
+        it('returns the message unchanged when it is a single line', () => {
+            expect(firstLine('Something went wrong')).toBe('Something went wrong');
+        });
+
+        it('returns only the first non-empty line of a multi-line message', () => {
+            const multi =
+                'Encountered "<EOF>" at line 5, column 39\nWas expecting one of:\n  "[" ...\n  "(" ...';
+            expect(firstLine(multi)).toBe('Encountered "<EOF>" at line 5, column 39');
+        });
+
+        it('skips leading blank lines', () => {
+            expect(firstLine('\n\n  real message\nmore')).toBe('real message');
+        });
+
+        it('trims surrounding whitespace', () => {
+            expect(firstLine('   padded   ')).toBe('padded');
+        });
+    });
+
+    describe('formatErrorTrace', () => {
+        it('returns just the resolved message for an unstructured error', () => {
+            const trace = formatErrorTrace(
+                { message: 'raw', structured: null, warnings: [] },
+                'Something went wrong'
+            );
+
+            expect(trace).toBe('Something went wrong');
+        });
+
+        it('prefixes the header with the error type and appends template + location lines', () => {
+            const trace = formatErrorTrace(
+                {
+                    message: 'ignored — resolvedMessage wins',
+                    warnings: [],
+                    structured: {
+                        message: 'Encountered "#end"',
+                        errorType: 'ParseErrorException',
+                        templateName: 'dynamic velocity',
+                        line: 12,
+                        column: 3
+                    }
+                },
+                'Encountered "#end"'
+            );
+
+            expect(trace).toBe(
+                [
+                    'ParseErrorException: Encountered "#end"',
+                    '    at template "dynamic velocity"',
+                    '    at line 12, column 3'
+                ].join('\n')
+            );
+        });
+
+        it('uses the full detail (not the summary) as the header body when present', () => {
+            const trace = formatErrorTrace(
+                {
+                    message: 'Encountered "<EOF>" at line 6, column 39',
+                    warnings: [],
+                    structured: {
+                        message: 'Encountered "<EOF>" at line 6, column 39',
+                        errorType: 'ParseErrorException',
+                        detail: 'Encountered "<EOF>" at line 6, column 39\nWas expecting one of:\n  "[" ...'
+                    }
+                },
+                'Encountered "<EOF>" at line 6, column 39'
+            );
+
+            expect(trace).toBe(
+                'ParseErrorException: Encountered "<EOF>" at line 6, column 39\nWas expecting one of:\n  "[" ...'
+            );
+        });
+
+        it('omits the column segment when only a line is reported', () => {
+            const trace = formatErrorTrace(
+                {
+                    message: 'boom',
+                    warnings: [],
+                    structured: { message: 'boom', errorType: 'MethodInvocationException', line: 5 }
+                },
+                'boom'
+            );
+
+            expect(trace).toBe(['MethodInvocationException: boom', '    at line 5'].join('\n'));
+        });
+
+        it('renders the message alone when structured detail has no type or location', () => {
+            const trace = formatErrorTrace(
+                { message: 'boom', structured: { message: 'boom' }, warnings: [] },
+                'boom'
+            );
+
+            expect(trace).toBe('boom');
+        });
+
+        it('appends collected warnings after the error', () => {
+            const trace = formatErrorTrace(
+                {
+                    message: 'boom',
+                    structured: { message: 'boom', errorType: 'ParseErrorException' },
+                    warnings: [
+                        {
+                            type: 'UNDEFINED_REFERENCE',
+                            message: "Undefined reference '$x'",
+                            reference: '$x',
+                            line: 2,
+                            column: 1
+                        }
+                    ]
+                },
+                'boom'
+            );
+
+            expect(trace).toBe(
+                [
+                    'ParseErrorException: boom',
+                    '',
+                    '1 warning:',
+                    "  - [UNDEFINED_REFERENCE] Undefined reference '$x' (line 2, column 1)"
+                ].join('\n')
+            );
+        });
+    });
+
+    describe('formatWarnings', () => {
+        it('returns an empty string for no warnings', () => {
+            expect(formatWarnings([])).toBe('');
+        });
+
+        it('formats a single warning with a singular header and location', () => {
+            expect(
+                formatWarnings([
+                    {
+                        type: 'INVALID_METHOD',
+                        message: 'nope() missing',
+                        reference: '$o',
+                        line: 4,
+                        column: 2
+                    }
+                ])
+            ).toBe(
+                ['1 warning:', '  - [INVALID_METHOD] nope() missing (line 4, column 2)'].join('\n')
+            );
+        });
+
+        it('uses a plural header and omits location when unavailable', () => {
+            expect(
+                formatWarnings([
+                    { type: 'UNDEFINED_REFERENCE', message: 'a' },
+                    { type: 'NULL_SET', message: 'b' }
+                ])
+            ).toBe(['2 warnings:', '  - [UNDEFINED_REFERENCE] a', '  - [NULL_SET] b'].join('\n'));
+        });
+    });
+
+    describe('parseWarningsHeader', () => {
+        it('returns [] for null/empty', () => {
+            expect(parseWarningsHeader(null)).toEqual([]);
+            expect(parseWarningsHeader('')).toEqual([]);
+            expect(parseWarningsHeader('   ')).toEqual([]);
+        });
+
+        it('parses a JSON array of warnings', () => {
+            const warnings = [{ type: 'UNDEFINED_REFERENCE', message: 'a', reference: '$a' }];
+            expect(parseWarningsHeader(JSON.stringify(warnings))).toEqual(warnings);
+        });
+
+        it('returns [] for malformed JSON or a non-array', () => {
+            expect(parseWarningsHeader('{ not json')).toEqual([]);
+            expect(parseWarningsHeader('{"not":"array"}')).toEqual([]);
         });
     });
 });

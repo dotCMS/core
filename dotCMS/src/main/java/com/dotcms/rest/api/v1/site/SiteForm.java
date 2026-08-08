@@ -2,48 +2,73 @@ package com.dotcms.rest.api.v1.site;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
  * Form to create a site
  * @author jsanca
  */
+@Schema(description = "Form used to create a Site (Host) in dotCMS. 'siteName' (the hostname) is the only "
+        + "required field; the new site is created unpublished and must be published separately.")
 public class SiteForm {
 
+    @Schema(description = "Identifier of the site. Ignored on creation; server-generated.")
     private final String identifier;
 
+    @Schema(description = "Inode (version identifier) of the site. Ignored on creation; server-generated.")
     private final String inode;
 
+    @Schema(description = "Comma- or newline-separated list of host aliases (alternate hostnames) for this site.")
     private final String aliases;
 
+    @Schema(description = "The hostname of the site, e.g. 'www.example.com'. This is the site's primary name.",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private final String siteName;
 
+    @Schema(description = "Identifier of the site whose tag storage this site shares. "
+            + "Defaults to this site itself when omitted.")
     private final String tagStorage;
 
+    @Schema(description = "Identifier of the image asset used as the site thumbnail.")
     private final String siteThumbnail;
 
+    @Schema(description = "Whether the analytics dashboard runs for this site.")
     private final boolean runDashboard;
 
+    @Schema(description = "Default meta keywords applied to pages on this site.")
     private final String keywords;
 
+    @Schema(description = "Default meta description applied to pages on this site.")
     private final String description;
 
+    @Schema(description = "Google Maps API key for this site.")
     private final String googleMap;
 
+    @Schema(description = "Google Analytics tracking ID for this site.")
     private final String googleAnalytics;
 
+    @Schema(description = "AddThis sharing-widget account ID for this site.")
     private final String addThis;
 
+    @Schema(description = "Proxy URL used to render the site in edit mode.")
     private final String proxyUrlForEditMode;
 
+    @Schema(description = "Embedded dashboard markup for this site.")
     private final String embeddedDashboard;
 
+    @Schema(description = "Default language ID for this site. Defaults to the system default language when 0/omitted.")
     private final long   languageId;
 
+    @Schema(description = "Whether this site should become the default site. The JSON property name is 'default'. "
+            + "Only one site can be the default at a time.")
     private final boolean isDefault;
 
+    @Schema(description = "Whether to force creation even when validation would otherwise warn "
+            + "(e.g. a duplicate alias).")
     private final boolean forceExecution;
 
+    @Schema(description = "Optional list of site variables (key/value pairs) to create alongside the site.")
     private final List<SimpleSiteVariableForm> variables;
 
     @JsonCreator

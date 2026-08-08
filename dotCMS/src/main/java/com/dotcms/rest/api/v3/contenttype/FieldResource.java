@@ -484,7 +484,22 @@ public class FieldResource {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Operation(
+            operationId = "getContentTypeFieldLayout",
+            summary = "Gets a Content Type's field layout",
+            description = "Returns the Content Type's current field layout (rows, columns and the " +
+                    "fields within them). If the layout is invalid it is repaired before being " +
+                    "returned; this endpoint does not modify data in the database.",
+            tags = {"Content Type Field"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The Content Type's field layout"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+                    @ApiResponse(responseCode = "404", description = "Content Type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
     public final Response getContentTypeFields(
+            @Parameter(description = "The ID or Velocity Variable Name of the Content Type.")
             @PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @Context final HttpServletRequest req
     ) throws DotDataException, DotSecurityException {
@@ -510,8 +525,29 @@ public class FieldResource {
     @DELETE
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Operation(
+            operationId = "deleteContentTypeFields",
+            summary = "Deletes fields from a Content Type",
+            description = "Deletes one or more fields from a Content Type and returns the updated " +
+                    "field layout together with the IDs that were actually deleted. A field being " +
+                    "used as the Content Type's Publish or Expire date field cannot be deleted " +
+                    "until it is unlinked.",
+            tags = {"Content Type Field"},
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "The IDs of the fields to delete.",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = DeleteFieldsForm.class))),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Fields deleted; returns the new layout and deleted IDs"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+                    @ApiResponse(responseCode = "404", description = "Content Type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
     public Response deleteFields(
+            @Parameter(description = "The ID or Velocity Variable Name of the Content Type.")
             @PathParam("typeIdOrVarName") final String typeIdOrVarName,
             final DeleteFieldsForm deleteFieldsForm,
             @Context final HttpServletRequest req

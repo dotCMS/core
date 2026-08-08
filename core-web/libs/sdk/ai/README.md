@@ -47,7 +47,7 @@ await dotcms.run(code);       // SANDBOXED — a model wrote `code`.
 | `@dotcms/ai/runtime` | Most callers — the front door | `createRuntime`, `defineAdapter`, errors | dotCMS-wired |
 | `@dotcms/ai/sandbox` | Power users / custom adapters | `createSandbox`, `defineAdapter`, `Executor`, types, errors | **fully generic, lint-enforced** |
 | `@dotcms/ai/adapter` | Power users | `dotcmsAdapter`, `requestCore`, context loading + cache | dotCMS-specific |
-| `@dotcms/ai/spec` | The search use case | the OpenAPI spec (opt-in; keeps the ~550KB off the default path) | dotCMS-specific |
+| `@dotcms/ai/spec` | The search use case | the OpenAPI spec (opt-in; keeps the ~400KB off the default path) | dotCMS-specific |
 
 `@dotcms/ai` is a pure namespace — there is no bare import; everything is reached through a subpath. It is an **umbrella** for growth: future AI surfaces (RAG, embeddings, custom agents, harness) land as new subpaths under the same package.
 
@@ -123,9 +123,11 @@ pnpm nx run sdk-ai:generate-spec
 pnpm nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
 ```
 
-The script filters the spec to the endpoints in `ALLOWED_PREFIXES` (see `scripts/generate-spec.ts`),
-dereferences `$ref`s, and strips response schemas to keep the file small. Because the spec is
-regenerated at build time, there is nothing to commit.
+The script filters the spec to the endpoints in `ALLOWED_PREFIXES` (see `scripts/spec-transform.ts`),
+keeps request/response `$ref`s, and prunes `components.schemas` to just the schemas those endpoints
+reference. Keeping `$ref`s (rather than dereferencing) dedupes shared schemas and keeps the file
+small (~400KB). The output is compact JSON (machine-read only) — use `jq` to inspect it. Because the
+spec is regenerated at build time, there is nothing to commit.
 
 ## Commands
 
