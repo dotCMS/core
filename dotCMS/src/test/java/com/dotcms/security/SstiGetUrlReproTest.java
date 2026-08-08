@@ -78,6 +78,19 @@ public class SstiGetUrlReproTest {
             server.stop(0);
         }
 
-        System.out.println("\n==== getURL hardened: file:// blocked, loopback SSRF blocked (F1 fixed) ====");
+        // ---- (3) other non-routable targets must also be refused (empty), per review ----
+        for (final String url : new String[]{
+                "http://[::1]:9999/x",         // IPv6 loopback
+                "http://100.64.0.1/x",         // IPv4 CGNAT (RFC 6598)
+                "http://[fd00::1]/x",          // IPv6 unique-local (ULA)
+                "http://0.0.0.0/x",            // any-local
+                "http://169.254.170.2/x"}) {   // ECS credentials endpoint (link-local)
+            final String out = String.valueOf(UtilMethods.getURL(url)).trim();
+            System.out.println("[BLOCK] " + url + " -> '" + out + "'");
+            assertTrue("REGRESSION: " + url + " was not blocked", out.isEmpty());
+        }
+
+        System.out.println("\n==== getURL hardened: file:// blocked; loopback / IPv6 / CGNAT / ULA / "
+                + "link-local SSRF all blocked (F1 fixed) ====");
     }
 }
