@@ -42,7 +42,7 @@ jobs:
   build:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
       # Your build steps here...
 

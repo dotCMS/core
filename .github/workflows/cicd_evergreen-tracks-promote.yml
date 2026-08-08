@@ -64,7 +64,7 @@ jobs:
       # since approval before it mutates anything.
       plan: ${{ steps.plan.outputs.plan }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@v5
       - uses: docker/setup-buildx-action@v3
       - name: Docker login
@@ -153,7 +153,7 @@ jobs:
       moved: ${{ steps.apply.outputs.moved }}
       summary: ${{ steps.apply.outputs.summary }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@v5
       - uses: docker/setup-buildx-action@v3
       - name: Docker login
@@ -239,7 +239,7 @@ jobs:
     if: always()
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Notify failure
         if: needs.plan.result == 'failure' || needs.apply.result == 'failure'
         continue-on-error: true
