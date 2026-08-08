@@ -87,7 +87,7 @@ jobs:
       artifact-url: ${{ steps.upload-artifact.outputs.artifact-url }}
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.BRANCH }}
 
@@ -107,7 +107,7 @@ jobs:
       # Upload the built distribution as an artifact
       - name: 'Upload built distribution'
         id: upload-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: cli-artifacts-${{ matrix.platform }}
           path: |

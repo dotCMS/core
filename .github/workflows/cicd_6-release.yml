@@ -292,7 +292,7 @@ jobs:
       group: evergreen-tracks-registry
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@v5
       - uses: docker/setup-buildx-action@v3
       - name: Docker login
@@ -333,7 +333,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
@@ -533,7 +533,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout core
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
 
@@ -554,7 +554,7 @@ jobs:
           && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
           && startsWith(needs.release-prepare.outputs.release_tag, 'v')
         continue-on-error: true
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
 

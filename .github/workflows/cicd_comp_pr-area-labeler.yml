@@ -31,13 +31,13 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout for config
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: .github/area-labels.yml
           sparse-checkout-cone-mode: false
 
       - name: Apply Area Labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const fs = require('fs');
