@@ -32,11 +32,11 @@ import {
     DotBrowsingService,
     SITE_PAGE_LIMIT
 } from '../../../services/dot-browsing/dot-browsing.service';
+import { SYSTEM_HOST_ID } from '../../dot-folder-tree/constants';
 
-export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
-
-/** Re-export so consumers/tests share Host Folder's site page size. */
+/** Re-exports so consumers/tests keep a single import site for these. */
 export { SITE_PAGE_LIMIT };
+export { SYSTEM_HOST_ID };
 
 export interface Content {
     id: string;

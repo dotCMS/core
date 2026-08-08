@@ -13,10 +13,10 @@ import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
     DotFolderTreeNodeItem,
-    DotContentDriveMoveItems,
-    ALL_FOLDER
+    DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { ALL_FOLDER } from '@dotcms/ui';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 

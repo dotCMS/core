@@ -1,0 +1,23 @@
+<div class="flex w-full items-center gap-2">
+    <dot-search-input
+        class="min-w-0 flex-1"
+        [value]="$searchTerm()"
+        (search)="store.setSearch($event)" />
+
+    <dot-upload-button
+        [defaultBaseType]="$defaultBaseType()"
+        data-testid="asset-picker-upload"
+        (upload)="upload.emit($event)" />
+</div>
+
+<div class="mt-2 flex w-full flex-wrap items-center gap-2">
+    <dot-content-type-filter
+        [selectedBaseTypes]="$baseTypes()"
+        [selectedContentTypes]="$contentTypes()"
+        [allowedBaseTypes]="$allowedBaseTypes()"
+        (selectionChange)="onTypeChange($event)" />
+
+    <dot-language-filter
+        [selectedLanguageIds]="$languageIds()"
+        (selectionChange)="onLanguageChange($event)" />
+</div>

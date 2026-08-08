@@ -13,9 +13,8 @@ import {
 import { TreeNode } from 'primeng/api';
 import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
-import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
+import { ALL_FOLDER, DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
-import { ALL_FOLDER } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,

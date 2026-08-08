@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -12,6 +13,7 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
@@ -39,6 +41,14 @@ import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot
  * `createComponentFactory` per file, and this scenario needs a factory that
  * omits the launcher token.
  */
+/** The AssetPicker needs a site to browse; GlobalStore supplies it. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
 describe('DotFileFieldComponent — legacy host availability (no Angular launcher)', () => {
     let spectator: Spectator<DotFileFieldComponent>;
 
@@ -47,6 +57,7 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
         imports: [ReactiveFormsModule],
         componentMocks: [DotFileFieldPreviewComponent, DotFileFieldUiMessageComponent],
         providers: [
+            mockProvider(GlobalStore, { siteDetails: signal(SITE_MOCK) }),
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),

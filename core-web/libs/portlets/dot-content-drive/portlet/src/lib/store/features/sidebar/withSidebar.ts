@@ -12,18 +12,19 @@ import { inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotFolderService } from '@dotcms/data-access';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
-
-import { SYSTEM_HOST } from '../../../shared/constants';
-import { DotContentDriveState } from '../../../shared/models';
 import {
     applyLoadMoreToHierarchy,
+    buildTreeFolderNodes,
+    DotFolderService,
     FolderTreeHierarchyLevel,
     getFolderHierarchyByPath,
     getFolderNodesByPath
-} from '../../../utils/functions';
-import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
+} from '@dotcms/data-access';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER } from '@dotcms/ui';
+
+import { SYSTEM_HOST } from '../../../shared/constants';
+import { DotContentDriveState } from '../../../shared/models';
 
 interface WithSidebarState {
     sidebarLoading: boolean;

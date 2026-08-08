@@ -5,12 +5,10 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFolderTreeComponent, DotFolderNamePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotFolderNamePipe, SYSTEM_HOST_ID } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent } from './dot-tree-folder.component';
-
-import { SYSTEM_HOST_ID } from '../shared/constants';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {

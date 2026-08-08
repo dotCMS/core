@@ -3,9 +3,9 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
     DotAiService,
@@ -15,8 +15,15 @@ import {
     DotUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { DotCMSContentTypeField, DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import {
+    DotAssetPickerComponent,
+    DotAssetPickerConfig,
+    DotDropZoneComponent,
+    DropZoneErrorType,
+    DropZoneFileEvent
+} from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
@@ -50,6 +57,14 @@ const mockLauncher = {
     open: jest.fn().mockReturnValue(of(null))
 };
 
+/** The AssetPicker needs a site to browse; GlobalStore supplies it. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
 describe('DotFileFieldComponent', () => {
     let spectator: SpectatorHost<DotFileFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof FileFieldStore>;
@@ -70,6 +85,7 @@ describe('DotFileFieldComponent', () => {
         // We also provide them (and mock the upload service's transitive deps) at
         // the module level so the harness can resolve them, then spy per test.
         providers: [
+            mockProvider(GlobalStore, { siteDetails: signal(SITE_MOCK) }),
             FileFieldStore,
             DialogService,
             DotFileFieldUploadService,
@@ -600,6 +616,132 @@ describe('DotFileFieldComponent', () => {
 
             expect(dojoLauncher.open).toHaveBeenCalled();
             expect(dialogLauncher.open).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('select existing asset (AssetPicker)', () => {
+        /** The site signal is created once by the factory, so a test that nulls it would leak. */
+        const setSite = (site: DotSite | null) =>
+            (spectator.inject(GlobalStore).siteDetails as WritableSignal<DotSite | null>).set(site);
+
+        const openPicker = (field: DotCMSContentTypeField, contentlet?: DotCMSContentlet) => {
+            setup(field, contentlet);
+            setSite(SITE_MOCK);
+            spectator.detectChanges();
+
+            const dialogService = spectator.inject(DialogService, true);
+            const spyOpen = jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(undefined),
+                close: jest.fn()
+            } as unknown as DynamicDialogRef);
+
+            spectator.component.showSelectExistingFileDialog();
+
+            return spyOpen;
+        };
+
+        /** The picker config the dialog was opened with. */
+        const configOf = (spyOpen: jest.SpyInstance): DotAssetPickerConfig =>
+            spyOpen.mock.calls[0][1].data as DotAssetPickerConfig;
+
+        it('should open the AssetPicker, not the browser selector', () => {
+            const spyOpen = openPicker(FILE_FIELD_MOCK);
+
+            expect(spyOpen).toHaveBeenCalledWith(
+                DotAssetPickerComponent,
+                expect.objectContaining({ data: expect.anything() })
+            );
+        });
+
+        describe('File field', () => {
+            it('should open in file mode: no type or mime restriction', () => {
+                const config = configOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(config.baseTypes).toBeUndefined();
+                expect(config.mimeTypes).toBeUndefined();
+            });
+
+            it('should pass the site being edited', () => {
+                const config = configOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(config.site).toEqual(SITE_MOCK);
+            });
+        });
+
+        describe('Image field', () => {
+            it('should restrict to the dotAsset and File Asset base types', () => {
+                const config = configOf(openPicker(IMAGE_FIELD_MOCK));
+
+                expect(config.baseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+            });
+
+            it('should apply the image mime restriction', () => {
+                const config = configOf(openPicker(IMAGE_FIELD_MOCK));
+
+                expect(config.mimeTypes).toEqual(['image/*']);
+            });
+        });
+
+        describe('locale', () => {
+            it("should use the contentlet's language when editing", () => {
+                const config = configOf(
+                    openPicker(FILE_FIELD_MOCK, createFakeContentlet({ languageId: 2 }))
+                );
+
+                expect(config.languageId).toBe('2');
+            });
+        });
+
+        describe('guards', () => {
+            it('should not open when no site has resolved yet', () => {
+                setup(FILE_FIELD_MOCK);
+                spectator.detectChanges();
+
+                // Cold start: GlobalStore has not loaded a site.
+                setSite(null);
+
+                const dialogService = spectator.inject(DialogService, true);
+                const spyOpen = jest.spyOn(dialogService, 'open');
+
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spyOpen).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('close contract', () => {
+            it('should set the preview from the returned contentlet', () => {
+                const asset = createFakeContentlet({ identifier: 'asset-1' });
+                setup(FILE_FIELD_MOCK);
+                setSite(SITE_MOCK);
+                spectator.detectChanges();
+
+                const spySetPreview = jest.spyOn(spectator.component.store, 'setPreviewFile');
+                jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                    onClose: of(asset),
+                    close: jest.fn()
+                } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spySetPreview).toHaveBeenCalledWith({ source: 'contentlet', file: asset });
+            });
+
+            it('should leave the field untouched on cancel', () => {
+                setup(FILE_FIELD_MOCK);
+                setSite(SITE_MOCK);
+                spectator.detectChanges();
+
+                const spySetPreview = jest.spyOn(spectator.component.store, 'setPreviewFile');
+                jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                    onClose: of(undefined),
+                    close: jest.fn()
+                } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spySetPreview).not.toHaveBeenCalled();
+            });
         });
     });
 });

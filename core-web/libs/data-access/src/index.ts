@@ -28,6 +28,8 @@ export * from './lib/dot-favorite-contenttype/dot-favorite-contenttype.service';
 export * from './lib/dot-favorite-page/dot-favorite-page.service';
 export * from './lib/dot-field/dot-field.service';
 export * from './lib/dot-folder/dot-folder.service';
+export * from './lib/dot-folder/folder-tree.utils';
+export * from './lib/dot-folder/folder-tree-load.utils';
 export * from './lib/dot-format-date/dot-format-date.service';
 export * from './lib/dot-generate-secure-password/dot-generate-secure-password.service';
 export * from './lib/dot-global-message/dot-global-message.service';

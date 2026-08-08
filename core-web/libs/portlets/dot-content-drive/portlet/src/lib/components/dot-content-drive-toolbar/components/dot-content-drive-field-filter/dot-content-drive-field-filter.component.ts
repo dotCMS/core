@@ -40,9 +40,9 @@ import {
     CHIP_FILTER_LISTBOX_PT,
     CHIP_FILTER_POPOVER_PT,
     DotChipFilterComponent,
-    DotFilterListItemComponent
-} from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+    DotFilterListItemComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotContentDriveRelationshipFooterComponent } from './dot-content-drive-relationship-footer/dot-content-drive-relationship-footer.component';
 

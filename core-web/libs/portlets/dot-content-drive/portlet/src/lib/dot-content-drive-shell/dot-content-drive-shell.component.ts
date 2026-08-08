@@ -44,23 +44,27 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
-    DotFolderListViewComponent,
-    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotContentDriveUploadFiles,
-    DotFolderListViewColumn,
     DotFolderTreeNodeData,
     DotFolderTreeNodeContentData,
     DotContentDriveMoveItems,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
+import {
+    DotAddToBundleComponent,
+    DotFolderListViewComponent,
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
+    DotFolderListViewColumn,
+    DotMessagePipe,
+    DotSeverityIconComponent,
+    DotUploadDropzoneComponent,
+    DotUploadTypeSelectorComponent
+} from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
-import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
-import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
@@ -103,10 +107,10 @@ import { encodeFilters, isFolder } from '../utils/functions';
         NgTemplateOutlet,
         DotContentDriveDialogFolderComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
-        DotContentDriveDialogUploadSelectorComponent,
+        DotUploadTypeSelectorComponent,
         MessageModule,
         DotMessagePipe,
-        DotContentDriveDropzoneComponent,
+        DotUploadDropzoneComponent,
         DotSeverityIconComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
@@ -171,6 +175,12 @@ export class DotContentDriveShellComponent {
      * `isTreeVisuallyExpanded` on the store for why these are kept separate.
      */
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Folder a dropped file lands in. The shared dropzone is presentational, so the target comes
+     * from here rather than the dropzone reaching into the store itself.
+     */
+    readonly $selectedFolder = computed(() => this.#store.selectedNode()?.data);
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -1059,6 +1069,14 @@ export class DotContentDriveShellComponent {
     }
 
     protected onTableScroll() {
+        this.#store.resetContextMenu();
+    }
+
+    /**
+     * A file drag entering the list dismisses the context menu, which would otherwise float over
+     * the drop overlay. The dropzone reports the drag; deciding what it means stays here.
+     */
+    protected onDropzoneDragEnter() {
         this.#store.resetContextMenu();
     }
 }
