@@ -79,6 +79,24 @@ public class IdentifierDateJob implements Job {
 					//Gets contentlet info
                     final Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
 
+					// A hit the database cannot resolve is skipped, not fatal. The index and the
+					// database drift for ordinary reasons (an interrupted delete, a stale shadow
+					// index during the ES→OS migration), and neither unresolved value is safe to
+					// carry into the body below: a null contentlet throws on getMap() and takes
+					// down the whole job, so every remaining contentlet of this type silently keeps
+					// a stale date; and an unresolved identifier comes back from find() as an
+					// EMPTY Identifier (IdentifierFactoryImpl.check404), which save() would
+					// persist as a brand-new row under a generated id, with null parent_path /
+					// asset_name / host_inode — rejected by identifier_parent_path_check, or
+					// corrupt data on any engine that lets it through. See issue #36501.
+					if (contentlet == null || !UtilMethods.isSet(identifier.getId())) {
+						Logger.warn(this, "Skipping index hit that does not resolve in the database"
+								+ " — identifier: " + contentletSearch.getIdentifier()
+								+ ", inode: " + contentletSearch.getInode()
+								+ ", content type: " + type.variable());
+						continue;
+					}
+
 					//Check if the new Publish Date Var is not null
 					if(UtilMethods.isSet(type.publishDateVar())){
 						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
