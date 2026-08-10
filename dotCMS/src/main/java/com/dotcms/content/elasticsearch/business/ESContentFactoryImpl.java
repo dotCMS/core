@@ -117,7 +117,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -1281,11 +1280,19 @@ public class ESContentFactoryImpl implements ContentletFactory {
   @Override
   public List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
+    // Single pass: the cache lookup already knows which inodes missed, so collect them here
+    // rather than re-deriving the difference afterwards. CollectionUtils.subtract built a
+    // HashBag of the hit keys, walked the inodes against it and returned a list that was then
+    // copied into a second list - three allocations and an extra pass to recompute something
+    // this loop already knew.
     final HashMap<String, Contentlet> conMap = new HashMap<>();
-    for (String i : inodes) {
+    final List<String> missingCons = new ArrayList<>();
+    for (final String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
       if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
         conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
+      } else {
+        missingCons.add(i);
       }
     }
 
@@ -1297,10 +1304,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     APILocator.getRequestCostAPI().incrementCost(Price.CONTENT_FROM_CACHE,
             ESContentFactoryImpl.class, "findContentlets", new Object[]{}, inodes.size());
 
-    if (conMap.size() != inodes.size()) {
-        final List<String> missingCons = new ArrayList<>(
-                CollectionUtils.subtract(inodes, conMap.keySet()));
-
+    if (!missingCons.isEmpty()) {
         APILocator.getRequestCostAPI().incrementCost(Price.CONTENT_FROM_DB,
                 ESContentFactoryImpl.class, "findContentlets", new Object[]{}, missingCons.size());
 
