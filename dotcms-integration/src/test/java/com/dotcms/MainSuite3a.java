@@ -30,6 +30,7 @@ import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeT
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.SecondaryCategoryPermissionTest;
+import com.dotmarketing.db.InodeExistenceCheckIntegrationTest;
 import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
@@ -100,6 +101,7 @@ import org.junit.runners.Suite;
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
+        InodeExistenceCheckIntegrationTest.class,
 })
 
 public class MainSuite3a {
