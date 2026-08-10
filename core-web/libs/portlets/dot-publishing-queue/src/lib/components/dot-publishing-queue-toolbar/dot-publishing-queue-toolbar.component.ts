@@ -27,6 +27,9 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue-status-filter/dot-publishing-queue-status-filter.component';
 
+/** Identifies the menu row that renders the trailing draft-bundle count. */
+export const SELECT_BUNDLE_ITEM_ID = 'select-bundle';
+
 @Component({
     selector: 'dot-publishing-queue-toolbar',
     imports: [
@@ -56,11 +59,21 @@ export class DotPublishingQueueToolbarComponent {
     /** Bulk actions appear only when the user has explicitly checked one or more rows. */
     protected readonly $hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
 
-    /** "Add Bundle" split-menu items. The commands emit outputs instead of
-     * calling services directly so the shell owns dialog orchestration
-     * (component ↔ dialog separation per libs/portlets/CLAUDE.md). */
+    /** Bare "Bundles" while the count is unknown — "(0)" would read as "you
+     * have no drafts". */
+    protected readonly $bundlesLabel = computed(() => {
+        const total = this.store.draftBundlesTotal();
+
+        return total === null
+            ? this.#dotMessageService.get('publishing-queue.bundles')
+            : this.#dotMessageService.get('publishing-queue.bundles.count', String(total));
+    });
+
+    /** Built once, never recomputed: PrimeNG re-processes `[model]` on every
+     * identity change and the menu then swallows the first click. */
     readonly addBundleItems: MenuItem[] = [
         {
+            id: SELECT_BUNDLE_ITEM_ID,
             label: this.#dotMessageService.get('publishing-queue.add-bundle.select'),
             command: () => this.$selectBundleClick.emit()
         },
@@ -82,5 +95,9 @@ export class DotPublishingQueueToolbarComponent {
 
     onBulkRetry(): void {
         this.store.retryBundles({ bundleIds: this.store.bundlesSelectedIds() });
+    }
+
+    protected showsDraftCount(item: MenuItem): boolean {
+        return item.id === SELECT_BUNDLE_ITEM_ID && this.store.draftBundlesTotal() !== null;
     }
 }

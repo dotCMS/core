@@ -3,10 +3,9 @@
     `!important` is required to override PrimeNG's default dimmed mask background, which the theme
     and the `pt` API do not otherwise let us clear — it is deliberate, not a leftover.
 
-    The left-cast shadow on `pt.root.class` is an arbitrary Tailwind value on purpose: the drawer
-    uses `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
-    `:host ::ng-deep` cannot reach it, and no dotCMS `$shadow-*` token is left-directional (they all
-    cast downward, but a right-anchored drawer needs the shadow cast to the left).
+    The shadow goes on `pt.root.class` rather than in component SCSS because the drawer uses
+    `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
+    `:host ::ng-deep` cannot reach it.
 
     `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
     dismissible tears the drawer down immediately, bypassing the unsaved-changes guard. The mask
@@ -22,6 +21,7 @@
     [maskStyle]="{ background: 'transparent !important' }"
     [pt]="{
         root: {
+            'data-testid': 'edit-content-side-panel',
             class: '!shadow-2xl',
             style: { width: $expanded() ? '100%' : '80%', transition: 'width 250ms ease' }
         },

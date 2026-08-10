@@ -763,12 +763,53 @@ export function withHistory() {
                  * Reloads never clear the current items first: the previous list stays
                  * visible while loading (page 1 replaces it on response), so the sidebar
                  * doesn't collapse into skeletons.
+                 *
+                 * The identity keys alone are not enough: a save/publish mints a NEW inode
+                 * under the SAME identifier and locale, so the keys stay equal while the
+                 * version list has genuinely gone stale. Two extra signals cover that:
+                 * - A list emptied back to INIT by `initializeExistingContent` (the
+                 *   full-screen in-place reload), which would otherwise render empty.
+                 * - The live inode moving while NOT browsing history (the dialog host never
+                 *   re-initializes, so nothing clears or refetches on its own).
+                 * `loadedLiveInode` only tracks the inode of the live version, so entering
+                 * a historical/compare version — and returning from it — does not refetch.
                  */
                 let loadedVersionsKey: string | null = null;
+                let loadedLiveInode: string | null = null;
                 let loadedPushPublishIdentifier: string | null = null;
 
                 effect(() => {
                     const contentlet = store.contentlet();
+                    // An in-place reload empties the lists back to INIT while deliberately
+                    // keeping the OUTGOING contentlet on screen (stale-while-revalidate),
+                    // so acting on the cleared flag mid-reload would fetch the identifier
+                    // we are leaving. Waiting for LOADING to clear is safe: the reload
+                    // patches `contentlet` and `state: LOADED` together while the statuses
+                    // are still INIT, so this fires on that same pass.
+                    //
+                    // INVARIANT this depends on — do not break it: nothing writes INIT
+                    // back to these statuses except the reducer defaults,
+                    // `initializeExistingContent`, and `clearVersions`/
+                    // `clearPushPublishHistory`. `loadVersions`/`loadPushPublishHistory`
+                    // only ever move LOADING -> LOADED/ERROR, so reading the statuses here
+                    // cannot re-trigger them. A loader that reset to INIT on completion or
+                    // error would turn this into a fetch loop.
+                    //
+                    // Nor can the cleared-list fetch be deferred forever: `state: LOADING`
+                    // is written only by the two initialize methods, there is no retry that
+                    // re-enters it, and the failure path navigates away from the editor
+                    // (content.feature.ts) — which tears down this store.
+                    const isReloading = store.state() === ComponentStatus.LOADING;
+                    const versionsCleared =
+                        !isReloading && store.versionsStatus().status === ComponentStatus.INIT;
+                    const pushPublishCleared =
+                        !isReloading &&
+                        store.pushPublishHistoryStatus().status === ComponentStatus.INIT;
+                    // Only historical view swaps `contentlet` for an older version. Compare
+                    // view leaves `contentlet` live (it only sets `compareContentlet`), so it
+                    // must NOT suppress the new-version check — otherwise publishing while
+                    // comparing would leave the list stale for the rest of the session.
+                    const isViewingHistoricalVersion = store.isViewingHistoricalVersion();
 
                     untracked(() => {
                         // Only load data if we have a contentlet with an identifier
@@ -777,16 +818,37 @@ export function withHistory() {
                         }
 
                         const versionsKey = `${contentlet.identifier}:${contentlet.languageId}`;
-                        if (versionsKey !== loadedVersionsKey) {
+                        const identityChanged = versionsKey !== loadedVersionsKey;
+                        // A workflow action (save/publish/restore) moved the live version
+                        // forward. Skipped on the first pass, where there is no baseline yet.
+                        //
+                        // Also skipped mid-reload, for the same reason the cleared-list
+                        // checks are: `initializeExistingContent` resets
+                        // `isViewingHistoricalVersion` to false in the SAME patch that flips
+                        // state to LOADING, while keeping the outgoing contentlet on screen.
+                        // If that contentlet was a historical version, its inode differs from
+                        // the live baseline and this would read as a new live version —
+                        // firing a request for the identifier we are leaving. The incoming
+                        // contentlet triggers the correct load once the reload lands, through
+                        // `identityChanged` or the still-INIT `versionsCleared`.
+                        const newLiveVersion =
+                            !isReloading &&
+                            !isViewingHistoricalVersion &&
+                            loadedLiveInode !== null &&
+                            contentlet.inode !== loadedLiveInode;
+
+                        if (identityChanged || versionsCleared || newLiveVersion) {
                             const isInitialLoad = loadedVersionsKey === null;
                             loadedVersionsKey = versionsKey;
 
-                            if (!isInitialLoad) {
+                            if (identityChanged && !isInitialLoad) {
                                 // The content identity (locale or identifier) changed under an
                                 // active compare/historical session — that state belongs to the
                                 // previous context, so discard it. Otherwise a stale
                                 // originalContentlet could later restore the previous locale's
                                 // content when exiting compare or historical view.
+                                // Skipped on a same-identity refetch: there the compare session
+                                // is still valid and must survive the reload.
                                 patchState(store, {
                                     compareContentlet: null,
                                     historicalVersionInode: null,
@@ -801,12 +863,26 @@ export function withHistory() {
                             });
                         }
 
-                        if (contentlet.identifier !== loadedPushPublishIdentifier) {
+                        if (
+                            contentlet.identifier !== loadedPushPublishIdentifier ||
+                            pushPublishCleared
+                        ) {
                             loadedPushPublishIdentifier = contentlet.identifier;
                             store.loadPushPublishHistory({
                                 identifier: contentlet.identifier,
                                 page: 1
                             });
+                        }
+
+                        // Only the live version updates the baseline, so returning from a
+                        // historical version lands back on a known inode instead of looking
+                        // like a brand-new one. Mid-reload is excluded too: the contentlet on
+                        // screen is the outgoing one (possibly a historical version whose
+                        // `isViewingHistoricalVersion` flag was already cleared), so adopting
+                        // its inode would leave the baseline pointing at a version that was
+                        // never the live one.
+                        if (!isReloading && !isViewingHistoricalVersion) {
+                            loadedLiveInode = contentlet.inode;
                         }
                     });
                 });
