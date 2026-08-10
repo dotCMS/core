@@ -773,23 +773,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // them and the editor would show "Page not found". Open them in a new tab
         // so the author can verify the link without leaving the editor.
         if (isAssetPath(url.pathname)) {
-            // Cancel before opening. The iframe must stay on the page being edited
-            // even if the open below fails, and it can: the iframe is sandboxed
-            // without `allow-popups`, so Firefox rejects a popup raised from its
-            // gesture with "The operation is insecure".
+            // Cancel before opening, so the page under edit stays put whatever the
+            // open does. `url` is the origin-resolved form of `href`, which can
+            // still be a raw relative attribute when the click lands on a child of
+            // the anchor.
             e.preventDefault();
-
-            try {
-                // `url` is the origin-resolved form of `href`, which can still be a
-                // raw relative attribute when the click lands on a child of the
-                // anchor. Two arguments only: a windowFeatures string turns this
-                // into a popup request, which is what the sandbox rejects.
-                this.window.open(url.href, '_blank');
-            } catch {
-                // Swallow. A throw here would otherwise reach the RxJS subscriber
-                // that feeds this handler and kill the click listener for the rest
-                // of the session, so every later link click would fall through.
-            }
+            this.#openInNewTab(url.href);
 
             return;
         }
@@ -801,6 +790,39 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Opens a URL in a new tab with the opener severed.
+     *
+     * Deliberately not `window.open(url, '_blank', 'noopener')`. A windowFeatures
+     * string makes Firefox classify the call as a popup request, and the iframe
+     * raising the gesture is sandboxed without `allow-popups`, so Firefox throws
+     * "DOMException: The operation is insecure". A `rel="noopener"` anchor is an
+     * ordinary tab navigation, which the sandbox permits, and carries the same
+     * opener guarantee, including for cross-origin targets where assigning
+     * `opener = null` on the returned window would not be allowed.
+     *
+     * @param {string} href - Absolute URL to open
+     * @memberof EditEmaEditorComponent
+     */
+    #openInNewTab(href: string): void {
+        try {
+            const doc = this.window.document;
+            const link = doc.createElement('a');
+
+            link.href = href;
+            link.target = '_blank';
+            link.rel = 'noopener';
+
+            doc.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch {
+            // Swallow. This runs inside the RxJS subscriber that feeds the iframe
+            // click handler, so an escaping throw would complete the subscription
+            // and kill link handling for the rest of the session.
+        }
     }
 
     /**
