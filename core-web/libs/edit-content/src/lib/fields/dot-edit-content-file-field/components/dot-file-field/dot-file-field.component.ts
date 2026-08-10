@@ -866,8 +866,8 @@ export class DotFileFieldComponent
             // Windowed size as a single `width`, not `90%` capped by a `max-width`: an inline
             // max-width would still clamp the dialog once it goes full screen. Roomy enough that
             // the folder tree and the asset table both breathe before reaching for full screen.
-            width: 'min(92vw, 1240px)',
-            height: 'min(92vh, 52rem)',
+            width: 'min(90vw, 1120px)',
+            height: 'min(94vh, 58rem)',
             // The picker fills the dialog so it can grow with the full-screen toggle.
             contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             // No explicit path: the picker reopens on the globally remembered folder.
