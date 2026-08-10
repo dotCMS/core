@@ -70,6 +70,12 @@ jobs:
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
+    secrets:
+      # Read-write: trunk is trusted.
+      build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY }}
+      build-cache-secret-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_SECRET_KEY }}
+      build-cache-endpoint: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ENDPOINT }}
+      build-cache-bucket: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_NAME }}
     permissions:
       contents: read
       packages: write

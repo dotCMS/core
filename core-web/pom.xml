@@ -177,6 +177,11 @@
                                 <argument>exec</argument>
                                 <argument>nx</argument>
                                 <argument>format:check</argument>
+                                <!-- Explicit base. Without it nx falls back to nx.json defaultBase
+                                     ("main"), i.e. a LOCAL branch that only exists when a job passes
+                                     require-main=true to prepare-runner. origin/main is always there
+                                     after a fetch-depth:0 checkout, so this runs anywhere. -->
+                                <argument>--base=${git.origin.branch}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -387,22 +392,6 @@
             </properties>
         </profile>
 
-        <profile>
-            <id>is_pr</id>
-            <!-- Configuration specific to PRs -->
-            <activation>
-                <property>
-                    <name>github.event.name</name>
-                    <value>pull_request</value>
-                </property>
-            </activation>
-            <properties>
-                <git.origin.branch>origin/main</git.origin.branch>
-                <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
-                <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
-                <skip.validate>false</skip.validate>
-            </properties>
-        </profile>
 
         <profile>
             <id>format</id>

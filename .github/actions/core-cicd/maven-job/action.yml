@@ -168,6 +168,27 @@ runs:
         echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
         echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
+    # The Maven distribution itself, which mvnw downloads from Maven Central on a
+    # cold runner. Without this every job in a run fetches the same ~40MB zip --
+    # around 26 downloads per run -- and Maven Central eventually answers 429,
+    # killing the job before any dotCMS code runs (and, under fail-fast, taking
+    # the rest of the matrix with it).
+    #
+    # Unlike the caches below this uses the combined action rather than the
+    # restore/save split: the content is an immutable versioned download, so
+    # there is no risk of persisting a polluted cache, and letting every job save
+    # means the first one to run on a cold key repairs it for the rest.
+    - id: cache-maven-wrapper
+      name: Cache Maven Wrapper Distribution
+      # Pinned to a commit SHA, not the mutable v4 tag: a tag can be repointed by
+      # the action owner, which is how the trivy-action and kics-github-action
+      # compromises worked. Bump deliberately when updating.
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/.m2/wrapper
+        # Changes only when the Maven version does, so this key is ~always a hit.
+        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
       if: ${{ inputs.artifacts-from == '' }}
@@ -307,7 +328,8 @@ runs:
           echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
-        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+        # Set by the build-cache-remote action when the S3 cache is wired up; empty otherwise.
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS ${BUILD_CACHE_ARGS:-} $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
           echo "Building Maven with args $FINAL_ARGS"
