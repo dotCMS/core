@@ -39,10 +39,14 @@
                         data-testid="workflow-actions" />
 
                     @if ($displayActionCenter()) {
+                        <!-- Refused outright during a run: the dialog would open with every row
+                             disabled and then close itself when the run settled. -->
                         <p-button
                             animate.enter="toolbar-enter"
                             animate.leave="toolbar-leave"
                             [label]="'content-drive.action-center.header' | dm"
+                            [disabled]="!!$actionExecution()"
+                            [pTooltip]="$actionCenterTooltip() | dm"
                             data-testid="action-center-button"
                             (click)="onOpenActionCenter()" />
                     }
@@ -72,6 +76,22 @@
                     size="small"
                     (click)="onClearAll()"
                     data-testid="clear-all-filters" />
+            }
+
+            <!-- Sits at the end of the filter row rather than beside the search box: during a run the
+                 selection still stands, so the row above is occupied by the workflow-action buttons.
+                 `ml-auto` keeps it right-aligned as filter chips come and go. -->
+            @if ($actionExecution()) {
+                <div
+                    class="ml-auto flex items-center gap-2 text-sm text-gray-700"
+                    animate.enter="toolbar-enter"
+                    animate.leave="toolbar-leave"
+                    role="status"
+                    aria-live="polite"
+                    data-testid="action-execution-indicator">
+                    <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
+                    <span [innerHTML]="$actionExecutionLabel()"></span>
+                </div>
             }
         </div>
     </div>

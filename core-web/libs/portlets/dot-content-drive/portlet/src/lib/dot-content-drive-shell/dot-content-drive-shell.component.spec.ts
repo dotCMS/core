@@ -78,6 +78,7 @@ import {
 } from '../shared/mocks';
 import {
     DotContentDriveDialog,
+    DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
     DotContentDriveSortOrder,
     DotContentDriveStatus
@@ -103,6 +104,10 @@ describe('DotContentDriveShellComponent', () => {
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
     // Header override published by a dialog body that has drilled into a sub-screen.
     let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
+    // Result of a finished workflow action, which the shell turns into a toast.
+    let actionExecutionResultSignal: WritableSignal<
+        DotContentDriveActionExecutionResult | undefined
+    >;
     // Reactive so the shell's $extraColumns computed recomputes when the fields change.
     let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
 
@@ -175,6 +180,9 @@ describe('DotContentDriveShellComponent', () => {
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
+        actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
+            undefined
+        );
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
 
@@ -210,6 +218,10 @@ describe('DotContentDriveShellComponent', () => {
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
                     dialogDrillDown: dialogDrillDownSignal,
+                    // Read by the toolbar, which the shell renders for real.
+                    actionExecution: signal(undefined),
+                    actionExecutionResult: actionExecutionResultSignal,
+                    clearActionExecutionResult: jest.fn(),
                     setDialog: jest.fn(),
                     setDialogDrillDown: jest.fn(),
                     clearDialogDrillDown: jest.fn(),
@@ -306,6 +318,84 @@ describe('DotContentDriveShellComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe('workflow action result', () => {
+        // The run outlives the Action Center dialog, so the shell is what reports the outcome — it
+        // owns <p-toast> and is never destroyed while the portlet is open.
+        const settle = (result: DotContentDriveActionExecutionResult) => {
+            actionExecutionResultSignal.set(result);
+            spectator.detectChanges();
+        };
+
+        it('should report a plain success when nothing failed or skipped', () => {
+            settle({
+                actionName: 'Publish',
+                successCount: 3,
+                skippedCount: 0,
+                failCount: 0
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    detail: 'content-drive.action-center.toast.executed-detail'
+                })
+            );
+        });
+
+        it('should downgrade to a warning when items failed', () => {
+            // Partial failure is a normal outcome (a lock held by somebody else, a per-contentlet
+            // permission) and must not read as an unqualified success.
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: 'content-drive.action-center.toast.executed-with-fails'
+                })
+            );
+        });
+
+        it('should surface skipped items when nothing failed', () => {
+            settle({
+                actionName: 'Send for Review',
+                successCount: 1,
+                skippedCount: 1,
+                failCount: 0
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    detail: 'content-drive.action-center.toast.executed-with-skips'
+                })
+            );
+        });
+
+        it('should refresh the grid, close the dialog and consume the result', () => {
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0
+            });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should stay silent while no result is published', () => {
+            spectator.detectChanges();
+
+            expect(messageService.add).not.toHaveBeenCalled();
+        });
     });
 
     describe('Query Params Update Effect', () => {

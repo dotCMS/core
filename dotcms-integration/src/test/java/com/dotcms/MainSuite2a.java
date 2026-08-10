@@ -69,6 +69,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
         com.dotcms.rest.api.v1.workflow.WorkflowResourceResponseCodeIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.workflow.WorkflowResourceLockUnlockIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLicenseIntegrationTest.class,
         com.dotcms.rest.api.v1.authentication.ResetPasswordResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResourceIntegrationTest.class,
