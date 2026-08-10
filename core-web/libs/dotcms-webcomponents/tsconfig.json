@@ -8,6 +8,15 @@
         "allowSyntheticDefaultImports": true,
         "allowUnreachableCode": false,
         "declaration": false,
+        // Strict mode (#35943) is not enabled yet — 274 type errors remain across 42 files, and
+        // Stencil type-checks during `build`, so turning it on before they are fixed breaks CI.
+        // The decorator members in src/ are already prepared for it.
+        //
+        // Do NOT add `"ignoreDeprecations": "6.0"` here: Stencil bundles TypeScript 5.8.3, which
+        // only accepts "5.0" and fails the build with `Invalid value for '--ignoreDeprecations'`.
+        // The repo's own tsc is 6.0.3 and needs "6.0" to look past the deprecated `baseUrl` /
+        // `moduleResolution` below, so pass it on the CLI when type-checking this project:
+        //   pnpm exec tsc -p libs/dotcms-webcomponents/tsconfig.json --noEmit --ignoreDeprecations 6.0 --strict
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "lib": ["dom", "es2015"],

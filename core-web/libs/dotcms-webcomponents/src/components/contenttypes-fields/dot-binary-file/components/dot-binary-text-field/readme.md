@@ -16,7 +16,7 @@ Represent a dotcms text field for the binary file element.
 | `hint`        | `hint`        | (optional) Hint text that suggest a clue of the field                                                   | `string`  | `''`        |
 | `placeholder` | `placeholder` | (optional) Placeholder specifies a short hint that describes the expected value of the input field      | `string`  | `''`        |
 | `required`    | `required`    | (optional) Determine if it is mandatory                                                                 | `boolean` | `false`     |
-| `value`       | `value`       | Value specifies the value of the <input> element                                                        | `any`     | `null`      |
+| `value`       | `value`       | Value specifies the value of the <input> element                                                        | `string`  | `null`      |
 
 
 ## Events

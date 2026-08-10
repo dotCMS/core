@@ -36,7 +36,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotCheckboxComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Name that will be used as ID */
     @Prop({ reflect: true })
@@ -71,14 +71,14 @@ export class DotCheckboxComponent {
     value = '';
 
     @State()
-    _options: DotOption[];
+    _options!: DotOption[];
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     componentWillLoad() {
         this.value = this.value || '';

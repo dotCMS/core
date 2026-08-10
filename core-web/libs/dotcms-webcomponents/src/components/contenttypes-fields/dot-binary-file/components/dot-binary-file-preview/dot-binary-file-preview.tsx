@@ -12,7 +12,7 @@ import { Component, Element, Event, EventEmitter, Prop, Host, h } from '@stencil
 })
 export class DotBinaryFilePreviewComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** file name to be displayed */
     @Prop({ reflect: true, mutable: true })
@@ -28,7 +28,7 @@ export class DotBinaryFilePreviewComponent {
 
     /** Emit when the file is deleted */
     @Event()
-    delete: EventEmitter;
+    delete!: EventEmitter;
 
     render() {
         return this.fileName ? (

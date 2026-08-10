@@ -30,7 +30,7 @@ import { SelectionFeedback } from './components/dot-autocomplete/dot-autocomplet
 })
 export class DotTagsComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value formatted splitted with a comma, for example: tag-1,tag-2 */
     @Prop({ mutable: true, reflect: true })
@@ -77,12 +77,12 @@ export class DotTagsComponent {
     data: () => Promise<string[]> | string[] = null;
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the filed, clear value and emit events.

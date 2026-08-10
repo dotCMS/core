@@ -9,7 +9,7 @@ import { getErrorClass, getId, getOriginalStatus, updateStatus } from '../../../
 })
 export class DotInputCalendarComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the input element */
     @Prop({ mutable: true, reflect: true })
@@ -44,11 +44,11 @@ export class DotInputCalendarComponent {
     type = '';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
     @Event()
-    _dotValueChange: EventEmitter<DotFieldValueEvent>;
+    _dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    _dotStatusChange: EventEmitter<DotInputCalendarStatusEvent>;
+    _dotStatusChange!: EventEmitter<DotInputCalendarStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.

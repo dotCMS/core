@@ -9,7 +9,7 @@ const DEFAULT_VALUE = { key: '', value: '' };
 })
 export class DotKeyValueComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) Disables all form interaction */
     @Prop({ reflect: true })
@@ -59,15 +59,15 @@ export class DotKeyValueComponent {
 
     /** Emit the added value, key/value pair */
     @Event()
-    add: EventEmitter<DotKeyValueField>;
+    add!: EventEmitter<DotKeyValueField>;
 
     /** Emit when key is changed */
     @Event()
-    keyChanged: EventEmitter<string>;
+    keyChanged!: EventEmitter<string>;
 
     /** Emit when any of the input is blur */
     @Event()
-    lostFocus: EventEmitter<FocusEvent>;
+    lostFocus!: EventEmitter<FocusEvent>;
 
     @State()
     inputs: DotKeyValueField = { ...DEFAULT_VALUE };

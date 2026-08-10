@@ -31,7 +31,7 @@ import flatpickr from 'flatpickr';
 })
 export class DotDateRangeComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) Value formatted with start and end date splitted with a comma */
     @Prop({ mutable: true, reflect: true })
@@ -103,12 +103,12 @@ export class DotDateRangeComponent {
     presetLabel = 'Presets';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     private flatpickr: any;
     private defaultPresets = [

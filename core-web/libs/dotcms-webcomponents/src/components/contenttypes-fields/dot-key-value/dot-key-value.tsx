@@ -43,7 +43,7 @@ const mapToKeyValue = ({ label, value }: DotOption) => {
 })
 export class DotKeyValueComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value of the field */
     @Prop({ reflect: true, mutable: true })
@@ -101,61 +101,61 @@ export class DotKeyValueComponent {
     @Prop({
         reflect: true
     })
-    formKeyPlaceholder: string;
+    formKeyPlaceholder?: string;
 
     /** (optional) Placeholder for the value input text in the key-value-form */
     @Prop({
         reflect: true
     })
-    formValuePlaceholder: string;
+    formValuePlaceholder?: string;
 
     /** (optional) The string to use in the key label in the key-value-form */
     @Prop({
         reflect: true
     })
-    formKeyLabel: string;
+    formKeyLabel?: string;
 
     /** (optional) The string to use in the value label in the key-value-form */
     @Prop({
         reflect: true
     })
-    formValueLabel: string;
+    formValueLabel?: string;
 
     /** (optional) Label for the add button in the key-value-form */
     @Prop({
         reflect: true
     })
-    formAddButtonLabel: string;
+    formAddButtonLabel?: string;
 
     /** (optional) The string to use in the delete button of a key/value item */
     @Prop({
         reflect: true
     })
-    listDeleteLabel: string;
+    listDeleteLabel?: string;
 
     /** (optional) The string to use in the empty option of whitelist dropdown key/value item */
     @Prop({
         reflect: true
     })
-    whiteListEmptyOptionLabel: string;
+    whiteListEmptyOptionLabel?: string;
 
     /** (optional) The string containing the value to be parsed for whitelist key/value */
     @Prop({
         reflect: true
     })
-    whiteList: string;
+    whiteList?: string;
 
     @State()
-    errorExistingKey: boolean;
+    errorExistingKey!: boolean;
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
     @State()
     items: DotKeyValueField[] = [];
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     @Watch('value')
     valueWatch(): void {

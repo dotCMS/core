@@ -21,7 +21,7 @@ export interface SelectionFeedback {
 })
 export class DotAutocompleteComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) Disables field's interaction */
     @Prop({ reflect: true })
@@ -48,11 +48,11 @@ export class DotAutocompleteComponent {
     data: () => Promise<string[]> | string[] = null;
 
     @Event()
-    selection: EventEmitter<string>;
+    selection!: EventEmitter<string>;
     @Event()
-    enter: EventEmitter<string>;
+    enter!: EventEmitter<string>;
     @Event()
-    lostFocus: EventEmitter<FocusEvent>;
+    lostFocus!: EventEmitter<FocusEvent>;
 
     private readonly id = `autoComplete${new Date().getTime()}`;
     private enteredSuggestionList = false;

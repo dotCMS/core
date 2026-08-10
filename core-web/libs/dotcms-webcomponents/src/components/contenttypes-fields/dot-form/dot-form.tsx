@@ -32,11 +32,11 @@ const SUBMIT_FORM_API_URL = '/api/v1/workflow/actions/default/fire/NEW';
 })
 export class DotFormComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) List of fields (variableName) separated by comma, to be shown */
     @Prop()
-    fieldsToShow: string;
+    fieldsToShow?: string;
 
     /** (optional) Text to be rendered on Reset button */
     @Prop({ reflect: true })
@@ -65,7 +65,7 @@ export class DotFormComponent {
 
     /**Emit when submit the form */
     @Event()
-    submit: EventEmitter<DotCMSContentlet>;
+    submit!: EventEmitter<DotCMSContentlet>;
 
     private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
     private value = {};

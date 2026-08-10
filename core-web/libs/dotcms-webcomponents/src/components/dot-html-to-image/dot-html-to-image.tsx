@@ -21,11 +21,11 @@ export class DotHtmlToImage {
     @Prop({ reflect: false, mutable: true })
     width = '';
 
-    @Event() pageThumbnail: EventEmitter<{
+    @Event() pageThumbnail!: EventEmitter<{
         file: File;
         error?: string;
     }>;
-    @State() previewImg: string;
+    @State() previewImg!: string;
 
     boundOnMessageHandler = null;
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;

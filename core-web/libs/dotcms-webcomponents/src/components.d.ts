@@ -31,7 +31,7 @@ export namespace Components {
           * @default 'Creating DotAssets'
          */
         "createAssetsText": string;
-        "customUploadFiles": (props: {
+        "customUploadFiles"?: (props: {
         files: File[];
         onSuccess: () => void;
         updateProgress: (progress: number) => void;
@@ -268,7 +268,7 @@ export namespace Components {
         /**
           * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
          */
-        "accept": string;
+        "accept"?: string;
         /**
           * (optional) Disables field's interaction
           * @default false
@@ -293,7 +293,7 @@ export namespace Components {
           * Value specifies the value of the <input> element
           * @default null
          */
-        "value": any;
+        "value": string | null;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -304,7 +304,7 @@ export namespace Components {
         /**
           * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
          */
-        "accept": string;
+        "accept"?: string;
         /**
           * (optional) Text that be shown in the browse file button
           * @default ''
@@ -334,13 +334,13 @@ export namespace Components {
     interface DotCard {
     }
     interface DotCardContentlet {
-        "checked": boolean;
+        "checked"?: boolean;
         "hideMenu": () => Promise<void>;
         /**
           * @default '96px'
          */
         "iconSize": string;
-        "item": DotCardContentletItem;
+        "item"?: DotCardContentletItem;
         "showMenu": (x: number, y: number) => Promise<void>;
         /**
           * @default false
@@ -362,7 +362,7 @@ export namespace Components {
           * @default true
          */
         "showVideoThumbnail": boolean;
-        "value": string;
+        "value"?: string;
     }
     interface DotCheckbox {
         /**
@@ -444,7 +444,7 @@ export namespace Components {
         "size": string;
     }
     interface DotContentletLockIcon {
-        "locked": boolean;
+        "locked"?: boolean;
         /**
           * @default '16px'
          */
@@ -466,7 +466,7 @@ export namespace Components {
           * @default false
          */
         "backgroundImage": boolean;
-        "contentlet": DotContentletItem;
+        "contentlet"?: DotContentletItem;
         /**
           * @default ''
          */
@@ -505,7 +505,7 @@ export namespace Components {
         "show": (x: number, y: number, position?: string) => Promise<void>;
     }
     interface DotDataViewButton {
-        "value": string;
+        "value"?: string;
     }
     interface DotDate {
         /**
@@ -711,7 +711,7 @@ export namespace Components {
         /**
           * (optional) List of fields (variableName) separated by comma, to be shown
          */
-        "fieldsToShow": string;
+        "fieldsToShow"?: string;
         /**
           * Layout metada to be rendered
           * @default []
@@ -737,21 +737,21 @@ export namespace Components {
         /**
           * Fields metada to be rendered
          */
-        "column": DotCMSContentTypeLayoutColumn;
+        "column"?: DotCMSContentTypeLayoutColumn;
         /**
           * (optional) List of fields (variableName) separated by comma, to be shown
          */
-        "fieldsToShow": string;
+        "fieldsToShow"?: string;
     }
     interface DotFormRow {
         /**
           * (optional) List of fields (variableName) separated by comma, to be shown
          */
-        "fieldsToShow": string;
+        "fieldsToShow"?: string;
         /**
           * Fields metada to be rendered
          */
-        "row": DotCMSContentTypeLayoutRow;
+        "row"?: DotCMSContentTypeLayoutRow;
     }
     interface DotHtmlToImage {
         /**
@@ -827,23 +827,23 @@ export namespace Components {
         /**
           * (optional) Label for the add button in the key-value-form
          */
-        "formAddButtonLabel": string;
+        "formAddButtonLabel"?: string;
         /**
           * (optional) The string to use in the key label in the key-value-form
          */
-        "formKeyLabel": string;
+        "formKeyLabel"?: string;
         /**
           * (optional) Placeholder for the key input text in the key-value-form
          */
-        "formKeyPlaceholder": string;
+        "formKeyPlaceholder"?: string;
         /**
           * (optional) The string to use in the value label in the key-value-form
          */
-        "formValueLabel": string;
+        "formValueLabel"?: string;
         /**
           * (optional) Placeholder for the value input text in the key-value-form
          */
-        "formValuePlaceholder": string;
+        "formValuePlaceholder"?: string;
         /**
           * (optional) Hint text that suggest a clue of the field
           * @default ''
@@ -857,7 +857,7 @@ export namespace Components {
         /**
           * (optional) The string to use in the delete button of a key/value item
          */
-        "listDeleteLabel": string;
+        "listDeleteLabel"?: string;
         /**
           * Name that will be used as ID
           * @default ''
@@ -890,11 +890,11 @@ export namespace Components {
         /**
           * (optional) The string containing the value to be parsed for whitelist key/value
          */
-        "whiteList": string;
+        "whiteList"?: string;
         /**
           * (optional) The string to use in the empty option of whitelist dropdown key/value item
          */
-        "whiteListEmptyOptionLabel": string;
+        "whiteListEmptyOptionLabel"?: string;
     }
     /**
      * Represent a dotcms label control.
@@ -1410,9 +1410,9 @@ export namespace Components {
         "value": string;
     }
     interface DotTooltip {
-        "content": string;
-        "delay": number;
-        "for": string;
+        "content"?: string;
+        "delay"?: number;
+        "for"?: string;
         /**
           * @default 'center bottom'
          */
@@ -1423,7 +1423,7 @@ export namespace Components {
           * @type {DotContentletItem}
           * @memberof DotVideoThumbnail
          */
-        "contentlet": DotContentletItem;
+        "contentlet"?: DotContentletItem;
         /**
           * @type {boolean}
           * @memberof DotVideoThumbnail
@@ -1441,7 +1441,7 @@ export namespace Components {
           * @type {string}
           * @memberof variable
          */
-        "variable": string;
+        "variable"?: string;
     }
     interface KeyValueForm {
         /**
@@ -2609,7 +2609,7 @@ declare namespace LocalJSX {
           * Value specifies the value of the <input> element
           * @default null
          */
-        "value"?: any;
+        "value"?: string | null;
     }
     /**
      * Represent a dotcms text field for the binary file element.

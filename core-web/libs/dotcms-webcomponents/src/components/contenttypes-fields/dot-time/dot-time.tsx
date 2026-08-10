@@ -27,7 +27,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotTimeComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value format hh:mm:ss e.g., 15:22:00 */
     @Prop({ mutable: true, reflect: true })
@@ -74,14 +74,14 @@ export class DotTimeComponent {
     step = '1';
 
     @State()
-    classNames: DotFieldStatusClasses;
+    classNames!: DotFieldStatusClasses;
     @State()
     errorMessageElement: any;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.

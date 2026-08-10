@@ -41,13 +41,13 @@ export class DotContentletThumbnail {
     playableVideo = false;
 
     @Prop()
-    contentlet: DotContentletItem;
+    contentlet?: DotContentletItem;
 
     @Prop({ reflect: true })
     fieldVariable = '';
 
-    @State() renderImage: boolean;
-    @State() isSVG: boolean;
+    @State() renderImage!: boolean;
+    @State() isSVG!: boolean;
 
     componentWillLoad() {
         const { hasTitleImage, mimeType } = this.contentlet;

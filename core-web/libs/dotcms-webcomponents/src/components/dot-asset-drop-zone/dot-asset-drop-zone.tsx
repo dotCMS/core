@@ -68,7 +68,7 @@ export class DotAssetDropZone {
     @Prop() typesErrorLabel: string = 'This action only allows $0 files.';
 
     /* custom function to upload files */
-    @Prop() customUploadFiles: (props: {
+    @Prop() customUploadFiles?: (props: {
         files: File[];
         onSuccess: () => void;
         updateProgress: (progress: number) => void;
@@ -76,7 +76,7 @@ export class DotAssetDropZone {
     }) => Promise<any>;
 
     /** Emit an array of Contentlets just created or array of errors */
-    @Event() uploadComplete: EventEmitter<DotCMSContentlet[] | DotHttpErrorResponse[] | any>;
+    @Event() uploadComplete!: EventEmitter<DotCMSContentlet[] | DotHttpErrorResponse[] | any>;
 
     @State() dropState: DotDropStatus = DotDropStatus.NONE;
     @State() progressIndicator = 0;

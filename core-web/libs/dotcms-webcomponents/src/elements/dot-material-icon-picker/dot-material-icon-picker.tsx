@@ -17,11 +17,11 @@ import '@material/mwc-icon';
     styleUrl: 'dot-material-icon-picker.scss'
 })
 export class DotMaterialIcon {
-    @Element() element: HTMLElement;
+    @Element() element!: HTMLElement;
 
-    @State() showSuggestions: boolean;
+    @State() showSuggestions!: boolean;
     @State() suggestionArr: string[] = [];
-    @State() selectedSuggestionIndex: number;
+    @State() selectedSuggestionIndex!: number;
 
     /** Value for input placeholder */
     @Prop({ reflect: true }) placeholder: string = '';
@@ -52,7 +52,7 @@ export class DotMaterialIcon {
     @Prop({ reflect: true }) suggestionlist: string[] = MaterialIconClasses;
 
     @Event()
-    dotValueChange: EventEmitter<{ name: string; value: string; colorValue: string }>;
+    dotValueChange!: EventEmitter<{ name: string; value: string; colorValue: string }>;
 
     @Listen('click', { target: 'window' })
     handleWindowClick(e: Event) {
