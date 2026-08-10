@@ -6,6 +6,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     ElementRef,
     inject,
@@ -13,12 +14,13 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
@@ -40,6 +42,7 @@ import {
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
     DotFolderListViewComponent,
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
@@ -69,7 +72,8 @@ import {
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    NEW_CONTENT_MARKER
 } from '../shared/constants';
 import {
     DotContentDriveContentTypeSelectorPayload,
@@ -104,9 +108,19 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
         DotSeverityIconComponent,
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule,
         DotContentDriveActionCenterComponent
     ],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
+    providers: [
+        DotContentDriveStore,
+        // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
+        // the side-panel feature flag; shared with the child components in this shell's subtree.
+        DotContentDriveNavigationService,
+        DotWorkflowsActionsService,
+        MessageService,
+        DotFolderService
+    ],
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -117,18 +131,64 @@ export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
+    readonly #route = inject(ActivatedRoute);
 
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+    readonly #destroyRef = inject(DestroyRef);
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #sidePanelNav = inject(DotSidePanelNavController);
+
+    /** Edit Content side panel request, driven by the navigation service; read by the template. */
+    protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
+
+    /**
+     * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
+     * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
+     * phantom entry whose Back puts the just-removed param back with no panel rendered.
+     */
+    #editPanelUrlWasSet = false;
+
+    /**
+     * The rendered side panel, so browser Back can route its close through the panel's guard.
+     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
+     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
+     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
+     * erased at compile time — it leaves no runtime reference).
+     */
+    protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
-    readonly $treeExpanded = this.#store.isTreeExpanded;
+
+    /**
+     * The tree's VISUAL expanded state (drives width/animation). Combines the user's real
+     * preference with any transient collapse the side panel is forcing — see
+     * `isTreeVisuallyExpanded` on the store for why these are kept separate.
+     */
+    readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
+     * narrow viewport, and clears the override on close. Purely derived from the panel's open
+     * state each time it runs — no bookkeeping needed (unlike a real preference, "should the panel
+     * currently be forcing a collapse" has no history to restore: it is always correctly
+     * recomputed from the CURRENT panel/viewport state, including right after a refresh with the
+     * panel already open from a deep link). `untracked` guards the store read/write so the effect
+     * only re-runs when the panel open/close state changes.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #forceCollapseTreeWithPanelEffect = effect(() => {
+        const panelOpen = !!this.$editPanelRequest();
+
+        untracked(() => {
+            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
+        });
+    });
 
     readonly $contextMenuData = this.#store.contextMenu;
 
@@ -265,6 +325,50 @@ export class DotContentDriveShellComponent {
 
     constructor() {
         this.#syncDialog(this.#store.dialog);
+
+        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
+        // once from the snapshot (the portlet is not re-created on in-session query-param changes).
+        // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
+        // are resolved.
+        const editContent = this.#route.snapshot.queryParams['editContent'];
+        if (editContent && editContent !== NEW_CONTENT_MARKER) {
+            this.#navigationService.openEditByIdentifier(editContent);
+        }
+
+        // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
+        // (no router navigation), so nothing else reacts to popstate. When Back removes or changes
+        // that param while a panel is open (edit OR new), route the close through the panel's
+        // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
+        // unsaved edits silently.
+        const locationSubscription = this.#location.subscribe((event) => {
+            const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+            const editContentParam = params.get('editContent');
+            const request = this.#navigationService.$editPanelRequest();
+            if (!request) {
+                return;
+            }
+
+            // The param the URL should carry for the currently-open panel: the identifier for edit,
+            // the marker for new. If Back changed it away from that, the panel should close.
+            const expected =
+                request.mode === 'edit' ? (request.identifier ?? null) : NEW_CONTENT_MARKER;
+
+            if (expected !== editContentParam) {
+                // Restore the param so the URL matches the still-open panel while the guard decides.
+                // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
+                // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
+                // → the panel stays open and the URL is already back in sync.
+                const restoredUrl = this.#router
+                    .createUrlTree([], {
+                        queryParams: { editContent: expected },
+                        queryParamsHandling: 'merge'
+                    })
+                    .toString();
+                this.#location.replaceState(restoredUrl);
+                this.$sidePanel()?.requestClose();
+            }
+        });
+        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
     }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
@@ -367,11 +471,34 @@ export class DotContentDriveShellComponent {
             queryParams['filters'] = null;
         }
 
+        // Reflect the open panel in the `editContent` param: the shareable identifier for edit, or
+        // a non-shareable marker for new (so browser Back has an entry to pop). Cleared when the
+        // panel is closed. Written via Location.go/replaceState so it triggers no navigation/reload.
+        const editRequest = this.$editPanelRequest();
+        const editContent = editRequest
+            ? editRequest.mode === 'edit'
+                ? (editRequest.identifier ?? null)
+                : NEW_CONTENT_MARKER
+            : null;
+        queryParams['editContent'] = editContent;
+
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
             queryParamsHandling: 'merge'
         });
-        this.#location.go(urlTree.toString());
+
+        // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
+        // moved the URL). Push when opening the panel so Back can pop it (AC8); replace when closing
+        // it, so no phantom history entry is left whose Back would resurrect the removed param.
+        const newUrl = urlTree.toString();
+        if (newUrl !== this.#location.path(true)) {
+            if (editContent === null && this.#editPanelUrlWasSet) {
+                this.#location.replaceState(newUrl);
+            } else {
+                this.#location.go(newUrl);
+            }
+        }
+        this.#editPanelUrlWasSet = editContent !== null;
     });
 
     /**
@@ -492,6 +619,16 @@ export class DotContentDriveShellComponent {
      */
     protected onDialogHidden() {
         this.$activeDialog.set(undefined);
+    }
+
+    /** Closes the Edit Content side panel. */
+    protected onEditPanelClosed() {
+        this.#navigationService.closeEditPanel();
+    }
+
+    /** A save in the side panel can create or change an item, so refresh the list. */
+    protected onEditPanelSaved() {
+        this.#store.reloadContentDrive();
     }
 
     /**

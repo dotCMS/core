@@ -65,6 +65,14 @@ describe('useExperimentVariant', () => {
             expect(shouldWaitForVariant).toBe(false);
         });
 
+        it(' if data is undefined (e.g. waiting on the UVE editor to resolve a draft page)', () => {
+            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+
+            const { result } = renderHook(() => useExperimentVariant(undefined));
+
+            expect(result.current.shouldWaitForVariant).toBe(false);
+        });
+
         it(' if `runningExperimentId` is undefined', () => {
             const mockData = {
                 viewAs: { variantId: EXPERIMENT_DEFAULT_VARIANT_NAME }
