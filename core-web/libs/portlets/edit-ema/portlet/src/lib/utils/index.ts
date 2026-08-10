@@ -1203,7 +1203,15 @@ const FILE_EXTENSION_PATTERN = /^(?=.*[a-z])[a-z0-9]{1,8}$/;
  *
  * Known limitation: a page whose last segment carries a dot followed by a short
  * alpha token is read as a file, so `/store/product.detail` opens in a new tab
- * instead of navigating. Reachable through author-controlled URL-map slugs.
+ * instead of navigating. Reachable through author-controlled slugs, since the
+ * page `url` is a plain text field (`HTMLPageAssetAPIImpl`).
+ *
+ * That direction is deliberate. Reading a page as a file opens it in a new tab,
+ * which is visible and recoverable; reading a file as a page hands it to the
+ * Page API and strands the editor on "Page not found", the defect this guards
+ * against. So the extension test stays permissive rather than matching against
+ * a known-extension allowlist, which would invert the bias and make every
+ * uncommon file type fail the worse way.
  *
  * @param {string} pathname - The pathname to check (query and hash excluded)
  * @returns {boolean} True when the pathname points at a file asset
