@@ -73,8 +73,6 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
 
-    String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
-
     /**
      * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
      * navigating full-screen (Content Drive) or a centered dialog (UVE). On by default
