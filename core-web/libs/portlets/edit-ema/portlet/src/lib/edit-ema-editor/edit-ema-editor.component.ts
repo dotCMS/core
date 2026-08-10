@@ -830,21 +830,27 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     #openInNewTab(href: string): void {
+        let link: HTMLAnchorElement | null = null;
+
         try {
             const doc = this.window.document;
-            const link = doc.createElement('a');
 
+            link = doc.createElement('a');
             link.href = href;
             link.target = '_blank';
             link.rel = 'noopener';
 
             doc.body.appendChild(link);
             link.click();
-            link.remove();
         } catch {
             // Swallow. This runs inside the RxJS subscriber that feeds the iframe
             // click handler, so an escaping throw would complete the subscription
             // and kill link handling for the rest of the session.
+        } finally {
+            // `click()` is the call that throws when the open is refused, so
+            // cleanup has to be unconditional or every failed attempt strands an
+            // anchor in the admin document.
+            link?.remove();
         }
     }
 

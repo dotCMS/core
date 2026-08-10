@@ -1664,6 +1664,10 @@ describe('utils functions', () => {
             // `htm` is not a dotCMS page extension: VELOCITY_PAGE_EXTENSION is `html`
             // and `dot` is its legacy fallback, so a `.htm` upload is a file asset.
             '/uploads/legacy-page.htm',
+            // `dot` is only the fallback VELOCITY_PAGE_EXTENSION for when the
+            // property is unset, which it never is; it is also the Word template
+            // extension, so a `.dot` upload is a file asset.
+            '/templates/letterhead.dot',
             // Digit-initial extensions are real; only all-digit trailing tokens are slugs.
             '/backups/archive.7z',
             '/media/clip.3gp'
@@ -1674,7 +1678,6 @@ describe('utils functions', () => {
         it.each([
             '/about-us/index',
             '/about-us/index.html',
-            '/legacy/index.dot',
             '/blog/',
             '/',
             '/blog/release-v1.2',

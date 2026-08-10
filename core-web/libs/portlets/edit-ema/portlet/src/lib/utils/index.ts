@@ -1173,16 +1173,22 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];
 
 /**
- * Extensions that still resolve to an HTMLPage. `html` is the shipped
- * `VELOCITY_PAGE_EXTENSION` and `dot` is the fallback the backend defaults to
- * when the property is unset (see `Identifier#setURI`). Deliberately excludes
- * `htm`, which dotCMS treats as an ordinary file asset, not a page.
+ * Extensions that still resolve to an HTMLPage. Only `html`, the shipped
+ * `VELOCITY_PAGE_EXTENSION` (`dotmarketing-config.properties:91`).
  *
- * `VELOCITY_PAGE_EXTENSION` is configurable, so a site that overrides it to
- * something else will see its page links open in a new tab. The value is not
- * exposed to the client, so it cannot be read here.
+ * Deliberately excludes two extensions that look like candidates. `htm` is an
+ * ordinary file asset in dotCMS, never a page. `dot` is only the fallback
+ * `Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot")` reaches for when
+ * the property is absent, which it never is in a standard install, and it is a
+ * real upload type (the Word 97-2003 template), so listing it would send those
+ * files to the Page API.
+ *
+ * `VELOCITY_PAGE_EXTENSION` is configurable and its value is not exposed to the
+ * client, so a site that overrides it sees its page links open in a new tab.
+ * That is the mild failure of the two, consistent with the bias documented on
+ * `isAssetPath`.
  */
-const PAGE_PATH_EXTENSIONS = new Set(['html', 'dot']);
+const PAGE_PATH_EXTENSIONS = new Set(['html']);
 
 /**
  * Matches a plausible file extension: 1-8 alphanumerics containing at least one

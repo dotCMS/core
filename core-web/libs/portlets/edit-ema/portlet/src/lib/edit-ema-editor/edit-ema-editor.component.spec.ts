@@ -3313,6 +3313,9 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                     expect(pageLoadSpy).not.toHaveBeenCalled();
+                    // click() is what throws, so cleanup has to be unconditional or
+                    // every refused open strands an anchor in the admin document.
+                    expect(openedLink.remove).toHaveBeenCalled();
                 });
 
                 it('should still load a page when the URL uses the page extension', () => {
