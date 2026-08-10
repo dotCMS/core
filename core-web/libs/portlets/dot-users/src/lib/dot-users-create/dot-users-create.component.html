@@ -97,12 +97,13 @@
                         }
                     </div>
                 </p-tabpanel>
-                <p-tabpanel [value]="2" class="block min-h-0 flex-1 overflow-auto">
-                    <div
-                        class="text-color-secondary px-7 pt-6 pb-7 text-sm"
-                        data-testid="users-dialog-permissions-tab-placeholder">
-                        {{ 'users.dialog.tabs.coming-soon' | dm }}
-                    </div>
+                <p-tabpanel
+                    [value]="2"
+                    class="block flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <dot-users-permissions-tab
+                        [userId]="user?.userId ?? null"
+                        class="flex min-h-0 flex-1 flex-col"
+                        data-testid="users-dialog-permissions-tab" />
                 </p-tabpanel>
                 <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
                     <div
@@ -127,7 +128,9 @@
         data-testid="users-dialog-cancel-btn" />
     <p-button
         [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
-        [disabled]="$isSaveDisabled()"
+        [disabled]="$isSaveDisabled() || $activeTab() === 2"
+        [pTooltip]="$activeTab() === 2 ? ('users.dialog.permissions.own-save' | dm) : null"
+        tooltipPosition="top"
         (onClick)="save()"
         data-testid="users-dialog-save-btn" />
 </footer>
