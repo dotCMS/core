@@ -102,9 +102,18 @@ const QUICK_ACTIONS: {
         nameKey: 'content-drive.context-menu.lock',
         icon: 'lock',
         danger: false,
-        // Archived content is a dead end until unarchived, and `deleteContentlets` honours
-        // `canLock`, so locking an archived item would quietly make it undeletable by anyone but
-        // the lock holder.
+        // Archived rows are excluded because locking one serves no purpose and has a lasting cost:
+        // `canLock` is a delete precondition (`ESContentletAPIImpl:3434`), so a stray lock leaves
+        // the item undeletable by anyone but the holder or a CMS Admin. Unarchive is unaffected —
+        // it checks PUBLISH permission and never consults the lock.
+        //
+        // **This is a UX filter, not an enforcement boundary.** Nothing server-side refuses to lock
+        // archived content: `ContentletAPI.lock` guards only a blank inode and `canLock`, so both
+        // `PUT /api/v1/content/_lock/{inode}` and a direct fire of the `LOCK` system action still
+        // allow it — as does this portlet's own row context menu, which gates on `canLock` alone.
+        // All this does is stop the dialog offering an action with no upside. Making it an actual
+        // invariant would mean changing `ContentletAPI.lock` for every caller, which is a behaviour
+        // change to a long-standing API and belongs in its own issue.
         eligibleWhen: (item) => !item.locked && !item.archived
     },
     {

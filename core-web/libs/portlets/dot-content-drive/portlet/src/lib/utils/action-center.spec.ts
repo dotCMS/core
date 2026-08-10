@@ -160,10 +160,10 @@ describe('action-center utils', () => {
         });
 
         it('should not count archived items as lockable or unlockable', () => {
-            // Archived content is a dead end until it is unarchived: locking it has no purpose and
-            // `deleteContentlets` honours `canLock`, so a stray lock quietly makes the item
-            // undeletable by anyone but the lock holder. Unlock is covered by `locked` alone
-            // (archive refuses locked content), but excluded explicitly so the pair reads the same.
+            // Locking an archived row serves no purpose and leaves it undeletable by anyone but
+            // the holder, since `canLock` is a delete precondition. Unlock is covered by `locked`
+            // alone (archive refuses locked content), but excluded explicitly so the pair reads the
+            // same. This narrows the dialog only — the lock endpoints accept archived content.
             const items = [contentlet({ inode: 'a', archived: true, locked: false })];
 
             const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
