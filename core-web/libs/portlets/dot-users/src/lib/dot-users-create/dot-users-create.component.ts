@@ -25,6 +25,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { passwordsMatchValidator } from './dot-users-form.model';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
+import { DotUsersRolesTabComponent } from './tabs/dot-users-roles-tab/dot-users-roles-tab.component';
 
 import { DotUsersReplacementPickerComponent } from '../components/dot-users-replacement-picker/dot-users-replacement-picker.component';
 import {
@@ -61,10 +62,9 @@ const ADDITIONAL_INFO_KEYS = ['prefix', 'suffix', 'title', 'company', 'website']
  * (create vs edit), and orchestrates each tab as a standalone
  * presentational sub-component.
  *
- * Scope for issue #36717 — only the Profile tab is real. Roles,
- * Permissions, and API Tokens render "Coming soon" placeholders and
- * are delivered by their sibling issues (#36718, #36719, #36720),
- * each of which swaps its placeholder for the real tab component.
+ * Scope for issue #36718 — Profile + Roles tabs are real; Permissions
+ * and API Tokens render "Coming soon" placeholders and are delivered
+ * by #36719 and #36720.
  */
 @Component({
     selector: 'dot-users-create',
@@ -81,7 +81,8 @@ const ADDITIONAL_INFO_KEYS = ['prefix', 'suffix', 'title', 'company', 'website']
         TagModule,
         DotMessagePipe,
         DotUsersReplacementPickerComponent,
-        DotUsersProfileTabComponent
+        DotUsersProfileTabComponent,
+        DotUsersRolesTabComponent
     ],
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',

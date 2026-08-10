@@ -65,10 +65,8 @@
                 </div>
             </p-tabpanel>
             <p-tabpanel [value]="1" class="block min-h-0 flex-1 overflow-auto">
-                <div
-                    class="text-color-secondary px-7 pt-[22px] pb-7 text-sm"
-                    data-testid="users-dialog-roles-tab-placeholder">
-                    {{ 'users.dialog.tabs.coming-soon' | dm }}
+                <div class="px-7 pt-[22px] pb-7">
+                    <dot-users-roles-tab data-testid="users-dialog-roles-tab" />
                 </div>
             </p-tabpanel>
             <p-tabpanel [value]="2" class="block min-h-0 flex-1 overflow-auto">
