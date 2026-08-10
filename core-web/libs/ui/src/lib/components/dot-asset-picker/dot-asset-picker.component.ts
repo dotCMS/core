@@ -1,12 +1,14 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
     DestroyRef,
+    effect,
     ElementRef,
     inject,
     OnInit,
+    Renderer2,
     signal,
     viewChild
 } from '@angular/core';
@@ -14,7 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService, type SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
+import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ToastModule } from 'primeng/toast';
@@ -29,13 +31,15 @@ import {
     TreeNodeData
 } from '@dotcms/dotcms-models';
 
+import { DotAssetPickerHeaderComponent } from './components/dot-asset-picker-header/dot-asset-picker-header.component';
 import { DotAssetPickerSidebarComponent } from './components/dot-asset-picker-sidebar/dot-asset-picker-sidebar.component';
 import { DotAssetPickerToolbarComponent } from './components/dot-asset-picker-toolbar/dot-asset-picker-toolbar.component';
 import { ERROR_MESSAGE_LIFE, SUCCESS_MESSAGE_LIFE, WARNING_MESSAGE_LIFE } from './constants';
-import { writeLastAssetPath } from './last-asset-path';
+import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
 
+import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotFolderListViewComponent } from '../dot-folder-list-view/dot-folder-list-view.component';
 import { DotUploadDropzoneComponent } from '../dot-upload-dropzone/dot-upload-dropzone.component';
@@ -68,6 +72,7 @@ import {
         NgTemplateOutlet,
         PopoverModule,
         ToastModule,
+        DotAssetPickerHeaderComponent,
         DotAssetPickerSidebarComponent,
         DotAssetPickerToolbarComponent,
         DotFolderListViewComponent,
@@ -86,8 +91,27 @@ export class DotAssetPickerComponent implements OnInit {
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #document = inject(DOCUMENT);
+    readonly #renderer = inject(Renderer2);
+
+    /**
+     * The PrimeNG dialog hosting this picker. Injectable because `DynamicDialog` declares its
+     * content inside a `<p-dialog>`, so we sit in the Dialog's element injector. `container()` is
+     * the `.p-dialog` element. Optional so the component still renders outside a dialog (tests).
+     */
+    readonly #dialog = inject(Dialog, { optional: true });
 
     protected readonly $loading = computed(() => this.store.status() === ComponentStatus.LOADING);
+
+    /** Dialog title, handed over by whoever opened the picker. */
+    protected readonly $title = computed(() => this.store.config()?.title ?? '');
+
+    constructor() {
+        // The picker owns its dialog, so it owns full-screen too: resize the host `.p-dialog`
+        // whenever `isFullscreen` flips. Same split as the image editor — the store holds the
+        // flag, the shell does the DOM work.
+        effect(() => this.#applyFullscreen(this.store.isFullscreen()));
+    }
 
     /** `DotFolderListView` pages by offset; the store pages by cursor + page number. */
     protected readonly $offset = computed(() => {
@@ -155,29 +179,86 @@ export class DotAssetPickerComponent implements OnInit {
             .subscribe((hydrated) => {
                 // Persist on confirm, not on selection: a row the user highlights and then cancels
                 // must not move a value shared by every picker in the system.
-                writeLastAssetPath(this.#resolveAssetFolder(hydrated));
+                writeLastAssetLocation(this.#resolveAssetLocation(hydrated));
                 this.#dialogRef.close(hydrated);
             });
     }
 
     /**
-     * Folder the chosen asset lives in, so the next open lands there.
+     * Where the chosen asset lives, so the next open lands there.
      *
-     * Derived from `url` (`/images/logo.png` → `/images/`) rather than the folder being browsed,
-     * because a global search can return an asset from somewhere else entirely. Falls back to the
-     * browsed folder when the row carries no usable url.
+     * The folder is derived from `url` (`/images/logo.png` → `/images/`) rather than from the folder
+     * being browsed, because a global search can return an asset from somewhere else entirely. The
+     * site is the one being browsed — the row carries no hostname of its own.
      *
      * `DotCMSContentlet.folder` is the folder's *identifier*, not a path, so it is no help here.
      */
-    #resolveAssetFolder(asset: DotCMSContentlet): string | undefined {
-        const lastSlash = asset.url?.lastIndexOf('/') ?? -1;
+    #resolveAssetLocation(asset: DotCMSContentlet): DotAssetPickerLocation | undefined {
+        const site = this.store.browsingSite();
 
-        return lastSlash >= 0 ? asset.url.slice(0, lastSlash + 1) : this.store.path();
+        if (!site) {
+            return undefined;
+        }
+
+        const lastSlash = asset.url?.lastIndexOf('/') ?? -1;
+        const path = lastSlash >= 0 ? asset.url.slice(0, lastSlash + 1) : this.store.path();
+
+        return { siteId: site.identifier, hostname: site.hostname, path };
     }
 
     /** Closing with no argument is how the caller reads "cancelled". */
     protected cancel(): void {
         this.#dialogRef.close();
+    }
+
+    // --- full screen -----------------------------------------------------------------------
+
+    /**
+     * Expands the host dialog to the viewport, or restores it.
+     *
+     * Full-screen is PrimeNG's own maximized state, so there is nothing to save and restore: the
+     * theme sizes {@link MAXIMIZED_DIALOG_CLASS} with `!important`, which is what beats the
+     * width/height `DialogService` writes inline. Dropping the class hands the windowed size back.
+     *
+     * `maximize()` keeps PrimeNG's `maximized` flag in step, so its own class computation agrees with
+     * us; the class is applied here as well because the `Dialog` is `OnPush` and a toggle coming from
+     * its projected content never marks it dirty.
+     */
+    #applyFullscreen(on: boolean): void {
+        const container = this.#dialog?.container() as HTMLElement | undefined;
+
+        if (!this.#dialog || !container) {
+            return;
+        }
+
+        // Set the size transition (idempotent) before any toggle, honouring reduced-motion. It
+        // lands on the first (windowed) effect run, so the first real toggle already animates.
+        this.#renderer.setStyle(
+            container,
+            'transition',
+            this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION
+        );
+
+        // `Boolean(...)`: PrimeNG leaves `maximized` UNSET until its own button is clicked, and
+        // `undefined !== false` would fire `maximize()` on the effect's first (windowed) run —
+        // flipping the flag to `true` and opening the picker full screen.
+        if (Boolean(this.#dialog.maximized) !== on) {
+            this.#dialog.maximize();
+        }
+
+        if (on) {
+            this.#renderer.addClass(container, MAXIMIZED_DIALOG_CLASS);
+        } else {
+            this.#renderer.removeClass(container, MAXIMIZED_DIALOG_CLASS);
+        }
+    }
+
+    /** Whether the user has requested reduced motion (skips the resize animation). */
+    #prefersReducedMotion(): boolean {
+        return (
+            this.#document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ??
+            false
+        );
     }
 
     // --- list ------------------------------------------------------------------------------
@@ -344,7 +425,7 @@ export class DotAssetPickerComponent implements OnInit {
         this.#uploadFileService
             .uploadFileByBaseType(file, baseType, {
                 // A folder id carries its site; at the root fall back to the site being browsed.
-                hostFolder: targetFolder?.id ?? this.store.config()?.site?.identifier ?? '',
+                hostFolder: targetFolder?.id ?? this.store.browsingSite()?.identifier ?? '',
                 indexPolicy: 'WAIT_FOR'
             })
             .pipe(takeUntilDestroyed(this.#destroyRef))

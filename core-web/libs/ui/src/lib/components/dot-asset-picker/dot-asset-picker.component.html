@@ -1,43 +1,53 @@
-<div class="flex h-180 flex-col gap-4">
-    <dot-asset-picker-toolbar (upload)="onUpload($event)" />
+<!-- `h-full`, not a fixed height: the dialog owns the sizing so full-screen can grow it. -->
+<div class="flex h-full flex-col">
+    <dot-asset-picker-header
+        class="flex-none border-b border-gray-200 px-4 py-3"
+        [title]="$title()"
+        (close)="cancel()" />
 
-    <div class="flex min-h-0 flex-1 flex-row overflow-hidden rounded-md border border-gray-200">
-        <div class="h-full w-1/4 min-w-64 shrink-0 overflow-auto border-r border-gray-200">
+    <!-- Two columns from directly under the header down, so the sidebar's "Search sites & folders"
+         sits on the same line as the asset search instead of below the whole toolbar. -->
+    <div class="flex min-h-0 flex-1 flex-row">
+        <div class="h-full w-1/4 min-w-64 shrink-0 border-r border-gray-200">
             <dot-asset-picker-sidebar data-testid="asset-picker-sidebar" />
         </div>
 
-        <dot-upload-dropzone
-            class="h-full flex-1 overflow-auto"
-            data-testid="asset-picker-dropzone"
-            [targetFolder]="$targetFolder()"
-            (uploadFiles)="onRequestUpload($event)">
-            <dot-folder-list-view
-                selectionMode="single"
-                data-testid="asset-picker-list"
-                [items]="store.items()"
-                [loading]="$loading()"
-                [totalItems]="store.totalItems()"
-                [offset]="$offset()"
-                (selectionChange)="onSelect($event)"
-                (doubleClick)="onSelect([$event])"
-                (paginate)="onPaginate($event)"
-                (sort)="onSort($event)" />
-        </dot-upload-dropzone>
-    </div>
+        <div class="flex min-h-0 flex-1 flex-col gap-4 p-4">
+            <dot-asset-picker-toolbar (upload)="onUpload($event)" />
 
-    <div class="flex flex-none flex-wrap justify-end gap-4">
-        <p-button
-            data-testid="asset-picker-cancel"
-            [label]="'dot.common.dialog.reject' | dm"
-            [text]="true"
-            severity="primary"
-            (click)="cancel()" />
-        <p-button
-            data-testid="asset-picker-confirm"
-            [label]="'dot.common.dialog.accept' | dm"
-            severity="primary"
-            [disabled]="!store.selectedAsset()"
-            (click)="confirm()" />
+            <dot-upload-dropzone
+                class="min-h-0 flex-1 overflow-auto rounded-md border border-gray-200"
+                data-testid="asset-picker-dropzone"
+                [targetFolder]="$targetFolder()"
+                (uploadFiles)="onRequestUpload($event)">
+                <dot-folder-list-view
+                    selectionMode="single"
+                    data-testid="asset-picker-list"
+                    [items]="store.items()"
+                    [loading]="$loading()"
+                    [totalItems]="store.totalItems()"
+                    [offset]="$offset()"
+                    (selectionChange)="onSelect($event)"
+                    (doubleClick)="onSelect([$event])"
+                    (paginate)="onPaginate($event)"
+                    (sort)="onSort($event)" />
+            </dot-upload-dropzone>
+
+            <div class="flex flex-none flex-wrap justify-end gap-4">
+                <p-button
+                    data-testid="asset-picker-cancel"
+                    [label]="'dot.common.dialog.reject' | dm"
+                    [text]="true"
+                    severity="primary"
+                    (click)="cancel()" />
+                <p-button
+                    data-testid="asset-picker-confirm"
+                    [label]="'dot.common.dialog.accept' | dm"
+                    severity="primary"
+                    [disabled]="!store.selectedAsset()"
+                    (click)="confirm()" />
+            </div>
+        </div>
     </div>
 </div>
 

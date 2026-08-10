@@ -1,15 +1,21 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 
+import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
+
 import { DEFAULT_ASSET_PICKER_PAGE, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
 import { withAssetBrowse } from './features/with-asset-browse.feature';
 import { withAssetFolderTree } from './features/with-asset-folder-tree.feature';
 import { withAssetSelection } from './features/with-asset-selection.feature';
 import { DotAssetPickerConfig, DotAssetPickerFilters, DotAssetPickerState } from './models';
 
+import { resolveSiteId } from '../../dot-folder-tree/site-tree.utils';
+
 const initialState: DotAssetPickerState = {
     config: null,
+    browsingSite: undefined,
     path: undefined,
-    filters: {}
+    filters: {},
+    isFullscreen: false
 };
 
 /**
@@ -52,6 +58,12 @@ export const DotAssetPickerStore = signalStore(
             initPicker: (config: DotAssetPickerConfig): void => {
                 patchState(store, {
                     config,
+                    // Starting point only — the sidebar can move the picker to another site. Opens
+                    // on the remembered site when there is one, otherwise on the editor's own.
+                    browsingSite: config.browseSite ?? {
+                        identifier: config.site.identifier,
+                        hostname: config.site.hostname
+                    },
                     path: config.path,
                     filters: {
                         ...(config.languageId ? { languageId: [config.languageId] } : {}),
@@ -66,9 +78,33 @@ export const DotAssetPickerStore = signalStore(
                 store.loadFolders();
             },
 
-            /** Scopes the list to a folder — what selecting a node in the sidebar does. */
-            setPath: (path: string | undefined): void => {
-                patchState(store, { path, ...resetPaging() });
+            /**
+             * Scopes the list to whatever the user picked in the sidebar: a site root browses that
+             * site's root, a folder browses that folder.
+             *
+             * This is where a cross-site move happens — the tree is the only way to change site, and
+             * a folder node carries its hostname but not its site id, so the id is resolved from the
+             * root it hangs from.
+             */
+            selectNode: (node: TreeNodeItem): void => {
+                const data = node.data;
+
+                if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+                    return;
+                }
+
+                const identifier = resolveSiteId(node, store.folders());
+
+                if (!identifier) {
+                    return;
+                }
+
+                store.setSelectedNode(node);
+                patchState(store, {
+                    browsingSite: { identifier, hostname: data.hostname },
+                    path: data.type === 'site' ? undefined : data.path || undefined,
+                    ...resetPaging()
+                });
             },
 
             patchFilters: (filters: DotAssetPickerFilters): void => {
@@ -115,6 +151,14 @@ export const DotAssetPickerStore = signalStore(
                 // The tree highlight has to follow the scope, not just the list: it is also what
                 // `$targetFolder` reads to decide where an upload lands.
                 store.selectRootNode();
+            },
+
+            /**
+             * Flips the full-screen flag. The shell reacts to it and resizes the host `.p-dialog`;
+             * the store deliberately knows nothing about the DOM.
+             */
+            toggleFullscreen: (): void => {
+                patchState(store, { isFullscreen: !store.isFullscreen() });
             }
         };
     }),

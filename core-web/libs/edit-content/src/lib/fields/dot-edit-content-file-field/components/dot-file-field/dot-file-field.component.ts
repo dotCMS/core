@@ -38,6 +38,7 @@ import {
 import { isImageFile } from '@dotcms/image-editor';
 import { GlobalStore } from '@dotcms/store';
 import {
+    ASSET_PICKER_TITLE_KEYS,
     buildAssetPickerConfig,
     DotAIImagePromptComponent,
     DotAssetPickerComponent,
@@ -841,12 +842,12 @@ export class DotFileFieldComponent
 
         const isImage = this.$field().fieldType === INPUT_TYPES.Image;
 
+        const mode = isImage ? 'image' : 'file';
+
         this.#dialogRef = this.#dialogService.open(DotAssetPickerComponent, {
-            header: this.#dotMessageService.get(
-                isImage
-                    ? 'dot.file.field.dialog.select.existing.image.header'
-                    : 'dot.file.field.dialog.select.existing.file.header'
-            ),
+            // The picker renders its own header (title + full screen + ✕), so PrimeNG's chrome
+            // header is hidden to avoid a duplicate and the title travels in `data`.
+            showHeader: false,
             appendTo: 'body',
             closeOnEscape: true,
             closable: true,
@@ -856,14 +857,24 @@ export class DotFileFieldComponent
             maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
-            width: '90%',
-            style: { 'max-width': '1040px' },
-            // The picker sets its own height, so no min-height is imposed from here.
-            contentStyle: { overflow: 'auto' },
+            // The picker's own header drives full screen through PrimeNG's maximized state. No
+            // maximize button is rendered — PrimeNG's lives in the header we just hid.
+            maximizable: true,
+            // Autofocus would land on the picker's search input and paint the theme's focus halo
+            // the moment the dialog opens, which reads as an error state.
+            focusOnShow: false,
+            // Windowed size as a single `width`, not `90%` capped by a `max-width`: an inline
+            // max-width would still clamp the dialog once it goes full screen. Roomy enough that
+            // the folder tree and the asset table both breathe before reaching for full screen.
+            width: 'min(92vw, 1240px)',
+            height: 'min(92vh, 52rem)',
+            // The picker fills the dialog so it can grow with the full-screen toggle.
+            contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             // No explicit path: the picker reopens on the globally remembered folder.
             data: buildAssetPickerConfig({
-                mode: isImage ? 'image' : 'file',
+                mode,
                 site,
+                title: this.#dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
                 languageId: this.$pickerLanguageId()
             })
         });

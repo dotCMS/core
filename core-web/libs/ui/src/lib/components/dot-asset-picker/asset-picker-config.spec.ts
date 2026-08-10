@@ -1,7 +1,7 @@
 import { DotSite } from '@dotcms/dotcms-models';
 
 import { buildAssetPickerConfig } from './asset-picker-config';
-import { writeLastAssetPath } from './last-asset-path';
+import { LAST_ASSET_PATH_KEY, writeLastAssetLocation } from './last-asset-path';
 
 const SITE: DotSite = {
     identifier: 'site-1',
@@ -9,6 +9,9 @@ const SITE: DotSite = {
     aliases: null,
     archived: false
 };
+
+/** Somewhere other than `SITE`, to prove the remembered site travels with the remembered path. */
+const OTHER_SITE = { siteId: 'site-2', hostname: 'blog.dotcms.com', path: '/images/' };
 
 describe('buildAssetPickerConfig', () => {
     beforeEach(() => window.localStorage.clear());
@@ -89,23 +92,48 @@ describe('buildAssetPickerConfig', () => {
         });
     });
 
-    describe('starting folder', () => {
+    describe('starting location', () => {
         it('should be undefined when nothing is remembered and none is given', () => {
             const config = buildAssetPickerConfig({ mode: 'file', site: SITE });
 
             expect(config.path).toBeUndefined();
+            expect(config.browseSite).toBeUndefined();
         });
 
-        it('should fall back to the remembered global path', () => {
-            writeLastAssetPath('/images/');
+        it('should fall back to the remembered global location', () => {
+            writeLastAssetLocation(OTHER_SITE);
 
             const config = buildAssetPickerConfig({ mode: 'file', site: SITE });
 
             expect(config.path).toBe('/images/');
         });
 
+        it('should reopen on the remembered site, not the site being edited', () => {
+            // The picker browses every site, so a remembered `/images/` belongs to the site it was
+            // picked from — applying it to the editor's site would open a folder that may not exist.
+            writeLastAssetLocation(OTHER_SITE);
+
+            const config = buildAssetPickerConfig({ mode: 'file', site: SITE });
+
+            expect(config.browseSite).toEqual({
+                identifier: 'site-2',
+                hostname: 'blog.dotcms.com'
+            });
+            // The entry site still travels through — it is the upload fallback.
+            expect(config.site).toBe(SITE);
+        });
+
+        it('should apply a legacy site-less path to the site being edited', () => {
+            window.localStorage.setItem(LAST_ASSET_PATH_KEY, '"/images/"');
+
+            const config = buildAssetPickerConfig({ mode: 'file', site: SITE });
+
+            expect(config.path).toBe('/images/');
+            expect(config.browseSite).toBeUndefined();
+        });
+
         it('should prefer an explicit path over the remembered one', () => {
-            writeLastAssetPath('/images/');
+            writeLastAssetLocation(OTHER_SITE);
 
             const config = buildAssetPickerConfig({
                 mode: 'file',
@@ -114,12 +142,14 @@ describe('buildAssetPickerConfig', () => {
             });
 
             expect(config.path).toBe('/docs/');
+            // An explicit path is about the entry site, so the remembered site must not tag along.
+            expect(config.browseSite).toBeUndefined();
         });
 
-        it('should share the remembered path across modes', () => {
-            // The value is global, not per field: a path stored from an Image field is what a File
-            // field opens on next.
-            writeLastAssetPath('/images/');
+        it('should share the remembered location across modes', () => {
+            // The value is global, not per field: a location stored from an Image field is what a
+            // File field opens on next.
+            writeLastAssetLocation(OTHER_SITE);
 
             expect(buildAssetPickerConfig({ mode: 'image', site: SITE }).path).toBe('/images/');
             expect(buildAssetPickerConfig({ mode: 'file', site: SITE }).path).toBe('/images/');

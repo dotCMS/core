@@ -13,7 +13,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     DotContentDriveService,
     DotFolderService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotSiteService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -44,6 +45,30 @@ const EMPTY_RESPONSE: DotContentDriveSearchResponse = {
     nextFolderCursor: 0
 };
 
+/** A second site, to prove the picker is not pinned to the one that opened it. */
+const OTHER_SITE: DotSite = {
+    identifier: 'site-2',
+    hostname: 'blog.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
+/** One page of sites as `/api/v1/site` returns them (`name`, not `hostname`). */
+const SITES_RESPONSE = {
+    sites: [
+        { identifier: SITE.identifier, hostname: SITE.hostname, aliases: null, archived: false },
+        {
+            identifier: OTHER_SITE.identifier,
+            hostname: OTHER_SITE.hostname,
+            aliases: null,
+            archived: false
+        }
+    ],
+    pagination: { currentPage: 1, perPage: 40, totalEntries: 2 }
+};
+
+const EMPTY_FOLDERS = { folders: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } };
+
 /** What AssetPicker 6/7 will hand the store for a File field: locale only, no type restriction. */
 const FILE_FIELD_CONFIG: DotAssetPickerConfig = {
     site: SITE,
@@ -72,7 +97,10 @@ describe('DotAssetPickerStore', () => {
                 search: jest.fn().mockReturnValue(of(EMPTY_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(of({ folders: [], pagination: {} }))
+                searchFolders: jest.fn().mockReturnValue(of(EMPTY_FOLDERS))
+            }),
+            mockProvider(DotSiteService, {
+                getSites: jest.fn().mockReturnValue(of(SITES_RESPONSE))
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of({ redirected: false, status: 500 }))
@@ -325,41 +353,59 @@ describe('DotAssetPickerStore', () => {
 
     describe('folder tree', () => {
         let folderService: SpyObject<DotFolderService>;
+        let siteService: SpyObject<DotSiteService>;
 
         beforeEach(() => {
             folderService = spectator.inject(DotFolderService, true);
+            siteService = spectator.inject(DotSiteService, true);
         });
 
         it('should load the tree when the picker is configured', () => {
             store.initPicker(FILE_FIELD_CONFIG);
 
-            expect(folderService.searchFolders).toHaveBeenCalled();
+            expect(siteService.getSites).toHaveBeenCalled();
         });
 
         it('should not load the tree before the picker is configured', () => {
-            expect(folderService.searchFolders).not.toHaveBeenCalled();
+            expect(siteService.getSites).not.toHaveBeenCalled();
         });
 
-        it('should not load the tree for SYSTEM_HOST', () => {
-            store.initPicker({
-                site: { ...SITE, identifier: 'SYSTEM_HOST', hostname: 'SYSTEM_HOST' }
-            });
-
-            expect(folderService.searchFolders).not.toHaveBeenCalled();
-        });
-
-        it('should prepend a site-scoped root node to the tree', () => {
+        it('should list every site the user can browse as a root', () => {
+            // The picker is not pinned to the site that opened it: the asset the editor needs is
+            // often on another site.
             store.initPicker(FILE_FIELD_CONFIG);
 
-            expect(store.folders()[0]).toEqual(
-                expect.objectContaining({
-                    key: 'ALL_FOLDER',
-                    data: expect.objectContaining({
-                        id: SITE.identifier,
-                        hostname: SITE.hostname
-                    })
-                })
+            expect(store.folders().map((node) => node.label)).toEqual([
+                SITE.hostname,
+                OTHER_SITE.hostname
+            ]);
+            expect(store.folders()[0].data).toEqual(
+                expect.objectContaining({ type: 'site', id: SITE.identifier })
             );
+        });
+
+        it('should leave System Host out of the roots', () => {
+            // It is not addressable as a drive `assetPath`, and its shared assets already surface in
+            // every site's listing through `includeSystemHost`.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(siteService.getSites).toHaveBeenCalledWith(
+                expect.objectContaining({ system: false })
+            );
+        });
+
+        it('should expand the site it opens on', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.folders()[0].expanded).toBe(true);
+            expect(store.folders()[1].expanded).toBeUndefined();
+        });
+
+        it('should open on the remembered site rather than the one being edited', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: OTHER_SITE });
+
+            expect(store.browsingSite()).toEqual(OTHER_SITE);
+            expect(store.folders()[1].expanded).toBe(true);
         });
 
         it('should replace the folders array on update so change detection sees it', () => {
@@ -380,9 +426,9 @@ describe('DotAssetPickerStore', () => {
             expect(store.selectedNode()).toBe(node);
         });
 
-        describe('when the hierarchy request fails', () => {
+        describe('when the sites request fails', () => {
             beforeEach(() => {
-                folderService.searchFolders.mockReturnValue(
+                siteService.getSites.mockReturnValue(
                     throwError(() => new HttpErrorResponse({ status: 500 }))
                 );
                 store.initPicker(FILE_FIELD_CONFIG);
@@ -399,11 +445,105 @@ describe('DotAssetPickerStore', () => {
             });
 
             it('should still accept a retry after failing', () => {
-                folderService.searchFolders.mockReturnValue(of({ folders: [], pagination: {} }));
+                siteService.getSites.mockReturnValue(of(SITES_RESPONSE));
 
                 store.initPicker(FILE_FIELD_CONFIG);
 
                 expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            });
+        });
+
+        describe('crossing sites', () => {
+            beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
+
+            it('should re-address the search at the site whose root is picked', () => {
+                store.selectNode(store.folders()[1]);
+
+                expect(store.$request().assetPath).toBe(`//${OTHER_SITE.hostname}/`);
+            });
+
+            it('should scope the search to a folder of that other site', () => {
+                const folder = {
+                    key: 'f1',
+                    label: `${OTHER_SITE.hostname}/images/`,
+                    data: {
+                        type: 'folder' as const,
+                        id: 'folder-1',
+                        hostname: OTHER_SITE.hostname,
+                        path: '/images/'
+                    }
+                } as TreeNodeItem;
+                store.folders()[1].children = [folder];
+
+                store.selectNode(folder);
+
+                expect(store.$request().assetPath).toBe(`//${OTHER_SITE.hostname}/images/`);
+            });
+
+            it('should send the user back to page one', () => {
+                store.setPagination({ limit: 20, page: 3 });
+
+                store.selectNode(store.folders()[1]);
+
+                expect(store.pagination().page).toBe(1);
+            });
+
+            it('should ignore a click on a "Load more" sentinel', () => {
+                const before = store.$request().assetPath;
+
+                store.selectNode({
+                    key: 'load-more:sites',
+                    data: { type: 'load-more', id: 'load-more:sites' }
+                } as TreeNodeItem);
+
+                expect(store.$request().assetPath).toBe(before);
+            });
+        });
+
+        describe('sidebar search', () => {
+            it('should search folder names recursively inside the site being browsed', () => {
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                store.setTreeSearch('ima');
+
+                expect(folderService.searchFolders).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        siteId: SITE.identifier,
+                        path: '/',
+                        recursive: true,
+                        name: 'ima'
+                    })
+                );
+            });
+
+            it('should narrow the site roots by the same term', () => {
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                store.setTreeSearch('blog');
+
+                expect(siteService.getSites).toHaveBeenLastCalledWith(
+                    expect.objectContaining({ filter: 'blog' })
+                );
+            });
+
+            it('should treat a one-character term as no search', () => {
+                // `/folder/search` rejects a `name` shorter than two characters.
+                store.initPicker(FILE_FIELD_CONFIG);
+                folderService.searchFolders.mockClear();
+
+                store.setTreeSearch('i');
+
+                expect(folderService.searchFolders).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ recursive: true })
+                );
+            });
+
+            it('should not leak into the asset search', () => {
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                store.setTreeSearch('images');
+
+                expect(store.$request().filters?.text).toBe('');
             });
         });
     });
@@ -428,7 +568,7 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().filters?.text).toBe('');
         });
 
-        it('should move the tree highlight back to the site root', () => {
+        it('should move the tree highlight back to the root of the site being browsed', () => {
             // The highlight is not decoration: `$targetFolder` reads it to pick the upload
             // destination. Leaving it on /docs/ while the list is site-wide sends uploads to a
             // folder the user is no longer looking at.
@@ -438,8 +578,8 @@ describe('DotAssetPickerStore', () => {
             store.setSearch('logo');
 
             expect(store.selectedNode()).toBe(store.folders()[0]);
-            expect(store.selectedNode().data).toEqual(
-                expect.objectContaining({ id: SITE.identifier, path: '' })
+            expect(store.selectedNode()?.data).toEqual(
+                expect.objectContaining({ type: 'site', id: SITE.identifier })
             );
         });
 
@@ -449,7 +589,16 @@ describe('DotAssetPickerStore', () => {
 
             store.setSearch('');
 
-            expect(store.selectedNode().key).toBe('ALL_FOLDER');
+            expect(store.selectedNode()?.key).toBe(SITE.identifier);
+        });
+
+        it('should follow the user to another site rather than snapping back to the first', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.selectNode(store.folders()[1]);
+
+            store.setSearch('logo');
+
+            expect(store.selectedNode()?.key).toBe(OTHER_SITE.identifier);
         });
     });
 
@@ -479,7 +628,19 @@ describe('DotAssetPickerStore', () => {
             });
 
             it('should drop the selection when the folder changes', () => {
-                store.setPath('/docs/');
+                const folder = {
+                    key: 'f1',
+                    label: `${SITE.hostname}/docs/`,
+                    data: {
+                        type: 'folder' as const,
+                        id: 'folder-1',
+                        hostname: SITE.hostname,
+                        path: '/docs/'
+                    }
+                } as TreeNodeItem;
+                store.folders()[0].children = [folder];
+
+                store.selectNode(folder);
                 spectator.flushEffects();
 
                 expect(store.selectedAsset()).toBeNull();

@@ -106,6 +106,9 @@ export * from './lib/validators/dotValidators';
 // Animations
 export * from './lib/animations/fade.animations';
 
+// Dialog
+export * from './lib/dialog/fullscreen-dialog';
+
 // Monaco editor presets
 export * from './lib/monaco/editor-options';
 

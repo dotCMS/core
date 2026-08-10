@@ -56,19 +56,23 @@ export function withAssetBrowse() {
         // scroll out of existence — see `loadItems`.
         { state: type<DotAssetPickerState & DotAssetPickerSelectionState>() },
         withState<DotAssetPickerBrowseState>(initialState),
-        withComputed(({ config, path, filters, pagination, sort, pages }) => ({
+        withComputed(({ config, browsingSite, path, filters, pagination, sort, pages }) => ({
             /**
              * `false` until the host configures a real site. Guards the search so the store can be
              * constructed by a dialog host before that host knows what to browse — Content Drive
              * never needs this because its URL-driven init runs at construction time.
+             *
+             * Reads `browsingSite`, not `config.site`: the user can move the picker to another site
+             * from the sidebar, and it is the site actually being browsed that has to be addressable.
              */
             $isBrowsable: computed(
-                () => !!config()?.site && config()?.site.identifier !== SYSTEM_HOST_ID
+                () => !!browsingSite() && browsingSite()?.identifier !== SYSTEM_HOST_ID
             ),
 
             $request: computed<DotContentDriveSearchRequest>(
                 () => {
                     const pickerConfig = config();
+                    const site = browsingSite();
                     const currentFilters = filters();
                     const currentPagination = pagination();
 
@@ -79,7 +83,7 @@ export function withAssetBrowse() {
                     );
 
                     return {
-                        assetPath: `//${pickerConfig?.site?.hostname}${path() || '/'}`,
+                        assetPath: `//${site?.hostname}${path() || '/'}`,
                         includeSystemHost: true,
                         filters: { text: currentFilters?.title || '', filterFolders: true },
                         language: currentFilters?.languageId,

@@ -644,6 +644,9 @@ describe('DotFileFieldComponent', () => {
         const configOf = (spyOpen: jest.SpyInstance): DotAssetPickerConfig =>
             spyOpen.mock.calls[0][1].data as DotAssetPickerConfig;
 
+        /** The `DialogService.open` options, minus the picker config. */
+        const optionsOf = (spyOpen: jest.SpyInstance) => spyOpen.mock.calls[0][1];
+
         it('should open the AssetPicker, not the browser selector', () => {
             const spyOpen = openPicker(FILE_FIELD_MOCK);
 
@@ -651,6 +654,47 @@ describe('DotFileFieldComponent', () => {
                 DotAssetPickerComponent,
                 expect.objectContaining({ data: expect.anything() })
             );
+        });
+
+        describe('dialog chrome', () => {
+            it('should hide PrimeNG’s header so the picker can render its own', () => {
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.showHeader).toBe(false);
+                expect(options.header).toBeUndefined();
+            });
+
+            it('should not autofocus on open', () => {
+                // Autofocus lands on the picker's search input and paints the theme's focus halo
+                // the moment the dialog appears.
+                expect(optionsOf(openPicker(FILE_FIELD_MOCK)).focusOnShow).toBe(false);
+            });
+
+            it('should let the picker fill the dialog so full screen can grow it', () => {
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.height).toBeTruthy();
+                expect(options.contentStyle).toEqual(
+                    expect.objectContaining({ height: '100%', padding: '0' })
+                );
+            });
+
+            it('should size the windowed dialog without an inline max-width', () => {
+                // An inline max-width survives `.p-dialog-maximized` (which only overrides
+                // width/height), so it would clamp the dialog once it goes full screen.
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.width).toBe('min(92vw, 1240px)');
+                expect(options.style).toBeUndefined();
+            });
+
+            it('should enable PrimeNG’s maximized state without adding its button', () => {
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.maximizable).toBe(true);
+                // PrimeNG renders the maximize button inside the header we hid.
+                expect(options.showHeader).toBe(false);
+            });
         });
 
         describe('File field', () => {
@@ -666,6 +710,17 @@ describe('DotFileFieldComponent', () => {
 
                 expect(config.site).toEqual(SITE_MOCK);
             });
+
+            it('should carry the "Add File" title in the config', () => {
+                const config = configOf(openPicker(FILE_FIELD_MOCK));
+
+                // The mocked message service returns a fixed string, so the assertion that
+                // distinguishes File from Image is which key was resolved.
+                expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                    'dot.asset.picker.header.file'
+                );
+                expect(config.title).toBeTruthy();
+            });
         });
 
         describe('Image field', () => {
@@ -679,6 +734,15 @@ describe('DotFileFieldComponent', () => {
                 const config = configOf(openPicker(IMAGE_FIELD_MOCK));
 
                 expect(config.mimeTypes).toEqual(['image/*']);
+            });
+
+            it('should carry the "Add Image" title in the config', () => {
+                const config = configOf(openPicker(IMAGE_FIELD_MOCK));
+
+                expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                    'dot.asset.picker.header.image'
+                );
+                expect(config.title).toBeTruthy();
             });
         });
 
