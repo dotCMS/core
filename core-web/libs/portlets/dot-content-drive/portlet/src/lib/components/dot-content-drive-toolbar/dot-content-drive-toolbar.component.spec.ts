@@ -559,10 +559,11 @@ describe('DotContentDriveToolbarComponent', () => {
             // anything; the real message has to be in play for the assertion to mean something.
             const messageService = spectator.inject(DotMessageService);
 
-            jest.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
-                key === 'content-drive.action-center.applying'
-                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
-                    : key
+            jest.spyOn(messageService, 'get').mockImplementation(
+                (key: string, ...args: string[]) =>
+                    key === 'content-drive.action-center.applying'
+                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                        : key
             );
 
             actionExecutionSignal.set({
