@@ -167,6 +167,53 @@ public class HtmlMinifierTest {
     }
 
     /**
+     * Given: an element that generates no box ({@code display: none}) sitting between content that
+     * whitespace separates.
+     * Expected: the separating whitespace survives. Such an element paints nothing, so the runs on
+     * either side of it end up adjacent in the inline flow and the whitespace between them is
+     * rendered. This is the same transparency a removed comment has.
+     * <p>
+     * Dropping it joins words: {@code hola <script>x</script> mundo} would render "holamundo".
+     */
+    @Test
+    public void test_minify_keeps_whitespace_beside_invisible_elements() {
+        assertEquals("hola <script>var x=1</script> mundo",
+                HtmlMinifier.minify("hola <script>var x=1</script> mundo"));
+        assertEquals("<b>a</b> <style>.x{}</style> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <style>.x{}</style> <b>b</b>"));
+        assertEquals("<b>a</b> <template><i>t</i></template> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <template><i>t</i></template> <b>b</b>"));
+        assertEquals("<b>a</b> <noscript>n</noscript> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <noscript>n</noscript> <b>b</b>"));
+        // Indentation around an invisible element between block elements is still removable.
+        assertEquals("<div>a</div><script>var x=1</script><div>b</div>",
+                HtmlMinifier.minify("<div>a</div>\n<script>var x=1</script>\n<div>b</div>"));
+    }
+
+    /**
+     * Given: replaced inline elements, the kind modern templates are full of.
+     * Expected: whitespace beside them is kept, because they sit in an inline formatting context.
+     * <p>
+     * {@code svg} is the one that matters most in practice: it is how icons are rendered, so
+     * {@code Ver <svg/>} losing its space glues the icon to the preceding word.
+     */
+    @Test
+    public void test_minify_keeps_whitespace_beside_replaced_inline_elements() {
+        assertEquals("Ver <svg width=\"8\"></svg>",
+                HtmlMinifier.minify("Ver <svg width=\"8\"></svg>"));
+        assertEquals("<a href=\"#\">x</a> <svg></svg>",
+                HtmlMinifier.minify("<a href=\"#\">x</a> <svg></svg>"));
+        assertEquals("<b>a</b> <iframe src=\"x\"></iframe> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <iframe src=\"x\"></iframe> <b>b</b>"));
+        assertEquals("<b>a</b> <canvas></canvas> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <canvas></canvas> <b>b</b>"));
+        assertEquals("<b>a</b> <video></video> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <video></video> <b>b</b>"));
+        assertEquals("<b>a</b> <audio></audio> <b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <audio></audio> <b>b</b>"));
+    }
+
+    /**
      * Given: malformed markup with an unclosed preserved tag.
      * Expected: the content still round trips instead of being truncated or throwing.
      */

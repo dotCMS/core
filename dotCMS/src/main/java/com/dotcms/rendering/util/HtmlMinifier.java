@@ -5,6 +5,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Minifies rendered HTML before it is written to the response (and, for LIVE mode, before it is
@@ -28,16 +30,38 @@ public class HtmlMinifier {
     private static final Set<String> PRESERVE_TAGS = Set.of("pre", "textarea", "script", "style");
 
     /**
+     * Elements that generate no box at all ({@code display: none}). They are <b>transparent</b> to
+     * whitespace collapsing in exactly the way a removed comment is: the element paints nothing, so
+     * the whitespace on either side of it ends up separating the surrounding content and is
+     * rendered. Dropping it joins words, which is why
+     * {@code hola <script>x</script> mundo} must not become {@code hola<script>x</script>mundo}.
+     */
+    private static final Set<String> INVISIBLE_TAGS =
+            Set.of("script", "style", "template", "noscript");
+
+    /**
      * Elements that participate in inline layout, where whitespace between tags is rendered and is
      * therefore significant. Whitespace touching any element <i>not</i> in this set can be removed
      * outright; whitespace between two inline elements is collapsed to a single space instead.
      */
     private static final Set<String> INLINE_TAGS = Set.of(
-            "a", "abbr", "b", "bdi", "bdo", "big", "br", "button", "cite", "code", "data",
-            "datalist", "del", "dfn", "em", "font", "i", "img", "input", "ins", "kbd", "label",
-            "map", "mark", "meter", "nobr", "object", "output", "picture", "progress", "q", "ruby",
-            "s", "samp", "select", "slot", "small", "span", "strike", "strong", "sub", "sup",
-            "textarea", "time", "tt", "u", "var", "wbr");
+            "a", "abbr", "acronym", "audio", "b", "bdi", "bdo", "big", "br", "button", "canvas",
+            "cite", "code", "data", "datalist", "del", "dfn", "em", "embed", "font", "i", "iframe",
+            "img", "input", "ins", "kbd", "label", "map", "mark", "math", "meter", "nobr", "object",
+            "output", "picture", "progress", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "select",
+            "slot", "small", "span", "strike", "strong", "sub", "sup", "svg", "textarea", "time",
+            "tt", "u", "var", "video", "wbr");
+
+    /**
+     * Every element beside which whitespace is painted, and therefore must survive: the inline-level
+     * ones because they sit in an inline formatting context, and the invisible ones because they
+     * generate no box, so the whitespace either side of them separates whatever surrounds them.
+     * <p>
+     * Whitespace touching an element <i>not</i> in this set can be removed outright.
+     */
+    private static final Set<String> WHITESPACE_SIGNIFICANT_TAGS =
+            Stream.concat(INLINE_TAGS.stream(), INVISIBLE_TAGS.stream())
+                    .collect(Collectors.toUnmodifiableSet());
 
     private HtmlMinifier() {
         // utility
@@ -62,6 +86,31 @@ public class HtmlMinifier {
     public static String minifyIfEnabled(final String html) {
 
         if (null == html || html.isEmpty() || !isEnabled()) {
+            return html;
+        }
+
+        return minifyBestEffort(html);
+    }
+
+    /**
+     * Minifies without consulting the feature flag, for callers that have already established it is
+     * on and must not read it twice.
+     * <p>
+     * Reading it once matters for two reasons. Each read probes the system table for two keys that
+     * normally do not exist, and while those misses are served from memory today, an operator who
+     * adds a remote provider to {@code cache.default.chain} turns them into network round trips per
+     * render. It also closes the window where the flag flipping between two reads would buffer a
+     * whole page and then serve it unminified anyway.
+     * <p>
+     * Minification stays strictly best-effort: any failure returns the original markup, so a bug
+     * here cannot take a page down.
+     *
+     * @param html the rendered markup, may be {@code null}
+     * @return the minified markup, or the original when empty or on error
+     */
+    public static String minifyBestEffort(final String html) {
+
+        if (null == html || html.isEmpty()) {
             return html;
         }
 
@@ -128,7 +177,7 @@ public class HtmlMinifier {
             if (null != preserveTag) {
                 // Copy the element, including its content and closing tag, verbatim.
                 final int end = findPreserveTagEnd(html, index, preserveTag);
-                if (pendingSpace && INLINE_TAGS.contains(preserveTag)) {
+                if (pendingSpace && keepsAdjacentWhitespace(preserveTag)) {
                     out.append(' ');
                 }
                 pendingSpace = false;
@@ -235,7 +284,7 @@ public class HtmlMinifier {
      * @return {@code true} when a separating space must be kept
      */
     private static boolean isSignificantBefore(final String lastTag) {
-        return null == lastTag || isInlineTag(lastTag);
+        return null == lastTag || keepsAdjacentWhitespace(lastTag);
     }
 
     /**
@@ -261,7 +310,7 @@ public class HtmlMinifier {
             }
 
             if (!html.startsWith("<!--", cursor)) {
-                return isInlineTag(tagNameAt(html, cursor));
+                return keepsAdjacentWhitespace(tagNameAt(html, cursor));
             }
 
             if (html.startsWith("<!--[if", cursor)) {
@@ -285,10 +334,10 @@ public class HtmlMinifier {
     /**
      * @param tagName a lower cased tag name, may be {@code null} for degenerate markup like
      * {@code </>}
-     * @return {@code true} when the tag denotes an inline element
+     * @return {@code true} when whitespace beside this tag is rendered and must be kept
      */
-    private static boolean isInlineTag(final String tagName) {
-        return null != tagName && INLINE_TAGS.contains(tagName);
+    private static boolean keepsAdjacentWhitespace(final String tagName) {
+        return null != tagName && WHITESPACE_SIGNIFICANT_TAGS.contains(tagName);
     }
 
     /**

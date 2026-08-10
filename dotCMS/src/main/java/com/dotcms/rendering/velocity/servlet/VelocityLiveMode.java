@@ -41,7 +41,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -53,10 +52,17 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
+
+    /**
+     * Initial size of the in-memory buffer used when minification is on. Big enough that a typical
+     * page never triggers a grow-and-copy, and small enough to be irrelevant if a page is tiny.
+     */
+    private static final int MERGE_BUFFER_INITIAL_CAPACITY = 32 * 1024;
 
     final static ThreadLocal<ByteArrayOutputStream> byteArrayLocal = ThreadLocal.withInitial(
             ByteArrayOutputStream::new);
@@ -278,9 +284,15 @@ public class VelocityLiveMode extends VelocityModeHandler {
         // Merge into memory first so the markup can be minified as a whole. What is written here is
         // also what gets stored in the page cache, so minification happens once per cache fill
         // rather than on every cache hit.
-        final StringWriter merged = new StringWriter();
+        //
+        // StringBuilderWriter rather than StringWriter: the latter is backed by a synchronized
+        // StringBuffer, and Velocity emits a page as many hundreds of small writes, so the lock is
+        // taken on every one of them. Sizing the buffer up front avoids the repeated grow-and-copy.
+        // minifyBestEffort, not minifyIfEnabled, because the flag was already read above and reading
+        // it twice per render buys nothing.
+        final StringBuilderWriter merged = new StringBuilderWriter(MERGE_BUFFER_INITIAL_CAPACITY);
         this.getTemplate(htmlPage, mode).merge(context, merged);
-        Try.run(() -> out.write(HtmlMinifier.minifyIfEnabled(merged.toString())))
+        Try.run(() -> out.write(HtmlMinifier.minifyBestEffort(merged.toString())))
                 .getOrElseThrow(DotRuntimeException::new);
     }
 

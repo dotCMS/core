@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
@@ -26,8 +28,9 @@ import org.junit.Test;
  * <p>
  * {@link HtmlMinifierTest} asserts exact output, which only covers cases somebody thought to write
  * down. This class asserts an <b>invariant</b> instead: minified markup must be
- * <i>semantically identical</i> to what went in. Anything that changes what a browser would render
- * is a failure, whether or not we anticipated it.
+ * <i>semantically identical</i> to what went in, so a corruption nobody anticipated still fails,
+ * within the limits of what the comparisons below can observe. Those limits are real, and the
+ * "Known limitation" note further down says where they bite.
  * <p>
  * The oracle in {@link #integrityFailures(String, String)} compares four things, each of which maps to
  * a way minification is known to go wrong:
@@ -43,6 +46,16 @@ import org.junit.Test;
  * </ol>
  * Plus idempotence, which matters because LIVE mode can minify on write and again through
  * {@code eval()}.
+ * <p>
+ * <b>Known limitation.</b> This oracle is not a browser. jsoup has no CSS model, so the visible-text
+ * comparison cannot observe a spacing change beside an element that contributes <i>no text of its
+ * own</i>: dropping the space in {@code <b>a</b> <svg></svg>} or
+ * {@code hola <script>x</script> mundo} leaves {@link Document#text()} identical, and the change
+ * goes unseen. Two content bugs of exactly that shape reached review before anyone noticed. The
+ * {@code option} allowance in {@link #visibleText(Document)} is the same limitation surfacing.
+ * <p>
+ * {@link #test_minify_keeps_whitespace_beside_every_significant_neighbour()} is the compensating
+ * control: it asserts adjacency directly, so it does not care whether the element renders any text.
  * <p>
  * New bug classes should be added as a corpus entry or a fixture here rather than as another
  * exact-output assertion, so the invariant does the work.
@@ -141,7 +154,51 @@ public class HtmlMinifierIntegrityTest {
                     "<span>a</span> <!--c--><div>b</div>"},
             {"unterminated comment between inline elements",
                     "<span>a</span> <!--c<span>b</span>"},
+
+            // display:none elements are transparent to whitespace collapsing in the same way a
+            // removed comment is. Note the oracle cannot see most of these on its own -- that is the
+            // known limitation in the class doc -- so they are here for the record and it is
+            // test_minify_keeps_whitespace_beside_every_significant_neighbour that guards them.
+            {"script between text", "hola <script>var x=1</script> mundo"},
+            {"style between inline elements", "<b>a</b> <style>.x{}</style> <b>b</b>"},
+            {"template between inline elements", "<b>a</b> <template><i>t</i></template> <b>b</b>"},
+            {"noscript between inline elements", "<b>a</b> <noscript>n</noscript> <b>b</b>"},
+            {"inline svg after text", "Ver <svg width=\"8\"></svg>"},
+            {"inline svg with children", "<p>a <svg><circle r=\"1\"></circle></svg> b</p>"},
+            {"iframe between inline elements", "<b>a</b> <iframe src=\"x\"></iframe> <b>b</b>"},
+            {"canvas between inline elements", "<b>a</b> <canvas></canvas> <b>b</b>"},
     };
+
+    /**
+     * Every tag beside which whitespace is painted, held here as an <b>independent specification</b>
+     * of the HTML rendering model rather than read from {@link HtmlMinifier}.
+     * <p>
+     * Inline-level elements sit in an inline formatting context, so whitespace between them is
+     * rendered. Elements with {@code display: none} generate no box, so the whitespace on either
+     * side of them separates whatever surrounds them and is also rendered. Both classes therefore
+     * belong here.
+     * <p>
+     * Keeping this list separate from the implementation's is the point: the two must agree, and a
+     * tag present in one but missing from the other fails this test instead of quietly changing what
+     * pages render. Reading the implementation's own set would make the test agree with any bug.
+     */
+    private static final String[] WHITESPACE_SIGNIFICANT_NEIGHBOURS = {
+            "a", "abbr", "acronym", "audio", "b", "bdi", "bdo", "big", "br", "button", "canvas",
+            "cite", "code", "data", "datalist", "del", "dfn", "em", "embed", "font", "i", "iframe",
+            "img", "input", "ins", "kbd", "label", "map", "mark", "math", "meter", "nobr",
+            "noscript", "object", "output", "picture", "progress", "q", "rp", "rt", "rtc", "ruby",
+            "s", "samp", "script", "select", "slot", "small", "span", "strike", "strong", "style",
+            "sub", "sup", "svg", "template", "textarea", "time", "tt", "u", "var", "video", "wbr"};
+
+    /**
+     * Block-level tags, as the negative control. Whitespace beside these is <i>not</i> rendered, so
+     * it must be removed. Without this, widening the significant set until everything is preserved
+     * would pass the test above while minifying nothing.
+     */
+    private static final String[] BLOCK_NEIGHBOURS = {
+            "address", "article", "aside", "blockquote", "div", "dl", "fieldset", "figure", "footer",
+            "form", "h1", "h2", "header", "hr", "li", "main", "nav", "ol", "p", "section", "table",
+            "tbody", "td", "tfoot", "th", "thead", "tr", "ul"};
 
     @BeforeClass
     public static void prepare() {
@@ -193,6 +250,66 @@ public class HtmlMinifierIntegrityTest {
             assertTrue(String.format("%s: expected >15%% reduction, got %.1f%% (%d -> %d)",
                     name, saved, before, after), saved > 15.0);
         }
+    }
+
+    /**
+     * Given: two words separated by whitespace, with one element of every whitespace-significant kind
+     * placed in that gap.
+     * Expected: the words stay separated.
+     * <p>
+     * This asserts <i>adjacency</i> rather than text, which is what makes it see the cases the
+     * visible-text comparison is blind to: it never asks the element in the middle to render
+     * anything. It is also data driven, so a tag added to
+     * {@link #WHITESPACE_SIGNIFICANT_NEIGHBOURS} is covered without writing another assertion.
+     */
+    @Test
+    public void test_minify_keeps_whitespace_beside_every_significant_neighbour() {
+        final List<String> failures = new ArrayList<>();
+        for (final String tag : WHITESPACE_SIGNIFICANT_NEIGHBOURS) {
+            final String separator = separatorAround(tag);
+            failures.addAll(separator.isEmpty()
+                    ? List.of(String.format("<%s>: the space between the words was removed, so they "
+                            + "render joined", tag))
+                    : List.of());
+        }
+        assertNoFailures(WHITESPACE_SIGNIFICANT_NEIGHBOURS.length + " whitespace-significant tags",
+                failures);
+    }
+
+    /**
+     * Given: the same two words with a block-level element in the gap.
+     * Expected: the whitespace is removed, because a block element ends the line either side of it so
+     * nothing is painted there. The negative half of the test above: it stops the significant set
+     * being widened until the minifier stops minifying.
+     */
+    @Test
+    public void test_minify_removes_whitespace_beside_block_neighbours() {
+        final List<String> failures = new ArrayList<>();
+        for (final String tag : BLOCK_NEIGHBOURS) {
+            final String separator = separatorAround(tag);
+            failures.addAll(separator.isEmpty() ? List.of()
+                    : List.of(String.format("<%s>: expected the whitespace to be removed, kept %s",
+                            tag, abbreviate(separator))));
+        }
+        assertNoFailures(BLOCK_NEIGHBOURS.length + " block-level tags", failures);
+    }
+
+    /**
+     * Minifies {@code alpha <tag></tag> omega} and reports what is left separating the two words once
+     * the element in the middle is taken back out. Plain words rather than elements on either side,
+     * so nothing depends on the wrapper's own tag being handled correctly.
+     *
+     * @return the surviving separator, empty when the words ended up joined
+     */
+    private static String separatorAround(final String tag) {
+
+        final String element = "<" + tag + "></" + tag + ">";
+        final String minified = HtmlMinifier.minify("alpha " + element + " omega");
+        final Matcher matcher = Pattern.compile("^alpha(.*)omega$", Pattern.DOTALL)
+                .matcher(minified);
+        assertTrue(tag + ": unexpected shape, the words themselves were altered: " + minified,
+                matcher.matches());
+        return matcher.group(1).replace(element, "");
     }
 
     /**
