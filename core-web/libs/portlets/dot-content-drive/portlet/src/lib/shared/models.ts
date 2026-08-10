@@ -112,6 +112,33 @@ export interface DotContentDriveDialog {
 }
 
 /**
+ * A workflow action currently being applied to the selection.
+ *
+ * Held in the store rather than in the Action Center dialog so it survives the dialog being closed:
+ * the run continues, the toolbar keeps reporting it, and reopening the dialog sees a run already in
+ * progress instead of offering to fire it again.
+ */
+export interface DotContentDriveActionExecution {
+    /** Already-resolved action label, not an i18n key — it goes straight into the indicator. */
+    actionName: string;
+    /** Number of contentlets the run was fired over. */
+    total: number;
+}
+
+/**
+ * Outcome of a finished run, published for the shell to present as a toast.
+ *
+ * Counts come from the response, never from the number of items submitted: both endpoints answer 200
+ * with per-item failures inside, so an item locked by another user would otherwise read as a success.
+ */
+export interface DotContentDriveActionExecutionResult {
+    actionName: string;
+    successCount: number;
+    skippedCount: number;
+    failCount: number;
+}
+
+/**
  * Payload for the content-type selector dialog: the palette list type that
  * encodes which base type(s) to show (e.g. ALL_CONTENT_TYPES or a single base type).
  */
