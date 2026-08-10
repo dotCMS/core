@@ -817,6 +817,56 @@ describe('DotFolderListViewComponent', () => {
         });
     });
 
+    describe('showActions', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        it('should default to showing row actions so Content Drive is unchanged', () => {
+            expect(spectator.component.$showActions()).toBe(true);
+            expect(spectator.query(byTestId('kebab-menu-button'))).toBeTruthy();
+        });
+
+        it('should drop the kebab column when actions are off', () => {
+            // The AssetPicker's rows are things you pick, not things you manage.
+            spectator.setInput('showActions', false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('kebab-menu-button'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-actions'))).toBeFalsy();
+        });
+
+        it('should drop the actions header cell too, so the columns stay aligned', () => {
+            const withActions = spectator.queryAll(
+                '[data-testId="header-column-sortable"], [data-testId="header-column-not-sortable"]'
+            ).length;
+
+            spectator.setInput('showActions', false);
+            spectator.detectChanges();
+
+            expect(
+                spectator.queryAll(
+                    '[data-testId="header-column-sortable"], [data-testId="header-column-not-sortable"]'
+                ).length
+            ).toBe(withActions - 1);
+        });
+
+        it('should leave the browser context menu alone when actions are off', () => {
+            spectator.setInput('showActions', false);
+            spectator.detectChanges();
+
+            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const event = new MouseEvent('contextmenu', { cancelable: true });
+
+            spectator.component.onContextMenu(event, mockItems[0]);
+
+            expect(rightClickSpy).not.toHaveBeenCalled();
+            expect(event.defaultPrevented).toBe(false);
+        });
+    });
+
     describe('Drag Events', () => {
         const firstItem = mockItems[0];
         const secondItem = mockItems[1];

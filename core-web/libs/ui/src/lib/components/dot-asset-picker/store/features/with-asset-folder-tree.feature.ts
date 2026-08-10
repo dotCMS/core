@@ -22,6 +22,8 @@ import {
 } from '../../../../services/dot-browsing/dot-browsing.service';
 import {
     findFolderParent,
+    findNodeByKey,
+    findSiteIdByHostname,
     hasMorePages,
     resolveSiteId,
     SITES_LOAD_MORE_KEY,
@@ -198,9 +200,46 @@ export function withAssetFolderTree() {
                 browsingService = inject(DotBrowsingService),
                 httpErrorManager = inject(DotHttpErrorManagerService)
             ) => {
-                /** Re-emits `folders` as a new object graph so `OnPush` sees in-place node mutations. */
-                const refresh = () =>
-                    patchState(store, { folders: structuredClone(store.folders()) });
+                /**
+                 * Publishes a tree, keeping the highlight on whatever node it was on.
+                 *
+                 * `selectedNode` is compared by reference by `p-tree`, and every publish hands it a
+                 * new object graph, so the selection has to be re-pointed by key or the highlight
+                 * silently disappears the first time a branch loads.
+                 */
+                const publish = (folders: TreeNodeItem[]): void => {
+                    const selectedKey = store.selectedNode()?.key;
+
+                    patchState(store, {
+                        folders,
+                        ...(selectedKey
+                            ? { selectedNode: findNodeByKey(folders, selectedKey) ?? null }
+                            : {})
+                    });
+                };
+
+                /**
+                 * Applies `change` to the node with `key` in a **fresh clone** of the tree.
+                 *
+                 * Both halves matter, and they pull against each other. The clone is what makes the
+                 * change visible: `p-tree` and its `p-treeNode`s are `OnPush` and their `*ngFor`
+                 * tracks by object identity, so a node mutated in place is never re-rendered — the
+                 * spinner would only clear the next time something else forced change detection.
+                 * Addressing the node by key rather than by reference is what makes the clone safe:
+                 * lazy loading spans a request, and a reference taken before it would point at an
+                 * object the tree has since replaced.
+                 */
+                const mutateNode = (key: string, change: (node: TreeNodeItem) => void): void => {
+                    const folders = structuredClone(store.folders());
+                    const target = findNodeByKey(folders, key);
+
+                    if (!target) {
+                        return;
+                    }
+
+                    change(target);
+                    publish(folders);
+                };
 
                 /** Current sites query: filtered by the sidebar term when one is active. */
                 const sitesPage = (page: number) =>
@@ -307,15 +346,15 @@ export function withAssetFolderTree() {
                         pipe(
                             mergeMap((node) => {
                                 const data = node.data;
+                                const key = node.key;
 
-                                if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+                                if (!key || !data || data.type === LOAD_MORE_NODE_TYPE) {
                                     return EMPTY;
                                 }
 
                                 // Already populated, or known to have nothing to populate.
                                 if ((node.children?.length ?? 0) > 0 || node.leaf) {
-                                    node.expanded = true;
-                                    refresh();
+                                    mutateNode(key, (target) => (target.expanded = true));
 
                                     return EMPTY;
                                 }
@@ -328,8 +367,7 @@ export function withAssetFolderTree() {
 
                                 const path = data.path || '/';
 
-                                node.loading = true;
-                                refresh();
+                                mutateNode(key, (target) => (target.loading = true));
 
                                 return browsingService
                                     .searchFolders(
@@ -343,23 +381,23 @@ export function withAssetFolderTree() {
                                         data.hostname
                                     )
                                     .pipe(
-                                        tap(({ folders, pagination }) => {
-                                            node.loading = false;
-                                            node.expanded = true;
-                                            node.leaf = folders.length === 0;
-                                            node.children = withLoadMore(
-                                                folders,
-                                                hasMorePages(pagination),
-                                                node.key ?? siteId,
-                                                2,
-                                                path,
-                                                data.hostname
-                                            );
-                                            refresh();
-                                        }),
+                                        tap(({ folders, pagination }) =>
+                                            mutateNode(key, (target) => {
+                                                target.loading = false;
+                                                target.expanded = true;
+                                                target.leaf = folders.length === 0;
+                                                target.children = withLoadMore(
+                                                    folders,
+                                                    hasMorePages(pagination),
+                                                    key,
+                                                    2,
+                                                    path,
+                                                    data.hostname
+                                                );
+                                            })
+                                        ),
                                         catchError((error) => {
-                                            node.loading = false;
-                                            refresh();
+                                            mutateNode(key, (target) => (target.loading = false));
                                             httpErrorManager.handle(error);
 
                                             // EMPTY keeps the rxMethod alive for the next expand.
@@ -380,8 +418,9 @@ export function withAssetFolderTree() {
                         pipe(
                             mergeMap((node) => {
                                 const data = node.data as TreeNodeLoadMoreData | undefined;
+                                const key = node.key;
 
-                                if (!data || data.type !== LOAD_MORE_NODE_TYPE) {
+                                if (!key || !data || data.type !== LOAD_MORE_NODE_TYPE) {
                                     return EMPTY;
                                 }
 
@@ -390,14 +429,15 @@ export function withAssetFolderTree() {
                                 const hostname = data.hostname ?? '';
                                 const isSitesLevel = !hostname && parentPath === '';
 
-                                node.loading = true;
-                                refresh();
+                                mutateNode(key, (target) => (target.loading = true));
 
                                 if (isSitesLevel) {
                                     return sitesPage(nextPage).pipe(
-                                        tap(({ sites, pagination }) => {
-                                            patchState(store, {
-                                                folders: withLoadMore(
+                                        tap(({ sites, pagination }) =>
+                                            // The sentinel is replaced wholesale here, so there is
+                                            // no loading flag left to clear.
+                                            publish(
+                                                withLoadMore(
                                                     [...stripLoadMore(store.folders()), ...sites],
                                                     hasMorePages(pagination),
                                                     SITES_LOAD_MORE_KEY,
@@ -405,11 +445,10 @@ export function withAssetFolderTree() {
                                                     '',
                                                     ''
                                                 )
-                                            });
-                                        }),
+                                            )
+                                        ),
                                         catchError((error) => {
-                                            node.loading = false;
-                                            refresh();
+                                            mutateNode(key, (target) => (target.loading = false));
                                             httpErrorManager.handle(error);
 
                                             return EMPTY;
@@ -417,18 +456,15 @@ export function withAssetFolderTree() {
                                     );
                                 }
 
-                                const parent = findFolderParent(
+                                const parentKey = findFolderParent(
                                     store.folders(),
                                     parentPath || '/',
                                     hostname
-                                );
-                                const siteId = parent
-                                    ? resolveSiteId(parent, store.folders())
-                                    : undefined;
+                                )?.key;
+                                const siteId = findSiteIdByHostname(hostname, store.folders());
 
-                                if (!parent || !siteId) {
-                                    node.loading = false;
-                                    refresh();
+                                if (!parentKey || !siteId) {
+                                    mutateNode(key, (target) => (target.loading = false));
 
                                     return EMPTY;
                                 }
@@ -445,27 +481,27 @@ export function withAssetFolderTree() {
                                         hostname
                                     )
                                     .pipe(
-                                        tap(({ folders, pagination }) => {
+                                        tap(({ folders, pagination }) =>
                                             // Keep what is already loaded, drop the old sentinel,
                                             // append the new page.
-                                            parent.children = withLoadMore(
-                                                [
-                                                    ...stripLoadMore(
-                                                        parent.children as TreeNodeItem[]
-                                                    ),
-                                                    ...folders
-                                                ],
-                                                hasMorePages(pagination),
-                                                parent.key ?? siteId,
-                                                nextPage + 1,
-                                                parentPath || '/',
-                                                hostname
-                                            );
-                                            refresh();
-                                        }),
+                                            mutateNode(parentKey, (parent) => {
+                                                parent.children = withLoadMore(
+                                                    [
+                                                        ...stripLoadMore(
+                                                            parent.children as TreeNodeItem[]
+                                                        ),
+                                                        ...folders
+                                                    ],
+                                                    hasMorePages(pagination),
+                                                    parentKey,
+                                                    nextPage + 1,
+                                                    parentPath || '/',
+                                                    hostname
+                                                );
+                                            })
+                                        ),
                                         catchError((error) => {
-                                            node.loading = false;
-                                            refresh();
+                                            mutateNode(key, (target) => (target.loading = false));
                                             httpErrorManager.handle(error);
 
                                             return EMPTY;
@@ -495,15 +531,6 @@ export function withAssetFolderTree() {
                                 ? (findSiteRoot(store.folders(), site.identifier) ?? null)
                                 : null
                         });
-                    },
-
-                    /**
-                     * `structuredClone` is load-bearing: tree nodes are mutated in place (children,
-                     * loading flags), and a shallow copy would keep the same references, so change
-                     * detection would never see the update.
-                     */
-                    updateFolders: (folders: TreeNodeItem[]): void => {
-                        patchState(store, { folders: structuredClone(folders) });
                     }
                 };
 

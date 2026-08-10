@@ -23,6 +23,7 @@
                 <dot-folder-list-view
                     selectionMode="single"
                     data-testid="asset-picker-list"
+                    [showActions]="false"
                     [items]="store.items()"
                     [loading]="$loading()"
                     [totalItems]="store.totalItems()"

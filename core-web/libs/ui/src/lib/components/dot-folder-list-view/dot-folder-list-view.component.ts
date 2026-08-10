@@ -122,6 +122,19 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     $selectionMode = input<DotFolderListViewSelectionMode>('multiple', { alias: 'selectionMode' });
 
     /**
+     * Whether rows offer per-row actions: the kebab column and the right-click menu.
+     *
+     * Defaults to `true` so Content Drive — where a row is something you manage (publish, move,
+     * delete) — is unchanged. The AssetPicker turns it off: there a row is something you *pick*, and
+     * the actions would either do nothing (nothing is listening) or take the editor out of the flow.
+     * It also gates `onContextMenu`, so right-click keeps the browser's own menu instead of being
+     * swallowed for a menu that never opens.
+     *
+     * @alias showActions
+     */
+    $showActions = input(true, { alias: 'showActions' });
+
+    /**
      * An output that emits the selected items.
      *
      * @type {Output<DotContentDriveItem[]>}
@@ -259,12 +272,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * renders only the extra cells generically in the same position.
      */
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
+        const fixed = this.$showActions()
+            ? HEADER_COLUMNS
+            : HEADER_COLUMNS.filter((column) => column.field !== 'actions');
         const extras = this.$sizedExtraColumns();
+
         if (!extras.length) {
-            return HEADER_COLUMNS;
+            return fixed;
         }
 
-        const columns = [...HEADER_COLUMNS];
+        const columns = [...fixed];
         const typeIndex = columns.findIndex((column) => column.field === 'contentType');
         const insertAt = typeIndex === -1 ? columns.length : typeIndex + 1;
         columns.splice(insertAt, 0, ...extras);
@@ -437,6 +454,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param contentlet The content item that was right clicked
      */
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
+        // Without row actions there is no menu to open, so swallowing the browser's own would just
+        // make right-click feel broken.
+        if (!this.$showActions()) {
+            return;
+        }
+
         event.preventDefault();
         this.rightClick.emit({ event, contentlet });
     }

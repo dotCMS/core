@@ -33,7 +33,7 @@ export class DotAssetPickerHeaderComponent {
     /**
      * Dialog title, already translated by the host — it depends on the field that opened the
      * picker ("Add File" / "Add Image"), which this component has no way to know.
-     * @type {string}
+     *
      * @alias title
      */
     readonly $title = input('', { alias: 'title' });

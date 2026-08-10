@@ -52,6 +52,32 @@ export function withLoadMore(
 }
 
 /**
+ * Finds a tree node by key, at any depth.
+ *
+ * The way to address a node across an async gap. `p-tree` and its `p-treeNode`s are `OnPush` and
+ * track by object identity, so a level that changed has to be published as **new** objects to
+ * re-render — which strands any reference taken before the request. Look the node up again by key
+ * after each publish instead of holding on to it.
+ */
+export function findNodeByKey(nodes: TreeNodeItem[], key: string): TreeNodeItem | undefined {
+    for (const node of nodes) {
+        if (node.key === key) {
+            return node;
+        }
+
+        const found = node.children
+            ? findNodeByKey(node.children as TreeNodeItem[], key)
+            : undefined;
+
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
+}
+
+/**
  * Site identifier for a hostname, looked up among the tree roots.
  *
  * Folder nodes carry their hostname but not their site id, and `/folder/search` is scoped by site

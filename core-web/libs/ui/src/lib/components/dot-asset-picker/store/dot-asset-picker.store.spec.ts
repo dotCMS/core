@@ -408,16 +408,6 @@ describe('DotAssetPickerStore', () => {
             expect(store.folders()[1].expanded).toBe(true);
         });
 
-        it('should replace the folders array on update so change detection sees it', () => {
-            store.initPicker(FILE_FIELD_CONFIG);
-            const next = [{ key: 'a', label: 'a' }] as TreeNodeItem[];
-
-            store.updateFolders(next);
-
-            expect(store.folders()).toEqual(next);
-            expect(store.folders()).not.toBe(next);
-        });
-
         it('should track the selected node', () => {
             const node = { key: 'docs', label: '/docs/' } as TreeNodeItem;
 
@@ -450,6 +440,91 @@ describe('DotAssetPickerStore', () => {
                 store.initPicker(FILE_FIELD_CONFIG);
 
                 expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            });
+        });
+
+        describe('expanding a node', () => {
+            /** The node as the tree is currently rendering it — not the reference we passed in. */
+            const renderedOtherSite = () =>
+                store.folders().find((node) => node.key === OTHER_SITE.identifier);
+
+            beforeEach(() => {
+                store.initPicker(FILE_FIELD_CONFIG);
+                folderService.searchFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                id: 'folder-1',
+                                name: 'images',
+                                path: '/',
+                                hasChildren: false
+                            }
+                        ],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                    })
+                );
+            });
+
+            it('should stop showing the spinner once the request resolves', () => {
+                // Regression: the pre-request state refresh deep-cloned the tree, so the response
+                // cleared `loading` on a node that was no longer the one being rendered — the
+                // spinner span forever even though the call had returned 200.
+                store.expandNode(store.folders()[1]);
+
+                expect(renderedOtherSite()?.loading).toBeFalsy();
+            });
+
+            it('should show the loaded children under the node', () => {
+                store.expandNode(store.folders()[1]);
+
+                expect(renderedOtherSite()?.expanded).toBe(true);
+                expect(renderedOtherSite()?.children).toHaveLength(1);
+            });
+
+            it('should publish the node as a new object so the OnPush tree re-renders it', () => {
+                // `p-tree` and its `p-treeNode`s are OnPush and their `*ngFor` tracks by object
+                // identity: a node mutated in place keeps its identity, so the row is never
+                // re-rendered and the spinner only clears when something else triggers change
+                // detection. Publishing a fresh object is what makes the update visible.
+                const before = store.folders()[1];
+
+                store.expandNode(before);
+
+                expect(renderedOtherSite()).not.toBe(before);
+            });
+
+            it('should keep the highlight on the selected node across a load', () => {
+                // The selection is compared by reference, so re-pointing it at the new object graph
+                // is what stops the highlight from vanishing when a branch loads.
+                store.selectNode(store.folders()[0]);
+                const selectedKey = store.selectedNode()?.key;
+
+                store.expandNode(store.folders()[1]);
+
+                expect(store.selectedNode()?.key).toBe(selectedKey);
+                expect(store.selectedNode()).toBe(
+                    store.folders().find((node) => node.key === selectedKey)
+                );
+            });
+
+            it('should clear the spinner when the request fails', () => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.expandNode(store.folders()[1]);
+
+                expect(renderedOtherSite()?.loading).toBeFalsy();
+                expect(httpErrorManager.handle).toHaveBeenCalled();
+            });
+
+            it('should not re-fetch a node that already has children', () => {
+                store.expandNode(store.folders()[1]);
+                folderService.searchFolders.mockClear();
+
+                store.expandNode(renderedOtherSite() as TreeNodeItem);
+
+                expect(folderService.searchFolders).not.toHaveBeenCalled();
             });
         });
 

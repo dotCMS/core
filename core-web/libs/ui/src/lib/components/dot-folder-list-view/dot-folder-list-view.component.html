@@ -201,17 +201,19 @@
                     {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
                 </td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
-                <td data-testId="item-actions" class="text-center">
-                    <p-button
-                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                        icon="pi pi-ellipsis-v"
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        (onClick)="onContextMenu($event, item)"
-                        data-testId="kebab-menu-button"
-                        aria-label="More actions" />
-                </td>
+                @if ($showActions()) {
+                    <td data-testId="item-actions" class="text-center">
+                        <p-button
+                            class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                            icon="pi pi-ellipsis-v"
+                            [text]="true"
+                            [rounded]="true"
+                            size="small"
+                            (onClick)="onContextMenu($event, item)"
+                            data-testId="kebab-menu-button"
+                            aria-label="More actions" />
+                    </td>
+                }
             </tr>
         }
     </ng-template>

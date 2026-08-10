@@ -100,8 +100,6 @@ const createMockStore = () => {
         setSelectedAsset: jest.fn(),
         clearSelection: jest.fn(),
         setSelectedNode: jest.fn(),
-        updateFolders: jest.fn(),
-        loadChildFolders: jest.fn().mockReturnValue(of({ folders: [], totalEntries: 0 })),
         loadFolders: jest.fn(),
         loadItems: jest.fn(),
         toggleFullscreen: jest.fn(() => isFullscreen.set(!isFullscreen()))
