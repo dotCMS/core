@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rendering.velocity.events.PreviewEditParseErrorException;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -62,6 +63,11 @@ public class VelocityEditMode extends VelocityModeHandler {
 
 
         try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
+            // Charged at the merge itself, not on serve(): serve() also does permission
+            // checks and context building, and would bill a merge that never happened.
+            // Nested #dotParse / #parseContainer charge separately in DotDirective.render.
+            APILocator.getRequestCostAPI().incrementCost(Price.VELOCITY_MERGE,
+                    VelocityEditMode.class, "serve", new Object[]{});
             this.getTemplate(htmlPage, mode).merge(context, outStr);
         } catch (PreviewEditParseErrorException e) {
             this.processException(user, htmlPage.getName(), e);
