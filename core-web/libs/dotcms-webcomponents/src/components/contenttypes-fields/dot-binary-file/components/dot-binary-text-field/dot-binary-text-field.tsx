@@ -16,9 +16,12 @@ export class DotBinaryTextFieldComponent {
     @Element()
     el!: HTMLElement;
 
-    /** Value specifies the value of the <input> element */
+    /**
+     * Value specifies the value of the <input> element.
+     * Holds a `File` when one is pasted from the clipboard, a string when a URL is pasted.
+     */
     @Prop({ mutable: true, reflect: true })
-    value: string | null = null;
+    value: string | File | null = null;
 
     /** (optional) Hint text that suggest a clue of the field */
     @Prop({ reflect: true })

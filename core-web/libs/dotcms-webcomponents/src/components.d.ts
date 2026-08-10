@@ -290,10 +290,10 @@ export namespace Components {
          */
         "required": boolean;
         /**
-          * Value specifies the value of the <input> element
+          * Value specifies the value of the <input> element. Holds a `File` when one is pasted from the clipboard, a string when a URL is pasted.
           * @default null
          */
-        "value": string | null;
+        "value": string | File | null;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -2606,10 +2606,10 @@ declare namespace LocalJSX {
          */
         "required"?: boolean;
         /**
-          * Value specifies the value of the <input> element
+          * Value specifies the value of the <input> element. Holds a `File` when one is pasted from the clipboard, a string when a URL is pasted.
           * @default null
          */
-        "value"?: string | null;
+        "value"?: string | File | null;
     }
     /**
      * Represent a dotcms text field for the binary file element.
