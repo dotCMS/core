@@ -1,3 +1,4 @@
+import { patchState } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
@@ -34,7 +35,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -55,7 +56,7 @@ import {
     DotRelatedContentNavigationStore
 } from '../../store/dot-related-content-navigation.store';
 import { DotEditContentStore } from '../../store/edit-content.store';
-import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
+import { MOCK_CONTENTLET_1_TAB, MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
@@ -1073,3 +1074,219 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
         });
     });
 });
+
+/**
+ * Integration coverage for the sidebar-refresh invariant (issue #36617).
+ *
+ * The feature specs (`activities.feature.spec.ts`, `information.feature.spec.ts`,
+ * `history.feature.spec.ts`) verify the store effects against a synthetic store with
+ * NO component mounted. That cannot catch the regression this fix addresses: those
+ * effects used to live on `DotEditContentSidebarComponent`, which the layout's
+ * `@if ($store.isLoaded() || $store.isSaving() || $store.isReloading())` destroys and
+ * recreates — taking the effects with it.
+ *
+ * Here the store is real and mounted inside the real layout, while the sidebar is a
+ * `MockComponent` (no effects of its own). So if the fetching ever moves back into
+ * that component, these tests fail where the feature specs would still pass.
+ *
+ * Both hosts are covered because they differ in what happens after a save: the
+ * full-screen host navigates (re-initializing and clearing the lists), while the
+ * dialog host does not — and the refresh must not depend on that difference.
+ */
+describe.each([
+    ['full-screen', false],
+    ['dialog', true]
+])(
+    'EditContentLayoutComponent - sidebar refresh is store-owned (%s host)',
+    (_hostName, inPlaceNavigation) => {
+        let spectator: Spectator<DotEditContentLayoutComponent>;
+        let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
+        let dotEditContentService: SpyObject<DotEditContentService>;
+
+        const IDENTIFIER = MOCK_CONTENTLET_1_TAB.identifier;
+        const hostTrail = signal<DotRelatedContentCrumb[]>([]);
+        const host = {
+            inPlaceNavigation,
+            inPlaceNavigation$: undefined,
+            trail: hostTrail,
+            setTrail: jest.fn(),
+            resolveIdentity: jest.fn().mockReturnValue({}),
+            reportSaved: jest.fn(),
+            reloadContent: jest.fn(),
+            setContentTitle: jest.fn(),
+            addBreadcrumb: jest.fn(),
+            goToSavedContent: jest.fn(),
+            goToRestoredVersion: jest.fn(),
+            goToRelatedContent: jest.fn(),
+            goToCrumb: jest.fn()
+        };
+
+        const emptyPage = {
+            entity: [],
+            pagination: null,
+            errors: [],
+            i18nMessagesMap: {},
+            messages: [],
+            permissions: []
+        };
+
+        const createComponent = createComponentFactory({
+            component: DotEditContentLayoutComponent,
+            imports: [
+                MessageModule,
+                ButtonModule,
+                MockComponent(DotEditContentFormComponent),
+                MockComponent(DotEditContentSidebarComponent),
+                DotMessagePipe
+            ],
+            componentProviders: [
+                DotEditContentStore,
+                mockProvider(DotWorkflowsActionsService),
+                mockProvider(DotWorkflowActionsFireService),
+                mockProvider(DotEditContentService),
+                mockProvider(DotContentTypeService),
+                mockProvider(DotWorkflowService),
+                mockProvider(DotContentletService),
+                mockProvider(DotVersionableService),
+                ConfirmationService,
+                { provide: EDIT_CONTENT_HOST, useValue: host }
+            ],
+            providers: [
+                mockProvider(DotHttpErrorManagerService),
+                mockProvider(MessageService),
+                mockProvider(DialogService),
+                mockProvider(DotLanguagesService),
+                mockProvider(DotSiteService, {
+                    getCurrentSite: jest
+                        .fn()
+                        .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
+                }),
+                mockProvider(DotSystemConfigService, {
+                    getSystemConfig: jest.fn().mockReturnValue(of({}))
+                }),
+                GlobalStore,
+                {
+                    provide: DotCurrentUserService,
+                    useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        get snapshot() {
+                            return { params: { id: '', contentType: '' } };
+                        }
+                    }
+                },
+                mockProvider(Router, {
+                    navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                    url: '/test-url',
+                    events: of()
+                }),
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+                mockProvider(DotRelatedContentNavigationStore, {
+                    trail: hostTrail,
+                    registerTitle: jest.fn(),
+                    buildTrailForSavedInode: jest.fn().mockReturnValue(null)
+                })
+            ]
+        });
+
+        /** Puts the store in the state a loaded contentlet produces, so the sidebar renders. */
+        const loadContentlet = (contentlet = MOCK_CONTENTLET_1_TAB) => {
+            patchState(store, {
+                contentlet,
+                contentType: CONTENT_TYPE_MOCK,
+                state: ComponentStatus.LOADED
+            });
+            spectator.detectChanges();
+        };
+
+        beforeEach(() => {
+            spectator = createComponent({ detectChanges: false });
+            store = spectator.inject(DotEditContentStore, true);
+            dotEditContentService = spectator.inject(DotEditContentService, true);
+
+            dotEditContentService.getActivities.mockReturnValue(of([]));
+            dotEditContentService.getReferencePages.mockReturnValue(of(0));
+            dotEditContentService.getVersions.mockReturnValue(of(emptyPage));
+            dotEditContentService.getPushPublishHistory.mockReturnValue(of(emptyPage));
+
+            // The lock and workflow features also react to `contentlet`, so their services
+            // need observables or their effects blow up before the ones under test run.
+            spectator
+                .inject(DotContentletService, true)
+                .canLock.mockReturnValue(of({ entity: { canLock: true } }));
+            spectator
+                .inject(DotWorkflowsActionsService, true)
+                .getByInode.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
+            spectator
+                .inject(DotWorkflowService, true)
+                .getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+        });
+
+        it('should fetch sidebar data even while the sidebar component is not rendered', fakeAsync(() => {
+            // `@if` is false here (not loaded, not saving, not reloading), so the sidebar is
+            // never mounted — yet the data must still load, because the store owns it.
+            patchState(store, {
+                contentlet: MOCK_CONTENTLET_1_TAB,
+                state: ComponentStatus.LOADING
+            });
+            spectator.detectChanges();
+            tick();
+
+            expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getVersions).toHaveBeenCalled();
+        }));
+
+        it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {
+            loadContentlet();
+            tick();
+            expect(spectator.query('dot-edit-content-sidebar')).not.toBeNull();
+
+            dotEditContentService.getActivities.mockClear();
+            dotEditContentService.getReferencePages.mockClear();
+            dotEditContentService.getVersions.mockClear();
+
+            // Flip the `@if` off — Angular destroys the sidebar and, before this fix, its effects.
+            patchState(store, { contentType: null, state: ComponentStatus.LOADING });
+            spectator.detectChanges();
+            tick();
+            expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
+
+            // Come back with a new inode, as a save does.
+            loadContentlet({ ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-save' });
+            tick();
+
+            expect(spectator.query('dot-edit-content-sidebar')).not.toBeNull();
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getVersions).toHaveBeenCalled();
+        }));
+
+        it('should refresh on a save that mints a new inode without any re-initialization', fakeAsync(() => {
+            // This is the dialog host's path: no navigation, so nothing clears the lists and
+            // the identifier/locale never change. Asserted for both hosts because the refresh
+            // must no longer depend on which one is mounted.
+            loadContentlet();
+            tick();
+
+            dotEditContentService.getActivities.mockClear();
+            dotEditContentService.getReferencePages.mockClear();
+            dotEditContentService.getVersions.mockClear();
+
+            patchState(store, {
+                contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-publish' }
+            });
+            spectator.detectChanges();
+            tick();
+
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getReferencePages).toHaveBeenCalledWith(IDENTIFIER);
+            expect(dotEditContentService.getVersions).toHaveBeenCalled();
+        }));
+    }
+);

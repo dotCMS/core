@@ -1016,17 +1016,29 @@ describe('HistoryFeature', () => {
             expect(store.pushPublishHistory()).toEqual(expectedSortedAfterClear);
         }));
 
-        it('should not reload anything when only the version inode changes', fakeAsync(() => {
+        it('should reload versions but not push publish history when the live inode moves', fakeAsync(() => {
+            // A bare inode move with no historical flags set is a newly minted version
+            // (save/publish) — browsing a version always goes through `loadVersionContent`,
+            // which sets isViewingHistoricalVersion. This is also the dialog-host path:
+            // it never navigates, so nothing clears the list and the identity keys stay
+            // equal; only the live inode moves.
             spectator.flushEffects();
             tick();
+            expect(store.versionsStatus().status).toBe(ComponentStatus.LOADED);
             dotEditContentService.getVersions.mockClear();
             dotEditContentService.getPushPublishHistory.mockClear();
 
-            store.updateContentlet({ ...mockContentlet, inode: 'another-version-inode' });
+            store.updateContentlet({ ...mockContentlet, inode: 'new-inode-after-publish' });
             spectator.flushEffects();
             tick();
 
-            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                mockContentlet.identifier,
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                mockContentlet.languageId
+            );
+            // Push publish history is per identifier, which did not change.
             expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
         }));
 
@@ -1154,6 +1166,306 @@ describe('HistoryFeature', () => {
 
             expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
             expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+        }));
+
+        it('should reload versions when an in-place reload empties the list under the same identity', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            expect(store.versions()).toEqual(mockVersionsResponse.entity);
+            dotEditContentService.getVersions.mockClear();
+
+            // What `initializeExistingContent` does after a save/publish: the lists are
+            // emptied back to INIT while identifier and locale stay the same.
+            patchState(store, {
+                versions: [],
+                versionsPagination: null,
+                versionsStatus: { status: ComponentStatus.INIT, error: null }
+            });
+            store.updateContentlet({ ...mockContentlet, inode: 'new-inode-after-publish' });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                mockContentlet.identifier,
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                mockContentlet.languageId
+            );
+            expect(store.versions()).toEqual(mockVersionsResponse.entity);
+        }));
+
+        it('should reload push publish history when an in-place reload empties it under the same identifier', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            patchState(store, {
+                pushPublishHistory: [],
+                pushPublishHistoryPagination: null,
+                pushPublishHistoryStatus: { status: ComponentStatus.INIT, error: null }
+            });
+            store.updateContentlet({ ...mockContentlet, inode: 'new-inode-after-publish' });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getPushPublishHistory).toHaveBeenCalledWith(
+                mockContentlet.identifier,
+                { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
+            );
+            expect(store.pushPublishHistory()).toHaveLength(
+                mockPushPublishHistoryResponse.entity.length
+            );
+        }));
+
+        it('should reload versions when publishing while in compare view', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            // What `loadCompareVersionContent` does: `contentlet` stays LIVE, only
+            // compareContentlet is set, and isViewingHistoricalVersion stays false.
+            const compareContent = { ...mockContentlet, inode: 'compare-inode' };
+            patchState(store, {
+                compareContentlet: compareContent,
+                historicalVersionInode: 'compare-inode',
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: false,
+                uiState: { ...store.uiState(), view: 'compare' }
+            });
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+
+            // Publishing from compare view still mints a new live version, so the list
+            // must refresh — compare must not be mistaken for browsing a version.
+            store.updateContentlet({ ...mockContentlet, inode: 'new-inode-after-publish' });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
+        }));
+
+        it('should not fetch with the outgoing identifier while a reload is in flight', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            // What `initializeExistingContent` does: empties the lists to INIT and flips
+            // state to LOADING while KEEPING the outgoing contentlet on screen.
+            patchState(store, {
+                state: ComponentStatus.LOADING,
+                versions: [],
+                versionsPagination: null,
+                versionsStatus: { status: ComponentStatus.INIT, error: null },
+                pushPublishHistory: [],
+                pushPublishHistoryPagination: null,
+                pushPublishHistoryStatus: { status: ComponentStatus.INIT, error: null }
+            });
+            spectator.flushEffects();
+            tick();
+
+            // Nothing yet: firing here would request the content we are leaving.
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+
+            // The reload lands: new contentlet and LOADED arrive in the same patch.
+            const incoming = {
+                ...mockContentlet,
+                identifier: 'incoming-identifier',
+                inode: 'incoming-inode'
+            };
+            patchState(store, { contentlet: incoming, state: ComponentStatus.LOADED });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                'incoming-identifier',
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                incoming.languageId
+            );
+            expect(dotEditContentService.getPushPublishHistory).toHaveBeenCalledWith(
+                'incoming-identifier',
+                { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
+            );
+        }));
+
+        it('should not fetch while a reload is in flight over a historical version', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            // The user is browsing a historical version: `loadVersionContent` swaps the
+            // contentlet for the older one, so the inode on screen no longer matches the
+            // live baseline.
+            patchState(store, {
+                contentlet: { ...mockContentlet, inode: 'historical-inode' },
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: true,
+                historicalVersionInode: 'historical-inode'
+            });
+            spectator.flushEffects();
+            tick();
+
+            dotEditContentService.getVersions.mockClear();
+            dotEditContentService.getPushPublishHistory.mockClear();
+
+            // What `initializeExistingContent` does from here: it clears the historical
+            // flags in the SAME patch that flips state to LOADING, while keeping the
+            // outgoing (historical) contentlet on screen. Without the `!isReloading` guard
+            // the inode mismatch reads as a new live version and fires a request for the
+            // identifier we are leaving.
+            patchState(store, {
+                state: ComponentStatus.LOADING,
+                versions: [],
+                versionsPagination: null,
+                versionsStatus: { status: ComponentStatus.INIT, error: null },
+                pushPublishHistory: [],
+                pushPublishHistoryPagination: null,
+                pushPublishHistoryStatus: { status: ComponentStatus.INIT, error: null },
+                isViewingHistoricalVersion: false,
+                historicalVersionInode: null,
+                originalContentlet: null,
+                compareContentlet: null
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+            expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+
+            // The reload lands and the incoming content is fetched normally.
+            const incoming = {
+                ...mockContentlet,
+                identifier: 'incoming-identifier',
+                inode: 'incoming-inode'
+            };
+            patchState(store, { contentlet: incoming, state: ComponentStatus.LOADED });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
+            expect(dotEditContentService.getVersions).toHaveBeenCalledWith(
+                'incoming-identifier',
+                { offset: 1, limit: DEFAULT_VERSIONS_PER_PAGE },
+                incoming.languageId
+            );
+            expect(dotEditContentService.getPushPublishHistory).toHaveBeenCalledWith(
+                'incoming-identifier',
+                { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
+            );
+        }));
+
+        it('should not reload versions when entering a historical version', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+
+            // What `loadVersionContent` does: swaps the contentlet for the old version.
+            patchState(store, {
+                contentlet: { ...mockContentlet, inode: 'historical-inode' },
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: true,
+                historicalVersionInode: 'historical-inode'
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+        }));
+
+        it('should not reload versions when returning from a historical version', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            patchState(store, {
+                contentlet: { ...mockContentlet, inode: 'historical-inode' },
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: true,
+                historicalVersionInode: 'historical-inode'
+            });
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+
+            // What `exitHistoricalView` does: restores the original live contentlet.
+            patchState(store, {
+                contentlet: mockContentlet,
+                originalContentlet: null,
+                isViewingHistoricalVersion: false,
+                historicalVersionInode: null
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+        }));
+
+        it('should not reload versions when entering compare view', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+
+            // Compare keeps `contentlet` live but sets historicalVersionInode.
+            patchState(store, {
+                compareContentlet: { ...mockContentlet, inode: 'compare-inode' },
+                historicalVersionInode: 'compare-inode',
+                originalContentlet: mockContentlet,
+                uiState: { ...store.uiState(), view: 'compare' }
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).not.toHaveBeenCalled();
+        }));
+
+        it('should reload versions after a publish that follows a historical round trip', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            // Browse a historical version and come back.
+            patchState(store, {
+                contentlet: { ...mockContentlet, inode: 'historical-inode' },
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: true,
+                historicalVersionInode: 'historical-inode'
+            });
+            spectator.flushEffects();
+            tick();
+            patchState(store, {
+                contentlet: mockContentlet,
+                originalContentlet: null,
+                isViewingHistoricalVersion: false,
+                historicalVersionInode: null
+            });
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+
+            // Now publish: the baseline must still be the live inode, so this counts.
+            store.updateContentlet({ ...mockContentlet, inode: 'new-inode-after-publish' });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
+        }));
+
+        it('should not refetch repeatedly once a reload-triggered load settles', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getVersions.mockClear();
+
+            patchState(store, {
+                versions: [],
+                versionsStatus: { status: ComponentStatus.INIT, error: null }
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
+
+            // Flushing again must not re-enter the loader: status is LOADED, not INIT.
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getVersions).toHaveBeenCalledTimes(1);
         }));
     });
 
