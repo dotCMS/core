@@ -42,6 +42,7 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.business.interceptor.RequestCostHandler;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
@@ -1301,11 +1302,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
     // else meters it. Base fee per contentlet asked for; the cache misses pay a surcharge
     // below. Note the surcharge is per missed ROW, not per SQL statement - the 200-row
     // batching is our implementation detail and is deliberately not priced.
-    APILocator.getRequestCostAPI().incrementCost(Price.CONTENT_FROM_CACHE,
+    RequestCostHandler.incrementCost(Price.CONTENT_FROM_CACHE,
             ESContentFactoryImpl.class, "findContentlets", new Object[]{}, inodes.size());
 
     if (!missingCons.isEmpty()) {
-        APILocator.getRequestCostAPI().incrementCost(Price.CONTENT_FROM_DB,
+        RequestCostHandler.incrementCost(Price.CONTENT_FROM_DB,
                 ESContentFactoryImpl.class, "findContentlets", new Object[]{}, missingCons.size());
 
         final String contentletBase =

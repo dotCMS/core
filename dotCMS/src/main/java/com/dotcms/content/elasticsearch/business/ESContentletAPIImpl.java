@@ -577,6 +577,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    // Deliberately NOT a terminal, and the stacking is intended: move() calls
+    // indexAPI.addContentToIndex(..) below, which reaches the annotated
+    // addContentToIndex(List) and adds CONTENT_INDEX on top of this CONTENT_MOVE. A move
+    // really does reindex, so it really should cost both. This is not the "annotating two
+    // methods in one chain double-charges" trap - that is about one operation being counted
+    // twice, this is two distinct operations each counted once. Do not remove either.
     @RequestCost(Price.CONTENT_MOVE)
     @Override
     public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host,

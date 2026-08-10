@@ -398,9 +398,16 @@ public class RequestCostApiImpl implements RequestCostApi {
         // Rounded, but still formatted "%.2f": the header has always looked like "23.00" and
         // has always been a whole number. Keeping both the format and the integrality means
         // nothing downstream has to change when the internal Price scale moves.
-        response.setHeader(REQUEST_COST_HEADER_NAME,
-                String.format("%.2f",
-                        (double) Math.round(currentCost.doubleValue() / requestCostDenominator)));
+        //
+        // Floored at 1 when the request cost anything at all. Without this, any request under
+        // half the denominator rounds to "0.00" - at the default of 10 that is every request
+        // reading a single warm contentlet - and a request that did real work would report as
+        // free. Only a genuinely zero-cost request reports 0.00. Window and lifetime totals
+        // are unaffected: they sum raw units and divide once, so no resolution is lost there.
+        final long reported = currentCost > 0
+                ? Math.max(1L, Math.round(currentCost.doubleValue() / requestCostDenominator))
+                : 0L;
+        response.setHeader(REQUEST_COST_HEADER_NAME, String.format("%.2f", (double) reported));
 
     }
 
