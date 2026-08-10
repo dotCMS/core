@@ -4,7 +4,12 @@
         "allowJs": false,
         "esModuleInterop": false,
         "allowSyntheticDefaultImports": true,
-        "strict": true
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
     },
     "files": [],
     "include": [],
