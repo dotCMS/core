@@ -135,6 +135,22 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     $showActions = input(true, { alias: 'showActions' });
 
     /**
+     * Whether clicking a row's title or thumbnail **opens** the item rather than selecting the row.
+     *
+     * Defaults to `true` for Content Drive, where the title is a distinct affordance: it navigates
+     * to the editor, so it swallows the click to keep the row from being selected underneath.
+     *
+     * The AssetPicker turns it off. There is nothing to open there — a row exists to be picked — so
+     * swallowing the click left the row selectable only through its padding, with the radio out of
+     * step with what the store had already recorded. With this off the click bubbles to
+     * `pSelectableRow` and the whole row selects. Travels with {@link $showActions}: together they
+     * are what separates a picker from a manager.
+     *
+     * @alias titleOpensItem
+     */
+    $titleOpensItem = input(true, { alias: 'titleOpensItem' });
+
+    /**
      * An output that emits the selected items.
      *
      * @type {Output<DotContentDriveItem[]>}
@@ -497,6 +513,25 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      */
     onDoubleClick(contentlet: DotContentDriveItem) {
         this.doubleClick.emit(contentlet);
+    }
+
+    /**
+     * Handles a click on the row's title or thumbnail.
+     *
+     * When the title opens the item it has to swallow the click, or the row would be selected on
+     * the way out too. When it does not, the click is left alone so it reaches `pSelectableRow` and
+     * the whole row — content included, not just its padding — selects.
+     *
+     * @param event The click event
+     * @param contentlet The content item whose title was clicked
+     */
+    onTitleClick(event: Event, contentlet: DotContentDriveItem) {
+        if (!this.$titleOpensItem()) {
+            return;
+        }
+
+        this.onDoubleClick(contentlet);
+        event.stopPropagation();
     }
 
     /**

@@ -76,6 +76,14 @@ export function withAssetBrowse() {
                     const currentFilters = filters();
                     const currentPagination = pagination();
 
+                    // `allowedBaseTypes` is a boundary, not a default the editor can clear: with
+                    // no chip selected the request still has to carry it, or a File field lists
+                    // Pages and every other content type instead of just files. A narrower
+                    // selection wins over it.
+                    const baseTypes = currentFilters?.baseType?.length
+                        ? currentFilters.baseType
+                        : pickerConfig?.allowedBaseTypes;
+
                     // Read UNTRACKED: the response writes the next page's cursor back into `pages`,
                     // so tracking it here would recompute the request, refire the search, and loop.
                     const cursor = untracked(
@@ -90,7 +98,7 @@ export function withAssetBrowse() {
                         contentTypes: currentFilters?.contentType,
                         // Base-type NAMES. Content Drive maps these to numbers so they survive the
                         // URL; the picker has no URL, so it skips that round-trip entirely.
-                        baseTypes: currentFilters?.baseType,
+                        baseTypes: baseTypes?.length ? baseTypes : undefined,
                         // Silent restriction from the host — never part of `filters`, so no chip.
                         mimeTypes: pickerConfig?.mimeTypes?.length
                             ? pickerConfig.mimeTypes

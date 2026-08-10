@@ -69,17 +69,25 @@ const SITES_RESPONSE = {
 
 const EMPTY_FOLDERS = { folders: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } };
 
-/** What AssetPicker 6/7 will hand the store for a File field: locale only, no type restriction. */
+/** The only two base types that carry an asset — the boundary both entry points impose. */
+const ASSET_BASE_TYPES = [
+    DotCMSBaseTypesContentTypes.DOTASSET,
+    DotCMSBaseTypesContentTypes.FILEASSET
+];
+
+/** What the File field hands the store: a type boundary and a locale, nothing pre-selected. */
 const FILE_FIELD_CONFIG: DotAssetPickerConfig = {
     site: SITE,
-    languageId: '1'
+    languageId: '1',
+    allowedBaseTypes: ASSET_BASE_TYPES
 };
 
-/** What AssetPicker 6/7 will hand the store for an Image field: locale + base types + silent mime. */
+/** What the Image field hands the store: the same boundary, pre-selected, plus a silent mime. */
 const IMAGE_FIELD_CONFIG: DotAssetPickerConfig = {
     site: SITE,
     languageId: '1',
-    baseTypes: [DotCMSBaseTypesContentTypes.DOTASSET, DotCMSBaseTypesContentTypes.FILEASSET],
+    allowedBaseTypes: ASSET_BASE_TYPES,
+    baseTypes: ASSET_BASE_TYPES,
     mimeTypes: ['image/*']
 };
 
@@ -130,11 +138,15 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().contentTypes).toBeUndefined();
         });
 
-        it('should not restrict base types', () => {
-            expect(store.$request().baseTypes).toBeUndefined();
+        it('should restrict to the asset base types even with nothing pre-selected', () => {
+            // Regression: a File field starts with no base-type chip, and "no chip" used to mean
+            // "no restriction" — so the list offered Pages and every other content type. A File
+            // field holds files (images, PDFs, videos), never content.
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
         });
 
         it('should not send a mimetype restriction', () => {
+            // Any kind of file is fair game here — that is what separates it from an Image field.
             expect(store.$request().mimeTypes).toBeUndefined();
         });
 
@@ -146,6 +158,41 @@ describe('DotAssetPickerStore', () => {
             store.initPicker({ ...FILE_FIELD_CONFIG, path: '/images/' });
 
             expect(store.$request().assetPath).toBe('//dotcms.com/images/');
+        });
+    });
+
+    describe('entry-point boundary', () => {
+        // `allowedBaseTypes` is what the field can EVER hold; `baseTypes` is only what starts
+        // selected. Conflating them is what let a File field list Pages.
+        it('should keep restricting after the editor clears every filter', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.clearFilters();
+
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should keep restricting after the editor removes the base-type filter', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.removeFilter('baseType');
+
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should let a narrower selection win over the boundary', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.patchFilters({ baseType: [DotCMSBaseTypesContentTypes.DOTASSET] });
+
+            expect(store.$request().baseTypes).toEqual([DotCMSBaseTypesContentTypes.DOTASSET]);
+        });
+
+        it('should stay unrestricted when the host configures no boundary', () => {
+            // Content Drive-style usage: the picker itself imposes nothing.
+            store.initPicker({ site: SITE });
+
+            expect(store.$request().baseTypes).toBeUndefined();
         });
     });
 

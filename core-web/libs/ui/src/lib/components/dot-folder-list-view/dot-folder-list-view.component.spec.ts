@@ -1448,6 +1448,63 @@ describe('DotFolderListViewComponent', () => {
 
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
         });
+
+        it('should swallow the title click so the row is not selected underneath', () => {
+            // Content Drive's title is an "open" affordance, distinct from selecting the row.
+            const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+            const stopPropagation = jest.spyOn(event, 'stopPropagation');
+
+            spectator.component.onTitleClick(event, mockItems[0]);
+
+            expect(stopPropagation).toHaveBeenCalled();
+        });
+    });
+
+    describe('titleOpensItem', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        it('should default to opening the item, leaving Content Drive untouched', () => {
+            expect(spectator.component.$titleOpensItem()).toBe(true);
+        });
+
+        it('should not open the item when turned off', () => {
+            spectator.setInput('titleOpensItem', false);
+            spectator.detectChanges();
+
+            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            spectator.click(spectator.query(byTestId('item-title-text')));
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should let the title click reach the row so the whole row selects', () => {
+            // The regression: the title swallowed the click, so only the cell padding selected the
+            // row and the radio fell out of step with the picker's stored selection.
+            spectator.setInput('titleOpensItem', false);
+            spectator.detectChanges();
+
+            const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+            const stopPropagation = jest.spyOn(event, 'stopPropagation');
+
+            spectator.component.onTitleClick(event, mockItems[0]);
+
+            expect(stopPropagation).not.toHaveBeenCalled();
+        });
+
+        it('should select the row when its title is clicked', () => {
+            spectator.setInput('titleOpensItem', false);
+            spectator.setInput('selectionMode', 'single');
+            spectator.detectChanges();
+
+            const selectionSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            spectator.click(spectator.query(byTestId('item-title-text')));
+
+            expect(selectionSpy).toHaveBeenCalledWith([mockItems[0]]);
+        });
     });
 
     describe('Scroll Events', () => {

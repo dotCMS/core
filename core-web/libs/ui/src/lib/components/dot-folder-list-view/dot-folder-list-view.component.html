@@ -85,7 +85,7 @@
                     data-testId="item-title">
                     <div
                         class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
-                        (click)="onDoubleClick(item); $event.stopPropagation()">
+                        (click)="onTitleClick($event, item)">
                         @if (!isFolder) {
                             <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                  resolves through titleImage / the default /dA path. Passing the
@@ -106,7 +106,7 @@
                     <span
                         data-testId="item-title-text"
                         class="block cursor-pointer truncate"
-                        (click)="onDoubleClick(item); $event.stopPropagation()">
+                        (click)="onTitleClick($event, item)">
                         {{ isFolder ? item.name : item.title }}
                     </span>
                     <span data-testId="lock-hint" class="text-gray-700">
