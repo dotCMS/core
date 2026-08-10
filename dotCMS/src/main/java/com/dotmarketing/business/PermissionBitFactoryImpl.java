@@ -21,6 +21,7 @@ import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.beans.PermissionType;
@@ -1840,20 +1841,37 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
    */
   @VisibleForTesting
   String resolvePermissionType(final Permissionable permissionable) {
+    return resolvePermissionKey(permissionable).canonicalName();
+  }
 
-    String type = inheritablePermissionType(permissionable);
+  /**
+   * The same resolution as {@link #resolvePermissionType(Permissionable)}, typed.
+   *
+   * <p>Returns a {@link PermissionKey} rather than a {@code String}, so a caller can tell a
+   * catalogued type apart from one the content declared at runtime — see {@link PermissionKey} for
+   * why that distinction is worth a type. The two existing call sites still want the string, and
+   * get it from the bridge above; the point is that they now <em>choose</em> to discard the
+   * distinction instead of never having had it.</p>
+   *
+   * @param permissionable the asset whose inheritance key is being resolved
+   * @return the key, in one of its two shapes
+   */
+  @VisibleForTesting
+  PermissionKey resolvePermissionKey(final Permissionable permissionable) {
+
+    PermissionKey key = inheritablePermissionKey(permissionable);
 
     if (permissionable instanceof Template template
         && UtilMethods.isSet(template.isDrawed())
         && template.isDrawed()) {
-      type = TemplateLayout.class.getCanonicalName();
+      key = new PermissionKey.KnownType(PermissionableType.TEMPLATE_LAYOUTS);
     }
 
     if (permissionable instanceof NavResult navResult) {
-      type = navResult.getEnclosingPermissionClassName();
+      key = new PermissionKey.DeclaredByAsset(navResult.getEnclosingPermissionClassName());
     }
 
-    return type;
+    return key;
   }
 
   /**
@@ -1872,26 +1890,31 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
    * without the null check its neighbour performed, so it could throw while computing a value that
    * was already correct.</p>
    *
+   * <p>The {@code default} arm is the reason {@link Permissionable} could not simply be sealed and
+   * this switch made exhaustive: it is not a fallback, it is a branch of the domain — "whatever the
+   * asset declares". Sealing the <em>output</em> and sealing the <em>input</em> are independent
+   * decisions, and only the first one is available here.</p>
+   *
    * @param permissionable the asset whose inheritance key is being resolved
-   * @return the fully qualified permission type name, defaulting to the asset's own declared type
+   * @return the key, defaulting to the asset's own declared type
    */
-  private String inheritablePermissionType(final Permissionable permissionable) {
+  private PermissionKey inheritablePermissionKey(final Permissionable permissionable) {
 
     return switch (permissionable) {
 
-      case Host _ -> Host.class.getCanonicalName();
+      case Host _ -> PermissionKey.HOST;
 
       case Contentlet contentlet when isOfContentType(contentlet, Host.HOST_VELOCITY_VAR_NAME)
-          -> Host.class.getCanonicalName();
+          -> PermissionKey.HOST;
 
-      case IHTMLPage _ -> IHTMLPage.class.getCanonicalName();
+      case IHTMLPage _ -> new PermissionKey.KnownType(PermissionableType.HTMLPAGES);
 
       case Contentlet contentlet when isOfBaseType(contentlet, BaseContentType.HTMLPAGE)
-          -> IHTMLPage.class.getCanonicalName();
+          -> new PermissionKey.KnownType(PermissionableType.HTMLPAGES);
 
-      case Identifier identifier -> permissionTypeOfBackingInode(identifier);
+      case Identifier identifier -> permissionKeyOfBackingInode(identifier);
 
-      default -> permissionable.getPermissionType();
+      default -> new PermissionKey.DeclaredByAsset(permissionable.getPermissionType());
     };
   }
 
@@ -1908,11 +1931,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
    * {@code Permissionable} interface does not change that. {@link IHTMLPage} is kept as a defensive
    * branch instead: it is an interface, so a future {@code Inode} subclass could implement it.</p>
    *
+   * <p>Every arm that resolves here comes out of the catalogue — this is the one place in the
+   * resolver where that is true, and typing the result is what makes it visible.</p>
+   *
    * @param identifier the identifier that was passed in by mistake
-   * @return the backing inode's permission type, or the identifier's own when the inode cannot be
+   * @return the backing inode's key, or the identifier's own declared type when the inode cannot be
    *         resolved or is of no recognised kind
    */
-  private String permissionTypeOfBackingInode(final Identifier identifier) {
+  private PermissionKey permissionKeyOfBackingInode(final Identifier identifier) {
 
     final Inode inode = InodeFactory.getInode(identifier.getPermissionId(), Inode.class);
 
@@ -1924,17 +1950,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       // No Inode implements IHTMLPage today — the only implementation, HTMLPageAsset, is a
       // Contentlet — so this branch is unreachable. It is kept because IHTMLPage is an interface
       // and a future Inode subclass could implement it, which is also why the compiler allows it.
-      case IHTMLPage _ -> IHTMLPage.class.getCanonicalName();
+      case IHTMLPage _ -> new PermissionKey.KnownType(PermissionableType.HTMLPAGES);
 
-      case Container _ -> Container.class.getCanonicalName();
+      case Container _ -> new PermissionKey.KnownType(PermissionableType.CONTAINERS);
 
-      case Link _ -> Link.class.getCanonicalName();
+      case Link _ -> new PermissionKey.KnownType(PermissionableType.LINKS);
 
-      case Template _ -> Template.class.getCanonicalName();
+      case Template _ -> new PermissionKey.KnownType(PermissionableType.TEMPLATES);
 
-      case Structure _ -> Structure.class.getCanonicalName();
+      case Structure _ -> new PermissionKey.KnownType(PermissionableType.STRUCTURES);
 
-      case null, default -> identifier.getPermissionType();
+      case null, default -> new PermissionKey.DeclaredByAsset(identifier.getPermissionType());
     };
   }
 
