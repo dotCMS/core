@@ -8,8 +8,15 @@ what these are for.
 |---|---|---|
 | `demo-home.html` | `/index` on the demo starter site | 54KB, 630 attribute values, an 11KB inline `<style>` block, 93 comments, and a `<select>` whose `<option>` whitespace is not rendered |
 | `demo-members.html` | `/members/index` on the demo starter site | Inline `<script>` whose correctness depends on automatic semicolon insertion, so it catches any attempt to minify script bodies |
+| `icons-and-media.html` | **built, not captured** | 45 inline `<svg>` icons plus `iframe`, `canvas`, `video`, `audio`, `noscript` and `template`. None of these appear in either demo page, so real markup could not catch whitespace bugs around them |
 
-Both are output of the public dotCMS demo starter, captured with `FEATURE_FLAG_MINIFY_HTML` off.
+The first two are output of the public dotCMS demo starter, captured with
+`FEATURE_FLAG_MINIFY_HTML` off.
+
+`icons-and-media.html` exists because the captures had a blind spot rather than a missing feature:
+two content bugs shipped to review that no page here contained an example of. It is written to look
+like a real template, with the `Home <svg>…</svg>` pattern that a modern icon set produces, and
+`test_minify_keeps_word_to_element_separations_in_real_pages` counts 41 of those separations in it.
 
 ## Adding or refreshing a page
 

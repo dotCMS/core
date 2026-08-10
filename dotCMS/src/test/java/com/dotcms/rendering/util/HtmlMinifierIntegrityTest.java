@@ -70,8 +70,15 @@ public class HtmlMinifierIntegrityTest {
      * combinations nobody writes by hand: the home page carries an 11KB inline {@code <style>}
      * block and 630 attribute values, and the member page an inline script that relies on automatic
      * semicolon insertion.
+     * <p>
+     * {@code icons-and-media.html} is the one page here that was built rather than captured. Neither
+     * demo page contains an {@code <svg>}, {@code <iframe>}, {@code <canvas>}, {@code <video>} or
+     * {@code <audio>}, so real markup could not have caught the whitespace bugs around those
+     * elements. It also carries an ideographic space, JSON in single-quoted attributes and a
+     * {@code <template>}.
      */
-    private static final String[] CORPUS = {"demo-home.html", "demo-members.html"};
+    private static final String[] CORPUS =
+            {"demo-home.html", "demo-members.html", "icons-and-media.html"};
 
     /**
      * Markup that targets a specific way minification can corrupt a page. Each entry is a case that
@@ -200,6 +207,25 @@ public class HtmlMinifierIntegrityTest {
             "form", "h1", "h2", "header", "hr", "li", "main", "nav", "ol", "p", "section", "table",
             "tbody", "td", "tfoot", "th", "thead", "tr", "ul"};
 
+    private static final String ELEMENT_BARE = "<%1$s></%1$s>";
+    private static final String DOCUMENT_BARE = "alpha %s omega";
+
+    /**
+     * The layouts each tag is checked in, as {@code {description, element format, document format}}.
+     * One empty element between two bare words is the easy case; these add the variations that a real
+     * template actually produces, so a fix that only works in the simplest position is caught.
+     */
+    private static final String[][] NEIGHBOUR_SHAPES = {
+            {"bare", ELEMENT_BARE, DOCUMENT_BARE},
+            {"with attributes", "<%1$s class=\"c\" data-x=\"1\"></%1$s>", DOCUMENT_BARE},
+            {"with children", "<%1$s><i>x</i></%1$s>", DOCUMENT_BARE},
+            {"inside a block element", ELEMENT_BARE, "<p>alpha %s omega</p>"},
+            {"nested two levels deep", ELEMENT_BARE, "<div><section>alpha %s omega</section></div>"},
+            {"indented across lines", ELEMENT_BARE, "<div>\n    alpha %s omega\n</div>"},
+            {"followed by more markup", ELEMENT_BARE, "<p>alpha %s omega</p>\n<p>tail</p>"},
+            {"beside inline markup", ELEMENT_BARE, "<p><b>alpha</b> %s <b>omega</b></p>"},
+    };
+
     @BeforeClass
     public static void prepare() {
         Config.initializeConfig();
@@ -236,6 +262,39 @@ public class HtmlMinifierIntegrityTest {
     }
 
     /**
+     * Given: real pages, and every place in them where a word is separated from a
+     * whitespace-significant element by whitespace, {@code Home <svg>} being the common shape.
+     * Expected: every one of those separations survives.
+     * <p>
+     * The adjacency test above proves the property on constructed markup;
+     * {@link #integrityFailures(String, String)} cannot prove it on a real page at all, because the
+     * elements in question render no text of their own. This closes that: it counts the separations
+     * in the input and requires the output to still have them, which needs no CSS model and no
+     * judgement about which whitespace was removable.
+     */
+    @Test
+    public void test_minify_keeps_word_to_element_separations_in_real_pages() throws IOException {
+        final List<String> failures = new ArrayList<>();
+        for (final String name : CORPUS) {
+            final String original = readCorpus(name);
+            final String minified = HtmlMinifier.minify(original);
+            for (final String tag : WHITESPACE_SIGNIFICANT_NEIGHBOURS) {
+                // A letter or digit, whitespace, then the element: a word visibly separated from it.
+                final Pattern separated = Pattern.compile("[\\p{L}\\p{N}]\\s+<" + tag + "\\b",
+                        Pattern.CASE_INSENSITIVE);
+                final long before = separated.matcher(original).results().count();
+                final long after = separated.matcher(minified).results().count();
+                failures.addAll(after < before
+                        ? List.of(String.format("%s: %d of %d <%s> elements lost the space "
+                                + "separating them from the preceding word", name, before - after,
+                                before, tag))
+                        : List.of());
+            }
+        }
+        assertNoFailures(CORPUS.length + " real pages", failures);
+    }
+
+    /**
      * Given: real rendered pages.
      * Expected: minification actually removes a worthwhile amount. Guards the opposite failure from
      * the rest of this class: an over-cautious change that keeps integrity by doing nothing.
@@ -266,14 +325,16 @@ public class HtmlMinifierIntegrityTest {
     public void test_minify_keeps_whitespace_beside_every_significant_neighbour() {
         final List<String> failures = new ArrayList<>();
         for (final String tag : WHITESPACE_SIGNIFICANT_NEIGHBOURS) {
-            final String separator = separatorAround(tag);
-            failures.addAll(separator.isEmpty()
-                    ? List.of(String.format("<%s>: the space between the words was removed, so they "
-                            + "render joined", tag))
-                    : List.of());
+            for (final String[] shape : NEIGHBOUR_SHAPES) {
+                final String separator = separatorAround(tag, shape[1], shape[2]);
+                failures.addAll(separator.isEmpty()
+                        ? List.of(String.format("<%s> (%s): the space between the words was removed, "
+                                + "so they render joined", tag, shape[0]))
+                        : List.of());
+            }
         }
-        assertNoFailures(WHITESPACE_SIGNIFICANT_NEIGHBOURS.length + " whitespace-significant tags",
-                failures);
+        assertNoFailures(WHITESPACE_SIGNIFICANT_NEIGHBOURS.length + " tags x "
+                + NEIGHBOUR_SHAPES.length + " shapes", failures);
     }
 
     /**
@@ -286,7 +347,7 @@ public class HtmlMinifierIntegrityTest {
     public void test_minify_removes_whitespace_beside_block_neighbours() {
         final List<String> failures = new ArrayList<>();
         for (final String tag : BLOCK_NEIGHBOURS) {
-            final String separator = separatorAround(tag);
+            final String separator = separatorAround(tag, ELEMENT_BARE, DOCUMENT_BARE);
             failures.addAll(separator.isEmpty() ? List.of()
                     : List.of(String.format("<%s>: expected the whitespace to be removed, kept %s",
                             tag, abbreviate(separator))));
@@ -295,21 +356,37 @@ public class HtmlMinifierIntegrityTest {
     }
 
     /**
-     * Minifies {@code alpha <tag></tag> omega} and reports what is left separating the two words once
-     * the element in the middle is taken back out. Plain words rather than elements on either side,
-     * so nothing depends on the wrapper's own tag being handled correctly.
+     * Minifies a document holding {@code alpha <tag>...</tag> omega} and reports what is left
+     * separating the two words once the element in the middle is taken back out. Plain words rather
+     * than elements on either side, so nothing depends on the wrapper's own tag being handled
+     * correctly.
      *
+     * @param tag the tag under test
+     * @param elementFormat how to build the element, {@code %1$s} being the tag name
+     * @param documentFormat how to build the surrounding document, {@code %s} being the element
      * @return the surviving separator, empty when the words ended up joined
      */
-    private static String separatorAround(final String tag) {
+    private static String separatorAround(final String tag, final String elementFormat,
+            final String documentFormat) {
 
-        final String element = "<" + tag + "></" + tag + ">";
-        final String minified = HtmlMinifier.minify("alpha " + element + " omega");
-        final Matcher matcher = Pattern.compile("^alpha(.*)omega$", Pattern.DOTALL)
-                .matcher(minified);
+        final String element = String.format(elementFormat, tag);
+        final String minified = HtmlMinifier.minify(String.format(documentFormat, element));
+
+        // Non-greedy and unanchored, so the same expression works whether or not the words sit
+        // inside wrapping markup.
+        final Matcher matcher = Pattern.compile("alpha(.*?)omega", Pattern.DOTALL).matcher(minified);
         assertTrue(tag + ": unexpected shape, the words themselves were altered: " + minified,
-                matcher.matches());
-        return matcher.group(1).replace(element, "");
+                matcher.find());
+
+        final String between = matcher.group(1);
+        assertTrue(tag + ": the element under test was rewritten, so this shape proves nothing: "
+                + minified, between.contains(element));
+
+        // Tags have to come out as well as the element. Markup between the words contributes no
+        // spacing of its own, so leaving it in would make the separator look non-empty and the check
+        // would pass whatever the minifier did -- which is exactly what the
+        // "beside inline markup" shape did until this line existed.
+        return between.replace(element, "").replaceAll("<[^>]*>", "");
     }
 
     /**
