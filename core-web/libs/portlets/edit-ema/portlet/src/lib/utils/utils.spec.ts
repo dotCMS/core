@@ -1690,5 +1690,18 @@ describe('utils functions', () => {
         it('should return false for a nullish pathname', () => {
             expect(isAssetPath(undefined as unknown as string)).toBe(false);
         });
+
+        // These pathnames are pages, and the heuristic knowingly reads them as file
+        // assets: a dot plus a short alpha token is indistinguishable from a real
+        // extension without asking the backend. Pinned deliberately, because the
+        // alternative (an extension allowlist) would send uncommon file types to the
+        // Page API instead, which is the failure this whole guard exists to prevent.
+        // Flipping any of these to `false` means that trade was changed, not fixed.
+        it.each(['/store/product.detail', '/pages/about.us', '/docs/getting.started'])(
+            'should knowingly misread the page %s as a file asset',
+            (pathname) => {
+                expect(isAssetPath(pathname)).toBe(true);
+            }
+        );
     });
 });
