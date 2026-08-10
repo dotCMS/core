@@ -18,10 +18,14 @@ export class DotBinaryTextFieldComponent {
 
     /**
      * Value specifies the value of the <input> element.
-     * Holds a `File` when one is pasted from the clipboard, a string when a URL is pasted.
+     *
+     * TODO(#35943): deliberately left untyped. At runtime this holds a string (pasted URL) but
+     * `handleFilePaste` also assigns a `File`, while the template feeds it to an `<input value>`
+     * that accepts neither. Annotating it surfaces that contradiction, which needs the render
+     * path fixed — that belongs to the strict-mode work, not here.
      */
     @Prop({ mutable: true, reflect: true })
-    value: string | File | null = null;
+    value = null;
 
     /** (optional) Hint text that suggest a clue of the field */
     @Prop({ reflect: true })

@@ -290,10 +290,10 @@ export namespace Components {
          */
         "required": boolean;
         /**
-          * Value specifies the value of the <input> element. Holds a `File` when one is pasted from the clipboard, a string when a URL is pasted.
+          * Value specifies the value of the <input> element.  TODO(#35943): deliberately left untyped. At runtime this holds a string (pasted URL) but `handleFilePaste` also assigns a `File`, while the template feeds it to an `<input value>` that accepts neither. Annotating it surfaces that contradiction, which needs the render path fixed — that belongs to the strict-mode work, not here.
           * @default null
          */
-        "value": string | File | null;
+        "value": any;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -2606,10 +2606,10 @@ declare namespace LocalJSX {
          */
         "required"?: boolean;
         /**
-          * Value specifies the value of the <input> element. Holds a `File` when one is pasted from the clipboard, a string when a URL is pasted.
+          * Value specifies the value of the <input> element.  TODO(#35943): deliberately left untyped. At runtime this holds a string (pasted URL) but `handleFilePaste` also assigns a `File`, while the template feeds it to an `<input value>` that accepts neither. Annotating it surfaces that contradiction, which needs the render path fixed — that belongs to the strict-mode work, not here.
           * @default null
          */
-        "value"?: string | File | null;
+        "value"?: any;
     }
     /**
      * Represent a dotcms text field for the binary file element.
