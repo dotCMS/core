@@ -3,7 +3,7 @@ import { MockComponent, MockPipe } from 'ng-mocks';
 import { Subject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
-import { DrawerModule } from 'primeng/drawer';
+import { DrawerClasses, DrawerModule } from 'primeng/drawer';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -211,10 +211,14 @@ describe('DotEditContentSidePanelComponent', () => {
      * mask imperatively during the drawer's show animation, which jsdom does not run — so the test
      * stands in a real element carrying the class the handler matches on, and dispatches a bubbling
      * click from it just as the browser would.
+     *
+     * The class comes from PrimeNG's own `DrawerClasses`, the same source the handler reads, so this
+     * stand-in cannot drift from the real mask. What it covers is our logic — target filtering, the
+     * `isTop` guard, routing through the unsaved-changes guard — not PrimeNG's class naming.
      */
     const clickOutside = (): void => {
         const mask = document.createElement('div');
-        mask.classList.add('p-drawer-mask');
+        mask.classList.add(DrawerClasses.mask);
         document.body.appendChild(mask);
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         mask.remove();

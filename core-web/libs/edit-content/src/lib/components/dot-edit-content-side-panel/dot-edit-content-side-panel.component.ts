@@ -16,7 +16,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
-import { DrawerModule } from 'primeng/drawer';
+// `DrawerClasses` carries PrimeNG's own class names for the drawer's parts. The click-outside
+// handler reads `DrawerClasses.mask` from it rather than hardcoding 'p-drawer-mask': a PrimeNG bump
+// that renames the class updates the enum, and one that drops the member breaks the build — either
+// way it can't silently disable click-to-close (see {@link DotEditContentSidePanelComponent.onMaskClick}).
+import { DrawerClasses, DrawerModule } from 'primeng/drawer';
 import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -35,14 +39,6 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 
 /** localStorage key persisting the user's expanded (full-width) preference for the side panel. */
 const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
-
-/**
- * Class PrimeNG puts on the drawer's modal mask — the overlay covering everything outside the
- * panel. The mask is built imperatively and appended to `document.body` by the drawer, so no
- * template binding can reach it; the click-outside handler matches on this class instead (see
- * {@link DotEditContentSidePanelComponent.onMaskClick}).
- */
-const DRAWER_MASK_CLASS = 'p-drawer-mask';
 
 /**
  * Reads the persisted expanded preference. Best-effort: returns `false` when storage is
@@ -196,14 +192,15 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * edits lost silently) and desyncs the one-way `[visible]` binding. Matching the mask ourselves
      * keeps the panel on screen until the guard says it is safe to close.
      *
-     * The listener is document-wide, so it filters to the mask element itself — a click inside the
-     * panel, or a drag that starts inside and ends on the mask, resolves to a different target and
-     * is ignored. As with ESC, only the frontmost stacked panel reacts.
+     * The listener is document-wide (the mask is built imperatively into `document.body`, so no
+     * template binding can reach it), which is why it filters to the mask element itself — a click
+     * inside the panel, or a drag that starts inside and ends on the mask, resolves to a different
+     * target and is ignored. As with ESC, only the frontmost stacked panel reacts.
      */
     protected onMaskClick(event: MouseEvent): void {
         const target = event.target as HTMLElement | null;
 
-        if (!target?.classList?.contains(DRAWER_MASK_CLASS)) {
+        if (!target?.classList?.contains(DrawerClasses.mask)) {
             return;
         }
 
