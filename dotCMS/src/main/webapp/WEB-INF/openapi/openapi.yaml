@@ -18511,6 +18511,8 @@ paths:
         Can use a [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene) in its body to select all resulting content items.
 
         Returns a list of resultant contentlet maps, each with an additional  `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **`LOCK` and `UNLOCK` are not supported by this endpoint** and are rejected with a `400`. Locking is per-user state on the contentlet's version info rather than a content change, so there is nothing for a merge to apply — accepting the call would lock the contentlet and silently discard the submitted field values. Use `POST` or `PUT /v1/workflow/actions/default/fire/{systemAction}` for those two.
       operationId: patchFireMergeSystemAction
       parameters:
       - description: Inode of the target content.

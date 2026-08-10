@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.workflow;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -294,6 +295,41 @@ public class WorkflowResourceLockUnlockIntegrationTest {
 
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
         assertEquals(adminUser().getUserId(), lockedBy(contentlet));
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireMergeActionDefault}
+     * <p>
+     * Given scenario: The field-merge variant of the default-action endpoint is asked to fire
+     * {@code LOCK} and {@code UNLOCK}.
+     * <p>
+     * Expected result: Both are rejected. The endpoint's contract is "assign these field values,
+     * then run the action", and the lock commands deliberately ignore {@code needSave} — a lock is
+     * per-user state on the version info, with nothing to check in. Accepting the call would lock
+     * the contentlet and drop the submitted field values without a word, so the endpoint refuses
+     * outright rather than half-honouring the request. This also keeps the behaviour and the
+     * published {@code allowableValues} for this path in agreement.
+     * <p>
+     * Asserted as a thrown {@link IllegalArgumentException} rather than a 400 because the resource
+     * method is called directly here: the {@code IllegalArgumentExceptionMapper} that turns it into
+     * a Bad Request only runs inside the JAX-RS runtime.
+     */
+    @Test
+    public void test_fireMergeAction_rejectsLockAndUnlock() throws Exception {
+        final Contentlet contentlet = newContentlet();
+
+        for (final SystemAction unsupported : List.of(SystemAction.LOCK, SystemAction.UNLOCK)) {
+            final FireActionForm form = new FireActionForm(
+                    new FireActionForm.Builder().contentlet(Map.of("inode", contentlet.getInode())));
+
+            assertThrows("Expected " + unsupported + " to be rejected by the merge endpoint",
+                    IllegalArgumentException.class,
+                    () -> workflowResource.fireMergeActionDefault(adminRequest(),
+                            new EmptyHttpResponse(), contentlet.getInode(), null,
+                            String.valueOf(contentlet.getLanguageId()), 0, unsupported, form));
+        }
+
+        assertNull("A rejected merge must not have locked anything", lockedBy(contentlet));
     }
 
     // ------------------------------------------------------------------------

@@ -3873,7 +3873,12 @@ public class WorkflowResource {
                     "body to select all resulting content items.\n\n" +
                     "Returns a list of resultant contentlet maps, each with an additional  " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**`LOCK` and `UNLOCK` are not supported by this endpoint** and are rejected with a " +
+                    "`400`. Locking is per-user state on the contentlet's version info rather than a " +
+                    "content change, so there is nothing for a merge to apply — accepting the call would " +
+                    "lock the contentlet and silently discard the submitted field values. Use " +
+                    "`POST` or `PUT /v1/workflow/actions/default/fire/{systemAction}` for those two.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
@@ -4042,6 +4047,19 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
+
+        // LOCK/UNLOCK are fireable everywhere else, but not here. This endpoint's contract is
+        // "assign these field values, then run the action", and the lock commands deliberately
+        // ignore `needSave` — a lock is per-user state on the version info, so there is nothing to
+        // check in. Accepting the call would lock the contentlet and silently drop the submitted
+        // field values, so it is refused rather than half-honoured. Rejecting here also keeps the
+        // behaviour in step with this path's published `allowableValues`, which omit both.
+        if (SystemAction.LOCK == systemAction || SystemAction.UNLOCK == systemAction) {
+
+            throw new IllegalArgumentException("The system action: " + systemAction +
+                    " is not supported by the merge endpoint; it carries no field changes to apply. " +
+                    "Use POST/PUT /v1/workflow/actions/default/fire/" + systemAction + " instead.");
+        }
 
         // host/folder in the contentlet body are not applied by this endpoint (they are system
         // fields, not content-type fields). We warn rather than reject so long-standing callers are

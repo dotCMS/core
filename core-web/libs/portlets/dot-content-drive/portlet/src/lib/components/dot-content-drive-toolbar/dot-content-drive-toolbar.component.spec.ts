@@ -470,6 +470,63 @@ describe('DotContentDriveToolbarComponent', () => {
                 header: 'content-drive.action-center.header'
             });
         });
+
+        it('should be disabled while an action is running', async () => {
+            // Reopening mid-run gives a dialog with every row greyed out that then closes itself
+            // when the run settles. Refusing to open it is the honest version of that state.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should explain why it is disabled while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
+        it('should carry no tooltip when nothing is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe('');
+        });
+
+        it('should not open the dialog while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            // Guards the handler too: a disabled attribute alone would leave the store reachable.
+            spectator.component['onOpenActionCenter']();
+
+            expect(store.setDialog).not.toHaveBeenCalled();
+        });
+
+        it('should become available again once the run settles', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(false);
+        });
     });
 
     describe('running-action indicator', () => {
@@ -491,6 +548,37 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.component.$actionExecutionLabel()).toBe(
                 'content-drive.action-center.applying'
             );
+        });
+
+        it('should not render markup carried by the action name', () => {
+            // Workflow action names come from the backend verbatim (`$selectedAction()?.name`), and
+            // the label is placed in the DOM as HTML so the message's own `<b>` renders. A name
+            // carrying markup must not become live DOM — an event-handler attribute least of all.
+            //
+            // The shared mock returns the bare key, which would make this pass without rendering
+            // anything; the real message has to be in play for the assertion to mean something.
+            const messageService = spectator.inject(DotMessageService);
+
+            jest.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
+                key === 'content-drive.action-center.applying'
+                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                    : key
+            );
+
+            actionExecutionSignal.set({
+                actionName: '<img src=x onerror="window.__xss = true">',
+                total: 3
+            });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            // Asserted structurally rather than by searching the markup for "onerror": once the name
+            // is escaped it renders as visible text that legitimately still contains that word.
+            expect(indicator?.querySelector('img')).toBeNull();
+            expect(indicator?.querySelector('[onerror]')).toBeNull();
+            // …and the name is still shown to the user, just as text.
+            expect(indicator?.textContent).toContain('<img src=x');
         });
 
         it('should disappear again once the run settles', () => {

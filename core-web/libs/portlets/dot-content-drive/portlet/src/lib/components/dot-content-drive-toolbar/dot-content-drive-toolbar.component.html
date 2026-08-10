@@ -41,10 +41,14 @@
                         data-testid="workflow-actions" />
 
                     @if ($displayActionCenter()) {
+                        <!-- Refused outright during a run: the dialog would open with every row
+                             disabled and then close itself when the run settled. -->
                         <p-button
                             animate.enter="toolbar-enter"
                             animate.leave="toolbar-leave"
                             [label]="'content-drive.action-center.header' | dm"
+                            [disabled]="!!$actionExecution()"
+                            [pTooltip]="$actionCenterTooltip() | dm"
                             data-testid="action-center-button"
                             (click)="onOpenActionCenter()" />
                     }
