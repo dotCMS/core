@@ -15,8 +15,12 @@ interface SearchBarProps {
     setSearchQuery: (value: string) => void;
 }
 
-export function BlogListingPage(pageResponse: Parameters<typeof useEditableDotCMSPage>[0]) {
-    const { content = {} } = useEditableDotCMSPage(pageResponse);
+interface BlogListingPageProps {
+    pageContent: Parameters<typeof useEditableDotCMSPage>[0];
+}
+
+export function BlogListingPage({ pageContent }: BlogListingPageProps) {
+    const { content = {} } = useEditableDotCMSPage(pageContent) ?? {};
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Blog[] | null>(null);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);

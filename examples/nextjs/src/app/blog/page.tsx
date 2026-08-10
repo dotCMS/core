@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isRequestFromUVE } from "@dotcms/uve";
 import { redirect } from "next/navigation";
 
 import NotFound from "@/app/not-found";
@@ -17,10 +18,21 @@ export async function generateMetadata(): Promise<Metadata> {
     return { title: `${getPageTitle(pageResponse, "Not Found")} - Blog` };
 }
 
-export default async function Home() {
+interface BlogPageProps {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function Home({ searchParams }: BlogPageProps) {
+    const sp = await searchParams;
     const pageResponse = await getDotCMSPage(`/blog`);
+    const insideUVE = isRequestFromUVE(sp);
 
     if (isPageError(pageResponse)) {
+        if (insideUVE) {
+            const { graphql } = pageResponse;
+            return <BlogListingPage pageContent={graphql ? { graphql } : undefined} />;
+        }
+
         return <ErrorPage error={{ status: getErrorStatus(pageResponse.error) }} />;
     }
 
@@ -31,9 +43,9 @@ export default async function Home() {
         redirect(vanityUrl.forwardTo);
     }
 
-    if (!pageResponse.pageAsset) {
+    if (!pageResponse.pageAsset && !insideUVE) {
         return <NotFound />;
     }
 
-    return <BlogListingPage {...pageResponse} />;
+    return <BlogListingPage pageContent={pageResponse} />;
 }

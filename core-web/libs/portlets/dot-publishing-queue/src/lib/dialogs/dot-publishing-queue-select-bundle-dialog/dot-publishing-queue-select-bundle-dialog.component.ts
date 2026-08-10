@@ -404,9 +404,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 'publishing-queue.asset-list.remove-confirm.message',
                 asset.title || asset.asset
             ),
-            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.delete'),
             rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
@@ -434,12 +433,14 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         }
         this.$validationWarningKey.set(null);
         this.#confirmationService.confirm({
-            header: this.#dotMessageService.get('publishing-queue.delete.confirm.header'),
+            header: this.#dotMessageService.get(
+                'publishing-queue.select-bundle.remove.confirm.header'
+            ),
             message: this.#dotMessageService.get(
                 'publishing-queue.select-bundle.remove.confirm.message',
                 String(ids.length)
             ),
-            acceptLabel: this.#dotMessageService.get('publishing-queue.history.kebab.delete'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
             rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',

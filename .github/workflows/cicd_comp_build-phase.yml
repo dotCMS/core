@@ -58,6 +58,20 @@ on:
         required: false
         type: string
         default: ''
+    secrets:
+      # Remote build cache (S3). Absent secrets simply disable the cache, so any
+      # caller that does not pass these -- every release workflow -- builds from
+      # scratch exactly as it does today.
+      # Untrusted refs must be given the READ-ONLY key pair; see the
+      # build-cache-remote action for why.
+      build-cache-access-key:
+        required: false
+      build-cache-secret-key:
+        required: false
+      build-cache-endpoint:
+        required: false
+      build-cache-bucket:
+        required: false
 
 jobs:
   # Initial JDK Build
@@ -105,11 +119,30 @@ jobs:
             echo "VALIDATE_PROFILE=" >> "$GITHUB_ENV"
           fi
 
+      # Wire the Maven build cache to the shared S3 bucket. Only the merge queue
+      # and trunk may write; every other ref reads. Exports BUILD_CACHE_ARGS.
+      #
+      # Two ways to turn it off without editing this file:
+      #   - repo/org variable BUILD_CACHE_DISABLED=true   (global kill switch)
+      #   - PR label "CI : No Build Cache"                (one pull request)
+      - name: Set up remote build cache
+        id: build-cache
+        uses: ./.github/actions/core-cicd/build-cache-remote
+        with:
+          enabled: "${{ vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') }}"
+          bucket: ${{ secrets.build-cache-bucket }}
+          endpoint: ${{ secrets.build-cache-endpoint }}
+          access-key: ${{ secrets.build-cache-access-key }}
+          secret-key: ${{ secrets.build-cache-secret-key }}
+          save: ${{ github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+
       # Run the Maven build job
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Initial Artifact Build"
-          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true -Dgithub.event.name=${{ github.event_name }}"
+          # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,
+          # which made the PR effective pom differ from trunk's for that module.
+          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
           require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -119,6 +152,46 @@ jobs:
           java-version: ${{ inputs.java-version }}
           maven-compiler-release: ${{ inputs.maven-compiler-release }}
           artifact-suffix: ${{ inputs.artifact-suffix }}
+
+      # Record who produced each cache entry. Nothing in an S3 bucket says which
+      # ref wrote a given hash, which is half of what makes a shared build cache
+      # a supply-chain risk (CVE-2025-36852). Written first-writer-wins, so an
+      # entry keeps the identity of the build that actually created it.
+      - name: Record build-cache provenance
+        if: env.BUILD_CACHE_SAVE == 'true' && success()
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.build-cache-access-key }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.build-cache-secret-key }}
+          ENDPOINT: ${{ secrets.build-cache-endpoint }}
+          BUCKET: ${{ secrets.build-cache-bucket }}
+        run: |
+          set -uo pipefail
+          root="$HOME/.m2/build-cache"
+          [[ -d "$root" ]] || exit 0
+          cat > /tmp/provenance.json <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ref": "${{ github.ref }}",
+            "sha": "${{ github.sha }}",
+            "event": "${{ github.event_name }}",
+            "workflow_ref": "${{ github.workflow_ref }}",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "actor": "${{ github.actor }}"
+          }
+          EOF
+          count=0
+          # A '<hash>/local' directory means this run built that module itself.
+          while IFS= read -r dir; do
+            rel="${dir#"$root"/}"
+            key="maven-build-cache/${rel%/local}/provenance.json"
+            aws --endpoint-url "$ENDPOINT" s3api head-object \
+              --bucket "$BUCKET" --key "$key" >/dev/null 2>&1 && continue
+            aws --endpoint-url "$ENDPOINT" s3 cp /tmp/provenance.json \
+              "s3://$BUCKET/$key" --only-show-errors && count=$((count+1))
+          done < <(find "$root" -mindepth 5 -maxdepth 5 -type d -name local)
+          echo "Recorded provenance for $count cache entries."
 
       # Check for unauthorized changes to the working directory (only for PR checks)
       - name: Check for changes to source during build
