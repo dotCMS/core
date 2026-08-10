@@ -35,9 +35,13 @@ public class HtmlMinifier {
      * the whitespace on either side of it ends up separating the surrounding content and is
      * rendered. Dropping it joins words, which is why
      * {@code hola <script>x</script> mundo} must not become {@code hola<script>x</script>mundo}.
+     * <p>
+     * Keyed on the tag name, so it cannot see an element hidden by the {@code hidden} attribute or
+     * by {@code style="display:none"}. Both leave the same corruption reachable; see the limitations
+     * note on the pull request.
      */
     private static final Set<String> INVISIBLE_TAGS =
-            Set.of("script", "style", "template", "noscript");
+            Set.of("script", "style", "template", "noscript", "dialog");
 
     /**
      * Elements that participate in inline layout, where whitespace between tags is rendered and is
@@ -110,7 +114,7 @@ public class HtmlMinifier {
      */
     public static String minifyBestEffort(final String html) {
 
-        if (null == html || html.isEmpty()) {
+        if (null == html || html.isEmpty() || !looksLikeHtml(html)) {
             return html;
         }
 
@@ -118,6 +122,40 @@ public class HtmlMinifier {
                 .onFailure(e -> Logger.warnAndDebug(HtmlMinifier.class,
                         "Unable to minify HTML, serving it unmodified: " + e.getMessage(), e))
                 .getOrElse(html);
+    }
+
+    /**
+     * Decides whether a payload is HTML at all, because these seams do not only carry HTML: a VTL
+     * page can render JSON, XML or CSV through exactly the same code path.
+     * <p>
+     * Collapsing whitespace in those changes data rather than formatting. A run of spaces inside a
+     * JSON string is part of the value, and a newline in CSV separates records, so minifying a CSV
+     * body merges every row onto one line. Nothing is lost by skipping them either, since a payload
+     * with no markup has no insignificant whitespace to remove in the first place.
+     * <p>
+     * Deliberately errs towards <i>not</i> minifying: an XML document is skipped on its declaration,
+     * because whitespace in XML text nodes is significant. The residual case it cannot see is a
+     * non-HTML payload that happens to contain markup, such as JSON carrying an HTML fragment in a
+     * string value. Gating on the response content type would be the stronger check, but
+     * {@code VelocityLiveMode} currently calls {@code setContentType(CHARSET)} with a charset rather
+     * than a media type, so that signal is not usable as it stands.
+     *
+     * @param content the rendered payload, never {@code null} or empty
+     * @return {@code true} when the payload carries markup and is safe to minify
+     */
+    private static boolean looksLikeHtml(final String content) {
+
+        if (content.stripLeading().regionMatches(true, 0, "<?xml", 0, 5)) {
+            return false;
+        }
+
+        for (int index = 0; index < content.length(); index++) {
+            if (content.charAt(index) == '<' && isMarkupStart(content, index)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -163,6 +201,14 @@ public class HtmlMinifier {
                 final int end = html.indexOf("-->", index);
                 final int commentEnd = end < 0 ? length : end + 3;
                 if (html.startsWith("<!--[if", index)) {
+                    // Emit the pending space first, as the preserve and markup branches below do.
+                    // A conditional comment is markup only to browsers nobody ships any more; every
+                    // modern engine treats it as a comment, paints nothing, and renders the
+                    // whitespace either side of it. Dropping it here joined words, and only looked
+                    // right when whitespace on the far side happened to put the space back.
+                    if (pendingSpace) {
+                        out.append(' ');
+                    }
                     out.append(html, index, commentEnd);
                     pendingSpace = false;
                     // Treated as text so that whitespace around it is kept, which is the safe

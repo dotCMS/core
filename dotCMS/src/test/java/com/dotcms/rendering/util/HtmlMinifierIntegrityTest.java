@@ -174,6 +174,20 @@ public class HtmlMinifierIntegrityTest {
             {"inline svg with children", "<p>a <svg><circle r=\"1\"></circle></svg> b</p>"},
             {"iframe between inline elements", "<b>a</b> <iframe src=\"x\"></iframe> <b>b</b>"},
             {"canvas between inline elements", "<b>a</b> <canvas></canvas> <b>b</b>"},
+
+            // A conditional comment is markup only to browsers nobody ships; to everything else it
+            // paints nothing, so it is as transparent as a removed comment. Every conditional-comment
+            // case in both suites used to sit in isolation, which is precisely why the whitespace
+            // beside one went unchecked -- the adjacency test cannot reach it either, being driven by
+            // tag names.
+            {"conditional comment between text", "a <!--[if IE]>x<![endif]-->b"},
+            {"conditional comment between inline elements",
+                    "<b>a</b> <!--[if IE]><b>x</b><![endif]--><b>b</b>"},
+            {"conditional comment with whitespace on both sides",
+                    "a <!--[if IE]>x<![endif]--> b"},
+            {"downlevel-revealed conditional comment",
+                    "<b>a</b> <!--[if !IE]>--><b>x</b><!--<![endif]-->"},
+            {"hidden dialog between text", "a <dialog>x</dialog> b"},
     };
 
     /**
@@ -194,7 +208,8 @@ public class HtmlMinifierIntegrityTest {
             "cite", "code", "data", "datalist", "del", "dfn", "em", "embed", "font", "i", "iframe",
             "img", "input", "ins", "kbd", "label", "map", "mark", "math", "meter", "nobr",
             "noscript", "object", "output", "picture", "progress", "q", "rp", "rt", "rtc", "ruby",
-            "s", "samp", "script", "select", "slot", "small", "span", "strike", "strong", "style",
+            "dialog", "s", "samp", "script", "select", "slot", "small", "span", "strike", "strong",
+            "style",
             "sub", "sup", "svg", "template", "textarea", "time", "tt", "u", "var", "video", "wbr"};
 
     /**
@@ -203,9 +218,10 @@ public class HtmlMinifierIntegrityTest {
      * would pass the test above while minifying nothing.
      */
     private static final String[] BLOCK_NEIGHBOURS = {
-            "address", "article", "aside", "blockquote", "div", "dl", "fieldset", "figure", "footer",
-            "form", "h1", "h2", "header", "hr", "li", "main", "nav", "ol", "p", "section", "table",
-            "tbody", "td", "tfoot", "th", "thead", "tr", "ul"};
+            "address", "article", "aside", "blockquote", "caption", "dd", "details", "div", "dl",
+            "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5",
+            "h6", "header", "hr", "legend", "li", "main", "nav", "ol", "p", "pre", "section",
+            "summary", "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul"};
 
     private static final String ELEMENT_BARE = "<%1$s></%1$s>";
     private static final String DOCUMENT_BARE = "alpha %s omega";

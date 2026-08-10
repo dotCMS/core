@@ -214,6 +214,61 @@ public class HtmlMinifierTest {
     }
 
     /**
+     * Given: a retained conditional comment sitting between content that whitespace separates.
+     * Expected: the separating space survives on the side <i>before</i> it as well as after.
+     * <p>
+     * A conditional comment is markup only to browsers nobody ships any more; to every modern engine
+     * it is a comment, so it paints nothing and the runs either side become adjacent. The whitespace
+     * between them is therefore rendered. It only looked correct before because whitespace on the
+     * far side happened to restore it.
+     */
+    @Test
+    public void test_minify_keeps_whitespace_beside_conditional_comments() {
+        assertEquals("a <!--[if IE]>x<![endif]-->b",
+                HtmlMinifier.minify("a <!--[if IE]>x<![endif]-->b"));
+        assertEquals("<b>a</b> <!--[if IE]><b>x</b><![endif]--><b>b</b>",
+                HtmlMinifier.minify("<b>a</b> <!--[if IE]><b>x</b><![endif]--><b>b</b>"));
+        // Whitespace on both sides must still collapse to a single space on each.
+        assertEquals("a <!--[if IE]>x<![endif]--> b",
+                HtmlMinifier.minify("a <!--[if IE]>x<![endif]--> b"));
+        // A block element either side still has its whitespace removed.
+        assertEquals("<div>a</div><!--[if IE]>x<![endif]--><div>b</div>",
+                HtmlMinifier.minify("<div>a</div>\n<!--[if IE]>x<![endif]-->\n<div>b</div>"));
+    }
+
+    /**
+     * Given: a {@code <dialog>} without {@code open}, which the user-agent stylesheet hides.
+     * Expected: whitespace beside it survives, like any other element that generates no box.
+     */
+    @Test
+    public void test_minify_keeps_whitespace_beside_dialog() {
+        assertEquals("a <dialog>x</dialog> b", HtmlMinifier.minify("a <dialog>x</dialog> b"));
+    }
+
+    /**
+     * Given: a payload that is not HTML at all, which a VTL page can render through the same seams.
+     * Expected: it is returned untouched.
+     * <p>
+     * Collapsing whitespace changes data rather than formatting here. A run of spaces inside a JSON
+     * string is part of the value, and a newline in CSV separates records, so minifying a CSV body
+     * merges every row into one line.
+     */
+    @Test
+    public void test_minifyBestEffort_leaves_non_html_payloads_alone() {
+        final String json = "{\"msg\": \"hello   world\", \"id\": 1}";
+        assertEquals(json, HtmlMinifier.minifyBestEffort(json));
+        final String csv = "name,note\nalpha,\"two  spaces\"\n";
+        assertEquals(csv, HtmlMinifier.minifyBestEffort(csv));
+        final String xml = "<?xml version=\"1.0\"?>\n<root>\n    <item>a   b</item>\n</root>";
+        assertEquals(xml, HtmlMinifier.minifyBestEffort(xml));
+        final String text = "just  some   text\nover two lines";
+        assertEquals(text, HtmlMinifier.minifyBestEffort(text));
+        // ... while HTML still goes through.
+        assertEquals("<div><p>a</p></div>",
+                HtmlMinifier.minifyBestEffort("<div>\n  <p>a</p>\n</div>"));
+    }
+
+    /**
      * Given: malformed markup with an unclosed preserved tag.
      * Expected: the content still round trips instead of being truncated or throwing.
      */
