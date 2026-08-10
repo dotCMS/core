@@ -1,0 +1,29 @@
+<div class="flex items-center justify-between" data-testid="asset-picker-header">
+    <h2 class="m-0 text-lg font-semibold" data-testid="asset-picker-title">{{ $title() }}</h2>
+
+    <div class="flex items-center gap-1">
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-pressed]="store.isFullscreen()"
+            [attr.aria-label]="$fullscreenLabelKey() | dm"
+            [pTooltip]="$fullscreenLabelKey() | dm"
+            (onClick)="store.toggleFullscreen()"
+            data-testid="asset-picker-fullscreen-btn">
+            <ng-template #icon>
+                <i class="material-symbols-outlined text-[1.125rem]!">{{ $fullscreenIcon() }}</i>
+            </ng-template>
+        </p-button>
+
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-label]="'dot.asset.picker.close.aria' | dm"
+            (onClick)="close.emit()"
+            data-testid="asset-picker-close-btn">
+            <ng-template #icon>
+                <i class="material-symbols-outlined text-[1.125rem]!">close</i>
+            </ng-template>
+        </p-button>
+    </div>
+</div>
