@@ -773,7 +773,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // them and the editor would show "Page not found". Open them in a new tab
         // so the author can verify the link without leaving the editor.
         if (isAssetPath(url.pathname)) {
-            this.window.open(href, '_blank');
+            // `url` is the origin-resolved form of `href`, which can still be a raw
+            // relative attribute when the click lands on a child of the anchor.
+            // `noopener` because the host check above compares hostname only, so
+            // this branch can still be cross-origin on another scheme or port.
+            this.window.open(url.href, '_blank', 'noopener');
             e.preventDefault();
 
             return;

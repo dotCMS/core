@@ -1173,24 +1173,37 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];
 
 /**
- * Extensions that still resolve to an HTMLPage. `html` is the default
- * `VELOCITY_PAGE_EXTENSION`; `dot` is the legacy fallback the backend uses
- * (see `Identifier#setURI`).
+ * Extensions that still resolve to an HTMLPage. `html` is the shipped
+ * `VELOCITY_PAGE_EXTENSION` and `dot` is the fallback the backend defaults to
+ * when the property is unset (see `Identifier#setURI`). Deliberately excludes
+ * `htm`, which dotCMS treats as an ordinary file asset, not a page.
+ *
+ * `VELOCITY_PAGE_EXTENSION` is configurable, so a site that overrides it to
+ * something else will see its page links open in a new tab. The value is not
+ * exposed to the client, so it cannot be read here.
  */
-const PAGE_PATH_EXTENSIONS = new Set(['html', 'htm', 'dot']);
+const PAGE_PATH_EXTENSIONS = new Set(['html', 'dot']);
 
 /**
- * Matches a plausible file extension: letter-initial, up to 8 alphanumerics.
- * Guards URL-map slugs such as `/blog/release-v1.2`, whose trailing `2` must
- * not be mistaken for a file extension.
+ * Matches a plausible file extension: 1-8 alphanumerics containing at least one
+ * letter. The letter requirement is what guards URL-map slugs such as
+ * `/blog/release-v1.2` and `/news/2024.10`, whose all-digit trailing token must
+ * not be mistaken for a file extension. Digit-initial extensions such as `7z`
+ * and `3gp` are real and must still match.
  */
-const FILE_EXTENSION_PATTERN = /^[a-z][a-z0-9]{0,7}$/;
+const FILE_EXTENSION_PATTERN = /^(?=.*[a-z])[a-z0-9]{1,8}$/;
 
 /**
  * Checks whether a pathname targets a file asset rather than an HTMLPage.
  *
- * Mirrors the backend's own extension heuristic: no extension (or the page
- * extension) means a page; any other real extension means a file.
+ * No extension (or the page extension) means a page; any other real extension
+ * means a file. This is a client-side approximation: the backend resolves the
+ * two by identifier lookup (`CMSUrlUtil#resolveResourceType`), not by
+ * extension, so an authoritative answer would cost a round-trip per link click.
+ *
+ * Known limitation: a page whose last segment carries a dot followed by a short
+ * alpha token is read as a file, so `/store/product.detail` opens in a new tab
+ * instead of navigating. Reachable through author-controlled URL-map slugs.
  *
  * @param {string} pathname - The pathname to check (query and hash excluded)
  * @returns {boolean} True when the pathname points at a file asset
@@ -1198,6 +1211,7 @@ const FILE_EXTENSION_PATTERN = /^[a-z][a-z0-9]{0,7}$/;
  * @example
  * isAssetPath('/application/files/doc.pdf')  // true
  * isAssetPath('/dA/abc123/asset/doc.pdf')    // true
+ * isAssetPath('/backups/archive.7z')         // true
  * isAssetPath('/about-us/index')             // false
  * isAssetPath('/about-us/index.html')        // false
  * isAssetPath('/blog/release-v1.2')          // false

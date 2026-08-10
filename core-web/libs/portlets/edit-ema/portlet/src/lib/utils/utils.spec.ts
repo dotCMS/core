@@ -1652,30 +1652,35 @@ describe('utils functions', () => {
 
     describe('isAssetPath', () => {
         it.each([
-            ['/dA/abc123/asset/report.pdf', true],
-            ['/dA/abc123/asset/no-extension', true],
-            ['/dotAsset/abc123', true],
-            ['/contentAsset/raw-data/abc123/asset', true],
-            ['/application/files/report.pdf', true],
-            ['/files/quarterly.docx', true],
-            ['/media/promo.mp4', true],
-            ['/backups/site.tar.gz', true],
-            ['/files/REPORT.PDF', true]
-        ])('should treat %s as a file asset', (pathname, expected) => {
-            expect(isAssetPath(pathname as string)).toBe(expected);
+            '/dA/abc123/asset/report.pdf',
+            '/dA/abc123/asset/no-extension',
+            '/dotAsset/abc123',
+            '/contentAsset/raw-data/abc123/asset',
+            '/application/files/report.pdf',
+            '/files/quarterly.docx',
+            '/media/promo.mp4',
+            '/backups/site.tar.gz',
+            '/files/REPORT.PDF',
+            // `htm` is not a dotCMS page extension: VELOCITY_PAGE_EXTENSION is `html`
+            // and `dot` is its legacy fallback, so a `.htm` upload is a file asset.
+            '/uploads/legacy-page.htm',
+            // Digit-initial extensions are real; only all-digit trailing tokens are slugs.
+            '/backups/archive.7z',
+            '/media/clip.3gp'
+        ])('should treat %s as a file asset', (pathname) => {
+            expect(isAssetPath(pathname)).toBe(true);
         });
 
         it.each([
-            ['/about-us/index', false],
-            ['/about-us/index.html', false],
-            ['/about-us/index.htm', false],
-            ['/legacy/index.dot', false],
-            ['/blog/', false],
-            ['/', false],
-            ['/blog/release-v1.2', false],
-            ['/news/2024.10', false]
-        ])('should treat %s as a page', (pathname, expected) => {
-            expect(isAssetPath(pathname as string)).toBe(expected);
+            '/about-us/index',
+            '/about-us/index.html',
+            '/legacy/index.dot',
+            '/blog/',
+            '/',
+            '/blog/release-v1.2',
+            '/news/2024.10'
+        ])('should treat %s as a page', (pathname) => {
+            expect(isAssetPath(pathname)).toBe(false);
         });
 
         it('should return false for an empty pathname', () => {

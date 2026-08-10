@@ -3121,7 +3121,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(pdfUrl, '_blank');
+                    expect(windowOpenSpy).toHaveBeenCalledWith(pdfUrl, '_blank', 'noopener');
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
@@ -3132,7 +3132,32 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(assetUrl, '_blank');
+                    expect(windowOpenSpy).toHaveBeenCalledWith(assetUrl, '_blank', 'noopener');
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should resolve a relative asset href against the site origin, not the admin path', () => {
+                    // The click lands on a child of the anchor, so `target.href` is undefined
+                    // and the raw (relative) href attribute is what reaches the handler.
+                    const mockEvent = {
+                        target: {
+                            closest: jest.fn().mockReturnValue({
+                                getAttribute: () => 'files/report.pdf'
+                            })
+                        },
+                        preventDefault: jest.fn()
+                    } as unknown as MouseEvent;
+
+                    jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).toHaveBeenCalledWith(
+                        'http://localhost:3000/files/report.pdf',
+                        '_blank',
+                        'noopener'
+                    );
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
