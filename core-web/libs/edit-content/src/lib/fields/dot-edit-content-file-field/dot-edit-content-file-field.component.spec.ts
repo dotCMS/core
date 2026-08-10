@@ -684,7 +684,7 @@ describe('DotFileFieldComponent', () => {
                 // width/height), so it would clamp the dialog once it goes full screen.
                 const options = optionsOf(openPicker(FILE_FIELD_MOCK));
 
-                expect(options.width).toBe('min(90vw, 1120px)');
+                expect(options.width).toBe('min(90vw, 114rem)');
                 expect(options.style).toBeUndefined();
             });
 
