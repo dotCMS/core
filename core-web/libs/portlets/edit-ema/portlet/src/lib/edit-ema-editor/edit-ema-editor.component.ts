@@ -773,12 +773,23 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // them and the editor would show "Page not found". Open them in a new tab
         // so the author can verify the link without leaving the editor.
         if (isAssetPath(url.pathname)) {
-            // `url` is the origin-resolved form of `href`, which can still be a raw
-            // relative attribute when the click lands on a child of the anchor.
-            // `noopener` because the host check above compares hostname only, so
-            // this branch can still be cross-origin on another scheme or port.
-            this.window.open(url.href, '_blank', 'noopener');
+            // Cancel before opening. The iframe must stay on the page being edited
+            // even if the open below fails, and it can: the iframe is sandboxed
+            // without `allow-popups`, so Firefox rejects a popup raised from its
+            // gesture with "The operation is insecure".
             e.preventDefault();
+
+            try {
+                // `url` is the origin-resolved form of `href`, which can still be a
+                // raw relative attribute when the click lands on a child of the
+                // anchor. Two arguments only: a windowFeatures string turns this
+                // into a popup request, which is what the sandbox rejects.
+                this.window.open(url.href, '_blank');
+            } catch {
+                // Swallow. A throw here would otherwise reach the RxJS subscriber
+                // that feeds this handler and kill the click listener for the rest
+                // of the session, so every later link click would fall through.
+            }
 
             return;
         }

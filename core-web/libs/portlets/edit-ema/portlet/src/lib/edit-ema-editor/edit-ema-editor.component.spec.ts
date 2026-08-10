@@ -3121,7 +3121,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(pdfUrl, '_blank', 'noopener');
+                    expect(windowOpenSpy).toHaveBeenCalledWith(pdfUrl, '_blank');
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
@@ -3132,7 +3132,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(assetUrl, '_blank', 'noopener');
+                    expect(windowOpenSpy).toHaveBeenCalledWith(assetUrl, '_blank');
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
@@ -3155,11 +3155,28 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(windowOpenSpy).toHaveBeenCalledWith(
                         'http://localhost:3000/files/report.pdf',
-                        '_blank',
-                        'noopener'
+                        '_blank'
                     );
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should keep the iframe on the page when opening a new tab throws', () => {
+                    // Firefox raises "The operation is insecure" when the sandboxed
+                    // iframe's gesture is used to open a popup. The click must still
+                    // be cancelled, or the anchor navigates the iframe to the asset.
+                    windowOpenSpy.mockImplementation(() => {
+                        throw new DOMException('The operation is insecure.');
+                    });
+
+                    const mockEvent = createMockEvent(
+                        'http://localhost:3000/dA/abc123/asset/photo.jpg'
+                    );
+
+                    expect(() => spectator.component.handleInternalNav(mockEvent)).not.toThrow();
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
                 });
 
                 it('should still load a page when the URL uses the page extension', () => {
