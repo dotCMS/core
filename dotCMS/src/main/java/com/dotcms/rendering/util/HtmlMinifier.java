@@ -67,6 +67,26 @@ public class HtmlMinifier {
             Stream.concat(INLINE_TAGS.stream(), INVISIBLE_TAGS.stream())
                     .collect(Collectors.toUnmodifiableSet());
 
+    /**
+     * Every element name HTML defines, used only to decide whether a payload is HTML at all.
+     * <p>
+     * An allow-list rather than a list of known non-HTML roots, so an XML vocabulary nobody thought
+     * of is skipped by default instead of being minified until someone reports it.
+     */
+    private static final Set<String> HTML_TAGS = Set.of(
+            "a", "abbr", "acronym", "address", "area", "article", "aside", "audio", "b", "base",
+            "bdi", "bdo", "big", "blockquote", "body", "br", "button", "canvas", "caption", "center",
+            "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn",
+            "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "font",
+            "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr",
+            "html", "i", "iframe", "img", "input", "ins", "kbd", "label", "legend", "li", "link",
+            "main", "map", "mark", "menu", "meta", "meter", "nav", "nobr", "noscript", "object",
+            "ol", "optgroup", "option", "output", "p", "param", "picture", "pre", "progress", "q",
+            "rp", "rt", "rtc", "ruby", "s", "samp", "script", "search", "section", "select", "slot",
+            "small", "source", "span", "strike", "strong", "style", "sub", "summary", "sup", "table",
+            "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr",
+            "track", "tt", "u", "ul", "var", "video", "wbr");
+
     private HtmlMinifier() {
         // utility
     }
@@ -129,33 +149,78 @@ public class HtmlMinifier {
      * page can render JSON, XML or CSV through exactly the same code path.
      * <p>
      * Collapsing whitespace in those changes data rather than formatting. A run of spaces inside a
-     * JSON string is part of the value, and a newline in CSV separates records, so minifying a CSV
-     * body merges every row onto one line. Nothing is lost by skipping them either, since a payload
-     * with no markup has no insignificant whitespace to remove in the first place.
+     * JSON string is part of the value, a newline in CSV separates records, and whitespace in an XML
+     * text node is significant.
      * <p>
-     * Deliberately errs towards <i>not</i> minifying: an XML document is skipped on its declaration,
-     * because whitespace in XML text nodes is significant. The residual case it cannot see is a
-     * non-HTML payload that happens to contain markup, such as JSON carrying an HTML fragment in a
-     * string value. Gating on the response content type would be the stronger check, but
-     * {@code VelocityLiveMode} currently calls {@code setContentType(CHARSET)} with a charset rather
-     * than a media type, so that signal is not usable as it stands.
+     * The payload must <b>begin</b> with an element, after any leading whitespace, doctype or
+     * comment, and that element must be one HTML defines. Beginning with an element is what keeps
+     * out JSON that happens to carry an HTML fragment in a string value; requiring a known name is
+     * what keeps out XML written without a declaration, such as {@code <rss>} or {@code <urlset>}.
+     * <p>
+     * The cost, stated plainly: a fragment that begins with <i>text</i> rather than a tag, such as
+     * {@code Hello <b>world</b>}, is no longer minified. That is compression lost rather than
+     * content changed, which is the direction to err in. Any content-shape test is guesswork
+     * though; the real signal is the response media type, and that is unusable while
+     * {@code VelocityLiveMode} passes a charset to {@code setContentType}.
      *
      * @param content the rendered payload, never {@code null} or empty
-     * @return {@code true} when the payload carries markup and is safe to minify
+     * @return {@code true} when the payload is HTML and safe to minify
      */
     private static boolean looksLikeHtml(final String content) {
 
-        if (content.stripLeading().regionMatches(true, 0, "<?xml", 0, 5)) {
+        // Index rather than stripLeading(), which copies the whole payload to inspect five
+        // characters -- and Velocity output usually does begin with whitespace, since a directive on
+        // line one emits nothing but leaves its newline behind.
+        int cursor = skipHtmlWhitespace(content, 0);
+
+        if (content.regionMatches(true, cursor, "<?xml", 0, 5)) {
             return false;
         }
 
-        for (int index = 0; index < content.length(); index++) {
-            if (content.charAt(index) == '<' && isMarkupStart(content, index)) {
-                return true;
+        // A doctype or leading comments are ordinary in HTML; look past them for the first element.
+        while (cursor < content.length()) {
+            if (content.startsWith("<!--", cursor)) {
+                final int end = content.indexOf("-->", cursor);
+                if (end < 0) {
+                    return false;
+                }
+                cursor = skipHtmlWhitespace(content, end + 3);
+            } else if (content.regionMatches(true, cursor, "<!doctype", 0, 9)) {
+                final int end = content.indexOf('>', cursor);
+                if (end < 0) {
+                    return false;
+                }
+                cursor = skipHtmlWhitespace(content, end + 1);
+            } else {
+                break;
             }
         }
 
-        return false;
+        // The payload has to *begin* with an element, which is what keeps JSON and CSV out even when
+        // markup appears later inside a string value, and that element has to be one HTML defines,
+        // which is what keeps a declaration-less <rss> or <urlset> out.
+        return cursor < content.length()
+                && isMarkupStart(content, cursor)
+                && isHtmlTag(tagNameAt(content, cursor));
+    }
+
+    /**
+     * @param tagName a lower cased tag name, may be {@code null} for degenerate markup
+     * @return {@code true} when HTML defines an element with this name
+     */
+    private static boolean isHtmlTag(final String tagName) {
+        return null != tagName && HTML_TAGS.contains(tagName);
+    }
+
+    /**
+     * @return the index of the first character at or after {@code from} that is not HTML whitespace
+     */
+    private static int skipHtmlWhitespace(final String content, final int from) {
+        int cursor = from;
+        while (cursor < content.length() && isHtmlWhitespace(content.charAt(cursor))) {
+            cursor++;
+        }
+        return cursor;
     }
 
     /**

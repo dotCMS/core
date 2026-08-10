@@ -263,9 +263,42 @@ public class HtmlMinifierTest {
         assertEquals(xml, HtmlMinifier.minifyBestEffort(xml));
         final String text = "just  some   text\nover two lines";
         assertEquals(text, HtmlMinifier.minifyBestEffort(text));
-        // ... while HTML still goes through.
+
+        // An XML declaration is optional, so the tag name has to carry the decision too.
+        final String rss = "<rss>\n  <title>a  b</title>\n</rss>";
+        assertEquals(rss, HtmlMinifier.minifyBestEffort(rss));
+        final String sitemap = "<urlset>\n  <url><loc>a  b</loc></url>\n</urlset>";
+        assertEquals(sitemap, HtmlMinifier.minifyBestEffort(sitemap));
+
+        // JSON carrying an HTML fragment must not switch minification on for the whole payload:
+        // "two  spaces" is a value, not formatting.
+        final String jsonWithHtml = "{\n  \"body\": \"<p>a   b</p>\",\n  \"note\": \"two  spaces\"\n}";
+        assertEquals(jsonWithHtml, HtmlMinifier.minifyBestEffort(jsonWithHtml));
+    }
+
+    /**
+     * Given: the HTML shapes that must keep being minified, and the one that is knowingly given up.
+     * Expected: pages and tag-leading fragments still minify; a fragment that begins with text no
+     * longer does.
+     * <p>
+     * That last line is the documented price of requiring a payload to begin with an element, which
+     * is what keeps JSON carrying an HTML fragment out. It costs compression, not correctness.
+     */
+    @Test
+    public void test_minifyBestEffort_still_minifies_html() {
+        assertEquals("<!DOCTYPE html><html><body><p>a b</p></body></html>",
+                HtmlMinifier.minifyBestEffort(
+                        "<!DOCTYPE html>\n<html>\n  <body>\n    <p>a   b</p>\n  </body>\n</html>"));
+        assertEquals("<div><p>a b</p></div>",
+                HtmlMinifier.minifyBestEffort("<div>\n  <p>a   b</p>\n</div>"));
+        // Leading whitespace and a leading comment are both ordinary in rendered output.
         assertEquals("<div><p>a</p></div>",
-                HtmlMinifier.minifyBestEffort("<div>\n  <p>a</p>\n</div>"));
+                HtmlMinifier.minifyBestEffort("\n\n<div>\n  <p>a</p>\n</div>"));
+        assertEquals("<div><p>a</p></div>",
+                HtmlMinifier.minifyBestEffort("<!-- generated -->\n<div>\n  <p>a</p>\n</div>"));
+        // Knowingly not minified: the payload starts with text, so it cannot be told from JSON or
+        // CSV carrying markup.
+        assertEquals("Hello   <b>world</b>", HtmlMinifier.minifyBestEffort("Hello   <b>world</b>"));
     }
 
     /**

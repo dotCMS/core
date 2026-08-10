@@ -205,11 +205,10 @@ public class HtmlMinifierIntegrityTest {
      */
     private static final String[] WHITESPACE_SIGNIFICANT_NEIGHBOURS = {
             "a", "abbr", "acronym", "audio", "b", "bdi", "bdo", "big", "br", "button", "canvas",
-            "cite", "code", "data", "datalist", "del", "dfn", "em", "embed", "font", "i", "iframe",
-            "img", "input", "ins", "kbd", "label", "map", "mark", "math", "meter", "nobr",
+            "cite", "code", "data", "datalist", "del", "dfn", "dialog", "em", "embed", "font", "i",
+            "iframe", "img", "input", "ins", "kbd", "label", "map", "mark", "math", "meter", "nobr",
             "noscript", "object", "output", "picture", "progress", "q", "rp", "rt", "rtc", "ruby",
-            "dialog", "s", "samp", "script", "select", "slot", "small", "span", "strike", "strong",
-            "style",
+            "s", "samp", "script", "select", "slot", "small", "span", "strike", "strong", "style",
             "sub", "sup", "svg", "template", "textarea", "time", "tt", "u", "var", "video", "wbr"};
 
     /**
