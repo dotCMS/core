@@ -31,7 +31,11 @@
             class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
             data-testid="action-center">
             @if ($ignoredFolderCount() > 0) {
-                <p-message severity="info" data-testid="folders-ignored-message">
+                <!-- `no-enter-motion` renders this notice statically; see the component's `styles`. -->
+                <p-message
+                    severity="info"
+                    styleClass="no-enter-motion"
+                    data-testid="folders-ignored-message">
                     {{
                         'content-drive.action-center.folders-ignored'
                             | dm: [$ignoredFolderCount().toString()]
@@ -51,7 +55,8 @@
                         @for (quickAction of $quickActions(); track quickAction.id) {
                             <!-- Rows with a zero count do not apply to this selection. They stay
                                  visible but non-selectable, so the action list is stable as the
-                                 selection changes. -->
+                                 selection changes. Clicking opens the preview; nothing fires from
+                                 here. -->
                             <button
                                 type="button"
                                 class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
@@ -62,7 +67,7 @@
                                 "
                                 [pTooltip]="quickActionHint(quickAction) | dm"
                                 [attr.data-testid]="'quick-action-' + quickAction.id"
-                                (click)="onExecuteQuickAction(quickAction)">
+                                (click)="onSelectQuickAction(quickAction)">
                                 <span
                                     class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
                                     [class]="
@@ -84,6 +89,23 @@
                                     ">
                                     {{ quickAction.name | dm }}
                                 </span>
+
+                                <!-- Items the action will still be fired over, but which are
+                                     expected to fail — a lock held by another user. Flagged rather
+                                     than subtracted from the count, since only the server can
+                                     decide. -->
+                                @if (quickAction.warningCount > 0) {
+                                    <i
+                                        class="pi pi-exclamation-triangle text-xs text-orange-500"
+                                        [pTooltip]="
+                                            quickAction.warningHint
+                                                | dm: [quickAction.warningCount.toString()]
+                                        "
+                                        [attr.data-testid]="
+                                            'quick-action-warning-' + quickAction.id
+                                        "
+                                        aria-hidden="true"></i>
+                                }
 
                                 <span class="text-xs font-medium text-surface-400">
                                     ({{ quickAction.count }})
@@ -281,7 +303,9 @@
             paginator sits below the scroll region rather than at the bottom of a scrolled page.
         -->
         <div class="flex min-h-0 flex-1 flex-col" data-testid="action-preview-body">
-            @if ($selectedAction(); as action) {
+            <!-- Workflow actions only. A quick action's count and its rows come from the same
+                 client-side filter, so it can never apply to fewer items than it lists. -->
+            @if (!$pendingQuickAction() && $selectedAction(); as action) {
                 <!-- The rows are already narrowed to content types this action's scheme covers, but
                      eligibility is also per workflow step: two contentlets of one type can sit on
                      different steps and only one may expose the action. `count` is the backend's true
@@ -327,7 +351,7 @@
                 [disabled]="!$includedCount() || $executing()"
                 [loading]="$executing()"
                 data-testid="action-preview-execute"
-                (click)="onExecuteWorkflowAction()" />
+                (click)="onExecutePreview()" />
         </div>
     }
 

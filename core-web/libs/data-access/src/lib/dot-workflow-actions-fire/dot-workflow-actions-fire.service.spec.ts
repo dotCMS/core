@@ -2,7 +2,11 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/
 
 import { HttpHeaders } from '@angular/common/http';
 
-import { DotActionBulkRequestOptions, DotActionBulkResult } from '@dotcms/dotcms-models';
+import {
+    DotActionBulkRequestOptions,
+    DotActionBulkResult,
+    DotFireDefaultActionResult
+} from '@dotcms/dotcms-models';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.service';
@@ -344,6 +348,31 @@ describe('DotWorkflowActionsFireService', () => {
         req.flush({
             entity: mockResult
         });
+    });
+
+    it('should fire a default system action over multiple inodes and return its summary', (done) => {
+        // The endpoint streams one entry per contentlet plus a summary. The summary is the only
+        // honest source of success/fail counts: individual items can fail while the request is 200.
+        const mockResult: DotFireDefaultActionResult = {
+            results: [],
+            summary: { affected: 2, successCount: 1, failCount: 1, time: 12 }
+        };
+
+        spectator.service
+            .fireDefaultAction({ action: 'UNLOCK', inodes: ['1', '2'] })
+            .subscribe((res) => {
+                expect(res).toEqual(mockResult);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/UNLOCK?indexPolicy=WAIT_FOR',
+            HttpMethod.POST
+        );
+
+        expect(req.request.body).toEqual({ contentlet: [{ inode: '1' }, { inode: '2' }] });
+
+        req.flush({ entity: mockResult });
     });
 
     afterEach(() => {
