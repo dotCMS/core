@@ -124,7 +124,7 @@ export class DotContentletIcon {
     @Prop({ reflect: true })
     size = '';
 
-    private ext: string;
+    private ext?: string;
 
     componentWillRender() {
         /*

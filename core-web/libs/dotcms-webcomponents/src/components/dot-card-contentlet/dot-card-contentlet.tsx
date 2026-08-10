@@ -16,9 +16,9 @@ import { DotContentState } from '@dotcms/dotcms-models';
     shadow: true
 })
 export class DotCardContentlet {
-    @Element() el: HTMLDotCardContentletElement;
+    @Element() el!: HTMLDotCardContentletElement;
 
-    @Prop() item: DotCardContentletItem;
+    @Prop() item?: DotCardContentletItem;
 
     @Prop() thumbnailSize = '260';
     @Prop() iconSize = '96px';
@@ -27,12 +27,12 @@ export class DotCardContentlet {
         reflect: true,
         mutable: true
     })
-    checked: boolean;
+    checked?: boolean;
 
     @Prop() showVideoThumbnail = false;
 
-    @Event() checkboxChange: EventEmitter<DotCardContentletEvent>;
-    @Event() contextMenuClick: EventEmitter<MouseEvent>;
+    @Event() checkboxChange!: EventEmitter<DotCardContentletEvent>;
+    @Event() contextMenuClick!: EventEmitter<MouseEvent>;
 
     private menu: HTMLDotContextMenuElement;
 

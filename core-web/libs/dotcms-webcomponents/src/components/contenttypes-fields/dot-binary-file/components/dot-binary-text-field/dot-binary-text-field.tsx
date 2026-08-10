@@ -14,11 +14,11 @@ import { getErrorClass, getHintId, isFileAllowed, isValidURL } from '../../../..
 })
 export class DotBinaryTextFieldComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the <input> element */
     @Prop({ mutable: true, reflect: true })
-    value = null;
+    value: string | null = null;
 
     /** (optional) Hint text that suggest a clue of the field */
     @Prop({ reflect: true })
@@ -34,19 +34,19 @@ export class DotBinaryTextFieldComponent {
 
     /** (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg  */
     @Prop({ reflect: true })
-    accept: string;
+    accept?: string;
 
     /** (optional) Disables field's interaction */
     @Prop({ reflect: true })
     disabled = false;
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    fileChange: EventEmitter<DotBinaryFileEvent>;
+    fileChange!: EventEmitter<DotBinaryFileEvent>;
     @Event()
-    lostFocus: EventEmitter;
+    lostFocus!: EventEmitter;
 
     render() {
         return (

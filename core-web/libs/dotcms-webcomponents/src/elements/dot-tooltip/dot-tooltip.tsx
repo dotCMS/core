@@ -7,15 +7,15 @@ import { getElement, getPosition, PositionX, PositionY, fadeIn } from './utils';
     shadow: true
 })
 export class DotTooltip {
-    @Element() el: HTMLElement;
+    @Element() el!: HTMLElement;
 
-    @Prop() content: string;
-    @Prop() for: string;
-    @Prop() delay: number;
+    @Prop() content?: string;
+    @Prop() for?: string;
+    @Prop() delay?: number;
     @Prop() position = 'center bottom';
 
-    private targetEl: HTMLElement;
-    private tooltipEl: HTMLElement;
+    private targetEl?: HTMLElement;
+    private tooltipEl?: HTMLElement;
     private showing = false;
 
     connectedCallback() {

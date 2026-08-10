@@ -42,7 +42,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotRadioComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value set from the ratio option */
     @Prop({ mutable: true, reflect: true })
@@ -77,14 +77,14 @@ export class DotRadioComponent {
     options = '';
 
     @State()
-    _options: DotOption[];
+    _options!: DotOption[];
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.

@@ -39,7 +39,7 @@ const TIME_SUFFIX = '-time';
 })
 export class DotDateTimeComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value format yyyy-mm-dd hh:mm:ss e.g., 2005-12-01 15:22:00 */
     @Prop({ mutable: true, reflect: true })
@@ -94,14 +94,14 @@ export class DotDateTimeComponent {
     timeLabel = 'Time';
 
     @State()
-    classNames: DotFieldStatusClasses;
+    classNames!: DotFieldStatusClasses;
     @State()
     errorMessageElement: any;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     private _minDateTime: DotDateSlot;
     private _maxDateTime: DotDateSlot;

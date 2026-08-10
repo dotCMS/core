@@ -45,7 +45,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotBinaryFileComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Name that will be used as ID */
     @Prop({ reflect: true })
@@ -112,12 +112,12 @@ export class DotBinaryFileComponent {
     previewImageUrl = '';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     private file: string | File = null;
     private allowedFileTypes = [];

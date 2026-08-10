@@ -42,7 +42,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotMultiSelectComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value set from the dropdown option */
     @Prop({ mutable: true, reflect: true })
@@ -81,14 +81,14 @@ export class DotMultiSelectComponent {
     size = '3';
 
     @State()
-    _options: DotOption[];
+    _options!: DotOption[];
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     _dotTouched = false;
     _dotPristine = true;

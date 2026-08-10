@@ -14,7 +14,7 @@ export class DotVideoThumbnail {
      * @type {DotContentletItem}
      * @memberof DotVideoThumbnail
      */
-    @Prop() contentlet: DotContentletItem;
+    @Prop() contentlet?: DotContentletItem;
 
     /**
      *
@@ -22,7 +22,7 @@ export class DotVideoThumbnail {
      * @type {string}
      * @memberof variable
      */
-    @Prop() variable: string;
+    @Prop() variable?: string;
 
     /**
      * If the video is playable or not.

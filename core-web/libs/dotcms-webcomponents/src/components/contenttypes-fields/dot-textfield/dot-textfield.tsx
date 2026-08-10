@@ -36,7 +36,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotTextfieldComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the input element */
     @Prop({ mutable: true })
@@ -83,12 +83,12 @@ export class DotTextfieldComponent {
     type = 'text';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.

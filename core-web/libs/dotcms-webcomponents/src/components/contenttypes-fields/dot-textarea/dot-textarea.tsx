@@ -36,7 +36,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotTextareaComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the textarea element */
     @Prop({ mutable: true, reflect: true })
@@ -75,13 +75,13 @@ export class DotTextareaComponent {
     regexCheck = '';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
 
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.

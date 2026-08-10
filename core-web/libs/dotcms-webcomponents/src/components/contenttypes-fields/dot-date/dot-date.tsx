@@ -26,7 +26,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotDateComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value format yyyy-mm-dd  e.g., 2005-12-01 */
     @Prop({ mutable: true, reflect: true })
@@ -73,14 +73,14 @@ export class DotDateComponent {
     step = '1';
 
     @State()
-    classNames: DotFieldStatusClasses;
+    classNames!: DotFieldStatusClasses;
     @State()
     errorMessageElement: any;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.

@@ -38,18 +38,18 @@ const getSelecttion = (items: DotCardContentletItem[], value: string): DotConten
     shadow: true
 })
 export class DotCardView {
-    @Element() el: HTMLElement;
+    @Element() el!: HTMLElement;
     @Prop() items: DotCardContentletItem[] = [];
     @Prop({
         reflect: true,
         mutable: true
     })
-    value: string;
+    value?: string;
 
     @Prop() showVideoThumbnail = true;
 
-    @Event() selected: EventEmitter;
-    @Event() cardClick: EventEmitter;
+    @Event() selected!: EventEmitter;
+    @Event() cardClick!: EventEmitter;
 
     private selection: DotContentletItem[] = [];
 

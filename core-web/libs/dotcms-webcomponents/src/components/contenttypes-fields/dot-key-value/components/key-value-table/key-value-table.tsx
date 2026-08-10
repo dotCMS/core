@@ -7,7 +7,7 @@ import { DotKeyValueField } from '../../../../../models';
 })
 export class KeyValueTableComponent {
     /** to get the current element */
-    @Element() el: HTMLElement;
+    @Element() el!: HTMLElement;
 
     /** (optional) Items to render in the list of key value */
     @Prop()
@@ -31,11 +31,11 @@ export class KeyValueTableComponent {
 
     /** Emit the index of the item deleted from the list */
     @Event()
-    delete: EventEmitter<number>;
+    delete!: EventEmitter<number>;
 
     /** Emit the notification of list reordered */
     @Event()
-    reorder: EventEmitter;
+    reorder!: EventEmitter;
 
     dragSrcEl = null;
 
