@@ -2,18 +2,27 @@ package com.dotmarketing.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.calendar.model.Event;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 /**
  * Pins the behaviour of {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)} — the
@@ -214,5 +223,122 @@ public class PermissionBitFactoryImplResolvePermissionTypeTest {
         when(navResult.getEnclosingPermissionClassName()).thenReturn("com.example.Enclosing");
 
         assertEquals("com.example.Enclosing", factory.resolvePermissionType(navResult));
+    }
+
+    // --- The Identifier fallback -------------------------------------------------------------
+    //
+    // An Identifier should never reach the permission loader; when one does, the resolver logs it
+    // as a defect and resolves the inode it points at instead. Reaching that code means going
+    // through the static InodeFactory.getInode, so these tests intercept it.
+
+    private static final String BACKING_INODE_ID = "e7b4c0de-0000-0000-0000-000000000001";
+
+    /**
+     * Resolves an identifier whose permission id is backed by the given inode, with
+     * {@link InodeFactory} intercepted so no database is involved.
+     *
+     * @param backingInode what the lookup hands back, {@code null} for an id that resolves to nothing
+     * @param expected     the permission type the resolver is expected to produce
+     */
+    private void assertIdentifierBackedBy(final Inode backingInode, final String expected) {
+        final Identifier identifier = mock(Identifier.class);
+        when(identifier.getPermissionId()).thenReturn(BACKING_INODE_ID);
+        when(identifier.getPermissionType()).thenReturn(DECLARED_TYPE);
+
+        try (MockedStatic<InodeFactory> inodeFactory = mockStatic(InodeFactory.class)) {
+            inodeFactory.when(() -> InodeFactory.getInode(BACKING_INODE_ID, Inode.class))
+                    .thenReturn(backingInode);
+
+            assertEquals(expected, factory.resolvePermissionType(identifier));
+        }
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} pointing at a {@link Container}.
+     * Expected result: resolves as a Container.
+     */
+    @Test
+    public void test_identifierBackedByContainer_resolvesAsContainer() {
+        assertIdentifierBackedBy(mock(Container.class), Container.class.getCanonicalName());
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} pointing at a {@link Link}.
+     * Expected result: resolves as a Link.
+     */
+    @Test
+    public void test_identifierBackedByLink_resolvesAsLink() {
+        assertIdentifierBackedBy(mock(Link.class), Link.class.getCanonicalName());
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} pointing at a {@link Template}.
+     * Expected result: resolves as a Template.
+     *
+     * <p>Production cannot currently reach this branch: {@link InodeFactory} throws for a
+     * {@code template} row rather than returning one. The mapping is pinned anyway, so the branch is
+     * covered for the day that changes.</p>
+     */
+    @Test
+    public void test_identifierBackedByTemplate_resolvesAsTemplate() {
+        assertIdentifierBackedBy(mock(Template.class), Template.class.getCanonicalName());
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} pointing at a {@link Structure}.
+     * Expected result: resolves as a Structure. Unreachable in production for the same reason as
+     * the Template case above.
+     */
+    @Test
+    public void test_identifierBackedByStructure_resolvesAsStructure() {
+        assertIdentifierBackedBy(mock(Structure.class), Structure.class.getCanonicalName());
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} pointing at an inode that also implements
+     * {@link IHTMLPage}.
+     * Expected result: resolves as an HTML page.
+     *
+     * <p>This is the branch kept as a defence rather than deleted. No {@code Inode} implements
+     * {@link IHTMLPage} today — the only implementation, {@code HTMLPageAsset}, is a
+     * {@link Contentlet} — so the mock has to be built with the extra interface to produce the
+     * combination at all. That is exactly the shape a future subclass would take, and the test shows
+     * the branch does its job if one ever appears.</p>
+     */
+    @Test
+    public void test_identifierBackedByHtmlPageInode_resolvesAsHtmlPage() {
+        final Inode htmlPageInode = mock(Inode.class, withSettings().extraInterfaces(IHTMLPage.class));
+
+        assertIdentifierBackedBy(htmlPageInode, HTML_PAGE_TYPE);
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} pointing at an inode of no recognised kind.
+     * Expected result: the identifier's own declared type, via {@code default}.
+     */
+    @Test
+    public void test_identifierBackedByUnrecognisedInode_fallsThroughToDeclaredType() {
+        assertIdentifierBackedBy(mock(Inode.class), DECLARED_TYPE);
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
+     * Given scenario: an {@link Identifier} whose permission id resolves to no inode at all.
+     * Expected result: the identifier's own declared type, without throwing.
+     *
+     * <p>{@link InodeFactory#getInode(String, Class)} returns {@code null} when the lookup fails, and
+     * a {@code switch} over patterns throws on a null selector unless a {@code case null} says
+     * otherwise — so this pins that the {@code case null, default} arm is load bearing, not
+     * decorative.</p>
+     */
+    @Test
+    public void test_identifierWithNoBackingInode_fallsThroughToDeclaredType() {
+        assertIdentifierBackedBy(null, DECLARED_TYPE);
     }
 }
