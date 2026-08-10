@@ -17,6 +17,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize, take } from 'rxjs/operators';
 
@@ -24,6 +25,7 @@ import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-acce
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { passwordsMatchValidator } from './dot-users-form.model';
+import { DotUsersPermissionsTabComponent } from './tabs/dot-users-permissions-tab/dot-users-permissions-tab.component';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
 
 import { DotUsersReplacementPickerComponent } from '../components/dot-users-replacement-picker/dot-users-replacement-picker.component';
@@ -61,10 +63,9 @@ const ADDITIONAL_INFO_KEYS = ['prefix', 'suffix', 'title', 'company', 'website']
  * (create vs edit), and orchestrates each tab as a standalone
  * presentational sub-component.
  *
- * Scope for issue #36717 — only the Profile tab is real. Roles,
- * Permissions, and API Tokens render "Coming soon" placeholders and
- * are delivered by their sibling issues (#36718, #36719, #36720),
- * each of which swaps its placeholder for the real tab component.
+ * Scope for issue #36719 — Profile + Permissions tabs are real; Roles
+ * and API Tokens render "Coming soon" placeholders and are delivered
+ * by #36718 and #36720.
  */
 @Component({
     selector: 'dot-users-create',
@@ -79,9 +80,11 @@ const ADDITIONAL_INFO_KEYS = ['prefix', 'suffix', 'title', 'company', 'website']
         InputTextModule,
         TabsModule,
         TagModule,
+        TooltipModule,
         DotMessagePipe,
         DotUsersReplacementPickerComponent,
-        DotUsersProfileTabComponent
+        DotUsersProfileTabComponent,
+        DotUsersPermissionsTabComponent
     ],
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',

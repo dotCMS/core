@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
-import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotPermissionsIframeComponent } from './dot-permissions-iframe.component';
 
 export interface DotPermissionsIframeDialogData {
     url: string;
@@ -11,9 +10,12 @@ export interface DotPermissionsIframeDialogData {
 }
 
 /**
- * Generic dialog component that displays any permissions page in an iframe.
- * Callers are responsible for building the URL before opening the dialog.
- * Only same-origin relative paths (starting with `/`) are accepted.
+ * Modal wrapper around {@link DotPermissionsIframeComponent}. Reads its
+ * URL from the {@link DynamicDialogConfig} so it can be dropped straight
+ * into `DialogService.open(...)` calls. Kept as a thin adapter — all URL
+ * validation and DOM rendering lives in the presentational component so
+ * embedding the permissions iframe inline (e.g. inside a `<p-tabpanel>`)
+ * doesn't require the dialog machinery.
  *
  * Usage:
  *   dialogService.open(DotPermissionsIframeDialogComponent, {
@@ -23,37 +25,15 @@ export interface DotPermissionsIframeDialogData {
  */
 @Component({
     selector: 'dot-permissions-iframe-dialog',
-    imports: [DotMessagePipe],
+    imports: [DotPermissionsIframeComponent],
     template: `
-        @let src = $iframeSrc();
-
-        @if (src) {
-            <iframe
-                [src]="src"
-                class="block w-full border-none"
-                [style.min-height]="$minHeight()"
-                title="Permissions"
-                data-testid="permissions-iframe"></iframe>
-        } @else {
-            <p class="p-3 m-0 text-500" data-testid="permissions-empty">
-                {{ 'dot.permissions.iframe.dialog.no-asset' | dm }}
-            </p>
-        }
+        <dot-permissions-iframe [url]="$url()" [minHeight]="$minHeight()" />
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPermissionsIframeDialogComponent {
     readonly #config = inject(DynamicDialogConfig<DotPermissionsIframeDialogData>);
-    readonly #sanitizer = inject(DomSanitizer);
 
-    readonly $iframeSrc = computed<SafeResourceUrl | null>(() => {
-        const url = this.#config.data?.url;
-        if (!url) return null;
-        // Only allow same-origin relative paths; reject absolute URLs, protocol-relative
-        // URLs, and dangerous schemes (javascript:, data:, http:, etc.)
-        if (!url.startsWith('/') || url.startsWith('//')) return null;
-        return this.#sanitizer.bypassSecurityTrustResourceUrl(url);
-    });
-
+    readonly $url = computed(() => this.#config.data?.url ?? '');
     readonly $minHeight = computed(() => this.#config.data?.minHeight ?? '60vh');
 }

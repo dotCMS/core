@@ -1,0 +1,17 @@
+@if (permissionsUrl()) {
+    <dot-permissions-iframe
+        [url]="permissionsUrl()"
+        height="100%"
+        class="flex min-h-0 flex-1 flex-col" />
+} @else {
+    <div
+        class="flex h-full min-h-96 flex-col items-center justify-center gap-2 py-8"
+        data-testid="users-permissions-tab-empty">
+        <span class="material-symbols-rounded text-5xl! text-surface-400" aria-hidden="true">
+            lock_person
+        </span>
+        <p class="text-color-secondary m-0">
+            {{ 'users.dialog.permissions.create-mode' | dm }}
+        </p>
+    </div>
+}
