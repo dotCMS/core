@@ -1900,39 +1900,41 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
    * loader in the first place — the caller logs that as a defect and falls back to the inode the
    * identifier points at.
    *
+   * <p>The lookup can only ever hand back an {@link Inode}, which is why the local is typed as one
+   * rather than as {@link Permissionable}: it lets the compiler reject a case that cannot match.
+   * The branches the original {@code if / else if} chain spent on {@link Contentlet},
+   * {@link Folder} and {@link ContentType} are gone for exactly that reason — each is a class with
+   * no kinship to {@code Inode}, so no object could ever be both, and the shared
+   * {@code Permissionable} interface does not change that. {@link IHTMLPage} is kept as a defensive
+   * branch instead: it is an interface, so a future {@code Inode} subclass could implement it.</p>
+   *
    * @param identifier the identifier that was passed in by mistake
    * @return the backing inode's permission type, or the identifier's own when the inode cannot be
    *         resolved or is of no recognised kind
    */
   private String permissionTypeOfBackingInode(final Identifier identifier) {
 
-    final Permissionable inode = InodeFactory.getInode(identifier.getPermissionId(), Inode.class);
+    final Inode inode = InodeFactory.getInode(identifier.getPermissionId(), Inode.class);
 
     Logger.error(this,
         "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
 
     return switch (inode) {
 
-      case null -> identifier.getPermissionType();
-
+      // No Inode implements IHTMLPage today — the only implementation, HTMLPageAsset, is a
+      // Contentlet — so this branch is unreachable. It is kept because IHTMLPage is an interface
+      // and a future Inode subclass could implement it, which is also why the compiler allows it.
       case IHTMLPage _ -> IHTMLPage.class.getCanonicalName();
 
-      case Contentlet contentlet when isOfBaseType(contentlet, BaseContentType.HTMLPAGE)
-          -> IHTMLPage.class.getCanonicalName();
-
       case Container _ -> Container.class.getCanonicalName();
-
-      case Folder _ -> Folder.class.getCanonicalName();
 
       case Link _ -> Link.class.getCanonicalName();
 
       case Template _ -> Template.class.getCanonicalName();
 
-      case Structure _, ContentType _ -> Structure.class.getCanonicalName();
+      case Structure _ -> Structure.class.getCanonicalName();
 
-      case Contentlet _ -> Contentlet.class.getCanonicalName();
-
-      default -> identifier.getPermissionType();
+      case null, default -> identifier.getPermissionType();
     };
   }
 
@@ -1944,15 +1946,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
    * @return {@code false} when the contentlet has no resolvable content type
    */
   private static boolean isOfContentType(final Contentlet contentlet, final String variableName) {
-
-    final Structure structure = contentlet.getStructure();
-    return structure != null && variableName.equals(structure.getVelocityVarName());
+    final ContentType contentType = contentlet.getContentType();
+    return contentType != null && variableName.equals(contentType.variable());
   }
 
   /**
    * Whether the contentlet's content type has the given base type.
    *
-   * <p>{@link Contentlet#getStructure()} returns {@code null} when the contentlet has no resolvable
+   * <p>{@link Contentlet#getContentType()} returns {@code null} when the contentlet has no resolvable
    * content type, so the null check is load bearing — reading the structure type straight off it is
    * what made the original chain throw.</p>
    *
@@ -1961,9 +1962,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
    * @return {@code false} when the contentlet has no resolvable content type
    */
   private static boolean isOfBaseType(final Contentlet contentlet, final BaseContentType baseType) {
-
-    final Structure structure = contentlet.getStructure();
-    return structure != null && baseType.getType() == structure.getStructureType();
+    final ContentType contentType = contentlet.getContentType();
+    return contentType != null && baseType == contentType.baseType();
   }
 
 

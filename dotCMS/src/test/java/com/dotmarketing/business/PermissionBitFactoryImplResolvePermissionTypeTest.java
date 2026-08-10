@@ -5,12 +5,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import org.junit.Test;
@@ -47,33 +47,34 @@ public class PermissionBitFactoryImplResolvePermissionTypeTest {
             new PermissionBitFactoryImpl(mock(PermissionCache.class));
 
     /**
-     * A contentlet whose content type resolves, with the given velocity variable name and base type.
+     * A contentlet whose content type resolves, with the given variable name and base type.
      */
-    private Contentlet contentletOf(final String velocityVarName, final BaseContentType baseType) {
-        final Structure structure = mock(Structure.class);
-        when(structure.getVelocityVarName()).thenReturn(velocityVarName);
-        when(structure.getStructureType()).thenReturn(baseType.getType());
+    private Contentlet contentletOf(final String variableName, final BaseContentType baseType) {
+        final ContentType contentType = mock(ContentType.class);
+        when(contentType.variable()).thenReturn(variableName);
+        when(contentType.baseType()).thenReturn(baseType);
 
         final Contentlet contentlet = mock(Contentlet.class);
-        when(contentlet.getStructure()).thenReturn(structure);
+        when(contentlet.getContentType()).thenReturn(contentType);
         when(contentlet.getPermissionType()).thenReturn(DECLARED_TYPE);
         return contentlet;
     }
 
     /**
      * Method to test: {@link PermissionBitFactoryImpl#resolvePermissionType(Permissionable)}
-     * Given scenario: a contentlet with no resolvable content type, so {@code getStructure()} is null.
+     * Given scenario: a contentlet with no resolvable content type, so {@code getContentType()} is null.
      * Expected result: it falls through to the declared type instead of throwing.
      *
      * <p>This is the behaviour that deliberately changed. The old chain read
      * {@code getStructure().getStructureType()} in the FILEASSET branch without the null check its
-     * neighbouring branch performed, and {@link Contentlet#getStructure()} returns {@code null} when the
-     * contentlet has no resolvable content type — so this input threw a {@link NullPointerException}.</p>
+     * neighbouring branch performed, and {@link Contentlet#getContentType()} returns {@code null} when
+     * the contentlet has no resolvable content type — so this input threw a
+     * {@link NullPointerException}.</p>
      */
     @Test
     public void test_contentletWithNoContentType_doesNotThrow() {
         final Contentlet contentlet = mock(Contentlet.class);
-        when(contentlet.getStructure()).thenReturn(null);
+        when(contentlet.getContentType()).thenReturn(null);
         when(contentlet.getPermissionType()).thenReturn(DECLARED_TYPE);
 
         assertEquals(DECLARED_TYPE, factory.resolvePermissionType(contentlet));
