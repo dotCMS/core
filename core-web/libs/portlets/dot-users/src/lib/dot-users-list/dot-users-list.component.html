@@ -177,4 +177,51 @@
     </p-table>
 </div>
 
-<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />
+<p-dialog
+    [visible]="bulkDeleteVisible()"
+    (visibleChange)="bulkDeleteVisible.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    [header]="'users.confirm.delete.header' | dm"
+    data-testid="users-bulk-delete-dialog">
+    <div class="flex flex-col gap-4">
+        <p class="m-0 text-color">
+            {{
+                'users.confirm.delete.message'
+                    | dm: [store.selectedUsers().length.toString()]
+            }}
+        </p>
+        <div class="field flex flex-col gap-2">
+            <label for="users-bulk-delete-replacement-picker">
+                {{ 'users.dialog.delete-confirm.replacement-label' | dm }}
+                <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <dot-users-replacement-picker
+                inputId="users-bulk-delete-replacement-picker"
+                [value]="bulkReplacementUser()"
+                [excludedUserIds]="bulkExcludedIds()"
+                (selectionChange)="onBulkReplacementSelect($event)"
+                data-testid="users-bulk-delete-replacement-picker" />
+            <small class="text-color-secondary">
+                {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+            </small>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'users.cancel' | dm"
+            severity="secondary"
+            [text]="true"
+            (onClick)="closeBulkDelete()"
+            data-testid="users-bulk-delete-cancel-btn" />
+        <p-button
+            [label]="'users.delete' | dm"
+            severity="danger"
+            [disabled]="!canConfirmBulkDelete()"
+            (onClick)="confirmBulkDelete()"
+            data-testid="users-bulk-delete-confirm-btn" />
+    </ng-template>
+</p-dialog>

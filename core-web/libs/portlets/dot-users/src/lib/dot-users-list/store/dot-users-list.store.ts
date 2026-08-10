@@ -13,7 +13,11 @@ import {
 } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
-import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
+import {
+    DotUserFormPayload,
+    DotUserListItem,
+    DotUsersService
+} from '../../services/dot-users.service';
 
 export type DotUsersListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -136,7 +140,86 @@ export const DotUsersListStore = signalStore(
                 patchState(store, { selectedUsers: users });
             },
 
-            deleteSelectedUsers() {
+            /**
+             * Creates a new user and reloads the list on success. Errors are
+             * surfaced through the shared HTTP error manager; the list stays
+             * in `loaded` state so the user can retry from the same dialog.
+             */
+            createUser(payload: DotUserFormPayload) {
+                patchState(store, { status: 'loading' });
+                usersService
+                    .createUser(payload)
+                    .pipe(take(1))
+                    .subscribe({
+                        next: () => {
+                            messageDisplayService.push({
+                                life: 5000,
+                                severity: DotMessageSeverity.SUCCESS,
+                                message: messageService.get('users.create.success'),
+                                type: DotMessageType.SIMPLE_MESSAGE
+                            });
+                            loadUsers();
+                        },
+                        error: (error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+                        }
+                    });
+            },
+
+            /**
+             * Updates a user and reloads the list on success. Same error
+             * contract as `createUser`.
+             */
+            updateUser(payload: DotUserFormPayload) {
+                patchState(store, { status: 'loading' });
+                usersService
+                    .updateUser(payload)
+                    .pipe(take(1))
+                    .subscribe({
+                        next: () => {
+                            messageDisplayService.push({
+                                life: 5000,
+                                severity: DotMessageSeverity.SUCCESS,
+                                message: messageService.get('users.update.success'),
+                                type: DotMessageType.SIMPLE_MESSAGE
+                            });
+                            loadUsers();
+                        },
+                        error: (error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+                        }
+                    });
+            },
+
+            /**
+             * Single-user delete dispatched from the dialog footer. Separate
+             * from `deleteSelectedUsers`, which acts on the bulk-selection.
+             */
+            deleteSingleUser(userId: string, replacementUserId?: string) {
+                patchState(store, { status: 'loading' });
+                usersService
+                    .deleteUser(userId, replacementUserId)
+                    .pipe(take(1))
+                    .subscribe({
+                        next: () => {
+                            messageDisplayService.push({
+                                life: 5000,
+                                severity: DotMessageSeverity.SUCCESS,
+                                message: messageService.get('users.delete.success.one'),
+                                type: DotMessageType.SIMPLE_MESSAGE
+                            });
+                            loadUsers();
+                        },
+                        error: (error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+                        }
+                    });
+            },
+
+            deleteSelectedUsers(replacementUserId?: string) {
                 const selected = store.selectedUsers();
                 if (selected.length === 0 || store.status() === 'loading') {
                     return;
@@ -144,7 +227,7 @@ export const DotUsersListStore = signalStore(
                 patchState(store, { status: 'loading' });
 
                 const deletions = selected.map((user) =>
-                    usersService.deleteUser(user.userId).pipe(
+                    usersService.deleteUser(user.userId, replacementUserId).pipe(
                         take(1),
                         map(() => true),
                         catchError((error) => {
@@ -163,9 +246,13 @@ export const DotUsersListStore = signalStore(
                         const failureCount = total - successCount;
 
                         if (successCount > 0) {
+                            const successKey =
+                                successCount === 1
+                                    ? 'users.delete.success.one'
+                                    : 'users.delete.success.many';
                             const message =
                                 failureCount === 0
-                                    ? messageService.get('users.delete.success', `${successCount}`)
+                                    ? messageService.get(successKey, `${successCount}`)
                                     : messageService.get(
                                           'users.delete.partial-success',
                                           `${successCount}`,
