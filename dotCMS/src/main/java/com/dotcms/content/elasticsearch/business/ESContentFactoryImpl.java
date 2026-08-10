@@ -42,6 +42,8 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -755,6 +757,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
      * @return
      */
+    // The cache-miss surcharge for the single-contentlet path. Reaching this method IS the
+    // miss - find() has already charged the CONTENT_FROM_CACHE base fee, so a warm find
+    // costs 1 and a cold one costs 11. Annotations are not inherited, so the @RequestCost on
+    // ContentletFactory's findInDb default does nothing here; this needs its own.
+    @RequestCost(Price.CONTENT_FROM_DB)
     public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
@@ -1282,9 +1289,20 @@ public class ESContentFactoryImpl implements ContentletFactory {
       }
     }
 
+    // This is the bulk loader behind every search result (GraphQL, /api/content,
+    // /api/es/search, page render) and it bypasses ESContentletAPIImpl.find(), so nothing
+    // else meters it. Base fee per contentlet asked for; the cache misses pay a surcharge
+    // below. Note the surcharge is per missed ROW, not per SQL statement - the 200-row
+    // batching is our implementation detail and is deliberately not priced.
+    APILocator.getRequestCostAPI().incrementCost(Price.CONTENT_FROM_CACHE,
+            ESContentFactoryImpl.class, "findContentlets", new Object[]{}, inodes.size());
+
     if (conMap.size() != inodes.size()) {
         final List<String> missingCons = new ArrayList<>(
                 CollectionUtils.subtract(inodes, conMap.keySet()));
+
+        APILocator.getRequestCostAPI().incrementCost(Price.CONTENT_FROM_DB,
+                ESContentFactoryImpl.class, "findContentlets", new Object[]{}, missingCons.size());
 
         final String contentletBase =
                 "select contentlet.*, contentlet_1_.owner  from contentlet join inode contentlet_1_ "

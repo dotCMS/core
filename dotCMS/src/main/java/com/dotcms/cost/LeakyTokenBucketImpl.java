@@ -66,8 +66,15 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     LeakyTokenBucketImpl() {
         this(
                 Config.getBooleanProperty("RATE_LIMIT_ENABLED", false),
-                Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 500),
-                Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 10000)
+                // Scaled with the Price table when it was re-based on resource-time
+                // (see RequestPrices.Price): one DB round trip is 10 units, one remote
+                // HTTP call is 100, so the old 500/10000 defaults would now throttle a
+                // handful of requests per second. Ratio to the old defaults is unchanged.
+                // NOTE: the bucket drains in RAW Price units, not the denominated ones
+                // reported in the x-dotrequest-cost header - a limit set here is on the
+                // Price scale (remote HTTP = 100), not the reported-token scale.
+                Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 5000),
+                Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 100000)
         );
     }
 

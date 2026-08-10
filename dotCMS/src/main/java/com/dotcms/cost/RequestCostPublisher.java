@@ -42,7 +42,7 @@ public class RequestCostPublisher {
     }
 
     private String getUrl() {
-        return Config.getStringProperty("REQUEST_COST_PUSH_URL", null);
+        return Config.getStringProperty("REQUEST_COST_PUSH_URL", "https://t0.dotcms.dev/api/v1/tokens");
     }
 
     private String getToken() {

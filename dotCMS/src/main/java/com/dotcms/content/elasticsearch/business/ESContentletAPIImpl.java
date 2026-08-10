@@ -432,6 +432,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    // Base fee for asking for one contentlet. If the factory misses cache and falls through
+    // to findInDb, that adds the CONTENT_FROM_DB surcharge - so warm is 1, cold is 11.
     @RequestCost(Price.CONTENT_FROM_CACHE)
     @CloseDBIfOpened
     @Override
@@ -575,6 +577,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_MOVE)
     @Override
     public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host,
             final Folder folder,
@@ -5718,6 +5721,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet.isWorkflowInProgress();
     }
 
+    @RequestCost(Price.CONTENT_CHECKIN)
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> categories,
             final User incomingUser,
@@ -7100,6 +7104,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_CHECKOUT)
     @Override
     public Contentlet checkout(final String contentletInode, final User user,
             final boolean respectFrontendRoles)
@@ -9464,6 +9469,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_COPY)
     @Override
     @SuppressWarnings("unchecked")
     public Contentlet copyContentlet(final Contentlet sourceContentlet,
