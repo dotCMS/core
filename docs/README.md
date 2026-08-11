@@ -17,9 +17,15 @@ Backend-specific patterns and standards:
 - **MAVEN_BUILD_SYSTEM.md** - Dependency and plugin management
 
 ### `/docs/frontend/` - Angular/TypeScript Development
-Frontend-specific patterns and standards:
-- **ANGULAR_STANDARDS.md** - Angular component and testing patterns
-- **STYLING_STANDARDS.md** - CSS/SCSS and BEM methodology
+Frontend-specific patterns and standards. **Start at the index: [frontend/README.md](frontend/README.md)** — it lists every doc and when to load it.
+- **[ANGULAR_STANDARDS.md](frontend/ANGULAR_STANDARDS.md)** - Single source of truth: components, signals, change detection, forms, icons
+- **[COMPONENT_ARCHITECTURE.md](frontend/COMPONENT_ARCHITECTURE.md)** - Component structure, file layout, data flow
+- **[STATE_MANAGEMENT.md](frontend/STATE_MANAGEMENT.md)** - NgRx Signal Store, rxMethod, patchState
+- **[STYLING_STANDARDS.md](frontend/STYLING_STANDARDS.md)** - Tailwind, PrimeNG theme, BEM, SCSS
+- **[TYPESCRIPT_STANDARDS.md](frontend/TYPESCRIPT_STANDARDS.md)** - Strict types, as const, `#` private
+- **[TESTING_FRONTEND.md](frontend/TESTING_FRONTEND.md)** - Writing tests: Spectator, Jest, byTestId
+- **[TESTING_REVIEW_RULES.md](frontend/TESTING_REVIEW_RULES.md)** - Reviewing tests: violation checklist
+- **[BREADCRUMBS.md](frontend/BREADCRUMBS.md)** - GlobalStore breadcrumb trail
 
 ### `/docs/claude/` - AI Assistant Guidance
 Workflow optimization for AI assistants:
