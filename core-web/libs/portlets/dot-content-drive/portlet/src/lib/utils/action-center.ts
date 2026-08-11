@@ -10,91 +10,93 @@ import {
 import { isFolder } from './functions';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
-/** Quick action that is not a `SystemAction` and so is not fired through the workflow endpoints. */
+/**
+ * Action Center helpers.
+ *
+ * Two action sources, one dialog:
+ * 1. **Quick actions** — fixed list (`QUICK_ACTIONS`), eligibility from row state.
+ * 2. **Workflow actions** — from bulk-actions API, one request per content type, then merged.
+ *
+ * Folders are always dropped: endpoints take contentlet inodes only.
+ */
+
+/** Not a `SystemAction`; not fired through workflow endpoints. */
 export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
 
 export type DotActionCenterQuickActionId = WORKFLOW_ACTION_ID | typeof ADD_TO_BUNDLE_ACTION_ID;
 
-/**
- * A quick action as rendered in the Action Center: the action itself, an icon, and the number of
- * selected contentlets it applies to.
- */
+/** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {
     id: DotActionCenterQuickActionId;
-    /** i18n key for the label. */
+    /** i18n label key. */
     name: string;
-    /** Material Symbols glyph name, rendered inside the row's icon chip. */
+    /** Material Symbols glyph name. */
     icon: string;
     /**
-     * The contentlet inodes the action applies to — exactly the set that gets fired.
-     *
-     * Derived alongside {@link count} from one filter pass so the number shown on the row and the
-     * items actually acted on cannot drift apart.
+     * Inodes the action will fire on. Built with {@link count} in one pass so the badge
+     * and the payload cannot diverge.
      */
     eligibleInodes: string[];
-    /**
-     * Number of selected contentlets the action applies to. `0` means it does not apply to this
-     * selection at all; the row is still rendered, but not selectable.
-     */
+    /** Eligible contentlets. `0` = shown but not selectable. */
     count: number;
-    /** Destructive action — rendered with the danger severity, as in the design. */
+    /** Renders with danger severity. */
     danger: boolean;
-    /** i18n key for a confirmation prompt shown before firing, when the action warrants one. */
+    /** i18n key for a confirm prompt before fire. */
     confirmMessage?: string;
-    /**
-     * i18n key explaining why the action cannot be run at all yet, independent of the selection.
-     * When set the row is always non-selectable and shows this as its hint.
-     */
+    /** i18n key when the action is always disabled (e.g. not implemented yet). */
     pendingHint?: string;
     /**
-     * How many of the {@link eligibleInodes} are expected to fail, with {@link warningHint}
-     * explaining why. `0` for actions with nothing to warn about.
-     *
-     * These items are still fired — the count is a heads-up, not a filter. See the Unlock entry in
-     * {@link QUICK_ACTIONS} for why the client cannot decide this on its own.
+     * Eligible items likely to fail — heads-up only; they are still fired.
+     * See Unlock in {@link QUICK_ACTIONS}.
      */
     warningCount: number;
-    /** i18n key describing what {@link warningCount} counts. Absent when it is `0`. */
+    /** i18n key for {@link warningCount}. Absent when count is `0`. */
     warningHint?: string;
 }
 
-/**
- * Caller state a quick action's predicates need but cannot read off a row.
- */
+/** Caller state predicates need beyond row data. */
 export interface DotActionCenterContext {
     /**
-     * Whether the current user holds the CMS Administrator role, from the store's
-     * `currentUserIsAdmin`. `false` while the flag is still resolving, which makes an unresolved
-     * flag behave like a non-admin — see {@link isLockedByAnotherUser}.
+     * CMS Administrator role. `false` while unresolved → treated as non-admin
+     * (see {@link isLockedByAnotherUser}).
      */
     isAdmin: boolean;
 }
 
 /**
- * Whether a row's lock belongs to somebody other than the current user *and* that matters.
+ * Definition of a quick action before selection counts are applied.
+ * {@link getQuickActions} maps these into {@link DotActionCenterQuickAction}.
+ */
+interface DotActionCenterQuickActionDef {
+    id: DotActionCenterQuickActionId;
+    /**
+     * i18n label key. Owned here (not shared with the toolbar) now that the
+     * Action Center owns these actions.
+     */
+    nameKey: string;
+    icon: string;
+    danger: boolean;
+    /** Row-state heuristic — not a permission check. Counted items can still fail at fire. */
+    eligibleWhen: (item: DotCMSContentlet) => boolean;
+    /** i18n key for confirm before fire (destructive actions). */
+    confirmMessage?: string;
+    /** i18n key when always disabled. */
+    pendingHint?: string;
+    /** Among eligible items; feeds `warningCount`. */
+    warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
+    /** Required whenever `warnWhen` is set. */
+    warningHint?: string;
+}
+
+/**
+ * True when the row is locked by someone else *and* that matters for the current user.
  *
- * The single definition of "foreign lock" for the whole Action Center: the Unlock row's warning
- * count and the preview's per-row marker both key off this, so the number on the row and the rows
- * marked in the preview can never disagree.
+ * Shared by the Unlock warning badge and the preview markers so those counts stay in sync.
  *
- * `contentEditable` is the closest thing the grid has to a lock owner. `BrowserAPIImpl.WfData`
- * derives it as `lockedBy == currentUser` (plus WRITE on the contentlet), so it is `false` on a row
- * locked by anyone else — but it never consults the user's role.
- *
- * The server-side gate, `ESContentletAPIImpl.canLock`, returns `true` for a CMS Administrator
- * *before* it looks at the lock owner. So an admin unlocks every row regardless of who holds it, and
- * warning them is noise about an outcome that will not happen. `isAdmin` is what removes that.
- *
- * One known false positive remains, and it over-warns rather than under-warns: a user holding EDIT
- * at the **content-type** level rather than on the contentlet. `contentEditable` checks WRITE on the
- * contentlet only, while `canLock` accepts EDIT on either. Removing it needs per-row unlockability
- * from the server (a `BrowserAPIImpl` change), which is why the hint says "may require" rather than
- * predicting failure.
- *
- * @param item - The row to test
- * @param context - Caller state; an unresolved admin flag counts as a non-admin, so the warning
- * errs toward showing rather than silently dropping a heads-up a non-admin needed
- * @returns `true` when the row should be flagged as locked by another user
+ * - Grid `contentEditable` ≈ lock owner (`lockedBy == currentUser` + WRITE), not role.
+ * - Server `canLock` lets CMS Admins unlock anyone — so admins get no warning.
+ * - Known over-warn: EDIT on content type (not contentlet) still fails `contentEditable`
+ *   while `canLock` allows it. Hint says "may require" for that reason.
  */
 export const isLockedByAnotherUser = (
     item: DotCMSContentlet,
@@ -102,61 +104,23 @@ export const isLockedByAnotherUser = (
 ): boolean => !isAdmin && !!item.locked && !item.contentEditable;
 
 /**
- * Quick actions offered in the Action Center.
+ * Quick actions in display order (fixed — rows never reshuffle).
  *
- * **The order of this array is the display order and is fixed** — Lock, Unlock, Publish, Unpublish,
- * Archive, Delete, Unarchive, Add to Bundle. Rows keep their position whether or not they are
- * selectable, so the list never reshuffles as the selection changes.
+ * Order: Lock, Unlock, Publish, Unpublish, Archive, Delete, Unarchive, Add to Bundle.
  *
- * Scope notes for v1:
- * - Every entry except Add to Bundle is a `SystemAction` the multi-contentlet endpoint accepts
- *   (`POST /api/v1/workflow/actions/default/fire/{systemAction}`), so each fires in one request.
- * - **Add to Bundle is present but always disabled.** `POST /api/v1/bundles/assets` does accept a
- *   list of asset identifiers, so the endpoint is not the blocker: it needs a target bundle, which
- *   means a picker step (`DotAddToBundleComponent` takes a single identifier today) and an
- *   enterprise-license gate. Tracked separately.
- *
- * `eligibleWhen` derives the count from row state the grid already has. It is a state heuristic,
- * not a permission check — an item can be counted and still fail at execution.
- *
- * `warnWhen` marks eligible items that are *likely* to fail, so the row can say so up front without
- * dropping them from the payload.
+ * v1 notes:
+ * - All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`.
+ * - Add to Bundle is always disabled (needs picker + enterprise gate).
  */
-const QUICK_ACTIONS: {
-    id: DotActionCenterQuickActionId;
-    /** Label key. Held here rather than borrowed from the toolbar's action list, which no longer
-     *  carries these actions now that the Workflow Center owns them. */
-    nameKey: string;
-    icon: string;
-    danger: boolean;
-    eligibleWhen: (item: DotCMSContentlet) => boolean;
-    /** Confirmation message key. Set for actions destructive enough to warrant a prompt. */
-    confirmMessage?: string;
-    pendingHint?: string;
-    /** Counted among the eligible items to produce `warningCount`. */
-    warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
-    /** Explains what `warnWhen` matched. Required whenever `warnWhen` is set. */
-    warningHint?: string;
-}[] = [
+const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
-        // Lock and Unlock lead the list: they are the least destructive actions here and the ones a
-        // user reaches for mid-edit, so they sit furthest from Archive and Delete.
+        // Least destructive; sit away from Archive/Delete.
         id: WORKFLOW_ACTION_ID.LOCK,
         nameKey: 'content-drive.context-menu.lock',
         icon: 'lock',
         danger: false,
-        // Archived rows are excluded because locking one serves no purpose and has a lasting cost:
-        // `canLock` is a delete precondition (`ESContentletAPIImpl:3434`), so a stray lock leaves
-        // the item undeletable by anyone but the holder or a CMS Admin. Unarchive is unaffected —
-        // it checks PUBLISH permission and never consults the lock.
-        //
-        // **This is a UX filter, not an enforcement boundary.** Nothing server-side refuses to lock
-        // archived content: `ContentletAPI.lock` guards only a blank inode and `canLock`, so both
-        // `PUT /api/v1/content/_lock/{inode}` and a direct fire of the `LOCK` system action still
-        // allow it — as does this portlet's own row context menu, which gates on `canLock` alone.
-        // All this does is stop the dialog offering an action with no upside. Making it an actual
-        // invariant would mean changing `ContentletAPI.lock` for every caller, which is a behaviour
-        // change to a long-standing API and belongs in its own issue.
+        // UX filter only: locking archived content has no upside and can block delete
+        // (`canLock` is a delete precondition). Server still allows it.
         eligibleWhen: (item) => !item.locked && !item.archived
     },
     {
@@ -164,14 +128,8 @@ const QUICK_ACTIONS: {
         nameKey: 'content-drive.context-menu.unlock',
         icon: 'lock_open',
         danger: false,
-        // `locked` alone would do — archive refuses locked content — but the archived exclusion is
-        // spelled out so the pair reads the same way.
         eligibleWhen: (item) => !!item.locked && !item.archived,
-        // A lock belonging to someone else can only be released by its holder or a CMS
-        // Administrator. Flagged rather than filtered out: the items are still counted, fired and
-        // reported on, because only the server can decide. See `isLockedByAnotherUser` for what the
-        // flag can and cannot know — notably that it goes quiet for an administrator, who unlocks
-        // every row regardless of who holds it.
+        // Warn, don't filter — only the server knows if unlock will succeed.
         warnWhen: isLockedByAnotherUser,
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
     },
@@ -202,13 +160,11 @@ const QUICK_ACTIONS: {
         icon: 'delete',
         danger: true,
         eligibleWhen: (item) => !!item.archived,
-        // Carried over from the toolbar's Delete, which prompted before firing. Without this the
-        // move into the Workflow Center would have quietly dropped the only guard on a bulk delete.
+        // Kept from the old toolbar Delete confirm.
         confirmMessage: 'content.drive.worflow.action.delete.confirm'
     },
     {
-        // Sits after Delete so the two archived-only actions are adjacent, and so archiving is not
-        // a one-way trip: without it nothing in this dialog can un-archive.
+        // After Delete so archived-only actions stay together.
         id: WORKFLOW_ACTION_ID.UNARCHIVE,
         nameKey: 'Default-Action-Unarchive',
         icon: 'unarchive',
@@ -220,47 +176,27 @@ const QUICK_ACTIONS: {
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
         danger: false,
-        // A bundle accepts any asset, so the count is the whole contentlet selection. It is shown
-        // for honesty about what the action would cover once the picker exists.
+        // Count = full selection; shows coverage once the picker ships.
         eligibleWhen: () => true,
         pendingHint: 'content-drive.action-center.add-to-bundle.pending'
     }
 ];
 
-/**
- * Strips folders out of a selection. Folders can be selected in the grid but are ignored by every
- * bulk action: the endpoints take contentlet inodes, and folders carry no workflow step.
- *
- * @param items - The raw selection from the grid
- * @returns Only the contentlet items
- */
+/** Drops folders from a selection (bulk endpoints are contentlet-only). */
 export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[] =>
     items.filter((item): item is DotCMSContentlet => !isFolder(item));
 
-/**
- * Maps a selection to the inode list expected by the bulk endpoints.
- *
- * @param items - The raw selection from the grid (folders are dropped)
- * @returns Contentlet inodes
- */
+/** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
     excludeFolders(items).map((item) => item.inode);
 
 /**
- * Builds the Quick Actions list for the current selection, each with its eligible count.
+ * Quick actions for the current selection, always in {@link QUICK_ACTIONS} order.
  *
- * Every action is always returned, including those that apply to nothing — a `count` of `0` means
- * "does not apply to this selection", and the dialog renders those rows as non-selectable. Keeping
- * them visible makes the set of available actions stable as the selection changes, instead of rows
- * appearing and disappearing under the pointer.
+ * Every action is returned — `count: 0` means not applicable but still shown, so the
+ * list stays stable as the selection changes. Empty array only when there are no contentlets.
  *
- * An empty result means there are no contentlets at all (an empty or folder-only selection), where
- * no action could apply.
- *
- * @param items - The raw selection from the grid
- * @param context - Caller state the predicates need, currently the user's admin flag. Defaults to a
- * non-admin so a caller that has nothing to say still gets the safe, over-warning behaviour
- * @returns Every quick action in display order, each with its eligible count (possibly `0`)
+ * @param context Defaults to non-admin (safe over-warning).
  */
 export const getQuickActions = (
     items: DotContentDriveItem[],
@@ -273,12 +209,9 @@ export const getQuickActions = (
     }
 
     return QUICK_ACTIONS.map((quickAction) => {
-        // One filter pass feeds both the count and the inodes that get fired, so the row can never
-        // advertise a different number of items than the action actually touches.
+        // One pass → count and fired inodes stay aligned.
         const eligible = contentlets.filter(quickAction.eligibleWhen);
         const eligibleInodes = eligible.map((item) => item.inode);
-        // Counted over `eligible` rather than the whole selection: warning about items the action
-        // was never going to touch would make the number meaningless.
         const { warnWhen } = quickAction;
         const warningCount = warnWhen
             ? eligible.filter((item) => warnWhen(item, context)).length
@@ -300,20 +233,10 @@ export const getQuickActions = (
 };
 
 /**
- * Flattens the `scheme -> steps -> actions` response into a single action list per scheme.
+ * Flattens `scheme → steps → actions` into one action list per scheme.
  *
- * The nested step grouping is a backend implementation detail the dialog does not surface. Two
- * things make the flattening safe:
- *
- * - The backend already sums an action's `count` across every step of its scheme, so concatenating
- *   step action lists does not inflate counts.
- * - The backend already dedupes actions per scheme, keeping a single occurrence.
- *
- * A defensive dedupe by action id is still applied (keeping the highest count) so a partially
- * out-of-sync index cannot render the same action twice.
- *
- * @param view - The raw `BulkActionView` response
- * @returns One entry per scheme, each with a flat action list; schemes with no actions are dropped
+ * Backend already sums counts and dedupes per scheme; we still dedupe by id
+ * (keep highest count) as a safety net. Schemes with no actions are dropped.
  */
 export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterScheme[] => {
     if (!view?.schemes?.length) {
@@ -335,8 +258,7 @@ export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterS
                 }
             }
 
-            // Each contentlet sits in exactly one step, so summing step counts gives the number of
-            // selected contentlets on this scheme.
+            // One contentlet per step → sum step counts = scheme coverage.
             const count = (schemeView.steps ?? []).reduce(
                 (total, { step }) => total + (step?.count ?? 0),
                 0
@@ -353,13 +275,8 @@ export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterS
 };
 
 /**
- * Groups a contentlet selection by content type variable name, preserving selection order.
- *
- * Used to split the bulk-actions lookup into one request per content type, which is what makes
- * per-action eligibility knowable at all — see {@link mergeActionCenterSchemes}.
- *
- * @param contentlets - Contentlets (folders already excluded)
- * @returns One entry per distinct content type
+ * Groups contentlets by content type, preserving selection order.
+ * Enables per-type bulk lookups — see {@link mergeActionCenterSchemes}.
  */
 export const groupByContentType = (
     contentlets: DotCMSContentlet[]
@@ -380,19 +297,11 @@ export const groupByContentType = (
 };
 
 /**
- * Merges per-content-type bulk-action responses into one scheme list, recording which content types
- * contributed each action.
+ * Merges per-content-type bulk responses into one scheme list.
  *
- * The endpoint only ever reports counts, so a single lookup over a mixed selection cannot say which
- * contentlets an action applies to. Asking once per content type recovers that: schemes are assigned
- * per content type, so an action returned for the "Blog" request applies to Blog contentlets and no
- * others.
- *
- * Counts are summed across groups, which reproduces exactly what a single combined lookup would have
- * reported — each contentlet is counted by exactly one group.
- *
- * @param groups - One `(contentType, response)` pair per content type in the selection
- * @returns Merged schemes, each action carrying its eligible content types
+ * A single mixed lookup only returns counts — not which contentlets match.
+ * One request per content type recovers that; each action gets `contentTypes`.
+ * Counts sum to the same totals a combined lookup would report.
  */
 export const mergeActionCenterSchemes = (
     groups: { contentType: string; view: DotBulkActionView }[]
@@ -427,8 +336,7 @@ export const mergeActionCenterSchemes = (
                 }
 
                 merged.count += action.count;
-                // Approximate wins: if the condition was unevaluated for any group, the total is an
-                // upper bound too.
+                // Unevaluated condition in any group → total is an upper bound.
                 merged.approximateCount = merged.approximateCount || action.approximateCount;
 
                 if (!merged.contentTypes.includes(contentType)) {
@@ -444,18 +352,10 @@ export const mergeActionCenterSchemes = (
 };
 
 /**
- * Narrows a selection to the contentlets a workflow action can actually run on.
+ * Contentlets a workflow action can run on (by content type).
  *
- * Falls back to the whole selection when the action has no resolved content types, so an unresolved
- * lookup shows too many rows rather than none.
- *
- * Scheme-level accurate, not step-level: two contentlets of the same content type can sit on
- * different steps, and only one of those steps may expose the action. The action's own `count` stays
- * the authority on the true total, which is why the dialog still warns when it falls short.
- *
- * @param action - The selected workflow action
- * @param contentlets - Contentlets in the selection (folders already excluded)
- * @returns The contentlets whose content type exposes the action
+ * Falls back to the full selection when `contentTypes` is empty (prefer over-include).
+ * Scheme-level only — same type, different steps, may still diverge from `action.count`.
  */
 export const eligibleContentlets = (
     action: DotActionCenterWorkflowAction | undefined,
@@ -469,11 +369,8 @@ export const eligibleContentlets = (
 };
 
 /**
- * Maps one `CountWorkflowAction` onto the UI shape.
- *
- * `requiresInput` folds together every flag that means the action cannot be fired straight from the
- * dialog: push-publish settings, a move target path, or an assign/comment prompt. v1 disables those
- * rather than reimplementing the params dialog.
+ * Maps API `CountWorkflowAction` → UI shape.
+ * `requiresInput` covers push-publish, move path, or assign/comment — v1 disables these.
  */
 const toActionCenterAction = (
     countAction: DotCountWorkflowAction
@@ -487,8 +384,7 @@ const toActionCenterAction = (
         requiresInput:
             pushPublish || moveable || workflowAction.assignable || workflowAction.commentable,
         approximateCount: conditionPresent,
-        // Stamped by `mergeActionCenterSchemes`, which is the only caller that knows which content
-        // type a response came from.
+        // Filled by `mergeActionCenterSchemes`.
         contentTypes: []
     };
 };
