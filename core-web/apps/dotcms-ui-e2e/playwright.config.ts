@@ -45,7 +45,14 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
-    /* Parallelize CI (2 workers); local keeps Playwright default. */
+    /*
+     * Parallelize CI (2 workers); local keeps Playwright default.
+     *
+     * Two Chromium instances share the runner with dotCMS, two OpenSearch nodes and Postgres, so
+     * this is the first knob to turn if the shard keeps crashing: drop to 1. Left at 2 because
+     * `--disable-dev-shm-usage` (see `use.launchOptions`) targets the observed crash directly, and
+     * halving concurrency would add ~10 minutes per shard for good.
+     */
     workers: process.env.CI ? 2 : undefined,
     timeout: 60000,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -66,7 +73,16 @@ export default defineConfig({
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
-        headless: headless
+        headless: headless,
+        launchOptions: {
+            /*
+             * Chromium puts its shared-memory allocations in /dev/shm, which a container gives 64MB
+             * of by default. Exhausting it crashes the browser process outright — a SIGSEGV with no
+             * Playwright output and no JUnit report, which is exactly how the CI shard died. This
+             * flag moves those allocations to regular temp files instead.
+             */
+            args: ['--disable-dev-shm-usage']
+        }
     },
     /* Run your local dev server before starting the tests */
     webServer:
