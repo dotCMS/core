@@ -16,12 +16,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
-// `DrawerClasses` carries PrimeNG's own class names for the drawer's parts. The click-outside
-// handler reads `DrawerClasses.mask` from it rather than hardcoding 'p-drawer-mask': a PrimeNG bump
-// that renames the class updates the enum, and one that drops the member breaks the build — either
-// way it can't silently disable click-to-close (see {@link DotEditContentSidePanelComponent.onMaskClick}).
-import { DrawerClasses, DrawerModule } from 'primeng/drawer';
+import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
@@ -119,6 +116,13 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
 
+    /**
+     * This panel's own drawer. Needed for its `mask` element: the click-outside handler compares
+     * the clicked node against THIS mask, not against the shared `p-drawer-mask` class, so masks
+     * belonging to other drawers in the document never close this panel (see {@link onMaskClick}).
+     */
+    protected readonly $drawer = viewChild(Drawer);
+
     /** Identity (and header title) of the content to create/edit, or `null` when closed. */
     readonly data = input<EditContentDialogData | null>(null);
 
@@ -178,9 +182,29 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * instead of one panel at a time.
      */
     protected onEscape(): void {
+        if (this.#hasOverlayAbove()) {
+            return;
+        }
+
         if (this.#navController.isTop(this)) {
             this.requestClose();
         }
+    }
+
+    /**
+     * Whether another PrimeNG overlay is stacked on top of this panel — the image editor dialog, a
+     * confirm popup, an open select panel, or a second side panel.
+     *
+     * Such an overlay owns the ESC key, but it is appended to `body` outside this component's DOM,
+     * so the document-level listener would still fire and close the panel underneath it. Every
+     * PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing
+     * the top of that stack against this drawer's own z-index answers "is something above me?"
+     * without matching on overlay class names, which differ per component and change across versions.
+     */
+    #hasOverlayAbove(): boolean {
+        const container = this.$drawer()?.container;
+
+        return !!container && ZIndexUtils.getCurrent() > ZIndexUtils.get(container);
     }
 
     /**
@@ -192,15 +216,16 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * edits lost silently) and desyncs the one-way `[visible]` binding. Matching the mask ourselves
      * keeps the panel on screen until the guard says it is safe to close.
      *
-     * The listener is document-wide (the mask is built imperatively into `document.body`, so no
-     * template binding can reach it), which is why it filters to the mask element itself — a click
-     * inside the panel, or a drag that starts inside and ends on the mask, resolves to a different
-     * target and is ignored. As with ESC, only the frontmost stacked panel reacts.
+     * The listener is document-wide because the mask is built imperatively into `document.body`, so
+     * no template binding can reach it. It matches on the mask's IDENTITY rather than its
+     * `p-drawer-mask` class: that class is shared by every modal drawer in the app (the UVE block
+     * editor sidebar is one), and a class check would let a foreign drawer's mask close this panel
+     * and pop the unsaved-changes prompt. Comparing the element also means a click inside the panel,
+     * or a drag that starts inside and ends on the mask, resolves to a different node and is
+     * ignored. As with ESC, only the frontmost stacked panel reacts.
      */
     protected onMaskClick(event: MouseEvent): void {
-        const target = event.target as HTMLElement | null;
-
-        if (!target?.classList?.contains(DrawerClasses.mask)) {
+        if (event.target !== this.$drawer()?.mask) {
             return;
         }
 

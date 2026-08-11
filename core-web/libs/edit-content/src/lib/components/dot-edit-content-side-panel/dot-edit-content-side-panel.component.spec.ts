@@ -3,7 +3,8 @@ import { MockComponent, MockPipe } from 'ng-mocks';
 import { Subject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
-import { DrawerClasses, DrawerModule } from 'primeng/drawer';
+import { Drawer, DrawerModule } from 'primeng/drawer';
+import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -119,9 +120,18 @@ describe('DotEditContentSidePanelComponent', () => {
             ?.querySelector('i')
             ?.textContent?.trim();
 
-    /** Expand button aria-label (i18n key via MockPipe) — user-facing expanded/collapsed cue. */
+    /**
+     * Expand button aria-label (i18n key via MockPipe) — user-facing expanded/collapsed cue.
+     *
+     * Read from the DESCENDANT native `<button>`, not the `p-button` host: the accessible name has
+     * to land on the focusable control. Reading the host would also pass with `[attr.aria-label]`,
+     * which leaves the real button unnamed (its only content is an icon glyph).
+     */
     const expandAriaLabel = (): string | null | undefined =>
-        spectator.query(byTestId('side-panel-expand'), { root: true })?.getAttribute('aria-label');
+        spectator
+            .query(byTestId('side-panel-expand'), { root: true })
+            ?.querySelector('button')
+            ?.getAttribute('aria-label');
 
     /**
      * Drawer width from the `pt.root.style` binding (`80%` collapsed / `100%` expanded). The drawer
@@ -189,6 +199,30 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(closedSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('should ignore Escape while another PrimeNG overlay is stacked above the panel', () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest.spyOn(layout, 'confirmClose');
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        // Stand in for the image editor dialog / a confirm popup opened from inside the panel:
+        // every PrimeNG overlay registers itself in this shared stack when it opens.
+        const stackedOverlay = document.createElement('div');
+        ZIndexUtils.set('modal', stackedOverlay, 2000);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+        // That overlay owns the ESC — the panel underneath must not consume it.
+        expect(confirmClose).not.toHaveBeenCalled();
+        expect(closedSpy).not.toHaveBeenCalled();
+
+        // Shared global stack: leaving the entry behind would leak into every later test.
+        ZIndexUtils.clear(stackedOverlay);
+    });
+
     it('should ignore Escape when not the frontmost stacked panel (isTop === false)', () => {
         (spectator.inject(DotSidePanelNavController).isTop as jest.Mock).mockReturnValue(false);
         spectator.setInput('data', EDIT_DATA);
@@ -207,19 +241,23 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     /**
-     * Simulates a click on the drawer's modal mask (the area behind the panel). PrimeNG builds that
-     * mask imperatively during the drawer's show animation, which jsdom does not run — so the test
-     * stands in a real element carrying the class the handler matches on, and dispatches a bubbling
-     * click from it just as the browser would.
+     * Builds a stand-in for a drawer's modal mask and dispatches a bubbling click from it, as the
+     * browser would. PrimeNG creates the real mask imperatively during the show animation, which
+     * jsdom never runs — hence the stand-in.
      *
-     * The class comes from PrimeNG's own `DrawerClasses`, the same source the handler reads, so this
-     * stand-in cannot drift from the real mask. What it covers is our logic — target filtering, the
-     * `isTop` guard, routing through the unsaved-changes guard — not PrimeNG's class naming.
+     * `ownedByPanel` decides whose mask it is: `true` assigns it to this panel's drawer instance
+     * (what the handler compares against), `false` leaves it as a foreign drawer's mask, which must
+     * be ignored.
      */
-    const clickOutside = (): void => {
+    const clickMask = ({ ownedByPanel }: { ownedByPanel: boolean }): void => {
         const mask = document.createElement('div');
-        mask.classList.add(DrawerClasses.mask);
+        mask.classList.add('p-drawer-mask');
         document.body.appendChild(mask);
+
+        if (ownedByPanel) {
+            spectator.query(Drawer).mask = mask;
+        }
+
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         mask.remove();
     };
@@ -236,7 +274,7 @@ describe('DotEditContentSidePanelComponent', () => {
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
 
-        clickOutside();
+        clickMask({ ownedByPanel: true });
 
         // Same contract as ESC / the X button: the guard runs first, close only follows it.
         expect(confirmClose).toHaveBeenCalledWith(expect.any(Function));
@@ -255,7 +293,7 @@ describe('DotEditContentSidePanelComponent', () => {
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
 
-        clickOutside();
+        clickMask({ ownedByPanel: true });
 
         expect(closedSpy).not.toHaveBeenCalled();
     });
@@ -270,7 +308,7 @@ describe('DotEditContentSidePanelComponent', () => {
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
 
-        clickOutside();
+        clickMask({ ownedByPanel: true });
 
         // A panel beneath the top one must not react to the shared document-level click.
         expect(confirmClose).not.toHaveBeenCalled();
@@ -286,10 +324,31 @@ describe('DotEditContentSidePanelComponent', () => {
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
 
+        // Asserted before dispatching on purpose: with an optional chain, a markup rename would
+        // silently skip the click and leave the two negative assertions below passing anyway.
+        const inside = spectator.query(byTestId('side-panel-title'), { root: true });
+        expect(inside).toBeTruthy();
+
         // Bubbles up to the same document listener, but its target is not the mask.
-        spectator
-            .query(byTestId('side-panel-title'), { root: true })
-            ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        inside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(confirmClose).not.toHaveBeenCalled();
+        expect(closedSpy).not.toHaveBeenCalled();
+    });
+
+    it('should NOT close on a click on ANOTHER drawer mask', () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = jest.spyOn(layout, 'confirmClose');
+        const closedSpy = jest.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        // `p-drawer-mask` is shared by every modal drawer in the app (the UVE block editor sidebar
+        // is one, mounted as a sibling of this panel). Matching on the class instead of the mask's
+        // identity would let a foreign drawer close this panel and pop the unsaved-changes prompt.
+        clickMask({ ownedByPanel: false });
 
         expect(confirmClose).not.toHaveBeenCalled();
         expect(closedSpy).not.toHaveBeenCalled();
@@ -436,9 +495,11 @@ describe('DotEditContentSidePanelComponent — persisted expanded preference', (
                 ?.querySelector('i')
                 ?.textContent?.trim()
         ).toBe(expected.icon);
+        // Descendant native <button>, not the p-button host — see `expandAriaLabel` above.
         expect(
             spectator
                 .query(byTestId('side-panel-expand'), { root: true })
+                ?.querySelector('button')
                 ?.getAttribute('aria-label')
         ).toBe(expected.ariaLabel);
         // Width is the user-visible outcome of reading `$expanded` on construction (`pt.root.style`).

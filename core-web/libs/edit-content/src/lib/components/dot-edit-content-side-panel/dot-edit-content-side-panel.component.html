@@ -10,6 +10,10 @@
     `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
     dismissible tears the drawer down immediately, bypassing the unsaved-changes guard. The mask
     click is handled by the component instead (see `onMaskClick`).
+
+    The header buttons name themselves through PrimeNG's `[ariaLabel]` input, never
+    `[attr.aria-label]`: the latter lands on the non-focusable `<p-button>` host, leaving the real
+    `<button>` — whose only content is an icon glyph — with no accessible name.
 -->
 <p-drawer
     [visible]="!!data()"
@@ -37,7 +41,7 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                         $expanded()
                             ? ('edit.content.side-panel.collapse' | dm)
                             : ('edit.content.side-panel.expand' | dm)
@@ -53,7 +57,7 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    [attr.aria-label]="'edit.content.side-panel.close' | dm"
+                    [ariaLabel]="'edit.content.side-panel.close' | dm"
                     (onClick)="requestClose()"
                     data-testid="side-panel-close">
                     <ng-template #icon>

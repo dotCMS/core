@@ -135,7 +135,10 @@
         <!-- Sidebar toggle: always visible. Single `dock_to_left` glyph, rendered as-is (NOT
              mirrored — the previous SVG pair carried a `-scale-x-100` flip that pointed it the wrong
              way). The glyph no longer changes per state, so the open/closed cue lives on the
-             button's aria-label — `aria-hidden` keeps screen readers off the ligature text. -->
+             accessible name — `aria-hidden` keeps screen readers off the ligature text.
+             The name MUST go through PrimeNG's `[ariaLabel]` input, not `[attr.aria-label]`: the
+             latter lands on the non-focusable `<p-button>` host, leaving the real `<button>` (whose
+             only content is the aria-hidden icon) with no accessible name at all. -->
         <div
             class="-mr-4 flex min-h-[52px] shrink-0 items-center justify-center"
             data-testId="sidebar-toggle">
@@ -143,7 +146,7 @@
                 [rounded]="true"
                 [text]="true"
                 (click)="$store.toggleSidebar()"
-                [attr.aria-label]="
+                [ariaLabel]="
                     (showSidebar ? 'edit.content.sidebar.close' : 'edit.content.sidebar.open') | dm
                 "
                 size="small"

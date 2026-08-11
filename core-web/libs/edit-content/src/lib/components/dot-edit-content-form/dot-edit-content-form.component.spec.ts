@@ -476,6 +476,51 @@ describe('DotFormComponent', () => {
                 expect(spectator.query(byTestId('sidebar-close-icon'))).toBeFalsy();
             });
 
+            it('should name the native sidebar-toggle button per open/closed state', () => {
+                // Assert on the DESCENDANT <button>, not the p-button host: the accessible name must
+                // land on the focusable control. `[attr.aria-label]` would sit on the inert host and
+                // leave this button unnamed (its only content is the aria-hidden glyph).
+                const nativeLabel = (): string | null | undefined =>
+                    spectator
+                        .query(byTestId('sidebar-toggle-button'))
+                        ?.querySelector('button')
+                        ?.getAttribute('aria-label');
+
+                // DotMessageService is a bare mockProvider (returns undefined), so echo the key back
+                // to make the label observable.
+                (spectator.inject(DotMessageService).get as jest.Mock).mockImplementation(
+                    (key: string) => key
+                );
+
+                // Opening the sidebar wakes the information feature's effect, which fetches the
+                // reference-page count. This describe never stubs it, so the bare mockProvider hands
+                // back `undefined` and the effect throws on `.pipe` — asynchronously, landing on
+                // whichever test runs next.
+                dotEditContentService.getReferencePages.mockReturnValue(of(0));
+
+                const expectedLabel = () =>
+                    store.isSidebarOpen()
+                        ? 'edit.content.sidebar.close'
+                        : 'edit.content.sidebar.open';
+
+                // `dm` is a PURE pipe, so it only re-runs when its input key changes — hence both
+                // assertions follow a toggle rather than reading the initial render. Derived from
+                // the live state instead of a hardcoded order: the initial value depends on how this
+                // describe initializes the store, not on the store's own default.
+                store.toggleSidebar();
+                spectator.detectChanges();
+                const afterFirstToggle = nativeLabel();
+                expect(afterFirstToggle).toBe(expectedLabel());
+
+                store.toggleSidebar();
+                spectator.detectChanges();
+                expect(nativeLabel()).toBe(expectedLabel());
+
+                // Both states were actually exercised — otherwise the two assertions above could
+                // both pass against a label that never changed.
+                expect(nativeLabel()).not.toBe(afterFirstToggle);
+            });
+
             describe('TabView Styling', () => {
                 it('should apply single-tab class when only one tab exists', () => {
                     dotContentTypeService.getContentTypeWithRender.mockReturnValue(
