@@ -437,6 +437,7 @@ pnpm install                    # NOT npm install
 - **Three files**: `.ts` + `.html` + `.scss` per component
 
 ## See also
+- [README.md](./README.md) — Index of all frontend docs, and which one to load when
 - [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
 - [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) — NgRx Signal Store for feature state
 - [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) — Tailwind CSS, PrimeNG theme, BEM, SCSS

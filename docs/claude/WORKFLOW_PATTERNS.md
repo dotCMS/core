@@ -27,8 +27,8 @@
 5. docs/backend/MAVEN_BUILD_SYSTEM.md
 
 # For Frontend tasks (add these)
-4. docs/frontend/ANGULAR_STANDARDS.md
-5. docs/frontend/STYLING_STANDARDS.md
+4. docs/frontend/README.md          # index — which frontend doc to load when
+5. docs/frontend/ANGULAR_STANDARDS.md  # single source of truth for Angular rules
 ```
 
 ### 3. TodoWrite Usage (Required for Multi-Step Tasks)

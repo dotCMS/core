@@ -33,7 +33,10 @@ cd core-web && pnpm nx affected -t test --exclude='tag:skip:test'
 | Adding or changing feature state (stores, async) | `@docs/frontend/STATE_MANAGEMENT.md` |
 | Writing or updating styles, Tailwind, BEM | `@docs/frontend/STYLING_STANDARDS.md` |
 | Writing or fixing tests (Spectator, Jest, data-testid) | `@docs/frontend/TESTING_FRONTEND.md` |
+| **Reviewing** someone else's tests (violation checklist) | `@docs/frontend/TESTING_REVIEW_RULES.md` |
 | Using TypeScript (strict, inference, `unknown`, `as const`, `#` private) | `@docs/frontend/TYPESCRIPT_STANDARDS.md` |
+| Working on the breadcrumb trail (GlobalStore) | `@docs/frontend/BREADCRUMBS.md` |
+| Unsure which doc you need | `@docs/frontend/README.md` (index) |
 
 **Reference in chat**: e.g. `@docs/frontend/ANGULAR_STANDARDS.md` or `@docs/frontend/TESTING_FRONTEND.md` so the right doc is included in context.
 

@@ -308,7 +308,8 @@ Ask Claude *"what skills can help with X?"* if you're unsure.
 - Backend (Java/Maven): [`docs/backend/`](docs/backend/) — start with
   [`JAVA_STANDARDS.md`](docs/backend/JAVA_STANDARDS.md) and [`MAVEN_BUILD_SYSTEM.md`](docs/backend/MAVEN_BUILD_SYSTEM.md)
 - Frontend (Angular/TS): [`core-web/CLAUDE.md`](core-web/CLAUDE.md) and
-  [`docs/frontend/`](docs/frontend/) — start with [`ANGULAR_STANDARDS.md`](docs/frontend/ANGULAR_STANDARDS.md)
+  [`docs/frontend/README.md`](docs/frontend/README.md) — the index of all frontend docs; start with
+  [`ANGULAR_STANDARDS.md`](docs/frontend/ANGULAR_STANDARDS.md), the single source of truth
 - Testing: [`docs/testing/`](docs/testing/)
 - The `justfile` at the repo root — the source of truth for `just` commands.
 

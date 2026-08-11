@@ -86,3 +86,8 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 | Events | `createFakeEvent`, `createFakeMouseEvent`, `createFakeKeyboardEvent` |
 
 See [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) for full examples and tutorials.
+
+## See also
+- [README.md](./README.md) — Index of all frontend docs, and which one to load when
+- [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) — Writing tests (this doc is for **reviewing** them)
+- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — The single source of truth for Angular rules
