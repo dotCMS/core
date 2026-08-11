@@ -6,12 +6,12 @@ Index for Angular/TypeScript frontend standards in `core-web`. **Cursor** uses `
 
 | Doc | When to load |
 |-----|----------------|
-| [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) | Components, templates, signals, OnPush, PrimeNG, testing stack |
+| [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) | Components, templates, signals, change detection defaults, PrimeNG, testing stack |
 | [BREADCRUMBS.md](./BREADCRUMBS.md) | GlobalStore breadcrumbs: addNewBreadcrumb, setBreadcrumbs, id/url for tabs, duplicate prevention |
 | [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) | Component structure, file layout, data flow, parent-child |
 | [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) | NgRx Signal Store, rxMethod, patchState — **prefer over manual state** |
 | [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) | Tailwind CSS, PrimeNG theme, BEM (when needed), SCSS variables |
-| [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Spectator, Jest/Vitest, byTestId, setInput, data-testid |
+| [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Spectator, Jest, byTestId, setInput, data-testid |
 | [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) | Strict types, inference, unknown, as const, # private |
 
 ## Congruence

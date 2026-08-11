@@ -4,8 +4,8 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 
 ## Required Framework
 
-- **Spectator** (`@ngneat/spectator/jest`) is required for all tests
-- **Jest** (or Vitest) as test runner
+- **Spectator** (`@openng/spectator/jest`) is required for all tests
+- **Jest** as test runner
 - **`@dotcms/utils-testing`** createFake functions for domain mocks
 
 ## Critical Violations 🔴 (Must Fix)
