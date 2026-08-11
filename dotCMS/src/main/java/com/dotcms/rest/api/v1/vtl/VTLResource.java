@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
@@ -538,6 +540,7 @@ public class VTLResource {
         }
     }
 
+    @RequestCost(Price.VELOCITY_MERGE)
     private Response evalVelocity(final HttpServletRequest request, final HttpServletResponse response,
                                   final Reader velocityReader, final Map<String, Object> contextParams,
                                   final User user, final DotJSONCache cache)

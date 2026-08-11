@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import static com.dotcms.content.index.IndexConfigHelper.haltMigration;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
@@ -2321,6 +2323,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+    @RequestCost(Price.CONTENT_INDEX)
     @Override
     public void addContentToIndex(final List<Contentlet> contentToIndex) {
 
