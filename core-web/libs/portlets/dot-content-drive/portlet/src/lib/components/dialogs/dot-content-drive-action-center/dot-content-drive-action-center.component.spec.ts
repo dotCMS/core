@@ -2,21 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 
-import {
-    DotHttpErrorManagerService,
-    DotMessageService,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
 
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
 
+import { DotContentDriveActionExecution } from '../../../shared/models';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const contentlet = (
@@ -83,13 +79,12 @@ const BULK_ACTIONS_RESPONSE = {
 describe('DotContentDriveActionCenterComponent', () => {
     let spectator: Spectator<DotContentDriveActionCenterComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
-    let messageService: SpyObject<MessageService>;
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
-    let fireService: SpyObject<DotWorkflowActionsFireService>;
     let confirmationService: SpyObject<ConfirmationService>;
-    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
+    // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
+    const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
@@ -97,19 +92,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             provideHttpClient(),
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
+                actionExecution: mockActionExecution,
                 loadItems: jest.fn(),
                 setStatus: jest.fn(),
                 setSelectedItems: jest.fn(),
                 closeDialog: jest.fn(),
                 setDialogDrillDown: jest.fn(),
-                clearDialogDrillDown: jest.fn()
+                clearDialogDrillDown: jest.fn(),
+                executeQuickAction: jest.fn(),
+                executeWorkflowAction: jest.fn()
             }),
-            mockProvider(MessageService, { add: jest.fn() }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
-            }),
-            mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
             })
         ],
         detectChanges: false
@@ -120,26 +114,19 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-1' }),
             contentlet({ inode: 'inode-2', live: true })
         ]);
+        mockActionExecution.set(undefined);
 
         spectator = createComponent();
 
         store = spectator.inject(DotContentDriveStore, true);
-        messageService = spectator.inject(MessageService, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
-        fireService = spectator.inject(DotWorkflowActionsFireService, true);
         confirmationService = spectator.inject(ConfirmationService, true);
-        httpErrorManager = spectator.inject(DotHttpErrorManagerService);
 
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
         );
-        jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(of([]));
-        jest.spyOn(fireService, 'bulkFire').mockReturnValue(
-            of({ successCount: 2, skippedCount: 0, fails: [] })
-        );
         jest.spyOn(store, 'closeDialog');
         jest.spyOn(store, 'loadItems');
-        jest.spyOn(messageService, 'add');
         // Records the call without accepting, so tests opt in to the accept path explicitly.
         jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
     });
@@ -161,6 +148,20 @@ describe('DotContentDriveActionCenterComponent', () => {
     const goToPreview = (): void => {
         armAction();
         spectator.click('[data-testid="continue-workflow-editorial"]');
+        spectator.detectChanges();
+    };
+
+    /** Opens a quick action's preview. Renders first, so callers can set the selection beforehand. */
+    const openQuickActionPreview = (id: string): void => {
+        spectator.detectChanges();
+        spectator.click(`[data-testid="quick-action-${id}"]`);
+        spectator.detectChanges();
+    };
+
+    /** Opens a quick action's preview and commits it, the full two-step path a user takes. */
+    const executeQuickAction = (id: string): void => {
+        openQuickActionPreview(id);
+        spectator.click('[data-testid="action-preview-execute"]');
         spectator.detectChanges();
     };
 
@@ -243,6 +244,21 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeFalsy();
         });
+
+        it('should render the notice statically, with no entrance animation', () => {
+            // The notice is present the moment the dialog opens, and PrimeNG's Message animates its
+            // own height from zero over 300ms with no way to opt out through the component — which
+            // read as the notice arriving late and shoving the action list down. `no-enter-motion` is
+            // what the component's styles hook onto to suppress it.
+            mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
+
+            spectator.detectChanges();
+
+            const notice = spectator.query('[data-testid="folders-ignored-message"]');
+
+            expect(notice).toBeTruthy();
+            expect(notice?.classList.contains('no-enter-motion')).toBe(true);
+        });
     });
 
     describe('quick actions', () => {
@@ -290,8 +306,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
 
-            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
         it('should confirm before firing Delete, then fire on accept', () => {
@@ -303,54 +321,48 @@ describe('DotContentDriveActionCenterComponent', () => {
                 return confirmationService;
             });
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            executeQuickAction('DELETE');
 
             expect(confirmationService.confirm).toHaveBeenCalled();
-            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: 'DELETE',
-                inodes: ['inode-1']
-            });
+            expect(store.executeQuickAction).toHaveBeenCalledWith('DELETE', expect.any(String), [
+                'inode-1'
+            ]);
         });
 
         it('should not fire Delete when the confirmation is dismissed', () => {
             mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
             // Default mock records the call without invoking `accept`.
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            executeQuickAction('DELETE');
 
             expect(confirmationService.confirm).toHaveBeenCalled();
-            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
         it('should fire non-destructive actions without confirming', () => {
-            spectator.detectChanges();
-
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
             expect(confirmationService.confirm).not.toHaveBeenCalled();
-            expect(fireService.fireDefaultAction).toHaveBeenCalled();
+            expect(store.executeQuickAction).toHaveBeenCalled();
         });
 
         it('should not fire an action that applies to nothing', () => {
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-DELETE"]');
+            spectator.detectChanges();
 
-            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            // Never even reaches the preview.
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
         it('should fire only the inodes the action applies to, not the whole selection', () => {
             // Selection is inode-1 (not live) and inode-2 (live). Publish applies to inode-1 only.
-            spectator.detectChanges();
+            executeQuickAction('PUBLISH');
 
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
-
-            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: 'PUBLISH',
-                inodes: ['inode-1']
-            });
+            expect(store.executeQuickAction).toHaveBeenCalledWith('PUBLISH', expect.any(String), [
+                'inode-1'
+            ]);
         });
 
         it('should fire exactly as many inodes as the row advertises', () => {
@@ -361,13 +373,13 @@ describe('DotContentDriveActionCenterComponent', () => {
             const row = spectator.query('[data-testid="quick-action-PUBLISH"]');
             const advertised = Number(row?.textContent?.match(/\((\d+)\)/)?.[1]);
 
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
+            executeQuickAction('PUBLISH');
 
-            const fired = (fireService.fireDefaultAction as unknown as jest.Mock).mock
-                .calls[0][0] as { inodes: string[] };
+            const [, , inodes] = (store.executeQuickAction as unknown as jest.Mock).mock
+                .calls[0] as [string, string, string[]];
 
             expect(advertised).toBe(1);
-            expect(fired.inodes).toHaveLength(advertised);
+            expect(inodes).toHaveLength(advertised);
         });
 
         it('should fire only archived items for Delete', () => {
@@ -381,33 +393,248 @@ describe('DotContentDriveActionCenterComponent', () => {
                 return confirmationService;
             });
 
-            spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            executeQuickAction('DELETE');
 
-            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: 'DELETE',
-                inodes: ['archived-1']
+            expect(store.executeQuickAction).toHaveBeenCalledWith('DELETE', expect.any(String), [
+                'archived-1'
+            ]);
+        });
+
+        it('should close the dialog as soon as the run is handed to the store', () => {
+            // The dialog is modal, so leaving it open would dim the toolbar that reports the run —
+            // and the counts it shows are stale the moment contentlets start moving step.
+            executeQuickAction('PUBLISH');
+
+            expect(store.executeQuickAction).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+    });
+
+    describe('lock and unlock quick actions', () => {
+        it('should fire LOCK with only the unlocked inodes', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'unlocked-1', locked: false }),
+                contentlet({ inode: 'locked-1', locked: true })
+            ]);
+
+            executeQuickAction('LOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('LOCK', expect.any(String), [
+                'unlocked-1'
+            ]);
+        });
+
+        it('should fire UNLOCK with only the locked inodes', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'unlocked-1', locked: false }),
+                contentlet({ inode: 'locked-1', locked: true })
+            ]);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'locked-1'
+            ]);
+        });
+
+        it('should keep Unlock non-selectable when nothing in the selection is locked', () => {
+            mockSelectedItems.set([contentlet({ inode: 'unlocked-1', locked: false })]);
+
+            spectator.detectChanges();
+
+            const unlock = spectator.query(
+                '[data-testid="quick-action-UNLOCK"]'
+            ) as HTMLButtonElement;
+
+            expect(unlock.disabled).toBe(true);
+        });
+
+        it('should keep Lock non-selectable when everything is already locked', () => {
+            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
+
+            spectator.detectChanges();
+
+            const lock = spectator.query('[data-testid="quick-action-LOCK"]') as HTMLButtonElement;
+
+            expect(lock.disabled).toBe(true);
+        });
+
+        it('should flag on the Unlock row how many locks are held by other users', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeTruthy();
+        });
+
+        it('should not flag the Unlock row when every lock is the current user’s own', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should still fire every locked item when some are held by other users', () => {
+            // Attempt-all is deliberate: the client cannot know whether the user holds the CMS
+            // Administrator role that lets them release someone else's lock.
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine',
+                'theirs'
+            ]);
+        });
+
+        it('should exclude folders from Lock', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'unlocked-1', locked: false }),
+                folder('folder-1')
+            ]);
+
+            executeQuickAction('LOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('LOCK', expect.any(String), [
+                'unlocked-1'
+            ]);
+        });
+
+        it('should hand unlock to the store with only the locked inodes', () => {
+            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'locked-1'
+            ]);
+        });
+
+        it('should not confirm before locking or unlocking', () => {
+            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
+
+            executeQuickAction('UNLOCK');
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('quick action preview', () => {
+        it('should open the preview instead of firing when a quick action is clicked', () => {
+            openQuickActionPreview('PUBLISH');
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-center"]')).toBeNull();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        it('should list only the contentlets the quick action applies to', () => {
+            // inode-1 is not live, inode-2 is. Publish applies to inode-1 only, so the preview must
+            // not offer inode-2 as something the user could include.
+            openQuickActionPreview('PUBLISH');
+
+            const rows = spectator.queryAll('[data-testid="preview-row"]');
+
+            expect(rows).toHaveLength(1);
+            expect(rows[0].textContent).toContain('Title inode-1');
+        });
+
+        it('should retitle the dialog header with the quick action and its count', () => {
+            openQuickActionPreview('PUBLISH');
+
+            expect(store.setDialogDrillDown).toHaveBeenCalledWith({
+                header: 'Default-Action-Publish',
+                itemCount: 1
             });
         });
 
-        it('should refresh the grid and close the dialog on success', () => {
+        it('should fire only the rows left checked in the preview', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'keep-me' }),
+                contentlet({ inode: 'drop-me' })
+            ]);
+
+            openQuickActionPreview('PUBLISH');
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
             spectator.detectChanges();
 
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
-
-            expect(store.loadItems).toHaveBeenCalled();
-            expect(store.closeDialog).toHaveBeenCalled();
+            expect(store.executeQuickAction).toHaveBeenCalledWith('PUBLISH', expect.any(String), [
+                'drop-me'
+            ]);
         });
 
-        it('should hand errors to the http error manager without closing the dialog', () => {
-            const error = new HttpErrorResponse({ status: 403 });
-            jest.spyOn(fireService, 'fireDefaultAction').mockReturnValue(throwError(() => error));
+        it('should keep Execute disabled once every row is unchecked', () => {
+            mockSelectedItems.set([contentlet({ inode: 'only-one' })]);
 
+            openQuickActionPreview('PUBLISH');
+            uncheckFirstRow();
+
+            const execute = spectator.query(
+                '[data-testid="action-preview-execute"] button'
+            ) as HTMLButtonElement;
+
+            expect(execute.disabled).toBe(true);
+        });
+
+        it('should return to the action list without firing when Back is clicked', () => {
+            openQuickActionPreview('PUBLISH');
+            spectator.click('[data-testid="action-preview-back"]');
             spectator.detectChanges();
-            spectator.click('[data-testid="quick-action-PUBLISH"]');
 
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(store.closeDialog).not.toHaveBeenCalled();
+            expect(spectator.query('[data-testid="action-center"]')).toBeTruthy();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
+            expect(store.clearDialogDrillDown).toHaveBeenCalled();
+        });
+
+        it('should confirm at Execute rather than when the destructive row is clicked', () => {
+            // The commit point moved: opening a preview changes nothing, so prompting there would
+            // ask the user to confirm something that has not been decided yet.
+            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
+
+            openQuickActionPreview('DELETE');
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(confirmationService.confirm).toHaveBeenCalled();
+        });
+
+        it('should not show the workflow partial-match warning on a quick action', () => {
+            // That warning explains a backend count falling short of the rows shown. A quick
+            // action's count is derived from the rows themselves, so it can never fall short.
+            openQuickActionPreview('PUBLISH');
+
+            expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
+        });
+
+        it('should let the user drop locks held by other users before unlocking', () => {
+            // The reason a preview earns its place on Unlock: the row-level warning becomes
+            // actionable here, because the user can exclude the items that would fail.
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            openQuickActionPreview('UNLOCK');
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'theirs'
+            ]);
         });
     });
 
@@ -431,7 +658,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
             expect(spectator.query('[data-testid="action-center"]')).toBeNull();
-            expect(fireService.bulkFire).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
         });
 
         it('should not fire when no action is selected', () => {
@@ -439,7 +666,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.component['onExecuteWorkflowAction']();
 
-            expect(fireService.bulkFire).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
         });
 
         it('should not open the preview when no action is selected', () => {
@@ -579,11 +806,10 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should fire every included contentlet', () => {
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(fireService.bulkFire).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    workflowActionId: 'action-review',
-                    contentletIds: ['inode-1', 'inode-2']
-                })
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-review',
+                expect.any(String),
+                ['inode-1', 'inode-2']
             );
         });
 
@@ -594,8 +820,10 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(fireService.bulkFire).toHaveBeenCalledWith(
-                expect.objectContaining({ contentletIds: ['inode-2'] })
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-review',
+                expect.any(String),
+                ['inode-2']
             );
         });
 
@@ -605,11 +833,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             const badge = spectator.query('[data-testid="action-preview-execute"] .p-badge');
             spectator.click('[data-testid="action-preview-execute"]');
 
-            const [request] = (fireService.bulkFire as jest.Mock).mock.calls[0] as [
-                { contentletIds: string[] }
-            ];
+            const [, , contentletIds] = (store.executeWorkflowAction as unknown as jest.Mock).mock
+                .calls[0] as [string, string, string[]];
 
-            expect(request.contentletIds.length).toBe(Number(badge.textContent.trim()));
+            expect(contentletIds.length).toBe(Number(badge.textContent.trim()));
         });
 
         it('should disable Execute once nothing is included', () => {
@@ -629,39 +856,14 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.component['onExecuteWorkflowAction']();
 
-            expect(fireService.bulkFire).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
         });
 
-        it('should surface skipped items in the result message', () => {
-            jest.spyOn(fireService, 'bulkFire').mockReturnValue(
-                of({ successCount: 1, skippedCount: 1, fails: [] })
-            );
-
+        it('should close the dialog as soon as the run is handed to the store', () => {
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    detail: 'content-drive.action-center.toast.executed-with-skips'
-                })
-            );
-        });
-
-        it('should refresh the grid and close the dialog on success', () => {
-            spectator.click('[data-testid="action-preview-execute"]');
-
-            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.executeWorkflowAction).toHaveBeenCalled();
             expect(store.closeDialog).toHaveBeenCalled();
-        });
-
-        it('should keep the dialog open and report the error on failure', () => {
-            jest.spyOn(fireService, 'bulkFire').mockReturnValue(
-                throwError(() => new HttpErrorResponse({ status: 500 }))
-            );
-
-            spectator.click('[data-testid="action-preview-execute"]');
-
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.closeDialog).not.toHaveBeenCalled();
         });
 
         describe('back', () => {
@@ -673,11 +875,13 @@ describe('DotContentDriveActionCenterComponent', () => {
                 expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
                 // Kept on purpose: re-entering the preview must not mean re-picking the action.
                 expect(spectator.component['$selectedActionId']()).toBe('action-review');
-                expect(fireService.bulkFire).not.toHaveBeenCalled();
+                expect(store.executeWorkflowAction).not.toHaveBeenCalled();
             });
 
             it('should be inert while an action is in flight', () => {
-                spectator.component['$executing'].set(true);
+                // Driven from store state, not a local flag: a run started before this dialog
+                // instance existed must still lock the view.
+                mockActionExecution.set({ actionName: 'Send for Review', total: 2 });
                 spectator.detectChanges();
 
                 spectator.component['onBackToActions']();
@@ -785,8 +989,10 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(fireService.bulkFire).toHaveBeenCalledWith(
-                expect.objectContaining({ contentletIds: ['blog-1'] })
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'copy-blog',
+                expect.any(String),
+                ['blog-1']
             );
         });
 
@@ -868,8 +1074,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.click('[data-testid="action-center-done"]');
 
             expect(store.closeDialog).toHaveBeenCalled();
-            expect(fireService.bulkFire).not.toHaveBeenCalled();
-            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
     });
 });

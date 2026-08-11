@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -265,6 +267,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @param out
      * @param htmlPage
      */
+    // The page's own template merge. The three call sites above are mutually exclusive
+    // branches, so this charges exactly once per render - and notably NOT at all when the
+    // page is served from the page cache, which never reaches here. Nested #dotParse /
+    // #parseContainer directives charge separately in DotDirective.render.
+    @RequestCost(Price.VELOCITY_MERGE)
     private void writePage(final Writer out, final IHTMLPage htmlPage) {
         final Context context = VelocityUtil.getInstance().getContext(request, response);
         this.getTemplate(htmlPage, mode).merge(context, out);
