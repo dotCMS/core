@@ -507,17 +507,18 @@ through the write-path gate above.
   that a Site Search crawl builds its corpus from a query against this index. It never changes the
   `verdict`, which states a different fact (the ES↔OS relationship).
 
-  **The denominator is O(1), by design.** It comes from the PostgreSQL planner statistics —
-  `pg_class.reltuples` for the row count (every working version, since `working_inode` is `NOT NULL`)
-  times `1 − pg_stats.null_frac` of `live_inode` for the live subset — two catalog lookups, no table
-  access. An exact `COUNT` is a sequential scan (verified with `EXPLAIN`: no index-only path counts
-  non-null `live_inode` without walking the table), which on a customer-sized table would mean a
-  multi-second query every time an operator refreshes the endpoint. The estimate is accurate to a few
-  percent (measured 689/682 against an exact 686/685) — well inside what this metric claims, since it
-  exists to tell 3% from 97%, never 99% from 100%. A table autovacuum has never analyzed reports
-  `reltuples = -1`, which is treated as unknown (fields omitted), not as an empty table. Site Search
-  rows have no such denominator (their corpus is crawled pages and files), so the fields are absent
-  there too.
+  **The denominator is an exact count.** `SELECT COUNT(*) AS working, COUNT(live_inode) AS live FROM
+  contentlet_version_info` — one row per `(identifier, lang, variant_id)`, the same unit as an index
+  document, so a complete index reads exactly `100.0` (verified against a live install: 686/685,
+  matching the index counts exactly). Both aggregates resolve through **index-only scans**
+  (`COUNT(live_inode)` over `idx_contentlet_vi_live` with an `IS NOT NULL` condition), so they read
+  narrow btrees and never the heap; it runs on an admin-only endpoint on demand and once per crawl,
+  never on a write path. Not the `pg_class.reltuples` estimate on purpose: that drifts a few points
+  between `ANALYZE` runs and surfaced as coverage slightly over 100%, which reads as a defect. With
+  exact counts, above 100% means the index holds documents the database no longer has — orphans from a
+  delete that never propagated, worth looking at rather than rounding away. Site Search rows have no
+  such denominator (their corpus is crawled pages and files), so the fields are absent there.
+
 - **What a count still cannot tell you.** A number that does not move is not proof that nothing was
   written: the document id is `identifier_languageId_variant`, so re-publishing content already present
   in that index is an **update**, and the total stays put. And in a dual-write phase the OpenSearch copy

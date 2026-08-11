@@ -24,12 +24,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @param recommendation    human-readable, action-oriented advice for a support technician
  * @param expectedDocCount  how many documents this index <em>should</em> hold according to the
  *                          database — the engine-independent denominator behind
- *                          {@link #esCoveragePercent()} / {@link #osCoveragePercent()}. A planner
- *                          estimate of {@code contentlet_version_info}, accurate to a few percent and
- *                          O(1) by design (an exact count would be a table scan on every request).
- *                          Only the content indices have one; {@code null} for Site Search, whose
+ *                          {@link #esCoveragePercent()} / {@link #osCoveragePercent()}. An exact count
+ *                          of {@code contentlet_version_info}, so 100% means complete and any excess is
+ *                          real. Only the content indices have one; {@code null} for Site Search, whose
  *                          corpus (crawled pages and files) has no such counterpart, and {@code null}
- *                          when the statistics are unavailable.
+ *                          when it could not be read.
  */
 @JsonIgnoreProperties("kind") // internal grouping/label only — the report keys rows by it, never emits it
 public record MirrorStatus(
@@ -160,10 +159,11 @@ public record MirrorStatus(
      * the source of truth, identical in every phase — so "this index holds 3% of the content" is
      * still visible when there is nothing to diff (issue #36983).</p>
      *
-     * <p>Read it as an order of magnitude, not an audit: the denominator counts one row per
-     * (identifier, language, variant) in {@code contentlet_version_info}, which is the same unit as an
-     * index document, but content types excluded from indexing and archived versions can move the
-     * number by a few points. It is built to tell 3% from 97%, not 99% from 100%.</p>
+     * <p>The denominator counts one row per (identifier, language, variant) in
+     * {@code contentlet_version_info} — the same unit as an index document — so a complete index reads
+     * exactly {@code 100.0}. Above 100% means the index holds documents the database no longer has
+     * (orphans left by a delete that never propagated), which is worth looking at rather than
+     * rounding away.</p>
      *
      * @return the percentage, or {@code null} when there is no denominator ({@code expectedDocCount}
      *         absent or zero) or the count was unmeasurable ({@code -1})

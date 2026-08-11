@@ -84,8 +84,8 @@ public class ContentIndexMirrorReconciler {
 
     /**
      * How many documents each content index should hold according to the database — the denominator
-     * behind the coverage percentages. A planner <em>estimate</em>, accurate to a few percent (see
-     * {@link #loadExpectedCountsQuietly()}); {@code null} on either field when it is unavailable.
+     * behind the coverage percentages. Counted exactly (see {@link #loadExpectedCountsQuietly()});
+     * {@code null} on either field when it could not be read.
      *
      * @param working one row per (identifier, language, variant): the working version always exists
      * @param live    the subset of those rows that also have a live version
@@ -215,49 +215,38 @@ public class ContentIndexMirrorReconciler {
     }
 
     /**
-     * How many documents each content index should hold, from the PostgreSQL planner statistics —
-     * <strong>O(1)</strong>, reading only the catalog.
+     * How many documents each content index should hold, counted exactly from
+     * {@code contentlet_version_info}.
      *
-     * <p><strong>Why an estimate and not {@code COUNT(*)}.</strong> {@code contentlet_version_info} is
-     * keyed by {@code (identifier, lang, variant_id)} — the same unit as an index document
-     * ({@code identifier_language_variant}) — so its row count is the natural denominator. But an exact
-     * count is a sequential scan (verified with {@code EXPLAIN}: no index-only path counts non-null
-     * {@code live_inode} without walking the table), which on a customer-sized table means a
-     * multi-second, I/O-heavy query every time an operator refreshes this endpoint. The catalog
-     * estimate costs two lookups and no table access:</p>
-     * <ul>
-     *   <li>{@code pg_class.reltuples} — the row count, i.e. every working version, since
-     *       {@code working_inode} is {@code NOT NULL}.</li>
-     *   <li>{@code × (1 − pg_stats.null_frac)} of {@code live_inode} — the fraction of those rows that
-     *       also have a live version.</li>
-     * </ul>
+     * <p>That table is keyed by {@code (identifier, lang, variant_id)} — the same unit as an index
+     * document ({@code identifier_language_variant}) — so its row count is the denominator directly:
+     * {@code COUNT(*)} is every working version ({@code working_inode} is {@code NOT NULL}, so every
+     * row has one) and {@code COUNT(live_inode)} skips nulls and therefore counts exactly the rows that
+     * also have a live version. Verified against a live install: 686/685, matching the index document
+     * counts exactly.</p>
      *
-     * <p>Both are maintained by {@code ANALYZE}/autovacuum and are accurate to a few percent (measured
-     * 689/682 against an exact 686/685). That is well inside what this metric claims: coverage exists
-     * to tell 3% from 97%, never 99% from 100% — so paying a table scan for exactness would buy
-     * precision the metric explicitly does not offer. A table that has never been analyzed reports
-     * {@code reltuples = -1}; that and any failure yield {@code null}, and the coverage fields are then
-     * simply omitted rather than failing the whole report.</p>
+     * <p>Both aggregates resolve through <strong>index-only scans</strong> — {@code COUNT(*)} over any
+     * index of the table, {@code COUNT(live_inode)} over {@code idx_contentlet_vi_live} with an
+     * {@code IS NOT NULL} condition — so this reads narrow btrees, never the heap. It runs on an
+     * admin-only endpoint on demand and once per crawl, never on a write path.</p>
      *
-     * <p>PostgreSQL-only, like the rest of the platform.</p>
+     * <p>Exact rather than the {@code pg_class.reltuples} estimate on purpose: the estimate drifts a few
+     * points in either direction between {@code ANALYZE} runs, which surfaces as coverage slightly over
+     * 100% and reads as a defect. With exact counts, 100% means complete and any excess is real —
+     * documents in the index that no longer exist in the database.</p>
+     *
+     * <p>Failure is quiet: the coverage fields are omitted rather than failing the whole report.</p>
      */
     private static ExpectedCounts loadExpectedCountsQuietly() {
         return Try.of(() -> {
             final List<Map<String, Object>> rows = new DotConnect()
-                    .setSQL("SELECT c.reltuples AS working_count, "
-                            + "c.reltuples * (1 - COALESCE(s.null_frac, 0)) AS live_count "
-                            + "FROM pg_class c "
-                            + "LEFT JOIN pg_stats s ON s.schemaname = current_schema() "
-                            + "  AND s.tablename = 'contentlet_version_info' "
-                            + "  AND s.attname = 'live_inode' "
-                            + "WHERE c.oid = to_regclass('contentlet_version_info')")
+                    .setSQL("SELECT COUNT(*) AS working_count, COUNT(live_inode) AS live_count "
+                            + "FROM contentlet_version_info")
                     .loadObjectResults();
             if (rows.isEmpty()) {
                 return null;
             }
             final Map<String, Object> row = rows.get(0);
-            // reltuples is -1 on a table that autovacuum has never analyzed: an unknown, not an empty
-            // table, so report it as absent instead of a 0 denominator that would read as "0% covered".
             return new ExpectedCounts(positiveOrNull(row.get("working_count")),
                     positiveOrNull(row.get("live_count")));
         }).onFailure(e -> Logger.warn(ContentIndexMirrorReconciler.class,
@@ -265,7 +254,7 @@ public class ContentIndexMirrorReconciler {
                 .getOrElse((ExpectedCounts) null);
     }
 
-    /** The estimate as a positive Long, or {@code null} when it is absent, negative or zero. */
+    /** The count as a positive Long, or {@code null} when it is absent, negative or zero. */
     private static Long positiveOrNull(final Object value) {
         final Long count = asLong(value);
         return count != null && count > 0 ? count : null;
