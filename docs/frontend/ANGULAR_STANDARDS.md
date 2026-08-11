@@ -47,6 +47,7 @@ This is the norm, not a suggestion. A new component that duplicates an existing 
 
 ## Component Rules
 - Keep components small and focused on a single responsibility
+- Every component selector uses the `dot-` prefix, for example `dot-my-component`
 - Use `input()` signal instead of decorators: [Angular Inputs](https://angular.dev/guide/components/inputs)
 - Use `output()` function instead of decorators: [Angular Outputs](https://angular.dev/guide/components/outputs)
 - Use `computed()` for derived state: [Signals](https://angular.dev/guide/signals)

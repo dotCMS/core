@@ -29,8 +29,21 @@ rules belong here instead. See
 [`.agents/skills/angular-developer/PROVENANCE.md`](../../../.agents/skills/angular-developer/PROVENANCE.md)
 for its upstream source and re-sync procedure.
 
-Canonical, longer-form source: **`docs/frontend/ANGULAR_STANDARDS.md`**. Read it when you need the
-full rationale or examples. This file is the short override sheet.
+## Source of truth
+
+> **`docs/frontend/ANGULAR_STANDARDS.md` is the single source of truth for Angular work in this
+> repository. Read it before writing or reviewing Angular code.**
+
+This file is deliberately **not** a copy of it. It carries only:
+
+1. the **trigger** (so it fires automatically when you touch frontend code),
+2. the **precedence** declaration over the vendored `angular-developer` skill, and
+3. the rules where upstream actively tells you to do the **wrong** thing here, so the correction is in
+   front of you at the moment you would otherwise follow upstream.
+
+Everything else — full rationale, examples, and the rules upstream already gets right — lives in the
+doc. **If this file and the doc ever disagree, the doc wins and this file is the bug.** When a
+standard changes, change it in the doc; only touch this file if the change is one upstream contradicts.
 
 ## Workspace facts
 
@@ -81,18 +94,7 @@ Inline `template:` and inline `styles:` in the decorator are forbidden. Referenc
 `templateUrl` and `styleUrls` (plural — matching `docs/frontend/ANGULAR_STANDARDS.md` and the
 dominant convention in the workspace).
 
-### 6. Teardown uses `DestroyRef` + `takeUntilDestroyed()`
-
-```ts
-readonly #destroyRef = inject(DestroyRef);
-
-this.#service.load().pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(…);
-```
-
-The legacy `destroy$` + `takeUntil` pattern exists in older code. It is **not** for new work, and it is
-**not** to be mass-migrated — only change it in code you are already rewriting.
-
-### 7. Reuse before creating
+### 6. Reuse before creating
 
 Before creating a new component, in this order:
 
@@ -100,17 +102,17 @@ Before creating a new component, in this order:
 2. Check PrimeNG.
 3. Only then create a new component — and say in the PR why neither of the above fit.
 
-### 8. Every component that renders data handles all four states
+### 7. Every component that renders data handles all four states
 
 **loading**, **empty**, **error**, **loaded** — explicitly. Never leave a blank render path. If a
 template has no branch for a state, that state is a bug.
 
-### 9. Error handling is mandatory
+### 8. Error handling is mandatory
 
 No silent failures. No unguarded `.subscribe()`. No empty `catchError`. Handle the error in the service
 with `catchError`, surface a user-facing error state in the component, and log the diagnostic detail.
 
-### 10. Icons are Material Symbols
+### 9. Icons are Material Symbols
 
 ```html
 <span class="material-symbols-outlined">drag_indicator</span>
@@ -123,39 +125,30 @@ The icon name goes in the element's **text content**, not in the class. Fonts ar
 - PrimeNG's internal icons are a theming concern and out of scope.
 - Do **not** use the deprecated `dot-icon` component.
 
-### 11. API and naming conventions
+### 10. dotCMS-specific naming
+
+These differ from stock Angular convention, so upstream will not tell you about them:
 
 | Rule | Do | Don't |
 | --- | --- | --- |
 | Signals | `$mySignal` (**`$` prefix**) | `mySignal`, `mySignal$` |
 | Observables | `myObservable$` (**`$` suffix**) | `$myObservable` |
-| Inputs / outputs | `input()`, `output()` functions | `@Input()`, `@Output()` decorators |
-| Injection | `inject()` | constructor parameter injection |
-| Control flow | `@if`, `@for` (with `track`), `@switch` | `*ngIf`, `*ngFor`, `*ngSwitch` |
-| Classes / styles | `[class.x]`, `[style.x]` bindings | `ngClass`, `ngStyle` |
-| Host bindings | the `host: { … }` metadata object | `@HostBinding`, `@HostListener` |
 | Selectors | `dot-` prefix | anything else |
 
-### 12. Signal Forms first
+## Covered in full by the doc — read it, do not rely on this file
 
-New forms use **Signal Forms** (`@angular/forms/signals`, available since Angular v21 and shipped in
-the Angular 22.x here):
+`docs/frontend/ANGULAR_STANDARDS.md` is authoritative for everything below. Upstream Angular guidance
+already agrees with us on these, so they are **not** restated here and this file must not grow a second
+copy of them:
 
-```ts
-import { form, Control } from '@angular/forms/signals';
-
-protected readonly $model = signal({ name: '', email: '' });
-protected readonly userForm = form(this.$model);
-```
-
-Existing **Reactive Forms stay as they are** — do NOT mass-migrate them; convert only when already
-rewriting a form for other reasons. Template-driven forms are not for new work. Use
-`@angular/forms/signals/compat` to interoperate with an existing Reactive Forms control.
-
-### 13. TypeScript 6
-
-`core-web/tsconfig.base.json` sets `"ignoreDeprecations": "6.0"` **transitionally**. It unblocks
-compilation of existing code that still uses deprecated APIs. New code must not rely on it.
+- **Subscription teardown** — `inject(DestroyRef)` + `takeUntilDestroyed()`; the legacy `destroy$`
+  pattern is not for new work and is not to be mass-migrated.
+- **Signal Forms first** — new forms use `@angular/forms/signals`; existing Reactive Forms stay.
+- **TypeScript 6** — the transitional `"ignoreDeprecations": "6.0"` flag; new code must not rely on it.
+- **Standard modern Angular API** — `input()` / `output()` over decorators, `inject()` over constructor
+  injection, `@if` / `@for` (with `track`) / `@switch` over `*ngIf` / `*ngFor` / `*ngSwitch`,
+  `[class.x]` / `[style.x]` over `ngClass` / `ngStyle`, and host bindings in the `host: { … }` object
+  over `@HostBinding` / `@HostListener`.
 
 ## Before you finish
 
