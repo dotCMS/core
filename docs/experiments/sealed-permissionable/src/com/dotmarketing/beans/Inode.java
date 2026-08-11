@@ -1,15 +1,22 @@
 package com.dotmarketing.beans;
 
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.fileUpload.model.FileUpload;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.user.model.UserComment;
 
 /**
- * Gives up and reopens the branch — Category, Field, WebAsset and UserComment all extend the real
- * one. Note this does NOT break exhaustiveness downstream: every subclass of Inode is still an
- * Inode, so a single `case Inode` covers all of them.
+ * Round 1 of this experiment declared Inode {@code non-sealed} and stopped there. This is the level
+ * it gave up on.
+ *
+ * <p>The six names below are the real direct subclasses — and they are not the six anyone guesses.
+ * Container, Link and Template are not here (they arrive through {@link WebAsset}), and Contentlet is
+ * not here at all: it implements Permissionable on its own and is no relation of Inode. See
+ * experiment 4.</p>
  */
-public non-sealed class Inode implements Permissionable {
+public sealed class Inode implements Permissionable permits
 
-    public String getPermissionType() {
-        return "Inode";
-    }
+        WebAsset, Structure, Field, Category, FileUpload, UserComment {
 }
