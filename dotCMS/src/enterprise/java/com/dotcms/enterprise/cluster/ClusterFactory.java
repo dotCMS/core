@@ -67,6 +67,13 @@ public class ClusterFactory {
     private static boolean CLUSTER_INITED=false;
 	private static List<Server> KNOWN_SERVERS=Collections.EMPTY_LIST;
 
+    /**
+     * Consecutive cluster cache-transport rewire failures. Reset to zero on the first
+     * successful rewire. Surfaced by the cache-transport health check and metrics so a
+     * persistently failing rewire is visible instead of being logged and forgotten.
+     */
+    private static final AtomicLong REWIRE_FAILURES = new AtomicLong(0);
+
     private static final String VERIFY_REQUIRED_TABLES =
             "SELECT dc.cluster_id, dc.cluster_salt, cs.server_id, cs.cluster_id, cs.name, "
                     + "cs.ip_address, cs.host, cs.cache_port, cs.es_transport_tcp_port, "
@@ -344,7 +351,12 @@ public class ClusterFactory {
 		try{
 			List<Server> aliveServers = APILocator.getServerAPI().getAliveServers();
 
-            if (!aliveServers.equals(KNOWN_SERVERS) || !aliveServers
+            // A pending failure must always be retried. The membership comparison below only
+            // fires when the alive-server set changes, so without this a rewire that failed
+            // while membership then settled back to KNOWN_SERVERS would never be attempted
+            // again: the transport would stay broken and REWIRE_FAILURES could never return to
+            // zero, leaving the health check reporting DOWN indefinitely.
+            if (REWIRE_FAILURES.get() > 0 || !aliveServers.equals(KNOWN_SERVERS) || !aliveServers
                     .contains(APILocator.getServerAPI().getCurrentServer()) ) {
 
 				rewireCluster();
@@ -399,12 +411,10 @@ public class ClusterFactory {
     }
 
     /**
-     * Consecutive cluster cache-transport rewire failures. Reset to zero on the first
-     * successful rewire. Surfaced by the cache-transport health check and metrics so a
-     * persistently failing rewire is visible instead of being logged and forgotten.
+     * Consecutive cluster cache-transport rewire failures, zero when the last rewire succeeded.
+     *
+     * @see #REWIRE_FAILURES
      */
-    private static final AtomicLong REWIRE_FAILURES = new AtomicLong(0);
-
     public static long getRewireFailures() {
         return REWIRE_FAILURES.get();
     }

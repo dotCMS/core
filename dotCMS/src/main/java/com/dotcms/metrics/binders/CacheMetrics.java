@@ -1,9 +1,12 @@
 package com.dotcms.metrics.binders;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.business.cache.transport.NullTransport;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.micrometer.core.instrument.Gauge;
@@ -11,6 +14,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Comprehensive metric binder for dotCMS cache-related metrics.
@@ -57,28 +61,43 @@ public class CacheMetrics implements MeterBinder {
     private void registerTransportMetrics(MeterRegistry registry) {
 
         Gauge.builder(METRIC_PREFIX + ".transport.invalidations.dropped", this,
-                        m -> getTransport().map(t -> (double) t.getDroppedMessages()).orElse(0.0))
+                        m -> activeTransport().map(t -> (double) t.getDroppedMessages()).orElse(0.0))
                 .description("Cluster cache invalidations dropped because the transport was not initialized")
                 .register(registry);
 
         Gauge.builder(METRIC_PREFIX + ".transport.initialized", this,
-                        m -> getTransport().map(t -> t.isInitialized() ? 1.0 : 0.0).orElse(1.0))
+                        m -> activeTransport().map(t -> t.isInitialized() ? 1.0 : 0.0).orElse(1.0))
                 .description("Whether the cluster cache transport is initialized (1) or dropping invalidations (0)")
                 .register(registry);
 
         Gauge.builder(METRIC_PREFIX + ".transport.rewire.failures", this,
-                        m -> (double) com.dotcms.enterprise.cluster.ClusterFactory.getRewireFailures())
+                        m -> (double) ClusterFactory.getRewireFailures())
                 .description("Consecutive cluster cache-transport rewire failures (reset on success)")
                 .register(registry);
     }
 
-    private java.util.Optional<com.dotmarketing.business.cache.transport.CacheTransport> getTransport() {
+    /**
+     * The cache transport, but only when it is one that actually carries cluster invalidations.
+     *
+     * Returns empty for {@link NullTransport} as well as for an unresolvable transport, so the
+     * gauges above fall back to their "nothing to report" defaults. This matters for
+     * {@code transport.initialized}: {@code NullTransport.isInitialized()} is false whenever it
+     * has been shut down, so without this guard every node configured with no real transport
+     * would publish {@code transport.initialized=0} and alert as if it were dropping
+     * invalidations -- while {@code CacheTransportHealthCheck} reported the same node healthy.
+     *
+     * Uses the {@code DotCacheAdministrator.getTransport()} interface method rather than
+     * casting {@code getImplementationObject()} to {@code ChainableCacheAdministratorImpl},
+     * which throws {@code ClassCastException} for any other administrator implementation.
+     */
+    private Optional<CacheTransport> activeTransport() {
         try {
-            return java.util.Optional.ofNullable(
-                    ((com.dotmarketing.business.ChainableCacheAdministratorImpl) CacheLocator
-                            .getCacheAdministrator().getImplementationObject()).getTransport());
+            final CacheTransport transport = CacheLocator.getCacheAdministrator().getTransport();
+            return transport == null || transport instanceof NullTransport
+                    ? Optional.empty()
+                    : Optional.of(transport);
         } catch (Exception e) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
     }
 
