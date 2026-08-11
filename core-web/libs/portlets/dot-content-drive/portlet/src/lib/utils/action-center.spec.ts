@@ -13,6 +13,7 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
+    isLockedByAnotherUser,
     mergeActionCenterSchemes,
     toActionCenterSchemes,
     toContentletInodes
@@ -93,6 +94,45 @@ describe('action-center utils', () => {
             const items = [contentlet({ inode: 'a' }), folder('f1')];
 
             expect(toContentletInodes(items)).toEqual(['a']);
+        });
+    });
+
+    describe('isLockedByAnotherUser', () => {
+        const row = (overrides: Partial<DotCMSContentlet>) =>
+            contentlet({ inode: 'a', ...overrides }) as DotCMSContentlet;
+
+        it('should flag a locked row the current user cannot edit', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: false }), {
+                    isAdmin: false
+                })
+            ).toBe(true);
+        });
+
+        it('should not flag a lock the current user holds', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: true }), {
+                    isAdmin: false
+                })
+            ).toBe(false);
+        });
+
+        it('should not flag an unlocked row', () => {
+            // `contentEditable` is false on plenty of unlocked rows (no WRITE permission); only a
+            // lock makes it mean "somebody else holds this".
+            expect(
+                isLockedByAnotherUser(row({ locked: false, contentEditable: false }), {
+                    isAdmin: false
+                })
+            ).toBe(false);
+        });
+
+        it('should never flag anything for an administrator', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: false }), {
+                    isAdmin: true
+                })
+            ).toBe(false);
         });
     });
 
@@ -214,6 +254,40 @@ describe('action-center utils', () => {
             );
 
             expect(unlock?.warningCount).toBe(0);
+        });
+
+        it('should not warn on Unlock for an administrator, whatever the locks', () => {
+            // `canLock` returns true for a CMS Admin before it ever looks at the lock owner, so an
+            // admin releases every one of these. Warning them is noise about an outcome that will
+            // not happen — and it was the only role the warning was ever addressed to.
+            const items = [
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false }),
+                contentlet({ inode: 'also-theirs', locked: true, contentEditable: false })
+            ];
+
+            const unlock = getQuickActions(items, { isAdmin: true }).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            // Still fired over both — the warning was never a filter.
+            expect(unlock?.count).toBe(2);
+            expect(unlock?.eligibleInodes).toEqual(['theirs', 'also-theirs']);
+            expect(unlock?.warningCount).toBe(0);
+            expect(unlock?.warningHint).toBeUndefined();
+        });
+
+        it('should warn on Unlock while the admin flag is still unresolved', () => {
+            // An unresolved flag arrives as `false` (the store's default), so it behaves like a
+            // non-admin. Deliberate: the hint says a foreign lock *may* require administrator
+            // permission, so over-warning is honest, whereas staying quiet would let a non-admin
+            // fire with no heads-up at all.
+            const items = [contentlet({ inode: 'theirs', locked: true, contentEditable: false })];
+
+            const unlock = getQuickActions(items, { isAdmin: false }).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.warningCount).toBe(1);
         });
 
         it('should not warn on actions other than Unlock', () => {
