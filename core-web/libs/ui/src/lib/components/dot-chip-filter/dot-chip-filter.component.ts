@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const BASE_CLASSES =
     'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer select-none whitespace-nowrap min-w-[140px] transition-[color,background-color,border-color,width] duration-200 ease-out';

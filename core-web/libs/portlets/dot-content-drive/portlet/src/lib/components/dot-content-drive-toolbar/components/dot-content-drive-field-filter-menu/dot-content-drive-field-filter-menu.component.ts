@@ -24,9 +24,9 @@ import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models
 import {
     CHIP_FILTER_LISTBOX_PT,
     CHIP_FILTER_POPOVER_PT,
-    DotFilterListItemComponent
-} from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+    DotFilterListItemComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { TITLE_FIELD_VARIABLE, USER_SEARCHABLE_FIELD_TYPES } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';

@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     template: `
         <span class="text-md truncate font-medium">{{ label() }}</span>
         @if (secondary(); as s) {
-            <span class="text-sm text-slate-500 truncate">({{ s }})</span>
+            <span class="truncate text-sm text-slate-500">({{ s }})</span>
         }
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,

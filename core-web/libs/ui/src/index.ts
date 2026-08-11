@@ -16,6 +16,8 @@ export * from './lib/components/dot-workflow-assign-comment/dot-workflow-assign-
 export * from './lib/components/dot-workflow-push-publish/dot-workflow-push-publish.component';
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
+export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
+export * from './lib/components/dot-chip-filter/dot-chip-filter.constants';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/components/dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';
@@ -23,6 +25,7 @@ export * from './lib/components/dot-copy-button/dot-copy-button.component';
 export * from './lib/components/dot-drop-zone/dot-drop-zone.component';
 export * from './lib/components/dot-empty-container/dot-empty-container.component';
 export * from './lib/components/dot-field-validation-message/dot-field-validation-message.component';
+export * from './lib/components/dot-filter-list-item/dot-filter-list-item.component';
 export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
 export * from './lib/components/dot-info-page/dot-info-page.component';
 export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
