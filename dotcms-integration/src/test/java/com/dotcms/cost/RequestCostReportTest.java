@@ -151,7 +151,9 @@ public class RequestCostReportTest {
         requestCostApi.incrementCost(Price.TWENTY, RequestCostReportTest.class, "method2", new Object[]{});
         requestCostApi.incrementCost(Price.THIRTY, RequestCostReportTest.class, "method3", new Object[]{});
 
-        int expectedTotal = requestCostApi.getRequestCost(request);
+        // The report renders the total divided by the configured denominator
+        double expectedTotal = requestCostApi.getRequestCost(request)
+                / requestCostApi.getRequestCostDenominator();
 
         // When
         String html = report.writeAccounting(request);
