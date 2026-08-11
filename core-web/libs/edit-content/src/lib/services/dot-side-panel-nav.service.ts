@@ -38,13 +38,21 @@ function clearPrevNavCollapsed(): void {
     }
 }
 
-/** Collapse the navs for the side panel when the viewport is narrower than this (px). */
-const COLLAPSE_MAX_WIDTH = 1800;
+/**
+ * Collapse the navs for the side panel below this viewport width (px).
+ *
+ * Note this makes collapsing the COMMON case, not an edge case: the panel takes 80% of the
+ * viewport, so the strip left beside it only clears the 270px expanded nav by a useful margin on
+ * very wide screens. In practice everything below ultra-wide / native 4K collapses — and since
+ * `innerWidth` is CSS pixels, a scaled or non-maximized 2560 display lands here too.
+ */
+const COLLAPSE_MAX_WIDTH = 2560;
 
 /**
  * Collapses the main navigation (logo + menus) while an Edit Content side panel is open, and
  * restores it when the last one closes — but only if it was expanded to begin with (a nav the user
- * had already collapsed stays collapsed), and only on small viewports ({@link shouldCollapse}).
+ * had already collapsed stays collapsed), and only below {@link COLLAPSE_MAX_WIDTH}
+ * ({@link shouldCollapse}), which covers most desktop widths.
  *
  * Ref-counted because the relationship field can stack a second panel on top: the nav must stay
  * collapsed until EVERY panel has closed, not just the top one. The pre-panel state is kept in
@@ -62,7 +70,10 @@ export class DotSidePanelNavController {
      */
     #stack: object[] = [];
 
-    /** Whether the viewport is narrow enough ({@link COLLAPSE_MAX_WIDTH}) to collapse the navs. */
+    /**
+     * Whether the viewport is below {@link COLLAPSE_MAX_WIDTH}, i.e. whether the navs should
+     * collapse. True for most desktop widths — see the constant for why that is intended.
+     */
     shouldCollapse(): boolean {
         return window.innerWidth < COLLAPSE_MAX_WIDTH;
     }
