@@ -13,7 +13,7 @@ import { uniqueSuffix } from '@utils/utils';
 import { FileField } from './helpers/file-field';
 
 import { AssetPickerDialog } from '../helpers/asset-picker-dialog';
-import { E2E_IMPORT_URL, createTestTextFile } from '../helpers/file-test-data';
+import { E2E_IMPORT_URL, createTestPngFile, createTestTextFile } from '../helpers/file-test-data';
 
 const FILE_FIELD_VARIABLE = 'fileField';
 const TEST_FILE = createTestTextFile();
@@ -128,11 +128,15 @@ test.describe('select an existing file through the AssetPicker', () => {
     // Seeded per test through the REST API: the picker only reads it, but a unique file name per
     // test is what lets the search find exactly this asset regardless of what else the environment
     // happens to contain.
+    //
+    // An image on purpose: the preview renders text assets as an editable code block
+    // (`code-preview`) and everything else as thumbnail + metadata, so a .txt here would never
+    // produce the file name this test asserts on.
     test.beforeEach(async ({ request }) => {
         const site = await getDefaultSite(request);
         seededAsset = await createDotAsset(
             request,
-            createTestTextFile(`e2e-picker-${uniqueSuffix()}.txt`),
+            createTestPngFile(`e2e-picker-${uniqueSuffix()}.png`),
             site.identifier
         );
         assetName = seededAsset.title;
@@ -171,6 +175,7 @@ test.describe('select an existing file through the AssetPicker', () => {
 
         await picker.expectClosed();
         await field.expectPreviewVisible();
+        await field.expectThumbnailVisible();
         await field.expectPreviewShowsFileName(assetName);
     });
 
