@@ -1,4 +1,3 @@
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
@@ -16,9 +15,16 @@ if(request.getParameter("jobName") != null){
 	}
 }
 
-ESIndexAPI iapi=new ESIndexAPI();
 List<String> indexes = ssapi.listIndices();
-Map<String,String> alias = iapi.getIndexAlias(indexes);
+// Site-search .os-aware alias resolution (issue #36983): resolve through the site-search API and
+// reverse (alias->index) into index->alias for the selector. The content-index router (ESIndexAPI)
+// misses site-search aliases in Phases 2/3 because the physical OpenSearch index is .os-tagged, so
+// the selector fell back to the raw internal index name — which is then saved as the job's
+// `indexAlias` and later re-applied as the new index's alias by the crawl, destroying the real one.
+Map<String,String> alias = new HashMap<String,String>();
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMap().entrySet()) {
+	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
+}
 
 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 SimpleDateFormat tdf = new SimpleDateFormat("HH:mm:ss");

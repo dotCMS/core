@@ -198,7 +198,8 @@ public class SiteSearchJobImpl {
                         + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
     }
 
-    private PreparedJobContext prepareJob(final JobExecutionContext jobContext)
+    @VisibleForTesting
+    PreparedJobContext prepareJob(final JobExecutionContext jobContext)
             throws DotDataException, IOException, DotSecurityException {
         synchronized (SiteSearchJobImpl.class) {
             final JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
@@ -239,6 +240,12 @@ public class SiteSearchJobImpl {
             // Run now jobs can not get the incremental treatment.
             final String indexAlias = getAliasName(dataMap.getString(INDEX_ALIAS));
             final IndexMetaData indexMetaData = getIndexMetaData(indexAlias);
+            // The alias the crawl must end up with. It is NOT necessarily the string stored in the
+            // job detail: that one can be a raw index name, in which case getIndexMetaData resolves
+            // the index's real alias (or null when it has none). Everything downstream — the config
+            // handed to the publisher, which re-applies it after the index switch — must use this
+            // resolved value, never the raw stored string (issue #36983).
+            final String resolvedAlias = indexMetaData.getAlias();
             final String newIndexName;
             final String indexName;
 
@@ -298,8 +305,7 @@ public class SiteSearchJobImpl {
                         uniqueFolderName();
                 // We use a new index name only on non-incremental
                 newIndexName = newIndexName();
-                final String newAlias =
-                        indexMetaData.isNewIndex() ? indexMetaData.getAlias() : null;
+                final String newAlias = indexMetaData.isNewIndex() ? resolvedAlias : null;
                 siteSearchAPI.createSiteSearchIndex(newIndexName, newAlias, 1);
                 // This is the old index we will swap from.
                 // if it doesnt exist. It doesnt matter here since we will end up with the new one.
@@ -310,7 +316,7 @@ public class SiteSearchJobImpl {
                     .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
                             BooleanUtils.toStringYesNo(incremental), indexName,
                             UtilMethods.isSet(newIndexName) ? newIndexName : "N/A",
-                            indexAlias,
+                            UtilMethods.isSet(resolvedAlias) ? resolvedAlias : "N/A",
                             bundleId)
             );
 
@@ -342,7 +348,7 @@ public class SiteSearchJobImpl {
                 config.setHosts(hosts);
                 config.setNewIndexName(newIndexName);
                 config.setIndexName(indexName);
-                config.setIndexAlias(indexAlias);
+                config.setIndexAlias(resolvedAlias);
                 config.setId(bundleId);
                 config.setStartDate(startDate);
                 config.setEndDate(endDate);
@@ -401,7 +407,8 @@ public class SiteSearchJobImpl {
      * @return @see IndexMetaData
      * @throws DotDataException
      */
-    private IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
+    @VisibleForTesting
+    IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
         String indexName = null;
         boolean defaultIndex = false;
         long recordCount = 0;
@@ -421,7 +428,13 @@ public class SiteSearchJobImpl {
                 // the alias comes with an index name that is already in use.
                 if(indices.contains(indexAlias)){
                    indexName = indexAlias;
-                   indexAlias = null;
+                   // The job was saved with a raw index name where an alias was expected (the job
+                   // scheduler used to fall back to raw names when alias resolution missed on
+                   // OpenSearch — issue #36983). Recover the index's REAL alias so a full crawl
+                   // re-applies it to the new index. Carrying the raw name forward instead would
+                   // make `switchIndex` set the DEAD index's name as the new index's alias,
+                   // destroying the alias the user created (issue #36983, Bug 1).
+                   indexAlias = aliasOf(indexName, aliasMap);
                 }
             }
             if(UtilMethods.isSet(indexName)){
@@ -430,6 +443,21 @@ public class SiteSearchJobImpl {
             }
         }//if indexName is null. Then the result is interpreted as a new index.
         return new IndexMetaData(indexName, defaultIndex, indexAlias, recordCount == 0);
+    }
+
+    /**
+     * Reverse lookup of the alias attached to {@code indexName}, given an alias&rarr;index map.
+     *
+     * @param indexName the (logical) index name to find an alias for
+     * @param aliasToIndex alias &rarr; index map as returned by {@link SiteSearchAPI#getAliasToIndexMap()}
+     * @return the alias pointing at {@code indexName}, or {@code null} when the index has none
+     */
+    private static String aliasOf(final String indexName, final Map<String, String> aliasToIndex) {
+        return aliasToIndex.entrySet().stream()
+                .filter(entry -> indexName.equals(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
     }
 
     private static final Pattern invalidAliasNamePattern = Pattern.compile("[^a-zA-Z0-9-_]");
