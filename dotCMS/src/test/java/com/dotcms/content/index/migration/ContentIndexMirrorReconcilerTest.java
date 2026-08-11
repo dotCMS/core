@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ExpectedCounts;
 import com.dotcms.content.index.IndexAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.domain.IndexStats;
@@ -75,7 +76,13 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     }
 
     private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info) {
-        return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info);
+        return reconciler(info, null);
+    }
+
+    /** @param expected the database denominator behind the coverage percentages, or null when absent */
+    private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info,
+            final ExpectedCounts expected) {
+        return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info, () -> expected);
     }
 
     /** Both content indices present on both engines with equal counts → two IN_SYNC rows. */
@@ -193,6 +200,69 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(15, working.os().docCount());
         verify(esOps).getIndexDocumentCount("cluster_x.working_1");
         verify(osOps).getIndexDocumentCount("cluster_x.working_1.os");
+    }
+
+    /**
+     * Coverage is each engine measured against the DATABASE, not against the other engine — the only
+     * completeness signal that survives into Phase 3, where there is no second engine to diff against
+     * (issue #36983). The scenario is the one observed live: the content mirror was never rebuilt.
+     */
+    @Test
+    public void coverage_isMeasuredAgainstTheDatabase() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 686); count(osOps, "working_1", 21);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
+                new ExpectedCounts(686L, 685L)).statuses().get(0);
+
+        assertEquals(Long.valueOf(686), working.expectedDocCount());
+        assertEquals(100.0, working.esCoveragePercent(), 0.001);
+        assertEquals(3.06, working.osCoveragePercent(), 0.001);
+        // The incomplete copy is named in the recommendation, with the fallout spelled out.
+        assertTrue(working.recommendation().contains("OpenSearch copy holds 21 of the 686"));
+        assertTrue(working.recommendation().contains("Site Search crawl"));
+        assertFalse("the complete copy must not be flagged",
+                working.recommendation().contains("Elasticsearch copy holds"));
+    }
+
+    /** No denominator (the query failed, or this is a Site Search row) → the fields are simply absent. */
+    @Test
+    public void coverage_absentWithoutADatabaseDenominator() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 686); count(osOps, "working_1", 21);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
+
+        assertNull(working.expectedDocCount());
+        assertNull(working.esCoveragePercent());
+        assertNull(working.osCoveragePercent());
+        assertFalse(working.recommendation().contains("NOTE"));
+    }
+
+    /**
+     * A complete mirror is not annotated, and coverage does not touch the verdict: the verdict states
+     * the ES↔OS relationship, coverage states completeness against the database. Two separate facts.
+     */
+    @Test
+    public void coverage_completeMirror_isNotFlagged() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 686); count(osOps, "working_1", 686);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
+                new ExpectedCounts(686L, 685L)).statuses().get(0);
+
+        assertEquals(100.0, working.osCoveragePercent(), 0.001);
+        assertEquals(Verdict.IN_SYNC, working.verdict());
+        assertFalse(working.recommendation().contains("NOTE"));
     }
 
     /**

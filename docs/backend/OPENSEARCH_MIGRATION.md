@@ -477,6 +477,28 @@ through the write-path gate above.
   report still shows the previous number — and a support technician checking whether a publish reached
   OpenSearch reads that as a **lost write**. This endpoint is the source of truth for exactly that
   question, so it must never report a number the engine can already contradict (issue #36983).
+- **Content rows also carry coverage against the DATABASE.** `expectedDocCount` is how many documents
+  the index should hold per `contentlet_version_info` (keyed by `identifier, lang, variant_id` — the
+  same unit as an index document), and `esCoveragePercent` / `osCoveragePercent` are each engine
+  measured against it. This is the only signal in the report that does not come from a search engine,
+  and that is the point: **`driftPercent` compares the two engines against each other, which stops
+  being an answer once one of them is the only one left.** In Phase 3 a mirror that was never rebuilt
+  has nothing to be diffed against and reads unremarkably, while coverage still says `3.06`. When a
+  copy is materially incomplete the `recommendation` names it and spells out the fallout — including
+  that a Site Search crawl builds its corpus from a query against this index. It never changes the
+  `verdict`, which states a different fact (the ES↔OS relationship).
+
+  **The denominator is O(1), by design.** It comes from the PostgreSQL planner statistics —
+  `pg_class.reltuples` for the row count (every working version, since `working_inode` is `NOT NULL`)
+  times `1 − pg_stats.null_frac` of `live_inode` for the live subset — two catalog lookups, no table
+  access. An exact `COUNT` is a sequential scan (verified with `EXPLAIN`: no index-only path counts
+  non-null `live_inode` without walking the table), which on a customer-sized table would mean a
+  multi-second query every time an operator refreshes the endpoint. The estimate is accurate to a few
+  percent (measured 689/682 against an exact 686/685) — well inside what this metric claims, since it
+  exists to tell 3% from 97%, never 99% from 100%. A table autovacuum has never analyzed reports
+  `reltuples = -1`, which is treated as unknown (fields omitted), not as an empty table. Site Search
+  rows have no such denominator (their corpus is crawled pages and files), so the fields are absent
+  there too.
 - **What a count still cannot tell you.** A number that does not move is not proof that nothing was
   written: the document id is `identifier_languageId_variant`, so re-publishing content already present
   in that index is an **update**, and the total stays put. And in a dual-write phase the OpenSearch copy
@@ -543,6 +565,7 @@ Search rows. Then:
 |---|---|
 | `verdict` | `IN_SYNC` · `MISSING_COUNTERPART` (one engine lacks the index) · `COUNT_DRIFT` (both hold it, different counts) |
 | `driftPercent` | `(OS − ES) / ES × 100`, rounded to 2 decimals. `0.0` in sync · negative = mirror **behind** (blocks *advance*) · positive = mirror **ahead** (blocks *rollback*) · `-100.0` mirror empty/absent · `+100.0` the original is empty but the mirror holds data · `null` a count could not be measured |
+| `expectedDocCount` + `esCoveragePercent` / `osCoveragePercent` | Content rows only. How complete each engine is **against the database**, not against the other engine — the one completeness signal that still works in Phase 3, where there is nothing left to diff. `100.0` = complete; `3.06` = the mirror was never rebuilt. Absent for Site Search and when a count could not be measured |
 | `docCount: -1` | The count could **not** be measured. Never read it as "zero" — the verdict treats it as out of sync on purpose |
 | `physicalName` | The exact name on that server (cluster-prefixed; `.os`-tagged on OpenSearch) — copy/paste it into `_cat/indices` to verify by hand |
 | `recommendation` | The concrete action (re-crawl / reindex). A trailing `NOTE:` flags an alias that is really an index name (see above) |

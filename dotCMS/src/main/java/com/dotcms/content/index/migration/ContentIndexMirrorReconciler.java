@@ -13,6 +13,7 @@ import com.dotcms.content.index.migration.MirrorStatus.Verdict;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -58,24 +59,38 @@ public class ContentIndexMirrorReconciler {
     private final ContentletIndexOperations esOps;
     private final ContentletIndexOperations osOps;
     private final Supplier<IndiciesInfo> indiciesSupplier;
+    private final Supplier<ExpectedCounts> expectedCountsSupplier;
 
     public ContentIndexMirrorReconciler() {
         this(new ESIndexAPI(), CDIUtils.getBeanThrows(OSIndexAPIImpl.class),
                 new ContentletIndexOperationsES(),
                 CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class),
-                ContentIndexMirrorReconciler::loadIndiciesQuietly);
+                ContentIndexMirrorReconciler::loadIndiciesQuietly,
+                ContentIndexMirrorReconciler::loadExpectedCountsQuietly);
     }
 
     @VisibleForTesting
     ContentIndexMirrorReconciler(final IndexAPI esImpl, final IndexAPI osImpl,
             final ContentletIndexOperations esOps, final ContentletIndexOperations osOps,
-            final Supplier<IndiciesInfo> indiciesSupplier) {
+            final Supplier<IndiciesInfo> indiciesSupplier,
+            final Supplier<ExpectedCounts> expectedCountsSupplier) {
         this.esImpl = esImpl;
         this.osImpl = osImpl;
         this.esOps = esOps;
         this.osOps = osOps;
         this.indiciesSupplier = indiciesSupplier;
+        this.expectedCountsSupplier = expectedCountsSupplier;
     }
+
+    /**
+     * How many documents each content index should hold according to the database — the denominator
+     * behind the coverage percentages. A planner <em>estimate</em>, accurate to a few percent (see
+     * {@link #loadExpectedCountsQuietly()}); {@code null} on either field when it is unavailable.
+     *
+     * @param working one row per (identifier, language, variant): the working version always exists
+     * @param live    the subset of those rows that also have a live version
+     */
+    public record ExpectedCounts(Long working, Long live) {}
 
     /** Per-index mirror status for the active working and live content indices. */
     public List<MirrorStatus> statuses() {
@@ -85,14 +100,18 @@ public class ContentIndexMirrorReconciler {
         }
         final Map<String, IndexStats> esStats = esImpl.getIndicesStats();
         final Map<String, IndexStats> osStats = osImpl.getIndicesStats();
+        final ExpectedCounts expected = expectedCountsSupplier.get();
         final List<MirrorStatus> out = new ArrayList<>(2);
-        addStatus(out, IndexKind.CONTENT_WORKING, info.getWorking(), esStats, osStats);
-        addStatus(out, IndexKind.CONTENT_LIVE, info.getLive(), esStats, osStats);
+        addStatus(out, IndexKind.CONTENT_WORKING, info.getWorking(), esStats, osStats,
+                expected == null ? null : expected.working());
+        addStatus(out, IndexKind.CONTENT_LIVE, info.getLive(), esStats, osStats,
+                expected == null ? null : expected.live());
         return out;
     }
 
     private void addStatus(final List<MirrorStatus> out, final IndexKind kind, final String rawName,
-            final Map<String, IndexStats> esStats, final Map<String, IndexStats> osStats) {
+            final Map<String, IndexStats> esStats, final Map<String, IndexStats> osStats,
+            final Long expectedDocCount) {
         if (!UtilMethods.isSet(rawName)) {
             return;
         }
@@ -111,10 +130,13 @@ public class ContentIndexMirrorReconciler {
         final long osCount = osExists ? countQuietly(osOps, bare) : 0L;
 
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
+        final String recommendation = recommend(bare, verdict, osExists)
+                + incompleteNote("Elasticsearch", esExists, esCount, expectedDocCount)
+                + incompleteNote("OpenSearch", osExists, osCount, expectedDocCount);
         out.add(new MirrorStatus(bare, kind,
                 new MirrorStatus.EngineCopy(esExists, esCount, esPhysical),
                 new MirrorStatus.EngineCopy(osExists, osCount, osPhysical),
-                verdict, recommend(bare, verdict, osExists)));
+                verdict, recommendation, expectedDocCount));
     }
 
     /**
@@ -137,6 +159,44 @@ public class ContentIndexMirrorReconciler {
                 .getOrElse(-1L);
     }
 
+    /**
+     * Coverage below which an existing index is called out as incomplete in the recommendation. Not a
+     * tight bound on purpose: the denominator is an order-of-magnitude measure (see
+     * {@code MirrorStatus#coverageOf}), so this is meant to catch "3% of the content", not a handful of
+     * documents.
+     */
+    private static final double INCOMPLETE_COVERAGE_THRESHOLD = 95.0;
+
+    /**
+     * A sentence appended to the recommendation when an engine holds materially less content than the
+     * database says it should.
+     *
+     * <p>This is the half of the report that survives into Phase 3. The verdict compares the two
+     * engines against each other, so once one of them is the only one left it can read reassuringly
+     * while the surviving index is nearly empty — and everything downstream inherits that emptiness
+     * silently, including a Site Search crawl, whose corpus is a query over this very index
+     * (issue #36983). Comparing against the database keeps that visible with nothing to diff.</p>
+     *
+     * <p>It never changes the {@code verdict}: the verdict states the ES↔OS relationship, which is a
+     * different fact. Reported side by side, not merged.</p>
+     */
+    private static String incompleteNote(final String engine, final boolean exists, final long count,
+            final Long expected) {
+        if (!exists || count < 0 || expected == null || expected <= 0) {
+            return "";
+        }
+        final double coverage = count * 100.0 / expected;
+        if (coverage >= INCOMPLETE_COVERAGE_THRESHOLD) {
+            return "";
+        }
+        return String.format(" NOTE: the %s copy holds %d of the %d contentlets the database has "
+                        + "(%.2f%%) — it was never fully rebuilt. Run a full reindex; until then, "
+                        + "anything reading through this index sees only that fraction of the content "
+                        + "(a Site Search crawl included, since it builds its corpus from a query "
+                        + "against it).",
+                engine, count, expected, coverage);
+    }
+
     private static String recommend(final String name, final Verdict verdict, final boolean osExists) {
         switch (verdict) {
             case IN_SYNC:
@@ -152,6 +212,68 @@ public class ContentIndexMirrorReconciler {
                         + "of documents. Run a full reindex to rebuild the OpenSearch copy before "
                         + "promoting the phase.", name);
         }
+    }
+
+    /**
+     * How many documents each content index should hold, from the PostgreSQL planner statistics —
+     * <strong>O(1)</strong>, reading only the catalog.
+     *
+     * <p><strong>Why an estimate and not {@code COUNT(*)}.</strong> {@code contentlet_version_info} is
+     * keyed by {@code (identifier, lang, variant_id)} — the same unit as an index document
+     * ({@code identifier_language_variant}) — so its row count is the natural denominator. But an exact
+     * count is a sequential scan (verified with {@code EXPLAIN}: no index-only path counts non-null
+     * {@code live_inode} without walking the table), which on a customer-sized table means a
+     * multi-second, I/O-heavy query every time an operator refreshes this endpoint. The catalog
+     * estimate costs two lookups and no table access:</p>
+     * <ul>
+     *   <li>{@code pg_class.reltuples} — the row count, i.e. every working version, since
+     *       {@code working_inode} is {@code NOT NULL}.</li>
+     *   <li>{@code × (1 − pg_stats.null_frac)} of {@code live_inode} — the fraction of those rows that
+     *       also have a live version.</li>
+     * </ul>
+     *
+     * <p>Both are maintained by {@code ANALYZE}/autovacuum and are accurate to a few percent (measured
+     * 689/682 against an exact 686/685). That is well inside what this metric claims: coverage exists
+     * to tell 3% from 97%, never 99% from 100% — so paying a table scan for exactness would buy
+     * precision the metric explicitly does not offer. A table that has never been analyzed reports
+     * {@code reltuples = -1}; that and any failure yield {@code null}, and the coverage fields are then
+     * simply omitted rather than failing the whole report.</p>
+     *
+     * <p>PostgreSQL-only, like the rest of the platform.</p>
+     */
+    private static ExpectedCounts loadExpectedCountsQuietly() {
+        return Try.of(() -> {
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("SELECT c.reltuples AS working_count, "
+                            + "c.reltuples * (1 - COALESCE(s.null_frac, 0)) AS live_count "
+                            + "FROM pg_class c "
+                            + "LEFT JOIN pg_stats s ON s.schemaname = current_schema() "
+                            + "  AND s.tablename = 'contentlet_version_info' "
+                            + "  AND s.attname = 'live_inode' "
+                            + "WHERE c.oid = to_regclass('contentlet_version_info')")
+                    .loadObjectResults();
+            if (rows.isEmpty()) {
+                return null;
+            }
+            final Map<String, Object> row = rows.get(0);
+            // reltuples is -1 on a table that autovacuum has never analyzed: an unknown, not an empty
+            // table, so report it as absent instead of a 0 denominator that would read as "0% covered".
+            return new ExpectedCounts(positiveOrNull(row.get("working_count")),
+                    positiveOrNull(row.get("live_count")));
+        }).onFailure(e -> Logger.warn(ContentIndexMirrorReconciler.class,
+                "Could not read the expected content counts for migration readiness: " + e.getMessage()))
+                .getOrElse((ExpectedCounts) null);
+    }
+
+    /** The estimate as a positive Long, or {@code null} when it is absent, negative or zero. */
+    private static Long positiveOrNull(final Object value) {
+        final Long count = asLong(value);
+        return count != null && count > 0 ? count : null;
+    }
+
+    /** JDBC hands a {@code COUNT} back as Long, BigDecimal or BigInteger depending on the driver. */
+    private static Long asLong(final Object value) {
+        return value instanceof Number ? ((Number) value).longValue() : null;
     }
 
     private static IndiciesInfo loadIndiciesQuietly() {

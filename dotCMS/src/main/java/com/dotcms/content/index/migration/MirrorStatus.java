@@ -16,12 +16,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * row belongs to. Each engine's side is a nested {@link EngineCopy} so the report reads as
  * {@code es:{exists,docCount}} / {@code os:{exists,docCount}}.</p>
  *
- * @param indexName      the logical index name (no {@code .os} tag)
- * @param kind           which mirrored index family this row belongs to
- * @param es             the Elasticsearch copy (existence + exact document count)
- * @param os             the OpenSearch ({@code .os}) copy (existence + exact document count)
- * @param verdict        the diff verdict between the two copies
- * @param recommendation human-readable, action-oriented advice for a support technician
+ * @param indexName         the logical index name (no {@code .os} tag)
+ * @param kind              which mirrored index family this row belongs to
+ * @param es                the Elasticsearch copy (existence + exact document count)
+ * @param os                the OpenSearch ({@code .os}) copy (existence + exact document count)
+ * @param verdict           the diff verdict between the two copies
+ * @param recommendation    human-readable, action-oriented advice for a support technician
+ * @param expectedDocCount  how many documents this index <em>should</em> hold according to the
+ *                          database — the engine-independent denominator behind
+ *                          {@link #esCoveragePercent()} / {@link #osCoveragePercent()}. A planner
+ *                          estimate of {@code contentlet_version_info}, accurate to a few percent and
+ *                          O(1) by design (an exact count would be a table scan on every request).
+ *                          Only the content indices have one; {@code null} for Site Search, whose
+ *                          corpus (crawled pages and files) has no such counterpart, and {@code null}
+ *                          when the statistics are unavailable.
  */
 @JsonIgnoreProperties("kind") // internal grouping/label only — the report keys rows by it, never emits it
 public record MirrorStatus(
@@ -30,7 +38,14 @@ public record MirrorStatus(
         EngineCopy es,
         EngineCopy os,
         Verdict verdict,
-        String recommendation) {
+        String recommendation,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Long expectedDocCount) {
+
+    /** A row with no database denominator — the shape the Site Search indices use. */
+    public MirrorStatus(final String indexName, final IndexKind kind, final EngineCopy es,
+            final EngineCopy os, final Verdict verdict, final String recommendation) {
+        this(indexName, kind, es, os, verdict, recommendation, null);
+    }
 
     /** Which mirrored index family a status row belongs to. */
     public enum IndexKind { CONTENT_WORKING, CONTENT_LIVE, SITE_SEARCH }
@@ -104,6 +119,60 @@ public record MirrorStatus(
         }
         final double pct = esCount == 0 ? 100.0 : (osCount - esCount) * 100.0 / esCount;
         return Math.round(pct * 100.0) / 100.0;
+    }
+
+    /**
+     * How complete the Elasticsearch copy is against the database, as a percentage of
+     * {@link #expectedDocCount}. See {@link #coverageOf(EngineCopy)}.
+     */
+    @JsonProperty("esCoveragePercent")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Schema(description = "Percentage of the documents the database says this index should hold that "
+            + "the Elasticsearch copy actually holds. 100.0 = complete. Absent for Site Search "
+            + "(no database denominator) and when a count could not be measured.")
+    public Double esCoveragePercent() {
+        return coverageOf(es);
+    }
+
+    /**
+     * How complete the OpenSearch copy is against the database, as a percentage of
+     * {@link #expectedDocCount}. See {@link #coverageOf(EngineCopy)}.
+     */
+    @JsonProperty("osCoveragePercent")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Schema(description = "Percentage of the documents the database says this index should hold that "
+            + "the OpenSearch copy actually holds. 100.0 = complete; a low value means the mirror was "
+            + "never rebuilt — and anything reading through it (including a Site Search crawl) sees "
+            + "only that fraction of the content. Absent for Site Search (no database denominator) "
+            + "and when a count could not be measured.")
+    public Double osCoveragePercent() {
+        return coverageOf(os);
+    }
+
+    /**
+     * One engine's completeness against the database: {@code docCount / expectedDocCount × 100},
+     * rounded to two decimals.
+     *
+     * <p><strong>Why this exists next to {@link #driftPercent()}.</strong> Drift compares the two
+     * engines against <em>each other</em>, which stops being an answer once one of them is the only
+     * one left: in Phase 3 there is no Elasticsearch side to compare against, so a mirror that was
+     * never rebuilt looks unremarkable. Coverage compares each engine against the <em>database</em> —
+     * the source of truth, identical in every phase — so "this index holds 3% of the content" is
+     * still visible when there is nothing to diff (issue #36983).</p>
+     *
+     * <p>Read it as an order of magnitude, not an audit: the denominator counts one row per
+     * (identifier, language, variant) in {@code contentlet_version_info}, which is the same unit as an
+     * index document, but content types excluded from indexing and archived versions can move the
+     * number by a few points. It is built to tell 3% from 97%, not 99% from 100%.</p>
+     *
+     * @return the percentage, or {@code null} when there is no denominator ({@code expectedDocCount}
+     *         absent or zero) or the count was unmeasurable ({@code -1})
+     */
+    private Double coverageOf(final EngineCopy copy) {
+        if (expectedDocCount == null || expectedDocCount <= 0 || copy.docCount() < 0) {
+            return null;
+        }
+        return Math.round(copy.docCount() * 10_000.0 / expectedDocCount) / 100.0;
     }
 
     /**
