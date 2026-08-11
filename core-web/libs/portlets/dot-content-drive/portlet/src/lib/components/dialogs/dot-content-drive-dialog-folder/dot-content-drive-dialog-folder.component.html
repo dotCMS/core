@@ -81,7 +81,11 @@
                         dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.allowed-file-extensions' | dm }}
                     </label>
+                    <!-- appendTo="body" keeps the suggestion panel out of the dialog's scrolling
+                         content, which otherwise clips it and swallows the wheel events. -->
                     <p-autoComplete
+                        #extensionsAutoComplete
+                        appendTo="body"
                         formControlName="allowedFileExtensions"
                         data-testid="allowed-file-extensions-autocomplete"
                         (completeMethod)="onCompleteMethod($event)"
@@ -89,7 +93,8 @@
                         [multiple]="true"
                         [unique]="true"
                         [forceSelection]="false"
-                        (keydown.enter)="onEnterKey($event)" />
+                        (keydown.enter)="onEnterKey($event)"
+                        (onBlur)="onExtensionsBlur($event)" />
                     <small id="allowedFileExtensions-help">
                         {{ 'content-drive.dialog.folder.field.allowed-file-extensions.help' | dm }}
                     </small>
@@ -102,7 +107,10 @@
                         dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.default-file-asset-type' | dm }}
                     </label>
+                    <!-- appendTo="body" keeps the options panel out of the dialog's scrolling
+                         content, which otherwise clips it and swallows the wheel events. -->
                     <p-select
+                        appendTo="body"
                         [options]="$fileAssetTypes()"
                         optionLabel="name"
                         optionValue="variable"

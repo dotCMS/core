@@ -6,6 +6,7 @@ import {
     inject,
     input,
     signal,
+    viewChild,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -18,7 +19,7 @@ import {
 } from '@angular/forms';
 
 import { MessageService } from 'primeng/api';
-import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -86,6 +87,9 @@ export class DotContentDriveDialogFolderComponent {
 
     /** Options for the "Upload Behavior" radio group (bound to the `defaultBaseType` control). */
     protected readonly uploadBehaviorOptions = FOLDER_UPLOAD_BEHAVIOR_OPTIONS;
+
+    /** Allowed-file-extensions field; chips are added through its own model. See {@link #addExtension}. */
+    readonly $extensionsAutoComplete = viewChild<AutoComplete>('extensionsAutoComplete');
 
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
@@ -183,22 +187,65 @@ export class DotContentDriveDialogFolderComponent {
         // text from persisting into the next entry, which was resetting the current selection.
         event.preventDefault();
 
+        this.#addExtension(event);
+    }
+
+    /**
+     * Commits whatever is still typed in the field when it loses focus, so clicking outside the
+     * input (Save, another tab, the dialog body) does not silently discard the extension the user
+     * just typed. PrimeNG's own `addOnBlur` only applies when `typeahead` is off, which it is not
+     * here, so the commit has to happen from the component.
+     *
+     * @param {Event} event - The blur event emitted by the AutoComplete
+     */
+    onExtensionsBlur(event: Event) {
         const input = event.target as HTMLInputElement;
-        const value = input.value.trim();
+        const pending = input?.value?.trim();
 
-        if (value) {
-            const currentExtensions = this.folderForm.get('allowedFileExtensions')?.value ?? [];
-            const isDuplicate = currentExtensions.includes(value);
+        if (!pending) {
+            return;
+        }
 
-            if (!isDuplicate) {
-                this.folderForm
-                    .get('allowedFileExtensions')
-                    ?.setValue([...currentExtensions, value]);
+        // Deferred on purpose: clicking a suggestion blurs the input *before* the option click
+        // lands, and PrimeNG clears the input when it adds that option. Re-reading the input on
+        // the next tick keeps this path from adding the raw text on top of the picked suggestion.
+        setTimeout(() => {
+            if (input.value?.trim() === pending) {
+                this.#addExtension(event, pending);
             }
+        });
+    }
 
+    /**
+     * Adds the currently typed extension as a chip.
+     *
+     * The value is pushed through the AutoComplete's own model instead of
+     * `control.setValue([...current, value])`: PrimeNG's `writeControlValue` re-derives the chips
+     * from the current `suggestions` list, so writing the whole array back drops every entry that
+     * is not part of the active filter. That left the form value and the visible chips out of
+     * sync — the previously saved extension stayed in the form value and came back on reload.
+     *
+     * @param {Event} event - The originating keyboard/blur event
+     * @param {string} [value] - Extension to add; defaults to the text currently in the input
+     */
+    #addExtension(event: Event, value?: string) {
+        const input = event.target as HTMLInputElement;
+        const extension = (value ?? input?.value ?? '').trim();
+
+        if (!extension) {
+            return;
+        }
+
+        const currentExtensions = this.folderForm.controls.allowedFileExtensions.value ?? [];
+
+        if (currentExtensions.includes(extension)) {
             // Clear the input so the next extension starts fresh and existing chips are preserved.
             input.value = '';
+
+            return;
         }
+
+        this.$extensionsAutoComplete()?.onOptionSelect(event, extension);
     }
 
     /**

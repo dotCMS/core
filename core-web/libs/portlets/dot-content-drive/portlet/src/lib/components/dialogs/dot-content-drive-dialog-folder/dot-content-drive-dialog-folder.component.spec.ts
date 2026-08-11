@@ -3,7 +3,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 import { of, throwError } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
-import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotContentDriveFolder } from '@dotcms/dotcms-models';
@@ -323,6 +323,29 @@ describe('DotContentDriveDialogFolderComponent', () => {
     });
 
     describe('file extensions functionality', () => {
+        /** The AutoComplete's own text input (the one the user types extensions into). */
+        const extensionsInput = () =>
+            (spectator.query(AutoComplete) as AutoComplete).inputEL?.nativeElement as
+                | HTMLInputElement
+                | undefined;
+
+        /** The chips the field is actually showing, which must mirror the form control. */
+        const renderedChips = () => (spectator.query(AutoComplete) as AutoComplete).modelValue();
+
+        /** Types `text` and lets the AutoComplete debounce run so the suggestions get filtered. */
+        const type = (text: string) => {
+            const input = extensionsInput();
+            input.value = text;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            jest.advanceTimersByTime(500);
+            spectator.detectChanges();
+
+            return input;
+        };
+
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
         it('should filter file extensions on autocomplete', () => {
             const event: AutoCompleteCompleteEvent = {
                 query: 'jpg',
@@ -335,18 +358,13 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
 
         it('should add extension on enter key if not duplicate', () => {
-            const target = { value: '*.pdf' };
-            spectator.triggerEventHandler(
-                '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keydown.enter',
-                { target, preventDefault: jest.fn() }
-            );
-
+            const input = type('*.pdf');
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toContain('*.pdf');
             // Input is cleared so the next entry starts fresh and existing chips are preserved.
-            expect(target.value).toBe('');
+            expect(input.value).toBe('');
         });
 
         it('should preserve existing selection when adding another extension', () => {
@@ -355,12 +373,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
             });
             spectator.detectChanges();
 
-            spectator.triggerEventHandler(
-                '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keydown.enter',
-                { target: { value: '*.png' }, preventDefault: jest.fn() }
-            );
-
+            const input = type('*.png');
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([
@@ -369,21 +383,96 @@ describe('DotContentDriveDialogFolderComponent', () => {
             ]);
         });
 
+        it('should keep the rendered chips in sync with the form value when adding an extension', () => {
+            // Regression: adding an extension used to write the whole array back through the form
+            // control, and PrimeNG re-derives the chips from the *filtered* suggestions on write.
+            // Every already-selected extension outside the active filter was dropped from the
+            // chips while staying in the form value, so the stale extension came back on reload.
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            const input = type('*.png');
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            spectator.detectChanges();
+
+            expect(renderedChips()).toEqual(['*.jpg', '*.png']);
+            expect(renderedChips()).toEqual(
+                component.folderForm.get('allowedFileExtensions')?.value
+            );
+        });
+
+        it('should commit the typed extension when the field loses focus', () => {
+            // Clicking outside the input (Save, another tab) used to discard the typed extension:
+            // PrimeNG only auto-commits on blur when `typeahead` is off, which it is not here.
+            const input = type('*.png');
+            input.dispatchEvent(new Event('blur', { bubbles: true }));
+            jest.runOnlyPendingTimers();
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.png']);
+            expect(renderedChips()).toEqual(['*.png']);
+        });
+
+        it('should not commit anything on blur when the input is empty', () => {
+            const input = extensionsInput();
+            input.dispatchEvent(new Event('blur', { bubbles: true }));
+            jest.runOnlyPendingTimers();
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([]);
+        });
+
         it('should not add duplicate extension on enter key', () => {
             component.folderForm.patchValue({
                 allowedFileExtensions: ['*.pdf']
             });
             spectator.detectChanges();
 
-            spectator.triggerEventHandler(
-                '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keydown.enter',
-                { target: { value: '*.pdf' }, preventDefault: jest.fn() }
-            );
-
+            const input = type('*.pdf');
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.pdf']);
+            expect(input.value).toBe('');
+        });
+
+        it('should replace the saved extension when it is removed and a new one is typed', () => {
+            // The reported flow: open a folder that already has an extension, remove it, type a
+            // different one. The new extension must be what ends up in the payload.
+            const autoComplete = spectator.query(AutoComplete) as AutoComplete;
+
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            autoComplete.removeOption({ stopPropagation: () => undefined } as unknown as Event, 0);
+            spectator.detectChanges();
+
+            const input = type('*.png');
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.png']);
+            expect(renderedChips()).toEqual(['*.png']);
+        });
+    });
+
+    describe('overlay panels', () => {
+        // Both panels are appended to the body: inside the dialog's scrolling content they get
+        // clipped, and the wheel events land on the dialog instead of the panel's own list.
+        it('should append the file extensions suggestions panel to the body', () => {
+            expect(
+                spectator
+                    .query('[data-testid="allowed-file-extensions-autocomplete"]')
+                    ?.getAttribute('appendTo')
+            ).toBe('body');
+        });
+
+        it('should append the default file asset type options panel to the body', () => {
+            expect(spectator.query('#defaultFileAssetType')?.getAttribute('appendTo')).toBe('body');
         });
     });
 
