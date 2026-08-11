@@ -6,10 +6,10 @@
             <i class="pi pi-eye text-2xl!" aria-hidden="true"></i>
         </span>
         <div>
-            <h1 class="m-0 text-xl font-extrabold tracking-tight text-gray-900">
+            <h1 class="m-0 text-xl font-extrabold tracking-tight text-color">
                 {{ 'accessibility.studio.title' | dm }}
             </h1>
-            <p class="m-0 mt-0.5 text-sm text-gray-500">
+            <p class="m-0 mt-0.5 text-sm text-muted-color">
                 {{ 'accessibility.studio.pagelist.subtitle' | dm }}
             </p>
         </div>
@@ -31,13 +31,13 @@
 
     <!-- Result count -->
     <div class="mt-4 mb-2.5 flex items-center gap-2 px-0.5">
-        <span class="text-xs font-semibold text-gray-500" data-testid="studio-result-count">
+        <span class="text-xs font-semibold text-muted-color" data-testid="studio-result-count">
             {{
                 'accessibility.studio.pagelist.count'
                     | dm: [store.pages().length.toString(), store.totalRecords().toString()]
             }}
         </span>
-        <span class="ml-auto inline-flex items-center gap-1.5 text-xs text-gray-400">
+        <span class="ml-auto inline-flex items-center gap-1.5 text-xs text-muted-color">
             <i class="pi pi-sort-amount-down text-sm!" aria-hidden="true"></i>
             {{ 'accessibility.studio.pagelist.sorted' | dm }}
         </span>
@@ -87,12 +87,12 @@
                         class="cursor-pointer"
                         (click)="openPage(row)">
                         <td
-                            class="truncate font-semibold text-gray-900"
+                            class="truncate font-semibold text-color"
                             data-testid="studio-page-title">
                             {{ row.title }}
                         </td>
-                        <td class="truncate text-gray-500">{{ row.path }}</td>
-                        <td class="truncate text-gray-500">{{ row.type }}</td>
+                        <td class="truncate text-muted-color">{{ row.path }}</td>
+                        <td class="truncate text-muted-color">{{ row.type }}</td>
                         <td>
                             @if (row.live) {
                                 <p-tag
@@ -106,7 +106,7 @@
                                     [rounded]="true" />
                             }
                         </td>
-                        <td class="text-gray-500">{{ row.modDate }}</td>
+                        <td class="text-muted-color">{{ row.modDate }}</td>
                     </tr>
                 }
             </ng-template>
@@ -120,10 +120,10 @@
                             <i
                                 class="pi pi-search text-5xl! text-surface-400"
                                 aria-hidden="true"></i>
-                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                            <h3 class="m-0 text-lg font-medium text-color">
                                 {{ 'accessibility.studio.pagelist.empty.title' | dm }}
                             </h3>
-                            <p class="m-0 text-base leading-6 text-gray-500">
+                            <p class="m-0 text-base leading-6 text-muted-color">
                                 {{ 'accessibility.studio.pagelist.empty.description' | dm }}
                             </p>
                         </div>
@@ -133,7 +133,7 @@
         </p-table>
     </div>
 
-    <p class="mt-4 text-center text-xs text-gray-400">
+    <p class="mt-4 text-center text-xs text-muted-color">
         {{ 'accessibility.studio.pagelist.hint' | dm }}
     </p>
 </div>

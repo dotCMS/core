@@ -38,10 +38,10 @@
             <div class="flex items-center gap-2.5 p-2" data-testid="diff-empty">
                 <i class="pi pi-check-circle flex-none text-green-500" aria-hidden="true"></i>
                 <div class="min-w-0">
-                    <div class="font-bold text-gray-900">
+                    <div class="font-bold text-color">
                         {{ 'accessibility.studio.diff.empty.title' | dm }}
                     </div>
-                    <p class="m-0 mt-0.5 leading-snug text-gray-500">
+                    <p class="m-0 mt-0.5 leading-snug text-muted-color">
                         {{ 'accessibility.studio.diff.empty.sub' | dm }}
                     </p>
                 </div>
@@ -61,10 +61,10 @@
                             <i
                                 class="pi pi-file flex-none"
                                 [class.text-primary]="file.identifier === selectedId()"
-                                [class.text-gray-400]="file.identifier !== selectedId()"
+                                [class.text-muted-color]="file.identifier !== selectedId()"
                                 aria-hidden="true"></i>
                             <div class="min-w-0 flex-1">
-                                <div class="truncate font-semibold text-gray-900">
+                                <div class="truncate font-semibold text-color">
                                     {{ file.name }}
                                 </div>
                             </div>
@@ -88,7 +88,7 @@
             @if (selectedId()) {
                 <button
                     type="button"
-                    class="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-200 bg-white p-2 font-semibold text-gray-600 transition-colors hover:bg-surface-50"
+                    class="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-200 bg-white p-2 font-semibold text-muted-color transition-colors hover:bg-surface-50"
                     (click)="clearSelection()"
                     data-testid="diff-back-to-preview-btn">
                     <i class="pi pi-arrow-left" aria-hidden="true"></i>

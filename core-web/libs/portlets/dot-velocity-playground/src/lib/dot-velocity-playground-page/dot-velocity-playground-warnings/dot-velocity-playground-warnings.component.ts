@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 
 import { MessageModule } from 'primeng/message';
+import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -18,7 +19,7 @@ import { VelocityWarning } from '../../models/dot-velocity-playground.models';
 @Component({
     selector: 'dot-velocity-playground-warnings',
     standalone: true,
-    imports: [MessageModule, DotMessagePipe],
+    imports: [MessageModule, TagModule, DotMessagePipe],
     templateUrl: './dot-velocity-playground-warnings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'contents' }

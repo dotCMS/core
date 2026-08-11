@@ -67,7 +67,13 @@ export class DotPageScannerA11yReportComponent {
             helpUrl: rule.helpUrl ?? '',
             items: (rule.nodes ?? []).map((node) => ({
                 context: node.html,
-                selector: node.target?.join(', ') ?? ''
+                // LAST entry, not a join. axe's `target` is an ancestor CHAIN — one entry
+                // per frame or shadow-root boundary crossed on the way to the element — so
+                // the element's own selector is the last one. Joining them produced a
+                // selector LIST, which `querySelector` resolves to whichever matches
+                // FIRST: for `['iframe#promo', 'button.cta']` that is the iframe.
+                // Keep in sync with `a11y-groups.ts` in the dot-agents portlet.
+                selector: node.target?.at(-1) ?? ''
             })),
             count: rule.nodes?.length ?? 0
         }));

@@ -16,10 +16,16 @@ export const dotAccessibilityStudioRoutes: Route[] = [
         component: DotA11yRootComponent,
         children: [
             { path: '', component: DotA11yPageListComponent },
-            // Wildcard, not `:id`: the run URL carries the page's human-readable
-            // path (e.g. `blog/post/hello`), which is multi-segment and so can't be
-            // a single Angular route param. `**` captures the whole path; the run
-            // screen reads it back and rehydrates the page. Must come after `''`.
+            // Wildcard, not `:id`: the run URL carries the page's human-readable path
+            // (e.g. `blog/post/hello`), which is multi-segment and so can't be a single
+            // Angular route param. `**` captures the whole path. Must come after `''`.
+            //
+            // The URL is for DISPLAY and history only — it does NOT make the run screen
+            // deep-linkable. The page itself is handed over in the navigation's `state`
+            // by the list, because the path alone can't supply the identifier, host and
+            // language the run needs. Opening a run URL cold (new tab, refresh, pasted
+            // link) therefore has no state and bounces straight back to the list; see
+            // DotA11yRunComponent's constructor.
             { path: '**', component: DotA11yRunComponent }
         ]
     }

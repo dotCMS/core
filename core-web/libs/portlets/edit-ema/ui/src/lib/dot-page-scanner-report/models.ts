@@ -14,7 +14,10 @@ export type A11yFindingType = 'error' | 'warning';
 export interface A11yGroupItem {
     /** Outer HTML of the offending element. */
     context: string;
-    /** First CSS selector axe reported for the element. */
+    /**
+     * CSS selector for the element itself — the LAST entry of axe's `target` chain, which
+     * is scoped to the innermost frame or shadow root containing it (see `mapRules`).
+     */
     selector: string;
 }
 

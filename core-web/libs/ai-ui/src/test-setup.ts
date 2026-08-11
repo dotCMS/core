@@ -18,7 +18,7 @@ class MockPointerEvent implements Partial<PointerEvent> {
         Object.assign(this, props);
     }
 }
-(global as any).PointerEvent = MockPointerEvent;
+(globalThis as any).PointerEvent = MockPointerEvent;
 
 /* global mocks for jsdom */
 const mock = () => {
@@ -54,7 +54,7 @@ if (typeof globalThis.structuredClone === 'undefined') {
 }
 
 // PrimeNG mocks
-(global as any).ResizeObserver = class ResizeObserver {
+(globalThis as any).ResizeObserver = class ResizeObserver {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -76,7 +76,7 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock IntersectionObserver
-(global as any).IntersectionObserver = class IntersectionObserver {
+(globalThis as any).IntersectionObserver = class IntersectionObserver {
     constructor() {}
     observe() {
         return null;

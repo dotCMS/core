@@ -17,13 +17,12 @@
                 <li
                     class="flex flex-wrap items-baseline gap-x-2"
                     data-testid="velocity-playground-warning-item">
-                    <span
-                        class="inline-flex items-center rounded-sm bg-yellow-100 px-1.5 py-0.5 font-mono font-semibold text-yellow-800">
-                        {{ warning.type }}
-                    </span>
+                    <!-- Read-only status label: severity comes from the theme preset so
+                         it tracks light/dark, rather than a literal yellow pairing. -->
+                    <p-tag severity="warn" [value]="warning.type" styleClass="font-mono" />
                     <span class="wrap-break-word">{{ warning.message }}</span>
                     @if (location(warning); as text) {
-                        <span class="text-color-secondary">{{ text }}</span>
+                        <span class="text-muted-color">{{ text }}</span>
                     }
                 </li>
             }

@@ -11,15 +11,15 @@
             [attr.aria-label]="'accessibility.studio.diff.backtopreview' | dm"
             data-testid="diff-viewer-close-btn" />
         <div class="min-w-0">
-            <div class="truncate text-sm font-bold text-gray-900">
+            <div class="truncate text-sm font-bold text-color">
                 {{ file()?.name }}
             </div>
-            <div class="truncate text-xs text-gray-400">{{ file()?.path }}</div>
+            <div class="truncate text-xs text-muted-color">{{ file()?.path }}</div>
         </div>
     </div>
     <div class="flex flex-none items-center gap-2 text-[11px] font-semibold">
         <span
-            class="inline-flex items-center gap-1 rounded-full bg-surface-100 px-2.5 py-1 text-gray-600">
+            class="inline-flex items-center gap-1 rounded-full bg-surface-100 px-2.5 py-1 text-muted-color">
             <i class="pi pi-globe text-[11px]!" aria-hidden="true"></i>
             {{ 'accessibility.studio.diff.live' | dm }}
         </span>

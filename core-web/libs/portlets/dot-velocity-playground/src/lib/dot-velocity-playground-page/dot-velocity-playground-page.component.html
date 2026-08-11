@@ -171,11 +171,14 @@
                                 class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
                                 data-testid="velocity-playground-error-detail">
                                 @if (detail.errorType) {
-                                    <span
-                                        class="inline-flex items-center rounded-sm bg-red-100 px-1.5 py-0.5 font-mono font-semibold text-red-700"
-                                        data-testid="velocity-playground-error-type">
-                                        {{ detail.errorType }}
-                                    </span>
+                                    <!-- Read-only status label: severity comes from the
+                                         theme preset so it tracks light/dark, rather than
+                                         a literal red palette pairing. -->
+                                    <p-tag
+                                        severity="danger"
+                                        [value]="detail.errorType"
+                                        styleClass="font-mono"
+                                        data-testid="velocity-playground-error-type" />
                                 }
                                 @if (detail.line !== undefined && detail.line !== null) {
                                     <span
@@ -214,7 +217,7 @@
                     class="flex flex-1 flex-col items-center justify-center gap-3"
                     data-testid="velocity-playground-loading">
                     <dot-spinner size="3rem" borderSize="3px" />
-                    <span class="text-color-secondary text-sm">
+                    <span class="text-sm text-muted-color">
                         {{ 'velocityPlayground.output.running' | dm }}
                     </span>
                 </div>
@@ -227,7 +230,7 @@
             } @else {
                 <!-- Stats bar -->
                 <div
-                    class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
+                    class="flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm text-muted-color"
                     data-testid="velocity-playground-stats-bar">
                     <div class="flex items-center gap-1.5">
                         @if (store.hasOutput()) {
@@ -237,7 +240,7 @@
                                 {{ 'velocityPlayground.output.viewing' | dm }}
                                 {{ store.outputContentType() }}
                             </span>
-                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="mx-1 text-muted-color">&middot;</span>
                         }
                         <span
                             class="material-symbols-rounded text-xl! text-green-600"
@@ -247,7 +250,7 @@
                         </span>
                         {{ 'velocityPlayground.output.ready' | dm }}
                         @if (store.elapsedMs() !== null) {
-                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="mx-1 text-muted-color">&middot;</span>
                             <span class="inline-flex items-center gap-1">
                                 <span class="font-bold text-color">{{ store.elapsedMs() }}</span>
                                 {{ 'velocityPlayground.output.timing' | dm }}
@@ -337,7 +340,7 @@
                     </div>
                     @if (example.description) {
                         <p
-                            class="text-color-secondary m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs"
+                            class="m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs text-muted-color"
                             data-testid="velocity-playground-help-description">
                             {{ example.description | dm }}
                         </p>

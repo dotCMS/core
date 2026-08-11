@@ -15,6 +15,13 @@ import { DotAgentMessageComponent } from '../dot-agent-message/dot-agent-message
 import { DotAgentThinkingComponent } from '../dot-agent-thinking/dot-agent-thinking.component';
 
 /**
+ * How close to the bottom still counts as "following along", in px. Absorbs fractional
+ * layout heights and a partially-rendered in-flight row, either of which would otherwise
+ * read as the user having scrolled away.
+ */
+const PINNED_TO_BOTTOM_TOLERANCE_PX = 32;
+
+/**
  * The shared "watch the agent work" surface — a thin composer.
  *
  * It renders one settled bubble per message ({@link DotAgentMessageComponent}) and,
@@ -82,19 +89,44 @@ export class DotAgentActivityLogComponent {
         // reads scrollHeight before the new DOM exists and stops one row short.
         // It pins whichever element actually scrolls — the host if the consumer
         // made it a scroll box, otherwise its nearest scrollable ancestor.
+        //
+        // Auto-scroll ONLY while the user is already at the bottom. The scroller is the
+        // nearest scrollable ancestor, which in a consumer like the Accessibility Studio
+        // is the whole side pane — score ring, legend and issue list included — so an
+        // unconditional pin dragged the user back down every time it ran. Scrolling up to
+        // read something mid-run is an explicit "leave me here", and this now honours it
+        // until they scroll back to the bottom themselves.
+        //
+        // NOTE: `workingText` is deliberately NOT tracked. It changes on every heartbeat
+        // (a few seconds apart) with no new content, so it was the reason a run yanked the
+        // pane back roughly every 5 seconds for its entire duration.
         afterRenderEffect(() => {
             const count = this.messages().length;
             const working = this.working();
-            // Also track the working text so a heartbeat-driven reflow re-pins.
-            this.workingText();
             if (!count && !working) {
                 return;
             }
             const scroller = this.scrollParent(this.host.nativeElement);
-            if (scroller) {
+            // Measured BEFORE the write, or the comparison is against the value we are
+            // about to set and every check trivially passes.
+            if (scroller && this.isPinnedToBottom(scroller)) {
                 scroller.scrollTop = scroller.scrollHeight;
             }
         });
+    }
+
+    /**
+     * Whether the scroller is at (or within a hair of) the bottom.
+     *
+     * The tolerance absorbs fractional layout heights and the partially-rendered row that
+     * is normally in flight while content streams in — without it, sub-pixel rounding
+     * alone would read as "the user scrolled away" and auto-scroll would stop for good.
+     */
+    private isPinnedToBottom(scroller: HTMLElement): boolean {
+        const distanceFromBottom =
+            scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+
+        return distanceFromBottom <= PINNED_TO_BOTTOM_TOLERANCE_PX;
     }
 
     /**

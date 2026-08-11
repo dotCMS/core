@@ -20,6 +20,7 @@ import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { SplitterModule } from 'primeng/splitter';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, take } from 'rxjs/operators';
@@ -66,6 +67,7 @@ import {
         MenuModule,
         PanelModule,
         PopoverModule,
+        TagModule,
         DotEmptyContainerComponent,
         DotSpinnerComponent,
         DotMessagePipe,

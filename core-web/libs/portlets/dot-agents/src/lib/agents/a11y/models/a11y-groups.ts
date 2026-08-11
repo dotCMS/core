@@ -16,7 +16,10 @@ export type A11yFindingType = 'error' | 'warning';
 export interface A11yGroupItem {
     /** Outer HTML of the offending element. */
     context: string;
-    /** First CSS selector axe reported for the element. */
+    /**
+     * CSS selector for the element itself — the LAST entry of axe's `target` chain, which
+     * is scoped to the innermost frame or shadow root containing it (see `mapRules`).
+     */
     selector: string;
 }
 
@@ -56,7 +59,13 @@ function mapRules(rules: AxeRule[], type: A11yFindingType): A11yGroup[] {
         helpUrl: rule.helpUrl ?? '',
         items: (rule.nodes ?? []).map((node) => ({
             context: node.html,
-            selector: node.target?.join(', ') ?? ''
+            // LAST entry, not a join. axe's `target` is an ancestor CHAIN — one entry per
+            // frame or shadow-root boundary crossed on the way to the element — so the
+            // element's own selector is the last one. Joining them produced a selector
+            // LIST, which `querySelector` resolves to whichever matches FIRST: for
+            // `['iframe#promo', 'button.cta']` that is the iframe, so the overlay outlined
+            // the whole embed instead of the button inside it.
+            selector: node.target?.at(-1) ?? ''
         })),
         count: rule.nodes?.length ?? 0
     }));
