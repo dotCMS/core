@@ -109,4 +109,33 @@ export class DotUsersProfileTabComponent {
         account.get('password')?.markAsDirty();
         account.get('confirmPassword')?.markAsDirty();
     }
+
+    /**
+     * Whether a control (relative to `accountGroup`) is in an error
+     * state we want to visualize on the input. PrimeNG's `[invalid]`
+     * input drives the red-outline treatment; we base it on
+     * `touched || dirty` so Save's `markAllAsTouched()` triggers it
+     * even for fields the user never focused.
+     */
+    protected isAccountFieldInvalid(controlName: string): boolean {
+        const control = this.accountGroup().get(controlName);
+
+        return !!control && control.invalid && (control.touched || control.dirty);
+    }
+
+    /**
+     * Cross-field mismatch on the account group counts as an error on
+     * the confirm-password field visually — same treatment as the
+     * required error but the source is the group-level validator.
+     */
+    protected isConfirmPasswordInvalid(): boolean {
+        const group = this.accountGroup();
+        const confirm = group.get('confirmPassword');
+        if (!confirm) {
+            return false;
+        }
+        const touched = confirm.touched || confirm.dirty;
+
+        return touched && (confirm.invalid || !!group.errors?.['passwordMismatch']);
+    }
 }

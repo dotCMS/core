@@ -60,6 +60,7 @@ import { DotUserListItem } from '../services/dot-users.service';
         DotUsersReplacementPickerComponent
     ],
     templateUrl: './dot-users-list.component.html',
+    styleUrl: './dot-users-list.component.scss',
     providers: [DotUsersListStore, DialogService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
@@ -75,6 +76,11 @@ export class DotUsersListComponent {
 
     protected readonly bulkDeleteVisible = signal(false);
     protected readonly bulkReplacementUser = signal<DotUserListItem | null>(null);
+    /**
+     * Flips on when Delete is clicked with an invalid form. Drives the
+     * footer validation hint; the button stays enabled per design.
+     */
+    protected readonly bulkDeleteAttempted = signal(false);
 
     /**
      * The picker must never surface any user currently selected for
@@ -92,6 +98,27 @@ export class DotUsersListComponent {
         }
 
         return !this.bulkExcludedIds().includes(replacement.userId);
+    });
+
+    /**
+     * Field-level error surfaced under the replacement picker after
+     * the user tries to click Delete with an invalid state. Same
+     * pattern as the single-delete flow.
+     */
+    protected readonly bulkReplacementError = computed(() => {
+        if (!this.bulkDeleteAttempted()) {
+            return null;
+        }
+
+        const replacement = this.bulkReplacementUser();
+        if (!replacement) {
+            return 'users.dialog.delete-confirm.replacement.required';
+        }
+        if (this.bulkExcludedIds().includes(replacement.userId)) {
+            return 'users.dialog.delete-confirm.replacement.self';
+        }
+
+        return null;
     });
 
     constructor() {
@@ -167,6 +194,7 @@ export class DotUsersListComponent {
 
     confirmDelete(): void {
         this.bulkReplacementUser.set(null);
+        this.bulkDeleteAttempted.set(false);
         this.bulkDeleteVisible.set(true);
     }
 
@@ -176,11 +204,14 @@ export class DotUsersListComponent {
 
     onBulkReplacementSelect(user: DotUserListItem | null): void {
         this.bulkReplacementUser.set(user);
+        this.bulkDeleteAttempted.set(false);
     }
 
     confirmBulkDelete(): void {
         const replacement = this.bulkReplacementUser();
         if (!this.canConfirmBulkDelete() || !replacement) {
+            this.bulkDeleteAttempted.set(true);
+
             return;
         }
 

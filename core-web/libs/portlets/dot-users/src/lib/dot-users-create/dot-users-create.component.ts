@@ -191,6 +191,14 @@ export class DotUsersCreateComponent {
     protected readonly deleteConfirmVisible = signal(false);
     protected readonly deleteConfirmationInput = signal('');
     protected readonly replacementUser = signal<DotUserListItem | null>(null);
+    /**
+     * Flips on when the user clicks Delete without a valid form.
+     * Used to reveal a footer validation message; the button itself
+     * stays enabled per design convention (no disabled buttons in UI).
+     * Reset every time the picker or email input changes so the user
+     * gets a fresh state after they course-correct.
+     */
+    protected readonly deleteAttempted = signal(false);
     protected readonly isLoading = signal(false);
 
     /**
@@ -227,6 +235,46 @@ export class DotUsersCreateComponent {
      * getter so it stays trivially derivable from `this.user`.
      */
     protected readonly excludedReplacementIds = this.user?.userId ? [this.user.userId] : [];
+
+    /**
+     * Granular per-field validity for the delete confirm dialog. The
+     * error strings are surfaced under each field only after the user
+     * has actually tried to click Delete (`deleteAttempted`) so an
+     * untouched form stays clean-looking on open.
+     */
+    protected readonly replacementError = computed(() => {
+        if (!this.deleteAttempted()) {
+            return null;
+        }
+
+        const replacement = this.replacementUser();
+        if (!replacement) {
+            return 'users.dialog.delete-confirm.replacement.required';
+        }
+        if (replacement.userId === this.user?.userId) {
+            return 'users.dialog.delete-confirm.replacement.self';
+        }
+
+        return null;
+    });
+
+    protected readonly emailConfirmError = computed(() => {
+        if (!this.deleteAttempted()) {
+            return null;
+        }
+
+        const input = this.deleteConfirmationInput().trim().toLowerCase();
+        if (!input) {
+            return 'users.dialog.delete-confirm.confirm.required';
+        }
+
+        const target = (this.user?.emailAddress ?? '').trim().toLowerCase();
+        if (target && input !== target) {
+            return 'users.dialog.delete-confirm.confirm.mismatch';
+        }
+
+        return null;
+    });
 
     protected readonly canConfirmDelete = computed(() => {
         const target = (this.user?.emailAddress ?? '').trim().toLowerCase();
@@ -277,6 +325,7 @@ export class DotUsersCreateComponent {
     protected openDeleteConfirm(): void {
         this.deleteConfirmationInput.set('');
         this.replacementUser.set(null);
+        this.deleteAttempted.set(false);
         this.deleteConfirmVisible.set(true);
     }
 
@@ -287,6 +336,11 @@ export class DotUsersCreateComponent {
     protected confirmDelete(): void {
         const replacement = this.replacementUser();
         if (!this.canConfirmDelete() || !this.user?.userId || !replacement) {
+            // Surface the footer hint instead of silently swallowing the
+            // click — matches the design convention of always-enabled
+            // buttons + contextual validation.
+            this.deleteAttempted.set(true);
+
             return;
         }
 
@@ -301,10 +355,12 @@ export class DotUsersCreateComponent {
 
     protected onDeleteInputChange(value: string): void {
         this.deleteConfirmationInput.set(value);
+        this.deleteAttempted.set(false);
     }
 
     protected onReplacementSelect(user: DotUserListItem | null): void {
         this.replacementUser.set(user);
+        this.deleteAttempted.set(false);
     }
 
     /**

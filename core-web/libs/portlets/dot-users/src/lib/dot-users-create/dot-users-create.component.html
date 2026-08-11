@@ -122,11 +122,18 @@
                 inputId="users-delete-replacement-picker"
                 [value]="replacementUser()"
                 [excludedUserIds]="excludedReplacementIds"
+                [invalid]="!!replacementError()"
                 (selectionChange)="onReplacementSelect($event)"
                 data-testid="users-delete-replacement-picker" />
-            <small class="text-color-secondary">
-                {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
-            </small>
+            @if (replacementError(); as key) {
+                <small class="text-red-600" data-testid="users-delete-replacement-error">
+                    {{ key | dm }}
+                </small>
+            } @else {
+                <small class="text-color-secondary">
+                    {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+                </small>
+            }
         </div>
         <div class="field flex flex-col gap-2">
             <label for="users-delete-confirm-input">
@@ -141,7 +148,14 @@
                 [ngModel]="deleteConfirmationInput()"
                 (ngModelChange)="onDeleteInputChange($event)"
                 [placeholder]="'users.dialog.delete-confirm.confirm-placeholder' | dm"
+                [class.ng-invalid]="!!emailConfirmError()"
+                [class.ng-dirty]="!!emailConfirmError()"
                 data-testid="users-delete-confirm-input" />
+            @if (emailConfirmError(); as key) {
+                <small class="text-red-600" data-testid="users-delete-confirm-error">
+                    {{ key | dm }}
+                </small>
+            }
         </div>
     </div>
     <ng-template pTemplate="footer">
@@ -154,7 +168,6 @@
         <p-button
             [label]="'users.dialog.delete.button' | dm"
             severity="danger"
-            [disabled]="!canConfirmDelete()"
             (onClick)="confirmDelete()"
             data-testid="users-delete-confirm-btn" />
     </ng-template>

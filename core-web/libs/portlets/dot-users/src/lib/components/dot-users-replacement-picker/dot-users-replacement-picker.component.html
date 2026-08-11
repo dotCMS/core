@@ -10,7 +10,10 @@
     [delay]="300"
     [forceSelection]="true"
     [showClear]="true"
+    [invalid]="invalid()"
     appendTo="body"
+    styleClass="w-full"
+    inputStyleClass="w-full"
     data-testid="users-replacement-picker">
     <ng-template let-candidate pTemplate="selectedItem">
         {{ displayName(candidate) }}

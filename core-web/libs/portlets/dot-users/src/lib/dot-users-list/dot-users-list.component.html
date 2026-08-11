@@ -147,10 +147,10 @@
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
-            <tr class="h-full hover:bg-transparent!">
-                <td colspan="6" class="h-full border-none p-6 text-center">
+            <tr class="hover:bg-transparent!">
+                <td colspan="6" class="border-none p-0 text-center">
                     <div
-                        class="mx-auto flex max-w-100 flex-col items-center gap-4"
+                        class="mx-auto flex h-full max-w-100 flex-col items-center justify-center gap-4 p-6"
                         data-testid="users-empty-state">
                         <div class="flex size-20 items-center justify-center rounded-full">
                             <span
@@ -186,10 +186,7 @@
     data-testid="users-bulk-delete-dialog">
     <div class="flex flex-col gap-4">
         <p class="m-0 text-color">
-            {{
-                'users.confirm.delete.message'
-                    | dm: [store.selectedUsers().length.toString()]
-            }}
+            {{ 'users.confirm.delete.message' | dm: [store.selectedUsers().length.toString()] }}
         </p>
         <div class="field flex flex-col gap-2">
             <label for="users-bulk-delete-replacement-picker">
@@ -200,11 +197,18 @@
                 inputId="users-bulk-delete-replacement-picker"
                 [value]="bulkReplacementUser()"
                 [excludedUserIds]="bulkExcludedIds()"
+                [invalid]="!!bulkReplacementError()"
                 (selectionChange)="onBulkReplacementSelect($event)"
                 data-testid="users-bulk-delete-replacement-picker" />
-            <small class="text-color-secondary">
-                {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
-            </small>
+            @if (bulkReplacementError(); as key) {
+                <small class="text-red-600" data-testid="users-bulk-delete-replacement-error">
+                    {{ key | dm }}
+                </small>
+            } @else {
+                <small class="text-color-secondary">
+                    {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+                </small>
+            }
         </div>
     </div>
     <ng-template pTemplate="footer">
@@ -217,7 +221,6 @@
         <p-button
             [label]="'users.delete' | dm"
             severity="danger"
-            [disabled]="!canConfirmBulkDelete()"
             (onClick)="confirmBulkDelete()"
             data-testid="users-bulk-delete-confirm-btn" />
     </ng-template>

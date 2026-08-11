@@ -52,6 +52,13 @@ export class DotUsersReplacementPickerComponent {
     /** Currently selected user, or null when the picker is empty. */
     readonly value = input<DotUserListItem | null>(null);
 
+    /**
+     * When true, the underlying p-autoComplete renders in its error
+     * state (red outline). Field-level error text is the caller's
+     * responsibility so this component stays reusable.
+     */
+    readonly invalid = input<boolean>(false);
+
     /** Emits every selection change (user or null when cleared). */
     readonly selectionChange = output<DotUserListItem | null>();
 
