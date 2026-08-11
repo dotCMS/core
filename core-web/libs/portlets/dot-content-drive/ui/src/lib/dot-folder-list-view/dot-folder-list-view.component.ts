@@ -199,6 +199,28 @@ export class DotFolderListViewComponent implements OnInit {
     $lazy = input<boolean>(true, { alias: 'lazy' });
 
     /**
+     * Inodes whose lock is held by somebody other than the current user, marked so a bulk action
+     * that may be refused on them is visible before firing. The caller decides — the judgement needs
+     * the user's admin role, which this table has no business knowing.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias lockedByOthers
+     */
+    $lockedByOthers = input<string[]>([], { alias: 'lockedByOthers' });
+
+    /**
+     * Strips the row affordances that assume a browsing grid — drag, context menu, open-on-click and
+     * the kebab. Checkboxes stay. Used when the table is a confirmation list inside a dialog.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias readOnly
+     */
+    $readOnly = input<boolean>(false, { alias: 'readOnly' });
+
+    /** Flagged inodes as a set — one lookup per row instead of a scan. */
+    protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
+
+    /**
      * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
      * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
      * table, which keeps its own set and clears it whenever `items` changes.
@@ -475,6 +497,12 @@ export class DotFolderListViewComponent implements OnInit {
      * @param contentlet The content item that was right clicked
      */
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
+        // Returns before `preventDefault` so a read-only table leaves the browser's own menu alone
+        // rather than suppressing it and offering nothing in its place.
+        if (this.$readOnly()) {
+            return;
+        }
+
         event.preventDefault();
         this.rightClick.emit({ event, contentlet });
     }
@@ -515,6 +543,12 @@ export class DotFolderListViewComponent implements OnInit {
      * @param contentlet The content item that was double clicked
      */
     onDoubleClick(contentlet: DotContentDriveItem) {
+        // Guarded here rather than per template binding: the row's dblclick, the title and the
+        // thumbnail all land on this, and opening an item from a dialog would navigate away from it.
+        if (this.$readOnly()) {
+            return;
+        }
+
         this.doubleClick.emit(contentlet);
     }
 

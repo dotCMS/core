@@ -66,7 +66,7 @@
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
-                [draggable]="true"
+                [draggable]="!$readOnly()"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()"
                 (dragover)="onDragOver($event, item)"
@@ -109,7 +109,20 @@
                     <span data-testId="lock-hint" class="text-gray-700">
                         @if (!isFolder) {
                             @if (item.locked) {
-                                <i class="pi pi-lock" data-testId="lock-icon"></i>
+                                <!-- A lock the current user does not hold: only its holder or a CMS
+                                     Administrator can release it, so a bulk Unlock may be refused
+                                     here. Coloured rather than a different glyph — it is still a
+                                     lock, just one that is not the user's to open. -->
+                                @if ($lockedByOthersSet().has(item.inode)) {
+                                    <i
+                                        class="pi pi-lock text-orange-500"
+                                        data-testId="lock-foreign-icon"
+                                        [title]="
+                                            'content-drive.list-view.locked-by-another-user' | dm
+                                        "></i>
+                                } @else {
+                                    <i class="pi pi-lock" data-testId="lock-icon"></i>
+                                }
                             } @else {
                                 <i class="pi pi-lock-open" data-testId="lock-open-icon"></i>
                             }
@@ -200,16 +213,20 @@
                     {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
                 </td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
+                <!-- The cell stays even when empty so the column count (and every colspan derived
+                     from it) is the same in both modes. -->
                 <td data-testId="item-actions" class="text-center">
-                    <p-button
-                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                        icon="pi pi-ellipsis-v"
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        (onClick)="onContextMenu($event, item)"
-                        data-testId="kebab-menu-button"
-                        aria-label="More actions" />
+                    @if (!$readOnly()) {
+                        <p-button
+                            class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                            icon="pi pi-ellipsis-v"
+                            [text]="true"
+                            [rounded]="true"
+                            size="small"
+                            (onClick)="onContextMenu($event, item)"
+                            data-testId="kebab-menu-button"
+                            aria-label="More actions" />
+                    }
                 </td>
             </tr>
         }

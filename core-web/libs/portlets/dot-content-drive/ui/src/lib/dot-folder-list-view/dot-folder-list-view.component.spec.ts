@@ -716,6 +716,122 @@ describe('DotFolderListViewComponent', () => {
                 expect(lockIcon).toBeFalsy();
                 expect(lockOpenIcon).toBeTruthy();
             });
+
+            /**
+             * A lock the current user does not hold reads differently from one they do: only the
+             * holder or a CMS Administrator can release it, so a bulk Unlock may be refused on
+             * these rows and the user needs to see which before firing.
+             *
+             * Which rows those are is the caller's call, not the table's — the decision needs the
+             * user's admin role, which lives in the portlet. An administrator releases every lock,
+             * so their caller passes nothing and no row is marked.
+             */
+            describe('locks held by another user', () => {
+                const lockedItem = { ...mockItems[0], locked: true, inode: 'locked-inode' };
+
+                beforeEach(() => {
+                    spectator.setInput('items', [lockedItem]);
+                    spectator.setInput('loading', false);
+                });
+
+                it('should show the plain lock icon when no rows are marked', () => {
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                });
+
+                it('should mark a locked row whose inode the caller flagged', () => {
+                    spectator.setInput('lockedByOthers', [lockedItem.inode]);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-icon'))).toBeFalsy();
+                });
+
+                it('should explain the marker on hover', () => {
+                    spectator.setInput('lockedByOthers', [lockedItem.inode]);
+                    spectator.detectChanges();
+
+                    expect(
+                        spectator.query(byTestId('lock-foreign-icon')).getAttribute('title')
+                    ).toBe('content-drive.list-view.locked-by-another-user');
+                });
+
+                it('should leave the current user’s own lock unmarked', () => {
+                    // Same selection, different row: only the flagged inodes are marked, so a lock
+                    // the user holds keeps reading as an ordinary lock.
+                    spectator.setInput('lockedByOthers', ['some-other-inode']);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                });
+
+                it('should not mark an unlocked row even when its inode is flagged', () => {
+                    // Defensive: a stale flag must not put a lock icon on a row that has none.
+                    spectator.setInput('items', [{ ...lockedItem, locked: false }]);
+                    spectator.setInput('lockedByOthers', [lockedItem.inode]);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-open-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                });
+            });
+        });
+
+        /**
+         * The grid's row affordances make no sense in a modal confirmation list: there is nowhere to
+         * drag to, the context menu acts on a grid that is not visible, and opening an item would
+         * navigate away from the dialog. `readOnly` strips them; the checkboxes stay.
+         */
+        describe('readOnly', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.setInput('readOnly', true);
+                spectator.detectChanges();
+            });
+
+            it('should not make rows draggable', () => {
+                expect(spectator.query(byTestId('item-row')).getAttribute('draggable')).toBe(
+                    'false'
+                );
+            });
+
+            it('should not render the kebab menu button', () => {
+                expect(spectator.query(byTestId('kebab-menu-button'))).toBeFalsy();
+            });
+
+            it('should not emit rightClick on context menu', () => {
+                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+
+                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'contextmenu');
+
+                expect(rightClickSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit doubleClick on a double click', () => {
+                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+
+                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'dblclick');
+
+                expect(doubleClickSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not open the item when its title is clicked', () => {
+                // The title and thumbnail carry their own click-to-open handlers, separate from the
+                // row's dblclick — both have to go or the dialog navigates out from under itself.
+                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+
+                spectator.click(byTestId('item-title-text'));
+
+                expect(doubleClickSpy).not.toHaveBeenCalled();
+            });
+
+            it('should still render the row checkboxes', () => {
+                expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+            });
         });
 
         describe('Status', () => {
