@@ -120,9 +120,9 @@ describe('DotContentDriveActionPreviewComponent', () => {
             );
             expect(firstRow.querySelector('[data-testid="contentlet-thumbnail"]')).toBeTruthy();
             expect(firstRow.querySelector('[data-testid="item-status"]')).toBeTruthy();
-            expect(firstRow.querySelector('[data-testid="item-content-type"]').textContent).toContain(
-                'Web Page'
-            );
+            expect(
+                firstRow.querySelector('[data-testid="item-content-type"]').textContent
+            ).toContain('Web Page');
 
             expect(firstRow.querySelector('[data-testid="item-language"]')).toBeFalsy();
             expect(firstRow.querySelector('[data-testid="item-mod-user-name"]')).toBeFalsy();

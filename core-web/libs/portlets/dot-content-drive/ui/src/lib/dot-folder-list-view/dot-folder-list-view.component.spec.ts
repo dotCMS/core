@@ -443,7 +443,9 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(
-                spectator.queryAll(byTestId('item-title-text')).map((cell) => cell.textContent.trim())
+                spectator
+                    .queryAll(byTestId('item-title-text'))
+                    .map((cell) => cell.textContent.trim())
             ).toEqual(['Chosen first', 'Chosen second']);
         });
 
