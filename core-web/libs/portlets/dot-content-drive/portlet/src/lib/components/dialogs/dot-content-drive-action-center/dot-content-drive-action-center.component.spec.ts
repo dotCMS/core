@@ -214,6 +214,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.queryAll('[data-testid="lock-icon"]').length).toBe(1);
         });
 
+        it('should mark foreign locks on any action’s preview, not just Unlock', () => {
+            // A lock held by somebody else fails a Publish or an Archive just as readily, so the
+            // marker is not scoped to Unlock. Both rows here are unpublished, so Publish applies to
+            // each of them and only the foreign lock is marked.
+            mockSelectedItems.set(lockedSelection);
+
+            openQuickActionPreview('PUBLISH');
+
+            expect(previewRows().length).toBe(2);
+            expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(1);
+        });
+
         it('should mark nothing for an administrator', () => {
             // Same signal as the row's warning: an admin releases every lock, so neither the
             // warning nor the markers appear for them.

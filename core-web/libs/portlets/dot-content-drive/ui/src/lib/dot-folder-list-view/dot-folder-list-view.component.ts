@@ -41,6 +41,13 @@ import {
 import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
 import { DOT_FOLDER_LIST_VIEW_COLUMN_TYPE, DotFolderListViewColumn } from '../shared/models';
 
+/**
+ * Canonical position of the "type" column. Extra columns follow it, in the header and in the body
+ * alike — read from the constant rather than hardcoded so the two cannot drift.
+ */
+const TYPE_COLUMN_ORDER =
+    HEADER_COLUMNS.find((column) => column.field === 'contentType')?.order ?? Infinity;
+
 @Component({
     selector: 'dot-folder-list-view',
     imports: [
@@ -348,9 +355,12 @@ export class DotFolderListViewComponent implements OnInit {
         }
 
         const columns = [...fixed];
-        const typeIndex = columns.findIndex((column) => column.field === 'contentType');
-        // Appends when the "type" column is hidden, so extras never fall off the end silently.
-        const insertAt = typeIndex === -1 ? columns.length : typeIndex + 1;
+        // Anchored to where the "type" column *sits in the canonical order*, not to whether it is
+        // rendered — the body's extra-column loop occupies that slot either way. Keying off the
+        // rendered index instead appended the extras when Type was hidden, putting every extra cell
+        // one heading early.
+        const afterType = columns.findIndex((column) => column.order > TYPE_COLUMN_ORDER);
+        const insertAt = afterType === -1 ? columns.length : afterType;
         columns.splice(insertAt, 0, ...extras);
 
         return columns;

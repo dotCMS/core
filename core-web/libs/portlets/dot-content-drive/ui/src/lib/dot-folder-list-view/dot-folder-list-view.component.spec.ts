@@ -625,6 +625,38 @@ describe('DotFolderListViewComponent', () => {
             );
         });
 
+        it('should keep extra columns under their own heading when Type is hidden', () => {
+            // The body anchors the extra-column loop at the Type slot whether or not Type renders,
+            // so the header has to do the same. Appending them instead left the cells one place
+            // early — an extra value sitting under the "Edited-By" heading.
+            //
+            // The case above hides everything after the title, which makes both orderings coincide;
+            // it takes a visible column *after* Type to tell them apart.
+            spectator.setInput('visibleColumns', ['title', 'modUser']);
+            spectator.setInput('extraColumns', [
+                { field: 'author', header: 'Author', order: 1, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerCells().map((cell) => cell.textContent.trim())).toEqual([
+                'name',
+                'Author',
+                'Edited-By'
+            ]);
+
+            // Same sequence in the body, which is the assertion that actually catches a mismatch.
+            const cells = [...spectator.query(byTestId('item-row')).querySelectorAll('td')].map(
+                (cell) => cell.getAttribute('data-testid') ?? cell.getAttribute('data-testId')
+            );
+
+            expect(cells).toEqual([
+                'item-checkbox',
+                'item-title',
+                'item-extra-author',
+                'item-mod-user-name'
+            ]);
+        });
+
         it('should still append caller-provided extra columns', () => {
             // Extras are explicitly passed in, so they are never what the caller meant to hide.
             spectator.setInput('visibleColumns', ['title']);
