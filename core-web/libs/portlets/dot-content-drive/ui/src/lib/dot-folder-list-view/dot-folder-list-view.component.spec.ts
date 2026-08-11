@@ -369,7 +369,10 @@ describe('DotFolderListViewComponent', () => {
         const manyItems = Array.from({ length: 25 }, (_, index) => ({
             ...mockItems[0],
             identifier: `id-${index}`,
-            inode: `inode-${index}`
+            inode: `inode-${index}`,
+            // Distinct titles so a test can tell *which* page it is looking at, not just how many
+            // rows it has.
+            title: `Item ${index}`
         }));
 
         it('should delegate paging to the parent by default', () => {
@@ -388,6 +391,60 @@ describe('DotFolderListViewComponent', () => {
 
             // Page two of twenty-five: the last five rows, not the first twenty over again.
             expect(spectator.queryAll(byTestId('item-row')).length).toBe(5);
+        });
+
+        it('should reach page two without the caller binding an offset', () => {
+            // A non-lazy caller has no reason to bind `offset` — it holds every row and does not
+            // fetch pages. `onFirstChange` used to pin `first` back to `$offset()` (still 0) on
+            // every page change, so the paginator advanced and snapped straight back, leaving
+            // everything past row 20 unreachable.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            spectator.click('.p-paginator-next');
+            spectator.detectChanges();
+
+            const titles = spectator
+                .queryAll(byTestId('item-title-text'))
+                .map((cell) => cell.textContent.trim());
+
+            // Page two of twenty-five holds the last five rows.
+            expect(titles.length).toBe(5);
+            expect(titles[0]).toBe(manyItems[20].title);
+        });
+
+        it('should keep an in-memory list in the order it was given', () => {
+            // The grid opens sorted by modDate desc, which is right for browsing a page of results.
+            // A non-lazy caller has already chosen an order — the action preview's rows are the
+            // user's selection, in the order the grid showed it — and PrimeNG sorts non-lazy data
+            // on render, so that default silently reshuffled it.
+            const chosenOrder = [
+                {
+                    ...mockItems[0],
+                    identifier: 'older',
+                    inode: 'older',
+                    title: 'Chosen first',
+                    modDate: '2020-01-01T00:00:00Z'
+                },
+                {
+                    ...mockItems[0],
+                    identifier: 'newer',
+                    inode: 'newer',
+                    title: 'Chosen second',
+                    modDate: '2030-01-01T00:00:00Z'
+                }
+            ];
+
+            spectator.setInput('items', chosenOrder);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(
+                spectator.queryAll(byTestId('item-title-text')).map((cell) => cell.textContent.trim())
+            ).toEqual(['Chosen first', 'Chosen second']);
         });
 
         it('should count the in-memory list rather than the totalItems input', () => {

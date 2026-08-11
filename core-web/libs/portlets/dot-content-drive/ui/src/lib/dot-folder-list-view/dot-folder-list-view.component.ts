@@ -781,6 +781,14 @@ export class DotFolderListViewComponent implements OnInit {
      * https://github.com/primefaces/primeng/issues/11898#issuecomment-1831076132
      */
     protected onFirstChange() {
+        // Lazy only. `$offset` is the parent's cursor into a server-paged list; a non-lazy caller
+        // holds every row, has no cursor and never binds it — so re-pinning `first` to a permanent
+        // `0` snapped the table back to page one on every page change, leaving everything past the
+        // first page unreachable.
+        if (!this.$lazy()) {
+            return;
+        }
+
         const dataTable = this.dataTable();
 
         if (dataTable) {
