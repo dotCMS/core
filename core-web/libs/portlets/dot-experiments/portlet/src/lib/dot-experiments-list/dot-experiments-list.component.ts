@@ -25,7 +25,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -42,6 +44,8 @@ import {
     DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
+    ExperimentsStatusIcons,
+    ExperimentsStatusList,
     GOALS_METADATA_MAP,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
@@ -53,7 +57,6 @@ import {
 } from '@dotcms/ui';
 
 import { DotExperimentStatusFilterComponent } from '../components/dot-experiment-status-filter/dot-experiment-status-filter.component';
-import { DotExperimentStatusTagComponent } from '../components/dot-experiment-status-tag/dot-experiment-status-tag.component';
 import { dotExperimentsListEvents } from '../store/dot-experiments-list.events';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
@@ -74,6 +77,26 @@ import {
 /** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
 type ExperimentListAction = keyof typeof AllowedActionsByExperimentStatus;
 
+/** `warn` (not `warning`) is PrimeNG's spelling — anything else yields no `p-tag-*` class. */
+type TagSeverity = 'success' | 'info' | 'warn' | 'secondary';
+
+/**
+ * Copied from `DotExperimentsUiHeaderComponent` so a status looks identical here and in the
+ * UVE header. Duplicated rather than imported: the header is legacy code left untouched.
+ */
+const STATUS_SEVERITIES: Record<DotExperimentStatus, TagSeverity> = {
+    [DotExperimentStatus.RUNNING]: 'success',
+    [DotExperimentStatus.SCHEDULED]: 'info',
+    [DotExperimentStatus.DRAFT]: 'warn',
+    [DotExperimentStatus.ENDED]: 'info',
+    [DotExperimentStatus.ARCHIVED]: 'secondary'
+};
+
+/** Existing lowercase i18n keys (`draft`, `running`, …) already declared by `ExperimentsStatusList`. */
+const STATUS_LABEL_KEYS = new Map<string, string>(
+    ExperimentsStatusList.map(({ value, label }) => [value, label])
+);
+
 /** A table row: the experiment plus everything the template would otherwise have to derive. */
 interface ExperimentRow {
     experiment: DotExperiment;
@@ -85,6 +108,15 @@ interface ExperimentRow {
     canArchive: boolean;
     /** Only archived experiments show the (still inactive) restore affordance. */
     isArchived: boolean;
+    /**
+     * Label of the row's primary action: results where the experiment has them, configuration
+     * otherwise. Rendered disabled until the Configure and Results screens land (#36990+), so
+     * the row matches the design without routing into the legacy UVE screens.
+     */
+    primaryActionLabelKey: string;
+    statusSeverity: TagSeverity;
+    statusIcon: string;
+    statusLabelKey: string;
 }
 
 /** Lifetime of the success toasts pushed after a row action. */
@@ -114,11 +146,12 @@ const NO_GOAL_PLACEHOLDER = '—';
         MenuModule,
         SkeletonModule,
         TableModule,
+        TagModule,
         ToolbarModule,
+        TooltipModule,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentStatusFilterComponent,
-        DotExperimentStatusTagComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',
@@ -152,7 +185,15 @@ export class DotExperimentsListComponent {
                 variants: variantsCount(experiment.trafficProportion),
                 schedule: formatSchedule(experiment.scheduling, scheduleLabels),
                 canArchive: isAllowed('archive', experiment.status),
-                isArchived: experiment.status === DotExperimentStatus.ARCHIVED
+                isArchived: experiment.status === DotExperimentStatus.ARCHIVED,
+                // `results` is allowed exactly where the design shows "View Results"
+                // (RUNNING, ENDED), so derive from the gate rather than restating the statuses.
+                primaryActionLabelKey: isAllowed('results', experiment.status)
+                    ? 'experiments.action.view.results'
+                    : 'experiments.list.action.configure',
+                statusSeverity: STATUS_SEVERITIES[experiment.status] ?? 'secondary',
+                statusIcon: ExperimentsStatusIcons[experiment.status] ?? '',
+                statusLabelKey: STATUS_LABEL_KEYS.get(experiment.status) ?? ''
             };
         });
     });

@@ -36,6 +36,17 @@
                 [statusCounts]="store.statusCounts()"
                 (selectionChange)="onStatusesChange($event)"
                 data-testid="experiments-status-filter" />
+
+            <!-- Creation lands with the New Experiment screen (#36990+); the button is placed
+                 per the design but stays disabled so it cannot open anything yet. -->
+            <p-button
+                class="ml-auto"
+                [label]="'experiments.list.action.new' | dm"
+                [disabled]="true"
+                [pTooltip]="'experiments.list.action.coming-soon' | dm"
+                tooltipPosition="bottom"
+                icon="pi pi-plus"
+                data-testid="experiments-new" />
         </div>
     </p-toolbar>
 
@@ -64,14 +75,14 @@
                     <th>{{ 'experiments.list.header.experiment' | dm }}</th>
                     <th>{{ 'experiments.list.header.page' | dm }}</th>
                     <th>{{ 'experiments.list.header.goal' | dm }}</th>
-                    <th>{{ 'experiments.list.header.variants' | dm }}</th>
+                    <th class="text-center">{{ 'experiments.list.header.variants' | dm }}</th>
                     <th>{{ 'experiments.list.header.schedule' | dm }}</th>
                     <th>{{ 'experiments.list.header.status' | dm }}</th>
                     <th pSortableColumn="modDate">
                         {{ 'experiments.list.header.modified' | dm }}
                         <p-sortIcon field="modDate" />
                     </th>
-                    <th class="w-40">{{ 'experiments.list.header.actions' | dm }}</th>
+                    <th class="w-64 text-right">{{ 'experiments.list.header.actions' | dm }}</th>
                 </tr>
             </ng-template>
 
@@ -106,16 +117,36 @@
                         <td data-testid="experiment-goal">
                             {{ row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER }}
                         </td>
-                        <td data-testid="experiment-variants">{{ row.variants }}</td>
+                        <td class="text-center" data-testid="experiment-variants">
+                            {{ row.variants }}
+                        </td>
                         <td data-testid="experiment-schedule">{{ row.schedule }}</td>
                         <td data-testid="experiment-status">
-                            <dot-experiment-status-tag [status]="row.experiment.status" />
+                            <p-tag
+                                [icon]="row.statusIcon"
+                                [severity]="row.statusSeverity"
+                                [value]="row.statusLabelKey | dm"
+                                data-testid="experiment-status-tag" />
                         </td>
                         <td data-testid="experiment-modified">
                             {{ row.experiment.modDate | date: 'MMM d, y' }}
                         </td>
                         <td>
-                            <div class="flex items-center gap-1">
+                            <div class="flex items-center justify-end gap-1">
+                                <!-- Leads the cell per the design: "View Results" where results
+                                     exist, "Configure" otherwise. Disabled until those screens
+                                     land (#36990+) so no row can route into the legacy UVE
+                                     experiments UI. -->
+                                <p-button
+                                    [label]="row.primaryActionLabelKey | dm"
+                                    [outlined]="true"
+                                    severity="secondary"
+                                    size="small"
+                                    [disabled]="true"
+                                    [pTooltip]="'experiments.list.action.coming-soon' | dm"
+                                    tooltipPosition="left"
+                                    data-testid="experiment-primary-action" />
+
                                 @if (row.canArchive) {
                                     <p-button
                                         [text]="true"

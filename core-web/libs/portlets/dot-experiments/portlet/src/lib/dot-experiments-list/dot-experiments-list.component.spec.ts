@@ -226,6 +226,25 @@ describe('DotExperimentsListComponent', () => {
         });
     });
 
+    describe('status tag', () => {
+        // Severities mirror `DotExperimentsUiHeaderComponent` so a status looks the same here
+        // and in the UVE header. `warn` is PrimeNG's spelling; anything else renders unstyled.
+        it.each([
+            [DotExperimentStatus.RUNNING, 'success', 'running'],
+            [DotExperimentStatus.SCHEDULED, 'info', 'scheduled'],
+            [DotExperimentStatus.DRAFT, 'warn', 'draft'],
+            [DotExperimentStatus.ENDED, 'info', 'ended'],
+            [DotExperimentStatus.ARCHIVED, 'secondary', 'archived']
+        ])('should render %s as a %s tag', (status, severity, labelKey) => {
+            renderRowWith(status);
+
+            const tag = spectator.query(byTestId('experiment-status-tag'));
+
+            expect(tag?.className).toContain(`p-tag-${severity}`);
+            expect(tag?.textContent).toContain(messageServiceMock.get(labelKey));
+        });
+    });
+
     describe('row actions', () => {
         it.each([
             [
@@ -259,20 +278,19 @@ describe('DotExperimentsListComponent', () => {
             [DotExperimentStatus.DRAFT, [ACTIONS_MENU_LABEL]],
             [DotExperimentStatus.RUNNING, [ACTIONS_MENU_LABEL]],
             [DotExperimentStatus.SCHEDULED, [ACTIONS_MENU_LABEL]]
-        ])(
-            'should render no primary action for %s, only the allowed icon buttons',
-            (status, expectedLabels) => {
-                renderRowWith(status);
+        ])('should render only the allowed icon buttons for %s', (status, expectedLabels) => {
+            renderRowWith(status);
 
-                const labels = Array.from(
-                    spectator
-                        .query(byTestId('experiment-row'))
-                        ?.querySelectorAll('td:last-child p-button') ?? []
-                ).map((button) => button.getAttribute('aria-label'));
+            // The primary action carries a visible label rather than an aria-label, so
+            // filtering on aria-label isolates the icon-only buttons this case is about.
+            const labels = Array.from(
+                spectator
+                    .query(byTestId('experiment-row'))
+                    ?.querySelectorAll('td:last-child p-button[aria-label]') ?? []
+            ).map((button) => button.getAttribute('aria-label'));
 
-                expect(labels).toEqual(expectedLabels);
-            }
-        );
+            expect(labels).toEqual(expectedLabels);
+        });
 
         it('should render the restore affordance disabled — there is no restore transition yet', () => {
             renderRowWith(DotExperimentStatus.ARCHIVED);
@@ -285,15 +303,54 @@ describe('DotExperimentsListComponent', () => {
             expect((restore as HTMLButtonElement).disabled).toBe(true);
         });
 
-        it('should never offer a configure or a view-results control', () => {
+        it.each([
+            [DotExperimentStatus.RUNNING, 'experiments.action.view.results'],
+            [DotExperimentStatus.ENDED, 'experiments.action.view.results'],
+            [DotExperimentStatus.DRAFT, 'experiments.list.action.configure'],
+            [DotExperimentStatus.SCHEDULED, 'experiments.list.action.configure'],
+            [DotExperimentStatus.ARCHIVED, 'experiments.list.action.configure']
+        ])('should label the primary action for %s from the results gate', (status, labelKey) => {
+            renderRowWith(status);
+
+            const primary = spectator.query(byTestId('experiment-primary-action'));
+
+            expect(primary?.textContent).toContain(messageServiceMock.get(labelKey));
+        });
+
+        it('should keep the primary action disabled until the configure and results screens land', () => {
+            // AC10: the row matches the design, but nothing may route into the legacy UVE
+            // experiments screens, so the control renders inert rather than navigating.
             Object.values(DotExperimentStatus).forEach((status) => {
                 renderRowWith(status);
 
-                expect(spectator.query(byTestId('experiment-configure-btn'))).toBeNull();
-                expect(spectator.query(byTestId('experiment-results-btn'))).toBeNull();
+                const primary = spectator
+                    .query(byTestId('experiment-primary-action'))
+                    ?.querySelector('button');
+
+                expect(primary).not.toBeNull();
+                expect((primary as HTMLButtonElement).disabled).toBe(true);
+            });
+        });
+
+        it('should never route into the legacy configure or results screens', () => {
+            Object.values(DotExperimentStatus).forEach((status) => {
+                renderRowWith(status);
+
                 expect(visibleMenuItemIds()).not.toContain('experiments-configuration');
                 expect(visibleMenuItemIds()).not.toContain('experiments-results');
+                expect(
+                    spectator.query(byTestId('experiment-row'))?.querySelector('a[href]')
+                ).toBeNull();
             });
+        });
+
+        it('should offer a disabled new-experiment button', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            const button = spectator.query(byTestId('experiments-new'))?.querySelector('button');
+
+            expect(button).not.toBeNull();
+            expect((button as HTMLButtonElement).disabled).toBe(true);
         });
     });
 
