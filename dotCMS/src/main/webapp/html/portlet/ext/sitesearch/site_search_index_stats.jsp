@@ -49,8 +49,11 @@ Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 // Site-search .os-aware alias resolution (issue #36360): resolve through the site-search API and
 // reverse (alias->index) into index->alias for per-row display. The content-index router (esapi)
 // misses site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
+// AllEngines (issue #36983): the rows below come from listIndices(), a union of both engines in the
+// dual-write phases, so a read-provider-only alias map blanks the Alias column for every index that
+// lives on the other engine (a Phase-0 index seen in Phase 2, a Phase-3 index seen in Phase 1).
 Map<String, String> alias = new java.util.HashMap<>();
-for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMap().entrySet()) {
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
 	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
 }
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;

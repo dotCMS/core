@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.publishing.sitesearch;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -15,6 +16,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Config;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -232,5 +234,65 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
         assertThrows(DotStateException.class, () -> router.deleteIndex(IDX));
         verify(esImpl, never()).deleteIndex(IDX);
         verify(osImpl, never()).deleteIndex(IDX);
+    }
+
+    // =======================================================================
+    // getAliasToIndexMapAllEngines — the management/display alias view (#36983)
+    // =======================================================================
+
+    private static final String OS_ONLY_IDX = "sitesearch_20260811155758";
+
+    /**
+     * The defect: in Phase 1 reads come from Elasticsearch, so an index that lives only on OpenSearch
+     * (created by a crawl in Phase 3, still listed after a downgrade) had no resolvable alias and the
+     * portlet rendered it blank. The management view must see both engines.
+     */
+    @Test
+    public void aliasMapAllEngines_dualWrite_includesTheEngineThePhaseDoesNotReadFrom() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.getAliasToIndexMap()).thenReturn(Map.of("es-alias", IDX));
+        when(osImpl.getAliasToIndexMap()).thenReturn(Map.of("os-alias", OS_ONLY_IDX));
+
+        final Map<String, String> merged = router.getAliasToIndexMapAllEngines();
+
+        assertEquals(2, merged.size());
+        assertEquals(IDX, merged.get("es-alias"));
+        assertEquals(OS_ONLY_IDX, merged.get("os-alias"));
+    }
+
+    /**
+     * Mirror desync — one alias resolving to different indices on each engine. The read provider wins,
+     * so the management view never contradicts what a search would actually hit.
+     */
+    @Test
+    public void aliasMapAllEngines_conflictingAlias_readProviderWins() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS); // reads = ES
+        when(esImpl.getAliasToIndexMap()).thenReturn(Map.of("shared", IDX));
+        when(osImpl.getAliasToIndexMap()).thenReturn(Map.of("shared", OS_ONLY_IDX));
+
+        assertEquals(IDX, router.getAliasToIndexMapAllEngines().get("shared"));
+    }
+
+    /** Single-provider phase: nothing to merge, and the idle engine must not be consulted. */
+    @Test
+    public void aliasMapAllEngines_phase0_onlyConsultsEs() {
+        setPhase(PHASE_0_ES_ONLY);
+        when(esImpl.getAliasToIndexMap()).thenReturn(Map.of("es-alias", IDX));
+
+        assertEquals(Map.of("es-alias", IDX), router.getAliasToIndexMapAllEngines());
+        verify(osImpl, never()).getAliasToIndexMap();
+    }
+
+    /**
+     * The single-engine view stays single-engine: searches must resolve an alias against the engine
+     * that will serve the query, so widening this one would be wrong.
+     */
+    @Test
+    public void aliasMap_singleEngine_staysOnTheReadProvider() {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS); // reads = ES
+        when(esImpl.getAliasToIndexMap()).thenReturn(Map.of("es-alias", IDX));
+
+        assertEquals(Map.of("es-alias", IDX), router.getAliasToIndexMap());
+        verify(osImpl, never()).getAliasToIndexMap();
     }
 }

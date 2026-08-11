@@ -56,7 +56,16 @@ try {
 
 
 List<String> indices=ssapi.listIndices();
-Map<String,String> alias=esapi.getIndexAlias(indices);
+// Site-search alias resolution for the index selector (issue #36983): the content-index router
+// (esapi) queries OpenSearch without the .os tag, so it resolves nothing in Phases 2/3 and the
+// dropdown showed raw internal index names instead of the aliases operators know. Resolve through
+// the site-search API, over the same provider set listIndices() uses — the list is a union of both
+// engines, so a read-provider-only map would still blank the label of any index living on the other
+// engine. Only the LABEL uses the alias; the option value stays the index name the search needs.
+Map<String,String> alias=new HashMap<String,String>();
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
+	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
+}
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;

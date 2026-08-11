@@ -140,6 +140,42 @@ public interface SiteSearchAPI {
 	Map<String, String> getAliasToIndexMap();
 
 	/**
+	 * Alias resolution for <strong>management and display</strong> — the same map as
+	 * {@link #getAliasToIndexMap()} but covering <em>every</em> index the current phase lists, not only
+	 * those on the read provider.
+	 *
+	 * <h4>Why a second method instead of changing the first</h4>
+	 * {@link #listIndices()} is a <em>union</em> of both engines in the dual-write phases, while
+	 * {@link #getAliasToIndexMap()} resolves against a <em>single</em> engine (the read provider). Any
+	 * index that lives only on the other engine therefore appears in the list with a blank alias:
+	 *
+	 * <ul>
+	 *   <li>Phase&nbsp;2 + an index created in Phase&nbsp;0 (Elasticsearch only) — reads come from
+	 *       OpenSearch, so its alias is invisible.</li>
+	 *   <li>Phase&nbsp;1 + an index created in Phase&nbsp;3 (OpenSearch only, e.g. after a downgrade) —
+	 *       reads come from Elasticsearch, so its alias is invisible.</li>
+	 * </ul>
+	 *
+	 * The two are mirror images of one defect (issue #36983). This method closes it by resolving over
+	 * the same provider set {@code listIndices()} uses, so every listed index can show its alias.
+	 *
+	 * <p>The distinction is deliberate and must be kept: <strong>searching</strong> resolves an alias
+	 * against the engine that will actually serve the query — that is {@link #getAliasToIndexMap()} and
+	 * it stays single-engine. <strong>Managing</strong> (listing indices, choosing one to crawl,
+	 * labelling a row in the portlet) needs to identify everything on screen, which is this method.</p>
+	 *
+	 * <p>When both engines resolve the same alias to different logical indices — a mirror desync — the
+	 * read provider's answer wins, so the map never disagrees with what a search would do.</p>
+	 *
+	 * @return map of logical alias name to logical index name across the phase's provider set; empty
+	 *         when nothing resolves
+	 */
+	default Map<String, String> getAliasToIndexMapAllEngines() {
+		// A single-engine implementation (either leaf) has nothing to merge — only the router overrides.
+		return getAliasToIndexMap();
+	}
+
+	/**
 	 * This basically tells you if the index passed as parameter is the default site search index or not
 	 * @param indexName
 	 * @return

@@ -21,8 +21,10 @@ List<String> indexes = ssapi.listIndices();
 // misses site-search aliases in Phases 2/3 because the physical OpenSearch index is .os-tagged, so
 // the selector fell back to the raw internal index name — which is then saved as the job's
 // `indexAlias` and later re-applied as the new index's alias by the crawl, destroying the real one.
+// AllEngines: this list is a union of both engines, so the alias view must cover the same set or an
+// index living only on the non-read engine renders (and gets saved) as a raw name again.
 Map<String,String> alias = new HashMap<String,String>();
-for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMap().entrySet()) {
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
 	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
 }
 

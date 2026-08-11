@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -199,6 +200,33 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     @Override
     public Map<String, String> getAliasToIndexMap() {
         return router.read(SiteSearchAPI::getAliasToIndexMap);
+    }
+
+    /**
+     * Router: alias resolution over the SAME provider set {@link #listIndices()} uses, so every listed
+     * index can show its alias — the management/display view (issue #36983).
+     *
+     * <p>Deliberately NOT the read provider alone. The list is a union in the dual-write phases, so an
+     * index living only on the other engine would otherwise render with a blank alias: Phase 2 + a
+     * Phase-0 (ES-only) index, or Phase 1 + a Phase-3 (OS-only) index after a downgrade. Merging over
+     * the write providers keeps the alias view and the index list exactly in step.</p>
+     *
+     * <p>The read provider is applied last so it wins any collision: if the two engines resolve one
+     * alias to different logical indices (a mirror desync), the map agrees with what a search would
+     * actually hit. In the single-provider phases (0 and 3) there is nothing to merge.</p>
+     */
+    @Override
+    public Map<String, String> getAliasToIndexMapAllEngines() {
+        final List<SiteSearchAPI> providers = router.writeProviders();
+        if (providers.size() == 1) {
+            return providers.getFirst().getAliasToIndexMap();
+        }
+        final SiteSearchAPI readProvider = router.readProvider();
+        final Map<String, String> merged = new LinkedHashMap<>();
+        providers.stream().filter(provider -> provider != readProvider)
+                .forEach(provider -> merged.putAll(provider.getAliasToIndexMap()));
+        merged.putAll(readProvider.getAliasToIndexMap()); // last write wins → read provider
+        return merged;
     }
 
     // -------------------------------------------------------------------------

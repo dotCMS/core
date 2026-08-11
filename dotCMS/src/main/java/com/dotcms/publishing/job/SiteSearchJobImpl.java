@@ -417,7 +417,12 @@ public class SiteSearchJobImpl {
             // Resolve via the site-search API so aliases are looked up with .os-aware physical names
             // in Phases 2/3; the content-index router misses site-search aliases there
             // and would force every crawl into full mode (issue #36360).
-            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            // AllEngines: over the same provider set as `indices` above. A crawl can legitimately
+            // target an index that lives only on the engine the phase does not read from (e.g. an
+            // OpenSearch-only index created in Phase 3, seen again after a downgrade to Phase 1) —
+            // with a read-provider-only map its alias is invisible, so the crawl would treat it as a
+            // brand-new index and drop the alias instead of carrying it over (issue #36983).
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMapAllEngines();
             indexName = aliasMap.get(indexAlias);
             if (UtilMethods.isSet(indexName)) {
                 if (siteSearchAPI.isDefaultIndex(indexAlias)) {

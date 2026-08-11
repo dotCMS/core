@@ -60,7 +60,7 @@ public class SiteSearchJobAliasResolutionTest {
      */
     @Test
     public void test_aliasStoredInJobDetail_isCarriedThrough() throws Exception {
-        when(siteSearchAPI.getAliasToIndexMap()).thenReturn(Map.of(CUSTOM_ALIAS, EXISTING_INDEX));
+        when(siteSearchAPI.getAliasToIndexMapAllEngines()).thenReturn(Map.of(CUSTOM_ALIAS, EXISTING_INDEX));
 
         final IndexMetaData metaData = job.getIndexMetaData(CUSTOM_ALIAS);
 
@@ -76,7 +76,7 @@ public class SiteSearchJobAliasResolutionTest {
      */
     @Test
     public void test_rawIndexNameStoredInJobDetail_resolvesTheIndexRealAlias() throws Exception {
-        when(siteSearchAPI.getAliasToIndexMap()).thenReturn(Map.of(CUSTOM_ALIAS, EXISTING_INDEX));
+        when(siteSearchAPI.getAliasToIndexMapAllEngines()).thenReturn(Map.of(CUSTOM_ALIAS, EXISTING_INDEX));
 
         final IndexMetaData metaData = job.getIndexMetaData(EXISTING_INDEX);
 
@@ -93,7 +93,7 @@ public class SiteSearchJobAliasResolutionTest {
      */
     @Test
     public void test_rawIndexNameWithoutAlias_resolvesToNoAlias() throws Exception {
-        when(siteSearchAPI.getAliasToIndexMap()).thenReturn(Collections.emptyMap());
+        when(siteSearchAPI.getAliasToIndexMapAllEngines()).thenReturn(Collections.emptyMap());
 
         final IndexMetaData metaData = job.getIndexMetaData(EXISTING_INDEX);
 
@@ -107,7 +107,7 @@ public class SiteSearchJobAliasResolutionTest {
      */
     @Test
     public void test_unknownName_isKeptAsTheAliasOfANewIndex() throws Exception {
-        when(siteSearchAPI.getAliasToIndexMap()).thenReturn(Collections.emptyMap());
+        when(siteSearchAPI.getAliasToIndexMapAllEngines()).thenReturn(Collections.emptyMap());
         when(siteSearchAPI.listIndices()).thenReturn(Collections.emptyList());
 
         final IndexMetaData metaData = job.getIndexMetaData("brand-new-alias");

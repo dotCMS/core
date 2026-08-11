@@ -295,6 +295,40 @@ can preview `.os` (and the ES/OS twin as distinct rows) while normal users keep 
 view — is the one place the two UIs should converge; it does **not** require changing the internal
 handle model, only the display sink.
 
+##### Two alias views: searching vs. managing (issue #36983)
+
+`SiteSearchAPI` exposes the alias map twice, and picking the wrong one is a bug:
+
+| Method | Resolves against | Use it for |
+|---|---|---|
+| `getAliasToIndexMap()` | the **read provider only** (ES in Phases 0/1, OS in Phases 2/3) | **searching** — resolve an alias against the engine that will actually serve the query |
+| `getAliasToIndexMapAllEngines()` | the **same provider set as `listIndices()`** (union in Phases 1/2) | **managing / displaying** — portlet columns, index selectors, choosing an index to crawl |
+
+The reason there are two: **`listIndices()` is a union of both engines in the dual-write phases,
+while alias resolution is single-engine.** Any index that lives only on the engine the current phase
+does *not* read from therefore appears in the list with a blank alias. Two mirror-image symptoms of
+the same defect:
+
+- **Phase 2 + an index created in Phase 0** (Elasticsearch only) — reads come from OpenSearch, alias
+  invisible.
+- **Phase 1 + an index created in Phase 3** (OpenSearch only; typical after a downgrade 3 → 2 → 1) —
+  reads come from Elasticsearch, alias invisible.
+
+`getAliasToIndexMapAllEngines()` merges over the write providers and applies the **read provider
+last**, so on a mirror desync (one alias resolving to different indices per engine) the management
+view agrees with what a search would hit. In the single-provider phases (0 and 3) there is nothing to
+merge and the idle engine is not consulted.
+
+Callers on the management side: `site_search_index_stats.jsp` (Indices tab), `site_search_job_schedule.jsp`
+(crawl index selector), `test_site_search.jsp` (Search tab selector) and `SiteSearchJobImpl` (the
+crawl's alias resolution — an alias invisible there makes the crawl treat an existing index as new
+and drop its alias). Everything on the search path keeps the single-engine method.
+
+**A phase change never builds counterparts retroactively.** An index created in a single-provider
+phase exists on that engine only until a crawl runs in a dual-write phase. Downgrading past that
+point leaves it listed but unsearchable (its content lives on the engine that no longer serves
+reads) — visible in the readiness report as `MISSING_COUNTERPART`; the fix is always a re-crawl.
+
 #### Site Search mirror reconciliation (write path) — self-heal on crawl
 
 The logical-handle model above makes *reads* correct, but a Site Search index can still end up
@@ -413,6 +447,129 @@ through the write-path gate above.
 Because this endpoint is the source of truth for migration/QA, the index portlets no longer reveal
 `.os` indices by role: `MigrationIndexVisibility` is now purely phase-based (hidden in Phases 0/1/2,
 shown in Phase 3, for everyone). The role key is retained only to gate this endpoint.
+
+##### How to read the readiness report
+
+**Access — both conditions, or 403.** The caller must be a **CMS administrator** *and* hold the
+migration support role. The role key comes from `OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` (default
+`os_migration_qa`); the check is `MigrationReadinessResource.isMigrationSupportUser`. A plain admin
+without the role gets a 403, and so does a role holder who is not an admin — deliberate, so a regular
+user never learns a migration is running. The endpoint is `@Hidden`, so it is absent from
+`openapi.yaml` and from the API playground: it will not show up by browsing, only by knowing the URL.
+
+```bash
+# Backend session or basic auth; both the admin role and the support role are required.
+curl -u admin@dotcms.com:admin http://localhost:8080/api/v1/index/migration/readiness | jq
+```
+
+If it returns 403, grant the `os_migration_qa` role to the admin user (Roles & Permissions), or point
+`OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` at a role they already hold. There is no envelope: the JSON
+**is** the report.
+
+**Read it top-down, in this order:**
+
+1. **`phase`** — `current`/`name`, plus `readEngine`, `writeEngines` and `dualWrite`. Everything below
+   is relative to this: which engine answers searches *right now*, and which ones receive writes.
+2. **`verdict.safeToAdvance` / `verdict.safeToRollback`** — the go/no-go pair. They answer different
+   questions and are not opposites: *advance* is blocked when the OpenSearch mirror is behind
+   (promoting would lose data on the OpenSearch-only phase); *rollback* is blocked when OpenSearch is
+   **ahead** (downgrading would hide the delta until a reindex). Both can be `false` at once.
+3. **`verdict.summary` + `verdict.blockers`** — the sentence to paste into a ticket, then the per-index
+   list of what to fix. An empty `blockers` with `safeToAdvance: false` cannot happen; if `blockers` is
+   non-empty, each entry names the index and the action.
+4. **`content` (keyed `WORKING`/`LIVE`) and `siteSearch` (list)** — the evidence behind the verdict.
+
+**Per-index row.** `es` and `os` each carry `{exists, docCount, physicalName}` — plus `alias` on Site
+Search rows. Then:
+
+| Field | How to read it |
+|---|---|
+| `verdict` | `IN_SYNC` · `MISSING_COUNTERPART` (one engine lacks the index) · `COUNT_DRIFT` (both hold it, different counts) |
+| `driftPercent` | Signed % the OpenSearch mirror deviates from the Elasticsearch original. `0.0` in sync · negative = mirror **behind** · positive = mirror **ahead** · `-100.0` mirror empty/absent · `null` a count failed |
+| `docCount: -1` | The count could **not** be measured. Never read it as "zero" — the verdict treats it as out of sync on purpose |
+| `physicalName` | The exact name on that server (cluster-prefixed; `.os`-tagged on OpenSearch) — copy/paste it into `_cat/indices` to verify by hand |
+| `recommendation` | The concrete action (re-crawl / reindex). A trailing `NOTE:` flags an alias that is really an index name (see above) |
+
+**Worked example — the downgrade case.** After going 3 → 2 → 1, a Site Search index created by a
+crawl while in Phase 3 exists **only** on OpenSearch:
+
+```json
+{ "indexName": "sitesearch_20260811155758_6c1f7101-…",
+  "es": { "exists": false, "docCount": 0,   "physicalName": "cluster_x.sitesearch_20260811155758_6c1f7101-…" },
+  "os": { "exists": true,  "docCount": 412, "physicalName": "cluster_x.sitesearch_20260811155758_6c1f7101-….os",
+          "alias": "sitesearch-ph-3" },
+  "driftPercent": 100.0, "verdict": "MISSING_COUNTERPART" }
+```
+
+Read as: the index and its alias are intact on OpenSearch, but in Phase 1 reads come from
+Elasticsearch, where it does not exist — so **its content is unsearchable until it is re-crawled**,
+and `safeToRollback` is `false` because OpenSearch holds documents Elasticsearch does not. A phase
+change never builds counterparts retroactively; only a crawl (or reindex, for content) does.
+
+Note this is exactly the information the *portlet* could not show before issue #36983: the index list
+is a union of both engines while alias resolution was single-engine, so that row rendered with a blank
+Alias. The endpoint never had that blind spot — it queries both engine leaves directly, in every
+phase — which is why it stays the source of truth even when a portlet column looks empty.
+
+##### Worked example — activating a pre-migration backup content index
+
+dotCMS lets an administrator activate an **old inactive index** (Maintenance → Index → *Make Default*,
+or `PUT /api/es/activateindex/…`) to roll back to a previous reindex. If that index **predates the
+migration**, it never went through the OpenSearch create fan-out, so it has **no OpenSearch
+counterpart** — and activation does not build one.
+
+**What the code actually does.** `ContentletIndexAPIImpl.activateIndex` repoints *both* stores by pure
+name transformation: the OpenSearch pointer is set to `operationsOS.toPhysicalName(name)` =
+`<cluster>.<name>.os`, with **no `indexExists` check, no create and no guard** (delete has
+`assertIndexNotActive`; activate has no equivalent). The OpenSearch store now names an index that has
+never existed. In Phases 1/2 the shadow writes to it are best-effort and swallowed, so nothing
+complains.
+
+**Why it is dangerous rather than merely wrong:**
+
+| Phase | What you see |
+|---|---|
+| 1 | Nothing. Silent divergence — writes to the OpenSearch counterpart go nowhere |
+| 2 | Still works: the Phase-2 read fallback drops back to Elasticsearch, but logs an `ERROR` per read — the early-warning signal |
+| 3 | No fallback exists. The OpenSearch pointer names an index that was never created → empty results or an exception, which reads to the customer as **lost content** |
+
+**What the readiness endpoint says — and when it can say it.** Once the backup is activated it *is*
+the `WORKING`/`LIVE` pointer, so the very next call reports it:
+
+```json
+"content": {
+  "WORKING": {
+    "indexName": "working_20251114093012",
+    "es": { "exists": true,  "docCount": 148230, "physicalName": "cluster_x.working_20251114093012" },
+    "os": { "exists": false, "docCount": 0,      "physicalName": "cluster_x.working_20251114093012.os" },
+    "driftPercent": -100.0,
+    "verdict": "MISSING_COUNTERPART",
+    "recommendation": "The OpenSearch copy of content index 'working_20251114093012' is missing. Run a full reindex to rebuild it before promoting to the OpenSearch-only phase."
+  }
+}
+```
+
+In Phases 1/2 this also flips `verdict.safeToAdvance` to `false` and names the index in
+`verdict.blockers` — the promotion gate does its job. **The fix is a full reindex**: that is the only
+path that fans out through the router and materializes the OpenSearch copy (a phase change never
+does, and neither does activation).
+
+**Three traps worth knowing before relying on this:**
+
+1. **You cannot pre-check a backup.** The content half of the report covers only the *active*
+   working/live pair, so a divergent backup is invisible while it sits inactive. Sequence: activate →
+   call readiness → reindex if it reports `MISSING_COUNTERPART` → only then change phase.
+2. **In Phase 3 the verdict does not protect you.** `safeToAdvance` is forced `true` there (there is no
+   phase beyond 3), so a backup activated *while already in Phase 3* still reads green at the top
+   level. Read the per-index rows and `outOfSyncCount`, never the boolean alone — and note this is
+   precisely the phase where the failure is immediate and customer-visible.
+3. **The endpoint reports, it never repairs.** It will not block the activation, and re-running it
+   changes nothing on its own.
+
+The durable fix — reconcile-on-activate, rebuilding the counterpart asynchronously through the
+existing reindex machinery (a synchronous copy of a large index is not viable, and a naive
+point-in-time copy would lose concurrent writes) — is **not implemented**. Until it is, the operational
+rule stands: after activating any pre-migration index, run a full reindex before touching the phase.
 
 #### Tag manipulation is the sole responsibility of `IndexTag`
 
