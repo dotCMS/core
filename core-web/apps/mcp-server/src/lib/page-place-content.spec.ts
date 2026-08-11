@@ -1,4 +1,4 @@
-import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
 import { placeContent } from './page-place-content';
 
@@ -312,9 +312,7 @@ describe('placeContent', () => {
     it('translates a net-loss 409 into an actionable message', async () => {
         const { runtime } = fakeRuntime({
             onPost: () => {
-                throw new Error(
-                    'Request failed with status 409: net content loss exceeds threshold'
-                );
+                throw new HttpError(409, 'Conflict', 'net content loss exceeds threshold');
             }
         });
 
@@ -325,6 +323,44 @@ describe('placeContent', () => {
                 slots: [{ slot: 1, contentlets: ['a'] }]
             })
         ).rejects.toThrow(/net-loss conflict.*Re-read the page and retry/i);
+    });
+
+    it('names the likely cause on a 400 instead of relaying the raw error', async () => {
+        // The most common failure of this tool in a placement loop. Without naming it, the
+        // model cannot tell that the fix is a different container or a different content
+        // type, so it retries the identical call and fails identically.
+        const { runtime } = fakeRuntime({
+            onPost: () => {
+                throw new HttpError(400, 'Bad Request', 'invalid contentlet for container');
+            }
+        });
+
+        await expect(
+            placeContent({
+                dotcms: runtime,
+                path: '/about-us',
+                slots: [{ slot: 1, contentlets: ['a'] }]
+            })
+        ).rejects.toThrow(/CONTENT TYPE is not permitted in the container/i);
+    });
+
+    it('does not report a non-409 as a conflict just because its body says "conflict"', async () => {
+        // The old test was a regex over the message, so any body containing "conflict" (or the
+        // digits 409 anywhere) was reported as a net-loss conflict — telling the model to
+        // re-read and retry a page that in fact hit a server error.
+        const { runtime } = fakeRuntime({
+            onPost: () => {
+                throw new HttpError(500, 'Server Error', 'unexpected conflict in module 409x');
+            }
+        });
+
+        await expect(
+            placeContent({
+                dotcms: runtime,
+                path: '/about-us',
+                slots: [{ slot: 1, contentlets: ['a'] }]
+            })
+        ).rejects.toThrow(/Failed to save page content/i);
     });
 
     it('passes variantName and languageId through to both the read and the write', async () => {

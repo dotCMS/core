@@ -2,7 +2,7 @@ import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xm
 import { z } from 'zod';
 
 import { uploadAssets } from '../lib/assets-transfer';
-import { errorMessage, runtimeFromEnv } from '../lib/runtime';
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 /**
  * A boolean that also accepts the string forms MCP clients often send ("true"/"false"/"1"/"0").
@@ -100,6 +100,6 @@ export default async function handler(
 
         return JSON.stringify(manifest, null, 2);
     } catch (error) {
-        return `Error: ${errorMessage(error)}`;
+        return toolFailure('upload_assets', error);
     }
 }

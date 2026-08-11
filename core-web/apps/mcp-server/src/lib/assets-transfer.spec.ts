@@ -106,3 +106,38 @@ describe('includeMatcher', () => {
         expect(m('photo.png')).toBe(true);
     });
 });
+
+describe('includeMatcher — trailing globstar', () => {
+    // `dir/**` is the common glob idiom, but it used to compile to `^dir(?:.*/)?$`, which
+    // matches only the bare string `dir` and no file path under it. Anyone writing it hit the
+    // "include pattern matched 0 of N files — check the glob syntax" warning while their
+    // syntax was perfectly reasonable.
+    it('matches files directly under the directory', () => {
+        const m = includeMatcher('themes/**');
+        expect(m('themes/style.css')).toBe(true);
+    });
+
+    it('matches files nested deeper under the directory', () => {
+        const m = includeMatcher('themes/**');
+        expect(m('themes/travel/css/style.css')).toBe(true);
+    });
+
+    it('does not match a sibling directory that shares the prefix', () => {
+        const m = includeMatcher('themes/**');
+        expect(m('themes-backup/style.css')).toBe(false);
+        expect(m('other/style.css')).toBe(false);
+    });
+
+    it('still supports a leading globstar with a pattern after it', () => {
+        const m = includeMatcher('**/*.png');
+        expect(m('logo.png')).toBe(true);
+        expect(m('themes/img/logo.png')).toBe(true);
+        expect(m('themes/style.css')).toBe(false);
+    });
+
+    it('treats a bare globstar as match-everything', () => {
+        const m = includeMatcher('**');
+        expect(m('a.css')).toBe(true);
+        expect(m('a/b/c.vtl')).toBe(true);
+    });
+});

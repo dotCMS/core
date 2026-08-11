@@ -2,7 +2,7 @@ import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xm
 import { z } from 'zod';
 
 import { verifyPage, type VerifyPageOptions } from '../lib/page-verify';
-import { errorMessage, runtimeFromEnv } from '../lib/runtime';
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 export const schema = {
     path: z
@@ -96,6 +96,6 @@ export default async function handler(
 
         return JSON.stringify(manifest, null, 2);
     } catch (error) {
-        return `Error: ${errorMessage(error)}`;
+        return toolFailure('page_verify', error);
     }
 }

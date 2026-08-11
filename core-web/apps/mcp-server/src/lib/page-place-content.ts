@@ -1,4 +1,6 @@
-import type { DotCMSRuntime } from '@dotcms/ai/runtime';
+import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
+
+import { errorMessage } from './runtime';
 
 /** The default variant when the caller does not name one. */
 export const DEFAULT_VARIANT = 'DEFAULT';
@@ -239,7 +241,18 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
     }
 
     const wanted = address.container.trim();
-    const matches = slots.filter((slot) => containerMatches(slot.identifier, wanted));
+    // Rank-filtered, like `findContainer`: keep only the slots matching at the BEST rank, so
+    // an exact/path-boundary hit on `.../default/` is never diluted by a loose substring hit on
+    // `.../default-banner/`. Without this, naming one container could report "appears in 2
+    // slots, pass slot.instance" about two DIFFERENT containers.
+    const bestRank = slots.reduce(
+        (rank, slot) => Math.max(rank, containerMatchRank(slot.identifier, wanted)),
+        MATCH_NONE
+    );
+    const matches =
+        bestRank === MATCH_NONE
+            ? []
+            : slots.filter((slot) => containerMatchRank(slot.identifier, wanted) === bestRank);
 
     if (matches.length === 0) {
         throw new Error(
@@ -272,14 +285,87 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
 }
 
 /**
- * A caller may name a container by its full key, a shorty id, or a bare path segment. The layout
- * key is authoritative, so we match generously: exact, suffix (path fragment), or contained.
+ * How well a layout container key matches what the caller asked for. Higher is better;
+ * `NONE` means no match at all.
+ *
+ * Ranked rather than boolean, because the previous "either string contains the other" test
+ * made resolution ORDER-DEPENDENT and therefore non-deterministic from the caller's side: a
+ * layout holding both `.../containers/default/` and `.../containers/default-banner/` would
+ * resolve a request for `.../default/` to whichever appeared FIRST in the object. Object keys
+ * iterate in insertion order, so which container won depended on layout authoring order — and
+ * in `merge` mode the tool would read the banner's contentlet list and write the merged result
+ * back under it, putting content in the wrong container and potentially replacing the banner's
+ * own contents.
  */
-function containerMatches(identifier: string, wanted: string): boolean {
-    if (identifier === wanted) return true;
-    const a = identifier.toLowerCase();
-    const b = wanted.toLowerCase();
-    return a === b || a.includes(b) || b.includes(a);
+const MATCH_NONE = 0;
+/** One string contains the other anywhere — the loosest, most ambiguous signal. */
+const MATCH_SUBSTRING = 1;
+/** The key ends with the wanted value on a `/` boundary, e.g. `.../containers/default/`. */
+const MATCH_PATH_SUFFIX = 2;
+/** Byte-identical (case-insensitively). */
+const MATCH_EXACT = 3;
+
+function containerMatchRank(identifier: string, wanted: string): number {
+    const key = identifier.toLowerCase();
+    const want = wanted.toLowerCase();
+
+    if (key === want) {
+        return MATCH_EXACT;
+    }
+
+    // Compare on `/`-delimited boundaries so `default` cannot match `default-banner`. Both
+    // sides are normalised for a trailing slash first, since container paths carry one and
+    // callers routinely omit it.
+    const keyTrimmed = key.replace(/\/+$/, '');
+    const wantTrimmed = want.replace(/\/+$/, '');
+    if (keyTrimmed === wantTrimmed || keyTrimmed.endsWith(`/${wantTrimmed}`)) {
+        return MATCH_PATH_SUFFIX;
+    }
+
+    if (key.includes(want) || want.includes(key)) {
+        return MATCH_SUBSTRING;
+    }
+
+    return MATCH_NONE;
+}
+
+/**
+ * The single best-matching key, or a hard error when the choice is genuinely ambiguous.
+ *
+ * Failing loudly with the candidates beats silently picking one: writing to the wrong
+ * container is not recoverable by the caller, whereas an error naming both candidates tells
+ * them exactly what to disambiguate with.
+ */
+function bestContainerKey(keys: string[], wanted: string): string | undefined {
+    let bestRank = MATCH_NONE;
+    let best: string[] = [];
+
+    for (const key of keys) {
+        const rank = containerMatchRank(key, wanted);
+        if (rank === MATCH_NONE || rank < bestRank) {
+            continue;
+        }
+        if (rank > bestRank) {
+            bestRank = rank;
+            best = [key];
+        } else {
+            best.push(key);
+        }
+    }
+
+    if (best.length === 0) {
+        return undefined;
+    }
+
+    if (best.length > 1) {
+        throw new Error(
+            `Container "${wanted}" is ambiguous — it matches ${best.length} containers on this ` +
+                `page equally well: ${best.join(', ')}. Pass the full container path or id to ` +
+                `disambiguate; guessing here could write content into the wrong container.`
+        );
+    }
+
+    return best[0];
 }
 
 function describeSlots(slots: PageSlot[]): string {
@@ -405,14 +491,21 @@ function findContainer(
     if (containers[identifier]) {
         return containers[identifier];
     }
-    const key = Object.keys(containers).find((k) => containerMatches(k, identifier));
+    const key = bestContainerKey(Object.keys(containers), identifier);
+
     return key ? containers[key] : undefined;
 }
 
 /**
- * POST the full container map. Translates the two documented non-200 outcomes into actionable
- * messages: 409 is the net-loss conflict (someone else changed the page, or the write would remove
- * too much), and a 400 usually means a contentlet's type is not allowed in its container.
+ * POST the full container map, translating the two documented non-200 outcomes into actionable
+ * messages: 409 is the net-loss conflict (someone else changed the page, or the write would
+ * remove too much), and a 400 usually means a contentlet's type is not allowed in its container.
+ *
+ * Both branches are keyed on `HttpError.status`, not on the text of the message. The 409 used to
+ * be sniffed with `/\b409\b|net content loss|conflict/i`, which both over-matched (any response
+ * body happening to contain "409" or "conflict") and under-matched (a real 409 whose body says
+ * neither). `cause` is threaded through so the original typed error — and with it `code` and
+ * `status` — still reaches the tool boundary instead of being flattened away here.
  */
 async function postContent(
     dotcms: DotCMSRuntime,
@@ -429,14 +522,47 @@ async function postContent(
             body
         });
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (/\b409\b|net content loss|conflict/i.test(message)) {
-            throw new Error(
+        const message = errorMessage(error);
+
+        if (error instanceof HttpError && error.status === 409) {
+            throw withCause(
                 'Page content save was rejected as a net-loss conflict (the change would remove more ' +
                     'content than allowed, or the page changed underneath this write). Re-read the page ' +
-                    `and retry. Original error: ${message}`
+                    `and retry. Original error: ${message}`,
+                error
             );
         }
-        throw new Error(`Failed to save page content: ${message}`);
+
+        // The 400 branch the docblock has always promised but never had. This is the single
+        // most common failure of this tool in a placement loop, and without naming the cause
+        // the model cannot tell that the fix is a different container or a different content
+        // type — so it retries the identical call and fails identically.
+        if (error instanceof HttpError && error.status === 400) {
+            throw withCause(
+                'Page content save was rejected (HTTP 400). The usual cause is a contentlet whose ' +
+                    'CONTENT TYPE is not permitted in the container it was placed in — check the ' +
+                    "container's allowed content types and either place a permitted type or choose " +
+                    'a different container. Retrying this same call unchanged will fail the same ' +
+                    `way. Original error: ${message}`,
+                error
+            );
+        }
+
+        throw withCause(`Failed to save page content: ${message}`, error);
     }
+}
+
+/**
+ * An `Error` carrying the original as `cause`.
+ *
+ * Written by assignment rather than `new Error(msg, { cause })` because that constructor
+ * overload needs the ES2022 lib and this project targets lower. Threading the cause matters:
+ * without it the typed `HttpError` — and with it `code` and `status` — is flattened to a
+ * message here and can never reach the tool boundary that reports `retryable`.
+ */
+function withCause(message: string, cause: unknown): Error {
+    const error = new Error(message);
+    (error as Error & { cause?: unknown }).cause = cause;
+
+    return error;
 }

@@ -1,8 +1,10 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createRuntime, formatSandboxResult } from '@dotcms/ai/runtime';
+import { formatSandboxResult } from '@dotcms/ai/runtime';
 import { getSpec } from '@dotcms/ai/spec';
+
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 export const schema = {
     code: z
@@ -78,23 +80,19 @@ export default async function handler(
         return 'Error: OpenAPI spec is not available. The server may not have been built with a generated spec (run the generate-spec step), so the search tool cannot run.';
     }
 
-    // The front door injects the instance context AND the `spec` global (includeSpec).
-    const dotcms = createRuntime({
-        url: process.env.DOTCMS_URL ?? '',
-        token: process.env.AUTH_TOKEN ?? '',
-        sessionId: extra?.sessionId ?? '__default__',
-        timeout: 10000,
-        includeSpec: true,
-        onContextError: (label, error) => {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error(`[context] failed to load ${label}: ${msg}`);
-        }
-    });
+    // Guarded for the same reason as `execute`: a config failure must reach the model as a
+    // tool result it can read, not as an MCP protocol error.
+    try {
+        // The front door injects the instance context AND the `spec` global (includeSpec).
+        const dotcms = runtimeFromEnv(extra?.sessionId, { timeout: 10000, includeSpec: true });
 
-    const result = await dotcms.run(code);
+        const result = await dotcms.run(code);
 
-    return formatSandboxResult(result, {
-        truncationHint:
-            'Use resolveRef(schemaOrName, depth) to expand one schema at a bounded depth.'
-    });
+        return formatSandboxResult(result, {
+            truncationHint:
+                'Use resolveRef(schemaOrName, depth) to expand one schema at a bounded depth.'
+        });
+    } catch (error) {
+        return toolFailure('search', error);
+    }
 }

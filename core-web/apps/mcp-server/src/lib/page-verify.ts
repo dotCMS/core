@@ -1,4 +1,4 @@
-import type { DotCMSRuntime } from '@dotcms/ai/runtime';
+import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
 /** Render modes the verify tool supports. LIVE = published; WORKING = latest saved (pre-publish). */
 export type VerifyMode = 'LIVE' | 'WORKING';
@@ -343,6 +343,21 @@ function diagnose(
         return `Page rendered, but ${noContent.length} slot(s) are empty (no content placed). Next: use page_place_content to fill them if intended.`;
     }
 
+    // Zero slots is NOT a clean bill of health. `collectWarnings` iterates `slots`, so an
+    // empty list yields no warnings, and the sentence below would interpolate to "all 0
+    // slot(s) produced content" — the tool built to catch blank slots declaring success over
+    // a page whose layout it could not read. Legacy/advanced templates, and any response with
+    // `entity.containers` populated but no `entity.layout.body.rows`, land exactly here.
+    if (slots.length === 0) {
+        return (
+            `The page rendered in ${mode} mode, but NO slots could be parsed from its layout, ` +
+            `so per-slot verification did not run and this is not a clean result. The template ` +
+            `may be legacy/advanced (no layout.body.rows), or the response shape may be ` +
+            `unexpected. Next: inspect the page's template directly — do not read this as "the ` +
+            `page is fine".`
+        );
+    }
+
     return `Page rendered successfully in ${mode} mode — all ${slots.length} slot(s) produced content.`;
 }
 
@@ -383,29 +398,21 @@ async function renderPage(
         })) as RenderResponse;
         return { status: 200, body };
     } catch (error) {
-        const status = extractStatus(error);
         // A 404/403/etc. is a legitimate verify outcome, not a tool failure — surface it in the
         // manifest with an empty body so the diagnosis explains the HTTP result.
-        if (status && status !== 200) {
-            return { status, body: {} };
+        //
+        // ONLY a real HttpError qualifies. The previous version fell back to scraping the
+        // first three-digit run out of the message, which turned any error containing a
+        // number into a fabricated verdict: `connect ETIMEDOUT 10.0.0.5:443` became status
+        // 443, and `buildManifest` then stated flatly that the page did not render and to
+        // check the path, site and existence — about a page that is very likely fine. The
+        // model's next move is to "fix" something that was never broken. A transport failure
+        // must surface AS a transport failure.
+        if (error instanceof HttpError) {
+            return { status: error.status, body: {} };
         }
-        throw new Error(
-            `Failed to render page: ${error instanceof Error ? error.message : String(error)}`
-        );
+        throw error;
     }
-}
-
-/** Pull an HTTP status out of a thrown request error (best-effort across error shapes). */
-function extractStatus(error: unknown): number | undefined {
-    if (error && typeof error === 'object') {
-        const status = (error as { status?: unknown }).status;
-        if (typeof status === 'number') {
-            return status;
-        }
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    const match = message.match(/\b(\d{3})\b/);
-    return match ? Number(match[1]) : undefined;
 }
 
 /**

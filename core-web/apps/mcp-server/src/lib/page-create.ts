@@ -1,7 +1,12 @@
-import type { DotCMSRuntime } from '@dotcms/ai/runtime';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
+
+import { errorMessage } from './runtime';
 
 /** The default page content type when the caller does not name one. */
 export const DEFAULT_PAGE_CONTENT_TYPE = 'htmlpageasset';
+
+/** Cap on an interpolated response entity inside an error message (see describeEntity). */
+const MAX_ENTITY_CHARS = 1_000;
 
 /** Base type string the REST API reports for any page content type. */
 const PAGE_BASE_TYPE = 'HTMLPAGE';
@@ -121,6 +126,13 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
     const contentType = await resolvePageContentType(options.dotcms, options.contentType);
     assertRequiredFieldsSatisfied(contentType, extraFields);
 
+    // Validate the remaining caller inputs BEFORE anything is written. `site` and
+    // `contentType` are already resolved above against cached context; `template` and
+    // `languageId` were the two that were not, which made them the only inputs whose
+    // rejection arrived AFTER the folder had been created (see ensureFolder below).
+    const languageId = await resolveLanguageId(options.dotcms, options.languageId);
+    await assertTemplateExists(options.dotcms, options.template);
+
     // Trap #1: the parent folder must exist before the page is fired, or dotCMS collapses the
     // page url to /index. createfolders is idempotent — re-creating an existing folder is a no-op.
     const folderId = await ensureFolder(options.dotcms, siteId, folder);
@@ -136,7 +148,11 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
     const hostFolder = folderId ?? siteId;
 
     const title = options.title;
-    const fired = await options.dotcms.request({
+    // Guarded: `ensureFolder` above has ALREADY COMMITTED a folder by this point, so a bare
+    // rethrow here leaves a folder nothing mentions. `page_create({urlPath:"/books/index"})`
+    // with a bad input would create `/books`, fail, and report only the HTTP error — and a
+    // corrected retry then operates on folder state the caller does not know exists.
+    const fired = await fireCreate(options.dotcms, folder, folderId, {
         method: 'PUT',
         path: '/api/v1/workflow/actions/default/fire/PUBLISH',
         query: { indexPolicy: 'WAIT_FOR' },
@@ -148,7 +164,7 @@ export async function createPage(options: CreatePageOptions): Promise<CreatePage
                 contentType: contentType.variable,
                 contentHost: siteId,
                 hostFolder,
-                languageId: options.languageId ?? 1,
+                languageId,
                 title,
                 url,
                 template: options.template,
@@ -353,8 +369,14 @@ function hasValue(value: unknown): boolean {
  * The input is first normalized through the URL API (against a throwaway base): this collapses
  * "."/".." segments and drops any query string or fragment. URL.pathname keeps percent-encoding
  * intact (notably so an encoded "%2F" can't smuggle a path separator), so we decode each segment
- * individually AFTER splitting — "/my%20books" → folder "my books" — which is safe because a
- * decoded slash then lives inside one segment name instead of creating a new path boundary.
+ * individually AFTER splitting — "/my%20books" → folder "my books".
+ *
+ * A decoded segment that still contains "/" is REJECTED rather than accepted. Splitting first
+ * does not by itself make the slash inert: the folder is rebuilt with `folderSegments.join('/')`
+ * below, which turns it straight back into a path boundary — so "/a/my%2Fbooks/index" and
+ * "/a/my/books/index" would resolve to the same folder "/a/my/books", silently placing the page
+ * somewhere the caller did not ask for. dotCMS folder names cannot contain a separator anyway,
+ * so there is no legitimate input being turned away.
  * The folder-vs-leaf decision below stays ours: the URL API preserves a trailing slash but does
  * not know that "/about-us/" means a folder index while "/about-us" means a leaf url.
  *
@@ -381,6 +403,16 @@ export function splitUrlPath(urlPath: string): { folder: string; url: string; fu
         .split('/')
         .filter(Boolean)
         .map((segment) => decodeURIComponent(segment));
+
+    const smuggled = segments.find((segment) => segment.includes('/'));
+    if (smuggled !== undefined) {
+        throw new Error(
+            `urlPath segment "${smuggled}" contains an encoded path separator (%2F), which would ` +
+                `silently place the page under a DIFFERENT folder than the one named: ` +
+                `"${urlPath}" would resolve as if the slash had been written literally. dotCMS ` +
+                `folder names cannot contain "/", so write the path out plainly instead.`
+        );
+    }
 
     // No segments → the site root; the page is the root index.
     if (segments.length === 0) {
@@ -434,7 +466,7 @@ async function ensureFolder(
             `Folder "${folder}" was requested on site "${site}" but createfolders returned no ` +
                 `resolvable folder id, so the page cannot be anchored to it. Refusing to fall ` +
                 `back to the site root (that would collapse the page url to /index). ` +
-                `Response entity: ${JSON.stringify(responseEntity(response))}`
+                `Response entity: ${describeEntity(response)}`
         );
     }
 
@@ -493,6 +525,15 @@ function extractFolderId(response: unknown, folder: string): string | undefined 
     return optionalString(chosen, 'identifier') ?? optionalString(chosen, 'inode');
 }
 
+/**
+ * Read the page fields out of a fire/read response.
+ *
+ * Every field is read through a checking accessor rather than asserted with `as`. The two
+ * casts that used to live here claimed `identifier`, `inode` and `live` existed with the
+ * right types off a `Record<string, unknown>` that nothing had checked — precisely the
+ * "type-check a lie and let `undefined` surface deep in the caller" failure that
+ * `responseEntity`/`asRecord`/`optionalString` were introduced to close.
+ */
 function extractPageEntity(response: unknown): PageEntity | undefined {
     const entity = asRecord(responseEntity(response));
     if (!entity) {
@@ -501,10 +542,31 @@ function extractPageEntity(response: unknown): PageEntity | undefined {
     // Fire responses sometimes wrap the contentlet under `contentlets[0]`.
     const contentlets = entity['contentlets'];
     if (Array.isArray(contentlets) && contentlets.length) {
-        return asRecord(contentlets[0]) as PageEntity | undefined;
+        const first = asRecord(contentlets[0]);
+
+        return first && toPageEntity(first);
     }
 
-    return entity as PageEntity;
+    return toPageEntity(entity);
+}
+
+/** Project a checked record onto {@link PageEntity} — unknown/mistyped fields stay undefined. */
+function toPageEntity(record: Record<string, unknown>): PageEntity {
+    return {
+        identifier: optionalString(record, 'identifier'),
+        inode: optionalString(record, 'inode'),
+        live: optionalBoolean(record, 'live')
+    };
+}
+
+/** Read an optional boolean property, ignoring non-boolean values. */
+function optionalBoolean(
+    record: Record<string, unknown> | undefined,
+    key: string
+): boolean | undefined {
+    const value = record?.[key];
+
+    return typeof value === 'boolean' ? value : undefined;
 }
 
 async function isLive(dotcms: DotCMSRuntime, identifier?: string): Promise<boolean> {
@@ -523,4 +585,113 @@ async function isLive(dotcms: DotCMSRuntime, identifier?: string): Promise<boole
         // A failed liveness check is not a failed create — surface it as a non-live result.
         return false;
     }
+}
+
+/**
+ * Resolve the language id against the instance's real languages.
+ *
+ * `site` and `contentType` are both validated against cached context with a candidate list on
+ * failure; `languageId` was not, and dotCMS silently falls back to the default language for an
+ * unknown id rather than rejecting it. So an unrecognised id did not fail — it quietly wrote to
+ * a DIFFERENT language than the caller named, while the manifest echoed the id they asked for.
+ *
+ * The default also stops being a hardcoded `?? 1`: the instance's own default language is the
+ * right fallback, and on some instances that is not id 1.
+ */
+async function resolveLanguageId(dotcms: DotCMSRuntime, languageId?: number): Promise<number> {
+    const { languages } = await dotcms.loadContext();
+
+    if (languageId === undefined) {
+        return languages[0]?.id ?? 1;
+    }
+
+    if (languages.some((language) => language.id === languageId)) {
+        return languageId;
+    }
+
+    const available =
+        languages.map((language) => `${language.id} (${language.isoCode})`).join(', ') ||
+        '(none found)';
+    throw new Error(
+        `languageId ${languageId} does not exist on this instance. dotCMS would silently fall ` +
+            `back to the default language and create the page in the WRONG language rather ` +
+            `than reject it, so this is refused up front. Available languages: ${available}.`
+    );
+}
+
+/**
+ * Confirm the template exists before anything is written.
+ *
+ * `template` is the one input a caller most often gets wrong — the schema says "the template
+ * UUID, not its name", which is exactly the mistake worth catching — and it was the only one
+ * whose rejection arrived from the fire, i.e. after the folder had already been created.
+ *
+ * A non-404 failure here is deliberately NOT fatal: the check is a courtesy, and refusing to
+ * create a page because the template lookup was briefly unavailable would be worse than
+ * letting the fire decide.
+ */
+async function assertTemplateExists(dotcms: DotCMSRuntime, template: string): Promise<void> {
+    try {
+        await dotcms.request({
+            path: `/api/v1/templates/${encodeURIComponent(template)}/working`
+        });
+    } catch (error) {
+        if (error instanceof HttpError && error.status === 404) {
+            throw new Error(
+                `Template "${template}" was not found. This must be the template's IDENTIFIER ` +
+                    `(a UUID), not its name — passing a human-readable title here is the most ` +
+                    `common cause. Nothing has been created; fix the template and re-run.`
+            );
+        }
+        // Anything else (403, 5xx, timeout): fall through and let the fire be the judge.
+    }
+}
+
+/**
+ * Fire the create, and on failure say what has ALREADY been committed.
+ *
+ * The folder write happens before this point and cannot be rolled back, so the recoverable
+ * outcome depends on the caller knowing three things: which inputs were used, that folder
+ * `<x>` now exists, and that re-running is safe because `createfolders` is idempotent. That
+ * last sentence is what turns an orphaned folder into a retryable operation.
+ */
+async function fireCreate(
+    dotcms: DotCMSRuntime,
+    folder: string,
+    folderId: string | undefined,
+    request: RequestOptions
+): Promise<unknown> {
+    try {
+        return await dotcms.request(request);
+    } catch (error) {
+        const created = folderId
+            ? `Folder "${folder}" (${folderId}) WAS created before this failure and still exists. `
+            : '';
+        throw new Error(
+            `${errorMessage(error)}\n\n${created}Re-running this call after fixing the input is ` +
+                `SAFE: folder creation is idempotent, so no duplicate folder is made.`
+        );
+    }
+}
+
+/**
+ * Render a response's entity for an error message.
+ *
+ * `JSON.stringify(undefined)` returns `undefined` (the value, not a string), so interpolating
+ * it printed the literal text "Response entity: undefined" — and an ABSENT entity is exactly
+ * the condition that triggers the branch using this, so that was the common case rather than
+ * the edge one. When an entity IS present it is capped: the raw blob can be arbitrarily large
+ * and this is going straight into an error the model has to read.
+ */
+function describeEntity(response: unknown): string {
+    const entity = responseEntity(response);
+    if (entity === undefined || entity === null) {
+        return '(no entity in the response — the endpoint returned a body this tool could not read)';
+    }
+
+    const json = JSON.stringify(entity);
+
+    return json.length <= MAX_ENTITY_CHARS
+        ? json
+        : `${json.slice(0, MAX_ENTITY_CHARS)}… [truncated]`;
 }

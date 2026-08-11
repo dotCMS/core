@@ -1,7 +1,9 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createRuntime, formatSandboxResult } from '@dotcms/ai/runtime';
+import { formatSandboxResult } from '@dotcms/ai/runtime';
+
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 export const schema = {
     code: z
@@ -118,22 +120,21 @@ export default async function handler(
 ) {
     const timeout = Number(process.env.SANDBOX_TIMEOUT) || 45000;
 
-    // The front door absorbs the executor + adapter + context-cache wiring and injects
-    // dotCMS instance context automatically. Auth tokens never enter the sandbox.
-    const dotcms = createRuntime({
-        url: process.env.DOTCMS_URL ?? '',
-        token: process.env.AUTH_TOKEN ?? '',
-        sessionId: extra?.sessionId ?? '__default__',
-        timeout,
-        onContextError: (label, error) => {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error(`[context] failed to load ${label}: ${msg}`);
-        }
-    });
+    // Guarded: `runtimeFromEnv` throws on a misconfigured server, and an unguarded throw
+    // here escapes as an MCP PROTOCOL error rather than a tool result — the model sees a
+    // transport failure with none of the explanation the error itself carries.
+    try {
+        // The front door absorbs the executor + adapter + context-cache wiring and injects
+        // dotCMS instance context automatically. Auth tokens never enter the sandbox.
+        const dotcms = runtimeFromEnv(extra?.sessionId, { timeout });
 
-    const result = await dotcms.run(code); // code === the model's output
+        const result = await dotcms.run(code); // code === the model's output
 
-    return formatSandboxResult(result, {
-        truncationHint: 'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
-    });
+        return formatSandboxResult(result, {
+            truncationHint:
+                'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
+        });
+    } catch (error) {
+        return toolFailure('execute', error);
+    }
 }

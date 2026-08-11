@@ -1,4 +1,4 @@
-import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
 import { buildManifest, verifyPage } from './page-verify';
 
@@ -265,12 +265,26 @@ describe('verifyPage', () => {
 
     it('surfaces a 404 render as a manifest verdict, not a throw', async () => {
         const { runtime } = fakeRuntime({
-            renderThrows: new Error('Request failed with status 404: not found')
+            renderThrows: new HttpError(404, 'Not Found', 'not found')
         });
 
         const m = await verifyPage({ dotcms: runtime, path: '/missing' });
         expect(m.httpStatus).toBe(404);
         expect(m.diagnosis).toMatch(/HTTP 404/);
+    });
+
+    it('rethrows a transport failure instead of inventing a status from its text', async () => {
+        // The status used to be scraped as the first three-digit run in the message, so
+        // `connect ETIMEDOUT 10.0.0.5:443` became status 443 — and the manifest then stated
+        // flatly that the page did not render and to check the path, site and existence.
+        // The model's next move is to "fix" a page that is almost certainly fine.
+        const { runtime } = fakeRuntime({
+            renderThrows: new Error('connect ETIMEDOUT 10.0.0.5:443')
+        });
+
+        await expect(verifyPage({ dotcms: runtime, path: '/about-us' })).rejects.toThrow(
+            /ETIMEDOUT/
+        );
     });
 
     it('produces an end-to-end ok verdict on a healthy page', async () => {

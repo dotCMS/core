@@ -2,7 +2,7 @@ import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xm
 import { z } from 'zod';
 
 import { downloadAssets } from '../lib/assets-transfer';
-import { errorMessage, runtimeFromEnv } from '../lib/runtime';
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 export const schema = {
     path: z
@@ -70,6 +70,6 @@ export default async function handler(
 
         return JSON.stringify(manifest, null, 2);
     } catch (error) {
-        return `Error: ${errorMessage(error)}`;
+        return toolFailure('download_assets', error);
     }
 }

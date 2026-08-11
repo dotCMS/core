@@ -2,7 +2,7 @@ import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xm
 import { z } from 'zod';
 
 import { placeContent, type PagePlaceContentOptions } from '../lib/page-place-content';
-import { errorMessage, runtimeFromEnv } from '../lib/runtime';
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 // A slot address: a 1-based index into the page's real slots, OR a container reference. `instance`
 // (the slot uuid) is optional only when the container occupies exactly one slot on the page.
@@ -143,6 +143,6 @@ export default async function handler(
 
         return JSON.stringify(manifest, null, 2);
     } catch (error) {
-        return `Error: ${errorMessage(error)}`;
+        return toolFailure('page_place_content', error);
     }
 }

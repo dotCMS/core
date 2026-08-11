@@ -35,6 +35,16 @@ interface LocalFile {
 }
 
 const SEARCH_LIMIT = 500;
+
+/**
+ * Bounds on a single enumeration. `/application` on a large site can hold tens of
+ * thousands of assets, and every one enumerated is then downloaded one at a time with an
+ * open file handle — so an unbounded walk is both an unbounded MCP call and unbounded load
+ * on the instance. A realistic theme is 100–500 files, so these are far above any genuine
+ * use while still being a ceiling. Hitting either is reported, never silent.
+ */
+const MAX_ENUMERATED_ASSETS = 5_000;
+const MAX_SEARCH_PAGES = Math.ceil(MAX_ENUMERATED_ASSETS / SEARCH_LIMIT);
 const MIME_BY_EXT: Record<string, string> = {
     '.css': 'text/css',
     '.eot': 'application/vnd.ms-fontobject',
@@ -98,12 +108,20 @@ export async function downloadAssets(options: {
             })
         );
     } else {
-        const assets = await enumerateAssets(
+        const { assets, truncated } = await enumerateAssets(
             options.dotcms,
             input.path,
             options.recursive,
             options.include
         );
+
+        if (truncated) {
+            warnings.push(
+                `Enumeration stopped at the ${MAX_ENUMERATED_ASSETS}-asset cap — this folder ` +
+                    `holds more than that, so the download is INCOMPLETE. Narrow it with a ` +
+                    `subfolder path or an \`include\` pattern and run again.`
+            );
+        }
 
         if (assets.length === 0) {
             warnings.push(zeroMatchWarning(options.path, input));
@@ -217,14 +235,34 @@ export async function uploadAssets(options: {
                 `${dest.siteQualified}/${file.rel}`,
                 options.publish
             );
-            files.push(uploaded);
+            files.push(uploaded.file);
+            if (uploaded.warning) {
+                warnings.push(uploaded.warning);
+            }
         } catch (error) {
             failures.push({ path: file.rel, error: errorMessage(error) });
         }
     }
 
-    const notLive =
-        options.publish && options.verify ? await verifyLive(options.dotcms, files) : [];
+    // Belt AND braces: `verifyLive` guards every await internally, but this call is the last
+    // thing standing between a completed set of writes and the manifest that reports them.
+    // If verification ever fails in a way it did not anticipate, the uploads still happened
+    // and the model still needs to be told exactly what landed — so the worst case here is a
+    // manifest with a warning, never a thrown error that erases the whole report.
+    let notLive: AssetManifestFile[] = [];
+    if (options.publish && options.verify) {
+        try {
+            const verified = await verifyLive(options.dotcms, files);
+            notLive = verified.notLive;
+            warnings.push(...verified.warnings);
+        } catch (error) {
+            warnings.push(
+                `Upload succeeded but live-verification could not complete: ` +
+                    `${errorMessage(error)}. The ${files.length} file(s) listed below WERE ` +
+                    `uploaded — do not re-upload them; check their published state directly.`
+            );
+        }
+    }
 
     return sortManifest({
         src,
@@ -239,17 +277,24 @@ export async function uploadAssets(options: {
     });
 }
 
+/** Enumerated assets plus whether a cap stopped the walk early (see MAX_ENUMERATED_ASSETS). */
+interface EnumerateResult {
+    assets: AssetContentlet[];
+    truncated: boolean;
+}
+
 async function enumerateAssets(
     dotcms: DotCMSRuntime,
     folder: string,
     recursive: boolean,
     include?: string
-): Promise<AssetContentlet[]> {
+): Promise<EnumerateResult> {
     const matches = includeMatcher(include);
     const assets: AssetContentlet[] = [];
     const seen = new Set<string>();
 
-    for (let offset = 0; ; offset += SEARCH_LIMIT) {
+    for (let page_ = 0; page_ < MAX_SEARCH_PAGES; page_++) {
+        const offset = page_ * SEARCH_LIMIT;
         const response = await dotcms.request({
             method: 'POST',
             path: '/api/content/_search',
@@ -261,6 +306,7 @@ async function enumerateAssets(
             }
         });
         const page = extractContentlets(response);
+        const seenBefore = seen.size;
 
         for (const asset of page) {
             if (!asset.identifier || !asset.path || seen.has(asset.identifier)) {
@@ -279,9 +325,23 @@ async function enumerateAssets(
         if (page.length < SEARCH_LIMIT) {
             break;
         }
+
+        // Termination guard, NOT an optimisation. If the backend ignores or clamps `offset`,
+        // every page comes back full of the same identifiers: `page.length < SEARCH_LIMIT`
+        // never fires, `seen` de-dupes so `assets` stops growing, and the loop spins forever
+        // issuing identical POSTs — an MCP call that never returns while the instance takes
+        // sustained load. A page that adds nothing new means we are not advancing, whatever
+        // the backend thinks it is doing.
+        if (seen.size === seenBefore) {
+            break;
+        }
+
+        if (assets.length >= MAX_ENUMERATED_ASSETS) {
+            return { assets, truncated: true };
+        }
     }
 
-    return assets;
+    return { assets, truncated: false };
 }
 
 /** Fetch an asset's raw bytes — by identifier (`/api/v2/assets/{id}`) or by path query. */
@@ -303,12 +363,18 @@ async function downloadAssetBytes(
     return bytes;
 }
 
+/** An uploaded file, plus any caveat the caller must surface (see the 0-byte fallback). */
+interface UploadOneResult {
+    file: AssetManifestFile;
+    warning?: string;
+}
+
 async function uploadOneAsset(
     dotcms: DotCMSRuntime,
     file: LocalFile,
     destPath: string,
     publish: boolean
-): Promise<AssetManifestFile> {
+): Promise<UploadOneResult> {
     const bytes = await readFile(file.abs);
 
     const put = (data: Buffer) =>
@@ -326,6 +392,7 @@ async function uploadOneAsset(
         }) as Promise<{ entity?: { identifier?: string } }>;
 
     let response: { entity?: { identifier?: string } };
+    let warning: string | undefined;
     try {
         // Upload the real content, 0-byte included.
         response = await put(bytes);
@@ -335,43 +402,97 @@ async function uploadOneAsset(
         // indicates 0-byte is accepted, so this path is expected to be unused.
         if (bytes.byteLength === 0) {
             response = await put(Buffer.from('\n'));
+            // The remote asset now DIFFERS from the source: 1 byte where the source has 0.
+            // Reporting a clean success would leave the caller unable to see that, and for
+            // an empty VTL or CSS partial the difference is invisible until something
+            // downstream behaves oddly. Say it plainly and report the bytes actually sent.
+            warning =
+                `"${file.rel}" is 0 bytes and dotCMS rejected an empty body, so it was ` +
+                `uploaded as a single newline (1 byte) instead. The remote file does NOT ` +
+                `match the source exactly.`;
         } else {
             throw error;
         }
     }
 
     return {
-        path: file.rel,
-        bytes: file.bytes,
-        identifier: response.entity?.identifier
+        file: {
+            path: file.rel,
+            bytes: warning ? 1 : file.bytes,
+            identifier: response.entity?.identifier
+        },
+        warning
     };
 }
 
+/** What a verification pass learned. It can only ever ADD to a manifest, never replace it. */
+interface VerifyLiveResult {
+    notLive: AssetManifestFile[];
+    warnings: string[];
+}
+
+/**
+ * Re-check that every uploaded asset is actually live, re-firing PUBLISH for any that
+ * aren't (up to 3 rounds), then confirming the last round's fires.
+ *
+ * Every await in here is individually guarded, for one reason: this is a READ-ONLY
+ * verification of writes that have ALREADY COMMITTED. A throw escaping this function would
+ * propagate out of `uploadAssets` and discard `files[]`, `failures[]` and `warnings[]` — so
+ * a 120-file theme that uploaded and published perfectly, then hit one flaky liveness GET,
+ * would be reported to the model as a failure. Its next move is to re-upload all 120.
+ *
+ * Verification can therefore only ever downgrade the manifest (add to `notLive`/`warnings`),
+ * never replace it with an exception.
+ */
 async function verifyLive(
     dotcms: DotCMSRuntime,
     files: AssetManifestFile[]
-): Promise<AssetManifestFile[]> {
+): Promise<VerifyLiveResult> {
+    const warnings: string[] = [];
+
+    // A file with no identifier CANNOT be checked, which is not the same as it being fine.
+    // Silently filtering these out meant that if the publish envelope ever stopped matching
+    // the expected shape, every identifier would be undefined, every file would drop out
+    // here, the round loop would never run, and the manifest would report
+    // `count: 120, notLive: [], warnings: []` — indistinguishable from a fully verified
+    // publish when in fact nothing at all was verified.
+    const unverifiable = files.filter((file) => !file.identifier);
+    if (unverifiable.length > 0) {
+        warnings.push(
+            `${unverifiable.length} of ${files.length} uploaded file(s) returned no identifier, ` +
+                `so their live status could NOT be verified: ` +
+                `${unverifiable.map((file) => file.path).join(', ')}. ` +
+                `They may or may not be published — check them directly.`
+        );
+    }
+
     let pending = files.filter((file) => file.identifier);
 
     for (let round = 0; round < 3 && pending.length > 0; round++) {
-        const notLive: AssetManifestFile[] = [];
-
-        for (const file of pending) {
-            if (!(await isLive(dotcms, file.identifier as string))) {
-                notLive.push(file);
-            }
-        }
+        const notLive = await collectNotLive(dotcms, pending, warnings);
 
         if (notLive.length === 0) {
-            return [];
+            return { notLive: [], warnings };
         }
 
+        // Sequential, not concurrent: these fire workflow actions against content dotCMS is
+        // concurrently versioning and indexing. The per-item catch is the fix that matters —
+        // previously the first bad fire (locked by another workflow, or a token without
+        // PUBLISH on that folder) threw, so every remaining asset was never even attempted
+        // and nothing recorded which ones those were.
         for (const file of notLive) {
-            await dotcms.request({
-                method: 'PUT',
-                path: '/api/v1/workflow/actions/default/fire/PUBLISH',
-                body: { contentlet: { identifier: file.identifier } }
-            });
+            try {
+                await dotcms.request({
+                    method: 'PUT',
+                    path: '/api/v1/workflow/actions/default/fire/PUBLISH',
+                    body: { contentlet: { identifier: file.identifier } }
+                });
+            } catch (error) {
+                warnings.push(
+                    `Re-publish failed for "${file.path}" (${file.identifier}): ` +
+                        `${errorMessage(error)}. Remaining files were still attempted.`
+                );
+            }
         }
 
         pending = notLive;
@@ -380,14 +501,48 @@ async function verifyLive(
     // The PUBLISH fired in the final round has not been verified yet — without this pass an
     // asset that only goes live on its last re-fire would be reported as notLive despite
     // having published successfully (a false negative in the transfer manifest).
-    const stillNotLive: AssetManifestFile[] = [];
-    for (const file of pending) {
-        if (!(await isLive(dotcms, file.identifier as string))) {
-            stillNotLive.push(file);
-        }
-    }
+    return { notLive: await collectNotLive(dotcms, pending, warnings), warnings };
+}
 
-    return stillNotLive;
+/**
+ * Which of `files` are not live yet.
+ *
+ * Pure GETs on distinct identifiers with no interdependence, so they run concurrently via
+ * `allSettled` — a 120-file theme was previously up to 3 rounds of 120 sequential round
+ * trips plus a final 120, and only the last round's results mattered.
+ *
+ * `allSettled` (not `all`) for the same reason the whole function is guarded: `all` fails
+ * fast and discards its settled siblings, and here those siblings ARE the answer. A single
+ * rejected read must not decide the fate of the other 119. A file whose check failed is
+ * treated as NOT-not-live — it is left out of `notLive` and reported as a warning, so an
+ * unreadable status never masquerades as a confirmed failure.
+ */
+async function collectNotLive(
+    dotcms: DotCMSRuntime,
+    files: AssetManifestFile[],
+    warnings: string[]
+): Promise<AssetManifestFile[]> {
+    const results = await Promise.allSettled(
+        files.map((file) => isLive(dotcms, file.identifier as string))
+    );
+
+    const notLive: AssetManifestFile[] = [];
+    results.forEach((result, index) => {
+        const file = files[index];
+        if (result.status === 'rejected') {
+            warnings.push(
+                `Could not check whether "${file.path}" (${file.identifier}) is live: ` +
+                    `${errorMessage(result.reason)}.`
+            );
+
+            return;
+        }
+        if (!result.value) {
+            notLive.push(file);
+        }
+    });
+
+    return notLive;
 }
 
 async function isLive(dotcms: DotCMSRuntime, identifier: string): Promise<boolean> {
@@ -650,12 +805,25 @@ function compileGlob(input: string, start: number, end: number): string {
                 // `**` crosses directory boundaries. Consume it plus one adjacent `/` (leading or
                 // trailing) and emit an optional "any number of full segments" fragment.
                 i += 2;
+                const trailing = i >= end;
                 if (input[i] === '/') {
                     i++;
-                } else if (out.endsWith('/')) {
+                } else if (!trailing && out.endsWith('/')) {
                     out = out.slice(0, -1);
                 }
-                out += '(?:.*/)?';
+
+                if (trailing) {
+                    // A globstar with nothing after it — `themes/**` — means "everything
+                    // below here", so it has to be able to match a final FILENAME segment.
+                    // The general fragment below cannot: it only ever ends at a `/`, so
+                    // `themes/**` compiled to `^themes(?:.*/)?$` and matched nothing but the
+                    // bare string `themes`. Since `dir/**` is the common idiom, users writing
+                    // it hit the "matched 0 of N files, check the glob syntax" warning while
+                    // their syntax was perfectly reasonable.
+                    out += '.*';
+                } else {
+                    out += '(?:.*/)?';
+                }
             } else {
                 out += '[^/]*';
                 i++;
