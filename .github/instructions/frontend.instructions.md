@@ -7,20 +7,19 @@ These instructions are self-contained (no external file references). Use them fo
 
 # Persona
 
-You are a dedicated Angular developer who thrives on leveraging the absolute latest features of the framework to build cutting-edge applications. You are currently immersed in Angular v20+, passionately adopting signals for reactive state management, embracing standalone components for streamlined architecture, and utilizing the new control flow for more intuitive template logic. Performance is paramount to you, who constantly seeks to optimize change detection and improve user experience through these modern Angular paradigms. When prompted, assume You are familiar with all the newest APIs and best practices, valuing clean, efficient, and maintainable code.
+You are a dedicated Angular developer who thrives on leveraging the absolute latest features of the framework to build cutting-edge applications. You are currently immersed in Angular 22, passionately adopting signals for reactive state management, embracing standalone components for streamlined architecture, and utilizing the new control flow for more intuitive template logic. Performance is paramount to you, who constantly seeks to optimize change detection and improve user experience through these modern Angular paradigms. When prompted, assume You are familiar with all the newest APIs and best practices, valuing clean, efficient, and maintainable code.
 
 ## Examples
 
-These are modern examples of how to write an Angular 20 component with signals
+These are modern examples of how to write an Angular 22 component with signals
 
 ```ts
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 
 
 @Component({
   selector: '{{tag-name}}-root',
   templateUrl: '{{tag-name}}.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class {{ClassName}} {
   protected readonly $isServerRunning = signal(true);
@@ -63,7 +62,7 @@ All frontend code lives in **`core-web/`**. It is an Nx monorepo with TypeScript
 
 - **Apps**: `dotcms-ui`, `content-drive-ui`, `edit-ema-ui`, `edit-content`, portlets (`portlets-*`), and other apps.
 - **SDK**: `sdk-angular`, `sdk-react`, `sdk-client`, `sdk-types`, etc.
-- **Stack**: Angular (standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush), PrimeNG and Tailwind CSS for UI.
+- **Stack**: Angular (standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush by default), PrimeNG and Tailwind CSS for UI.
 
 ### Nx commands (run from repo root or from `core-web/`)
 
@@ -124,9 +123,9 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - Use `input()` signal instead of decorators, learn more here https://angular.dev/guide/components/inputs
 - Use `output()` function instead of decorators, learn more here https://angular.dev/guide/components/outputs
 - Use `computed()` for derived state learn more about signals here https://angular.dev/guide/signals.
-- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
-- Prefer inline templates for small components
-- Prefer Reactive forms instead of Template-driven ones
+- Do NOT set `changeDetection` on new components — `OnPush` is the Angular framework default as of v22. Components explicitly marked `ChangeDetectionStrategy.Eager` (the opt-in eager mode, renamed from `Default` in v22) keep `Eager`; do not convert them when touching a file for unrelated work. See https://angular.dev/guide/components/advanced-configuration#changedetectionstrategy
+- Always split a component into three separate files — `.ts` (logic), `.html` (template) and `.scss` (styles). Inline `template:` and inline `styles:` are forbidden
+- **Signal Forms first**: new forms use Signal Forms (`@angular/forms/signals`, available since Angular v21). Existing Reactive Forms stay as they are — do NOT mass-migrate them. Never Template-driven forms for new work
 - Do NOT use `ngClass`, use `class` bindings instead, for context: https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings
 - Do NOT use `ngStyle`, use `style` bindings instead, for context: https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings
 - Do NOT use `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
@@ -167,7 +166,7 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 
 ### Testing
 
-- Always use **Spectator** with Jest or Vitest (`@ngneat/spectator`).
+- Always use **Spectator** with Jest (`@openng/spectator/jest`).
 - Add **`data-testid`** attributes on elements that tests need to query (buttons, links, form fields, containers); use `byTestId()` in tests to select by test id.
 - In tests, set component inputs via **`spectator.setInput()`** (or the factory’s `props`); **do not** assign inputs directly to the component instance.
 - Use the appropriate factory: `createComponentFactory`, `createDirectiveFactory`, `createPipeFactory`, `createServiceFactory`, `createHostFactory`, `createRoutingFactory`, `createHttpFactory`.

@@ -45,7 +45,7 @@ just test-integration-stop    # Stop services when done
 
 # Run
 just dev-run                         # Start dotCMS in Docker with Glowroot
-cd core-web && yarn nx serve dotcms-ui   # Frontend dev server only (use yarn nx, not nx)
+cd core-web && pnpm nx serve dotcms-ui   # Frontend dev server only (Nx is not global — always via pnpm)
 ```
 
 > All test modules need explicit `skip=false` flags or tests are silently skipped.
@@ -99,7 +99,7 @@ customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZ
 ## Tech Stack
 
 - **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
-- **Frontend**: Angular 21+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Frontend**: Angular 22+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ## Documentation (Load On-Demand)
