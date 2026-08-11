@@ -10,6 +10,12 @@ import java.lang.reflect.Method;
 /**
  * Shared handler for {@code @RequestCost} logic. Used by both the ByteBuddy advice and the
  * CDI interceptor to keep the implementation DRY.
+ * <p>
+ * Charge sites placed past a cache short-circuit (so a cache hit stays free) follow a shared
+ * idiom by convention, not by a common helper: call {@link #incrementCost(Price, Class, String,
+ * Object[])} right after the short-circuit check, with a comment naming the sibling sites. See
+ * {@code NavTool.getNav}, {@code DotDirective.render}, and {@code VelocityLiveMode.writePage}.
+ * If a fourth site shows up, promote this to a real helper instead of copy-pasting the comment.
  */
 public final class RequestCostHandler {
 
