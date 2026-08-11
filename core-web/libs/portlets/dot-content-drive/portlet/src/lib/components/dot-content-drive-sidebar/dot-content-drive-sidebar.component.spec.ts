@@ -1164,9 +1164,7 @@ describe('DotContentDriveSidebarComponent', () => {
             contentDriveStore.loadFolderPermissions.mockReturnValue(of(undefined));
         });
 
-        const buildFolderNode = (
-            permissions?: PermissionType[]
-        ): DotFolderTreeNodeItem => ({
+        const buildFolderNode = (permissions?: PermissionType[]): DotFolderTreeNodeItem => ({
             key: 'docs-id',
             label: '/documents/reports/',
             data: {
@@ -1194,7 +1192,9 @@ describe('DotContentDriveSidebarComponent', () => {
         };
 
         it('should publish the folder to the store in the shape the menu and dialog consume', () => {
-            const event = rightClick(buildFolderNode([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]));
+            const event = rightClick(
+                buildFolderNode([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT])
+            );
 
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith({
                 triggeredEvent: event,

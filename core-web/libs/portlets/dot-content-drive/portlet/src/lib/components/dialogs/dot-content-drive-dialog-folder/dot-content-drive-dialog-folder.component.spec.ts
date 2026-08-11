@@ -1064,9 +1064,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
             expect(folderService.saveFolder).toHaveBeenCalled();
             const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
-            expect(lastCall?.assetPath).toBe(
-                '//demo.dotcms.com/campaigns/2026/marketing-assets/'
-            );
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/campaigns/2026/marketing-assets/');
         });
 
         it('should anchor the edit assetPath at the site root for a root-level folder', () => {
