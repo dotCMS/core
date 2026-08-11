@@ -100,6 +100,8 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 
 ### TypeScript Best Practices
 
+- `core-web/tsconfig.base.json` sets `"ignoreDeprecations": "6.0"` **transitionally** for the TypeScript 6 migration. New code must not rely on the deprecated APIs it unblocks, and the flag must not be removed as part of unrelated work
+
 - Use strict type checking
 - Prefer type inference when the type is obvious
 - Avoid the `any` type; use `unknown` when type is uncertain
@@ -119,6 +121,7 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 
 ### Components
 
+- **Reuse before creating.** Before writing a new component, check dotCMS's own components first (`core-web/libs/ui`, imported as `@dotcms/ui`, and the existing feature libs), then PrimeNG. Creating a new component is the last resort and needs justification
 - Keep components small and focused on a single responsibility
 - Use `input()` signal instead of decorators, learn more here https://angular.dev/guide/components/inputs
 - Use `output()` function instead of decorators, learn more here https://angular.dev/guide/components/outputs
@@ -126,6 +129,9 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - Do NOT set `changeDetection` on new components — `OnPush` is the Angular framework default as of v22. Components explicitly marked `ChangeDetectionStrategy.Eager` (the opt-in eager mode, renamed from `Default` in v22) keep `Eager`; do not convert them when touching a file for unrelated work. See https://angular.dev/guide/components/advanced-configuration#changedetectionstrategy
 - Always split a component into three separate files — `.ts` (logic), `.html` (template) and `.scss` (styles). Inline `template:` and inline `styles:` are forbidden
 - **Signal Forms first**: new forms use Signal Forms (`@angular/forms/signals`, available since Angular v21). Existing Reactive Forms stay as they are — do NOT mass-migrate them. Never Template-driven forms for new work
+- **Teardown**: use `inject(DestroyRef)` with `takeUntilDestroyed(this.destroyRef)` from `@angular/core/rxjs-interop`. The legacy `destroy$` + `takeUntil` + `ngOnDestroy` pattern still exists in older code — it is not for new work and is NOT to be mass-migrated
+- **Handle every state**: a component that renders data must explicitly handle **loading**, **empty**, **error** and **loaded**. Never leave a blank render path — use `@if` / `@else` for loading and error branches, and `@empty` on every `@for`
+- **Handle every error**: no silent failures, no unguarded `.subscribe()`, no empty `catchError`. Surface the failure to the user and clear the loading state — never leave the user on a spinner
 - Do NOT use `ngClass`, use `class` bindings instead, for context: https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings
 - Do NOT use `ngStyle`, use `style` bindings instead, for context: https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings
 - Do NOT use `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
@@ -140,6 +146,7 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 ### Styling
 
 - **Priority: Tailwind CSS & PrimeNG first.** Prefer Tailwind utility classes for layout, spacing, typography, and colors; avoid custom SCSS when a Tailwind class exists. Use PrimeNG components instead of building custom UI from scratch (e.g. `p-button`, `p-inputText`, `p-card`, `p-dialog`). Custom styles should be the exception, not the default.
+- **Icons use Material Symbols**: `<span class="material-symbols-outlined">drag_indicator</span>` — the icon name goes in the element's **text content**, not the class. Fonts are self-hosted via `core-web/libs/dotcms-scss/shared/_material-symbols-outlined.scss`. Existing PrimeIcons (`pi pi-*`) stay as they are and are NOT to be mass-migrated; PrimeNG's internal icons are a theming concern. Do NOT use the deprecated `dot-icon` component.
 - When custom styles are needed, follow BEM; avoid hardcoded colors and spacing—use design tokens, CSS variables, or theme variables when available.
 - Do not hardcode hex/rgb colors or pixel values for spacing in components when shared variables exist.
 
