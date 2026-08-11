@@ -424,9 +424,9 @@ This is worse than the read-time cliff above, in three ways:
 **read** engine is complete. In Phases 2/3 that means **full content reindex first, Site Search crawl
 second** — the reverse order silently produces a truncated index that looks fine everywhere.
 
-**The crawl warns when it is about to do this.** `SiteSearchJobImpl` checks the coverage of the
-content index it is about to read — the read engine's copy measured against the database, the same
-metric the readiness endpoint reports — and logs a `WARN` naming the index, the engine, the
+**The crawl warns when it is about to do this.** `SiteSearchJobImpl` checks how much of the content
+the index it is about to read actually holds — the read engine's copy measured against the database,
+the same `osIndexedPercent` / `esIndexedPercent` the readiness endpoint reports — and logs a `WARN` naming the index, the engine, the
 percentage, and the fact that reindexing afterwards will not repair the result:
 
 ```
@@ -502,7 +502,7 @@ through the write-path gate above.
   measured against it. This is the only signal in the report that does not come from a search engine,
   and that is the point: **`driftPercent` compares the two engines against each other, which stops
   being an answer once one of them is the only one left.** In Phase 3 a mirror that was never rebuilt
-  has nothing to be diffed against and reads unremarkably, while coverage still says `3.06`. When a
+  has nothing to be diffed against and reads unremarkably, while `osIndexedPercent` still says `3.06`. When a
   copy is materially incomplete the `recommendation` names it and spells out the fallout — including
   that a Site Search crawl builds its corpus from a query against this index. It never changes the
   `verdict`, which states a different fact (the ES↔OS relationship).
@@ -517,7 +517,7 @@ through the write-path gate above.
   use a `Parallel Index Only Scan` (17 ms), but the live half stays a sequential scan regardless (nearly
   every row has a live version, so the index buys nothing), and the two together measured 41 ms against
   28 ms combined. Not the `pg_class.reltuples` estimate on purpose: that drifts a few points
-  between `ANALYZE` runs and surfaced as coverage slightly over 100%, which reads as a defect. With
+  between `ANALYZE` runs and surfaced as an indexed percentage slightly over 100%, which reads as a defect. With
   exact counts, above 100% means the index holds documents the database no longer has — orphans from a
   delete that never propagated, worth looking at rather than rounding away. Site Search rows have no
   such denominator (their corpus is crawled pages and files), so the fields are absent there.
@@ -588,7 +588,7 @@ Search rows. Then:
 |---|---|
 | `verdict` | `IN_SYNC` · `MISSING_COUNTERPART` (one engine lacks the index) · `COUNT_DRIFT` (both hold it, different counts) |
 | `driftPercent` | `(OS − ES) / ES × 100`, rounded to 2 decimals. `0.0` in sync · negative = mirror **behind** (blocks *advance*) · positive = mirror **ahead** (blocks *rollback*) · `-100.0` mirror empty/absent · `+100.0` the original is empty but the mirror holds data · `null` a count could not be measured |
-| `databaseDocCount` + `esIndexedPercent` / `osIndexedPercent` | Content rows only. How complete each engine is **against the database**, not against the other engine — the one completeness signal that still works in Phase 3, where there is nothing left to diff. `100.0` = complete; `3.06` = the mirror was never rebuilt. Absent for Site Search and when a count could not be measured |
+| `databaseDocCount` + `esIndexedPercent` / `osIndexedPercent` | Content rows only. What percentage of the database's content each engine actually holds — measured **against the database**, not against the other engine — the one completeness signal that still works in Phase 3, where there is nothing left to diff. `100.0` = complete; `3.06` = the mirror was never rebuilt. Absent for Site Search and when a count could not be measured |
 | `docCount: -1` | The count could **not** be measured. Never read it as "zero" — the verdict treats it as out of sync on purpose |
 | `physicalName` | The exact name on that server (cluster-prefixed; `.os`-tagged on OpenSearch) — copy/paste it into `_cat/indices` to verify by hand |
 | `recommendation` | The concrete action (re-crawl / reindex). A trailing `NOTE:` flags an alias that is really an index name (see above) |
@@ -603,6 +603,9 @@ crawl while in Phase 3 exists **only** on OpenSearch:
           "alias": "sitesearch-ph-3" },
   "driftPercent": 100.0, "verdict": "MISSING_COUNTERPART" }
 ```
+
+(A Site Search row, so it carries no `databaseDocCount` / `*IndexedPercent`: those exist only for the
+content indices, whose denominator is the database.)
 
 Read as: the index and its alias are intact on OpenSearch, but in Phase 1 reads come from
 Elasticsearch, where it does not exist — so **its content is unsearchable until it is re-crawled**,
@@ -645,6 +648,9 @@ the `WORKING`/`LIVE` pointer, so the very next call reports it:
     "indexName": "working_20251114093012",
     "es": { "exists": true,  "docCount": 148230, "physicalName": "cluster_x.working_20251114093012" },
     "os": { "exists": false, "docCount": 0,      "physicalName": "cluster_x.working_20251114093012.os" },
+    "databaseDocCount": 148230,
+    "esIndexedPercent": 100.0,
+    "osIndexedPercent": 0.0,
     "driftPercent": -100.0,
     "verdict": "MISSING_COUNTERPART",
     "recommendation": "The OpenSearch copy of content index 'working_20251114093012' is missing. Run a full reindex to rebuild it before promoting to the OpenSearch-only phase."
@@ -668,6 +674,10 @@ does, and neither does activation).
    precisely the phase where the failure is immediate and customer-visible.
 3. **The endpoint reports, it never repairs.** It will not block the activation, and re-running it
    changes nothing on its own.
+
+Note `osIndexedPercent: 0.0` next to `esIndexedPercent: 100.0`: that pair is the one part of this row
+that keeps its meaning in Phase 3, where there is no Elasticsearch side left and `driftPercent` has
+nothing to compare.
 
 The durable fix — reconcile-on-activate, rebuilding the counterpart asynchronously through the
 existing reindex machinery (a synchronous copy of a large index is not viable, and a naive
