@@ -1,0 +1,16 @@
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java
+index 214b7ccfa7..50c0f44de1 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java
+@@ -8,8 +8,9 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutableSimpleContentType.class)
+ @JsonDeserialize(as = ImmutableSimpleContentType.class)
+ @Value.Immutable
+-public abstract class SimpleContentType extends ContentType
+-        implements UrlMapable, Serializable, Expireable {
++public abstract sealed class SimpleContentType extends ContentType
++        implements UrlMapable, Serializable, Expireable
++        permits ImmutableSimpleContentType, ImmutableSimpleContentType.Json {
+ 
+     private static final long serialVersionUID = 1L;
+ 

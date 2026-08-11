@@ -1,0 +1,16 @@
+# B-seal-inode
+#
+# BUILD FAILURE
+# 11 distinct diagnostics (javac reports each twice — once per annotation-processing round)
+
+dotCMS/src/main/java/com/dotmarketing/beans/Inode.java:[42,43] error: class Inode in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/beans/Inode.java:[43,43] error: class Inode in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/beans/Inode.java:[44,44] error: class Inode in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/beans/Inode.java:[45,44] error: class Inode in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/beans/Inode.java:[46,38] error: class Inode in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/portlets/structure/model/Field.java:[20,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/WebAsset.java:[26,16] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/structure/model/Structure.java:[41,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/categories/model/Category.java:[36,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/fileUpload/model/FileUpload.java:[11,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/user/model/UserComment.java:[9,7] error: sealed, non-sealed or final modifiers expected

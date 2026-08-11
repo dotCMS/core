@@ -1,0 +1,41 @@
+diff --git a/dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java b/dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java
+index 78713ab38e..c1b9010ac7 100644
+--- a/dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java
++++ b/dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java
+@@ -4,7 +4,35 @@ import java.util.List;
+ 
+ import com.dotmarketing.exception.DotDataException;
+ 
+-public interface Permissionable {
++public sealed interface Permissionable permits
++
++		// the eleven classes whose only route to Permissionable is this interface
++		com.dotmarketing.portlets.contentlet.model.Contentlet,
++		com.dotmarketing.portlets.folders.model.Folder,
++		com.dotmarketing.beans.Identifier,
++		com.dotmarketing.beans.Inode,
++		com.dotcms.contenttype.model.type.ContentType,
++		com.dotcms.rendering.velocity.viewtools.navigation.NavResult,
++		com.dotcms.publisher.environment.bean.Environment,
++		com.dotmarketing.portlets.workflows.model.WorkflowAction,
++		com.dotmarketing.portlets.rules.model.Rule,
++		com.dotmarketing.beans.UserProxy,
++		com.dotmarketing.beans.PermissionableProxy,
++
++		// three that inherit it as well, and re-declare it anyway
++		com.dotmarketing.portlets.structure.model.Structure,
++		com.dotmarketing.beans.WebAsset,
++		com.dotmarketing.beans.Host,
++
++		// and the eight interfaces that extend it
++		Treeable,
++		Ruleable,
++		com.dotmarketing.portlets.categories.business.Categorizable,
++		com.dotmarketing.portlets.fileassets.business.IFileAsset,
++		com.dotcms.keyvalue.model.KeyValue,
++		com.dotcms.vanityurl.model.VanityUrl,
++		com.dotmarketing.portlets.personas.model.IPersona,
++		com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage {
+ 
+ 	/**
+ 	 * Sets the id to be used for checking permissions 

@@ -1,0 +1,20 @@
+diff --git a/dotCMS/src/main/java/com/dotmarketing/beans/Inode.java b/dotCMS/src/main/java/com/dotmarketing/beans/Inode.java
+index 22653ae7a9..6df331174f 100644
+--- a/dotCMS/src/main/java/com/dotmarketing/beans/Inode.java
++++ b/dotCMS/src/main/java/com/dotmarketing/beans/Inode.java
+@@ -37,8 +37,13 @@ import java.util.UUID;
+  * @author David H Torres (2009)
+  */
+ @JsonIgnoreProperties(ignoreUnknown = true)
+-public class Inode implements Serializable, Comparable, Permissionable,Versionable,
+-		Categorizable, UUIDable {
++public sealed class Inode implements Serializable, Comparable, Permissionable,Versionable,
++		Categorizable, UUIDable permits WebAsset,
++		com.dotmarketing.portlets.structure.model.Structure,
++		com.dotmarketing.portlets.structure.model.Field,
++		com.dotmarketing.portlets.categories.model.Category,
++		com.dotmarketing.portlets.fileUpload.model.FileUpload,
++		com.dotmarketing.portlets.user.model.UserComment {
+ 
+ 	private static final long serialVersionUID = -152856052702254985L;
+ 

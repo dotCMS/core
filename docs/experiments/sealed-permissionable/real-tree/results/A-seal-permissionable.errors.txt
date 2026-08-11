@@ -1,0 +1,47 @@
+# A-seal-permissionable
+#
+# BUILD FAILURE
+# 42 distinct diagnostics (javac reports each twice — once per annotation-processing round)
+
+dotCMS/src/main/java/com/dotcms/contenttype/model/type/ContentType.java:[80,16] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/Inode.java:[40,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[10,44] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[11,41] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[12,24] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[13,24] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[14,35] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[15,52] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[16,39] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[17,43] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[18,39] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[19,24] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[20,24] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[23,43] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[24,24] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[25,24] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[30,47] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[31,47] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[32,27] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[33,28] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[34,42] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/business/Permissionable.java:[35,47] error: class Permissionable in unnamed module cannot extend a sealed class in a different package
+dotCMS/src/main/java/com/dotmarketing/portlets/categories/business/Categorizable.java:[5,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/contentlet/model/Contentlet.java:[91,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/business/Treeable.java:[12,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotmarketing/business/Ruleable.java:[3,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/folders/model/Folder.java:[39,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/Identifier.java:[32,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotcms/rendering/velocity/viewtools/navigation/NavResult.java:[32,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotcms/publisher/environment/bean/Environment.java:[15,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/workflows/model/WorkflowAction.java:[43,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/rules/model/Rule.java:[38,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/UserProxy.java:[17,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/PermissionableProxy.java:[11,8] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/structure/model/Structure.java:[41,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/WebAsset.java:[26,16] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/beans/Host.java:[27,7] error: sealed, non-sealed or final modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/fileassets/business/IFileAsset.java:[15,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotcms/keyvalue/model/KeyValue.java:[23,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotcms/vanityurl/model/VanityUrl.java:[17,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/personas/model/IPersona.java:[21,7] error: sealed or non-sealed modifiers expected
+dotCMS/src/main/java/com/dotmarketing/portlets/htmlpageasset/model/IHTMLPage.java:[24,7] error: sealed or non-sealed modifiers expected
