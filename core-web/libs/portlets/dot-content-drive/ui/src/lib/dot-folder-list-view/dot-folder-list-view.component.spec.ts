@@ -321,6 +321,108 @@ describe('DotFolderListViewComponent', () => {
         });
     });
 
+    /**
+     * Row identity. The browsing grid keys on `identifier`, but language variants of one contentlet
+     * share an identifier and differ only by inode — and inodes are what bulk actions fire on. A
+     * caller that acts per variant has to be able to key on `inode` instead.
+     */
+    describe('dataKey', () => {
+        const variantA = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-en' };
+        const variantB = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-es' };
+
+        it('should key rows on identifier by default', () => {
+            expect(spectator.query(Table).dataKey).toBe('identifier');
+        });
+
+        it('should treat rows sharing an identifier as the same row by default', () => {
+            // Not a defect for the grid — it lists one row per identifier — but it is exactly why
+            // the default cannot be reused where variants are listed separately.
+            spectator.setInput('items', [variantA, variantB]);
+            spectator.setInput('selection', [variantA]);
+            spectator.detectChanges();
+
+            const table = spectator.query(Table);
+
+            expect(table.isSelected(variantA)).toBe(true);
+            expect(table.isSelected(variantB)).toBe(true);
+        });
+
+        it('should distinguish rows sharing an identifier when keyed on inode', () => {
+            spectator.setInput('items', [variantA, variantB]);
+            spectator.setInput('dataKey', 'inode');
+            spectator.setInput('selection', [variantA]);
+            spectator.detectChanges();
+
+            const table = spectator.query(Table);
+
+            expect(table.isSelected(variantA)).toBe(true);
+            expect(table.isSelected(variantB)).toBe(false);
+        });
+    });
+
+    /**
+     * Where the rows come from. The grid is lazy: it holds one page and asks the parent for the
+     * next. A caller that already has every row in memory pages locally instead.
+     */
+    describe('lazy', () => {
+        /** More rows than fit on a page, so paging is observable. */
+        const manyItems = Array.from({ length: 25 }, (_, index) => ({
+            ...mockItems[0],
+            identifier: `id-${index}`,
+            inode: `inode-${index}`
+        }));
+
+        it('should delegate paging to the parent by default', () => {
+            expect(spectator.query(Table).lazy).toBe(true);
+        });
+
+        it('should honour the offset when paging an in-memory list', () => {
+            // The discriminating behaviour. PrimeNG slices to `rows` either way, but pins the slice
+            // to index 0 while lazy — the parent is expected to have fetched the right page. Only a
+            // non-lazy table moves through a list it already holds.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('offset', 20);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            // Page two of twenty-five: the last five rows, not the first twenty over again.
+            expect(spectator.queryAll(byTestId('item-row')).length).toBe(5);
+        });
+
+        it('should count the in-memory list rather than the totalItems input', () => {
+            // `totalItems` is the server's count and means nothing to a caller holding every row —
+            // left at 0 here, which would collapse the paginator to a single page if it were used.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 0);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query(Table).totalRecords).toBe(manyItems.length);
+        });
+
+        it('should hide the paginator when an in-memory list fits on one page', () => {
+            // Dead weight on a short confirmation list. The lazy grid always shows it, because it
+            // cannot know whether the server has more.
+            spectator.setInput('items', mockItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-paginator')).toBeNull();
+        });
+
+        it('should show the paginator when an in-memory list outgrows a page', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-paginator')).toBeTruthy();
+        });
+    });
+
     describe('Loading', () => {
         it('should show the loading row', () => {
             spectator.setInput('items', mockItems);

@@ -181,6 +181,24 @@ export class DotFolderListViewComponent implements OnInit {
     scroll = output<Event>();
 
     /**
+     * Field that identifies a row. Language variants of one contentlet share an `identifier` and
+     * differ only by `inode`, so a caller listing variants separately must key on `inode`.
+     *
+     * @type {InputSignal<string>}
+     * @alias dataKey
+     */
+    $dataKey = input<string>('identifier', { alias: 'dataKey' });
+
+    /**
+     * Where the rows come from. `true` (default) pages server-side: the table holds one page and
+     * emits `paginate` for the next. `false` pages a list the caller already holds in full.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias lazy
+     */
+    $lazy = input<boolean>(true, { alias: 'lazy' });
+
+    /**
      * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
      * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
      * table, which keeps its own set and clears it whenever `items` changes.
@@ -290,8 +308,22 @@ export class DotFolderListViewComponent implements OnInit {
     /** Total column count including the leading checkbox column — drives colspan/skeleton span. */
     protected readonly $columnSpan = computed(() => this.$columns().length + 1);
 
-    protected readonly $showPagination = computed(
-        () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
+    /**
+     * Whether to render the paginator. Always while lazy — the table cannot know whether the server
+     * has more. Non-lazy it holds the whole list, so below a page the paginator is dead weight.
+     *
+     * Replaces a `$showPagination` that was declared but never bound.
+     */
+    protected readonly $paginator = computed(
+        () => this.$lazy() || this.$items().length > this.MIN_ROWS_PER_PAGE
+    );
+
+    /**
+     * Row count the paginator divides into pages. `totalItems` is the server's count and is
+     * meaningless to a caller holding every row, so a non-lazy table counts what it was given.
+     */
+    protected readonly $recordCount = computed(() =>
+        this.$lazy() ? this.$totalItems() : this.$items().length
     );
 
     readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
