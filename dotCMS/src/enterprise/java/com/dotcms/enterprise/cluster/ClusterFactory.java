@@ -65,7 +65,7 @@ public class ClusterFactory {
 
 
     private static boolean CLUSTER_INITED=false;
-	private static List<Server> KNOWN_SERVERS=Collections.EMPTY_LIST;
+	private static List<Server> KNOWN_SERVERS=Collections.emptyList();
 
     /**
      * Consecutive cluster cache-transport rewire failures. Reset to zero on the first
@@ -351,13 +351,8 @@ public class ClusterFactory {
 		try{
 			List<Server> aliveServers = APILocator.getServerAPI().getAliveServers();
 
-            // A pending failure must always be retried. The membership comparison below only
-            // fires when the alive-server set changes, so without this a rewire that failed
-            // while membership then settled back to KNOWN_SERVERS would never be attempted
-            // again: the transport would stay broken and REWIRE_FAILURES could never return to
-            // zero, leaving the health check reporting DOWN indefinitely.
-            if (REWIRE_FAILURES.get() > 0 || !aliveServers.equals(KNOWN_SERVERS) || !aliveServers
-                    .contains(APILocator.getServerAPI().getCurrentServer()) ) {
+            if (shouldRewire(aliveServers, KNOWN_SERVERS,
+                    APILocator.getServerAPI().getCurrentServer(), REWIRE_FAILURES.get())) {
 
 				rewireCluster();
 			}
@@ -365,10 +360,42 @@ public class ClusterFactory {
 		catch(Exception e){
 			Logger.error(ClusterFactory.class, "Unable to rewire cluster:" + e.getMessage());
 			Logger.error(ClusterFactory.class, "servers:" + KNOWN_SERVERS);
-			
-			
+
+
 			throw new DotRuntimeException(e);
 		}
+    }
+
+    /**
+     * Decides whether {@link #rewireCluster()} should run on this heartbeat.
+     *
+     * Extracted from {@link #rewireClusterIfNeeded()} so it can be unit tested without the
+     * enterprise statics, {@code APILocator} and license state that method needs. Pure function of
+     * its arguments; behaviour is unchanged from the inline condition it replaces.
+     *
+     * A rewire is needed when any of the following holds:
+     *
+     * - {@code pendingFailures > 0} -- a previous rewire failed and must be retried. This is the
+     *   clause added for issue #36803. The membership comparison below only fires when the
+     *   alive-server set *changes*, so without this a rewire that failed while membership then
+     *   settled back to {@code knownServers} would never be attempted again: the transport would
+     *   stay broken, {@code REWIRE_FAILURES} could never return to zero, and the cache-transport
+     *   health check would report unhealthy indefinitely.
+     * - cluster membership changed since the last successful rewire.
+     * - this server is missing from the alive set, so its own registration needs redoing.
+     *
+     * @param aliveServers   servers currently seen as alive
+     * @param knownServers   membership as of the last *successful* rewire
+     * @param currentServer  this server
+     * @param pendingFailures consecutive rewire failures not yet cleared by a success
+     */
+    @VisibleForTesting
+    static boolean shouldRewire(final List<Server> aliveServers, final List<Server> knownServers,
+                                final Server currentServer, final long pendingFailures) {
+
+        return pendingFailures > 0
+                || !aliveServers.equals(knownServers)
+                || !aliveServers.contains(currentServer);
     }
     
     public static void rewireCluster() throws Exception {
