@@ -9,7 +9,12 @@ import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotExperiment, DotExperimentStatus, DotMessageSeverity } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotExperimentStatus,
+    DotMessageSeverity,
+    HealthStatusTypes
+} from '@dotcms/dotcms-models';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -58,7 +63,21 @@ const ARCHIVE_LABEL = 'Archive';
 const RESTORE_LABEL = 'Restore';
 const ACTIONS_MENU_LABEL = 'Actions';
 
+const NOT_CONFIGURED_COPY = {
+    title: 'Analytics not configured',
+    subtitle: 'Configure the Analytics app to start experimenting'
+};
+
+const MISCONFIGURATION_COPY = {
+    title: 'Analytics misconfigured',
+    subtitle: 'Review the Analytics app configuration'
+};
+
 const messageServiceMock = new MockDotMessageService({
+    'experiments.analytics-app-no-configured.title': NOT_CONFIGURED_COPY.title,
+    'experiments.analytics-app-no-configured.subtitle': NOT_CONFIGURED_COPY.subtitle,
+    'experiments.analytics-app-misconfiguration.title': MISCONFIGURATION_COPY.title,
+    'experiments.analytics-app-misconfiguration.subtitle': MISCONFIGURATION_COPY.subtitle,
     'experiments.action.archive': ARCHIVE_LABEL,
     'experiments.action.restore': RESTORE_LABEL,
     'experiments.list.actions.menu': ACTIONS_MENU_LABEL,
@@ -75,6 +94,8 @@ const messageServiceMock = new MockDotMessageService({
  * reads them, and every test decides the values before the component is created.
  */
 const createStoreMock = () => ({
+    healthStatus: jest.fn().mockReturnValue(HealthStatusTypes.OK),
+    isMisconfigured: jest.fn().mockReturnValue(false),
     pagedExperiments: jest.fn().mockReturnValue([] as DotExperiment[]),
     pageInfoByPageId: jest.fn().mockReturnValue(PAGE_INFO),
     statusCounts: jest.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
@@ -372,6 +393,44 @@ describe('DotExperimentsListComponent', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+    });
+
+    describe('analytics misconfiguration', () => {
+        const renderMisconfigured = (healthStatus: HealthStatusTypes) => {
+            storeMock.isMisconfigured.mockReturnValue(true);
+            storeMock.healthStatus.mockReturnValue(healthStatus);
+            spectator.detectChanges();
+        };
+
+        it.each([
+            [HealthStatusTypes.NOT_CONFIGURED, NOT_CONFIGURED_COPY],
+            [HealthStatusTypes.CONFIGURATION_ERROR, MISCONFIGURATION_COPY]
+        ])('should render the %s message', (healthStatus, copy) => {
+            renderMisconfigured(healthStatus);
+
+            const container = spectator.query(byTestId('experiments-misconfiguration'));
+
+            expect(container?.textContent).toContain(copy.title);
+            expect(container?.textContent).toContain(copy.subtitle);
+        });
+
+        it('should hide the toolbar, the filters and the table', () => {
+            renderMisconfigured(HealthStatusTypes.NOT_CONFIGURED);
+
+            expect(spectator.query(byTestId('experiments-search-input'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-status-filter'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-table-wrapper'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-table'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+
+        it('should render the list untouched when analytics is healthy', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query(byTestId('experiments-misconfiguration'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+            expect(spectator.query(byTestId('experiment-row'))).not.toBeNull();
         });
     });
 

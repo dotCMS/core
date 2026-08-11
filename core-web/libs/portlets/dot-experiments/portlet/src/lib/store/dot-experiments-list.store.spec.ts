@@ -16,6 +16,7 @@ import {
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
+    HealthStatusTypes,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -118,6 +119,7 @@ describe('DotExperimentsListStore', () => {
     let dispatcher: Dispatcher;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
 
+    const healthCheck = jest.fn();
     const getAllUnfiltered = jest.fn();
     const archive = jest.fn();
     const remove = jest.fn();
@@ -136,6 +138,7 @@ describe('DotExperimentsListStore', () => {
             // and a store from a previous test would keep reacting to this test's events.
             provideDispatcher(),
             mockProvider(DotExperimentsService, {
+                healthCheck,
                 getAllUnfiltered,
                 archive,
                 delete: remove,
@@ -183,6 +186,7 @@ describe('DotExperimentsListStore', () => {
     beforeEach(() => {
         jest.resetAllMocks();
 
+        healthCheck.mockReturnValue(of(HealthStatusTypes.OK));
         getAllUnfiltered.mockReturnValue(of(EXPERIMENTS));
         contentSearchGet.mockReturnValue(of(PAGE_SEARCH_RESULT));
         archive.mockReturnValue(of({}));
@@ -239,6 +243,69 @@ describe('DotExperimentsListStore', () => {
 
             expect(contentSearchGet).not.toHaveBeenCalled();
             expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('analytics health gate', () => {
+        it('should check the analytics health before requesting the list', () => {
+            const dispatchSpy = jest.spyOn(Dispatcher.prototype, 'dispatch');
+
+            initStore();
+
+            const dispatchedTypes = dispatchSpy.mock.calls.map(([event]) => event.type);
+            expect(healthCheck).toHaveBeenCalledTimes(1);
+            expect(
+                dispatchedTypes.indexOf(dotExperimentsListEvents.healthCheckRequested.type)
+            ).toBeLessThan(dispatchedTypes.indexOf(dotExperimentsListEvents.listRequested.type));
+
+            dispatchSpy.mockRestore();
+        });
+
+        it('should load the list when analytics reports OK', () => {
+            initStore();
+
+            expect(store.healthStatus()).toBe(HealthStatusTypes.OK);
+            expect(store.isMisconfigured()).toBe(false);
+            expect(getAllUnfiltered).toHaveBeenCalledTimes(1);
+            expect(store.status()).toBe('loaded');
+        });
+
+        it.each([HealthStatusTypes.NOT_CONFIGURED, HealthStatusTypes.CONFIGURATION_ERROR])(
+            'should flag %s as misconfigured and never query the experiments',
+            (healthStatus) => {
+                healthCheck.mockReturnValue(of(healthStatus));
+
+                initStore();
+
+                expect(store.healthStatus()).toBe(healthStatus);
+                expect(store.isMisconfigured()).toBe(true);
+                expect(getAllUnfiltered).not.toHaveBeenCalled();
+                expect(contentSearchGet).not.toHaveBeenCalled();
+                expect(store.status()).toBe('loaded');
+            }
+        );
+
+        it('should not claim a misconfiguration while the health check is in flight', () => {
+            healthCheck.mockReturnValue(NEVER);
+
+            initStore();
+
+            expect(store.healthStatus()).toBeNull();
+            expect(store.isMisconfigured()).toBe(false);
+            expect(store.status()).toBe('loading');
+            expect(getAllUnfiltered).not.toHaveBeenCalled();
+        });
+
+        it('should end in error and report the failure when the health check fails', () => {
+            const error = httpError(500);
+            healthCheck.mockReturnValue(throwError(() => error));
+
+            initStore();
+
+            expect(store.status()).toBe('error');
+            expect(store.error()).toBe(error);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(getAllUnfiltered).not.toHaveBeenCalled();
         });
     });
 
@@ -542,7 +609,12 @@ describe('DotExperimentsListStore', () => {
 
             const dispatchedTypes = dispatchSpy.mock.calls.map(([event]) => event.type);
             expect(dispatchedTypes.indexOf(dotExperimentsListEvents.hydratedFromUrl.type)).toBe(0);
-            expect(dispatchedTypes.indexOf(dotExperimentsListEvents.listRequested.type)).toBe(1);
+            expect(
+                dispatchedTypes.indexOf(dotExperimentsListEvents.healthCheckRequested.type)
+            ).toBe(1);
+            expect(
+                dispatchedTypes.indexOf(dotExperimentsListEvents.listRequested.type)
+            ).toBeGreaterThan(1);
 
             dispatchSpy.mockRestore();
         });
@@ -578,6 +650,23 @@ describe('DotExperimentsListStore', () => {
             spectator.flushEffects();
 
             expect(getAllUnfiltered).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('site switch while analytics is misconfigured', () => {
+        it('should not request the list', () => {
+            healthCheck.mockReturnValue(of(HealthStatusTypes.NOT_CONFIGURED));
+            initStore();
+
+            expect(getAllUnfiltered).not.toHaveBeenCalled();
+
+            currentSiteId.set(OTHER_SITE_ID);
+            spectator.flushEffects();
+
+            // The gate applies to every load, not just the first one — otherwise switching
+            // site would query experiments behind the misconfiguration screen.
+            expect(getAllUnfiltered).not.toHaveBeenCalled();
+            expect(store.isMisconfigured()).toBe(true);
         });
     });
 });

@@ -1,4 +1,6 @@
-<dot-experiments-header (goBack)="goToBrowserBack()" [title]="pageTitle | dm" />
-<div class="flex justify-center items-center h-full">
+<!-- `isLoading` defaults to true on the header, and this screen has nothing left to load,
+     so it must opt out explicitly or the title renders as a skeleton forever. -->
+<dot-experiments-header (goBack)="goToBrowserBack()" [title]="pageTitle | dm" [isLoading]="false" />
+<div class="flex h-full items-center justify-center">
     <dot-empty-container [configuration]="emptyConfiguration" [hideContactUsLink]="true" />
 </div>

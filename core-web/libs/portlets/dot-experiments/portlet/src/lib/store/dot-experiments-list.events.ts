@@ -1,7 +1,7 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperiment, DotExperimentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 /** Sort direction used by the experiments list. */
 export type DotExperimentsListSortDirection = 'ASC' | 'DESC';
@@ -50,6 +50,12 @@ export interface DotExperimentsListSortChange {
 export const dotExperimentsListEvents = eventGroup({
     source: 'Experiments List',
     events: {
+        // Analytics health gate: runs before anything is fetched, since a misconfigured
+        // Analytics app makes the whole list meaningless.
+        healthCheckRequested: type<void>(),
+        healthCheckSucceeded: type<HealthStatusTypes>(),
+        healthCheckFailed: type<unknown>(),
+
         // Load
         listRequested: type<void>(),
         listSucceeded: type<DotExperiment[]>(),

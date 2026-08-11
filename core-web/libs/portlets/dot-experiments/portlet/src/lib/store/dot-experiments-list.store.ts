@@ -22,7 +22,12 @@ import {
     DotExperimentsService,
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotExperiment,
+    DotExperimentStatus,
+    HealthStatusTypes
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import {
@@ -38,6 +43,8 @@ export type DotExperimentsListStatus = 'loading' | 'loaded' | 'error';
 /** Full state of the experiments list. */
 export interface DotExperimentsListState extends DotExperimentsListViewState {
     status: DotExperimentsListStatus;
+    /** Analytics health, `null` until the gate resolves. Anything but `OK` blocks the list. */
+    healthStatus: HealthStatusTypes | null;
     /** Every experiment returned by the API, across all sites. Narrowed by `siteScopedExperiments`. */
     experiments: DotExperiment[];
     /** Page url/host resolved per `pageId`; the only source of site information for an experiment. */
@@ -57,6 +64,7 @@ export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = Object.v
 
 const initialState: DotExperimentsListState = {
     status: 'loading',
+    healthStatus: null,
     experiments: [],
     pageInfoByPageId: {},
     filter: '',
@@ -75,6 +83,9 @@ interface ContentSearchEntity {
 
 /**
  * Store for the experiments list.
+ *
+ * Nothing is fetched until the Analytics health gate passes: `isMisconfigured` is the inline
+ * equivalent of the legacy `AnalyticsAppGuard` redirect, so `/experiments` stays the URL.
  *
  * The API returns every experiment regardless of site and `DotExperiment` has no host, so the
  * list is narrowed client-side: one bulk `htmlpageasset` lookup resolves each distinct `pageId`
@@ -180,10 +191,29 @@ export const DotExperimentsListStore = signalStore(
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
-            totalRecords: computed<number>(() => filteredExperiments().length)
+            totalRecords: computed<number>(() => filteredExperiments().length),
+            /**
+             * Same rule as the legacy `AnalyticsAppGuard`: only `OK` passes. Stays `false`
+             * while the gate is pending, so the list is never blocked on a guess.
+             */
+            isMisconfigured: computed<boolean>(() => {
+                const healthStatus = store.healthStatus();
+
+                return healthStatus !== null && healthStatus !== HealthStatusTypes.OK;
+            })
         };
     }),
     withReducer<DotExperimentsListState>(
+        on(dotExperimentsListEvents.healthCheckSucceeded, ({ payload }) => ({
+            healthStatus: payload,
+            // A non-OK gate stops the flow here: nothing else is fetched, so settle instead of
+            // leaving the table stuck on its skeleton.
+            status: payload === HealthStatusTypes.OK ? ('loading' as const) : ('loaded' as const)
+        })),
+        on(dotExperimentsListEvents.healthCheckFailed, ({ payload }) => ({
+            status: 'error' as const,
+            error: payload
+        })),
         on(dotExperimentsListEvents.listRequested, () => ({
             status: 'loading' as const,
             error: null
@@ -284,6 +314,31 @@ export const DotExperimentsListStore = signalStore(
             );
 
         return {
+            healthCheck$: events.on(dotExperimentsListEvents.healthCheckRequested).pipe(
+                switchMap(() =>
+                    experimentsService.healthCheck().pipe(
+                        tapResponse({
+                            next: (healthStatus) => {
+                                dispatcher.dispatch(
+                                    dotExperimentsListEvents.healthCheckSucceeded(healthStatus)
+                                );
+
+                                // Querying experiments on a broken Analytics install is pointless.
+                                if (healthStatus === HealthStatusTypes.OK) {
+                                    dispatcher.dispatch(dotExperimentsListEvents.listRequested());
+                                }
+                            },
+                            error: (error: HttpErrorResponse) => {
+                                httpErrorManager.handle(error);
+                                dispatcher.dispatch(
+                                    dotExperimentsListEvents.healthCheckFailed(error)
+                                );
+                            }
+                        })
+                    )
+                )
+            ),
+
             loadList$: events.on(dotExperimentsListEvents.listRequested).pipe(
                 switchMap(() =>
                     experimentsService.getAllUnfiltered().pipe(
@@ -373,7 +428,7 @@ export const DotExperimentsListStore = signalStore(
             })
         };
     }),
-    withHooks(() => {
+    withHooks((store) => {
         const route = inject(ActivatedRoute);
         const location = inject(Location);
         const globalStore = inject(GlobalStore);
@@ -390,7 +445,9 @@ export const DotExperimentsListStore = signalStore(
                         parseViewState(fromRouteParams(route.snapshot.queryParams))
                     )
                 );
-                dispatcher.dispatch(dotExperimentsListEvents.listRequested());
+                // The health gate owns the first fetch: the list is only requested once
+                // Analytics reports `OK`.
+                dispatcher.dispatch(dotExperimentsListEvents.healthCheckRequested());
 
                 /**
                  * Back/Forward re-hydration. The component writes the view state with
@@ -421,7 +478,13 @@ export const DotExperimentsListStore = signalStore(
 
                     untracked(() => {
                         dispatcher.dispatch(dotExperimentsListEvents.siteChanged(currentSiteId));
-                        dispatcher.dispatch(dotExperimentsListEvents.listRequested());
+
+                        // Same rule as the initial load: never query experiments on an install
+                        // whose Analytics app is not configured. Without this the switch would
+                        // fire a request behind the misconfiguration screen.
+                        if (store.healthStatus() === HealthStatusTypes.OK) {
+                            dispatcher.dispatch(dotExperimentsListEvents.listRequested());
+                        }
                     });
                 });
             },

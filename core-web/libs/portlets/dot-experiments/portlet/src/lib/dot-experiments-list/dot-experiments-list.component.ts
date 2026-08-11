@@ -38,7 +38,8 @@ import {
     DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
-    GOALS_METADATA_MAP
+    GOALS_METADATA_MAP,
+    HealthStatusTypes
 } from '@dotcms/dotcms-models';
 import {
     DotAddToBundleComponent,
@@ -167,6 +168,32 @@ export class DotExperimentsListComponent {
         icon: 'science',
         iconStyle: 'material-symbols-rounded'
     }));
+
+    /**
+     * Copy shown instead of the list when Analytics is not usable. Mirrors the legacy
+     * misconfiguration screen: only `NOT_CONFIGURED` means "never set up", every other
+     * non-OK status is a broken configuration.
+     */
+    readonly $misconfiguredConfiguration = computed<PrincipalConfiguration>(() => {
+        const isNotConfigured = this.store.healthStatus() === HealthStatusTypes.NOT_CONFIGURED;
+
+        return {
+            title: this.#dotMessageService.get(
+                isNotConfigured
+                    ? 'experiments.analytics-app-no-configured.title'
+                    : 'experiments.analytics-app-misconfiguration.title'
+            ),
+            subtitle: this.#dotMessageService.get(
+                isNotConfigured
+                    ? 'experiments.analytics-app-no-configured.subtitle'
+                    : 'experiments.analytics-app-misconfiguration.subtitle'
+            ),
+            // Material symbols, matching the empty state above — the legacy screen used a
+            // PrimeIcon, which would be the only one on this page.
+            icon: 'analytics',
+            iconStyle: 'material-symbols-rounded'
+        };
+    });
 
     /** Actions of the row whose kebab menu is open; rebuilt on every toggle. */
     readonly $rowMenuItems = signal<MenuItem[]>([]);
