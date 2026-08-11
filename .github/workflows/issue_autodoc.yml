@@ -304,14 +304,15 @@ jobs:
           ]
 
           with open('/tmp/eval_context.md', 'w') as f:
-              f.write('\n'.join(lines))
+              f.write('\n'.join(lines) + '\n')
           PYEOF
           python3 /tmp/ctx.py
 
+          DELIM="$(openssl rand -hex 16)"
           {
-            echo 'content<<__AUTODOC_EOF__'
+            echo "content<<${DELIM}"
             cat /tmp/eval_context.md
-            echo '__AUTODOC_EOF__'
+            echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
   claude:
