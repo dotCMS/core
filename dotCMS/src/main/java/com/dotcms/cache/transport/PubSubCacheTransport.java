@@ -88,8 +88,31 @@ public class PubSubCacheTransport implements CacheTransport {
         Logger.debug(this.getClass(), "PubSubCacheTransport");
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * {@code synchronized} so the guard below is a genuine test-and-set rather than a
+     * check-then-act: two threads could otherwise both read {@code initialized == false} and each
+     * run {@code start()} + {@code subscribe()}, double-subscribing the listener -- the opposite of
+     * the churn this transport was changed to remove.
+     *
+     * Today every path here is already serialized -- {@code init()} is reached only through
+     * {@code ChainableCacheAdministratorImpl.setCluster()} <- {@code addMeToCacheIfNeeded()} <-
+     * {@code rewireCluster()} <- {@code ClusterFactory.rewireClusterIfNeeded()}, which is
+     * {@code static synchronized}, and each of those has exactly one call site. This guards the
+     * future: {@code rewireCluster()} is {@code public static} and not itself synchronized, so a
+     * new caller could bypass the lock that currently makes the race unreachable. The method runs
+     * once per cluster rewire, so the monitor costs nothing.
+     *
+     * Note that {@code initialized} is deliberately set only *after* {@code start()} and
+     * {@code subscribe()} have returned. Marking it up front (for instance via a
+     * {@code compareAndSet} guard) would leave a thrown {@code start()} permanently flagged as
+     * initialized: {@link #isInitialized()} would report true, {@link #shouldReinit()} would report
+     * false, {@code setCluster()} would never retry, and the health check would report a healthy
+     * transport that never subscribed -- exactly the silent failure issue #36803 removes.
+     */
     @Override
-    public void init(final Server localServer) throws CacheTransportException {
+    public synchronized void init(final Server localServer) throws CacheTransportException {
 
         if (this.initialized.get()) {
             Logger.debug(this.getClass(), "PubSubCacheTransport already initialized, skipping re-init");
@@ -212,8 +235,16 @@ public class PubSubCacheTransport implements CacheTransport {
         return this.topic.readResponses();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Shares {@link #init(Server)}'s monitor so the two cannot interleave. Without it a shutdown
+     * landing between {@code init()}'s {@code subscribe()} and its {@code initialized.set(true)}
+     * would stop the provider and then be overwritten back to initialized, leaving a transport that
+     * reports itself up with nothing listening.
+     */
     @Override
-    public void shutdown() throws CacheTransportException {
+    public synchronized void shutdown() throws CacheTransportException {
         Logger.debug(this.getClass(), "shutdown()");
         this.pubsub.stop();
         if (initialized.get()) {
