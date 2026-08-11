@@ -13,7 +13,6 @@ description: >
   Angular CLI guidance whenever the work is inside this repository.
 owner: "@dotcms/falcon"
 status: experimental
-related: [dot-ui-vtl-migration]
 ---
 
 # dotCMS Angular Standards (core-web)
