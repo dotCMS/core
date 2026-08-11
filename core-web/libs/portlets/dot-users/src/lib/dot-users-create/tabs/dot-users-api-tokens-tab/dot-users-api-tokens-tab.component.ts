@@ -85,7 +85,7 @@ export class DotUsersApiTokensTabComponent {
     protected openRequestDialog(): void {
         const ref: DynamicDialogRef = this.dialogService.open(DotUsersRequestTokenDialogComponent, {
             header: this.messageService.get('users.dialog.tokens.request.header'),
-            width: '620px',
+            width: '500px',
             closable: true,
             closeOnEscape: true,
             draggable: false,
