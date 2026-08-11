@@ -52,7 +52,63 @@ public class PubSubCacheTransportTest {
         transport.send("0:testGroup");
 
         assertNotNull(provider.lastEventOut());
-        assertEquals(1, transport.getDroppedMessages());
+        assertEquals("the pre-init drop was retired to the startup counter",
+                0, transport.getDroppedMessages());
+        assertEquals(1, transport.getStartupDroppedMessages());
+    }
+
+    /**
+     * A successful init() moves the drops that happened before the transport ever came up into the
+     * startup counter, so getDroppedMessages() reports only invalidations lost while the transport
+     * was expected to be carrying them. Without this, every node permanently reports the boot
+     * burst -- measured at ~2,800 on a first boot -- and the counter is useless for alerting.
+     */
+    @Test
+    public void test_init_retires_startup_drops_from_the_dropped_counter() throws Exception {
+        final NullDotPubSubProvider provider = new NullDotPubSubProvider();
+        final PubSubCacheTransport transport = newTransport(provider);
+
+        transport.send("boot-1");
+        transport.send("boot-2");
+        transport.send("boot-3");
+        assertEquals(3, transport.getDroppedMessages());
+        assertEquals(0, transport.getStartupDroppedMessages());
+
+        transport.init(null);
+
+        assertEquals("drops from before the first init are not operational drops",
+                0, transport.getDroppedMessages());
+        assertEquals("but they are still reported, for diagnostics",
+                3, transport.getStartupDroppedMessages());
+    }
+
+    /**
+     * Drops after the transport has been up once are real invalidation loss: the transport was
+     * expected to be carrying them. A later re-init must not launder those into the startup
+     * bucket, which would recreate the blind spot this issue exists to remove.
+     */
+    @Test
+    public void test_drops_after_first_init_are_not_retired_by_a_later_init() throws Exception {
+        final NullDotPubSubProvider provider = new NullDotPubSubProvider();
+        final PubSubCacheTransport transport = newTransport(provider);
+
+        transport.send("boot-1");
+        transport.init(null);
+        assertEquals(1, transport.getStartupDroppedMessages());
+
+        // the transport goes down, and invalidations are lost while it is down
+        transport.shutdown();
+        assertFalse(transport.isInitialized());
+        transport.send("lost-1");
+        transport.send("lost-2");
+        assertEquals(2, transport.getDroppedMessages());
+
+        // recovery must leave the real loss on the books
+        transport.init(null);
+
+        assertEquals("real drops survive a re-init", 2, transport.getDroppedMessages());
+        assertEquals("and are not moved into the startup bucket",
+                1, transport.getStartupDroppedMessages());
     }
 
     /**

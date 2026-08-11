@@ -9,6 +9,9 @@ import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.NullTransport;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
@@ -18,7 +21,8 @@ import javax.enterprise.context.ApplicationScoped;
  * tries to send, so other nodes serve stale content while all standard probes report healthy
  * (see issue #36803 / incident #36544). This check surfaces that state:
  *
- * - transport not initialized -> unhealthy
+ * - transport not initialized -> unhealthy, once past the startup grace period
+ *   (see {@link #DEFAULT_INITIALIZATION_GRACE_SECONDS})
  * - cluster rewire failing repeatedly -> unhealthy (see {@link #DEFAULT_REWIRE_FAILURE_THRESHOLD})
  * - dropped and failed invalidation counts exposed in structured data for monitoring
  *
@@ -41,6 +45,8 @@ import javax.enterprise.context.ApplicationScoped;
  * - health.check.cache-transport.mode = Safety mode (PRODUCTION, MONITOR_MODE, DISABLED)
  * - health.check.cache-transport.rewire-failure-threshold = consecutive rewire failures
  *   tolerated before reporting unhealthy (default 3)
+ * - health.check.cache-transport.initialization-grace-period-seconds = how long a
+ *   never-yet-initialized transport is reported as still starting up (default 120)
  */
 @ApplicationScoped
 public class CacheTransportHealthCheck extends HealthCheckBase {
@@ -56,6 +62,34 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
      * reaching this threshold means the rewire has been failing for minutes, not milliseconds.
      */
     private static final int DEFAULT_REWIRE_FAILURE_THRESHOLD = 3;
+
+    /**
+     * How long a transport that has never been initialized is treated as still starting up.
+     *
+     * The transport is initialized late in boot, when {@code ClusterFactory} wires the cluster, so
+     * every node necessarily reports an uninitialized transport for the first seconds of its life.
+     * Failing the check there would turn a normal rolling deployment into a DEGRADED overall
+     * status on every pod start -- noise that costs an operator's trust in the signal long before
+     * it ever catches the real fault from issue #36803. A node genuinely stuck without a transport
+     * stays stuck, so waiting this out loses nothing but the first two minutes of detection.
+     *
+     * Only applies before the first successful init. Once this check has seen an initialized
+     * transport, losing it is a regression and is reported immediately.
+     */
+    private static final int DEFAULT_INITIALIZATION_GRACE_SECONDS = 120;
+
+    /**
+     * Latched the first time an initialized transport is observed, which ends the startup grace
+     * period for the lifetime of the JVM.
+     */
+    private final AtomicBoolean everInitialized = new AtomicBoolean(false);
+
+    /**
+     * When the current run of uninitialized observations began, or 0 if the last observation was
+     * healthy. Used to measure the grace period from the first poll that saw the problem rather
+     * than from JVM start, so the window is not consumed by a slow boot before this check runs.
+     */
+    private final AtomicLong uninitializedSince = new AtomicLong(0);
 
     /**
      * Transport state resolved once per {@code check()} invocation.
@@ -88,11 +122,11 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
         }
 
         if (!snapshot.initialized) {
-            return new CheckResult(false, 0L,
-                    "Cache transport is NOT initialized - cluster cache invalidations are being dropped"
-                            + " (dropped so far: " + snapshot.dropped
-                            + ", consecutive rewire failures: " + snapshot.rewireFailures + ")");
+            return uninitialized(snapshot);
         }
+
+        everInitialized.set(true);
+        uninitializedSince.set(0);
 
         final int threshold = getConfigProperty("rewire-failure-threshold",
                 DEFAULT_REWIRE_FAILURE_THRESHOLD);
@@ -108,6 +142,41 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
                 "Cache transport initialized (" + snapshot.transportName
                         + ", dropped invalidations: " + snapshot.dropped
                         + ", failed invalidations: " + snapshot.failed
+                        + ", consecutive rewire failures: " + snapshot.rewireFailures + ")");
+    }
+
+    /**
+     * Decides whether an uninitialized transport is a node that is still starting up or a node
+     * that is silently dropping invalidations. See {@link #DEFAULT_INITIALIZATION_GRACE_SECONDS}.
+     */
+    private CheckResult uninitialized(final TransportSnapshot snapshot) {
+
+        final long now = System.currentTimeMillis();
+        uninitializedSince.compareAndSet(0, now);
+
+        if (!everInitialized.get()) {
+
+            final long graceMillis = TimeUnit.SECONDS.toMillis(getConfigProperty(
+                    "initialization-grace-period-seconds", DEFAULT_INITIALIZATION_GRACE_SECONDS));
+            final long waitingMillis = now - uninitializedSince.get();
+
+            if (waitingMillis < graceMillis) {
+                return new CheckResult(true, 0L,
+                        "Cache transport is still initializing (" + waitingMillis / 1000
+                                + "s of " + graceMillis / 1000 + "s grace period, dropped so far: "
+                                + snapshot.dropped + ")");
+            }
+
+            return new CheckResult(false, 0L,
+                    "Cache transport has NOT initialized within " + graceMillis / 1000
+                            + "s of startup - cluster cache invalidations are being dropped"
+                            + " (dropped so far: " + snapshot.dropped
+                            + ", consecutive rewire failures: " + snapshot.rewireFailures + ")");
+        }
+
+        return new CheckResult(false, 0L,
+                "Cache transport was initialized and is NOT anymore - cluster cache invalidations"
+                        + " are being dropped (dropped so far: " + snapshot.dropped
                         + ", consecutive rewire failures: " + snapshot.rewireFailures + ")");
     }
 
@@ -130,7 +199,8 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
 
         return new TransportSnapshot(transport.getClass().getSimpleName(), present,
                 transport.isInitialized(), transport.getDroppedMessages(),
-                transport.getFailedMessages(), rewireFailures);
+                transport.getStartupDroppedMessages(), transport.getFailedMessages(),
+                rewireFailures);
     }
 
     /**
@@ -207,7 +277,11 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
             if (snapshot.present) {
                 data.put("initialized", snapshot.initialized);
                 data.put("droppedInvalidations", snapshot.dropped);
+                data.put("startupDroppedInvalidations", snapshot.startupDropped);
                 data.put("failedInvalidations", snapshot.failed);
+                // Lets a consumer tell "initialized:false but still booting, reported UP" apart
+                // from "initialized:false and past the grace period, reported DOWN".
+                data.put("awaitingInitialization", !snapshot.initialized && !everInitialized.get());
             }
             return data;
         } finally {
@@ -228,21 +302,24 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
         final boolean present;
         final boolean initialized;
         final long dropped;
+        final long startupDropped;
         final long failed;
         final long rewireFailures;
 
         TransportSnapshot(final String transportName, final boolean present, final boolean initialized,
-                          final long dropped, final long failed, final long rewireFailures) {
+                          final long dropped, final long startupDropped, final long failed,
+                          final long rewireFailures) {
             this.transportName = transportName;
             this.present = present;
             this.initialized = initialized;
             this.dropped = dropped;
+            this.startupDropped = startupDropped;
             this.failed = failed;
             this.rewireFailures = rewireFailures;
         }
 
         static TransportSnapshot unavailable(final long rewireFailures) {
-            return new TransportSnapshot(NO_TRANSPORT, false, false, 0L, 0L, rewireFailures);
+            return new TransportSnapshot(NO_TRANSPORT, false, false, 0L, 0L, 0L, rewireFailures);
         }
     }
 }

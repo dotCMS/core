@@ -58,11 +58,24 @@ public interface CacheTransport {
     }
 
     /**
-     * Number of cache invalidation messages this transport has dropped, e.g. because it was
-     * asked to send before it was initialized. Used by health checks and metrics to surface
-     * silent invalidation loss in a cluster.
+     * Number of cache invalidation messages this transport has dropped because it was asked to
+     * send while not initialized, counted only from the first successful {@link #init(Server)}
+     * onwards. Used by health checks and metrics to surface silent invalidation loss in a cluster.
+     *
+     * Drops from before the transport ever came up are reported by
+     * {@link #getStartupDroppedMessages()} instead: they are an unavoidable consequence of boot
+     * order and would otherwise dominate this counter permanently.
      */
     default long getDroppedMessages() {
+        return 0;
+    }
+
+    /**
+     * Number of cache invalidation messages dropped before this transport was initialized for the
+     * first time, which is expected during startup and is not an operational problem on its own.
+     * Kept out of {@link #getDroppedMessages()} so that counter stays usable for alerting.
+     */
+    default long getStartupDroppedMessages() {
         return 0;
     }
 

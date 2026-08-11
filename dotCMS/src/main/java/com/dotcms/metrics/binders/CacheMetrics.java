@@ -62,7 +62,14 @@ public class CacheMetrics implements MeterBinder {
 
         Gauge.builder(METRIC_PREFIX + ".transport.invalidations.dropped", this,
                         m -> activeTransport().map(t -> (double) t.getDroppedMessages()).orElse(0.0))
-                .description("Cluster cache invalidations dropped because the transport was not initialized")
+                .description("Cluster cache invalidations dropped, after the transport first came up,"
+                        + " because it was not initialized")
+                .register(registry);
+
+        Gauge.builder(METRIC_PREFIX + ".transport.invalidations.dropped.startup", this,
+                        m -> activeTransport().map(t -> (double) t.getStartupDroppedMessages()).orElse(0.0))
+                .description("Cluster cache invalidations dropped before the transport was first"
+                        + " initialized (expected during startup, not an alerting signal)")
                 .register(registry);
 
         Gauge.builder(METRIC_PREFIX + ".transport.invalidations.failed", this,
@@ -70,6 +77,10 @@ public class CacheMetrics implements MeterBinder {
                 .description("Cluster cache invalidations the transport attempted but failed to publish")
                 .register(registry);
 
+        // Reported raw, with no startup grace period: a gauge's job is to state the current
+        // fact, and every node reads 0 here for the first seconds of its life. Alert on it with
+        // a duration clause (Prometheus "for: 2m") rather than on the instantaneous value, or
+        // alert on the cache-transport health check, which applies the grace period itself.
         Gauge.builder(METRIC_PREFIX + ".transport.initialized", this,
                         m -> activeTransport().map(t -> t.isInitialized() ? 1.0 : 0.0).orElse(1.0))
                 .description("Whether the cluster cache transport is initialized (1) or dropping invalidations (0)")

@@ -37,6 +37,28 @@ public class PubSubCacheTransport implements CacheTransport {
     final AtomicLong droppedMessages = new AtomicLong(0);
 
     /**
+     * Invalidations dropped before this transport was ever initialized.
+     *
+     * Boot order guarantees some of these: caches are invalidated by startup tasks and by the
+     * starter import long before {@code ClusterFactory} wires the cluster and calls
+     * {@link #init(Server)}, and a node that is alone at that point has nobody to notify anyway. A
+     * first boot against an empty database was measured at ~2,800 of them.
+     *
+     * They are kept apart from {@link #droppedMessages} so the number an operator sees on a
+     * healthy node is zero rather than thousands of benign startup drops -- a cumulative counter
+     * dominated by boot noise is worthless as an alerting signal, which is the whole point of
+     * issue #36803. Reported separately for diagnostics.
+     */
+    final AtomicLong startupDroppedMessages = new AtomicLong(0);
+
+    /**
+     * Whether {@link #init(Server)} has ever succeeded, which ends the startup accounting for the
+     * life of this transport. Drops after that point were suffered by a transport that had been
+     * working and are genuine invalidation loss, so a later re-init must not retire them.
+     */
+    private final AtomicBoolean everInitialized = new AtomicBoolean(false);
+
+    /**
      * Sends that were attempted and reported as failed by a synchronous provider. Failures from
      * an asynchronous provider are counted by the provider itself and read back in
      * {@link #getFailedMessages()}; see {@link DotPubSubProvider#getFailedPublishCount(String)}.
@@ -80,6 +102,36 @@ public class PubSubCacheTransport implements CacheTransport {
 
         this.initialized.set(true);
 
+        retireStartupDrops();
+    }
+
+    /**
+     * On the first successful init only, moves the drops accumulated so far into
+     * {@link #startupDroppedMessages}, so {@link #getDroppedMessages()} counts only invalidations
+     * lost while the transport was expected to be carrying them.
+     *
+     * Deliberately first-init-only. A transport that came up, went down, dropped invalidations and
+     * recovered has lost real ones, and retiring those on every re-init would launder genuine loss
+     * into the benign startup bucket -- exactly the blind spot issue #36803 exists to remove.
+     *
+     * The drop-warning throttle is cleared on every init: a genuine drop minutes later must log
+     * immediately rather than be swallowed because an earlier drop consumed the window.
+     *
+     * A {@code send()} racing with this can have its increment land in either bucket. The total is
+     * preserved either way, and both counters are diagnostics rather than exact accounting.
+     */
+    private void retireStartupDrops() {
+
+        if (this.everInitialized.compareAndSet(false, true)) {
+            final long startupDrops = this.droppedMessages.getAndSet(0);
+            if (startupDrops > 0) {
+                this.startupDroppedMessages.addAndGet(startupDrops);
+                Logger.info(this.getClass(), "Cache transport initialized. " + startupDrops
+                        + " cache invalidation(s) were dropped before it came up (expected during"
+                        + " startup, when there is no cluster to notify yet).");
+            }
+        }
+        this.lastDropWarnAt.set(0);
     }
 
     @Override
@@ -181,9 +233,20 @@ public class PubSubCacheTransport implements CacheTransport {
         return !initialized.get();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Counts only drops recorded after the transport was first initialized; see
+     * {@link #startupDroppedMessages} for the benign pre-init ones.
+     */
     @Override
     public long getDroppedMessages() {
         return droppedMessages.get();
+    }
+
+    @Override
+    public long getStartupDroppedMessages() {
+        return startupDroppedMessages.get();
     }
 
     /**
