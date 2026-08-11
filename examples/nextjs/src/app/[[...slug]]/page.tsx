@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isRequestFromUVE } from "@dotcms/uve";
 import { redirect } from "next/navigation";
 
 import NotFound from "@/app/not-found";
@@ -9,6 +10,7 @@ import { Page } from "@/views/Page";
 
 interface SlugPageProps {
     params: Promise<{ slug?: string[] }>;
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 function getPath(slug?: string[]) {
@@ -28,12 +30,19 @@ export async function generateMetadata({
     return { title: getPageTitle(pageContent, "Not Found") };
 }
 
-export default async function Home({ params }: SlugPageProps) {
+export default async function Home({ params, searchParams }: SlugPageProps) {
     const { slug } = await params;
+    const sp = await searchParams;
     const path = getPath(slug);
     const pageContent = await getDotCMSPage(path);
+    const insideUVE = isRequestFromUVE(sp);
 
     if (isPageError(pageContent)) {
+        if (insideUVE) {
+            const { graphql } = pageContent;
+            return <Page pageContent={graphql ? { graphql } : undefined} />;
+        }
+
         return <ErrorPage error={{ status: getErrorStatus(pageContent.error) }} />;
     }
 
@@ -44,7 +53,7 @@ export default async function Home({ params }: SlugPageProps) {
         redirect(vanityUrl.forwardTo);
     }
 
-    if (!pageContent.pageAsset) {
+    if (!pageContent.pageAsset && !insideUVE) {
         return <NotFound />;
     }
 

@@ -10,8 +10,10 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.business.PublisherQueueJobTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
+import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.MetricTimeoutTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
@@ -28,6 +30,7 @@ import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeT
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.SecondaryCategoryPermissionTest;
+import com.dotmarketing.db.InodeExistenceCheckIntegrationTest;
 import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
@@ -72,12 +75,14 @@ import org.junit.runners.Suite;
         OpenAIVisionAPIImplTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
+        ContentDriveKeywordSearchTest.class,
         ContentDriveWorkflowArchiveStepTest.class,
         ContentDriveWorkflowFilterTest.class,
         AppsAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
+        com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategyMatchingTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest.class,
@@ -95,6 +100,8 @@ import org.junit.runners.Suite;
         TreeFactoryTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
+        CacheResourceIntegrationTest.class,
+        InodeExistenceCheckIntegrationTest.class,
 })
 
 public class MainSuite3a {

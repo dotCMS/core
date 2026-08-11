@@ -42,6 +42,9 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.business.interceptor.RequestCostHandler;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -115,7 +118,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -250,7 +252,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
     private static final Set<String> REMOVABLE_KEY_SET = CollectionsUtils.set(WORKFLOW_ACTION_KEY,
             WORKFLOW_ASSIGN_KEY, WORKFLOW_COMMENTS_KEY, WORKFLOW_BULK_KEY,
-            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date");
+            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date",
+            Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -754,6 +757,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
      * @return
      */
+    // The cache-miss surcharge for the single-contentlet path. Reaching this method IS the
+    // miss - find() has already charged the CONTENT_FROM_CACHE base fee, so a warm find
+    // costs 1 and a cold one costs 11. Annotations are not inherited, so the @RequestCost on
+    // ContentletFactory's findInDb default does nothing here; this needs its own.
+    @RequestCost(Price.CONTENT_FROM_DB)
     public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
@@ -1273,17 +1281,35 @@ public class ESContentFactoryImpl implements ContentletFactory {
   @Override
   public List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
+    // Single pass: the cache lookup already knows which inodes missed, so collect them here
+    // rather than re-deriving the difference afterwards. A hit only counts when the cached
+    // inode matches the requested one: the cache stores the CACHE_404_CONTENTLET sentinel
+    // under the requested key after a failed single-item lookup, and treating it as a hit
+    // would silently drop that inode from the result instead of falling through to the DB
+    // (the old CollectionUtils.subtract over conMap's keys had the same inode-equality
+    // semantics, since the sentinel's inode never matches a requested inode).
     final HashMap<String, Contentlet> conMap = new HashMap<>();
-    for (String i : inodes) {
+    final List<String> missingCons = new ArrayList<>();
+    for (final String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
-      if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-        conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
+      if (contentlet != null && i.equals(contentlet.getInode())) {
+        conMap.put(i, processCachedContentlet(contentlet));
+      } else {
+        missingCons.add(i);
       }
     }
 
-    if (conMap.size() != inodes.size()) {
-        final List<String> missingCons = new ArrayList<>(
-                CollectionUtils.subtract(inodes, conMap.keySet()));
+    // This is the bulk loader behind every search result (GraphQL, /api/content,
+    // /api/es/search, page render) and it bypasses ESContentletAPIImpl.find(), so nothing
+    // else meters it. Base fee per contentlet asked for; the cache misses pay a surcharge
+    // below. Note the surcharge is per missed ROW, not per SQL statement - the 200-row
+    // batching is our implementation detail and is deliberately not priced.
+    RequestCostHandler.incrementCost(Price.CONTENT_FROM_CACHE,
+            ESContentFactoryImpl.class, "findContentlets", new Object[]{}, inodes.size());
+
+    if (!missingCons.isEmpty()) {
+        RequestCostHandler.incrementCost(Price.CONTENT_FROM_DB,
+                ESContentFactoryImpl.class, "findContentlets", new Object[]{}, missingCons.size());
 
         final String contentletBase =
                 "select contentlet.*, contentlet_1_.owner  from contentlet join inode contentlet_1_ "

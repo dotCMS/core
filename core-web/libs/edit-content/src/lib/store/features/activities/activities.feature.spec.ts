@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -12,7 +12,7 @@ import { delay } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { HttpCode } from '@dotcms/dotcms-js';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { withActivities } from './activities.feature';
 
@@ -262,6 +262,76 @@ describe('Activities Feature Store', () => {
 
             // Assert
             expect(store.activities()).toEqual([...mockActivities, mockNewActivity]);
+        }));
+    });
+
+    describe('Automatic Activities Loading Effect', () => {
+        const mockContentlet = {
+            identifier: 'test-identifier',
+            inode: 'test-inode',
+            languageId: 1
+        } as DotCMSContentlet;
+
+        beforeEach(() => {
+            dotEditContentService.getActivities.mockReturnValue(of(mockActivities));
+        });
+
+        it('should automatically load activities when the contentlet is set', fakeAsync(() => {
+            patchState(store, { contentlet: mockContentlet });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith('test-identifier');
+            expect(store.activities()).toEqual(mockActivities);
+        }));
+
+        it('should automatically reload activities when a save mints a new inode under the same identifier', fakeAsync(() => {
+            patchState(store, { contentlet: mockContentlet });
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getActivities.mockClear();
+
+            patchState(store, { contentlet: { ...mockContentlet, inode: 'new-inode-after-save' } });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getActivities).toHaveBeenCalledWith('test-identifier');
+        }));
+
+        it('should not load activities when the sidebar is closed', fakeAsync(() => {
+            patchState(store, {
+                contentlet: mockContentlet,
+                uiState: { ...store.uiState(), isSidebarOpen: false }
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getActivities).not.toHaveBeenCalled();
+        }));
+
+        it('should not load activities when there is no contentlet identifier', fakeAsync(() => {
+            patchState(store, { contentlet: null });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getActivities).not.toHaveBeenCalled();
+        }));
+
+        it('should not reload activities on unrelated uiState changes', fakeAsync(() => {
+            patchState(store, { contentlet: mockContentlet });
+            spectator.flushEffects();
+            tick();
+            dotEditContentService.getActivities.mockClear();
+
+            // Every uiState writer replaces the slice wholesale, so the effect must
+            // depend on the isSidebarOpen leaf rather than the object.
+            patchState(store, {
+                uiState: { ...store.uiState(), activeSidebarTab: 2, view: 'form' }
+            });
+            spectator.flushEffects();
+            tick();
+
+            expect(dotEditContentService.getActivities).not.toHaveBeenCalled();
         }));
     });
 });

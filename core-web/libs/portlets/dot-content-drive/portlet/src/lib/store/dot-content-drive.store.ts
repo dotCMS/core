@@ -6,8 +6,9 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, SubscriptionLike } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -17,10 +18,12 @@ import { DotContentDriveService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveItem,
-    DotContentDriveSearchRequest
+    DotContentDriveSearchRequest,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
+import { GlobalStore, withFlags } from '@dotcms/store';
 
+import { withActionExecution } from './features/action-execution/withActionExecution';
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
@@ -47,6 +50,7 @@ import {
 import {
     buildUserSearchablePayload,
     decodeFilters,
+    encodeFilters,
     getUserSearchableActive,
     parseWorkflowFilter
 } from '../utils/functions';
@@ -61,6 +65,7 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    isTreeForceCollapsed: false,
     pages: [DEFAULT_PAGE],
     userSearchableFields: [],
     userSearchableActive: [],
@@ -70,9 +75,31 @@ const initialState: DotContentDriveState = {
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
+    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
+    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
+    // vs full-screen editor.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed(
-        ({ path, filters, currentSite, pagination, sort, pages, userSearchableFields }) => {
+        ({
+            path,
+            filters,
+            currentSite,
+            pagination,
+            sort,
+            pages,
+            userSearchableFields,
+            isTreeExpanded,
+            isTreeForceCollapsed
+        }) => {
             return {
+                /**
+                 * The tree's VISUAL expanded state — the user's real preference (`isTreeExpanded`,
+                 * persisted/shareable via the URL) minus any transient collapse the side panel is
+                 * forcing on a narrow viewport (`isTreeForceCollapsed`, never persisted). Kept
+                 * separate so the panel's temporary collapse can never leak into the shareable
+                 * state — see `setTreeForceCollapsed`.
+                 */
+                isTreeVisuallyExpanded: computed(() => isTreeExpanded() && !isTreeForceCollapsed()),
                 $request: computed<DotContentDriveSearchRequest>(
                     () => {
                         const paginationSignal = pagination();
@@ -237,6 +264,15 @@ export const DotContentDriveStore = signalStore(
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
             },
+            /**
+             * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
+             * Never touches `isTreeExpanded` — the real, shareable preference — so a panel-forced
+             * collapse can never be persisted to the URL or survive a refresh as if it were the
+             * user's own choice.
+             */
+            setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
+                patchState(store, { isTreeForceCollapsed });
+            },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
@@ -389,8 +425,10 @@ export const DotContentDriveStore = signalStore(
     withHooks((store) => {
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
+        const location = inject(Location);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
+        let locationSub: SubscriptionLike;
 
         return {
             onInit() {
@@ -411,6 +449,43 @@ export const DotContentDriveStore = signalStore(
                 });
 
                 /**
+                 * Browser Back/Forward re-hydration. The browsing params (path/filters/tree) are
+                 * written to the URL via `Location.go` (bypassing the router, so no content reload
+                 * fires on every filter change), and the init effect above hydrates from a one-time
+                 * `route.snapshot` read. Together that means a Back/Forward changes the URL but never
+                 * re-hydrates the store, leaving the list stale. `Location.subscribe` fires on
+                 * popstate (not on our own `go`/`replaceState`), so re-run the same hydration from
+                 * the restored URL — `initContentDrive` resets to LOADING, which the search effect
+                 * turns into a fresh load.
+                 */
+                locationSub = location.subscribe((event) => {
+                    const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+                    const path = params.get('path') || DEFAULT_PATH;
+                    const filtersRaw = params.get('filters') || '';
+                    const isTreeExpanded =
+                        (params.get('isTreeExpanded') ?? DEFAULT_TREE_EXPANDED.toString()) ===
+                        'true';
+
+                    // Only re-hydrate when a browsing param actually changed. A popstate that only
+                    // flips `editContent` (e.g. closing the side panel via Back) must NOT reset and
+                    // reload the list — that param is owned by the shell's own popstate handler.
+                    if (
+                        path === store.path() &&
+                        filtersRaw === encodeFilters(store.filters()) &&
+                        isTreeExpanded === store.isTreeExpanded()
+                    ) {
+                        return;
+                    }
+
+                    store.initContentDrive({
+                        currentSite: globalStore.siteDetails(),
+                        path,
+                        filters: decodeFilters(filtersRaw),
+                        isTreeExpanded
+                    });
+                });
+
+                /**
                  * Effect that triggers a content reload when search parameters change.
                  * loadItems internally uses $searchParams signal, so it will be triggered
                  * whenever query, pagination or sort changes.
@@ -422,11 +497,13 @@ export const DotContentDriveStore = signalStore(
             onDestroy() {
                 initEffect?.destroy();
                 searchEffect?.destroy();
+                locationSub?.unsubscribe();
             }
         };
     }),
     withContextMenu(),
     withDialog(),
     withSidebar(),
-    withDragging()
+    withDragging(),
+    withActionExecution()
 );

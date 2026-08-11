@@ -86,9 +86,46 @@
     [closeOnEscape]="true"
     appendTo="body"
     data-testId="dialog"
-    [pt]="{ content: { class: $dialogContentClass() } }"
+    [style]="$dialogStyle()"
+    [contentStyle]="$dialogContentStyle()"
+    [pt]="{
+        content: { class: $dialogContentClass() },
+        header: { class: $dialogHeaderClass() }
+    }"
     (visibleChange)="onVisibleChange($event)"
     (onHide)="onDialogHidden()">
+    <!--
+        A single header template, switched by dialog type. PrimeNG finds `#header` with a
+        `descendants: false` ContentChild query, so it has to be a direct child of `p-dialog` and
+        cannot live inside the @switch below. Providing it also suppresses PrimeNG's own title span,
+        which is why the default branch renders the title itself.
+    -->
+    <ng-template #header>
+        @switch ($activeDialog()?.type) {
+            @case (DIALOG_TYPE.ACTION_CENTER) {
+                <!-- Title and count both come from computeds that prefer the drilled-into screen's
+                     values, so selecting an action retitles this one header instead of the body
+                     rendering a second one. -->
+                <div class="flex flex-col gap-1">
+                    <span class="p-dialog-title" data-testId="dialog-header">
+                        {{ $actionCenterHeader() }}
+                    </span>
+                    <span
+                        class="text-sm font-medium text-surface-500"
+                        data-testId="dialog-subheader">
+                        {{
+                            'content-drive.action-center.items-selected'
+                                | dm: [$actionCenterCount().toString()]
+                        }}
+                    </span>
+                </div>
+            }
+            @default {
+                <span class="p-dialog-title">{{ $activeDialog()?.header }}</span>
+            }
+        }
+    </ng-template>
+
     @switch ($activeDialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <dot-content-drive-dialog-folder
@@ -101,6 +138,9 @@
                     data-testId="dialog-content-type-selector"
                     [listType]="listType" />
             }
+        }
+        @case (DIALOG_TYPE.ACTION_CENTER) {
+            <dot-content-drive-action-center data-testId="dialog-action-center" />
         }
     }
 </p-dialog>
@@ -144,3 +184,25 @@
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
 <input type="file" (change)="onFileChange($event)" #fileInput hidden />
+
+<!-- Edit Content side panel: opens the new editor over Content Drive instead of navigating away.
+     `@defer` splits the editor (and its Block Editor dependency chain) out of this portlet's chunk,
+     fetched only on the first open. The inner `@if` still mounts/destroys a fresh editor on every
+     open/close — `@defer`'s `when` trigger only gates the one-time chunk load, it does not toggle
+     like `@if` (once resolved, the block stays resolved for the rest of this shell's lifetime). -->
+@defer (when $editPanelRequest()) {
+    @if ($editPanelRequest(); as data) {
+        <dot-edit-content-side-panel
+            #sidePanelRef
+            data-testId="edit-content-side-panel"
+            [data]="data"
+            (saved)="onEditPanelSaved()"
+            (closed)="onEditPanelClosed()" />
+    }
+} @loading {
+    <div
+        class="fixed right-4 bottom-4 z-10000 rounded-full bg-white p-3 shadow-lg"
+        data-testid="edit-content-side-panel-loading">
+        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="loading editor" />
+    </div>
+}

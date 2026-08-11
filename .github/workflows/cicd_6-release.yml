@@ -202,6 +202,7 @@ jobs:
     with:
       release_version: ${{ github.event.inputs.release_version }}
       release_commit: ${{ github.event.inputs.release_commit }}
+      bump_min_sdk_version: ${{ github.event.inputs.bump_min_sdk_version == 'true' }}
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
       CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}

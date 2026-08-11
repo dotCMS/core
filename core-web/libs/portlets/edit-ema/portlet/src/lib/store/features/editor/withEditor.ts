@@ -104,12 +104,10 @@ export function withEditor() {
                     return false;
                 }
 
-                // When feature flag is enabled, always allow access (user can toggle lock)
-                if (store.$lockFeatureEnabled()) {
-                    return true;
-                }
-
-                // Legacy behavior: block access if page is locked
+                // Editing always requires lock ownership: not locked at all, or
+                // locked by the current user. A lock held by someone else must be
+                // released (and re-locked by this user) before editing is allowed —
+                // this applies with or without the toggle-lock feature flag.
                 return !store.$lockIsPageLocked();
             });
 

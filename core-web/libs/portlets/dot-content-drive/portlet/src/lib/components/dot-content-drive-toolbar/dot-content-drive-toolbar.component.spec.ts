@@ -11,6 +11,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
     DotCategoriesService,
     DotContentletService,
@@ -28,6 +30,8 @@ import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.com
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveActionExecution } from '../../shared/models';
+import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -54,12 +58,17 @@ describe('DotContentDriveToolbarComponent', () => {
     const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
         undefined
     );
+    const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
+                // The toolbar now renders from the visual (panel-aware) computed; reusing the same
+                // signal keeps these tests driving one value, since they don't need to distinguish
+                // the real preference from a panel-forced override.
+                isTreeVisuallyExpanded: isTreeExpandedSignal,
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -73,7 +82,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 userSearchableActive: signal<string[]>([]),
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn()
+                clearUserSearchableFilters: jest.fn(),
+                actionExecution: actionExecutionSignal
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -109,6 +119,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             },
+            // Needed once a selection exists: that mounts the workflow-actions child, which injects
+            // both of these.
+            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: jest.fn(),
+                editPage: jest.fn()
+            }),
             provideHttpClient()
         ],
         detectChanges: false
@@ -126,6 +143,7 @@ describe('DotContentDriveToolbarComponent', () => {
         filtersSignal.set({});
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
+        actionExecutionSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -404,6 +422,174 @@ describe('DotContentDriveToolbarComponent', () => {
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+    });
+
+    describe('Workflow Center button', () => {
+        it('should not offer it with no selection', async () => {
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should offer it from the first selected contentlet', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should keep the workflow action buttons alongside it', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            await settleToolbarAnimation(spectator);
+
+            // The two are offered together, not one instead of the other.
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+            expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
+        });
+
+        it('should not offer it for a folder-only selection', async () => {
+            // Every bulk endpoint ignores folders, so there would be nothing to act on.
+            selectedItemsSignal.set([
+                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should open the ACTION_CENTER dialog when clicked', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            spectator.click(byTestId('action-center-button'));
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.ACTION_CENTER,
+                header: 'content-drive.action-center.header'
+            });
+        });
+
+        it('should be disabled while an action is running', async () => {
+            // Reopening mid-run gives a dialog with every row greyed out that then closes itself
+            // when the run settles. Refusing to open it is the honest version of that state.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should explain why it is disabled while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
+        it('should carry no tooltip when nothing is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe('');
+        });
+
+        it('should not open the dialog while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            // Guards the handler too: a disabled attribute alone would leave the store reachable.
+            spectator.component['onOpenActionCenter']();
+
+            expect(store.setDialog).not.toHaveBeenCalled();
+        });
+
+        it('should become available again once the run settles', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(false);
+        });
+    });
+
+    describe('running-action indicator', () => {
+        it('should stay hidden when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        it('should report the action and the number of items once a run starts', () => {
+            // The toolbar is the only place still reporting the run after the Action Center dialog is
+            // closed, which is the whole reason the indicator lives out here.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            expect(indicator).toBeTruthy();
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying'
+            );
+        });
+
+        it('should not render markup carried by the action name', () => {
+            // Workflow action names come from the backend verbatim (`$selectedAction()?.name`), and
+            // the label is placed in the DOM as HTML so the message's own `<b>` renders. A name
+            // carrying markup must not become live DOM — an event-handler attribute least of all.
+            //
+            // The shared mock returns the bare key, which would make this pass without rendering
+            // anything; the real message has to be in play for the assertion to mean something.
+            const messageService = spectator.inject(DotMessageService);
+
+            jest.spyOn(messageService, 'get').mockImplementation(
+                (key: string, ...args: string[]) =>
+                    key === 'content-drive.action-center.applying'
+                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                        : key
+            );
+
+            actionExecutionSignal.set({
+                actionName: '<img src=x onerror="window.__xss = true">',
+                total: 3
+            });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            // Asserted structurally rather than by searching the markup for "onerror": once the name
+            // is escaped it renders as visible text that legitimately still contains that word.
+            expect(indicator?.querySelector('img')).toBeNull();
+            expect(indicator?.querySelector('[onerror]')).toBeNull();
+            // …and the name is still shown to the user, just as text.
+            expect(indicator?.textContent).toContain('<img src=x');
+        });
+
+        it('should disappear again once the run settles', () => {
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
         });
     });
 

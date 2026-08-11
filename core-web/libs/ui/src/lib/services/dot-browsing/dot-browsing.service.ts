@@ -153,8 +153,8 @@ export class DotBrowsingService {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder',
+            expandedIcon: 'pi pi-globe',
+            collapsedIcon: 'pi pi-globe',
             leaf: false
         };
     }
@@ -394,8 +394,8 @@ export class DotBrowsingService {
                     path: '',
                     type: 'site'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
+                expandedIcon: 'pi pi-globe',
+                collapsedIcon: 'pi pi-globe',
                 leaf: false
             }))
         );

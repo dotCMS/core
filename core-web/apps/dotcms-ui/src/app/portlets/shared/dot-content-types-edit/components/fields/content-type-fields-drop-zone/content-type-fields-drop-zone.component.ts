@@ -11,7 +11,8 @@ import {
     SimpleChanges,
     inject,
     input,
-    output
+    output,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -43,6 +44,7 @@ import { FieldPropertyService } from '../service/field-properties.service';
     selector: 'dot-content-type-fields-drop-zone',
     templateUrl: './content-type-fields-drop-zone.component.html',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DialogService]
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {

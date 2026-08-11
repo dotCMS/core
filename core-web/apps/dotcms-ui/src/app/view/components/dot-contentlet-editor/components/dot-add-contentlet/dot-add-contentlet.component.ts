@@ -1,7 +1,14 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -14,6 +21,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
  * @implements {OnInit}
  */
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-add-contentlet',
     templateUrl: './dot-add-contentlet.component.html',
     styleUrls: ['./dot-add-contentlet.component.scss'],

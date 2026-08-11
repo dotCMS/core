@@ -18,6 +18,8 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -1223,7 +1225,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertNotNull("Result should not be null", result);
         assertTrue("Should contain title search", result.contains("title:test*"));
         assertTrue("Should contain quoted title search", result.contains("title:'test'^15"));
-        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*^5"));
+        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*"));
         assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
         assertFalse("Should not contain metadata search", result.contains("metadata.name"));
 
@@ -1304,8 +1306,43 @@ public class BrowserAPITest extends IntegrationTestBase {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
-     *     <li><b>Given Scenario:</b> Test query structure and Lucene syntax compliance.</li>
-     *     <li><b>Expected Result:</b> Generated queries should follow proper Lucene query syntax.</li>
+     *     <li><b>Given Scenario:</b> A free-text filter is provided.</li>
+     *     <li><b>Expected Result:</b> The text clause is produced by the shared
+     *     {@link GlobalSearchAttributeStrategy} — the same one the Content Search portlet uses — and
+     *     no longer by a hand-rolled query string.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_delegatesToSharedGlobalSearchStrategy() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+        final String filter = "searchterm";
+
+        final String result = browserAPIImpl.buildBaseESQuery(
+                BrowserQuery.builder().withFilter(filter).build());
+
+        // The free-text clause must be byte-identical to what the Content Search portlet builds,
+        // so both surfaces always query the index the same way (issue #36688).
+        final String expectedTextGroup = new GlobalSearchAttributeStrategy().generateQuery(
+                new FieldContext.Builder()
+                        .withFieldName("title")
+                        .withFieldValue(filter)
+                        .build());
+        assertEquals("Text group must be exactly what the shared global-search strategy produces",
+                " +(" + expectedTextGroup + ")", result);
+
+        // Guards against regressing to the previous hand-rolled query, which used a broad,
+        // unscoped leading-wildcard catchall (slow, matched unrelated body text). Whether the
+        // strategy itself uses ' OR ' internally is its own concern — the assertEquals above
+        // already pins this method to whatever it produces.
+        assertFalse("Must not use a leading-wildcard catchall clause",
+                result.contains("catchall:*"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Verify the generated query complies with Lucene syntax.</li>
+     *     <li><b>Expected Result:</b> Query uses valid Lucene field:value syntax.</li>
      * </ul>
      */
     @Test

@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -106,13 +106,30 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             expect(field.attributes).toEqual(
                 expect.objectContaining({
                     accept: 'image/*',
+                    name: 'thumbnail',
                     style: 'height: 3.35rem;'
                 })
             );
 
-            expect(field.nativeNode.previewImageUrl).toBeNull();
-            expect(field.nativeNode.previewImageName).toBeNull();
+            expect(field.nativeNode.previewImageUrl).toBeFalsy();
+            expect(field.nativeNode.previewImageName).toBeFalsy();
             expect(field.nativeNode.placeholder).toBe('Drop or paste image or image url');
+            expect(field.nativeNode.disabled).toBeFalsy();
+        });
+
+        it('should not fetch or disable when writeValue receives an empty id', () => {
+            dotCrudService = TestBed.inject(DotCrudService);
+            jest.spyOn(dotCrudService, 'getDataById');
+
+            component.writeValue('');
+            fixture.detectChanges();
+
+            const field = de.query(By.css('dot-binary-file'));
+
+            expect(dotCrudService.getDataById).not.toHaveBeenCalled();
+            expect(component.loading).toBe(false);
+            expect(component.asset).toBeNull();
+            expect(field.nativeNode.disabled).toBeFalsy();
         });
 
         it('should have fillted attr', () => {
@@ -344,6 +361,57 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 assetVersion: 'path/to/something.png',
                 name: 'Something'
             });
+        });
+
+        it('should update preview bindings after async writeValue without extra detectChanges', () => {
+            const response$ = new Subject<
+                {
+                    assetVersion: string;
+                    name: string;
+                    inode: string;
+                }[]
+            >();
+
+            jest.spyOn(dotCrudService, 'getDataById').mockReturnValue(response$.asObservable());
+
+            fixture.detectChanges();
+
+            const binaryFile = de.query(By.css('dot-binary-file'));
+
+            expect(binaryFile.nativeNode.previewImageName).toBeFalsy();
+            expect(binaryFile.nativeNode.previewImageUrl).toBeFalsy();
+            expect(field.loading).toBe(true);
+
+            response$.next([
+                {
+                    ...dotcmsContentletMock,
+                    assetVersion: 'path/to/something.png',
+                    name: 'Something',
+                    inode: '123inode'
+                }
+            ]);
+            response$.complete();
+
+            // Component must trigger CD itself (DynamicDialog path); do not call fixture.detectChanges().
+            expect(field.loading).toBe(false);
+            expect(field.asset).toEqual({
+                ...dotcmsContentletMock,
+                assetVersion: 'path/to/something.png',
+                name: 'Something',
+                inode: '123inode'
+            });
+            expect(binaryFile.nativeNode.previewImageName).toBe('Something');
+            expect(binaryFile.nativeNode.previewImageUrl).toBe('/dA/123inode');
+        });
+
+        it('should not call getDataById when form control value is empty', () => {
+            jest.spyOn(dotCrudService, 'getDataById');
+
+            field.writeValue('');
+
+            expect(dotCrudService.getDataById).not.toHaveBeenCalled();
+            expect(field.loading).toBe(false);
+            expect(field.asset).toBeNull();
         });
     });
 });

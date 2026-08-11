@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+# Reviewing a commit that has already been superseded helps nobody, and the run
+# holds a runner slot the rest of the pipeline is queueing for.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Security gate: Check if user is dotCMS organization member
   #

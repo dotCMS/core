@@ -1,17 +1,3 @@
-interface ThemeRule {
-    token: string;
-    foreground?: string;
-    background?: string;
-    fontStyle?: string;
-}
-
-interface ThemeData {
-    base: 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
-    inherit: boolean;
-    rules: ThemeRule[];
-    colors: Record<string, string>;
-}
-
 interface WindowWithMonaco extends Window {
     monaco?: {
         languages: {
@@ -23,15 +9,10 @@ interface WindowWithMonaco extends Window {
             setMonarchTokensProvider: (id: string, provider: unknown) => void;
             getLanguages?: () => Array<{ id: string }>;
         };
-        editor: {
-            defineTheme: (name: string, theme: ThemeData) => void;
-            setTheme: (name: string) => void;
-        };
     };
 }
 
 export const VELOCITY_LANGUAGE_ID = 'velocity-playground';
-export const VELOCITY_THEME_ID = 'dot-velocity-dark';
 
 /**
  * Enriched Velocity grammar tuned for the playground.
@@ -40,8 +21,8 @@ export const VELOCITY_THEME_ID = 'dot-velocity-dark';
  * `$variable`, and comments — everything else (strings, numbers, method calls,
  * operators) falls through HTML_BASE_TOKENIZER as an empty token and stays
  * uncolored regardless of the active theme. We define a playground-only grammar
- * that adds the missing token classes so the Monokai Pro palette below can
- * paint every category developers expect to see distinguished.
+ * that adds the missing token classes so Monaco's default theme can
+ * distinguish every category developers expect to see.
  */
 const VELOCITY_PLAYGROUND_GRAMMAR = {
     defaultToken: '',
@@ -121,57 +102,6 @@ const VELOCITY_PLAYGROUND_GRAMMAR = {
     }
 };
 
-/**
- * Monokai-Pro–inspired palette matching the reference screenshot:
- * directives pink/coral, variables orange, method access cyan,
- * strings green, numbers purple, on a very dark surface.
- */
-const VELOCITY_THEME: ThemeData = {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-        // Directives — #set, #if, #foreach, #end, #macro, #parse, #include, #stop, #else, #elseif
-        { token: 'keyword.velocity', foreground: 'FF6188', fontStyle: 'bold' },
-        // #dotParse — dotCMS-specific directive
-        { token: 'keyword.dotparse.velocity', foreground: 'FF6188', fontStyle: 'bold' },
-
-        // Variables — $name, ${name}
-        { token: 'variable.velocity', foreground: 'FC9867' },
-
-        // Property / method access — .pull, .identifier, .title, …
-        { token: 'identifier.method.velocity', foreground: '78DCE8' },
-
-        // Strings
-        { token: 'string.velocity', foreground: 'A9DC76' },
-        { token: 'string.escape.velocity', foreground: 'AB9DF2' },
-
-        // Numbers
-        { token: 'number.velocity', foreground: 'AB9DF2' },
-        { token: 'number.float.velocity', foreground: 'AB9DF2' },
-
-        // Comments
-        { token: 'comment.velocity', foreground: '727072', fontStyle: 'italic' },
-
-        // Operators and delimiters
-        { token: 'operator.velocity', foreground: 'FF6188' },
-        { token: 'delimiter.velocity', foreground: 'FCFCFA' },
-        { token: 'delimiter.curly', foreground: 'FCFCFA' },
-        { token: 'delimiter.square', foreground: 'FCFCFA' },
-        { token: 'delimiter.parenthesis', foreground: 'FCFCFA' }
-    ],
-    colors: {
-        'editor.background': '#2D2A2E',
-        'editor.foreground': '#FCFCFA',
-        'editorLineNumber.foreground': '#5B595C',
-        'editorLineNumber.activeForeground': '#C1C0C0',
-        'editor.selectionBackground': '#403E41',
-        'editor.lineHighlightBackground': '#34313680',
-        'editorCursor.foreground': '#FFD866',
-        'editorIndentGuide.background': '#403E41',
-        'editorIndentGuide.activeBackground': '#5B595C'
-    }
-};
-
 let registered = false;
 
 export const ensureVelocityLanguageRegistered = (): void => {
@@ -194,12 +124,6 @@ export const ensureVelocityLanguageRegistered = (): void => {
             VELOCITY_PLAYGROUND_GRAMMAR
         );
     }
-
-    monaco.editor.defineTheme(VELOCITY_THEME_ID, VELOCITY_THEME);
-    // setTheme is global — any existing editor instance picks up the change
-    // immediately, which fixes the race where ngx-monaco-editor created the
-    // editor before defineTheme ran and fell back to the default light theme.
-    monaco.editor.setTheme(VELOCITY_THEME_ID);
 
     registered = true;
 };

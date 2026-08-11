@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotRenderModes } from '@dotcms/dotcms-models';
@@ -14,6 +14,7 @@ interface RenderMode {
 @Component({
     selector: 'dot-render-mode-property',
     templateUrl: './render-mode-property.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class RenderModePropertyComponent {
