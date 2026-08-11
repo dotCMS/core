@@ -12,7 +12,6 @@ import { computed, inject, isDevMode } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { AgentHeartbeat, AgentProgress, AgentRunStep } from '@dotcms/dotcms-models';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 
@@ -84,8 +83,16 @@ interface A11yRunState {
      * long, quiet step (a model call) doesn't look hung. Null between runs.
      */
     heartbeat: AgentHeartbeat | null;
-    /** Set when a fix run fails — surfaced inline so the user can retry. */
-    fixError: string | null;
+    /**
+     * The one error channel for this screen — a failed scan, a failed fix run, a stream
+     * that dropped, or a stop that didn't take. Rendered as a banner at the top of the
+     * portlet and cleared whenever a new scan or fix starts.
+     *
+     * Deliberately NOT routed through `DotHttpErrorManagerService`: a modal error dialog
+     * over a long-running agent screen interrupts a run the user is watching, and these
+     * failures are all recoverable in place (re-scan, re-run, retry the stop).
+     */
+    runError: string | null;
     /** The §6 run report — populated when the fix pass completes (SSE `done`). */
     report: FixReport | null;
     /**
@@ -107,10 +114,18 @@ const initialState: A11yRunState = {
     progress: null,
     runId: null,
     heartbeat: null,
-    fixError: null,
+    runError: null,
     report: null,
     previewRevision: 0
 };
+
+/**
+ * A thrown value as banner text, falling back to `fallback` for anything that isn't an
+ * `Error` (an HTTP failure arrives as an `HttpErrorResponse`, whose `message` is the
+ * useful part; a non-Error throw has nothing worth showing the user).
+ */
+const errorText = (error: unknown, fallback: string): string =>
+    error instanceof Error && error.message ? error.message : fallback;
 
 /** The run-state reset shared by opening a page and starting a fresh scan. */
 const runReset = (): Partial<A11yRunState> => ({
@@ -120,7 +135,7 @@ const runReset = (): Partial<A11yRunState> => ({
     progress: null,
     runId: null,
     heartbeat: null,
-    fixError: null,
+    runError: null,
     report: null,
     previewRevision: 0
 });
@@ -308,7 +323,6 @@ export const A11yRunStore = signalStore(
     withMethods((store) => {
         const scannerService = inject(DotPageScannerService);
         const agentService = inject(DotA11yAgentService);
-        const httpErrorManager = inject(DotHttpErrorManagerService);
 
         // The in-flight scan / fix-stream subscription, held so Stop can cancel it
         // (unsubscribing aborts the underlying fetch). Not reactive UI state.
@@ -320,6 +334,10 @@ export const A11yRunStore = signalStore(
         // so the ring + per-severity legend track the agent's live fixes. Held so a
         // newer progress frame supersedes an in-flight one (no stampede / stale writes).
         const fixRescan = new SubscriptionSlot();
+        // The in-flight POST /stop. Held so teardown can cancel it, and so a user
+        // clicking Stop repeatedly supersedes the previous request instead of piling
+        // up one un-cancellable POST per click.
+        const stopRequest = new SubscriptionSlot();
 
         /**
          * The dotCMS backend origin the agent must render + call against.
@@ -463,7 +481,7 @@ export const A11yRunStore = signalStore(
                     scanResult: null,
                     liveScanResult: null,
                     report: null,
-                    fixError: null
+                    runError: null
                 });
 
                 // Primary scan — the PREVIEW (working) render. Owns the phase + all
@@ -473,10 +491,13 @@ export const A11yRunStore = signalStore(
                         .checkA11y(buildScanUrl(page, 'EDIT_MODE'))
                         .pipe(
                             take(1),
-                            catchError((error) => {
-                                httpErrorManager.handle(error);
-                                // Return to ready so the user can retry the scan.
-                                patchState(store, { phase: 'ready' });
+                            catchError((error: unknown) => {
+                                // Return to ready so the user can retry the scan, and
+                                // report it in the portlet's own banner.
+                                patchState(store, {
+                                    phase: 'ready',
+                                    runError: errorText(error, 'The scan failed.')
+                                });
 
                                 return EMPTY;
                             })
@@ -516,6 +537,7 @@ export const A11yRunStore = signalStore(
                 activeScan.cancel();
                 liveScan.cancel();
                 fixRescan.cancel();
+                stopRequest.cancel();
             },
 
             /** Cancel the in-flight scan (unsubscribe aborts the request) → back to ready. */
@@ -548,7 +570,7 @@ export const A11yRunStore = signalStore(
                     progress: null,
                     runId: null,
                     heartbeat: null,
-                    fixError: null,
+                    runError: null,
                     report: null,
                     previewRevision: 0
                 });
@@ -561,6 +583,13 @@ export const A11yRunStore = signalStore(
                     skipCss: store.skipCss()
                 };
 
+                // Whether this run's outcome has already been recorded — by a terminal
+                // frame (`done` / `aborted` / `error`) or by the stream erroring. Read by
+                // the `complete` handler below, which fires in BOTH cases (the error path
+                // completes too, via the EMPTY that `catchError` returns) and must not
+                // overwrite an outcome that is already correct.
+                let settled = false;
+
                 activeScan.set(
                     agentService
                         .fixStream(request)
@@ -570,63 +599,91 @@ export const A11yRunStore = signalStore(
                                     error instanceof Error
                                         ? error.message
                                         : 'The agent run failed.';
-                                patchState(store, { phase: 'scanned', fixError: message });
+                                settled = true;
+                                patchState(store, { phase: 'scanned', runError: message });
 
                                 return EMPTY;
                             })
                         )
-                        .subscribe((event) => {
-                            switch (event.type) {
-                                case 'run':
-                                    // First frame: capture the run id so Stop can target it.
-                                    patchState(store, { runId: event.runId });
-                                    break;
-                                // `step` is the legacy alias of `phase` — treat identically.
-                                case 'phase':
-                                case 'step':
-                                    patchState(store, { steps: [...store.steps(), event.step] });
-                                    break;
-                                case 'progress':
-                                    // Live violation count → drives the score donut down.
-                                    patchState(store, { progress: event.progress });
-                                    // Re-scan the preview so the ring segments, legend, and
-                                    // issue list reflect the fixes that just landed (the
-                                    // progress totals alone carry no per-severity split).
-                                    rescanPreviewDuringFix();
-                                    break;
-                                case 'heartbeat':
-                                    // Keep-alive while the agent is thinking between
-                                    // actions — drives the "still working…" indicator so a
-                                    // long, quiet step doesn't look hung.
-                                    patchState(store, { heartbeat: event.heartbeat });
-                                    break;
-                                case 'done':
-                                case 'aborted':
-                                    // done = full run; aborted = stopped early with a partial
-                                    // report (fixes already applied are kept). Both land on
-                                    // the done screen with the report the agent returned.
-                                    // Cancel any pending mid-fix rescan first so it can't
-                                    // overwrite the report-driven widgets afterwards.
-                                    fixRescan.cancel();
-                                    patchState(store, {
-                                        phase: 'done',
-                                        report: event.result,
-                                        // Final reload so the preview reflects the finished
-                                        // working render.
-                                        previewRevision: store.previewRevision() + 1
-                                    });
-                                    break;
-                                case 'error':
-                                    // Terminal error event from the agent.
-                                    fixRescan.cancel();
-                                    patchState(store, {
-                                        phase: 'scanned',
-                                        fixError: event.message
-                                    });
-                                    break;
-                                default:
-                                    // Exhaustive: any unhandled event type is ignored.
-                                    break;
+                        .subscribe({
+                            next: (event) => {
+                                switch (event.type) {
+                                    case 'run':
+                                        // First frame: capture the run id so Stop can target it.
+                                        patchState(store, { runId: event.runId });
+                                        break;
+                                    // `step` is the legacy alias of `phase` — treat identically.
+                                    case 'phase':
+                                    case 'step':
+                                        patchState(store, {
+                                            steps: [...store.steps(), event.step]
+                                        });
+                                        break;
+                                    case 'progress':
+                                        // Live violation count → drives the score donut down.
+                                        patchState(store, { progress: event.progress });
+                                        // Re-scan the preview so the ring segments, legend, and
+                                        // issue list reflect the fixes that just landed (the
+                                        // progress totals alone carry no per-severity split).
+                                        rescanPreviewDuringFix();
+                                        break;
+                                    case 'heartbeat':
+                                        // Keep-alive while the agent is thinking between
+                                        // actions — drives the "still working…" indicator so a
+                                        // long, quiet step doesn't look hung.
+                                        patchState(store, { heartbeat: event.heartbeat });
+                                        break;
+                                    case 'done':
+                                    case 'aborted':
+                                        // done = full run; aborted = stopped early with a partial
+                                        // report (fixes already applied are kept). Both land on
+                                        // the done screen with the report the agent returned.
+                                        // Cancel any pending mid-fix rescan first so it can't
+                                        // overwrite the report-driven widgets afterwards.
+                                        settled = true;
+                                        fixRescan.cancel();
+                                        patchState(store, {
+                                            phase: 'done',
+                                            report: event.result,
+                                            // Final reload so the preview reflects the finished
+                                            // working render.
+                                            previewRevision: store.previewRevision() + 1
+                                        });
+                                        break;
+                                    case 'error':
+                                        // Terminal error event from the agent.
+                                        settled = true;
+                                        fixRescan.cancel();
+                                        patchState(store, {
+                                            phase: 'scanned',
+                                            runError: event.message
+                                        });
+                                        break;
+                                    default:
+                                        // Exhaustive: any unhandled event type is ignored.
+                                        break;
+                                }
+                            },
+                            complete: () => {
+                                // The stream ended. If a terminal frame already landed this
+                                // is the normal close and the phase is already correct.
+                                if (settled) {
+                                    return;
+                                }
+
+                                // Otherwise the connection dropped mid-run. Fall back to
+                                // `scanned` so the user keeps their scan results and can
+                                // retry — staying in `fixing` would spin the "still
+                                // working…" indicator forever with no way out, since Stop
+                                // targets a run the agent may no longer have.
+                                fixRescan.cancel();
+                                patchState(store, {
+                                    phase: 'scanned',
+                                    runError:
+                                        'The connection to the agent ended before it reported a result. ' +
+                                        'Any fixes it already wrote to the working version are kept — ' +
+                                        're-scan to see the current state.'
+                                });
                             }
                         })
                 );
@@ -638,19 +695,39 @@ export const A11yRunStore = signalStore(
              * fixes already applied. We keep the stream subscribed so that terminal
              * event still lands and moves us to the done screen. No-op if the run id
              * hasn't arrived yet (the agent hasn't announced the run).
+             *
+             * A FAILED stop must be visible. The service already treats 202 and 404 as
+             * equivalent (the run is gone either way), so anything still reaching the
+             * error path — a 5xx, a network drop — means the agent very likely kept
+             * running and kept writing to the working version. Swallowing that would
+             * leave the UI claiming a stop that never took, on the one control the user
+             * reaches for when they want the agent to stop touching their page.
              */
             stopAgent() {
                 const runId = store.runId();
                 if (store.phase() !== 'fixing' || !runId) {
                     return;
                 }
-                agentService
-                    .stop(runId)
-                    .pipe(
-                        take(1),
-                        catchError(() => EMPTY)
-                    )
-                    .subscribe();
+                stopRequest.set(
+                    agentService
+                        .stop(runId)
+                        .pipe(
+                            take(1),
+                            catchError(() => {
+                                // Stay in `fixing`: the run is, as far as we know, still
+                                // going. The stream's own terminal frame (or its close
+                                // handler) still owns the phase transition.
+                                patchState(store, {
+                                    runError:
+                                        'Could not stop the agent — it may still be running and ' +
+                                        'writing to the working version. Try again in a moment.'
+                                });
+
+                                return EMPTY;
+                            })
+                        )
+                        .subscribe()
+                );
             },
 
             /**

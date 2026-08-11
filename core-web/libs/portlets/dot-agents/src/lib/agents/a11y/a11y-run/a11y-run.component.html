@@ -1,5 +1,26 @@
+<!-- ============ ERROR BANNER ============ -->
+<!-- The single error surface for this screen: a failed scan, a failed or dropped fix
+     run, or a stop that didn't take. Spans both columns at the top of the portlet so
+     it's visible whichever pane the user is looking at, and takes no space when there
+     is no error (the host's first grid row is `auto`, and nothing else is placed in it).
+     Every child below is pinned to row 2 explicitly — without that, auto-placement puts
+     them in row 1 whenever this banner is absent, collapsing both panes to their content
+     height and leaving row 2 empty. -->
+@if (store.runError(); as error) {
+    <div
+        class="col-span-2 row-start-1 flex items-start gap-2.5 border-b border-red-100 bg-red-50 px-4 py-2.5 text-red-700"
+        data-testid="studio-run-error"
+        role="alert">
+        <i class="pi pi-exclamation-triangle mt-0.5 flex-none" aria-hidden="true"></i>
+        <div class="min-w-0">
+            <span class="font-semibold">{{ 'accessibility.studio.error.title' | dm }}</span>
+            <span class="ml-1.5 wrap-break-word text-red-600">{{ error }}</span>
+        </div>
+    </div>
+}
+
 <!-- ============ AGENT COLUMN ============ -->
-<aside class="flex min-h-0 flex-col border-r border-surface-200 bg-white">
+<aside class="row-start-2 flex min-h-0 flex-col border-r border-surface-200 bg-white">
     <!-- Page context bar -->
     <div class="flex h-13 flex-none items-center gap-2.5 border-b border-surface-100 pr-4 pl-3">
         <p-button
@@ -308,23 +329,6 @@
                             </div>
                         }
 
-                        @if (store.fixError(); as error) {
-                            <div
-                                class="mt-2 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3.5 text-red-700"
-                                data-testid="studio-fix-error"
-                                role="alert">
-                                <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
-                                <div class="min-w-0">
-                                    <div class="font-semibold">
-                                        {{ 'accessibility.studio.error.title' | dm }}
-                                    </div>
-                                    <div class="mt-0.5 wrap-break-word text-red-600">
-                                        {{ error }}
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
                         <!-- Live agent activity + final report timeline (shared, agent-agnostic).
              The log appends the live "working" bubble (workingMessage) below the
              settled steps while fixing. -->
@@ -546,7 +550,7 @@
 <!-- Shows the visual before/after, or the selected file's source diff when the user
      picks one from the left panel's changed-files list. The preview stays mounted
      (just hidden) so its iframes don't reload when returning from a diff. -->
-<div class="flex min-h-0 flex-col bg-surface-100">
+<div class="row-start-2 flex min-h-0 flex-col bg-surface-100">
     <!-- The iframes stay mounted while a diff is open so returning to the preview
          doesn't reload them. `display` is set inline rather than via a `hidden`
          class: Tailwind's `hidden` and the `grid` class here have equal specificity,

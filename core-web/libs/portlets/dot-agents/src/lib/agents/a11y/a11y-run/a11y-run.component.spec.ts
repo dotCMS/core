@@ -2,7 +2,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 
 import { Location } from '@angular/common';
 import { Component, input, output } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
@@ -12,6 +12,7 @@ import { DotA11yRunComponent } from './a11y-run.component';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
+import { A11Y_PAGE_LIST_ROUTE } from '../a11y.constants';
 import { A11yGroup } from '../models/a11y-groups';
 import {
     FixReport,
@@ -78,13 +79,13 @@ describe('DotA11yRunComponent', () => {
     const discard = jest.fn();
     const setSkipCss = jest.fn();
     const openSelectedPage = jest.fn();
-    const navigate = jest.fn();
+    const navigate = jest.fn().mockResolvedValue(true);
 
     // Mutable per-test state read by the store mock's reactive getters.
     let phase: StudioPhase = 'ready';
     let report: FixReport | null = null;
     let steps: AgentRunStep[] = [];
-    let fixError: string | null = null;
+    let runError: string | null = null;
     let heartbeat: AgentHeartbeat | null = null;
     // Bumped when the working render changes → preview iframe cache-buster.
     let previewRevision = 0;
@@ -137,7 +138,7 @@ describe('DotA11yRunComponent', () => {
         phase: () => phase,
         report: () => report,
         steps: () => steps,
-        fixError: () => fixError,
+        runError: () => runError,
         latestStep: () => (steps.length ? steps[steps.length - 1] : null),
         heartbeat: () => heartbeat,
         selected: () => MOCK_PAGE,
@@ -221,8 +222,7 @@ describe('DotA11yRunComponent', () => {
                 provide: Location,
                 // useFactory so each test's `handoverRow` is read at injection time.
                 useFactory: () => ({ getState: () => (handoverRow ? { row: handoverRow } : null) })
-            },
-            { provide: ActivatedRoute, useValue: {} }
+            }
         ]
     });
 
@@ -230,12 +230,12 @@ describe('DotA11yRunComponent', () => {
         nextPhase: StudioPhase,
         nextReport: FixReport | null = null,
         nextSteps: AgentRunStep[] = [],
-        nextFixError: string | null = null
+        nextRunError: string | null = null
     ) {
         phase = nextPhase;
         report = nextReport;
         steps = nextSteps;
-        fixError = nextFixError;
+        runError = nextRunError;
         // A scan result exists once the page has been scanned.
         hasScan = ['scanned', 'fixing', 'done', 'published'].includes(nextPhase);
         spectator = createComponent();
@@ -247,7 +247,7 @@ describe('DotA11yRunComponent', () => {
         phase = 'ready';
         report = null;
         steps = [];
-        fixError = null;
+        runError = null;
         heartbeat = null;
         previewRevision = 0;
         hasScan = false;
@@ -582,12 +582,17 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    describe('fix error state', () => {
+    describe('run error state', () => {
         beforeEach(() => render('scanned', MOCK_FIX_REPORT, [], 'render unreliable'));
 
-        it('surfaces the agent error inline', () => {
-            const error = spectator.query(byTestId('studio-fix-error'));
+        it('surfaces the error in the banner at the top of the portlet', () => {
+            const error = spectator.query(byTestId('studio-run-error'));
             expect(error).toHaveText('render unreliable');
+        });
+
+        it('renders no banner when there is no error', () => {
+            render('scanned', MOCK_FIX_REPORT);
+            expect(spectator.query(byTestId('studio-run-error'))).toBeFalsy();
         });
     });
 
@@ -796,10 +801,9 @@ describe('DotA11yRunComponent', () => {
         const btn = spectator.query(byTestId('studio-back-btn'))?.querySelector('button');
         spectator.click(btn as HTMLElement);
         // No store reset — the per-route run store is destroyed on navigation.
-        expect(navigate).toHaveBeenCalledWith(
-            ['..'],
-            expect.objectContaining({ relativeTo: expect.anything() })
-        );
+        // Absolute, not relative: a `..` from the multi-segment `**` run route lands on
+        // `**` again and leaves the user on the same screen.
+        expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
     });
 
     describe('page handover from the page list', () => {
@@ -813,10 +817,7 @@ describe('DotA11yRunComponent', () => {
             handoverRow = null;
             render('ready');
             expect(openSelectedPage).not.toHaveBeenCalled();
-            expect(navigate).toHaveBeenCalledWith(
-                ['..'],
-                expect.objectContaining({ relativeTo: expect.anything() })
-            );
+            expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
         });
     });
 });

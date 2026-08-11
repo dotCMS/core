@@ -1,10 +1,9 @@
 import { patchState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { NEVER, Observable, of, throwError } from 'rxjs';
+import { concat, NEVER, Observable, of, throwError } from 'rxjs';
 
 import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 
 import { A11yRunStore } from './a11y-run.store';
@@ -37,6 +36,18 @@ const MOCK_FIX_STREAM: A11yAgentStreamEvent[] = [
     },
     { type: 'done', result: MOCK_FIX_REPORT }
 ];
+
+/**
+ * A fix stream that emits `events` and then STAYS OPEN, as a real SSE connection does
+ * mid-run.
+ *
+ * Use this — not a bare `of(...)` — for any run that has not reached a terminal frame.
+ * `of()` completes as soon as it has emitted, which the store reads as the connection
+ * dropping mid-run (its documented abnormal-close path), so a mid-run assertion written
+ * against `of()` would be asserting against a closed stream.
+ */
+const openStream = (...events: A11yAgentStreamEvent[]): Observable<A11yAgentStreamEvent> =>
+    concat(of<A11yAgentStreamEvent>(...events), NEVER);
 
 // Two violation rules (3 + 2 = 5 error elements) + one incomplete rule (2 warnings).
 const MOCK_SCAN_RESPONSE = {
@@ -139,9 +150,6 @@ describe('A11yRunStore', () => {
             mockProvider(DotA11yAgentService, {
                 fixStream: jest.fn().mockReturnValue(of(...MOCK_FIX_STREAM)),
                 stop: jest.fn().mockReturnValue(of(null))
-            }),
-            mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn().mockReturnValue(of(null))
             })
         ]
     });
@@ -234,7 +242,6 @@ describe('A11yRunStore', () => {
         });
 
         it('a failing LIVE scan does not derail the UI (comparison-only, error swallowed)', () => {
-            const errorManager = spectator.inject(DotHttpErrorManagerService);
             scannerService.checkA11y
                 .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE))
                 .mockReturnValueOnce(throwError(() => new Error('live boom')));
@@ -242,7 +249,8 @@ describe('A11yRunStore', () => {
             expect(store.phase()).toBe('scanned');
             expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
             expect(store.liveScanResult()).toBeNull();
-            expect(errorManager.handle).not.toHaveBeenCalled();
+            // Comparison-only: it must not reach the banner either.
+            expect(store.runError()).toBeNull();
         });
 
         it('runScan stores the scan result and the real error/warning counts', () => {
@@ -271,13 +279,12 @@ describe('A11yRunStore', () => {
             expect(store.scanResult()).toBeNull();
         });
 
-        it('returns to ready and reports the error if the scan fails', () => {
-            const errorManager = spectator.inject(DotHttpErrorManagerService);
+        it('returns to ready and reports the error in the banner if the scan fails', () => {
             scannerService.checkA11y.mockReturnValueOnce(throwError(() => new Error('boom')));
             store.runScan();
-            expect(errorManager.handle).toHaveBeenCalled();
             expect(store.phase()).toBe('ready');
             expect(store.scanResult()).toBeNull();
+            expect(store.runError()).toBe('boom');
         });
 
         it('startFix streams phase steps then moves scanned → done with the full report', () => {
@@ -297,20 +304,20 @@ describe('A11yRunStore', () => {
 
         it('progress events drive the live openCount down while fixing', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
+                openStream(
                     { type: 'run', runId: 'r_test_123' },
                     { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } }
                 )
             );
             store.runScan();
             store.startFix();
-            expect(store.phase()).toBe('fixing'); // no terminal event → still fixing
+            expect(store.phase()).toBe('fixing'); // stream still open, no terminal event
             expect(store.openCount()).toBe(2);
         });
 
         it('re-scans the preview on each progress frame so the legend/ring track fixes', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
+                openStream(
                     { type: 'run', runId: 'r_test_123' },
                     { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } },
                     { type: 'progress', progress: { baseline: 5, current: 1, cleared: 4 } }
@@ -326,7 +333,7 @@ describe('A11yRunStore', () => {
 
         it('fixedCount reflects the live progress.cleared while fixing', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
+                openStream(
                     { type: 'run', runId: 'r_test_123' },
                     { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } }
                 )
@@ -369,7 +376,7 @@ describe('A11yRunStore', () => {
                 .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // live comparison scan
                 .mockReturnValueOnce(of(REDUCED_SCAN)); // mid-fix re-scan
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
+                openStream(
                     { type: 'run', runId: 'r_test_123' },
                     { type: 'progress', progress: { baseline: 5, current: 1, cleared: 4 } }
                 )
@@ -383,14 +390,14 @@ describe('A11yRunStore', () => {
 
         it('captures the run id from the stream and targets stop at it', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
+                openStream(
                     { type: 'run', runId: 'r_test_123' },
                     { type: 'step', step: { message: 'working' } }
                 )
             );
             store.runScan();
             store.startFix();
-            expect(store.phase()).toBe('fixing'); // no terminal event → still fixing
+            expect(store.phase()).toBe('fixing'); // stream still open, no terminal event
             expect(store.runId()).toBe('r_test_123');
 
             store.stopAgent();
@@ -399,7 +406,7 @@ describe('A11yRunStore', () => {
 
         it('stopAgent is a no-op when no run id has arrived yet', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>({ type: 'step', step: { message: 'working' } })
+                openStream({ type: 'step', step: { message: 'working' } })
             );
             store.runScan();
             store.startFix();
@@ -426,7 +433,7 @@ describe('A11yRunStore', () => {
             store.runScan();
             store.startFix();
             expect(store.phase()).toBe('scanned');
-            expect(store.fixError()).toBe('render unreliable');
+            expect(store.runError()).toBe('render unreliable');
             expect(store.report()).toBeNull();
         });
 
@@ -435,7 +442,55 @@ describe('A11yRunStore', () => {
             store.runScan();
             store.startFix();
             expect(store.phase()).toBe('scanned');
-            expect(store.fixError()).toBe('network down');
+            expect(store.runError()).toBe('network down');
+        });
+
+        it('a stream that closes with no terminal frame leaves fixing instead of wedging', () => {
+            // The transport completes the observable whenever the response body ends —
+            // an agent pod restart, an ingress idle timeout, or the relay closing on an
+            // upstream socket drop all look like this: frames, then a clean close and no
+            // `done`/`aborted`/`error`. Staying in `fixing` would spin the "still
+            // working…" indicator forever with no way back to the results.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+
+            expect(store.phase()).toBe('scanned');
+            expect(store.runError()).toContain('ended before it reported a result');
+            expect(store.report()).toBeNull();
+        });
+
+        it('a normal close after a terminal frame does not overwrite the outcome', () => {
+            // The default mock ends with `done` and then completes, which is the ordinary
+            // end of a run — the abnormal-close fallback must not fire here.
+            store.runScan();
+            store.startFix();
+
+            expect(store.phase()).toBe('done');
+            expect(store.runError()).toBeNull();
+            expect(store.report()).toEqual(MOCK_FIX_REPORT);
+        });
+
+        it('surfaces a failed stop instead of swallowing it, and stays in fixing', () => {
+            // The service already treats 202 and 404 as equivalent, so anything reaching
+            // this path means the agent is likely still running and still writing to the
+            // working version. Silence here would claim a stop that never took.
+            agentService.fixStream.mockReturnValueOnce(
+                openStream({ type: 'run', runId: 'r_test_123' })
+            );
+            agentService.stop.mockReturnValueOnce(throwError(() => new Error('502 Bad Gateway')));
+
+            store.runScan();
+            store.startFix();
+            store.stopAgent();
+
+            expect(store.runError()).toContain('Could not stop the agent');
+            expect(store.phase()).toBe('fixing');
         });
 
         it('publish moves done → published', () => {

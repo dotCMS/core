@@ -13,7 +13,7 @@ import {
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
@@ -28,6 +28,7 @@ import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
+import { A11Y_PAGE_LIST_ROUTE } from '../a11y.constants';
 import { A11yAgentPresenter } from '../models/a11y-agent.presenter';
 import {
     impactToSeverity,
@@ -161,14 +162,17 @@ interface SeverityRow {
         DotAgentRunService
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'grid h-full min-h-0 grid-cols-[412px_1fr]' }
+    // Two rows: an `auto` row for the error banner (collapses to 0 when there is no
+    // error, since the banner is the only thing in it) over the main content row, which
+    // takes the rest. `minmax(0,1fr)` rather than `1fr` so the panes can be bounded
+    // shorter than their content and scroll internally.
+    host: { class: 'grid h-full min-h-0 grid-cols-[412px_1fr] grid-rows-[auto_minmax(0,1fr)]' }
 })
 export class DotA11yRunComponent {
     readonly store = inject(A11yRunStore);
 
     private readonly markerService = inject(A11yMarkerService);
     private readonly router = inject(Router);
-    private readonly route = inject(ActivatedRoute);
     private readonly location = inject(Location);
     private readonly destroyRef = inject(DestroyRef);
 
@@ -306,9 +310,20 @@ export class DotA11yRunComponent {
         }
     }
 
-    /** Navigate up to the page-list route (`/agents/a11y`). */
+    /**
+     * Navigate to the page-list route.
+     *
+     * Absolute, NOT relative: the run screen is the `**` route (the page path is
+     * multi-segment, so it can't be a single param), and Angular's `..` drops one URL
+     * SEGMENT rather than one route level. From `/agents/a11y/about-us/index` a `..`
+     * yields `/agents/a11y/about-us`, which matches `**` again — the same component is
+     * reused and the screen never changes.
+     */
     private toPageList(): void {
-        this.router.navigate(['..'], { relativeTo: this.route });
+        this.router.navigate([A11Y_PAGE_LIST_ROUTE]).catch(() => {
+            // Navigation cancelled (guard or a newer navigation superseded this
+            // one). Nothing to recover — the router owns where we ended up.
+        });
     }
 
     /**
