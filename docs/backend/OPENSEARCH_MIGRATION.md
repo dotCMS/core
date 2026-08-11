@@ -485,7 +485,7 @@ Search rows. Then:
 | Field | How to read it |
 |---|---|
 | `verdict` | `IN_SYNC` · `MISSING_COUNTERPART` (one engine lacks the index) · `COUNT_DRIFT` (both hold it, different counts) |
-| `driftPercent` | Signed % the OpenSearch mirror deviates from the Elasticsearch original. `0.0` in sync · negative = mirror **behind** · positive = mirror **ahead** · `-100.0` mirror empty/absent · `null` a count failed |
+| `driftPercent` | `(OS − ES) / ES × 100`, rounded to 2 decimals. `0.0` in sync · negative = mirror **behind** (blocks *advance*) · positive = mirror **ahead** (blocks *rollback*) · `-100.0` mirror empty/absent · `+100.0` the original is empty but the mirror holds data · `null` a count could not be measured |
 | `docCount: -1` | The count could **not** be measured. Never read it as "zero" — the verdict treats it as out of sync on purpose |
 | `physicalName` | The exact name on that server (cluster-prefixed; `.os`-tagged on OpenSearch) — copy/paste it into `_cat/indices` to verify by hand |
 | `recommendation` | The concrete action (re-crawl / reindex). A trailing `NOTE:` flags an alias that is really an index name (see above) |
