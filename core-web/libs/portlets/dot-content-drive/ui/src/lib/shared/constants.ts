@@ -12,7 +12,7 @@ export type DotFolderListViewFixedColumn = DotFolderListViewColumn & {
     field: DotFolderListViewColumnField;
 };
 
-export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [
+const FIXED_COLUMNS: DotFolderListViewFixedColumn[] = [
     { field: 'title', header: 'name', width: '32%', order: 1, sortable: true },
     { field: 'live', header: 'status', width: '10%', order: 2 },
     { field: 'languageId', header: 'locale', width: '10%', order: 3, sortable: true },
@@ -20,7 +20,14 @@ export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [
     { field: 'modUser', header: 'Edited-By', width: '15%', order: 5, sortable: true },
     { field: 'modDate', header: 'Last-Edited', sortable: true, width: '13%', order: 6 },
     { field: 'actions', header: '', width: '5%', order: 7 }
-].sort((a, b) => a.order - b.order); // Sort the columns by order, so the columns are in the correct order in the UI
+];
+
+// Sorted by order so the columns render in the intended sequence. Kept off the literal above:
+// calling `.sort()` on an annotated array literal drops the contextual typing, widening each
+// `field` back to `string`.
+export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [...FIXED_COLUMNS].sort(
+    (a, b) => a.order - b.order
+);
 
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 

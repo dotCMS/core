@@ -301,7 +301,9 @@ export class DotFolderListViewComponent implements OnInit {
      * they never drift. De-dupe is by field key, not label.
      */
     protected readonly $safeExtraColumns = computed<DotFolderListViewColumn[]>(() => {
-        const seen = new Set(HEADER_COLUMNS.map((column) => column.field));
+        // Widened to `string` deliberately: the fixed fields are a closed union, but the extras
+        // this de-dupes against are caller-provided and can carry any field name.
+        const seen = new Set<string>(HEADER_COLUMNS.map((column) => column.field));
 
         return this.$extraColumns().filter((column) => {
             if (seen.has(column.field)) {
