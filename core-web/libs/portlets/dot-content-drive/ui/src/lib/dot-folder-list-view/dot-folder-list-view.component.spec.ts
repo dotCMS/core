@@ -1296,7 +1296,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Set some selected items
-            spectator.component.selectedItems = [firstItem, secondItem];
+            spectator.component.onSelectionChange([firstItem, secondItem]);
             expect(spectator.component.selectedItems.length).toBe(2);
 
             // Change items input
@@ -1315,7 +1315,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Set some selected items
-            spectator.component.selectedItems = [firstItem];
+            spectator.component.onSelectionChange([firstItem]);
             expect(spectator.component.selectedItems.length).toBe(1);
 
             // Change to empty items
@@ -1336,6 +1336,18 @@ describe('DotFolderListViewComponent', () => {
          */
         describe('caller-provided selection', () => {
             const [firstItem, secondItem, thirdItem] = mockItems;
+
+            /**
+             * Checked state per row, read from what the checkbox renders from: `TableCheckbox`
+             * assigns `this.checked = dt.isSelected(value)`. Not the `input` element's `checked`
+             * property — that is a focus proxy PrimeNG never drives, so it reads false even for a
+             * genuinely selected row.
+             */
+            const rowChecked = (): boolean[] => {
+                const table = spectator.query(Table);
+
+                return mockItems.map((item) => table.isSelected(item));
+            };
 
             beforeEach(() => {
                 spectator.setInput('items', mockItems);
@@ -1396,6 +1408,39 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.selectedItems).toEqual([firstItem]);
             });
 
+            it('should stay on the parent’s set when the parent declines a change', () => {
+                // The point of controlled mode: the parent can refuse. PrimeNG mutates its own
+                // selection on a checkbox click, and if the parent then hands back an unchanged
+                // input, Angular sees no change and re-runs nothing — leaving the checkbox visually
+                // ahead of the set that will actually be fired.
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                expect(rowChecked()).toEqual([true, true, false, false, false]);
+
+                spectator.click(spectator.queryAll(byTestId('item-row'))[0].querySelector('input'));
+                spectator.detectChanges();
+
+                // Parent said nothing, so the row is still in — and the box has to say so. Asserted
+                // on what the row renders, not on the model: the model was already right, and it was
+                // the box drifting away from it.
+                expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
+                expect(rowChecked()).toEqual([true, true, false, false, false]);
+            });
+
+            it('should follow the parent when it narrows the set to something else', () => {
+                // The parent normalising rather than echoing: what it returns is what renders, not
+                // what the click implied.
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                spectator.click(spectator.queryAll(byTestId('item-row'))[0].querySelector('input'));
+                spectator.setInput('selection', [thirdItem]);
+                spectator.detectChanges();
+
+                expect(rowChecked()).toEqual([false, false, true, false, false]);
+            });
+
             it('should drag the caller-provided selection', () => {
                 // `onDragStart` reads the effective selection; it must see the caller's, not a
                 // stale internal one. (The preview sets `readOnly`, but the input pair is
@@ -1434,7 +1479,7 @@ describe('DotFolderListViewComponent', () => {
                 it('should handle drag of a single item not in selection', () => {
                     const dragEvent = createDragStartEvent();
 
-                    spectator.component.selectedItems = [];
+                    spectator.component.onSelectionChange([]);
                     spectator.component.onDragStart(dragEvent, firstItem);
 
                     expect(dragEvent.stopPropagation).toHaveBeenCalled();
@@ -1451,7 +1496,7 @@ describe('DotFolderListViewComponent', () => {
                         writable: true
                     });
 
-                    spectator.component.selectedItems = [];
+                    spectator.component.onSelectionChange([]);
                     spectator.component.onDragStart(dragEvent, firstItem);
 
                     expect(dragEvent.stopPropagation).not.toHaveBeenCalled();
@@ -1463,7 +1508,7 @@ describe('DotFolderListViewComponent', () => {
                 it('should handle drag of multiple selected items', () => {
                     const dragEvent = createDragStartEvent();
 
-                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onSelectionChange([firstItem, secondItem]);
                     spectator.component.onDragStart(dragEvent, firstItem);
 
                     expect(dragEvent.stopPropagation).toHaveBeenCalled();
@@ -1475,7 +1520,7 @@ describe('DotFolderListViewComponent', () => {
                 it('should drag all selected items when dragging one of them', () => {
                     const dragEvent = createDragStartEvent();
 
-                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onSelectionChange([firstItem, secondItem]);
                     // Drag the second item which is in selection
                     spectator.component.onDragStart(dragEvent, secondItem);
 
@@ -1488,7 +1533,7 @@ describe('DotFolderListViewComponent', () => {
                     const dragEvent = createDragStartEvent();
                     const thirdItem = mockItems[2];
 
-                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onSelectionChange([firstItem, secondItem]);
                     spectator.component.onDragStart(dragEvent, thirdItem);
 
                     // Should emit only the third item, not the selected items

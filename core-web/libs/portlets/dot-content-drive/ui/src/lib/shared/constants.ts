@@ -1,10 +1,18 @@
 import { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';
 
-import { DotFolderListViewColumn, DotFolderTreeNodeItem } from './models';
+import {
+    DotFolderListViewColumn,
+    DotFolderListViewColumnField,
+    DotFolderTreeNodeItem
+} from './models';
 
 export { LOAD_MORE_NODE_TYPE };
 
-export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
+export type DotFolderListViewFixedColumn = DotFolderListViewColumn & {
+    field: DotFolderListViewColumnField;
+};
+
+export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [
     { field: 'title', header: 'name', width: '32%', order: 1, sortable: true },
     { field: 'live', header: 'status', width: '10%', order: 2 },
     { field: 'languageId', header: 'locale', width: '10%', order: 3, sortable: true },

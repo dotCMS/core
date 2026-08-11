@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { DotCMSContentlet, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderListViewColumnField,
+    DotFolderListViewComponent
+} from '@dotcms/portlets/content-drive/ui';
 
 /**
  * The contentlets a workflow action is about to run on, as a checkable table.
@@ -46,7 +49,11 @@ export class DotContentDriveActionPreviewComponent {
      * edited-by, last-edited and the actions column are dropped; the dialog is far narrower than the
      * portlet and the full set overflows it.
      */
-    protected readonly PREVIEW_COLUMNS = ['title', 'live', 'contentType'];
+    protected readonly PREVIEW_COLUMNS: DotFolderListViewColumnField[] = [
+        'title',
+        'live',
+        'contentType'
+    ];
 
     /**
      * The grid speaks `DotContentDriveItem` (contentlets *or* folders); a preview only ever lists

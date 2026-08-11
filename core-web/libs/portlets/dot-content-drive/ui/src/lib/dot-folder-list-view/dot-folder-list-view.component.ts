@@ -38,8 +38,12 @@ import {
     DotRelativeDatePipe
 } from '@dotcms/ui';
 
-import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
-import { DOT_FOLDER_LIST_VIEW_COLUMN_TYPE, DotFolderListViewColumn } from '../shared/models';
+import { DOT_DRAG_ITEM, DotFolderListViewFixedColumn, HEADER_COLUMNS } from '../shared/constants';
+import {
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
+    DotFolderListViewColumn,
+    DotFolderListViewColumnField
+} from '../shared/models';
 
 /**
  * Canonical position of the "type" column. Extra columns follow it, in the header and in the body
@@ -214,7 +218,7 @@ export class DotFolderListViewComponent implements OnInit {
      * @type {InputSignal<string[]>}
      * @alias visibleColumns
      */
-    $visibleColumns = input<string[]>([], { alias: 'visibleColumns' });
+    $visibleColumns = input<DotFolderListViewColumnField[]>([], { alias: 'visibleColumns' });
 
     /**
      * Freezes the selection while the caller is acting on it. Distinct from `loading`, which is
@@ -261,24 +265,31 @@ export class DotFolderListViewComponent implements OnInit {
     /** Checked set while uncontrolled. Ignored as long as `selection` is provided. */
     readonly #internalSelection = signal<DotContentDriveItem[]>([]);
 
+    /**
+     * Bumped on every selection change the table reports. Exists so the sync effect below re-runs
+     * after a click whose outcome the parent declines — where the effective selection is unchanged
+     * and a value-based dependency alone would never fire.
+     */
+    readonly #selectionRevision = signal(0);
+
     /** What the table renders: the caller's set when provided, otherwise our own. */
     protected readonly $tableSelection = computed<DotContentDriveItem[]>(
         () => this.$selection() ?? this.#internalSelection()
     );
 
     /**
-     * The effective selection. Assigning sets the uncontrolled set; a caller-provided `selection`
-     * always wins on read, so a controlled table cannot be moved from the inside.
+     * The effective selection — the caller's set when one is provided, otherwise our own.
+     *
+     * Read-only on purpose. A setter used to exist and it was a trap: while controlled it wrote the
+     * internal set, which the getter then ignored in favour of the caller's, so an assignment
+     * vanished without a word. The only way in is `onSelectionChange`, the same entry point the
+     * table itself uses.
      *
      * @type {DotContentDriveItem[]}
      * @alias selectedItems
      */
     get selectedItems(): DotContentDriveItem[] {
         return this.$tableSelection();
-    }
-
-    set selectedItems(items: DotContentDriveItem[]) {
-        this.#internalSelection.set(items ?? []);
     }
 
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -341,20 +352,27 @@ export class DotFolderListViewComponent implements OnInit {
      * extra columns spliced in right after the "type" column. The body keeps its hardcoded cells and
      * renders only the extra cells generically in the same position.
      */
-    protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
-        const extras = this.$sizedExtraColumns();
-        // Filtered off `HEADER_COLUMNS` rather than off the caller's list, so display order stays
-        // the table's and an unknown field is simply ignored.
+    /**
+     * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
+     * list, so display order stays the table's.
+     */
+    protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
         const requested = this.$visibleColumns();
-        const fixed = requested.length
+
+        return requested.length
             ? this.#fillWidth(HEADER_COLUMNS.filter((column) => requested.includes(column.field)))
             : HEADER_COLUMNS;
+    });
+
+    protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
+        const extras = this.$sizedExtraColumns();
+        const fixed = this.$fixedColumns();
 
         if (!extras.length) {
             return fixed;
         }
 
-        const columns = [...fixed];
+        const columns: DotFolderListViewColumn[] = [...fixed];
         // Anchored to where the "type" column *sits in the canonical order*, not to whether it is
         // rendered — the body's extra-column loop occupies that slot either way. Keying off the
         // rendered index instead appended the extras when Type was hidden, putting every extra cell
@@ -370,8 +388,8 @@ export class DotFolderListViewComponent implements OnInit {
      * Fields actually being rendered. The body checks against this so its cells can never disagree
      * with the header — a mismatch shifts every cell out from under its heading.
      */
-    protected readonly $visibleColumnSet = computed(
-        () => new Set(this.$columns().map((column) => column.field))
+    protected readonly $visibleColumnSet = computed<Set<DotFolderListViewColumnField>>(
+        () => new Set(this.$fixedColumns().map((column) => column.field))
     );
 
     /** Total column count including the leading checkbox column — drives colspan/skeleton span. */
@@ -429,6 +447,39 @@ export class DotFolderListViewComponent implements OnInit {
     });
 
     /**
+     * Pushes the effective selection into the table, which one-way binding alone does not.
+     *
+     * PrimeNG's table is built for `[(selection)]`: toggling a checkbox sets
+     * `preventSelectionSetterPropagation`, on the assumption that the value coming back is the one
+     * it just emitted and so needs no re-keying. With a one-way binding that assumption breaks —
+     * a parent that declines a change sends no new value at all, and one that normalises sends a
+     * different array whose first arrival is swallowed by that flag. Either way the checkbox ends up
+     * showing something other than the set that would be fired.
+     *
+     * Re-asserting here makes the rendered boxes follow this component's model unconditionally,
+     * which is what "controlled" has to mean. Idempotent in the uncontrolled case, where the value
+     * being re-asserted is the one PrimeNG just produced.
+     */
+    protected readonly $syncTableSelection = effect(() => {
+        const selection = this.$tableSelection();
+        // Read so a click re-runs this even when the effective selection did not change — the
+        // decline case, where the parent sends nothing back but PrimeNG has already moved.
+        this.#selectionRevision();
+
+        const table = this.dataTable();
+
+        if (!table) {
+            return;
+        }
+
+        table.selection = selection;
+        // Both are needed: the first rebuilds the row-key lookup `isSelected` reads, the second
+        // tells the already-rendered checkboxes to re-read it.
+        table.updateSelectionKeys();
+        table.tableService.onSelectionChange();
+    });
+
+    /**
      * Effect that cleans the selected items when the items change.
      *
      * Only ever touches the uncontrolled set — `$tableSelection` prefers the caller's, so this can
@@ -457,7 +508,7 @@ export class DotFolderListViewComponent implements OnInit {
      * Left alone when any visible column carries a non-percentage width: there is nothing
      * meaningful to rescale a `12rem` against a `32%`.
      */
-    #fillWidth(columns: DotFolderListViewColumn[]): DotFolderListViewColumn[] {
+    #fillWidth(columns: DotFolderListViewFixedColumn[]): DotFolderListViewFixedColumn[] {
         const widths = columns.map((column) =>
             column.width?.endsWith('%') ? Number.parseFloat(column.width) : NaN
         );
@@ -608,6 +659,9 @@ export class DotFolderListViewComponent implements OnInit {
     onSelectionChange(items: DotContentDriveItem[]) {
         this.#internalSelection.set(items ?? []);
         this.selectionChange.emit(items ?? []);
+        // Runs after PrimeNG has finished mutating its own state — it drops the row's selection key
+        // *after* emitting, so anything restored from inside this handler would be undone.
+        this.#selectionRevision.update((revision) => revision + 1);
     }
 
     /**
