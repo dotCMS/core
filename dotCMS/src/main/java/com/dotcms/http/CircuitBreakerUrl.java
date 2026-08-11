@@ -75,7 +75,7 @@ public class CircuitBreakerUrl {
     private static final Lazy<Integer> circuitBreakerMaxConnTotal =
             Lazy.of(() -> Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL", 100));
     private static final Lazy<Boolean> allowAccessToPrivateSubnets =
-            Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+                Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
     private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl =
             new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
 

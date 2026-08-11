@@ -1,5 +1,7 @@
 package com.dotcms.graphql;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -74,6 +76,7 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
      * @param request
      * @param response
      */
+    @RequestCost(Price.GRAPHQL_QUERY)
     protected void handleRequest(HttpServletRequest request, HttpServletResponse response) {
         corsHeaders.get().forEach(response::setHeader);
         try {
