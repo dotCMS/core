@@ -7,7 +7,7 @@
 
 <p-popover
     #popover
-    [pt]="popoverPt"
+    styleClass="dot-chip-filter-panel"
     (onShow)="$popoverOpen.set(true)"
     (onHide)="$popoverOpen.set(false)">
     @if ($popoverOpen()) {
@@ -57,7 +57,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     data-testid="field-filter-select">
@@ -79,7 +78,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     (onChange)="onMultiChange()"
@@ -109,7 +107,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     (onChange)="onMultiChange()"
@@ -129,7 +126,6 @@
                     [ngModelOptions]="{ standalone: true }"
                     [options]="$binaryOptions()"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     data-testid="field-filter-binary">
@@ -156,7 +152,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     data-testid="field-filter-radio">

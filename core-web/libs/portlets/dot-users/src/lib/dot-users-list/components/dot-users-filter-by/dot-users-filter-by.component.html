@@ -5,14 +5,13 @@
     (removed)="onRemove()"
     data-testid="users-filter-by-chip" />
 
-<p-popover #popover [pt]="popoverPt">
+<p-popover #popover styleClass="dot-chip-filter-panel">
     <p-listbox
         [(ngModel)]="$selectedValue"
         [ngModelOptions]="{ standalone: true }"
         [options]="$options"
         [multiple]="false"
         [checkbox]="false"
-        [pt]="listboxPt"
         optionLabel="label"
         optionValue="value"
         (onChange)="onChange()">

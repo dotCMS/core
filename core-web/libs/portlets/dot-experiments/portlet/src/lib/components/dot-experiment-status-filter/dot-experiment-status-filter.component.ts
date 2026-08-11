@@ -15,13 +15,7 @@ import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
-    DotChipFilterComponent,
-    DotFilterListItemComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
 /** A single status entry rendered inside the filter listbox. */
 interface StatusFilterOption {
@@ -70,9 +64,6 @@ export class DotExperimentStatusFilterComponent {
 
     /** Emits on every toggle and on clear. */
     readonly selectionChange = output<DotExperimentStatus[]>();
-
-    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
-    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly LISTBOX_SCROLL_HEIGHT = '320px';
 
     protected readonly $options = computed<StatusFilterOption[]>(() => {

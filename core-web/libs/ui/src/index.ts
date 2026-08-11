@@ -17,7 +17,6 @@ export * from './lib/components/dot-workflow-push-publish/dot-workflow-push-publ
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
-export * from './lib/components/dot-chip-filter/dot-chip-filter.constants';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/components/dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';

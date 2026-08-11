@@ -5,7 +5,7 @@
     (removed)="onRemoveAll()"
     data-testid="language-chip" />
 
-<p-popover #popover [pt]="popoverPt" (onHide)="listbox.resetFilter()">
+<p-popover #popover styleClass="dot-chip-filter-panel" (onHide)="listbox.resetFilter()">
     <p-listbox
         #listbox
         [(ngModel)]="$selectedLanguages"
@@ -16,7 +16,6 @@
         [filter]="true"
         [filterPlaceHolder]="'search' | dm"
         [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-        [pt]="listboxPt"
         optionLabel="language"
         optionValue="id"
         (onChange)="onChange()">

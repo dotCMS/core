@@ -21,7 +21,6 @@ import { DotContentDriveLanguageFieldComponent } from './dot-content-drive-langu
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
-
 const MOCK_LANGUAGES: DotLanguage[] = [
     createFakeLanguage({
         id: 1,

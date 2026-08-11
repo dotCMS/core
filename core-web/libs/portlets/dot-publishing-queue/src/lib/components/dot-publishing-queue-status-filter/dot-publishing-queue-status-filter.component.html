@@ -5,7 +5,7 @@
     (removed)="onRemoveAll()"
     data-testid="pq-status-filter-chip" />
 
-<p-popover #popover [pt]="popoverPt" (onHide)="listbox.resetFilter()">
+<p-popover #popover styleClass="dot-chip-filter-panel" (onHide)="listbox.resetFilter()">
     <p-listbox
         #listbox
         [(ngModel)]="$selected"
@@ -16,7 +16,6 @@
         [filter]="true"
         [filterPlaceHolder]="'search' | dm"
         [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-        [pt]="listboxPt"
         optionLabel="label"
         optionValue="value"
         (onChange)="onChange()">

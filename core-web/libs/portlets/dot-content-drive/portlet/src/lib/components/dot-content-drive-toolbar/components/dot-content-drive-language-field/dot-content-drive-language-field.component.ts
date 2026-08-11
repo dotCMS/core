@@ -15,13 +15,7 @@ import { PopoverModule } from 'primeng/popover';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
-    DotChipFilterComponent,
-    DotFilterListItemComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -58,8 +52,6 @@ export class DotContentDriveLanguageFieldComponent implements OnInit {
     });
 
     protected readonly LISTBOX_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
-    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
-    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
 
     protected readonly $selectedLanguageNames = computed(() => {
         const ids = this.$selectedLanguages() ?? [];

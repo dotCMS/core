@@ -29,7 +29,6 @@ import { DotContentDriveContentTypeFilterComponent } from './dot-content-drive-c
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
-
 const BASE_TYPES: StructureTypeView[] = [
     { name: 'CONTENT', label: 'Content', types: [] },
     { name: 'FILEASSET', label: 'File', types: [] },

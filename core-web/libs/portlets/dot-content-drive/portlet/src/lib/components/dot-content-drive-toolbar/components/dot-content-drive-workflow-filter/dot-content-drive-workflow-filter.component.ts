@@ -24,13 +24,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotWorkflowService } from '@dotcms/data-access';
 import { DotCMSWorkflow, WorkflowStep } from '@dotcms/dotcms-models';
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
-    DotChipFilterComponent,
-    DotFilterListItemComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -98,9 +92,6 @@ export class DotContentDriveWorkflowFilterComponent {
     readonly #destroyRef = inject(DestroyRef);
     readonly #workflowService = inject(DotWorkflowService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
-
-    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
-    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     protected readonly LISTBOX_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
 
     readonly $state = signalState<State>({

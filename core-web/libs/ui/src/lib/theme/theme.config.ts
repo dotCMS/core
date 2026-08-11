@@ -180,6 +180,39 @@ export const CustomLaraPreset = definePreset(Lara, {
                     display: none !important;
                 }
             `
+        },
+        popover: {
+            // Panel chrome for `dot-chip-filter` popovers, applied from a single place instead
+            // of a pass-through object every filter had to import and bind. Scoped to the
+            // `dot-chip-filter-panel` class rather than bare `.p-popover`: it zeroes the content
+            // padding and strips the listbox chrome, which is right for a filter panel and wrong
+            // for the ~17 other popovers in the app.
+            //
+            // The listbox rules live here, under the popover class, because that class is the
+            // only thing marking the panel — the listbox inside it is otherwise ordinary.
+            css: `
+                .p-popover.dot-chip-filter-panel {
+                    border-radius: var(--radius-lg);
+                    overflow: hidden;
+                }
+                .p-popover.dot-chip-filter-panel .p-popover-content {
+                    padding: 0;
+                }
+                .p-popover.dot-chip-filter-panel .p-listbox {
+                    border: 0;
+                    border-radius: 0;
+                    box-shadow: none;
+                    --p-listbox-option-padding: 0 1rem;
+                    --p-listbox-option-focus-background: var(--p-slate-50);
+                    --p-listbox-option-selected-color: var(--p-primary-700);
+                    --p-listbox-option-selected-focus-color: var(--p-primary-700);
+                    --p-listbox-option-selected-focus-background: var(
+                        --p-listbox-option-selected-background
+                    );
+                    --p-checkbox-width: 16px;
+                    --p-checkbox-height: 16px;
+                }
+            `
         }
     }
 });

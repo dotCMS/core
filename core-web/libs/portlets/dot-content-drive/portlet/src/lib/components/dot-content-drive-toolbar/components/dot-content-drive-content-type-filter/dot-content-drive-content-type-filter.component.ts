@@ -31,13 +31,7 @@ import {
     DotPagination,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
-    DotChipFilterComponent,
-    DotFilterListItemComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
     DEBOUNCE_TIME,
@@ -52,7 +46,7 @@ const ITEMS_PER_PAGE = 10;
 /**
  * Row height (px) used by the right column's virtual scroller.
  * Empirically measured against PrimeNG v21 listbox option default styling
- * (`--p-listbox-option-padding: 0 1rem` from CHIP_FILTER_LISTBOX_PT, plus the
+ * (`--p-listbox-option-padding: 0 1rem` from the chip-filter panel styles, plus the
  * `dot-filter-list-item` `py-3` host class). If a future PrimeNG / theme
  * upgrade changes the option padding or font, this number needs to be
  * re-measured or the scroller will misalign.
@@ -112,9 +106,6 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
      * overwrite the current state.
      */
     readonly #cancelFetch$ = new Subject<void>();
-
-    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
-    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     /**
      * PT applied to the base-type checkbox when it's in the indeterminate
      * (partial) state — paints the box with the checked-state tokens so the
