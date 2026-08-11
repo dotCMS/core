@@ -84,6 +84,98 @@ export const UVEStore = signalStore(
 
 Each feature slice owns a named prefix in the flat state (e.g. `editor*`, `view*`, `page*`) and exposes only the methods and computeds relevant to its domain. See `libs/portlets/edit-ema/portlet/README.md` for a full example.
 
+## Events-Plugin Pattern (NgRx Signals)
+
+`withState` + store methods stays the default for simple CRUD (`dot-tags`). Reach for the events plugin when:
+
+- Many components dispatch into one store and you do not want to thread method calls through inputs/outputs
+- You want an auditable action log (every state change has a named, typed event)
+- State transitions and async work should be separated so each can be reasoned about (and tested) on its own
+
+### The pieces
+
+| Piece | Where | Rule |
+|-------|-------|------|
+| `eventGroup({ source, events: { name: type<Payload>() } })` | `*.events.ts` | One group per source; async flows use `Requested → Succeeded → Failed` triples |
+| `withReducer(on(event, ({ payload }, state) => newState))` | store | **Only** place state changes |
+| `withEventHandlers` | store | **Only** place for async/HTTP; `switchMap` so a re-trigger cancels the in-flight request |
+| `injectDispatch(eventGroup)` | component | The store exposes **no methods** for state changes |
+
+### Version note (critical)
+
+The async hook in the installed `@ngrx/signals` (**21.1.1**) is **`withEventHandlers`**. **`withEffects` does not exist** and will not compile — many online examples use that name. Verified exports of `@ngrx/signals/events`:
+
+`event`, `eventGroup`, `on`, `withReducer`, `withEventHandlers`, `injectDispatch`, `Dispatcher`, `Events`, `ReducerEvents`, `mapToScope`, `provideDispatcher`, `toScope`
+
+### Error handling
+
+Same rules as the rest of this guide: the `Failed` handler routes through `DotHttpErrorManagerService.handle(error)` — no custom error UI. A failed LOAD sets `status: 'error'`; a failed CRUD action returns `status` to `'loaded'` so the list stays usable.
+
+```typescript
+// experiments-list.events.ts
+export const experimentsListEvents = eventGroup({
+    source: 'Experiments List',
+    events: {
+        listRequested: type<void>(),
+        listSucceeded: type<DotExperiment[]>(),
+        listFailed: type<unknown>()
+    }
+});
+
+// experiments-list.store.ts
+export const ExperimentsListStore = signalStore(
+    withState(initialState),
+    withReducer(
+        on(experimentsListEvents.listRequested, (_event, state) => ({
+            ...state,
+            status: 'loading' as const
+        })),
+        on(experimentsListEvents.listSucceeded, ({ payload }, state) => ({
+            ...state,
+            experiments: payload,
+            status: 'loaded' as const
+        })),
+        on(experimentsListEvents.listFailed, (_event, state) => ({
+            ...state,
+            status: 'error' as const
+        }))
+    ),
+    withEventHandlers(() => {
+        const events = inject(Events);
+        const dispatcher = inject(Dispatcher);
+        const service = inject(DotExperimentsService);
+        const httpErrorManager = inject(DotHttpErrorManagerService);
+
+        return {
+            loadList$: events.on(experimentsListEvents.listRequested).pipe(
+                switchMap(() =>
+                    service.getAll().pipe(
+                        tapResponse({
+                            next: (experiments) =>
+                                dispatcher.dispatch(
+                                    experimentsListEvents.listSucceeded(experiments)
+                                ),
+                            error: (error: HttpErrorResponse) => {
+                                httpErrorManager.handle(error);
+                                dispatcher.dispatch(experimentsListEvents.listFailed(error));
+                            }
+                        })
+                    )
+                )
+            )
+        };
+    })
+);
+
+// component
+readonly #dispatch = injectDispatch(experimentsListEvents);
+```
+
+### Reference implementations
+
+- `libs/image-editor/src/lib/store/` — feature-sliced: `image-editor.events.ts` + `features/with-*.feature.ts`
+- `libs/portlets/dot-experiments/portlet/src/lib/site-wide/store/` — single-store list example
+
 ## Nx Generator Post-Setup
 
 After running the generator:

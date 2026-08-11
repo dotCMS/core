@@ -1,0 +1,175 @@
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon>
+                <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                    search
+                </span>
+            </p-inputIcon>
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'experiments.list.search.placeholder' | dm"
+                [attr.aria-label]="'experiments.list.search.placeholder' | dm"
+                data-testid="experiments-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <dot-experiment-status-filter
+            [selectedStatuses]="store.selectedStatuses()"
+            [statusCounts]="store.statusCounts()"
+            (selectionChange)="onStatusesChange($event)"
+            data-testid="experiments-status-filter" />
+    </div>
+</p-toolbar>
+
+<!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="experiments-table-wrapper">
+    <p-table
+        [value]="$tableValue()"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        [paginator]="true"
+        [rows]="store.perPage()"
+        [totalRecords]="store.totalRecords()"
+        [first]="(store.page() - 1) * store.perPage()"
+        [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [sortField]="store.orderBy()"
+        [sortOrder]="store.direction() === 'DESC' ? -1 : 1"
+        dataKey="experiment.id"
+        data-testid="experiments-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>{{ 'experiments.list.header.experiment' | dm }}</th>
+                <th>{{ 'experiments.list.header.page' | dm }}</th>
+                <th>{{ 'experiments.list.header.goal' | dm }}</th>
+                <th>{{ 'experiments.list.header.variants' | dm }}</th>
+                <th>{{ 'experiments.list.header.schedule' | dm }}</th>
+                <th>{{ 'experiments.list.header.status' | dm }}</th>
+                <th pSortableColumn="modDate">
+                    {{ 'experiments.list.header.modified' | dm }}
+                    <p-sortIcon field="modDate" />
+                </th>
+                <th class="w-40">{{ 'experiments.list.header.actions' | dm }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+            @if (store.status() === 'loading') {
+                <tr
+                    data-testid="experiments-loading-row"
+                    class="h-17 cursor-default hover:bg-transparent!">
+                    @for (column of SKELETON_COLUMNS; track column) {
+                        <td>
+                            <span class="flex h-full items-center">
+                                <p-skeleton height="1.5rem" width="100%" />
+                            </span>
+                        </td>
+                    }
+                </tr>
+            } @else {
+                <tr data-testid="experiment-row">
+                    <td data-testid="experiment-name">
+                        <div class="flex flex-col">
+                            <span class="font-medium">{{ row.experiment.name }}</span>
+                            @if (row.experiment.description) {
+                                <span class="text-sm text-surface-500">
+                                    {{ row.experiment.description }}
+                                </span>
+                            }
+                        </div>
+                    </td>
+                    <td class="font-mono text-sm" data-testid="experiment-page">
+                        {{ row.pagePath }}
+                    </td>
+                    <td data-testid="experiment-goal">
+                        {{ row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER }}
+                    </td>
+                    <td data-testid="experiment-variants">{{ row.variants }}</td>
+                    <td data-testid="experiment-schedule">{{ row.schedule }}</td>
+                    <td data-testid="experiment-status">
+                        <dot-experiment-status-tag [status]="row.experiment.status" />
+                    </td>
+                    <td data-testid="experiment-modified">
+                        {{ row.experiment.modDate | date: 'MMM d, y' }}
+                    </td>
+                    <td>
+                        <div class="flex items-center gap-1">
+                            @if (row.canArchive) {
+                                <p-button
+                                    [text]="true"
+                                    severity="secondary"
+                                    (onClick)="confirmArchive(row.experiment)"
+                                    [attr.aria-label]="'experiments.action.archive' | dm"
+                                    data-testid="experiment-archive-btn">
+                                    <span
+                                        class="material-symbols-rounded text-xl! leading-none!"
+                                        aria-hidden="true">
+                                        archive
+                                    </span>
+                                </p-button>
+                            }
+                            @if (row.isArchived) {
+                                <!-- Restoring an archived experiment has no backend transition yet -->
+                                <p-button
+                                    [text]="true"
+                                    severity="secondary"
+                                    [disabled]="true"
+                                    [attr.aria-label]="'experiments.action.restore' | dm"
+                                    data-testid="experiment-restore-btn">
+                                    <span
+                                        class="material-symbols-rounded text-xl! leading-none!"
+                                        aria-hidden="true">
+                                        unarchive
+                                    </span>
+                                </p-button>
+                            }
+                            <p-button
+                                [text]="true"
+                                severity="secondary"
+                                (onClick)="onRowMenuToggle(row.experiment); rowMenu.toggle($event)"
+                                [attr.aria-label]="'experiments.list.actions.menu' | dm"
+                                data-testid="experiment-actions-btn">
+                                <span
+                                    class="material-symbols-rounded text-xl! leading-none!"
+                                    aria-hidden="true">
+                                    more_vert
+                                </span>
+                            </p-button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr class="h-full hover:bg-transparent!">
+                <td colspan="8" class="h-full border-none p-6">
+                    <dot-empty-container
+                        [configuration]="$emptyConfiguration()"
+                        [hideContactUsLink]="true"
+                        data-testid="experiments-empty-state" />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-menu #rowMenu [model]="$rowMenuItems()" [popup]="true" appendTo="body" />
+
+@if ($addToBundleAssetId(); as assetIdentifier) {
+    <dot-add-to-bundle
+        [assetIdentifier]="assetIdentifier"
+        (cancel)="$addToBundleAssetId.set(null)" />
+}
+
+<p-confirmDialog
+    [key]="CONFIRM_KEY"
+    [draggable]="false"
+    [position]="'center'"
+    [style]="{ width: '500px' }" />
