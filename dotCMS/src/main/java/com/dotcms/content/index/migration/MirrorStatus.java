@@ -22,9 +22,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @param os                the OpenSearch ({@code .os}) copy (existence + exact document count)
  * @param verdict           the diff verdict between the two copies
  * @param recommendation    human-readable, action-oriented advice for a support technician
- * @param expectedDocCount  how many documents this index <em>should</em> hold according to the
+ * @param databaseDocCount  how many documents this index <em>should</em> hold according to the
  *                          database — the engine-independent denominator behind
- *                          {@link #esCoveragePercent()} / {@link #osCoveragePercent()}. An exact count
+ *                          {@link #esIndexedPercent()} / {@link #osIndexedPercent()}. An exact count
  *                          of {@code contentlet_version_info}, so 100% means complete and any excess is
  *                          real. Only the content indices have one; {@code null} for Site Search, whose
  *                          corpus (crawled pages and files) has no such counterpart, and {@code null}
@@ -38,7 +38,7 @@ public record MirrorStatus(
         EngineCopy os,
         Verdict verdict,
         String recommendation,
-        @JsonInclude(JsonInclude.Include.NON_NULL) Long expectedDocCount) {
+        @JsonInclude(JsonInclude.Include.NON_NULL) Long databaseDocCount) {
 
     /** A row with no database denominator — the shape the Site Search indices use. */
     public MirrorStatus(final String indexName, final IndexKind kind, final EngineCopy es,
@@ -121,41 +121,41 @@ public record MirrorStatus(
     }
 
     /**
-     * How complete the Elasticsearch copy is against the database, as a percentage of
-     * {@link #expectedDocCount}. See {@link #coverageOf(EngineCopy)}.
+     * What percentage of the database's content the Elasticsearch copy holds — a percentage of
+     * {@link #databaseDocCount}. See {@link #indexedPercentOf(EngineCopy)}.
      */
-    @JsonProperty("esCoveragePercent")
+    @JsonProperty("esIndexedPercent")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "Percentage of the documents the database says this index should hold that "
             + "the Elasticsearch copy actually holds. 100.0 = complete. Absent for Site Search "
             + "(no database denominator) and when a count could not be measured.")
-    public Double esCoveragePercent() {
-        return coverageOf(es);
+    public Double esIndexedPercent() {
+        return indexedPercentOf(es);
     }
 
     /**
-     * How complete the OpenSearch copy is against the database, as a percentage of
-     * {@link #expectedDocCount}. See {@link #coverageOf(EngineCopy)}.
+     * What percentage of the database's content the OpenSearch copy holds — a percentage of
+     * {@link #databaseDocCount}. See {@link #indexedPercentOf(EngineCopy)}.
      */
-    @JsonProperty("osCoveragePercent")
+    @JsonProperty("osIndexedPercent")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "Percentage of the documents the database says this index should hold that "
             + "the OpenSearch copy actually holds. 100.0 = complete; a low value means the mirror was "
             + "never rebuilt — and anything reading through it (including a Site Search crawl) sees "
             + "only that fraction of the content. Absent for Site Search (no database denominator) "
             + "and when a count could not be measured.")
-    public Double osCoveragePercent() {
-        return coverageOf(os);
+    public Double osIndexedPercent() {
+        return indexedPercentOf(os);
     }
 
     /**
-     * One engine's completeness against the database: {@code docCount / expectedDocCount × 100},
+     * One engine's completeness against the database: {@code docCount / databaseDocCount × 100},
      * rounded to two decimals.
      *
      * <p><strong>Why this exists next to {@link #driftPercent()}.</strong> Drift compares the two
      * engines against <em>each other</em>, which stops being an answer once one of them is the only
      * one left: in Phase 3 there is no Elasticsearch side to compare against, so a mirror that was
-     * never rebuilt looks unremarkable. Coverage compares each engine against the <em>database</em> —
+     * never rebuilt looks unremarkable. This compares each engine against the <em>database</em> —
      * the source of truth, identical in every phase — so "this index holds 3% of the content" is
      * still visible when there is nothing to diff (issue #36983).</p>
      *
@@ -165,14 +165,14 @@ public record MirrorStatus(
      * (orphans left by a delete that never propagated), which is worth looking at rather than
      * rounding away.</p>
      *
-     * @return the percentage, or {@code null} when there is no denominator ({@code expectedDocCount}
+     * @return the percentage, or {@code null} when there is no denominator ({@code databaseDocCount}
      *         absent or zero) or the count was unmeasurable ({@code -1})
      */
-    private Double coverageOf(final EngineCopy copy) {
-        if (expectedDocCount == null || expectedDocCount <= 0 || copy.docCount() < 0) {
+    private Double indexedPercentOf(final EngineCopy copy) {
+        if (databaseDocCount == null || databaseDocCount <= 0 || copy.docCount() < 0) {
             return null;
         }
-        return Math.round(copy.docCount() * 10_000.0 / expectedDocCount) / 100.0;
+        return Math.round(copy.docCount() * 10_000.0 / databaseDocCount) / 100.0;
     }
 
     /**

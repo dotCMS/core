@@ -440,7 +440,7 @@ Run a full reindex first.
 It is **advisory only**: it never stops the crawl, and any failure to measure is swallowed — a
 diagnostic must not be able to break indexing. Only the engine the phase actually reads from is
 checked, so an incomplete OpenSearch mirror stays silent in Phases 0/1 where the crawl queries a
-complete Elasticsearch. Threshold: `SITE_SEARCH_CRAWL_MIN_CONTENT_COVERAGE_PERCENT` (default `95`;
+complete Elasticsearch. Threshold: `SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT` (default `95`;
 `0` disables the check).
 
 Note the readiness endpoint does catch the precondition: an unreconciled content mirror shows as
@@ -496,9 +496,9 @@ through the write-path gate above.
   report still shows the previous number — and a support technician checking whether a publish reached
   OpenSearch reads that as a **lost write**. This endpoint is the source of truth for exactly that
   question, so it must never report a number the engine can already contradict (issue #36983).
-- **Content rows also carry coverage against the DATABASE.** `expectedDocCount` is how many documents
+- **Content rows also say how much of the database's content each engine actually holds.** `databaseDocCount` is how many documents
   the index should hold per `contentlet_version_info` (keyed by `identifier, lang, variant_id` — the
-  same unit as an index document), and `esCoveragePercent` / `osCoveragePercent` are each engine
+  same unit as an index document), and `esIndexedPercent` / `osIndexedPercent` are each engine
   measured against it. This is the only signal in the report that does not come from a search engine,
   and that is the point: **`driftPercent` compares the two engines against each other, which stops
   being an answer once one of them is the only one left.** In Phase 3 a mirror that was never rebuilt
@@ -588,7 +588,7 @@ Search rows. Then:
 |---|---|
 | `verdict` | `IN_SYNC` · `MISSING_COUNTERPART` (one engine lacks the index) · `COUNT_DRIFT` (both hold it, different counts) |
 | `driftPercent` | `(OS − ES) / ES × 100`, rounded to 2 decimals. `0.0` in sync · negative = mirror **behind** (blocks *advance*) · positive = mirror **ahead** (blocks *rollback*) · `-100.0` mirror empty/absent · `+100.0` the original is empty but the mirror holds data · `null` a count could not be measured |
-| `expectedDocCount` + `esCoveragePercent` / `osCoveragePercent` | Content rows only. How complete each engine is **against the database**, not against the other engine — the one completeness signal that still works in Phase 3, where there is nothing left to diff. `100.0` = complete; `3.06` = the mirror was never rebuilt. Absent for Site Search and when a count could not be measured |
+| `databaseDocCount` + `esIndexedPercent` / `osIndexedPercent` | Content rows only. How complete each engine is **against the database**, not against the other engine — the one completeness signal that still works in Phase 3, where there is nothing left to diff. `100.0` = complete; `3.06` = the mirror was never rebuilt. Absent for Site Search and when a count could not be measured |
 | `docCount: -1` | The count could **not** be measured. Never read it as "zero" — the verdict treats it as out of sync on purpose |
 | `physicalName` | The exact name on that server (cluster-prefixed; `.os`-tagged on OpenSearch) — copy/paste it into `_cat/indices` to verify by hand |
 | `recommendation` | The concrete action (re-crawl / reindex). A trailing `NOTE:` flags an alias that is really an index name (see above) |

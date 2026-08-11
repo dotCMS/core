@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.ContentletIndexOperations;
-import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ExpectedCounts;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.DatabaseCounts;
 import com.dotcms.content.index.IndexAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.domain.IndexStats;
@@ -81,7 +81,7 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
 
     /** @param expected the database denominator behind the coverage percentages, or null when absent */
     private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info,
-            final ExpectedCounts expected) {
+            final DatabaseCounts expected) {
         return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info, () -> expected);
     }
 
@@ -216,11 +216,11 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         count(esOps, "working_1", 686); count(osOps, "working_1", 21);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
-                new ExpectedCounts(686L, 685L)).statuses().get(0);
+                new DatabaseCounts(686L, 685L)).statuses().get(0);
 
-        assertEquals(Long.valueOf(686), working.expectedDocCount());
-        assertEquals(100.0, working.esCoveragePercent(), 0.001);
-        assertEquals(3.06, working.osCoveragePercent(), 0.001);
+        assertEquals(Long.valueOf(686), working.databaseDocCount());
+        assertEquals(100.0, working.esIndexedPercent(), 0.001);
+        assertEquals(3.06, working.osIndexedPercent(), 0.001);
         // The incomplete copy is named in the recommendation, with the fallout spelled out.
         assertTrue(working.recommendation().contains("OpenSearch copy holds 21 of the 686"));
         assertTrue(working.recommendation().contains("Site Search crawl"));
@@ -239,9 +239,9 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
 
-        assertNull(working.expectedDocCount());
-        assertNull(working.esCoveragePercent());
-        assertNull(working.osCoveragePercent());
+        assertNull(working.databaseDocCount());
+        assertNull(working.esIndexedPercent());
+        assertNull(working.osIndexedPercent());
         assertFalse(working.recommendation().contains("NOTE"));
     }
 
@@ -258,9 +258,9 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         count(esOps, "working_1", 686); count(osOps, "working_1", 686);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
-                new ExpectedCounts(686L, 685L)).statuses().get(0);
+                new DatabaseCounts(686L, 685L)).statuses().get(0);
 
-        assertEquals(100.0, working.osCoveragePercent(), 0.001);
+        assertEquals(100.0, working.osIndexedPercent(), 0.001);
         assertEquals(Verdict.IN_SYNC, working.verdict());
         assertFalse(working.recommendation().contains("NOTE"));
     }

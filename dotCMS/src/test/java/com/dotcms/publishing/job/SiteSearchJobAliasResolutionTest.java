@@ -221,12 +221,12 @@ public class SiteSearchJobAliasResolutionTest {
     @Test
     public void test_thresholdZero_disablesTheCheck() {
         Config.setProperty(MigrationPhase.FLAG_KEY, "3");
-        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_COVERAGE_KEY, "0");
+        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, "0");
         try {
             assertFalse(jobSeeing(contentRow(686L, 686, 21))
                     .incompleteContentIndexWarning().isPresent());
         } finally {
-            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_COVERAGE_KEY, null);
+            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
             Config.setProperty(MigrationPhase.FLAG_KEY, null);
         }
     }

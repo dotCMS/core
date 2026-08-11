@@ -410,13 +410,13 @@ public class SiteSearchJobImpl {
     }
 
     /**
-     * Config key for the coverage below which a crawl is warned about. Percentage of the content the
+     * Config key for the indexed percentage below which a crawl is warned about. Percentage of the content the
      * database says exists; {@code 0} disables the check.
      */
-    static final String MIN_CONTENT_COVERAGE_KEY = "SITE_SEARCH_CRAWL_MIN_CONTENT_COVERAGE_PERCENT";
+    static final String MIN_CONTENT_INDEXED_KEY = "SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT";
 
     /** Default: warn when the content index serving the crawl is missing more than 5% of the content. */
-    static final double DEFAULT_MIN_CONTENT_COVERAGE = 95.0;
+    static final double DEFAULT_MIN_CONTENT_INDEXED = 95.0;
 
     /**
      * The warning to emit before crawling when the content index this crawl will read from is
@@ -437,24 +437,24 @@ public class SiteSearchJobImpl {
     @VisibleForTesting
     Optional<String> incompleteContentIndexWarning() {
         final double threshold = Config.getFloatProperty(
-                MIN_CONTENT_COVERAGE_KEY, (float) DEFAULT_MIN_CONTENT_COVERAGE);
+                MIN_CONTENT_INDEXED_KEY, (float) DEFAULT_MIN_CONTENT_INDEXED);
         if (threshold <= 0) {
             return Optional.empty();
         }
         final boolean readsOpenSearch = MigrationPhase.current().isReadEnabled();
         return Try.of(() -> contentMirrorStatuses.get().stream()
-                        .map(status -> coverageShortfall(status, readsOpenSearch, threshold))
+                        .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
                         .flatMap(Optional::stream)
                         .findFirst())
                 .getOrElse(Optional.empty());
     }
 
     /** The shortfall message for one content row, or empty when that row is fine or unmeasured. */
-    private static Optional<String> coverageShortfall(final MirrorStatus status,
+    private static Optional<String> indexedShortfall(final MirrorStatus status,
             final boolean readsOpenSearch, final double threshold) {
-        final Double coverage = readsOpenSearch
-                ? status.osCoveragePercent() : status.esCoveragePercent();
-        if (coverage == null || coverage >= threshold) {
+        final Double indexedPercent = readsOpenSearch
+                ? status.osIndexedPercent() : status.esIndexedPercent();
+        if (indexedPercent == null || indexedPercent >= threshold) {
             return Optional.empty();
         }
         return Optional.of(String.format(
@@ -463,8 +463,8 @@ public class SiteSearchJobImpl {
                         + "querying that index, so it can only index what it finds there — this crawl "
                         + "will produce a partial Site Search index, and reindexing the content later "
                         + "will NOT repair it (it must be crawled again). Run a full reindex first.",
-                status.indexName(), readsOpenSearch ? "OpenSearch" : "Elasticsearch", coverage,
-                status.expectedDocCount()));
+                status.indexName(), readsOpenSearch ? "OpenSearch" : "Elasticsearch", indexedPercent,
+                status.databaseDocCount()));
     }
 
     /**
