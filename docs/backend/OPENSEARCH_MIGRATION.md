@@ -391,6 +391,43 @@ ensure every Site Search index has been crawled at least once so its OS counterp
 sync. The migration-readiness endpoint below is what tells the operator *which* indices still need
 that crawl, before they change the phase.
 
+##### The crawl inherits the content index — reindex first, crawl second
+
+A Site Search crawl does **not** read the database. It builds its bundle from a **search over the
+content index**:
+
+```java
+// FileAssetBundler:205 — same shape in HTMLPageAsContentBundler and URLMapBundler
+searchResults.addAll(this.conAPI.searchIndex(luceneQuery + " +live:true", ...));
+```
+
+That search is phase-routed, so in Phases 2/3 it is served by **OpenSearch**. If the OpenSearch
+*content* mirror has not been rebuilt by a full reindex, the crawl simply cannot see the content that
+is missing from it — and writes a Site Search index containing only what it found. Observed on a
+Phase-3 crawl: the content index held 685 live documents on Elasticsearch and 21 on OpenSearch (never
+reindexed), and the resulting Site Search index came out with **14 documents** instead of ~443. The
+crawl answered its query correctly; the corpus it queried was 3% complete.
+
+This is worse than the read-time cliff above, in three ways:
+
+1. **The crawl reports success.** Nothing warns that the input corpus was nearly empty — the counts it
+   logs are of what it bundled, so they look internally consistent.
+2. **The bundlers swallow search failures at `Logger.debug`** (`FileAssetBundler:206-208, 213-215`).
+   Even a hard search error surfaces as nothing more than a smaller bundle.
+3. **The damage outlives its cause.** Reindexing the content store afterwards fixes the content mirror
+   but does *not* repair the Site Search index that was already built from the empty one — it keeps
+   its 14 documents until it is crawled again. Nor will the readiness report flag it: the index exists
+   on OpenSearch, which in Phase 3 is exactly the expected topology, so the row reads healthy. The
+   defect is *inside* the index, not in its shape.
+
+**Ordering rule:** a Site Search crawl is only meaningful once the content index of the phase's
+**read** engine is complete. In Phases 2/3 that means **full content reindex first, Site Search crawl
+second** — the reverse order silently produces a truncated index that looks fine everywhere.
+
+Note the readiness endpoint does catch the precondition: an unreconciled content mirror shows as
+`COUNT_DRIFT` on `WORKING`/`LIVE` with `safeToAdvance: false`. It only *reports*, though — nothing
+stops a promotion or a crawl from proceeding anyway.
+
 #### Migration-readiness endpoint (pre-phase-change advisory)
 
 `GET /api/v1/index/migration/readiness` is an internal, read-only report a support technician runs
