@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ListboxModule } from 'primeng/listbox';
-import { Popover, PopoverModule } from 'primeng/popover';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
@@ -36,9 +36,10 @@ interface StatusFilterOption {
 /**
  * Multi-select status filter for the experiments list.
  *
- * Renders a chip that opens a popover with a checkbox listbox. Checking options
- * only mutates a local pending selection — nothing is emitted until the user
- * presses Done (or Clear). Dismissing the popover discards the pending change.
+ * Renders a chip that opens a popover with a checkbox listbox. Each toggle applies
+ * immediately and the chip's remove control clears the selection, matching every
+ * `dot-chip-filter` consumer in content-drive — none of them batch behind an apply
+ * button, so this one does not either.
  */
 @Component({
     selector: 'dot-experiment-status-filter',
@@ -67,7 +68,7 @@ export class DotExperimentStatusFilterComponent {
         alias: 'statusCounts'
     });
 
-    /** Emits the new selection when the user applies (Done) or clears it. */
+    /** Emits on every toggle and on clear. */
     readonly selectionChange = output<DotExperimentStatus[]>();
 
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
@@ -98,23 +99,20 @@ export class DotExperimentStatusFilterComponent {
             .map(({ label }) => label);
     });
 
-    /** Selection being edited inside the popover, re-seeded whenever the applied selection changes. */
-    protected readonly $pendingStatuses = linkedSignal<DotExperimentStatus[]>(() => [
+    /**
+     * Bound two-way to the listbox. Re-seeds from the applied selection whenever the parent
+     * changes it (URL hydration, back/forward), while staying writable by the listbox.
+     */
+    protected readonly $selectedStatusValues = linkedSignal<DotExperimentStatus[]>(() => [
         ...this.$selectedStatuses()
     ]);
 
-    protected onDone(popover: Popover): void {
-        this.selectionChange.emit(this.$pendingStatuses());
-        popover.hide();
+    protected onChange(): void {
+        this.selectionChange.emit(this.$selectedStatusValues() ?? []);
     }
 
-    protected onClear(): void {
-        this.$pendingStatuses.set([]);
+    protected onRemoveAll(): void {
+        this.$selectedStatusValues.set([]);
         this.selectionChange.emit([]);
-    }
-
-    /** Dismissing the popover without applying discards the pending edit. */
-    protected onPopoverHide(): void {
-        this.$pendingStatuses.set([...this.$selectedStatuses()]);
     }
 }

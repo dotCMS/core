@@ -2,12 +2,12 @@
     [title]="'experiments.list.filter.status' | dm"
     [selections]="$selectedLabels()"
     (clicked)="popover.toggle($event)"
-    (removed)="onClear()"
+    (removed)="onRemoveAll()"
     data-testid="experiment-status-filter-chip" />
 
-<p-popover #popover [pt]="popoverPt" (onHide)="onPopoverHide()">
+<p-popover #popover [pt]="popoverPt">
     <p-listbox
-        [(ngModel)]="$pendingStatuses"
+        [(ngModel)]="$selectedStatusValues"
         [ngModelOptions]="{ standalone: true }"
         [options]="$options()"
         [multiple]="true"
@@ -16,7 +16,8 @@
         [pt]="listboxPt"
         [ariaLabel]="'experiments.list.filter.status' | dm"
         optionLabel="label"
-        optionValue="value">
+        optionValue="value"
+        (onChange)="onChange()">
         <ng-template let-option pTemplate="item">
             <dot-filter-list-item
                 [label]="option.label"
@@ -24,19 +25,4 @@
                 [attr.data-testid]="option.testId" />
         </ng-template>
     </p-listbox>
-
-    <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-3 py-2">
-        <p-button
-            [label]="'Clear' | dm"
-            [text]="true"
-            severity="secondary"
-            size="small"
-            (onClick)="onClear()"
-            data-testid="experiment-status-filter-clear" />
-        <p-button
-            [label]="'Done' | dm"
-            size="small"
-            (onClick)="onDone(popover)"
-            data-testid="experiment-status-filter-done" />
-    </div>
 </p-popover>

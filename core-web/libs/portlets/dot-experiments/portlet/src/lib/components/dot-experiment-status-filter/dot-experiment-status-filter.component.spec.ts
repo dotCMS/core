@@ -1,7 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { Popover } from 'primeng/popover';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -63,12 +61,6 @@ describe('DotExperimentStatusFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    const clickFooterButton = (testId: string) => {
-        const button = queryInOverlay(testId)?.querySelector('button');
-        spectator.click(button as HTMLElement);
-        spectator.detectChanges();
-    };
-
     const setUp = (selectedStatuses: DotExperimentStatus[] = [DotExperimentStatus.DRAFT]) => {
         spectator = createComponent({
             props: { selectedStatuses, statusCounts: STATUS_COUNTS }
@@ -103,71 +95,52 @@ describe('DotExperimentStatusFilterComponent', () => {
         });
     });
 
-    describe('pending selection', () => {
-        it('should not emit while options are being ticked', () => {
+    describe('selection', () => {
+        // Every `dot-chip-filter` consumer in content-drive applies each toggle immediately
+        // and clears through the chip. There is no apply button to batch behind.
+        it('should emit on every toggle', () => {
             openPopover();
 
             toggleOption(DotExperimentStatus.RUNNING);
-            toggleOption(DotExperimentStatus.ENDED);
-
-            expect(selectionChange).not.toHaveBeenCalled();
-        });
-
-        it('should emit the pending selection only when Done is pressed', () => {
-            openPopover();
-            toggleOption(DotExperimentStatus.RUNNING);
-
-            clickFooterButton('experiment-status-filter-done');
 
             expect(selectionChange).toHaveBeenCalledTimes(1);
-            expect(selectionChange).toHaveBeenCalledWith([
+            expect(selectionChange).toHaveBeenLastCalledWith([
                 DotExperimentStatus.DRAFT,
                 DotExperimentStatus.RUNNING
             ]);
         });
 
-        it('should close the popover after Done', () => {
+        it('should emit again when a second option is ticked', () => {
             openPopover();
 
-            clickFooterButton('experiment-status-filter-done');
+            toggleOption(DotExperimentStatus.RUNNING);
+            toggleOption(DotExperimentStatus.ENDED);
 
-            expect((spectator.query(Popover) as Popover).overlayVisible).toBe(false);
+            expect(selectionChange).toHaveBeenCalledTimes(2);
+            expect(selectionChange).toHaveBeenLastCalledWith([
+                DotExperimentStatus.DRAFT,
+                DotExperimentStatus.RUNNING,
+                DotExperimentStatus.ENDED
+            ]);
         });
 
-        it('should discard the pending change when the popover is dismissed without Done', () => {
-            openPopover();
-            toggleOption(DotExperimentStatus.RUNNING);
-
-            // PrimeNG emits `onHide` from the overlay's animation-done hook, which never
-            // completes under jsdom, so `hide()` alone would not reach the discard handler.
-            const popover = spectator.query(Popover) as Popover;
-            popover.hide();
-            popover.onHide.emit({});
-            spectator.detectChanges();
+        it('should emit without the status when an applied option is unticked', () => {
             openPopover();
 
-            expect(selectionChange).not.toHaveBeenCalled();
-            expect(spectator.query(Popover)).not.toBeNull();
+            toggleOption(DotExperimentStatus.DRAFT);
 
-            // The pending selection is re-seeded from the applied input, so pressing Done
-            // now emits the original selection instead of the discarded edit.
-            clickFooterButton('experiment-status-filter-done');
+            expect(selectionChange).toHaveBeenLastCalledWith([]);
+        });
 
-            expect(selectionChange).toHaveBeenCalledWith([DotExperimentStatus.DRAFT]);
+        it('should not expose an apply or clear footer', () => {
+            openPopover();
+
+            expect(queryInOverlay('experiment-status-filter-done')).toBeNull();
+            expect(queryInOverlay('experiment-status-filter-clear')).toBeNull();
         });
     });
 
     describe('clear', () => {
-        it('should reset the pending selection and emit an empty selection', () => {
-            openPopover();
-            toggleOption(DotExperimentStatus.RUNNING);
-
-            clickFooterButton('experiment-status-filter-clear');
-
-            expect(selectionChange).toHaveBeenCalledTimes(1);
-            expect(selectionChange).toHaveBeenCalledWith([]);
-        });
-
         it('should emit an empty selection when the chip is removed', () => {
             spectator.triggerEventHandler(
                 '[data-testid="experiment-status-filter-chip"]',
