@@ -48,10 +48,10 @@ export default defineConfig({
     /*
      * Parallelize CI (2 workers); local keeps Playwright default.
      *
-     * Two Chromium instances share the runner with dotCMS, two OpenSearch nodes and Postgres, so
-     * this is the first knob to turn if the shard keeps crashing: drop to 1. Left at 2 because
-     * `--disable-dev-shm-usage` (see `use.launchOptions`) targets the observed crash directly, and
-     * halving concurrency would add ~10 minutes per shard for good.
+     * Do NOT lower this to work around a crashing shard. The 1 -> 2 bump is a measured improvement
+     * from #36567 / PR #36647: the Playwright phase went from ~49m to a <30m target, so going back
+     * roughly doubles E2E time for every PR in the repo. If concurrency ever is proven to be the
+     * cause, that belongs in its own change against #36567, not smuggled into a feature PR.
      */
     workers: process.env.CI ? 2 : undefined,
     timeout: 60000,
