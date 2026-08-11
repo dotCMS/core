@@ -16,6 +16,10 @@ export const dotExperimentsPortletRoutes: Routes = [
     {
         path: '',
         title: 'experiment.container.list.title',
+        // `DotPushPublishEnvironmentsResolver` is `@Injectable()` without `providedIn: 'root'`,
+        // so referencing it in `resolve` is not enough — it has to be provided on the route or
+        // the router throws NG0201 on activation.
+        providers: [DotPushPublishEnvironmentsResolver],
         resolve: {
             pushPublishEnvironments: DotPushPublishEnvironmentsResolver
         },
