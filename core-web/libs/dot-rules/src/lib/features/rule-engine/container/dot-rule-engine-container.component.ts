@@ -1,7 +1,7 @@
 import { Observable, Subject, merge, from as observableFrom } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { filter, map, mergeMap, reduce, take, takeUntil } from 'rxjs/operators';
@@ -44,6 +44,7 @@ export {
     selector: 'dot-rule-engine-container',
     templateUrl: './dot-rule-engine-container.component.html',
     imports: [DotRuleEngineComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'flex flex-grow min-h-full'
     }

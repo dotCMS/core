@@ -211,7 +211,8 @@ public class ContentResource {
             operationId = "saveDraft",
             summary = "Saves a content draft",
             description = "Creates or updates a draft version of a contentlet without triggering workflow. " +
-                    "Drafts allow content editors to save work in progress without publishing.",
+                    "Drafts allow content editors to save work in progress without publishing." +
+                    com.dotcms.rest.api.v1.workflow.WorkflowResource.BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Draft saved successfully",
@@ -253,8 +254,15 @@ public class ContentResource {
         APILocator.getContentletAPI().saveDraft(contentlet,
                 (ContentletRelationships) contentlet.get(Contentlet.RELATIONSHIP_KEY), categories.orElse(null), null,
                 initDataObject.getUser(), false);
-        return new ResponseEntityContentletView(
-                new DotTransformerBuilder().defaultOptions().content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+        // Popped BEFORE the transformer builds the entity map so the transient warnings key
+        // never leaks into the response entity; surfaced as advisory messages (#36658).
+        final List<MessageEntity> conversionMessages =
+                MapToContentletPopulator.popStoryBlockConversionMessages(contentlet);
+        final Map<String, Object> entityMap = new DotTransformerBuilder().defaultOptions()
+                .content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        return null != conversionMessages
+                ? new ResponseEntityContentletView(entityMap, conversionMessages)
+                : new ResponseEntityContentletView(entityMap);
     }
 
     /**

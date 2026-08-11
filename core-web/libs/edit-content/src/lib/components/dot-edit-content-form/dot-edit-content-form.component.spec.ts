@@ -11,7 +11,6 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -472,13 +471,20 @@ describe('DotFormComponent', () => {
 
             describe('TabView Styling', () => {
                 it('should apply single-tab class when only one tab exists', () => {
-                    const tabView = spectator.query('.dot-edit-content-tabview');
-                    component.$hasSingleTab = signal(true);
+                    dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                        of(MOCK_CONTENTTYPE_1_TAB)
+                    );
+                    store.initializeExistingContent({
+                        inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                        depth: DotContentletDepths.ONE
+                    });
+                    spectator.flushEffects();
                     spectator.detectChanges();
 
-                    expect(tabView.classList.contains('dot-edit-content-tabview--single-tab')).toBe(
-                        true
-                    );
+                    const tabView = spectator.query('.dot-edit-content-tabview');
+                    expect(
+                        tabView?.classList.contains('dot-edit-content-tabview--single-tab')
+                    ).toBe(true);
                 });
             });
         });
@@ -1229,6 +1235,68 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
 
                 // Locking must not clobber the user's real unsaved changes.
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
+
+            it('treats a native `drop` as a genuine interaction, even as the very first one (drag-and-drop from the OS has no preceding pointerdown)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                // Dragging a file in from the OS file manager: the drag starts outside the window,
+                // so no `pointerdown` precedes it inside the host — only this native `drop` event
+                // (dispatched on the host, where the capture-phase listener lives) does.
+                spectator.element.dispatchEvent(new Event('drop', { bubbles: true }));
+
+                // Simulate the file field's CVA writing the dropped file's value — same as any
+                // CVA-driven onChange, Angular's forms wiring marks the control dirty and emits
+                // valueChanges, which `initializeFormListener` reacts to.
+                component.form.markAsDirty();
+                component.form.updateValueAndValidity();
+                spectator.detectChanges();
+
+                // #userTouched (latched by the drop) must stop the listener from resetting to
+                // pristine, the way it would for untouched async-CVA populate noise.
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
+
+            it('does not wipe a real edit made within the isStable/500ms fallback window (#scheduleMarkPristineAfterInit is gated on #userTouched too)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+                // A microtask flush (not a meaningful time advance) is needed for the field to
+                // actually render — without it `text2` isn't in the DOM yet. This costs nothing
+                // against the 500ms fallback window the test is about.
+                tick(0);
+                spectator.detectChanges();
+
+                // A real edit lands before the fallback timer fires (e.g. the user starts typing
+                // immediately, before ApplicationRef settles or the 500ms safety window elapses).
+                const input = spectator.query(byTestId('text2')) as HTMLInputElement;
+                spectator.typeInElement('edited before settle', input);
+                spectator.detectChanges();
+                expect(component.form.dirty).toBe(true);
+
+                // Drain #scheduleMarkPristineAfterInit's fallback timer.
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                // Previously this timer called markAsPristine() unconditionally, silently
+                // discarding the edit the moment the window elapsed.
                 expect(component.form.dirty).toBe(true);
 
                 flush();

@@ -12,12 +12,14 @@ export interface UnknownBlockNodeAttrs {
 }
 
 function isJsonContent(value: unknown): value is JSONContent {
+    const type = (value as JSONContent | null | undefined)?.type;
+
     return (
         !!value &&
         !Array.isArray(value) &&
         typeof value === 'object' &&
-        typeof (value as JSONContent).type === 'string' &&
-        (value as JSONContent).type.length > 0
+        typeof type === 'string' &&
+        type.length > 0
     );
 }
 
@@ -100,8 +102,8 @@ export function createUnsupportedBlockNode() {
                     default: null,
                     parseHTML: (element) => element.getAttribute('data-original-type'),
                     renderHTML: (attributes) =>
-                        attributes.originalType
-                            ? { 'data-original-type': attributes.originalType }
+                        attributes['originalType']
+                            ? { 'data-original-type': attributes['originalType'] }
                             : {}
                 },
                 originalNode: {

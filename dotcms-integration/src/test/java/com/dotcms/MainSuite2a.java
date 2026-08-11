@@ -59,8 +59,17 @@ import org.junit.runners.Suite.SuiteClasses;
  */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Data-scanning tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so anything
+        // that walks the whole dataset (findAllContent) costs O(all content
+        // created so far). Scheduled late these pay for every preceding test's
+        // leftovers. Keep new full-scan tests in this block.
+        com.dotmarketing.factories.MultiTreeAPITest.class,
+
         com.dotcms.rest.api.v1.workflow.WorkflowResourceResponseCodeIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.workflow.WorkflowResourceLockUnlockIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLicenseIntegrationTest.class,
         com.dotcms.rest.api.v1.authentication.ResetPasswordResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResourceIntegrationTest.class,
@@ -103,7 +112,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
-        com.dotmarketing.factories.MultiTreeAPITest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
         InterceptorHandlerTest.class,

@@ -15,6 +15,7 @@ import {
     DotContentletService,
     DotCurrentUserService,
     DotFolderService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
     DotSiteService,
@@ -94,6 +95,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(DotWorkflowActionsFireService, {
                 fireTo: jest.fn().mockReturnValue(of({}))
             }),
+            // Required by the store's `withActionExecution`, which routes fire failures through it.
+            mockProvider(DotHttpErrorManagerService),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn()
             }),

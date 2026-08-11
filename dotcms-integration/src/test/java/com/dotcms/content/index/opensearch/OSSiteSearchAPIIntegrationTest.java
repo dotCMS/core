@@ -11,6 +11,8 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ClusterIndexHealth;
+import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.enterprise.publishing.sitesearch.OSSiteSearchAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
@@ -184,6 +186,58 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
         assertEquals("the resolvable alias must survive a missing sibling in the same batch",
                 alias, aliases.get(OS_IDX_ONE));
         Logger.info(this, "✅ test_getIndexAlias_toleratesMissingIndexInBatch passed");
+    }
+
+    /**
+     * Given scenario: a site-search index created with an alias; its physical OpenSearch index is
+     * {@code .os}-tagged, but {@code listIndices()} exposes only the logical (bare) name.
+     * Expected: {@code getAliasToIndexMap()} resolves the alias to the LOGICAL index name — it
+     * re-tags the index list with {@code .os} to hit the physical index, then strips {@code .os}
+     * back off the resolved value so the returned map stays purely logical. This is the OpenSearch
+     * half of the Phase 2/3 alias-resolution fix (issue #36360): before it, resolving a site-search
+     * alias through the content-index router with bare names missed the {@code .os}-tagged physical
+     * index and returned nothing ("Index Alias not found").
+     */
+    @Test
+    public void test_getAliasToIndexMap_resolvesAliasToLogicalIndex() throws Exception {
+        final String alias = "ss_alias_" + RUN_ID;
+        osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, alias, 1);
+        assertTrue("Pre-condition: the .os-tagged physical index must exist",
+                osIndexAPI.indexExists(OS_IDX_ONE));
+
+        final Map<String, String> aliasToIndex = osSiteSearchAPI.getAliasToIndexMap();
+
+        assertEquals("alias must resolve to the LOGICAL (.os-stripped) index name",
+                IDX_ONE, aliasToIndex.get(alias));
+        assertFalse("no .os tag may leak into the resolved index name",
+                IndexTag.OS.isTagged(aliasToIndex.get(alias)));
+        Logger.info(this, "✅ test_getAliasToIndexMap_resolvesAliasToLogicalIndex passed – "
+                + alias + " -> " + aliasToIndex.get(alias));
+    }
+
+    /**
+     * Given scenario: a site-search index whose physical OpenSearch index is {@code .os}-tagged.
+     * Expected: {@code getIndicesStats()} and {@code getClusterHealth()} key the index by its
+     * {@code .os}-tagged logical name (cluster prefix stripped, {@code .os} kept) — NOT the bare
+     * logical name. This locks the contract the Site Search index-stats portlet relies on: it must
+     * look up stats/health by the {@code .os}-tagged key for OS-backed indices, otherwise
+     * Count/Shards/Replicas/Size/Health render as "n/a" in Phases 2/3 (issue #36360).
+     */
+    @Test
+    public void test_indicesStatsAndHealth_keyedByOsTaggedName() throws Exception {
+        osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
+        assertTrue("Pre-condition: the .os-tagged physical index must exist",
+                osIndexAPI.indexExists(OS_IDX_ONE));
+
+        final Map<String, IndexStats> stats = osIndexAPI.getIndicesStats();
+        assertNotNull("stats must be keyed by the .os-tagged name", stats.get(OS_IDX_ONE));
+        assertNull("stats must NOT be keyed by the bare logical name", stats.get(IDX_ONE));
+
+        final Map<String, ClusterIndexHealth> health = osIndexAPI.getClusterHealth();
+        assertNotNull("health must be keyed by the .os-tagged name", health.get(OS_IDX_ONE));
+        assertNull("health must NOT be keyed by the bare logical name", health.get(IDX_ONE));
+
+        Logger.info(this, "✅ test_indicesStatsAndHealth_keyedByOsTaggedName passed");
     }
 
     // =======================================================================

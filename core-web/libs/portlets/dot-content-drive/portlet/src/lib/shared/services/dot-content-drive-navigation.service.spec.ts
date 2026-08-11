@@ -9,9 +9,11 @@ import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import {
+    DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotRouterService
@@ -21,6 +23,14 @@ import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testi
 
 import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
 
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+
+/** Builds a mock store exposing only what the nav service reads: the `flags()` slice. */
+const mockStoreWithFlag = (enabled: boolean) =>
+    mockProvider(DotContentDriveStore, {
+        flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled })
+    });
+
 describe('DotContentDriveNavigationService', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
     let service: DotContentDriveNavigationService;
@@ -29,6 +39,7 @@ describe('DotContentDriveNavigationService', () => {
     let dotRouterService: jest.Mocked<DotRouterService>;
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
+    let contentSearch: jest.Mocked<DotContentSearchService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -47,7 +58,13 @@ describe('DotContentDriveNavigationService', () => {
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of({}))
-            })
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn()
+            }),
+            // Side panel feature flag ON by default (read from the store's flags slice) so the
+            // side-panel tests below apply; the "side panel disabled" block re-creates it off.
+            mockStoreWithFlag(true)
         ]
     });
 
@@ -59,6 +76,7 @@ describe('DotContentDriveNavigationService', () => {
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
+        contentSearch = spectator.inject(DotContentSearchService);
     });
 
     afterEach(() => {
@@ -97,10 +115,12 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should navigate to new content editor when feature flag is enabled', () => {
+        it('should open the new editor side panel when feature flag is enabled', () => {
             const mockContentlet = createFakeContentlet({
                 contentType: 'blog',
-                inode: 'test-inode-123'
+                inode: 'test-inode-123',
+                identifier: 'test-identifier-123',
+                title: 'My Blog Post'
             });
 
             const mockContentType = createFakeContentType({
@@ -114,7 +134,13 @@ describe('DotContentDriveNavigationService', () => {
             service.editContent(mockContentlet);
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(router.navigate).toHaveBeenCalledWith(['content/test-inode-123']);
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                contentletInode: 'test-inode-123',
+                identifier: 'test-identifier-123',
+                title: 'My Blog Post'
+            });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should navigate to old content editor when feature flag is disabled', () => {
@@ -225,7 +251,7 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     describe('createContent', () => {
-        it('should navigate to new content editor (empty query params) when feature flag is enabled and no folder given', () => {
+        it('should open the new editor side panel when feature flag is enabled and no folder given', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -237,12 +263,16 @@ describe('DotContentDriveNavigationService', () => {
             service.createContent('blog');
 
             expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
-                queryParams: {}
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'new',
+                contentTypeId: 'blog',
+                folderPath: undefined,
+                title: 'Blog'
             });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
-        it('should forward folderPath to the new content editor so it is created in the current folder', () => {
+        it('should forward folderPath to the new editor side panel so it is created in the current folder', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -253,9 +283,13 @@ describe('DotContentDriveNavigationService', () => {
 
             service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
-                queryParams: { folderPath: 'demo.dotcms.com/about-us/' }
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'new',
+                contentTypeId: 'blog',
+                folderPath: 'demo.dotcms.com/about-us/',
+                title: 'Blog'
             });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should navigate to legacy content editor with mapped CD_ params when feature flag is disabled', () => {
@@ -430,5 +464,164 @@ describe('DotContentDriveNavigationService', () => {
                 language_id: 5
             });
         });
+    });
+
+    describe('openEditByIdentifier', () => {
+        it('should resolve the identifier to its working inode and open the edit panel', () => {
+            const resolved = createFakeContentlet({
+                inode: 'working-inode-1',
+                identifier: 'shared-identifier',
+                title: 'Shared Content'
+            });
+            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
+            });
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                contentletInode: 'working-inode-1',
+                identifier: 'shared-identifier',
+                title: 'Shared Content'
+            });
+        });
+
+        it('should not open the panel when the identifier resolves to nothing', () => {
+            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
+
+            service.openEditByIdentifier('missing-identifier');
+
+            expect(service.$editPanelRequest()).toBeNull();
+        });
+
+        it('should surface the error and not open the panel when the search fails', () => {
+            const error = new HttpErrorResponse({ status: 500 });
+            contentSearch.get.mockReturnValue(throwError(() => error));
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(service.$editPanelRequest()).toBeNull();
+        });
+    });
+});
+
+describe('DotContentDriveNavigationService (side panel disabled)', () => {
+    let spectator: SpectatorService<DotContentDriveNavigationService>;
+    let service: DotContentDriveNavigationService;
+    let router: jest.Mocked<Router>;
+    let contentTypeService: jest.Mocked<DotContentTypeService>;
+
+    const newEditorType = () =>
+        createFakeContentType({
+            id: 'blog',
+            name: 'Blog',
+            metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+        });
+
+    // Own factory with the side panel flag OFF, so the new editor falls back to route navigation.
+    const createService = createServiceFactory({
+        service: DotContentDriveNavigationService,
+        providers: [
+            mockProvider(Router, { navigate: jest.fn() }),
+            mockProvider(DotContentTypeService, { getContentType: jest.fn() }),
+            mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
+            mockProvider(Location, { path: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotContentSearchService, { get: jest.fn() }),
+            mockStoreWithFlag(false)
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        router = spectator.inject(Router);
+        contentTypeService = spectator.inject(DotContentTypeService);
+    });
+
+    it('should navigate to the full-screen editor instead of opening the panel (edit)', () => {
+        const mockContentlet = createFakeContentlet({ contentType: 'blog', inode: 'inode-x' });
+        contentTypeService.getContentType.mockReturnValue(of(newEditorType()));
+
+        service.editContent(mockContentlet);
+
+        expect(router.navigate).toHaveBeenCalledWith(['content/inode-x']);
+        expect(service.$editPanelRequest()).toBeNull();
+    });
+
+    it('should navigate to the full-screen new-content editor instead of the panel (create)', () => {
+        contentTypeService.getContentType.mockReturnValue(of(newEditorType()));
+
+        service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
+
+        expect(router.navigate).toHaveBeenCalledWith(['content/new/blog'], {
+            queryParams: { folderPath: 'demo.dotcms.com/about-us/' }
+        });
+        expect(service.$editPanelRequest()).toBeNull();
+    });
+
+    it('should navigate to the full-screen editor instead of opening the panel for a deep link (?editContent=)', () => {
+        // The param can outlive the flag being on (shared link, bookmark, staging→prod) — reading
+        // the flag here (not skipping it) keeps this path honoring AC15 when the flag is off.
+        const contentSearch = spectator.inject(DotContentSearchService);
+        (contentSearch.get as jest.Mock).mockReturnValue(
+            of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'inode-y' })] } })
+        );
+
+        service.openEditByIdentifier('shared-identifier');
+
+        expect(router.navigate).toHaveBeenCalledWith(['content/inode-y']);
+        expect(service.$editPanelRequest()).toBeNull();
+    });
+});
+
+describe('DotContentDriveNavigationService ($sidePanelEnabled)', () => {
+    // The flag now comes from the store's `withFlags` slice; the nav service just maps it to a
+    // boolean. The failed-config-read degradation is owned (and tested) by withFlags itself — here
+    // an empty/unresolved flags map (its degraded value) must simply read as `false`.
+    const flagsSignal = signal<Partial<Record<FeaturedFlags, boolean>>>({});
+    let spectator: SpectatorService<DotContentDriveNavigationService>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveNavigationService,
+        providers: [
+            mockProvider(Router, { navigate: jest.fn() }),
+            mockProvider(DotContentTypeService, { getContentType: jest.fn() }),
+            mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
+            mockProvider(Location, { path: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn().mockReturnValue(of({})) }),
+            mockProvider(DotContentSearchService, { get: jest.fn() }),
+            mockProvider(DotContentDriveStore, { flags: flagsSignal })
+        ]
+    });
+
+    beforeEach(() => {
+        flagsSignal.set({});
+        spectator = createService();
+    });
+
+    it('is true when the store reports the flag enabled', () => {
+        flagsSignal.set({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true });
+
+        expect(spectator.service.$sidePanelEnabled()).toBe(true);
+    });
+
+    it('is false when the store reports the flag disabled', () => {
+        flagsSignal.set({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false });
+
+        expect(spectator.service.$sidePanelEnabled()).toBe(false);
+    });
+
+    it('is false (never throws) when the flags map is empty — the withFlags degraded/unresolved value', () => {
+        flagsSignal.set({});
+
+        expect(() => spectator.service.$sidePanelEnabled()).not.toThrow();
+        expect(spectator.service.$sidePanelEnabled()).toBe(false);
     });
 });

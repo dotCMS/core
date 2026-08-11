@@ -15,7 +15,6 @@ import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 /* eslint-disable @nx/enforce-module-boundaries */
@@ -72,7 +71,6 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
         MenuModule,
         SkeletonModule,
         TableModule,
-        TagModule,
         TooltipModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
@@ -120,7 +118,8 @@ export class DotPublishingQueueTableComponent {
     }));
 
     readonly bundlesEmpty: PrincipalConfiguration = {
-        icon: 'pi-inbox',
+        icon: 'inbox',
+        iconStyle: 'material-symbols-rounded',
         title: this.#dotMessageService.get('publishing-queue.empty.bundles.title'),
         subtitle: this.#dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };
@@ -246,6 +245,18 @@ export class DotPublishingQueueTableComponent {
         if (!ok) {
             this.#globalMessage.error();
         }
+    }
+
+    /** "1 item" / "20 items" for the Items column link. Reuses the asset-list
+     * dialog's count keys so the link and the dialog it opens word the same
+     * number identically. */
+    itemsLabel(count: number): string {
+        return this.#dotMessageService.get(
+            count === 1
+                ? 'publishing-queue.asset-list.items-count.singular'
+                : 'publishing-queue.asset-list.items-count.plural',
+            String(count)
+        );
     }
 
     truncateBundleId(bundleId: string): string {

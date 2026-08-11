@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -36,6 +37,8 @@ import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.MigrationHaltReport;
 import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -43,6 +46,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
+import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -341,6 +345,10 @@ public class ESIndexResource {
         System.setProperty("es.index.number_of_shards", String.valueOf(shards));
         Logger.info(this, "Running Contentlet Reindex");
 
+        // Captured before the call: a shadow-phase OpenSearch failure is absorbed deep in the index
+        // layer, which halts the migration to ES-only without any of it reaching this response.
+        final boolean migrationWasRunning = !MigrationPhase.current().isMigrationNotStarted();
+
         if(!DOTALL.equals(contentType)) {
             ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType);
             Logger.info(this.getClass(), "Starting reindex of " + type.name());
@@ -351,8 +359,38 @@ public class ESIndexResource {
             APILocator.getContentletAPI().refreshAllContent();
         }
 
+        final Optional<String> haltMessage = migrationHaltMessage(migrationWasRunning);
+        if (haltMessage.isPresent()) {
+            Logger.warn(this.getClass(), haltMessage.get());
+            return Response.ok(new ResponseEntityView<>(
+                    ESReindexationProcessStatus.getProcessIndexationMap(),
+                    List.of(new MessageEntity(haltMessage.get())))).build();
+        }
+
         return getReindexationProgress(request, response);
 
+    }
+
+    /**
+     * Returns what to tell the operator when the OpenSearch migration switched itself off while this
+     * request was running, or empty when it did not (issue #36222).
+     *
+     * <p>The reindex itself succeeds on Elasticsearch — that degradation is deliberate — but it must
+     * not be silent: without this the response is indistinguishable from a run where nothing went
+     * wrong, and the only trace is a log line nobody is watching.</p>
+     *
+     * @param migrationWasRunning whether the migration was active before the reindex was triggered
+     * @return the operator-facing message, if the migration was halted during this request
+     */
+    private static Optional<String> migrationHaltMessage(final boolean migrationWasRunning) {
+        if (!migrationWasRunning || !MigrationPhase.current().isMigrationNotStarted()) {
+            return Optional.empty();
+        }
+        return Optional.of(MigrationHaltReport.last()
+                .map(MigrationHaltReport::operatorMessage)
+                .orElse("The OpenSearch migration was switched off while this reindex was starting"
+                        + " and dotCMS is serving from Elasticsearch only. See the log for the"
+                        + " cause, and re-enable the migration phase once it is fixed."));
     }
     
     @CloseDBIfOpened
@@ -644,7 +682,7 @@ public class ESIndexResource {
         final InitDataObject init = auth(request, response);
 
         return Response.ok(new ResponseEntityView<>(
-                IndexResourceHelper.getInstance().indexStatsList(init.getUser()))).build();
+                IndexResourceHelper.getInstance().indexStatsList())).build();
 
     }
     

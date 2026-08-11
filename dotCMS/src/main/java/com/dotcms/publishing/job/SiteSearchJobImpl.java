@@ -1,6 +1,5 @@
 package com.dotcms.publishing.job;
 
-import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
@@ -78,7 +77,6 @@ public class SiteSearchJobImpl {
     static final String INCLUDE = "include";
     static final String PATHS = "paths";
 
-    private final IndexAPI esIndexAPI;
     private final IndiciesAPI indicesAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
@@ -90,7 +88,6 @@ public class SiteSearchJobImpl {
 
     @VisibleForTesting
     SiteSearchJobImpl(
-            final IndexAPI esIndexAPI,
             final IndiciesAPI indicesAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,
@@ -98,7 +95,6 @@ public class SiteSearchJobImpl {
             final SiteSearchAuditAPI siteSearchAuditAPI,
             final PublisherAPI publisherAPI
             ) {
-        this.esIndexAPI = esIndexAPI;
         this.indicesAPI = indicesAPI;
         this.siteSearchAPI = siteSearchAPI;
         this.hostAPI = hostAPI;
@@ -108,7 +104,7 @@ public class SiteSearchJobImpl {
     }
 
     public SiteSearchJobImpl() {
-        this(APILocator.getESIndexAPI(), APILocator.getIndiciesAPI(), APILocator.getSiteSearchAPI(),
+        this(APILocator.getIndiciesAPI(), APILocator.getSiteSearchAPI(),
                 APILocator.getHostAPI(), APILocator.getUserAPI(),
                 APILocator.getSiteSearchAuditAPI(), APILocator.getPublisherAPI());
     }
@@ -251,9 +247,33 @@ public class SiteSearchJobImpl {
             final List<SiteSearchAudit> recentAudits = isRunNowJob ? Collections.emptyList()
                     : siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
 
-            final boolean incremental = (incrementalParam && !isRunNowJob && !indexMetaData
-                    .isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty());
+            // An incremental crawl writes documents in place into the existing index; it never
+            // rebuilds it. During an ES→OS migration a site-search index is one logical index
+            // mirrored across both engines, so an incremental crawl is only safe when those mirrors
+            // are in sync — the index exists on EVERY write engine AND their document counts match.
+            // If a twin is missing, the in-place write would auto-create it with a dynamic (wrong)
+            // mapping; if the twins drifted (e.g. a shadow write failed fire-and-forget), an
+            // incremental would layer a new delta on top of divergent copies and never reconcile them.
+            // In either case fall back to a full rebuild, which recreates identical copies (correct
+            // mapping) on every engine and re-points the alias — self-healing the mirror on this
+            // crawl (issue #36360).
+            final boolean mirrorReadyForIncremental = !indexMetaData.isNewIndex()
+                    && siteSearchAPI.writeMirrorsInSync(indexMetaData.getIndexName());
+            // The base preconditions for an incremental crawl (independent of mirror sync). Extracted to
+            // a single local so the decision below and the "forcing full rebuild" log cannot drift out
+            // of step if one copy is later edited and the other is not (issue #36360).
+            final boolean incrementalEligible = incrementalParam && !isRunNowJob
+                    && !indexMetaData.isNewIndex() && !indexMetaData.isEmpty()
+                    && !recentAudits.isEmpty();
+            final boolean incremental = incrementalEligible && mirrorReadyForIncremental;
             //We can only run incrementally if all the above pre-requisites are met.
+            if (incrementalEligible && !mirrorReadyForIncremental) {
+                Logger.info(SiteSearchJobImpl.class, () -> String.format(
+                        "Site-search index `%s` is missing on a write engine or its engine copies are "
+                                + "out of sync; forcing a full rebuild instead of an incremental crawl "
+                                + "to restore the mirror.",
+                        indexMetaData.getIndexName()));
+            }
             if (incremental) {
                 //Incremental mode is useful only if there's already an index previously built.
                 //Incremental mode also implies that we have to have a date range to work on.
@@ -387,7 +407,10 @@ public class SiteSearchJobImpl {
         long recordCount = 0;
         if (UtilMethods.isSet(indexAlias)) {
             final List<String> indices = siteSearchAPI.listIndices();
-            final Map<String, String> aliasMap = esIndexAPI.getAliasToIndexMap(indices);
+            // Resolve via the site-search API so aliases are looked up with .os-aware physical names
+            // in Phases 2/3; the content-index router misses site-search aliases there
+            // and would force every crawl into full mode (issue #36360).
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
             indexName = aliasMap.get(indexAlias);
             if (UtilMethods.isSet(indexName)) {
                 if (siteSearchAPI.isDefaultIndex(indexAlias)) {

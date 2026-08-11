@@ -11,7 +11,7 @@ The legacy engine is untouched and remains the default. This engine is selected
 
 | Property | Default | Effect |
 |----------|---------|--------|
-| `IMAGE_API_USE_LIBVIPS` | `false` | Turn the libvips engine on for the image exporter chain. |
+| `IMAGE_API_USE_LIBVIPS` | `true` | Use the libvips engine for the image exporter chain. Set to `false` to force the legacy Java2D engine. Even when `true`, the engine only activates if the native libvips library is present. |
 | `IMAGE_API_LIBVIPS_FALLBACK` | `true` | If a libvips op fails (corrupt image, missing delegate), run the legacy filter instead of erroring. |
 
 ### Operation-cache tuning (optional)

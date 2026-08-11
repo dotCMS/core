@@ -1,65 +1,32 @@
 @let loading = $loading();
 
 @if (!loading) {
-    <p-tree
-        [value]="$folders()"
-        [loading]="loading"
+    <dot-folder-tree
+        [folders]="$folders()"
+        [loading]="false"
+        [selectedNode]="$selectedNode()"
         selectionMode="multiple"
-        loadingMode="icon"
-        [class]="treeStyleClasses()"
-        [selection]="$selectedNode()"
-        [scrollHeight]="'auto'"
         [metaKeySelection]="true"
-        [pt]="{
-            root: { class: 'w-full h-full border-none overflow-y-auto' },
-            nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' }
-        }"
+        scrollHeight="auto"
+        [pt]="treePt"
+        [showLoadMorePlusIcon]="true"
+        loadMoreTestId="tree-load-more"
+        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)"
-        (onNodeCollapse)="onNodeCollapse.emit($event)">
-        <ng-template let-node pTemplate="default">
-            @if (node.data.type === LOAD_MORE_NODE_TYPE) {
-                <button
-                    type="button"
-                    data-testid="tree-load-more"
-                    class="cursor-pointer border-none bg-transparent p-0 text-left text-sm font-normal text-(--color-palette-primary-500)"
-                    [disabled]="node.loading"
-                    [attr.aria-label]="node.label | dm"
-                    (click)="onLoadMoreClick($event, node)">
-                    @if (node.loading) {
-                        <i class="pi pi-spinner pi-spin mr-1 text-xs"></i>
-                    }
-                    {{ node.label | dm }}
-                    @if (node.data.remaining) {
-                        ({{ node.data.remaining }})
-                    }
-                </button>
-            } @else {
-                <span
-                    data-testid="tree-node-label"
-                    [attr.data-json-node]="node.data | json"
-                    class="font-normal"
-                    [class.active]="$activeDropNode()?.id === node?.data.id">
-                    {{
-                        node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | folderName)
-                    }}
-                </span>
-            }
-        </ng-template>
-        <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
-        <ng-template pTemplate="togglericon" let-expanded>
-            <span class="toggler-regular">
-                <i
-                    class="pi text-sm text-gray-600"
-                    [class]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-            </span>
-            <span class="toggler-first">
-                <i
-                    class="pi text-(--color-palette-gray-800)"
-                    [class]="expanded ? 'pi-folder-open' : 'pi-folder'"></i>
+        (onNodeCollapse)="onNodeCollapse.emit($event)"
+        (loadMore)="onLoadMore($event)">
+        <ng-template #folderTreeNodeLabel let-node>
+            <span
+                data-testid="tree-node-label"
+                [attr.data-json-node]="node.data | json"
+                [attr.data-id]="node?.data?.id"
+                class="font-normal"
+                [class.active]="$activeDropNode()?.id === node?.data.id">
+                {{ node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | dotFolderName) }}
             </span>
         </ng-template>
-    </p-tree>
+    </dot-folder-tree>
 } @else {
     <div
         class="pointer-events-none flex size-full flex-col items-center justify-center gap-6 font-normal select-none">

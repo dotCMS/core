@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -30,6 +31,7 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotMessagePipe,
         DotTemplateAdvancedComponent,

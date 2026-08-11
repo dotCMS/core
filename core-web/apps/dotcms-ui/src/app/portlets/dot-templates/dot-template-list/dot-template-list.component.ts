@@ -7,7 +7,8 @@ import {
     OnInit,
     effect,
     inject,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -98,6 +99,7 @@ interface TemplateListState {
         DotContentletStatusBadgeComponent,
         ContextMenu
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotTemplatesService, DialogService, DotSiteBrowserService]
 })
 export class DotTemplateListComponent implements OnInit {

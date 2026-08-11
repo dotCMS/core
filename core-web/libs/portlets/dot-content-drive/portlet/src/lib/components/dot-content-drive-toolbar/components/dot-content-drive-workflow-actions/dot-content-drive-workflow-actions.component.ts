@@ -1,15 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
-import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { getImageAssetUrl, WINDOW } from '@dotcms/utils';
 
 import { SUCCESS_MESSAGE_LIFE } from '../../../../shared/constants';
-import { DotContentDriveStatus } from '../../../../shared/models';
 import { DotContentDriveNavigationService } from '../../../../shared/services';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import { isFolder } from '../../../../utils/functions';
@@ -23,12 +21,8 @@ import {
 
 @Component({
     selector: 'dot-content-drive-workflow-actions',
-    imports: [ButtonModule, DotMessagePipe, ConfirmDialogModule],
-    providers: [
-        DotWorkflowActionsFireService,
-        ConfirmationService,
-        { provide: WINDOW, useValue: window }
-    ],
+    imports: [ButtonModule, DotMessagePipe],
+    providers: [{ provide: WINDOW, useValue: window }],
     templateUrl: './dot-content-drive-workflow-actions.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -40,9 +34,7 @@ export class DotContentDriveWorkflowActionsComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #navigationService = inject(DotContentDriveNavigationService);
-    readonly #confirmationService = inject(ConfirmationService);
     readonly #window = inject(WINDOW);
 
     protected readonly $selectedItems = this.#store.selectedItems;
@@ -50,7 +42,6 @@ export class DotContentDriveWorkflowActionsComponent {
 
     /**
      * Executes the appropriate workflow action based on the action ID.
-     * Handles navigation actions (edit contentlet, edit page) differently from workflow operations.
      *
      * @param id - The unique identifier of the workflow action to execute
      */
@@ -67,9 +58,6 @@ export class DotContentDriveWorkflowActionsComponent {
                 break;
             case WORKFLOW_ACTION_ID.RENAME:
                 this.rename();
-                break;
-            default:
-                this.executeWorkflowAction(action);
                 break;
         }
     }
@@ -112,65 +100,6 @@ export class DotContentDriveWorkflowActionsComponent {
     }
 
     /**
-     * Executes a workflow action with optional confirmation dialog.
-     * If the action has a confirmation message, displays a confirmation dialog
-     * before proceeding with the action execution.
-     *
-     * @param action - The workflow action to execute
-     */
-    private executeWorkflowAction(action: ContentDriveWorkflowAction) {
-        const { confirmationMessage, id } = action;
-
-        if (confirmationMessage) {
-            this.#confirmationService.confirm({
-                message: this.#dotMessageService.get(confirmationMessage),
-                header: 'Confirmation',
-                acceptLabel: this.#dotMessageService.get('dot.common.yes'),
-                rejectLabel: this.#dotMessageService.get('dot.common.no'),
-                accept: () => {
-                    this.performWorkflowAction(id);
-                }
-            });
-        } else {
-            this.performWorkflowAction(id);
-        }
-    }
-
-    /**
-     * Performs the actual workflow action execution on the selected items.
-     * Fires the workflow action through the service and handles the response
-     * by displaying success or error messages and refreshing the item list on success.
-     *
-     * @param action - The workflow action ID to perform
-     */
-    private performWorkflowAction(action: string) {
-        const inodes = this.$selectedItems().map((item) => item.inode);
-        this.beforeExecuteWorkflowAction();
-        this.#dotWorkflowActionsFireService.fireDefaultAction({ action, inodes }).subscribe({
-            next: () => {
-                this.#store.loadItems();
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('content-drive.toast.workflow-executed'),
-                    detail: this.#dotMessageService.get(
-                        'content-drive.toast.workflow-executed-detail',
-                        action
-                    )
-                });
-            },
-            error: (error) => {
-                this.#messageService.add({
-                    severity: 'error',
-                    summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
-                    detail: error.message
-                });
-
-                console.error('Error executing workflow action:', error);
-            }
-        });
-    }
-
-    /**
      * Downloads the selected items.
      */
     download() {
@@ -201,18 +130,5 @@ export class DotContentDriveWorkflowActionsComponent {
      */
     private rename() {
         console.warn('Rename functionality is under development');
-    }
-
-    /**
-     * Resets the selected items and status to loading and displays a processing message before executing a workflow action.
-     */
-    private beforeExecuteWorkflowAction() {
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
-        this.#store.setSelectedItems([]);
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('content-drive.toast.workflow-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.toast.workflow-in-progress-detail')
-        });
     }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
@@ -7,6 +7,7 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     selector: 'dot-data-type-property',
     templateUrl: './data-type-property.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataTypePropertyComponent implements OnInit {

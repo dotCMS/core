@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -86,6 +88,7 @@ public class NavTool implements ViewTool {
         children.add(nav);
     }
 
+    @RequestCost(Price.NAV_BUILD)
     protected NavResultHydrated getNav(final Host host, String path, final long languageId, final User systemUserParam)
             throws DotDataException, DotSecurityException {
 
