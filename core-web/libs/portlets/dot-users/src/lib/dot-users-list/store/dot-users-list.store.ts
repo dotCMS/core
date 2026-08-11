@@ -144,12 +144,36 @@ export const DotUsersListStore = signalStore(
              * Creates a new user and reloads the list on success. Errors are
              * surfaced through the shared HTTP error manager; the list stays
              * in `loaded` state so the user can retry from the same dialog.
+             *
+             * `gettingStartedChange` optionally chains a toolgroup PUT after
+             * user creation succeeds. A "getting started" failure is soft —
+             * we log it via the shared error manager but the user creation
+             * is still considered successful (the toolgroup can be toggled
+             * again from the same dialog).
              */
-            createUser(payload: DotUserFormPayload) {
+            createUser(payload: DotUserFormPayload, gettingStartedChange?: 'add' | 'remove') {
                 patchState(store, { status: 'loading' });
                 usersService
                     .createUser(payload)
-                    .pipe(take(1))
+                    .pipe(
+                        take(1),
+                        switchMap((created) => {
+                            // create defaults to `not present`, so only an
+                            // explicit "add" is meaningful here.
+                            if (gettingStartedChange !== 'add' || !created.userId) {
+                                return of(created);
+                            }
+
+                            return usersService.setGettingStarted(created.userId, true).pipe(
+                                map(() => created),
+                                catchError((error) => {
+                                    httpErrorManager.handle(error);
+
+                                    return of(created);
+                                })
+                            );
+                        })
+                    )
                     .subscribe({
                         next: () => {
                             messageDisplayService.push({
@@ -169,13 +193,32 @@ export const DotUsersListStore = signalStore(
 
             /**
              * Updates a user and reloads the list on success. Same error
-             * contract as `createUser`.
+             * contract as `createUser`. `gettingStartedChange` optionally
+             * chains the toolgroup PUT (add or remove).
              */
-            updateUser(payload: DotUserFormPayload) {
+            updateUser(payload: DotUserFormPayload, gettingStartedChange?: 'add' | 'remove') {
                 patchState(store, { status: 'loading' });
                 usersService
                     .updateUser(payload)
-                    .pipe(take(1))
+                    .pipe(
+                        take(1),
+                        switchMap((updated) => {
+                            if (!gettingStartedChange || !payload.userId) {
+                                return of(updated);
+                            }
+
+                            return usersService
+                                .setGettingStarted(payload.userId, gettingStartedChange === 'add')
+                                .pipe(
+                                    map(() => updated),
+                                    catchError((error) => {
+                                        httpErrorManager.handle(error);
+
+                                        return of(updated);
+                                    })
+                                );
+                        })
+                    )
                     .subscribe({
                         next: () => {
                             messageDisplayService.push({

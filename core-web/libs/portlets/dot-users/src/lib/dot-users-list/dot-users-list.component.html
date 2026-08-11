@@ -120,7 +120,6 @@
                         <!-- Roles column requires a per-user call to
                              GET /api/v1/roles/users/{userIdOrEmail}.
                              Populated in a follow-up (batch endpoint or lazy fetch). -->
-                        &mdash;
                     </td>
                     <td data-testid="users-cell-access">
                         <div class="flex gap-1">
@@ -141,8 +140,6 @@
                     <td data-testid="users-cell-last-login">
                         @if (user.lastLoginDate) {
                             {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
-                        } @else {
-                            &mdash;
                         }
                     </td>
                 </tr>

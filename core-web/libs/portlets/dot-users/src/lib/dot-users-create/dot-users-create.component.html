@@ -46,12 +46,6 @@
                                     [severity]="isActive() ? 'success' : 'secondary'"
                                     [rounded]="true"
                                     data-testid="users-dialog-header-status" />
-                            } @else {
-                                <span
-                                    class="text-color-secondary text-sm"
-                                    data-testid="users-dialog-header-subtitle">
-                                    {{ 'users.dialog.create.subtitle' | dm }}
-                                </span>
                             }
                         </div>
                     </header>
@@ -100,6 +94,7 @@
         data-testid="users-dialog-cancel-btn" />
     <p-button
         [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
+        [disabled]="isSaveDisabled()"
         (onClick)="save()"
         data-testid="users-dialog-save-btn" />
 </footer>

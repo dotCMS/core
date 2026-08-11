@@ -54,7 +54,6 @@ const MESSAGES = {
     'users.dialog.untitled-user': 'Untitled User',
     'users.dialog.status.active': 'Active',
     'users.dialog.status.inactive': 'Inactive',
-    'users.dialog.create.subtitle': 'Fill in the details below to create this user',
     'users.dialog.save': 'Save Changes',
     'users.dialog.create': 'Create User',
     'users.dialog.delete.button': 'Delete User',
@@ -73,6 +72,14 @@ describe('DotUsersCreateComponent', () => {
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
                 getUser: jest.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
+                getUserRoles: jest.fn().mockReturnValue(
+                    of([
+                        { id: 'role-back', roleKey: 'DOTCMS_BACK_END_USER' },
+                        { id: 'role-personal', roleKey: 'user-42' }
+                    ])
+                ),
+                getGettingStartedState: jest.fn().mockReturnValue(of(false)),
+                setGettingStarted: jest.fn().mockReturnValue(of({})),
                 getUsersPaginated: jest.fn().mockReturnValue(
                     of({
                         entity: [],
@@ -106,8 +113,7 @@ describe('DotUsersCreateComponent', () => {
             expect(spectator.query(byTestId('users-dialog-tab-api-tokens'))).toBeTruthy();
         });
 
-        it('should render the create subtitle in the header when no user is provided', () => {
-            expect(spectator.query(byTestId('users-dialog-header-subtitle'))).toBeTruthy();
+        it('should NOT render the status chip in the header when no user is provided', () => {
             expect(spectator.query(byTestId('users-dialog-header-status'))).toBeFalsy();
         });
 
@@ -188,6 +194,70 @@ describe('DotUsersCreateComponent', () => {
         it('should NOT mark password as required in edit mode', () => {
             const password = spectator.component.form.controls.account.controls.password;
             expect(password.hasError('required')).toBe(false);
+        });
+
+        it('should hydrate access toggles from the loaded role keys', () => {
+            const access = spectator.component.form.controls.access.getRawValue();
+            // The mock returns DOTCMS_BACK_END_USER + the user's personal role.
+            expect(access.backend).toBe(true);
+            expect(access.cmsAdmin).toBe(false);
+            expect(access.frontend).toBe(false);
+        });
+
+        it('should keep Can Login toggle disabled (backend-derived)', () => {
+            const canLogin = spectator.component.form.controls.access.controls.canLogin;
+            expect(canLogin.disabled).toBe(true);
+        });
+
+        it('should recompute Can Login when CMS Admin or Back-end toggles change', () => {
+            const access = spectator.component.form.controls.access.controls;
+
+            // Loaded user has DOTCMS_BACK_END_USER → canLogin starts true.
+            expect(access.canLogin.value).toBe(true);
+
+            access.backend.setValue(false);
+            expect(access.canLogin.value).toBe(false);
+
+            access.cmsAdmin.setValue(true);
+            expect(access.canLogin.value).toBe(true);
+
+            access.cmsAdmin.setValue(false);
+            expect(access.canLogin.value).toBe(false);
+        });
+
+        it('should merge access toggles into `roles` and preserve non-access role keys on save', () => {
+            spectator.component.form.controls.access.patchValue({
+                cmsAdmin: true,
+                backend: true,
+                frontend: false
+            });
+
+            spectator.component['save']();
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    mode: 'update',
+                    payload: expect.objectContaining({
+                        userId: 'user-42',
+                        roles: expect.arrayContaining([
+                            'user-42', // personal role preserved
+                            'DOTCMS_BACK_END_USER',
+                            'CMS Administrator'
+                        ])
+                    })
+                })
+            );
+        });
+
+        it('should emit `gettingStartedChange: add` when the toggle flips ON', () => {
+            spectator.component.form.controls.access.patchValue({ showGettingStarted: true });
+
+            spectator.component['save']();
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({ gettingStartedChange: 'add' })
+            );
         });
 
         const REPLACEMENT_USER: DotUserListItem = {

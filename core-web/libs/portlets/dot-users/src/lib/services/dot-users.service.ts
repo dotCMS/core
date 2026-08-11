@@ -97,6 +97,37 @@ interface DotUserUpdateResponse {
     };
 }
 
+/**
+ * RoleView returned by `GET /api/v1/roles/users/{userIdOrEmail}`. The
+ * `roleKey` field is what UserForm on the backend consumes when we
+ * send `roles: [...]` on save — create/update call
+ * `roleAPI.loadRoleByKey(...)` on each entry.
+ */
+export interface DotRoleView {
+    id: string;
+    name?: string;
+    description?: string;
+    roleKey?: string;
+    parent?: string;
+    editPermissions?: boolean;
+    editUsers?: boolean;
+    editLayouts?: boolean;
+    locked?: boolean;
+    system?: boolean;
+    dbfqn?: string;
+    fqn?: string;
+}
+
+interface DotRolesResponse {
+    entity: DotRoleView[];
+}
+
+interface DotToolgroupStateResponse {
+    entity: {
+        message?: boolean;
+    };
+}
+
 export interface DotUsersPaginatedParams {
     filter?: string;
     page?: number;
@@ -173,5 +204,54 @@ export class DotUsersService {
         return this.#http
             .put<DotUserUpdateResponse>('/api/v1/users', payload)
             .pipe(map((response) => response.entity.user));
+    }
+
+    /**
+     * Returns every role currently assigned to a user (explicit + system).
+     * We rely on this for two things:
+     *   1. Hydrating the Access section toggles by checking for
+     *      well-known role keys (CMS Administrator, DOTCMS_BACK_END_USER,
+     *      DOTCMS_FRONT_END_USER).
+     *   2. Preserving the user's other role memberships on save. The
+     *      backend `PUT /api/v1/users` replaces the full role list, so
+     *      we must send back every role key the user already had, minus
+     *      the access-role keys that are now toggled off.
+     */
+    getUserRoles(userIdOrEmail: string): Observable<DotRoleView[]> {
+        return this.#http
+            .get<DotRolesResponse>(
+                `/api/v1/roles/users/${encodeURIComponent(userIdOrEmail)}`
+            )
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * Reads whether the `gettingstarted` layout is assigned to a user.
+     * The legacy admin UI ties the "Show Getting Started" checkbox to
+     * this same layout via `_addtouser` / `_removefromuser`; we mirror
+     * that semantic instead of introducing a new field.
+     */
+    getGettingStartedState(userId: string): Observable<boolean> {
+        return this.#http
+            .get<DotToolgroupStateResponse>(
+                '/api/v1/toolgroups/gettingstarted/_userHasLayout',
+                { params: new HttpParams().set('userid', userId) }
+            )
+            .pipe(map((response) => !!response.entity?.message));
+    }
+
+    /**
+     * Adds or removes the `gettingstarted` layout on the target user.
+     * Independent of `PUT /api/v1/users` — mirrors the two legacy
+     * endpoints used by view_users_js_inc.jsp.
+     */
+    setGettingStarted(userId: string, enabled: boolean): Observable<unknown> {
+        const url = enabled
+            ? '/api/v1/toolgroups/gettingstarted/_addtouser'
+            : '/api/v1/toolgroups/gettingstarted/_removefromuser';
+
+        return this.#http.put(url, null, {
+            params: new HttpParams().set('userid', userId)
+        });
     }
 }

@@ -155,9 +155,9 @@ export class DotUsersListComponent {
 
             if (result.action === 'save') {
                 if (result.mode === 'create') {
-                    this.store.createUser(result.payload);
+                    this.store.createUser(result.payload, result.gettingStartedChange);
                 } else {
-                    this.store.updateUser(result.payload);
+                    this.store.updateUser(result.payload, result.gettingStartedChange);
                 }
             } else if (result.action === 'delete') {
                 this.store.deleteSingleUser(result.userId, result.replacementUserId);

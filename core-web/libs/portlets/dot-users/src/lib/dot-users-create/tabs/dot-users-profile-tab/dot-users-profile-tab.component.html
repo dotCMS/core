@@ -118,6 +118,7 @@
                     formControlName="password"
                     [toggleMask]="true"
                     [feedback]="!isEdit()"
+                    [placeholder]="isEdit() ? '••••••••' : null"
                     styleClass="w-full"
                     inputStyleClass="w-full"
                     data-testid="users-profile-password" />
@@ -139,6 +140,7 @@
                     formControlName="confirmPassword"
                     [toggleMask]="true"
                     [feedback]="false"
+                    [placeholder]="isEdit() ? '••••••••' : null"
                     styleClass="w-full"
                     inputStyleClass="w-full"
                     data-testid="users-profile-confirm-password" />
