@@ -111,5 +111,10 @@ export type StudioStepPhase = 'scan' | 'locate' | 'read' | 'fix' | 'rescan';
  * The a11y agent's stream: the generic {@link AgentStreamEvent} specialized to
  * the a11y terminal payload. `done`/`aborted` carry a {@link FixReport} (the
  * `aborted` one is partial — fixes already applied are kept).
+ *
+ * Nullable because a terminal frame does not guarantee a report: `aborted` can carry a
+ * status-only payload, and `FixReport.status` exists precisely for that. The service
+ * validates the shape and hands back null rather than a `FixReport`-shaped lie, so
+ * consumers reading `report.scan` have to acknowledge the case.
  */
-export type A11yAgentStreamEvent = AgentStreamEvent<FixReport>;
+export type A11yAgentStreamEvent = AgentStreamEvent<FixReport | null>;

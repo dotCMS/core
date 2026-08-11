@@ -228,7 +228,7 @@ export class DotA11yRunComponent {
         // language). Adopt it, or bounce back to the list when there is none — which
         // is what a cold load, refresh, or pasted run URL looks like, since the run
         // route is reachable only THROUGH the list.
-        const row = (this.location.getState() as { row?: StudioPageRow } | null)?.row;
+        const row = readHandoverRow(this.location.getState());
         if (row) {
             this.store.openSelectedPage(row);
         } else {
@@ -775,3 +775,34 @@ const REVIEW_REASON_KEYS: Record<string, string> = {
     'aria-allowed-attr': 'accessibility.studio.review.reason.aria',
     'nested-interactive': 'accessibility.studio.review.reason.nested'
 };
+
+/**
+ * The page row the list hands over in the navigation's `state`, or null.
+ *
+ * Validated rather than cast: `history.state` is external input — it survives a reload,
+ * and anything can put anything there via `history.pushState`. The three fields checked
+ * are the ones the run screen cannot work without: `identifier` targets the fix,
+ * `hostId` scopes the scan URL, and `languageId` selects the version to read. A partial
+ * object reaching `openSelectedPage` would scan the wrong page, or a nonexistent one,
+ * with no error to explain it — bouncing to the list is the recoverable outcome.
+ */
+function readHandoverRow(state: unknown): StudioPageRow | null {
+    if (!state || typeof state !== 'object') {
+        return null;
+    }
+
+    const row = (state as { row?: unknown }).row;
+    if (!row || typeof row !== 'object') {
+        return null;
+    }
+
+    const { identifier, hostId, languageId } = row as Partial<StudioPageRow>;
+
+    return typeof identifier === 'string' &&
+        identifier.length > 0 &&
+        typeof hostId === 'string' &&
+        hostId.length > 0 &&
+        typeof languageId === 'number'
+        ? (row as StudioPageRow)
+        : null;
+}

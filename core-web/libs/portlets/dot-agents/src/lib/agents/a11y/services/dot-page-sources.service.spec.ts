@@ -261,6 +261,91 @@ describe('DotPageSourcesService', () => {
             expect(result).toEqual([]);
         });
 
+        it('drops a file whose working text fails to load, rather than showing a deletion', () => {
+            // A 502 on the working version used to map to `''`, which diffs as every line
+            // removed — a whole-file deletion the agent never made, in the one panel whose
+            // job is to be the trustworthy account of what changed before publish.
+            let result = null as unknown;
+            spectator.service.getDiffFiles(files, 1).subscribe((r) => (result = r));
+
+            spectator
+                .expectOne(
+                    '/api/v1/content/versions?identifier=vtl-1&groupByLang=1',
+                    HttpMethod.GET
+                )
+                .flush(
+                    versionsResponse([
+                        { inode: 'working-inode', working: true },
+                        { inode: 'live-inode', live: true }
+                    ])
+                );
+            spectator.controller
+                .match('/dA/working-inode/fileAsset/file.vtl')[0]
+                .flush('nope', { status: 502, statusText: 'Bad Gateway' });
+            spectator.controller
+                .match('/dA/live-inode/fileAsset/file.vtl')[0]
+                .flush('line one\nline two');
+
+            expect(result).toEqual([]);
+        });
+
+        it('drops a file whose live text fails to load', () => {
+            let result = null as unknown;
+            spectator.service.getDiffFiles(files, 1).subscribe((r) => (result = r));
+
+            spectator
+                .expectOne(
+                    '/api/v1/content/versions?identifier=vtl-1&groupByLang=1',
+                    HttpMethod.GET
+                )
+                .flush(
+                    versionsResponse([
+                        { inode: 'working-inode', working: true },
+                        { inode: 'live-inode', live: true }
+                    ])
+                );
+            spectator.controller.match('/dA/working-inode/fileAsset/file.vtl')[0].flush('new');
+            spectator.controller
+                .match('/dA/live-inode/fileAsset/file.vtl')[0]
+                .flush('nope', { status: 500, statusText: 'Server Error' });
+
+            expect(result).toEqual([]);
+        });
+
+        it('prefers assetVersion over fileAssetVersion, matching getFileVersion', () => {
+            // The local copy had these the other way round while its docblock claimed to
+            // mirror the util, so a contentlet carrying both made the diff viewer show a
+            // different version of the file than every other admin surface.
+            let result = null as unknown;
+            spectator.service.getDiffFiles(files, 1).subscribe((r) => (result = r));
+
+            spectator
+                .expectOne(
+                    '/api/v1/content/versions?identifier=vtl-1&groupByLang=1',
+                    HttpMethod.GET
+                )
+                .flush({
+                    entity: {
+                        versions: {
+                            'en-us': [
+                                {
+                                    inode: 'working-inode',
+                                    working: true,
+                                    live: false,
+                                    languageId: 1,
+                                    assetVersion: '/dA/canonical/fileAsset/file.vtl',
+                                    fileAssetVersion: '/dA/other/fileAsset/file.vtl'
+                                }
+                            ]
+                        }
+                    }
+                });
+
+            spectator.expectOne('/dA/canonical/fileAsset/file.vtl', HttpMethod.GET).flush('a');
+            spectator.controller.verify();
+            expect(result).toEqual([expect.objectContaining({ working: 'a', live: '' })]);
+        });
+
         it('returns an empty array for an empty file list without any HTTP', () => {
             let result = null as unknown;
             spectator.service.getDiffFiles([], 1).subscribe((r) => (result = r));

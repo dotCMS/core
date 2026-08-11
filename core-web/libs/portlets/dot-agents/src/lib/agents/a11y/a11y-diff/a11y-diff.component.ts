@@ -1,18 +1,25 @@
+import { of } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
     DestroyRef,
-    effect,
     inject,
     input,
     output,
-    signal,
-    untracked
+    signal
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
-import { switchMap, take } from 'rxjs/operators';
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    map,
+    switchMap
+} from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -22,6 +29,13 @@ import { A11yRunStore } from '../store/a11y-run.store';
 
 /** Load status of the file list. */
 type DiffStatus = 'loading' | 'loaded' | 'error';
+
+/**
+ * How long to wait for `previewRevision` to settle before reloading the file list.
+ * Long enough to collapse a burst of SSE progress frames into one load, short enough
+ * that a terminal frame still updates the panel promptly.
+ */
+export const DIFF_RELOAD_DEBOUNCE_MS = 400;
 
 /**
  * The "working vs live" changed-file list — the body of the side panel's "Files"
@@ -99,61 +113,72 @@ export class DotA11yDiffComponent {
     /** True once loaded and there are no changed files to show. */
     readonly empty = computed(() => this.status() === 'loaded' && this.files().length === 0);
 
-    /**
-     * Cache key of the last-loaded list: page identifier + a revision that bumps
-     * whenever the working render changes (each run, re-scan, publish). Reloading
-     * on the revision — not just the page — means a new run's fixes (and any prior
-     * or manual working edits) show up as soon as they land.
-     */
-    private loadedKey: string | null = null;
-
     constructor() {
-        // Load the file list as soon as the page is known — before any scan — and
-        // reload whenever the working render changes (each run, re-scan, publish).
-        // Keyed on page + revision so a no-op change doesn't refetch.
-        effect(() => {
-            const page = this.store.selected();
-            const revision = this.store.previewRevision();
-            if (!page) {
-                return;
-            }
-            const key = `${page.identifier}#${revision}`;
-            untracked(() => {
-                if (this.loadedKey !== key) {
-                    this.loadedKey = key;
-                    this.loadDiff(page.path, page.hostId, page.languageId);
-                }
-            });
-        });
-    }
+        // Load the file list as soon as the page is known — before any scan — and reload
+        // whenever the working render changes (each run, re-scan, publish).
+        //
+        // Built as a stream rather than an effect for two reasons, both about
+        // `previewRevision` being a HOT key: it bumps on every SSE progress frame, and one
+        // load is a `_render-sources` call plus two fetches per source file.
+        //   - `debounceTime` collapses a burst of frames into a single load, instead of
+        //     dozens of overlapping request sets per run.
+        //   - `switchMap` makes the newest load the only one that can write. Previously
+        //     nothing superseded an in-flight load, so a slow early response could land
+        //     after a fast later one and set a stale `files`/`changedCount` — and since
+        //     the Publish bar is gated on `changedFileCount`, that could flip
+        //     `hasChangedFiles()` back to FALSE after the agent had written files,
+        //     blocking publish until request ordering happened to favour it.
+        toObservable(
+            computed(() => {
+                const page = this.store.selected();
 
-    /** Fetch the page's source files, resolve their working-vs-live diffs. */
-    private loadDiff(path: string, hostId: string, languageId: number): void {
-        this.status.set('loading');
-        this.sourcesService
-            .getPageSources(path, hostId, languageId)
+                return page
+                    ? {
+                          key: `${page.identifier}#${this.store.previewRevision()}`,
+                          path: page.path,
+                          hostId: page.hostId,
+                          languageId: page.languageId
+                      }
+                    : null;
+            })
+        )
             .pipe(
-                switchMap((sources) => this.sourcesService.getDiffFiles(sources, languageId)),
-                take(1),
+                filter((request) => request !== null),
+                distinctUntilChanged((a, b) => a.key === b.key),
+                debounceTime(DIFF_RELOAD_DEBOUNCE_MS),
+                switchMap((request) => {
+                    this.status.set('loading');
+
+                    return this.sourcesService
+                        .getPageSources(request.path, request.hostId, request.languageId)
+                        .pipe(
+                            switchMap((sources) =>
+                                this.sourcesService.getDiffFiles(sources, request.languageId)
+                            ),
+                            map((files) => ({ files, failed: false })),
+                            catchError(() => of({ files: [] as PageDiffFile[], failed: true }))
+                        );
+                }),
                 takeUntilDestroyed(this.destroyRef)
             )
-            .subscribe({
-                next: (files) => {
-                    this.files.set(files);
-                    // A reload can drop the file the right pane was showing (e.g. a
-                    // publish makes working == live). Close the pane in that case so
-                    // it isn't left diffing something no longer in the list.
-                    const openId = this.selectedId();
-                    if (openId && !files.some((f) => f.identifier === openId)) {
-                        this.fileSelected.emit(null);
-                    }
-                    this.status.set('loaded');
-                    this.changedCount.emit(files.length);
-                },
-                error: () => {
+            .subscribe(({ files, failed }) => {
+                if (failed) {
                     this.status.set('error');
                     this.changedCount.emit(0);
+
+                    return;
                 }
+
+                this.files.set(files);
+                // A reload can drop the file the right pane was showing (e.g. a
+                // publish makes working == live). Close the pane in that case so
+                // it isn't left diffing something no longer in the list.
+                const openId = this.selectedId();
+                if (openId && !files.some((f) => f.identifier === openId)) {
+                    this.fileSelected.emit(null);
+                }
+                this.status.set('loaded');
+                this.changedCount.emit(files.length);
             });
     }
 

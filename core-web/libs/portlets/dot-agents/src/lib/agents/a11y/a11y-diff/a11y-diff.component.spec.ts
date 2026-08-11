@@ -6,7 +6,7 @@ import { signal } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotA11yDiffComponent } from './a11y-diff.component';
+import { DIFF_RELOAD_DEBOUNCE_MS, DotA11yDiffComponent } from './a11y-diff.component';
 
 import { PageDiffFile, PageSourceFile } from '../models/page-render-sources.models';
 import { DotPageSourcesService } from '../services/dot-page-sources.service';
@@ -81,9 +81,24 @@ describe('DotA11yDiffComponent', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.useFakeTimers();
         selectedPage = MOCK_PAGE;
         previewRevision.set(0);
     });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    /**
+     * Run the reload pipeline's debounce and re-render. The component collapses a burst
+     * of `previewRevision` bumps into one load, so nothing is fetched until the timer
+     * fires — every assertion about a load has to come after this.
+     */
+    function flushReload() {
+        jest.advanceTimersByTime(DIFF_RELOAD_DEBOUNCE_MS);
+        spectator.detectChanges();
+    }
 
     /** Render the accordion with the given diff files. */
     function render(diffFiles: PageDiffFile[] = DIFF_FILES) {
@@ -98,6 +113,7 @@ describe('DotA11yDiffComponent', () => {
             ]
         });
         spectator.detectChanges();
+        flushReload();
     }
 
     it('loads the diff for the selected page on init — no scan required', () => {
@@ -164,6 +180,7 @@ describe('DotA11yDiffComponent', () => {
         spectator.inject(DotPageSourcesService).getDiffFiles.mockReturnValue(of([DIFF_FILES[1]]));
         previewRevision.set(1);
         spectator.detectChanges();
+        flushReload();
 
         expect(emitted).toEqual([null]);
     });
@@ -180,10 +197,12 @@ describe('DotA11yDiffComponent', () => {
         });
         spectator.component.changedCount.subscribe((n) => counts.push(n));
         spectator.detectChanges();
+        flushReload();
 
         // Re-resolve on a revision bump so the count is re-reported.
         previewRevision.set(1);
         spectator.detectChanges();
+        flushReload();
         expect(counts).toContain(2);
     });
 
@@ -206,6 +225,7 @@ describe('DotA11yDiffComponent', () => {
         spectator.component.changedCount.subscribe((n) => counts.push(n));
         previewRevision.set(1);
         spectator.detectChanges();
+        flushReload();
 
         expect(counts).toContain(0);
     });
@@ -220,6 +240,7 @@ describe('DotA11yDiffComponent', () => {
             ]
         });
         spectator.detectChanges();
+        flushReload();
         expect(spectator.query(byTestId('diff-error'))).toBeTruthy();
     });
 });

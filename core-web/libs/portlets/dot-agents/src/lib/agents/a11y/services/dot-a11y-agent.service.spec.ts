@@ -83,6 +83,41 @@ describe('DotA11yAgentService', () => {
         expect(received).toEqual({ type: 'done', result: FIX_REPORT });
     });
 
+    it('yields null for a status-only terminal payload rather than a report-shaped lie', () => {
+        // `aborted` may carry only a status. The old double cast asserted FixReport onto
+        // any truthy payload, so consumers read `report.scan` on an object without one and
+        // threw during change detection, blanking the whole run pane.
+        runService.run.mockReturnValue(
+            of({ type: 'aborted', result: { status: 'cancelled' } } as AgentStreamEvent<unknown>)
+        );
+        let received: unknown;
+        service.fixStream(REQUEST).subscribe((e) => (received = e));
+        expect(received).toEqual({ type: 'aborted', result: null });
+    });
+
+    it('yields null for a wrapped payload whose report has no scan', () => {
+        runService.run.mockReturnValue(
+            of({
+                type: 'done',
+                result: { report: { runId: 'r_1', results: [] } }
+            } as AgentStreamEvent<unknown>)
+        );
+        let received: unknown;
+        service.fixStream(REQUEST).subscribe((e) => (received = e));
+        expect(received).toEqual({ type: 'done', result: null });
+    });
+
+    it('yields null for a null or non-object terminal payload', () => {
+        for (const payload of [null, 'done', 42]) {
+            runService.run.mockReturnValue(
+                of({ type: 'done', result: payload } as AgentStreamEvent<unknown>)
+            );
+            let received: unknown;
+            service.fixStream(REQUEST).subscribe((e) => (received = e));
+            expect(received).toEqual({ type: 'done', result: null });
+        }
+    });
+
     it('passes non-terminal events (phase / progress / workingChanged) through untouched', () => {
         const events = [
             { type: 'phase', step: { message: 'scanning', meta: { phase: 'scan' } } },

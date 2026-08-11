@@ -93,7 +93,15 @@ interface A11yRunState {
      * failures are all recoverable in place (re-scan, re-run, retry the stop).
      */
     runError: string | null;
-    /** The §6 run report — populated when the fix pass completes (SSE `done`). */
+    /**
+     * The §6 run report — populated when the fix pass completes (SSE `done`).
+     *
+     * Non-null implies `scan.before` and `scan.after` are present: `DotA11yAgentService`
+     * validates the terminal payload and yields null for a status-only frame rather than
+     * a partial report. That invariant is what lets every derived count below read
+     * `report.scan` behind a plain truthiness check — a status-only `aborted` frame used
+     * to satisfy that check and then throw inside the computeds, blanking the run pane.
+     */
     report: FixReport | null;
     /**
      * Monotonic counter bumped whenever the working (preview) render changes — each
@@ -600,7 +608,13 @@ export const A11yRunStore = signalStore(
                                         ? error.message
                                         : 'The agent run failed.';
                                 settled = true;
-                                patchState(store, { phase: 'scanned', runError: message });
+                                patchState(store, {
+                                    phase: 'scanned',
+                                    runError: message,
+                                    // The run may have written fixes before the stream
+                                    // died; refresh so they aren't hidden (see `error`).
+                                    previewRevision: store.previewRevision() + 1
+                                });
 
                                 return EMPTY;
                             })
@@ -656,7 +670,13 @@ export const A11yRunStore = signalStore(
                                         fixRescan.cancel();
                                         patchState(store, {
                                             phase: 'scanned',
-                                            runError: event.message
+                                            runError: event.message,
+                                            // Bump like `done`/`aborted` do. A run can fail
+                                            // AFTER writing fixes to the working version, and
+                                            // without this the preview and changed-files panel
+                                            // keep their pre-run state — hiding real unpublished
+                                            // edits and, with them, the Publish bar.
+                                            previewRevision: store.previewRevision() + 1
                                         });
                                         break;
                                     default:
@@ -682,7 +702,10 @@ export const A11yRunStore = signalStore(
                                     runError:
                                         'The connection to the agent ended before it reported a result. ' +
                                         'Any fixes it already wrote to the working version are kept — ' +
-                                        're-scan to see the current state.'
+                                        're-scan to see the current state.',
+                                    // Those kept fixes are exactly what the preview and
+                                    // changed-files panel must now show (see `error`).
+                                    previewRevision: store.previewRevision() + 1
                                 });
                             }
                         })

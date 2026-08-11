@@ -62,7 +62,7 @@ export class DotA11yAgentService {
      */
     fixStream(request: AgentFixRequest): Observable<A11yAgentStreamEvent> {
         return this.#runService
-            .run<FixReport | { report: FixReport }>(`${AGENT_BASE}/fix/stream`, request)
+            .run<FixReport | { report: FixReport } | null>(`${AGENT_BASE}/fix/stream`, request)
             .pipe(
                 map((event): A11yAgentStreamEvent => {
                     if (event.type === 'done' || event.type === 'aborted') {
@@ -79,9 +79,36 @@ export class DotA11yAgentService {
  * Unwrap the agent's terminal payload to a bare {@link FixReport}. The agent
  * sends `{ report: FixReport }`; older/other shapes may send the report directly,
  * so accept both.
+ *
+ * Narrowed with an `in` check rather than a double cast. The old form asserted a
+ * `FixReport` onto ANY truthy payload, so a status-only terminal frame (`aborted` carries
+ * one) became a `report` with no `scan`, and every count computed off `report.scan` threw
+ * during change detection — taking the score widget, footer and donut down together and
+ * leaving a blank pane. Returning null lets the store keep its pre-run figures instead.
  */
-function unwrapReport(payload: FixReport | { report: FixReport }): FixReport {
-    const wrapped = payload as { report?: FixReport };
+function unwrapReport(payload: unknown): FixReport | null {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
 
-    return wrapped?.report ?? (payload as FixReport);
+    const candidate = 'report' in payload ? (payload as { report?: unknown }).report : payload;
+
+    // `scan` is what every derived count reads; a payload without it is a status frame,
+    // not a report, however much of the rest it happens to carry.
+    return isFixReport(candidate) ? candidate : null;
+}
+
+/** Whether a terminal payload actually carries the report shape the widgets read. */
+function isFixReport(value: unknown): value is FixReport {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+    const scan = (value as { scan?: unknown }).scan;
+
+    return (
+        !!scan &&
+        typeof scan === 'object' &&
+        'before' in (scan as object) &&
+        'after' in (scan as object)
+    );
 }

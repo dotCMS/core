@@ -819,5 +819,22 @@ describe('DotA11yRunComponent', () => {
             expect(openSelectedPage).not.toHaveBeenCalled();
             expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
         });
+
+        it.each([
+            ['a row missing its identifier', { hostId: 'h', languageId: 1 }],
+            ['a row missing its hostId', { identifier: 'id-1', languageId: 1 }],
+            ['a row missing its languageId', { identifier: 'id-1', hostId: 'h' }],
+            ['a row with an empty identifier', { identifier: '', hostId: 'h', languageId: 1 }],
+            ['a non-object row', 'not-a-row'],
+            ['a languageId of the wrong type', { identifier: 'id-1', hostId: 'h', languageId: '1' }]
+        ])('bounces rather than adopting %s', (_label, row) => {
+            // `history.state` survives a reload and anything can write to it, so the three
+            // fields the run screen cannot work without are validated. A partial row would
+            // scan the wrong page, or none, with no error to explain it.
+            handoverRow = row as never;
+            render('ready');
+            expect(openSelectedPage).not.toHaveBeenCalled();
+            expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
+        });
     });
 });

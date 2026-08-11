@@ -6,6 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotCMSAPIResponse, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { getFileVersion } from '@dotcms/utils';
 
 import {
     ContainerSourceView,
@@ -113,9 +114,17 @@ export class DotPageSourcesService {
 
                 return forkJoin({
                     working: this.fetchText(workingUrl),
-                    live: liveUrl ? this.fetchText(liveUrl) : of('')
+                    // No live version is a fact (`''`, a brand-new working-only file);
+                    // a failed fetch is not (`null`, handled below).
+                    live: liveUrl ? this.fetchText(liveUrl) : of<string | null>('')
                 }).pipe(
                     map(({ working: workingText, live: liveText }) => {
+                        // Either side unknown → drop the file rather than diff against a
+                        // guess. Showing it as a whole-file deletion would report an edit
+                        // the agent never made, and the user's next move is Discard.
+                        if (workingText === null || liveText === null) {
+                            return null;
+                        }
                         // Identical → not a change; drop it (the whole point is to
                         // surface only what the agent touched).
                         if (workingText === liveText) {
@@ -160,24 +169,29 @@ export class DotPageSourcesService {
      * Fetch the raw text of a specific file version. The `fileAssetVersion` path
      * (`/dA/<inode>/fileAsset/<name>`) is version-specific (the inode identifies
      * the version), so GETting it returns that exact version's bytes.
+     *
+     * Returns `null` — NOT `''` — on failure. The two are opposite facts: `''` is a
+     * genuinely empty file, while `null` means we don't know what the file holds. Mapping
+     * a failure to `''` made a 502 on the working version render as a real diff deleting
+     * every line, which is the single most misleading thing this panel could show, since
+     * its entire job is to be the trustworthy account of what the agent changed.
      */
-    private fetchText(url: string): Observable<string> {
-        return this.#http.get(url, { responseType: 'text' }).pipe(catchError(() => of('')));
+    private fetchText(url: string): Observable<string | null> {
+        return this.#http.get(url, { responseType: 'text' }).pipe(catchError(() => of(null)));
     }
 }
 
 /**
- * The versioned asset URL of a file-asset contentlet — `fileAssetVersion` is the
- * version-specific `/dA/<inode>/...` path; `fileAsset` is the identifier-level
- * fallback. Mirrors `getFileVersion` in `@dotcms/utils`.
+ * The versioned asset URL of a file-asset contentlet.
+ *
+ * Delegates to `getFileVersion` so the version-key precedence is identical to every other
+ * admin surface — a local copy that merely *said* it mirrored the util had the two keys
+ * the other way round, so whenever a contentlet carried both, the diff viewer fetched a
+ * different version of the file than the editor showed. `fileAsset` (the identifier-level
+ * path) stays as a last resort here; the util doesn't consider it.
  */
 function versionUrl(contentlet: DotCMSContentlet): string | null {
-    return (
-        (contentlet['fileAssetVersion'] as string) ||
-        (contentlet['assetVersion'] as string) ||
-        (contentlet['fileAsset'] as string) ||
-        null
-    );
+    return (getFileVersion(contentlet) as string) || (contentlet['fileAsset'] as string) || null;
 }
 
 /**

@@ -1,13 +1,17 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
 
-import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotContentSearchService,
+    DotHttpErrorManagerService,
+    DotLanguagesService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { A11yPageListStore } from './a11y-page-list.store';
+import { A11yPageListStore, pickDefaultLanguageId } from './a11y-page-list.store';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
 
@@ -61,6 +65,8 @@ describe('A11yPageListStore', () => {
     let store: InstanceType<typeof A11yPageListStore>;
     let searchService: jest.Mocked<DotContentSearchService>;
     let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
+    /** What `DotLanguagesService.get()` returns for the next store instance. */
+    let languagesResponse: () => Observable<DotLanguage[]>;
 
     const createService = createServiceFactory({
         service: A11yPageListStore,
@@ -70,6 +76,9 @@ describe('A11yPageListStore', () => {
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of(null))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn(() => languagesResponse())
             }),
             mockProvider(GlobalStore, {
                 get currentSiteId() {
@@ -82,6 +91,11 @@ describe('A11yPageListStore', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         currentSiteIdSignal = signal<string | null>('site-1');
+        languagesResponse = () =>
+            of([
+                { id: 1, defaultLanguage: true },
+                { id: 2, defaultLanguage: false }
+            ] as DotLanguage[]);
         spectator = createService();
         store = spectator.service;
         searchService = spectator.inject(
@@ -122,13 +136,38 @@ describe('A11yPageListStore', () => {
         expect(store.pages()[0].path).toBe('/blog/post/hello');
     });
 
-    it('builds a host-scoped pages query', () => {
+    it('builds a host- and language-scoped pages query', () => {
         const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
         expect(query).toContain('+working:true');
         expect(query).toContain('+(urlmap:* OR basetype:5)');
         expect(query).toContain('+deleted:false');
         expect(query).toContain('+conhost:site-1');
+        // Without this a multilingual site returns the same page once per language,
+        // identical in a table that renders no language column.
+        expect(query).toContain('+languageId:1');
         expect(query).not.toContain('title:');
+    });
+
+    describe('pickDefaultLanguageId', () => {
+        it('picks the flagged default, not merely the first returned', () => {
+            // The endpoint's ordering is not a contract, and on a screen with no language
+            // column a silently non-default list would be invisible.
+            expect(
+                pickDefaultLanguageId([
+                    { id: 3, defaultLanguage: false },
+                    { id: 7, defaultLanguage: true }
+                ] as DotLanguage[])
+            ).toBe(7);
+        });
+
+        it('falls back to the first entry when nothing is flagged', () => {
+            expect(pickDefaultLanguageId([{ id: 5 }, { id: 9 }] as DotLanguage[])).toBe(5);
+        });
+
+        it('falls back to language 1 for an empty or missing list', () => {
+            expect(pickDefaultLanguageId([])).toBe(1);
+            expect(pickDefaultLanguageId(null)).toBe(1);
+        });
     });
 
     it('does not fetch until the current site is known, then fetches scoped', () => {
@@ -164,6 +203,18 @@ describe('A11yPageListStore', () => {
         expect(query).toContain('a\\:b\\(c\\)');
     });
 
+    it('keeps a multi-word filter inside one term instead of leaking a bare token', () => {
+        searchService.get.mockClear();
+        store.setFilter('about us');
+        spectator.flushEffects();
+
+        const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
+        // A raw space would end the field-qualified term, leaving `us*` to run against
+        // the DEFAULT field and match users/usage instead of the intended path.
+        expect(query).not.toContain('path:*about us*');
+        expect(query).toContain('+(title:about?us* OR path:*about?us* OR urlmap:*about?us*)');
+    });
+
     it('translates pagination into limit/offset', () => {
         searchService.get.mockClear();
         store.setPagination(3, 10);
@@ -185,5 +236,28 @@ describe('A11yPageListStore', () => {
 
         expect(errorManager.handle).toHaveBeenCalled();
         expect(store.pageListStatus()).toBe('error');
+    });
+
+    it('supersedes an in-flight search so a slow earlier response cannot win', () => {
+        // Type "blog", then page before it lands. If the FIRST response were allowed to
+        // write, the table would show page 1's rows while the paginator showed page 2.
+        const slowFirst = new Subject<unknown>();
+        searchService.get.mockClear();
+        searchService.get.mockReturnValueOnce(slowFirst as never);
+        store.setFilter('blog');
+        spectator.flushEffects();
+
+        searchService.get.mockReturnValueOnce(
+            of({ jsonObjectView: { contentlets: [MOCK_CONTENTLETS[1]] }, resultsSize: 1 }) as never
+        );
+        store.setPagination(2, 25);
+        spectator.flushEffects();
+
+        // The stale first response resolves last and must be ignored.
+        slowFirst.next(MOCK_SEARCH_ENTITY);
+        slowFirst.complete();
+
+        expect(store.totalRecords()).toBe(1);
+        expect(store.pages().length).toBe(1);
     });
 });

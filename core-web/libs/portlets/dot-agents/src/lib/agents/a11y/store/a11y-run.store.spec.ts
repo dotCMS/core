@@ -476,6 +476,39 @@ describe('A11yRunStore', () => {
             expect(store.report()).toEqual(MOCK_FIX_REPORT);
         });
 
+        it('survives a terminal frame that carries no report', () => {
+            // `aborted` can arrive with a status-only payload — `FixReport.status` exists
+            // for exactly that — and the service hands that through as null. The counts
+            // must fall back to the pre-run scan rather than reading `report.scan` on
+            // something that has none, which threw inside change detection and blanked the
+            // score widget, footer and donut together.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>({ type: 'aborted', result: null })
+            );
+            store.runScan();
+            store.startFix();
+
+            expect(store.report()).toBeNull();
+            // The pre-run scan figures survive rather than the pane dying.
+            expect(() => store.beforeCount()).not.toThrow();
+            expect(store.beforeCount()).toBe(5);
+            expect(store.afterCount()).toBe(0);
+            expect(store.fixedCount()).toBe(0);
+        });
+
+        it('refreshes the preview on a terminal error, so fixes already written show up', () => {
+            // A run can fail AFTER writing fixes to the working version; without a bump the
+            // preview and changed-files panel keep their pre-run state and hide them.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+            );
+            store.runScan();
+            const before = store.previewRevision();
+            store.startFix();
+
+            expect(store.previewRevision()).toBeGreaterThan(before);
+        });
+
         it('surfaces a failed stop instead of swallowing it, and stays in fixing', () => {
             // The service already treats 202 and 404 as equivalent, so anything reaching
             // this path means the agent is likely still running and still writing to the

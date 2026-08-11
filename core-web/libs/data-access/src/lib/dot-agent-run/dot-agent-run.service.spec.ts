@@ -243,6 +243,59 @@ describe('DotAgentRunService', () => {
             expect(events).toEqual([{ type: 'error', message: 'Agent run failed.' }]);
         });
 
+        it('emits a trailing frame that never got its blank-line terminator', async () => {
+            // A server that ends the body right after writing the terminal event leaves the
+            // frame in the buffer with no `\n\n`. Dropping it turned a finished run into
+            // one that looked hung — the consumer waited forever for a `done` already sent.
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'event: step\ndata: {"message":"Fixing"}\n\n',
+                    'event: done\ndata: {"total":3}\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events[events.length - 1]).toEqual({ type: 'done', result: { total: 3 } });
+        });
+
+        it('does not invent an event from trailing whitespace', async () => {
+            fetchMock.mockResolvedValue(
+                mockSseResponse(['event: done\ndata: {"total":1}\n\n', '\n\n  \n'])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            expect(events).toEqual([{ type: 'done', result: { total: 1 } }]);
+        });
+
+        it('drops an unparseable frame but logs it, and keeps the stream alive', async () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'event: step\ndata: {not json}\n\n',
+                    'event: done\ndata: {"total":7}\n\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/url', {}).pipe(toArray())
+            );
+
+            // One bad frame from a flaky backend must not take the whole stream down...
+            expect(events).toEqual([{ type: 'done', result: { total: 7 } }]);
+            // ...but it must not vanish silently either.
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringContaining('dropped an unparseable "step" frame'),
+                expect.stringContaining('{not json}')
+            );
+            warn.mockRestore();
+        });
+
         it('errors the observable when the response is not ok', async () => {
             fetchMock.mockResolvedValue(mockSseResponse([], { ok: false, status: 500 }));
 

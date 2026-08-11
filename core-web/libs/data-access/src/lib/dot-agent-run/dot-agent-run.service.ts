@@ -114,6 +114,19 @@ export class DotAgentRunService {
                             delimiter = buffer.indexOf('\n\n');
                         }
                     }
+
+                    // Flush a trailing frame that never got its blank line. A server that
+                    // ends the body right after writing the terminal event leaves it here,
+                    // and dropping it turns a finished run into one that looks like it
+                    // hung — the consumer waits forever for a `done` that was sent.
+                    const tail = buffer.trim();
+                    if (tail) {
+                        const parsed = this.#parseFrame<TResult>(tail);
+                        if (parsed) {
+                            subscriber.next(parsed);
+                        }
+                    }
+
                     subscriber.complete();
                 } catch (e) {
                     if (!controller.signal.aborted) {
@@ -141,10 +154,20 @@ export class DotAgentRunService {
             return null;
         }
 
+        const data = dataLines.join('\n');
         let payload: unknown;
         try {
-            payload = JSON.parse(dataLines.join('\n'));
+            payload = JSON.parse(data);
         } catch {
+            // Dropping the frame is right — one bad frame from a flaky backend must not
+            // take down the whole stream — but do it loudly. Silently discarding a frame
+            // that happened to be the terminal `done` leaves the run looking hung with
+            // nothing anywhere to explain why.
+            console.warn(
+                `[DotAgentRunService] dropped an unparseable "${event}" frame:`,
+                data.length > 500 ? `${data.slice(0, 500)}…` : data
+            );
+
             return null;
         }
 
