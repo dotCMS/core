@@ -61,6 +61,11 @@ SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
+// Phase-aware default (issue #36983): the legacy IndiciesInfo pointer freezes at the Elasticsearch-era
+// default from Phase 3 on, where activateIndex fans out to OpenSearch alone. Resolved once for every row.
+String defaultSiteSearchIndex = null;
+try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (Exception e) { Logger.warn(this.getClass(), "Could not resolve the default site-search index: " + e.getMessage()); }
+
 
 %>
 
@@ -131,7 +136,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<% ClusterIndexHealth health = map.get(x);       if (health == null) { health = map.get(IndexTag.OS.tag(x)); } %>
 		<% IndexStats status         = indexInfo.get(x); if (status == null) { status = indexInfo.get(IndexTag.OS.tag(x)); } %>
 
-		<%boolean active =x.equals(info.getSiteSearch());%>
+		<%boolean active = x.equals(defaultSiteSearchIndex);%>
 		<%	Date d = null;
 			String myDate = null;
 			try{
@@ -200,7 +205,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 <%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =x.equals(info.getSiteSearch());%>
+			<%boolean active = x.equals(defaultSiteSearchIndex);%>
 
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 

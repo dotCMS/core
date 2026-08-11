@@ -19,7 +19,12 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 
-String testIndex = (request.getParameter("testIndex") == null) ? info.getSiteSearch() : request.getParameter("testIndex");
+// Phase-aware default (issue #36983): from Phase 3 on, activateIndex fans out to OpenSearch alone, so
+// the legacy IndiciesInfo pointer freezes at the Elasticsearch-era default and would preselect a stale
+// index here. Resolved once and reused below for the "(Default)" marker.
+String defaultSiteSearchIndex = null;
+try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (Exception e) { Logger.warn(this.getClass(), "Could not resolve the default site-search index: " + e.getMessage()); }
+String testIndex = (request.getParameter("testIndex") == null) ? defaultSiteSearchIndex : request.getParameter("testIndex");
 String testQuery = request.getParameter("testQuery");
 
 
@@ -117,7 +122,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 				
 				<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(defaultSiteSearchIndex)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 				</select>
 				

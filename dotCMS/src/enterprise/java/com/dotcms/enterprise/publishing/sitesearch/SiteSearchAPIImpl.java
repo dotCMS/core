@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.quartz.SchedulerException;
 
@@ -247,6 +248,23 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     @Override
     public SiteSearchResult getFromIndex(final String index, final String id) {
         return router.read(impl -> impl.getFromIndex(index, id));
+    }
+
+    /**
+     * Router: the default site-search index according to the current read provider — Elasticsearch's
+     * legacy pointer in Phases 0/1, OpenSearch's {@code VersionedIndices} (with a legacy fallback) in
+     * Phases 2/3. Reading the legacy pointer directly goes stale from Phase 3 on, where
+     * {@code activateIndex} fans out to OpenSearch alone (issue #36983).
+     */
+    @Override
+    public Optional<String> defaultIndexName() throws DotDataException {
+        try {
+            return router.readChecked(SiteSearchAPI::defaultIndexName);
+        } catch (DotDataException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     @Override

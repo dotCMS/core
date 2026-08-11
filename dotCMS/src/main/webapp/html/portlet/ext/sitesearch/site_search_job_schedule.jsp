@@ -74,7 +74,10 @@ for(String x : indexHosts){
 	catch(Exception e){}
 }
 
-boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch() != null;
+// Phase-aware default (issue #36983) — see the note in site_search_index_stats.jsp.
+String defaultSiteSearchIndex = null;
+try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (Exception e) { Logger.warn(this.getClass(), "Could not resolve the default site-search index: " + e.getMessage()); }
+boolean hasDefaultIndex = defaultSiteSearchIndex != null;
 
 
 List<Language> langs=APILocator.getLanguageAPI().getLanguages();
@@ -85,7 +88,7 @@ String includeExclude = (String) props.get("includeExclude") ==null ? "all": (St
 
 boolean hasPath = false;
 
-final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
+final String siteSearch = defaultSiteSearchIndex;
 
 %>
 

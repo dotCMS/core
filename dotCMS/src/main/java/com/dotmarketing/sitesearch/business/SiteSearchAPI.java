@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.quartz.SchedulerException;
 
@@ -174,6 +175,27 @@ public interface SiteSearchAPI {
 		// A single-engine implementation (either leaf) has nothing to merge — only the router overrides.
 		return getAliasToIndexMap();
 	}
+
+	/**
+	 * The site-search index currently marked as the default, resolved <strong>phase-aware</strong>.
+	 *
+	 * <p>Which store holds that pointer changes with the phase: Elasticsearch owns it in Phases 0/1
+	 * (the legacy {@code indicies} row), OpenSearch in Phases 2/3 ({@code VersionedIndices}, falling
+	 * back to the legacy row when its slot was never populated). Reading the legacy row directly —
+	 * {@code IndiciesInfo#getSiteSearch()} — is therefore correct only up to Phase 1: from Phase 2 on,
+	 * {@code activateIndex} fans out to OpenSearch alone in Phase 3, so the legacy pointer freezes at
+	 * whatever was default in the Elasticsearch era and every screen reading it shows a stale default
+	 * (issue #36983).</p>
+	 *
+	 * <p>Callers that only need to test one name should use {@link #isDefaultIndex(String)}, which is
+	 * defined in terms of this. Callers that need the name itself — preselecting it in a dropdown,
+	 * listing the non-default indices — use this one, and get an empty {@link Optional} instead of a
+	 * {@code null} to dereference when no default has ever been set.</p>
+	 *
+	 * @return the logical name of the default index, or empty when there is none
+	 * @throws DotDataException if the pointer store cannot be read
+	 */
+	Optional<String> defaultIndexName() throws DotDataException;
 
 	/**
 	 * This basically tells you if the index passed as parameter is the default site search index or not

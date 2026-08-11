@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Config;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -294,5 +295,44 @@ public class SiteSearchRouterReconciliationTest extends UnitTestBase {
 
         assertEquals(Map.of("es-alias", IDX), router.getAliasToIndexMap());
         verify(osImpl, never()).getAliasToIndexMap();
+    }
+
+    // =======================================================================
+    // defaultIndexName — which store owns the "default" pointer (#36983)
+    // =======================================================================
+
+    private static final int PHASE_3_OS_ONLY = 3;
+
+    /** Phases 0/1: Elasticsearch owns the pointer, so the OpenSearch store is not consulted. */
+    @Test
+    public void defaultIndexName_phase1_comesFromElasticsearch() throws Exception {
+        setPhase(PHASE_1_DUAL_WRITE_ES_READS);
+        when(esImpl.defaultIndexName()).thenReturn(Optional.of(IDX));
+
+        assertEquals(Optional.of(IDX), router.defaultIndexName());
+        verify(osImpl, never()).defaultIndexName();
+    }
+
+    /**
+     * Phase 3: OpenSearch owns it. This is the case the fix exists for — {@code activateIndex} fans out
+     * to OpenSearch alone there, so the legacy Elasticsearch pointer freezes at whatever was default in
+     * the Elasticsearch era and every screen reading it shows a stale default.
+     */
+    @Test
+    public void defaultIndexName_phase3_comesFromOpenSearch() throws Exception {
+        setPhase(PHASE_3_OS_ONLY);
+        when(osImpl.defaultIndexName()).thenReturn(Optional.of(OS_ONLY_IDX));
+
+        assertEquals(Optional.of(OS_ONLY_IDX), router.defaultIndexName());
+        verify(esImpl, never()).defaultIndexName();
+    }
+
+    /** No default set anywhere → empty, never a null to dereference. */
+    @Test
+    public void defaultIndexName_noneSet_isEmpty() throws Exception {
+        setPhase(PHASE_3_OS_ONLY);
+        when(osImpl.defaultIndexName()).thenReturn(Optional.empty());
+
+        assertTrue(router.defaultIndexName().isEmpty());
     }
 }
