@@ -449,6 +449,72 @@ describe('DotFolderListViewComponent', () => {
             ).toEqual(['Chosen first', 'Chosen second']);
         });
 
+        it('should not reorder the array the caller passed in', () => {
+            // PrimeNG's non-lazy path sorts `value` **in place** (`sortSingle`), and the array a
+            // caller hands over is the one it holds itself — for the action preview, the very array
+            // behind `$previewItems()` and the parent's included set. Reordering it from outside
+            // Angular would be a side effect on the caller's own state, not just a display choice.
+            const given = [
+                { ...mockItems[0], inode: 'older', title: 'Chosen first', modDate: '2020-01-01' },
+                { ...mockItems[0], inode: 'newer', title: 'Chosen second', modDate: '2030-01-01' }
+            ];
+            const originalOrder = [...given];
+
+            spectator.setInput('items', given);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(given).toEqual(originalOrder);
+        });
+
+        it('should not ask the parent to fetch a page it already holds', () => {
+            // `paginate` means "fetch me this page from the server" — a request a caller holding
+            // every row cannot satisfy, and it also resets the skeleton rows on each page turn.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.click('.p-paginator-next');
+            spectator.detectChanges();
+
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        it('should still ask the parent to fetch a page while lazy', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalled();
+        });
+
+        it('should not fetch languages when the locale column is hidden', () => {
+            // The preview is a second instance of this grid, built and torn down on every drill-in,
+            // and it hides the locale column — so the map that request builds is never read.
+            const languagesService = spectator.inject(DotLanguagesService, true);
+            languagesService.get.mockClear();
+
+            const scoped = createComponent({
+                props: { items: mockItems, visibleColumns: ['title', 'live', 'contentType'] }
+            });
+            scoped.detectChanges();
+
+            expect(languagesService.get).not.toHaveBeenCalled();
+        });
+
+        it('should fetch languages when the locale column is shown', () => {
+            const languagesService = spectator.inject(DotLanguagesService, true);
+
+            expect(languagesService.get).toHaveBeenCalled();
+        });
+
         it('should count the in-memory list rather than the totalItems input', () => {
             // `totalItems` is the server's count and means nothing to a caller holding every row —
             // left at 0 here, which would collapse the paginator to a single page if it were used.
@@ -1117,6 +1183,20 @@ describe('DotFolderListViewComponent', () => {
 
             it('should still render the row checkboxes', () => {
                 expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+            });
+
+            it('should not toggle a row when a cell without its own click handler is clicked', () => {
+                // Rows are `pSelectableRow`, and PrimeNG's `metaKeySelection` defaults to false, so a
+                // plain click toggles. The checkbox, title and thumbnail cells all stop propagation;
+                // the status and type cells do not. In a confirmation list that means glancing at a
+                // status badge can silently drop that row from what Execute fires — with nothing
+                // suggesting the row was clickable. The table this replaced toggled on the checkbox
+                // alone.
+                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+                spectator.click(spectator.query(byTestId('item-status')));
+
+                expect(selectionChangeSpy).not.toHaveBeenCalled();
             });
         });
 

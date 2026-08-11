@@ -570,6 +570,12 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        // Only the locale column reads the map, so a caller that hides it — the action preview,
+        // which is a fresh instance of this grid on every drill-in — should not pay for the request.
+        if (!this.$visibleColumnSet().has('languageId')) {
+            return;
+        }
+
         // We should be getting this from the Global Store
         // But it gets out of scope for the ticket.
         this.dotLanguagesService
@@ -643,6 +649,12 @@ export class DotFolderListViewComponent implements OnInit {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
+        // Lazy only. `paginate` means "fetch me this page" — nothing a caller holding every row can
+        // act on, and the skeleton rows it primes would never be shown. The table pages itself.
+        if (!this.$lazy()) {
+            return;
+        }
+
         const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
         this.paginate.emit({ ...event, page });
         this.$loadingRows.set([...Array(event.rows)]);

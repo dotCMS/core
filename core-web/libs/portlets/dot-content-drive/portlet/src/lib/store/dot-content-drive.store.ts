@@ -350,7 +350,11 @@ export const DotContentDriveStore = signalStore(
                         take(1),
                         catchError(() => EMPTY)
                     )
-                    .subscribe(({ admin }) => patchState(store, { currentUserIsAdmin: !!admin }));
+                    // Read defensively rather than destructured: `catchError` is upstream of the
+                    // subscriber, so it covers a failed request but not a successful one with no
+                    // body (a 204, a proxy that strips it, a gateway answering without JSON). The
+                    // documented default — false — should hold for both.
+                    .subscribe((user) => patchState(store, { currentUserIsAdmin: !!user?.admin }));
             },
             loadItems() {
                 const request = store.$request();

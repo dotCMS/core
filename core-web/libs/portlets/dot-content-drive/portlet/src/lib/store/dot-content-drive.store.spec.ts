@@ -118,6 +118,15 @@ describe('DotContentDriveStore', () => {
             expect(store.currentUserIsAdmin()).toBe(false);
         });
 
+        it('should stay false when the response carries no body', () => {
+            // `catchError` sits upstream of `subscribe`, so it only covers observable errors.
+            // Destructuring the response inside the subscriber would throw on a 204, a proxy that
+            // strips the body, or a session-expired gateway returning no JSON — an unhandled error
+            // during store init, for a flag that is explicitly non-essential.
+            expect(() => currentUser$.next(null as unknown as DotCurrentUser)).not.toThrow();
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
         it('should stay false when the request fails', () => {
             // A portlet that cannot answer "is this an admin?" should still work: the role only
             // softens a warning, so a failure is swallowed rather than surfaced.

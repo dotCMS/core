@@ -63,7 +63,7 @@
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
-                [pSelectableRowDisabled]="$disabled()"
+                [pSelectableRowDisabled]="$disabled() || $readOnly()"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
