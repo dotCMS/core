@@ -40,7 +40,7 @@ import {
     DotCMSContentTypeField,
     DotCMSDataTypes,
     DotCMSFieldTypes,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
@@ -216,7 +216,7 @@ export class DotContentDriveShellComponent {
         const dialog = this.$activeDialog();
 
         return dialog?.type === DIALOG_TYPE.FOLDER
-            ? (dialog.payload as DotContentDriveFolder)
+            ? (dialog.payload as DotContentDriveActionableFolder)
             : undefined;
     });
 

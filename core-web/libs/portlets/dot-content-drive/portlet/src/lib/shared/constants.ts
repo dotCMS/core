@@ -35,6 +35,17 @@ export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
  */
 export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 10000;
 
+/**
+ * Page size for the on-demand lookup that resolves a single folder's permissions when its tree node
+ * was hydrated without them (see `getFolderPermissionsByPath`). Matches the backend cap for
+ * `includePermissions=true` (`content.drive.folder.search.permissions.max.per.page`, default 200) —
+ * requesting more would be rejected with a 400.
+ */
+export const FOLDER_PERMISSIONS_LOOKUP_PAGE_SIZE = 200;
+
+/** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
+export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC

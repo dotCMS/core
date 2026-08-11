@@ -8,13 +8,14 @@ import {
     createLoadMoreTreeNode,
     DotCMSContentTypeField,
     DotContentDriveDateRange,
-    DotContentDriveFolder,
-    DotContentDriveItem,
+    DotContentDriveActionableFolder,
+    DotContentDriveActionableItem,
     DotContentDriveUserSearchableValue,
     DotFolder,
     DotSite,
     FolderSearchView,
-    LOAD_MORE_NODE_TYPE
+    LOAD_MORE_NODE_TYPE,
+    PermissionType
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
@@ -26,6 +27,8 @@ import {
     FIELD_FILTER_DATE_TYPES,
     FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTI_VALUE_TYPES,
+    FOLDER_NAME_FILTER_MIN_LENGTH,
+    FOLDER_PERMISSIONS_LOOKUP_PAGE_SIZE,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
     USER_SEARCHABLE_PREFIX,
@@ -266,7 +269,18 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
         path: `${parentPath}${view.name}/`,
         addChildrenAllowed: view.addChildrenAllowed,
         hasChildren: view.hasChildren,
-        defaultBaseType: view.defaultBaseType
+        defaultBaseType: view.defaultBaseType,
+        name: view.name,
+        title: view.title,
+        sortOrder: view.sortOrder,
+        filesMasks: view.filesMasks,
+        defaultFileType: view.defaultFileType,
+        showOnMenu: view.showOnMenu,
+        // `null` (not requested) and `[]` (requested, no grants) mean different things, and the
+        // difference drives behavior: a node whose permissions were never fetched must resolve them
+        // on demand before its context menu can gate correctly, while an empty array is a final
+        // answer. Collapse `null` to `undefined` (the optional-field idiom) and keep `[]` intact.
+        permissions: view.permissions ?? undefined
     };
 }
 
@@ -313,6 +327,11 @@ export function getFolderHierarchyByPath(
                 orderby: 'name',
                 direction: 'ASC',
                 page: 1,
+                // Deliberately NOT requesting `includePermissions` here: the backend caps the page
+                // size when permissions are requested (default 200) and rejects anything larger with
+                // a 400, and this call intentionally uses a much larger page to resolve deep-link
+                // ancestors in one shot. Nodes hydrated here therefore arrive without permissions;
+                // `getFolderPermissionsByPath` resolves them on demand when one is right-clicked.
                 per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
             })
             .pipe(
@@ -355,7 +374,11 @@ export function getFolderNodesByPath(
             orderby: 'name',
             direction: 'ASC',
             page,
-            per_page: FOLDER_TREE_PAGE_SIZE
+            per_page: FOLDER_TREE_PAGE_SIZE,
+            // Safe to request here: this page size (40) is well under the backend cap, so nodes
+            // loaded by expanding a folder carry their permissions and their context menu opens
+            // without a second round-trip.
+            includePermissions: true
         })
         .pipe(
             map(({ folders, pagination }) => ({
@@ -364,6 +387,65 @@ export function getFolderNodesByPath(
                 ),
                 totalEntries: pagination?.totalEntries ?? folders.length
             }))
+        );
+}
+
+/**
+ * The parent path of a folder path: `/a/b/` → `/a/`, `/b/` → `/`.
+ * `GET /api/v1/folder/search` scopes a non-recursive search by the *parent* path, while tree nodes
+ * carry their own full path.
+ *
+ * @param {string} folderPath - The folder's own path, with or without a trailing slash
+ * @returns {string} the parent path, always trailing-slashed
+ */
+export function getParentPath(folderPath: string): string {
+    const withoutTrailing = folderPath.endsWith('/') ? folderPath.slice(0, -1) : folderPath;
+    const lastSeparator = withoutTrailing.lastIndexOf('/');
+
+    return lastSeparator <= 0 ? '/' : withoutTrailing.slice(0, lastSeparator + 1);
+}
+
+/**
+ * Resolves the permission types the current user holds on a single folder.
+ *
+ * Needed because the deep-link hierarchy load ({@link getFolderHierarchyByPath}) cannot request
+ * permissions — its page size exceeds the backend cap — so the folders visible on first render
+ * arrive without them. Without this, right-clicking those nodes would produce an empty menu that
+ * is indistinguishable from "you have no rights on this folder".
+ *
+ * Queries the folder's own level, narrowed by name so the response stays small, and matches the
+ * folder by id. Resolves to `undefined` when the folder is not found in the page, letting the
+ * caller tell "no grants" (`[]`) from "could not resolve".
+ *
+ * @param {string} folderPath - The folder's own full path, e.g. `/a/b/`
+ * @param {string} folderId - Identifier of the folder to match in the response
+ * @param {string} folderName - The folder's own name, used to narrow the query
+ * @param {DotSite} site - Site scoping the search
+ * @param {DotFolderService} dotFolderService - The folder service
+ * @returns {Observable<PermissionType[] | undefined>} the folder's permissions, if resolved
+ */
+export function getFolderPermissionsByPath(
+    folderPath: string,
+    folderId: string,
+    folderName: string,
+    site: DotSite,
+    dotFolderService: DotFolderService
+): Observable<PermissionType[] | undefined> {
+    return dotFolderService
+        .searchFolders({
+            siteId: site.identifier,
+            path: getParentPath(folderPath),
+            recursive: false,
+            // The endpoint rejects a filter shorter than 2 characters, so single-character folder
+            // names fall back to an unfiltered page of the level.
+            name: folderName.length >= FOLDER_NAME_FILTER_MIN_LENGTH ? folderName : undefined,
+            page: 1,
+            per_page: FOLDER_PERMISSIONS_LOOKUP_PAGE_SIZE,
+            includePermissions: true
+        })
+        .pipe(
+            map(({ folders }) => folders.find((folder) => folder.id === folderId)),
+            map((folder) => folder?.permissions ?? undefined)
         );
 }
 
@@ -485,10 +567,16 @@ function findFolderNodeByPath(
 /**
  * Checks if an item is a folder.
  *
- * @param {DotContentDriveItem} item - The item to check
+ * Narrows to the actionable folder shape rather than the full table row, so it serves folders from
+ * both views. Called with a `DotContentDriveItem` (the table's list) it still narrows to
+ * `DotContentDriveFolder`, since that is the only folder member of that union.
+ *
+ * @param {DotContentDriveActionableItem} item - The item to check
  * @returns {boolean} True if the item is a folder, false otherwise
  */
-export function isFolder(item: DotContentDriveItem): item is DotContentDriveFolder {
+export function isFolder(
+    item: DotContentDriveActionableItem
+): item is DotContentDriveActionableFolder {
     return item != null && 'type' in item && item.type === 'folder';
 }
 

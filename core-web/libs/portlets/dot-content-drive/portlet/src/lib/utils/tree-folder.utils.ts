@@ -41,7 +41,17 @@ export const createTreeNode = (
             hostname: folder.hostName,
             path: folder.path,
             type: 'folder',
-            defaultBaseType: folder.defaultBaseType
+            defaultBaseType: folder.defaultBaseType,
+            // Carried so a right-click can gate the shared context menu and pre-populate the
+            // "Edit folder" dialog without refetching. `permissions` stays undefined for nodes
+            // built by the deep-link hierarchy load, which cannot request them.
+            name: folder.name,
+            title: folder.title,
+            sortOrder: folder.sortOrder,
+            filesMasks: folder.filesMasks,
+            defaultFileType: folder.defaultFileType,
+            showOnMenu: folder.showOnMenu,
+            permissions: folder.permissions
         },
         // Hide the expand toggle for folders the search endpoint reports as having no visible
         // children. When `hasChildren` is undefined (legacy source) the folder stays expandable.

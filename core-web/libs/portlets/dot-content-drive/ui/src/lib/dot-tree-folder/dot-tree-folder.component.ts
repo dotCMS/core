@@ -15,12 +15,13 @@ import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
 import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
-import { ALL_FOLDER } from '../shared/constants';
+import { ALL_FOLDER, LOAD_MORE_NODE_TYPE } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
     DotContentDriveUploadFiles,
-    DotContentDriveMoveItems
+    DotContentDriveMoveItems,
+    DotContentDriveTreeRightClick
 } from '../shared/models';
 
 /**
@@ -48,6 +49,8 @@ export class DotTreeFolderComponent {
     loadMore = output<DotFolderTreeNodeItem>();
     uploadFiles = output<DotContentDriveUploadFiles>();
     moveItems = output<DotContentDriveMoveItems>();
+    /** Right-click on a folder node — drives the shared folder context menu, as the table's rows do. */
+    rightClick = output<DotContentDriveTreeRightClick>();
 
     readonly elementRef = inject(ElementRef);
 
@@ -62,6 +65,25 @@ export class DotTreeFolderComponent {
 
     protected onLoadMore(node: TreeNode): void {
         this.loadMore.emit(node as DotFolderTreeNodeItem);
+    }
+
+    /**
+     * @description Emits a right-click on a real folder node so the consumer can open the shared
+     * context menu. The browser menu is suppressed only for nodes that can actually produce one:
+     * the synthetic "All folders" root and "Load more" sentinels are not folders, so they keep the
+     * native menu rather than swallowing the event for no reason.
+     * @param event - The contextmenu MouseEvent
+     * @param node - The tree node under the cursor
+     */
+    protected onContextMenu(event: MouseEvent, node: DotFolderTreeNodeItem): void {
+        const data = node?.data;
+
+        if (!data || data.type === LOAD_MORE_NODE_TYPE || node.key === this.ALL_FOLDER_KEY) {
+            return;
+        }
+
+        event.preventDefault();
+        this.rightClick.emit({ event, node });
     }
 
     /**

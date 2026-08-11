@@ -1,6 +1,7 @@
 import {
     DotCMSContentTypeField,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
+    DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
     DotSite
@@ -83,7 +84,11 @@ export interface DotContentDriveInit {
  */
 export interface DotContentDriveContextMenu {
     triggeredEvent: Event | null;
-    contentlet: DotContentDriveItem | null;
+    /**
+     * The item the menu acts on. Folders arrive from two sources — a full row from the table and a
+     * search view from the sidebar tree — so this is the narrower actionable shape both satisfy.
+     */
+    contentlet: DotContentDriveActionableItem | null;
     showAddToBundle: boolean;
 }
 
@@ -106,7 +111,7 @@ export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
     payload?:
-        | DotContentDriveFolder
+        | DotContentDriveActionableFolder
         | DotContentDriveContentTypeSelectorPayload
         | DotContentDriveUploadSelectorPayload;
 }

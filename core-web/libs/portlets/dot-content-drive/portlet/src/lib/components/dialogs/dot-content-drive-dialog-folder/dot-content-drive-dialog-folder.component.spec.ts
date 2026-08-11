@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotContentDriveFolder } from '@dotcms/dotcms-models';
+import { DotContentDriveActionableFolder, DotContentDriveFolder } from '@dotcms/dotcms-models';
 import { createFakeSite, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog-folder.component';
@@ -50,7 +50,7 @@ const editableFolder = (overrides: Partial<DotContentDriveFolder> = {}): DotCont
         modDate: 1,
         owner: null,
         parent: '',
-        path: '',
+        path: '/documents/app/',
         permissions: [],
         type: 'folder',
         ...overrides
@@ -304,7 +304,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/existing-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -1001,7 +1001,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/original-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -1036,6 +1036,65 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(lastCall?.assetPath).toBe('//demo.dotcms.com/documents/test-folder/');
         });
 
+        it('should anchor the edit assetPath on the folder itself, not the open folder', () => {
+            // The sidebar tree can open this dialog for any folder in the site, not just a child of
+            // the folder currently open in the drive (`store.path()` is '/documents'). Anchoring on
+            // the open path would build '//demo.dotcms.com/documents/marketing-assets/' — a
+            // different folder, which would 404 on save or silently overwrite a same-named sibling.
+            const folderInAnotherBranch: DotContentDriveActionableFolder = {
+                name: 'marketing-assets',
+                title: 'Marketing Assets',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                identifier: 'other-branch-id',
+                path: '/campaigns/2026/marketing-assets/',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', folderInAnotherBranch);
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalled();
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.assetPath).toBe(
+                '//demo.dotcms.com/campaigns/2026/marketing-assets/'
+            );
+        });
+
+        it('should anchor the edit assetPath at the site root for a root-level folder', () => {
+            const rootLevelFolder: DotContentDriveActionableFolder = {
+                name: 'archive',
+                title: 'Archive',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                identifier: 'root-level-id',
+                path: '/archive/',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', rootLevelFolder);
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/archive/');
+        });
+
         it('should include name in data when originalName exists and name has changed', () => {
             // Simulate editing an existing folder
             const mockFolder: DotContentDriveFolder = {
@@ -1057,7 +1116,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/original-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -1122,7 +1181,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/original-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -1177,7 +1236,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/existing-folder/',
                 permissions: [],
                 type: 'folder'
             };

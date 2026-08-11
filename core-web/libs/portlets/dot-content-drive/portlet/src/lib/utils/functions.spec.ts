@@ -8,7 +8,8 @@ import {
     DotContentDriveItem,
     DotPagination,
     FolderSearchView,
-    isTreeNodeContentData
+    isTreeNodeContentData,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import {
     createFakeCheckboxField,
@@ -30,6 +31,8 @@ import {
     folderSearchViewToDotFolder,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
+    getFolderPermissionsByPath,
+    getParentPath,
     getUserSearchableActive,
     isBinaryCheckboxField,
     isDateFieldFilterType,
@@ -433,18 +436,16 @@ describe('Utility Functions', () => {
         });
 
         it('should adapt search results into DotFolder full paths with the site hostname', (done) => {
-            mockDotFolderService.searchFolders.mockReturnValueOnce(
-                searchResult([
-                    createFakeFolderSearchView({
-                        id: 'm',
-                        inode: 'im',
-                        name: 'main',
-                        path: '/',
-                        addChildrenAllowed: true,
-                        hasChildren: true
-                    })
-                ])
-            );
+            const view = createFakeFolderSearchView({
+                id: 'm',
+                inode: 'im',
+                name: 'main',
+                path: '/',
+                addChildrenAllowed: true,
+                hasChildren: true
+            });
+
+            mockDotFolderService.searchFolders.mockReturnValueOnce(searchResult([view]));
 
             getFolderHierarchyByPath('/main', SITE, mockDotFolderService).subscribe({
                 next: (levels) => {
@@ -454,8 +455,30 @@ describe('Utility Functions', () => {
                         hostName: HOSTNAME,
                         path: '/main/',
                         addChildrenAllowed: true,
-                        hasChildren: true
+                        hasChildren: true,
+                        name: 'main',
+                        title: view.title,
+                        sortOrder: view.sortOrder,
+                        filesMasks: view.filesMasks,
+                        defaultFileType: view.defaultFileType,
+                        showOnMenu: view.showOnMenu,
+                        defaultBaseType: view.defaultBaseType,
+                        // The hierarchy load cannot opt into permissions, so the endpoint's `null`
+                        // is carried through as "unresolved" rather than "no grants".
+                        permissions: undefined
                     });
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should not request permissions (its page size exceeds the backend cap)', (done) => {
+            getFolderHierarchyByPath('/main', SITE, mockDotFolderService).subscribe({
+                next: () => {
+                    expect(mockDotFolderService.searchFolders).not.toHaveBeenCalledWith(
+                        expect.objectContaining({ includePermissions: true })
+                    );
                     done();
                 },
                 error: done
@@ -643,16 +666,19 @@ describe('Utility Functions', () => {
         });
 
         it('should transform child folders into tree nodes', (done) => {
+            const firstChild = createFakeFolderSearchView({
+                id: 'child-1',
+                inode: 'inode-1',
+                name: 'child1',
+                path: '/main/sub-folder/',
+                addChildrenAllowed: true,
+                hasChildren: true,
+                permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+            });
+
             mockDotFolderService.searchFolders.mockReturnValue(
                 searchResult([
-                    createFakeFolderSearchView({
-                        id: 'child-1',
-                        inode: 'inode-1',
-                        name: 'child1',
-                        path: '/main/sub-folder/',
-                        addChildrenAllowed: true,
-                        hasChildren: true
-                    }),
+                    firstChild,
                     createFakeFolderSearchView({
                         id: 'child-2',
                         inode: 'inode-2',
@@ -675,7 +701,16 @@ describe('Utility Functions', () => {
                             inode: 'inode-1',
                             hostname: HOSTNAME,
                             path: '/main/sub-folder/child1/',
-                            type: 'folder'
+                            type: 'folder',
+                            // Carried so a right-click can gate the menu and fill the edit dialog.
+                            name: 'child1',
+                            title: firstChild.title,
+                            sortOrder: firstChild.sortOrder,
+                            filesMasks: firstChild.filesMasks,
+                            defaultFileType: firstChild.defaultFileType,
+                            showOnMenu: firstChild.showOnMenu,
+                            defaultBaseType: firstChild.defaultBaseType,
+                            permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
                         },
                         // hasChildren: true → expandable (chevron shown)
                         leaf: false
@@ -684,6 +719,18 @@ describe('Utility Functions', () => {
                     expect(result.folders[1].label).toBe('/main/sub-folder/child2/');
                     // hasChildren: false → no chevron, cannot expand
                     expect(result.folders[1].leaf).toBe(true);
+                    done();
+                },
+                error: done
+            });
+        });
+
+        it('should request permissions so an expanded node can gate its context menu', (done) => {
+            getFolderNodesByPath('/main/sub-folder/', SITE, mockDotFolderService).subscribe({
+                next: () => {
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                        expect.objectContaining({ includePermissions: true })
+                    );
                     done();
                 },
                 error: done
@@ -1218,5 +1265,177 @@ describe('folderSearchViewToDotFolder', () => {
         const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
 
         expect(folder.defaultBaseType).toBeUndefined();
+    });
+
+    it('should carry the fields the Edit-folder dialog reads', () => {
+        const view = createFakeFolderSearchView({
+            name: 'docs',
+            path: '/',
+            title: 'Documents',
+            sortOrder: 3,
+            filesMasks: '*.pdf,*.docx',
+            defaultFileType: 'FileAsset',
+            showOnMenu: true
+        });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder).toEqual(
+            expect.objectContaining({
+                name: 'docs',
+                title: 'Documents',
+                sortOrder: 3,
+                filesMasks: '*.pdf,*.docx',
+                defaultFileType: 'FileAsset',
+                showOnMenu: true
+            })
+        );
+    });
+
+    it('should carry granted permissions through unchanged', () => {
+        const view = createFakeFolderSearchView({
+            name: 'docs',
+            path: '/',
+            permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+        });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.permissions).toEqual([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]);
+    });
+
+    it('should keep an empty permissions array as a resolved "no grants" answer', () => {
+        const view = createFakeFolderSearchView({ name: 'docs', path: '/', permissions: [] });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.permissions).toEqual([]);
+    });
+
+    it('should turn a null permissions response into undefined ("not resolved")', () => {
+        // The distinction matters: `[]` is final, `undefined` makes the sidebar resolve them on
+        // demand before opening the context menu.
+        const view = createFakeFolderSearchView({ name: 'docs', path: '/', permissions: null });
+
+        const folder = folderSearchViewToDotFolder(view, 'demo.dotcms.com');
+
+        expect(folder.permissions).toBeUndefined();
+    });
+});
+
+describe('getParentPath', () => {
+    it.each([
+        ['/a/b/', '/a/'],
+        ['/a/b', '/a/'],
+        ['/b/', '/'],
+        ['/b', '/'],
+        ['/', '/'],
+        ['', '/']
+    ])('should resolve the parent of %s as %s', (path, expected) => {
+        expect(getParentPath(path)).toBe(expected);
+    });
+});
+
+describe('getFolderPermissionsByPath', () => {
+    let mockDotFolderService: { searchFolders: jest.Mock };
+
+    const searchResult = (folders: FolderSearchView[]) =>
+        of({ folders, pagination: { totalEntries: folders.length } as DotPagination });
+
+    beforeEach(() => {
+        mockDotFolderService = { searchFolders: jest.fn().mockReturnValue(searchResult([])) };
+    });
+
+    it('should query the parent level with permissions, narrowed by folder name', (done) => {
+        getFolderPermissionsByPath(
+            '/main/docs/',
+            'docs-id',
+            'docs',
+            createFakeSite({ identifier: 'site-1', hostname: 'demo.dotcms.com' }),
+            mockDotFolderService as unknown as DotFolderService
+        ).subscribe({
+            next: () => {
+                expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        siteId: 'site-1',
+                        path: '/main/',
+                        recursive: false,
+                        name: 'docs',
+                        includePermissions: true
+                    })
+                );
+                done();
+            },
+            error: done
+        });
+    });
+
+    it('should omit the name filter when the folder name is too short for the endpoint', (done) => {
+        getFolderPermissionsByPath(
+            '/main/a/',
+            'a-id',
+            'a',
+            createFakeSite({ identifier: 'site-1' }),
+            mockDotFolderService as unknown as DotFolderService
+        ).subscribe({
+            next: () => {
+                expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: undefined })
+                );
+                done();
+            },
+            error: done
+        });
+    });
+
+    it('should return the permissions of the matching folder', (done) => {
+        mockDotFolderService.searchFolders.mockReturnValue(
+            searchResult([
+                createFakeFolderSearchView({
+                    id: 'other',
+                    name: 'docs-archive',
+                    permissions: [PERMISSIONS_TYPE.READ]
+                }),
+                createFakeFolderSearchView({
+                    id: 'docs-id',
+                    name: 'docs',
+                    permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+                })
+            ])
+        );
+
+        getFolderPermissionsByPath(
+            '/main/docs/',
+            'docs-id',
+            'docs',
+            createFakeSite({ identifier: 'site-1' }),
+            mockDotFolderService as unknown as DotFolderService
+        ).subscribe({
+            next: (permissions) => {
+                expect(permissions).toEqual([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]);
+                done();
+            },
+            error: done
+        });
+    });
+
+    it('should resolve undefined when the folder is not in the page', (done) => {
+        mockDotFolderService.searchFolders.mockReturnValue(
+            searchResult([createFakeFolderSearchView({ id: 'someone-else' })])
+        );
+
+        getFolderPermissionsByPath(
+            '/main/docs/',
+            'docs-id',
+            'docs',
+            createFakeSite({ identifier: 'site-1' }),
+            mockDotFolderService as unknown as DotFolderService
+        ).subscribe({
+            next: (permissions) => {
+                expect(permissions).toBeUndefined();
+                done();
+            },
+            error: done
+        });
     });
 });

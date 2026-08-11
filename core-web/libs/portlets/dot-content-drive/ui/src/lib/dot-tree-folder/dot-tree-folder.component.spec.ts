@@ -10,7 +10,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent } from './dot-tree-folder.component';
 
-import { SYSTEM_HOST_ID } from '../shared/constants';
+import { ALL_FOLDER, LOAD_MORE_NODE_TYPE, SYSTEM_HOST_ID } from '../shared/constants';
+import { DotFolderTreeNodeItem } from '../shared/models';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
@@ -819,6 +820,79 @@ describe('DotTreeFolderComponent', () => {
                 component.$activeDropNode.set(null);
                 expect(component.$activeDropNode()).toBeNull();
             });
+        });
+    });
+
+    describe('right-click', () => {
+        const folderNode: DotFolderTreeNodeItem = {
+            key: 'folder-1',
+            label: '/application/content/',
+            data: {
+                id: 'folder-1',
+                hostname: 'demo.dotcms.com',
+                path: '/application/content/',
+                type: 'folder'
+            }
+        };
+
+        const rightClickOn = (node: DotFolderTreeNodeItem) => {
+            const event = new MouseEvent('contextmenu', { cancelable: true });
+            jest.spyOn(event, 'preventDefault');
+            // The handler is protected — reached the way the template reaches it.
+            (
+                component as unknown as {
+                    onContextMenu: (e: MouseEvent, n: DotFolderTreeNodeItem) => void;
+                }
+            ).onContextMenu(event, node);
+
+            return event;
+        };
+
+        it('should emit the event and node for a folder node', () => {
+            const emitted = jest.fn();
+            component.rightClick.subscribe(emitted);
+
+            const event = rightClickOn(folderNode);
+
+            expect(emitted).toHaveBeenCalledWith({ event, node: folderNode });
+        });
+
+        it('should suppress the native browser menu for a folder node', () => {
+            const event = rightClickOn(folderNode);
+
+            expect(event.preventDefault).toHaveBeenCalled();
+        });
+
+        it('should ignore the "All folders" root, which is not a real folder', () => {
+            const emitted = jest.fn();
+            component.rightClick.subscribe(emitted);
+
+            const event = rightClickOn({ ...folderNode, key: ALL_FOLDER.key });
+
+            expect(emitted).not.toHaveBeenCalled();
+            // No menu to show, so the native one is left alone rather than swallowed.
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('should ignore "Load more" sentinels', () => {
+            const emitted = jest.fn();
+            component.rightClick.subscribe(emitted);
+
+            const event = rightClickOn({
+                key: 'load-more:/application/',
+                label: '',
+                data: {
+                    type: LOAD_MORE_NODE_TYPE,
+                    id: 'load-more:/application/',
+                    path: '/application/',
+                    hostname: 'demo.dotcms.com',
+                    nextPage: 2,
+                    remaining: 10
+                }
+            } as DotFolderTreeNodeItem);
+
+            expect(emitted).not.toHaveBeenCalled();
+            expect(event.preventDefault).not.toHaveBeenCalled();
         });
     });
 });

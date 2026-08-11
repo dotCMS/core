@@ -1,6 +1,10 @@
 import type { TreeNode } from 'primeng/api';
 
-import type { TreeNodeContentData, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
+import type {
+    PermissionType,
+    TreeNodeContentData,
+    TreeNodeLoadMoreData
+} from '@dotcms/dotcms-models';
 
 /**
  * @export
@@ -84,6 +88,24 @@ export type DotFolderTreeNodeContentData = TreeNodeContentData & {
      */
     defaultBaseType?: string | null;
     fromTable?: boolean;
+    /**
+     * Fields below back the shared folder context menu and the "Edit folder" dialog, so a
+     * right-click on a tree node can gate and pre-populate without a refetch. Populated from
+     * `GET /api/v1/folder/search`; optional because other node sources (e.g. the synthetic
+     * "All folders" root) do not carry them.
+     */
+    name?: string;
+    title?: string;
+    sortOrder?: number;
+    filesMasks?: string;
+    defaultFileType?: string;
+    showOnMenu?: boolean;
+    /**
+     * Permission types the user holds on this folder. `undefined` means "not resolved yet" — the
+     * deep-link hierarchy load cannot request permissions, so those nodes resolve them on demand
+     * on first right-click. An empty array is a final answer: the user holds none.
+     */
+    permissions?: PermissionType[];
 };
 
 /**
@@ -99,3 +121,14 @@ export type DotFolderTreeNodeData = DotFolderTreeNodeContentData | TreeNodeLoadM
  * @description Tree node item
  */
 export type DotFolderTreeNodeItem = TreeNode<DotFolderTreeNodeData>;
+
+/**
+ * @export
+ * @interface DotContentDriveTreeRightClick
+ * @description Right-click on a folder node in the sidebar tree. Carries the original event (the
+ * shared context menu anchors itself to it) and the node that was clicked.
+ */
+export interface DotContentDriveTreeRightClick {
+    event: MouseEvent;
+    node: DotFolderTreeNodeItem;
+}

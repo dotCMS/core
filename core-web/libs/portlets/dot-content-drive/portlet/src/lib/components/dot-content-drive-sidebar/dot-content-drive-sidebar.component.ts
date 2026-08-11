@@ -3,12 +3,14 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     effect,
     inject,
     output,
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import type {
     TreeNodeCollapseEvent,
@@ -16,11 +18,13 @@ import type {
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
-import { TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
+import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
     ALL_FOLDER,
     DotContentDriveMoveItems,
+    DotContentDriveTreeRightClick,
     DotContentDriveUploadFiles,
+    DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
@@ -48,6 +52,7 @@ import { appendLoadMoreNodes } from '../../utils/functions';
 })
 export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);
+    readonly #destroyRef = inject(DestroyRef);
 
     readonly $loading = this.#store.sidebarLoading;
     readonly $folders = this.#store.folders;
@@ -230,6 +235,71 @@ export class DotContentDriveSidebarComponent {
         }
 
         return undefined;
+    }
+
+    /**
+     * Opens the shared folder context menu for a right-clicked tree node, giving the sidebar the
+     * same folder actions the table offers.
+     *
+     * Nodes loaded by expanding a folder already carry their permissions. Nodes hydrated by the
+     * deep-link hierarchy load do not (that call's page size exceeds the backend cap for
+     * `includePermissions`), so those resolve them on demand on first right-click and the result is
+     * cached back onto the node — a second right-click on the same folder opens immediately.
+     *
+     * @param {DotContentDriveTreeRightClick} rightClick - The originating event and the clicked node
+     */
+    protected onNodeRightClick({ event, node }: DotContentDriveTreeRightClick): void {
+        const data = node.data;
+
+        if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+            return;
+        }
+
+        if (data.permissions) {
+            this.#openContextMenu(event, data);
+
+            return;
+        }
+
+        this.#store
+            .loadFolderPermissions(data.path, data.id, data.name ?? '')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((permissions) => {
+                // Cache onto the node so the next right-click skips the lookup. `[]` is a valid
+                // cached answer ("no grants"); only an unresolved lookup stays undefined and retries.
+                if (permissions) {
+                    data.permissions = permissions;
+                }
+
+                this.#openContextMenu(event, { ...data, permissions: permissions ?? [] });
+            });
+    }
+
+    /**
+     * Publishes the clicked folder to the store in the shape the shared context menu and the
+     * "Edit folder" dialog consume.
+     *
+     * @param {MouseEvent} event - The originating right-click, used to anchor the menu
+     * @param {DotFolderTreeNodeContentData} data - The clicked node's folder data
+     */
+    #openContextMenu(event: MouseEvent, data: DotFolderTreeNodeContentData): void {
+        this.#store.patchContextMenu({
+            triggeredEvent: event,
+            contentlet: {
+                type: 'folder',
+                identifier: data.id,
+                // The tree labels nodes by full path; `name` comes from the folder-search view.
+                name: data.name ?? '',
+                path: data.path,
+                title: data.title ?? '',
+                sortOrder: data.sortOrder ?? 0,
+                showOnMenu: data.showOnMenu ?? false,
+                filesMasks: data.filesMasks ?? '',
+                defaultFileType: data.defaultFileType ?? '',
+                defaultBaseType: data.defaultBaseType,
+                permissions: data.permissions ?? []
+            } satisfies DotContentDriveActionableFolder
+        });
     }
 
     /**

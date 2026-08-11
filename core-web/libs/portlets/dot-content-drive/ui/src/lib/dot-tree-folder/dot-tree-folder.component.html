@@ -22,7 +22,8 @@
                 [attr.data-json-node]="node.data | json"
                 [attr.data-id]="node?.data?.id"
                 class="font-normal"
-                [class.active]="$activeDropNode()?.id === node?.data.id">
+                [class.active]="$activeDropNode()?.id === node?.data.id"
+                (contextmenu)="onContextMenu($event, node)">
                 {{ node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | dotFolderName) }}
             </span>
         </ng-template>
