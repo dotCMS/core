@@ -65,6 +65,11 @@ public class CacheMetrics implements MeterBinder {
                 .description("Cluster cache invalidations dropped because the transport was not initialized")
                 .register(registry);
 
+        Gauge.builder(METRIC_PREFIX + ".transport.invalidations.failed", this,
+                        m -> activeTransport().map(t -> (double) t.getFailedMessages()).orElse(0.0))
+                .description("Cluster cache invalidations the transport attempted but failed to publish")
+                .register(registry);
+
         Gauge.builder(METRIC_PREFIX + ".transport.initialized", this,
                         m -> activeTransport().map(t -> t.isInitialized() ? 1.0 : 0.0).orElse(1.0))
                 .description("Whether the cluster cache transport is initialized (1) or dropping invalidations (0)")

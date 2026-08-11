@@ -36,7 +36,16 @@ public class PubSubCacheTransport implements CacheTransport {
 
     final AtomicLong droppedMessages = new AtomicLong(0);
 
+    /**
+     * Sends that were attempted and reported as failed by a synchronous provider. Failures from
+     * an asynchronous provider are counted by the provider itself and read back in
+     * {@link #getFailedMessages()}; see {@link DotPubSubProvider#getFailedPublishCount(String)}.
+     */
+    final AtomicLong failedMessages = new AtomicLong(0);
+
     private final AtomicLong lastDropWarnAt = new AtomicLong(0);
+
+    private final AtomicLong lastFailWarnAt = new AtomicLong(0);
 
     private static final long DROP_WARN_INTERVAL_MILLIS =
             Config.getLongProperty("CACHE_TRANSPORT_DROP_WARN_INTERVAL_MILLIS", 30000);
@@ -77,22 +86,40 @@ public class PubSubCacheTransport implements CacheTransport {
     public void send(final String message) throws CacheTransportException {
         if (!this.initialized.get()) {
             final long dropped = this.droppedMessages.incrementAndGet();
-            final long now = System.currentTimeMillis();
-            final long lastWarn = this.lastDropWarnAt.get();
-            if (now - lastWarn > DROP_WARN_INTERVAL_MILLIS
-                    && this.lastDropWarnAt.compareAndSet(lastWarn, now)) {
-                Logger.warn(this.getClass(),
-                        "Cache transport is not initialized - dropping cluster cache invalidations. "
-                                + "Other nodes may serve stale content. Total dropped: " + dropped);
-            }
+            warnThrottled(this.lastDropWarnAt,
+                    "Cache transport is not initialized - dropping cluster cache invalidations. "
+                            + "Other nodes may serve stale content. Total dropped: " + dropped);
             return;
         }
 
         final DotPubSubEvent event = new DotPubSubEvent.Builder().withTopic(this.topic)
                         .withType(CacheEventType.INVAL.name()).withMessage(message).build();
 
-        this.pubsub.publish(event);
+        // The boolean matters: every provider signals a failed send by returning false rather
+        // than throwing, so ignoring it (as this did before issue #36803) made a transport that
+        // was initialized but failing every publish completely invisible - no drops recorded,
+        // isInitialized() still true, health checks green, other nodes stale. Asynchronous
+        // providers cannot answer here and return true immediately; their failures are counted
+        // provider-side and picked up by getFailedMessages().
+        if (!this.pubsub.publish(event)) {
+            final long failed = this.failedMessages.incrementAndGet();
+            warnThrottled(this.lastFailWarnAt,
+                    "Cache transport failed to publish cluster cache invalidations. "
+                            + "Other nodes may serve stale content. Total failed: " + failed);
+        }
 
+    }
+
+    /**
+     * Logs at most one warning per {@link #DROP_WARN_INTERVAL_MILLIS} for the given throttle, so
+     * a sustained failure does not flood the log at invalidation rate.
+     */
+    private void warnThrottled(final AtomicLong lastWarnAt, final String message) {
+        final long now = System.currentTimeMillis();
+        final long lastWarn = lastWarnAt.get();
+        if (now - lastWarn > DROP_WARN_INTERVAL_MILLIS && lastWarnAt.compareAndSet(lastWarn, now)) {
+            Logger.warn(this.getClass(), message);
+        }
     }
 
     @Override
@@ -157,6 +184,19 @@ public class PubSubCacheTransport implements CacheTransport {
     @Override
     public long getDroppedMessages() {
         return droppedMessages.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Sums the failures this transport observed synchronously with those the provider recorded on
+     * its own thread. Exactly one of the two counts a given attempt: a synchronous provider
+     * returns the real boolean to {@link #send(String)} and reports 0 here, while an
+     * asynchronous one returns true immediately and counts the outcome itself.
+     */
+    @Override
+    public long getFailedMessages() {
+        return failedMessages.get() + this.pubsub.getFailedPublishCount(this.topic.getTopic());
     }
 
     @Override

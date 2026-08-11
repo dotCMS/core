@@ -1,7 +1,10 @@
 package com.dotcms.dotpubsub;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfig;
 import com.dotcms.concurrent.DotSubmitter;
@@ -22,8 +25,14 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
     private final DotPubSubProvider wrappedProvider;
 
     private final Cache<Integer, Boolean> recentEvents ;
-    
+
     private final DotSubmitter submitter;
+
+    /**
+     * Failed publish attempts per topic. Keyed by topic because one provider instance serves
+     * every topic in the JVM, so a single total could not be attributed to the cache transport.
+     */
+    private final Map<String, AtomicLong> failedByTopic = new ConcurrentHashMap<>();
     
 
 
@@ -98,15 +107,57 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
         sent++;
 
         recentEvents.put(event.hashCode(), true);
-        submitter.submit(()->this.wrappedProvider.publish(event));
-        
-        
+        submitter.submit(()->publishAndRecordOutcome(event));
+
+
         Logger.debug(this.getClass(), ()->"sent/skipped: " + sent + "/" + skipped);
         Logger.debug(this.getClass(), ()->"active count:" + submitter.getActiveCount());
         
 
         return true;
 
+    }
+
+    /**
+     * Runs the real publish on the submitter thread and records the outcome.
+     *
+     * {@link #publish(DotPubSubEvent)} has to return before this completes, so it always returns
+     * {@code true} and the caller never learns whether the send actually worked. Before issue
+     * #36803 the result of this task was discarded entirely, which meant a transport that was
+     * initialized but failing every publish -- a dropped database connection, a stopped Redis
+     * client -- reported no drops, stayed "initialized", and kept every health check green while
+     * other nodes served stale content.
+     */
+    private void publishAndRecordOutcome(final DotPubSubEvent event) {
+        try {
+            if (!this.wrappedProvider.publish(event)) {
+                recordFailure(event);
+            }
+        } catch (Exception e) {
+            // providers are expected to swallow their own failures and return false; this is
+            // the belt-and-braces path so an unexpected throw is still counted, not lost
+            recordFailure(event);
+            Logger.warnAndDebug(this.getClass(),
+                    "Unable to publish pubsub event " + event + " : " + e.getMessage(), e);
+        }
+    }
+
+    private void recordFailure(final DotPubSubEvent event) {
+        failedByTopic.computeIfAbsent(String.valueOf(event.getTopic()), t -> new AtomicLong(0))
+                .incrementAndGet();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns only this wrapper's own count. The wrapped provider published synchronously from
+     * the submitter thread, so its {@code false} return has already been counted here -- adding
+     * {@code wrappedProvider.getFailedPublishCount(topic)} would double count.
+     */
+    @Override
+    public long getFailedPublishCount(final String topic) {
+        final AtomicLong failed = failedByTopic.get(topic);
+        return failed == null ? 0 : failed.get();
     }
 
     @Override

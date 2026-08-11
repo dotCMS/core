@@ -20,7 +20,12 @@ import javax.enterprise.context.ApplicationScoped;
  *
  * - transport not initialized -> unhealthy
  * - cluster rewire failing repeatedly -> unhealthy (see {@link #DEFAULT_REWIRE_FAILURE_THRESHOLD})
- * - dropped-invalidation count exposed in structured data for monitoring
+ * - dropped and failed invalidation counts exposed in structured data for monitoring
+ *
+ * Failed invalidations (initialized transport whose sends are erroring) are reported but do not
+ * on their own make the check unhealthy: the count is cumulative and never resets, so alarming on
+ * "greater than zero" would pin a node DOWN forever after one transient publish error. Alert on
+ * the rate of increase of {@code dotcms.cache.transport.invalidations.failed} instead.
  *
  * Nodes with no real transport -- {@link NullTransport} via
  * {@code CACHE_INVALIDATION_TRANSPORT_CLASS}, or no resolvable cache layer at all -- always
@@ -102,6 +107,7 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
         return new CheckResult(true, 0L,
                 "Cache transport initialized (" + snapshot.transportName
                         + ", dropped invalidations: " + snapshot.dropped
+                        + ", failed invalidations: " + snapshot.failed
                         + ", consecutive rewire failures: " + snapshot.rewireFailures + ")");
     }
 
@@ -123,7 +129,8 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
         final boolean present = !(transport instanceof NullTransport);
 
         return new TransportSnapshot(transport.getClass().getSimpleName(), present,
-                transport.isInitialized(), transport.getDroppedMessages(), rewireFailures);
+                transport.isInitialized(), transport.getDroppedMessages(),
+                transport.getFailedMessages(), rewireFailures);
     }
 
     /**
@@ -200,6 +207,7 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
             if (snapshot.present) {
                 data.put("initialized", snapshot.initialized);
                 data.put("droppedInvalidations", snapshot.dropped);
+                data.put("failedInvalidations", snapshot.failed);
             }
             return data;
         } finally {
@@ -220,19 +228,21 @@ public class CacheTransportHealthCheck extends HealthCheckBase {
         final boolean present;
         final boolean initialized;
         final long dropped;
+        final long failed;
         final long rewireFailures;
 
         TransportSnapshot(final String transportName, final boolean present, final boolean initialized,
-                          final long dropped, final long rewireFailures) {
+                          final long dropped, final long failed, final long rewireFailures) {
             this.transportName = transportName;
             this.present = present;
             this.initialized = initialized;
             this.dropped = dropped;
+            this.failed = failed;
             this.rewireFailures = rewireFailures;
         }
 
         static TransportSnapshot unavailable(final long rewireFailures) {
-            return new TransportSnapshot(NO_TRANSPORT, false, false, 0L, rewireFailures);
+            return new TransportSnapshot(NO_TRANSPORT, false, false, 0L, 0L, rewireFailures);
         }
     }
 }

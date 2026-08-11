@@ -65,6 +65,19 @@ public interface CacheTransport {
     default long getDroppedMessages() {
         return 0;
     }
+
+    /**
+     * Number of cache invalidation messages this transport tried to send and that the underlying
+     * provider reported as failed -- as opposed to {@link #getDroppedMessages()}, which counts
+     * messages never attempted because the transport was not initialized.
+     *
+     * The distinction is operational: dropped means "the transport is down, fix the transport",
+     * failed means "the transport believes it is up but sends are erroring". Both lose cluster
+     * invalidations, but only the first is visible from {@link #isInitialized()}.
+     */
+    default long getFailedMessages() {
+        return 0;
+    }
     
 
     public interface CacheTransportInfo extends Serializable {
