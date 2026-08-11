@@ -29,7 +29,11 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
@@ -118,7 +122,10 @@ const NO_GOAL_PLACEHOLDER = '—';
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',
-    providers: [DotExperimentsListStore, ConfirmationService],
+    // `DotExperimentsService` is `@Injectable()` with no `providedIn` and is not in the app-wide
+    // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
+    // screens do the same in `old/dot-experiments-shell`.
+    providers: [DotExperimentsListStore, ConfirmationService, DotExperimentsService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
