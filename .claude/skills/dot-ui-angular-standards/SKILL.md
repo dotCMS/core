@@ -31,8 +31,22 @@ for its upstream source and re-sync procedure.
 
 ## Source of truth
 
-> **`docs/frontend/ANGULAR_STANDARDS.md` is the single source of truth for Angular work in this
-> repository. Read it before writing or reviewing Angular code.**
+> **[`docs/frontend/ANGULAR_STANDARDS.md`](../../../docs/frontend/ANGULAR_STANDARDS.md) is the single
+> source of truth for Angular work in this repository. Read it before writing or reviewing Angular
+> code.**
+
+It has siblings — load the one your task needs, or
+[`docs/frontend/README.md`](../../../docs/frontend/README.md) (the index) if you are unsure:
+
+| Task | Doc |
+| --- | --- |
+| Component structure, file layout, data flow | [COMPONENT_ARCHITECTURE.md](../../../docs/frontend/COMPONENT_ARCHITECTURE.md) |
+| Feature state — NgRx Signal Store, `rxMethod`, `patchState` | [STATE_MANAGEMENT.md](../../../docs/frontend/STATE_MANAGEMENT.md) |
+| Tailwind, PrimeNG theme, BEM, SCSS | [STYLING_STANDARDS.md](../../../docs/frontend/STYLING_STANDARDS.md) |
+| Strict types, `as const`, `#` private | [TYPESCRIPT_STANDARDS.md](../../../docs/frontend/TYPESCRIPT_STANDARDS.md) |
+| **Writing** tests — Spectator, Jest, `byTestId` | [TESTING_FRONTEND.md](../../../docs/frontend/TESTING_FRONTEND.md) |
+| **Reviewing** tests — violation checklist | [TESTING_REVIEW_RULES.md](../../../docs/frontend/TESTING_REVIEW_RULES.md) |
+| GlobalStore breadcrumb trail | [BREADCRUMBS.md](../../../docs/frontend/BREADCRUMBS.md) |
 
 This file is deliberately **not** a copy of it. It carries only:
 
