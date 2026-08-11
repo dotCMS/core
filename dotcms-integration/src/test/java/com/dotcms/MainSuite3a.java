@@ -102,6 +102,7 @@ import org.junit.runners.Suite;
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
         InodeExistenceCheckIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest.class,
 })
 
 public class MainSuite3a {

@@ -15126,6 +15126,61 @@ paths:
       summary: Load user roles
       tags:
       - Roles
+  /v1/roles/{roleId}:
+    put:
+      description: "Updates an existing role's name, key, description, can-grant flags\
+        \ and parent. A null parentRoleId turns the role into a root role. Reparenting\
+        \ under the role's own descendant is rejected. System and locked roles cannot\
+        \ be updated. Note: the role is updated in place — grants and permissions\
+        \ attached to the role are preserved."
+      operationId: updateRole
+      parameters:
+      - description: Id of the role to update
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleForm"
+        description: Role information — same shape as POST /v1/roles
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - invalid role name, or the reparent would create\
+            \ a hierarchy cycle"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role is a system\
+            \ or locked role"
+        "404":
+          content:
+            application/json: {}
+          description: Role or parent role not found
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - duplicate role key, or duplicate role name under\
+            \ the same parent"
+      summary: Update a role
+      tags:
+      - Roles
   /v1/roles/{roleId}/layouts:
     get:
       description: Returns a collection of layouts associated to a role
@@ -35424,6 +35479,10 @@ components:
           type: string
         parent:
           type: string
+        roleChildren:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleView"
         roleKey:
           type: string
         system:
