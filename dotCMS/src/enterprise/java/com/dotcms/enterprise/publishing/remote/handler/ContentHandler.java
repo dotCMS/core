@@ -572,12 +572,18 @@ public class ContentHandler implements IHandler {
 	                if(isHost) {
                     	final String hostIdentifier = content.getIdentifier();
                     	final Host host = hostAPI.find(hostIdentifier, systemUser, false);
-						host.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-						host.setProperty(Contentlet.DISABLE_WORKFLOW, true);
-                    	if(host.isDefault()) {
-                    		APILocator.getHostAPI().updateDefaultHost(host, systemUser, false);
+                    	if (!UtilMethods.isSet(host)) {
+                    	    Logger.warn(this.getClass(), "Host with identifier '" + hostIdentifier +
+                    	            "' was not found on the receiving server. This may be a related " +
+                    	            "contentlet bundled with a .host.xml extension. Skipping host update.");
+                    	} else {
+						    host.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+						    host.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+                    	    if (host.isDefault()) {
+                    		    APILocator.getHostAPI().updateDefaultHost(host, systemUser, false);
+                    	    }
+                    	    APILocator.getHostAPI().updateCache(host);
                     	}
-                    	APILocator.getHostAPI().updateCache(host);
                     }
 
 	                // pushing live content requires some cleanup we have on contentletAPI.publish

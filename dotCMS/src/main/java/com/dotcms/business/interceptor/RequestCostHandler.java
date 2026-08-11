@@ -32,4 +32,40 @@ public final class RequestCostHandler {
                     "Error in RequestCostHandler.incrementCost(): " + t.getMessage(), t);
         }
     }
+
+    /**
+     * Increments the request cost by {@code price * times} from a call site that charges
+     * directly rather than through the {@code @RequestCost} annotation.
+     * <p>
+     * Use this rather than calling {@code APILocator.getRequestCostAPI().incrementCost(..)}
+     * inline. The annotation path is protected — {@code RequestCostAdvice.enter} is declared
+     * {@code @Advice.OnMethodEnter(suppress = Throwable.class)} — so a failure in the cost API
+     * can never break the method being metered. A direct call has no such protection, and
+     * these charge points sit on page rendering and content loading: metering must never be
+     * able to take down serving.
+     *
+     * @param price  the unit price
+     * @param clazz  calling class
+     * @param method calling method
+     * @param args   arguments, for the HTML accounting report
+     * @param times  how many units of work were done
+     */
+    public static void incrementCost(final Price price, final Class clazz, final String method,
+                                     final Object[] args, final int times) {
+        try {
+            APILocator.getRequestCostAPI().incrementCost(price, clazz, method, args, times);
+        } catch (Throwable t) {
+            Logger.warnAndDebug(RequestCostHandler.class,
+                    "Error in RequestCostHandler.incrementCost(): " + t.getMessage(), t);
+        }
+    }
+
+    /**
+     * Convenience overload charging a single unit. See
+     * {@link #incrementCost(Price, Class, String, Object[], int)}.
+     */
+    public static void incrementCost(final Price price, final Class clazz, final String method,
+                                     final Object[] args) {
+        incrementCost(price, clazz, method, args, 1);
+    }
 }
