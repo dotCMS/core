@@ -11,6 +11,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.migration.MirrorStatus;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.job.SiteSearchJobImpl.IndexMetaData;
@@ -18,8 +20,11 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
+import com.dotmarketing.util.Config;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -114,5 +119,115 @@ public class SiteSearchJobAliasResolutionTest {
 
         assertEquals("brand-new-alias", metaData.getAlias());
         assertTrue(metaData.isNewIndex());
+    }
+
+    // =======================================================================
+    // Incomplete-content-index warning (issue #36983)
+    // =======================================================================
+
+    /** A content row with the given coverage on each engine. */
+    private static MirrorStatus contentRow(final Long expected, final long esCount,
+            final long osCount) {
+        return new MirrorStatus("working_1", MirrorStatus.IndexKind.CONTENT_WORKING,
+                new MirrorStatus.EngineCopy(true, esCount, "cluster_x.working_1"),
+                new MirrorStatus.EngineCopy(true, osCount, "cluster_x.working_1.os"),
+                MirrorStatus.Verdict.IN_SYNC, "", expected);
+    }
+
+    private SiteSearchJobImpl jobSeeing(final MirrorStatus... rows) {
+        return new SiteSearchJobImpl(mock(IndiciesAPI.class), siteSearchAPI, mock(HostAPI.class),
+                mock(UserAPI.class), mock(SiteSearchAuditAPI.class), mock(PublisherAPI.class),
+                () -> List.of(rows));
+    }
+
+    /**
+     * The case this exists for: a Phase-3 crawl reading an OpenSearch content index that was never
+     * rebuilt. The crawl queries that index to build its corpus, so it can only produce a partial Site
+     * Search index — and reindexing the content afterwards does not repair it.
+     */
+    @Test
+    public void test_incompleteContentIndexOnTheReadEngine_isWarnedAbout() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "3"); // reads = OpenSearch
+        try {
+            final Optional<String> warning = jobSeeing(contentRow(686L, 686, 21))
+                    .incompleteContentIndexWarning();
+
+            assertTrue(warning.isPresent());
+            assertTrue(warning.get().contains("INCOMPLETE content index"));
+            assertTrue(warning.get().contains("OpenSearch"));
+            assertTrue(warning.get().contains("3.06%"));
+        } finally {
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
+    }
+
+    /**
+     * The same incomplete OpenSearch copy is NOT warned about in a phase that reads Elasticsearch: the
+     * crawl will query the complete ES index, so its corpus is fine. Warning there would train
+     * operators to ignore the message.
+     */
+    @Test
+    public void test_incompleteCopyOnTheEngineNotBeingRead_isNotWarnedAbout() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "1"); // reads = Elasticsearch
+        try {
+            assertFalse(jobSeeing(contentRow(686L, 686, 21))
+                    .incompleteContentIndexWarning().isPresent());
+        } finally {
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
+    }
+
+    /** A complete index says nothing. */
+    @Test
+    public void test_completeContentIndex_isNotWarnedAbout() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        try {
+            assertFalse(jobSeeing(contentRow(686L, 686, 686))
+                    .incompleteContentIndexWarning().isPresent());
+        } finally {
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
+    }
+
+    /** Without a database denominator there is no coverage to judge — silence, not a false alarm. */
+    @Test
+    public void test_noDatabaseDenominator_isNotWarnedAbout() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        try {
+            assertFalse(jobSeeing(contentRow(null, 686, 21))
+                    .incompleteContentIndexWarning().isPresent());
+        } finally {
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
+    }
+
+    /** The check is advisory: if it cannot be computed, the crawl proceeds silently. */
+    @Test
+    public void test_failureToMeasure_isSwallowed() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        try {
+            final SiteSearchJobImpl failing = new SiteSearchJobImpl(mock(IndiciesAPI.class),
+                    siteSearchAPI, mock(HostAPI.class), mock(UserAPI.class),
+                    mock(SiteSearchAuditAPI.class), mock(PublisherAPI.class),
+                    () -> { throw new IllegalStateException("cluster down"); });
+
+            assertFalse(failing.incompleteContentIndexWarning().isPresent());
+        } finally {
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
+    }
+
+    /** The threshold is configurable, and 0 disables the check outright. */
+    @Test
+    public void test_thresholdZero_disablesTheCheck() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_COVERAGE_KEY, "0");
+        try {
+            assertFalse(jobSeeing(contentRow(686L, 686, 21))
+                    .incompleteContentIndexWarning().isPresent());
+        } finally {
+            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_COVERAGE_KEY, null);
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
     }
 }

@@ -424,6 +424,25 @@ This is worse than the read-time cliff above, in three ways:
 **read** engine is complete. In Phases 2/3 that means **full content reindex first, Site Search crawl
 second** — the reverse order silently produces a truncated index that looks fine everywhere.
 
+**The crawl warns when it is about to do this.** `SiteSearchJobImpl` checks the coverage of the
+content index it is about to read — the read engine's copy measured against the database, the same
+metric the readiness endpoint reports — and logs a `WARN` naming the index, the engine, the
+percentage, and the fact that reindexing afterwards will not repair the result:
+
+```
+Site Search crawl starting against an INCOMPLETE content index: 'working_20260811191012' on
+OpenSearch holds 3.06% of the 686 contentlets the database has. A crawl builds its corpus by
+querying that index, so it can only index what it finds there — this crawl will produce a partial
+Site Search index, and reindexing the content later will NOT repair it (it must be crawled again).
+Run a full reindex first.
+```
+
+It is **advisory only**: it never stops the crawl, and any failure to measure is swallowed — a
+diagnostic must not be able to break indexing. Only the engine the phase actually reads from is
+checked, so an incomplete OpenSearch mirror stays silent in Phases 0/1 where the crawl queries a
+complete Elasticsearch. Threshold: `SITE_SEARCH_CRAWL_MIN_CONTENT_COVERAGE_PERCENT` (default `95`;
+`0` disables the check).
+
 Note the readiness endpoint does catch the precondition: an unreconciled content mirror shows as
 `COUNT_DRIFT` on `WORKING`/`LIVE` with `safeToAdvance: false`. It only *reports*, though — nothing
 stops a promotion or a crawl from proceeding anyway.

@@ -2,6 +2,9 @@ package com.dotcms.publishing.job;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler;
+import com.dotcms.content.index.migration.MirrorStatus;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
@@ -24,6 +27,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -35,6 +39,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +49,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,6 +90,7 @@ public class SiteSearchJobImpl {
     private final UserAPI userAPI;
     private final SiteSearchAuditAPI siteSearchAuditAPI;
     private final PublisherAPI publisherAPI;
+    private final Supplier<List<MirrorStatus>> contentMirrorStatuses;
 
     private String bundleId;
 
@@ -95,12 +103,27 @@ public class SiteSearchJobImpl {
             final SiteSearchAuditAPI siteSearchAuditAPI,
             final PublisherAPI publisherAPI
             ) {
+        this(indicesAPI, siteSearchAPI, hostAPI, userAPI, siteSearchAuditAPI, publisherAPI,
+                () -> new ContentIndexMirrorReconciler().statuses());
+    }
+
+    @VisibleForTesting
+    SiteSearchJobImpl(
+            final IndiciesAPI indicesAPI,
+            final SiteSearchAPI siteSearchAPI,
+            final HostAPI hostAPI,
+            final UserAPI userAPI,
+            final SiteSearchAuditAPI siteSearchAuditAPI,
+            final PublisherAPI publisherAPI,
+            final Supplier<List<MirrorStatus>> contentMirrorStatuses
+            ) {
         this.indicesAPI = indicesAPI;
         this.siteSearchAPI = siteSearchAPI;
         this.hostAPI = hostAPI;
         this.userAPI = userAPI;
         this.siteSearchAuditAPI = siteSearchAuditAPI;
         this.publisherAPI = publisherAPI;
+        this.contentMirrorStatuses = contentMirrorStatuses;
     }
 
     public SiteSearchJobImpl() {
@@ -312,6 +335,11 @@ public class SiteSearchJobImpl {
                 indexName = indexMetaData.getIndexName();
             }
 
+            // Advisory, never a gate: the crawl reads the content index, so an incomplete one silently
+            // yields a partial Site Search index (issue #36983).
+            incompleteContentIndexWarning()
+                    .ifPresent(warning -> Logger.warn(SiteSearchJobImpl.class, warning));
+
             Logger.info(SiteSearchJobImpl.class, () -> String
                     .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
                             BooleanUtils.toStringYesNo(incremental), indexName,
@@ -379,6 +407,64 @@ public class SiteSearchJobImpl {
                     builder.build()
             );
         }
+    }
+
+    /**
+     * Config key for the coverage below which a crawl is warned about. Percentage of the content the
+     * database says exists; {@code 0} disables the check.
+     */
+    static final String MIN_CONTENT_COVERAGE_KEY = "SITE_SEARCH_CRAWL_MIN_CONTENT_COVERAGE_PERCENT";
+
+    /** Default: warn when the content index serving the crawl is missing more than 5% of the content. */
+    static final double DEFAULT_MIN_CONTENT_COVERAGE = 95.0;
+
+    /**
+     * The warning to emit before crawling when the content index this crawl will read from is
+     * materially incomplete, or {@link Optional#empty()} when there is nothing to say.
+     *
+     * <p><strong>Why a crawl cares about the CONTENT index.</strong> A crawl does not read the
+     * database: the bundlers build the bundle from {@code ContentletAPI#searchIndex}, a phase-routed
+     * search over the content index. So the crawl can only find what that index holds — if the
+     * OpenSearch content mirror was never rebuilt, a Phase-3 crawl silently produces a Site Search
+     * index containing a fraction of the site, reports success, and that truncated index survives even
+     * after the content store is reindexed (issue #36983).</p>
+     *
+     * <p>Measured against the <em>database</em>, not against the other engine: in Phase 3 there is no
+     * other engine to compare with, which is exactly when this is most needed. Advisory only — it never
+     * stops the crawl, and any failure to compute it is swallowed, because a diagnostic must not be
+     * able to break indexing.</p>
+     */
+    @VisibleForTesting
+    Optional<String> incompleteContentIndexWarning() {
+        final double threshold = Config.getFloatProperty(
+                MIN_CONTENT_COVERAGE_KEY, (float) DEFAULT_MIN_CONTENT_COVERAGE);
+        if (threshold <= 0) {
+            return Optional.empty();
+        }
+        final boolean readsOpenSearch = MigrationPhase.current().isReadEnabled();
+        return Try.of(() -> contentMirrorStatuses.get().stream()
+                        .map(status -> coverageShortfall(status, readsOpenSearch, threshold))
+                        .flatMap(Optional::stream)
+                        .findFirst())
+                .getOrElse(Optional.empty());
+    }
+
+    /** The shortfall message for one content row, or empty when that row is fine or unmeasured. */
+    private static Optional<String> coverageShortfall(final MirrorStatus status,
+            final boolean readsOpenSearch, final double threshold) {
+        final Double coverage = readsOpenSearch
+                ? status.osCoveragePercent() : status.esCoveragePercent();
+        if (coverage == null || coverage >= threshold) {
+            return Optional.empty();
+        }
+        return Optional.of(String.format(
+                "Site Search crawl starting against an INCOMPLETE content index: '%s' on %s holds "
+                        + "%.2f%% of the %d contentlets the database has. A crawl builds its corpus by "
+                        + "querying that index, so it can only index what it finds there — this crawl "
+                        + "will produce a partial Site Search index, and reindexing the content later "
+                        + "will NOT repair it (it must be crawled again). Run a full reindex first.",
+                status.indexName(), readsOpenSearch ? "OpenSearch" : "Elasticsearch", coverage,
+                status.expectedDocCount()));
     }
 
     /**
