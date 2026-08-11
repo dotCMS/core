@@ -25,9 +25,11 @@ export class AssetPickerDialog {
         this.title = this.root.getByTestId('asset-picker-title');
         this.closeButton = this.root.getByTestId('asset-picker-close-btn');
         this.fullscreenButton = this.root.getByTestId('asset-picker-fullscreen-btn');
-        this.search = this.root.getByTestId('search-input-field');
+        // Two search boxes are on screen at once, so each carries its own id — a shared one made
+        // every selector here ambiguous and was what broke this suite in CI.
+        this.search = this.root.getByTestId('asset-picker-search-input');
         this.sidebar = this.root.getByTestId('asset-picker-sidebar');
-        this.treeSearch = this.sidebar.getByTestId('search-input-field');
+        this.treeSearch = this.root.getByTestId('asset-picker-tree-search-input');
         this.list = this.root.getByTestId('asset-picker-list');
         this.rows = this.list.getByTestId('item-row');
         this.cancelButton = this.root.getByTestId('asset-picker-cancel');

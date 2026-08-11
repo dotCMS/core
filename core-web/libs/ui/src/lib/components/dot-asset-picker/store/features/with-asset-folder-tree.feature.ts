@@ -146,11 +146,17 @@ function searchFoldersInBrowsingSite(
     site: DotAssetPickerSite | undefined,
     browsingService: DotBrowsingService
 ): Observable<TreeLoadResult> {
-    const root = site ? findSiteRoot(roots, site.identifier) : undefined;
-
-    if (!site || !root) {
+    if (!site) {
         return of({ folders: roots });
     }
+
+    // The sites query is filtered by the SAME term, so the site being browsed drops out of `roots`
+    // whenever the term matches a folder name but not that site's hostname — which is the normal
+    // case for a folder search. Put it back, or the search silently returns an empty tree and the
+    // site the user was on disappears. Its folders are the whole point of the search.
+    const existingRoot = findSiteRoot(roots, site.identifier);
+    const root = existingRoot ?? browsingService.mapSiteToTreeNode(site);
+    const allRoots = existingRoot ? roots : [root, ...roots];
 
     return browsingService
         .searchFolders(
@@ -171,7 +177,7 @@ function searchFoldersInBrowsingSite(
                 root.expanded = true;
                 root.leaf = folders.length === 0;
 
-                return { folders: roots, selectedNode: root };
+                return { folders: allRoots };
             })
         );
 }
@@ -309,7 +315,12 @@ export function withAssetFolderTree() {
                                 tap(({ folders, selectedNode }) =>
                                     patchState(store, {
                                         folders,
-                                        selectedNode,
+                                        // Spread only when the loader actually decided on a node.
+                                        // `patchState` merges with `{...current, ...partial}`, so an
+                                        // absent key destructured to `undefined` would still be
+                                        // present in the partial and would wipe the highlight —
+                                        // exactly what `TreeLoadResult` says must not happen.
+                                        ...(selectedNode !== undefined ? { selectedNode } : {}),
                                         foldersStatus: ComponentStatus.LOADED
                                     })
                                 ),

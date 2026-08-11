@@ -176,11 +176,25 @@ export class DotAssetPickerComponent implements OnInit {
         this.#contentletService
             .getContentletByInodeWithContent(asset.inode)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((hydrated) => {
-                // Persist on confirm, not on selection: a row the user highlights and then cancels
-                // must not move a value shared by every picker in the system.
-                writeLastAssetLocation(this.#resolveAssetLocation(hydrated));
-                this.#dialogRef.close(hydrated);
+            .subscribe({
+                next: (hydrated) => {
+                    // Persist on confirm, not on selection: a row the user highlights and then
+                    // cancels must not move a value shared by every picker in the system.
+                    writeLastAssetLocation(this.#resolveAssetLocation(hydrated));
+                    this.#dialogRef.close(hydrated);
+                },
+                // The row was fetched minutes ago; by now it can be gone, or permissions changed.
+                // Without this the dialog just sits there and Confirm looks like it did nothing —
+                // the picker stays open on purpose so the user can pick something else.
+                error: () =>
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('dot.asset.picker.confirm.error'),
+                        detail: this.#dotMessageService.get(
+                            'dot.asset.picker.confirm.error.detail'
+                        ),
+                        life: ERROR_MESSAGE_LIFE
+                    })
             });
     }
 

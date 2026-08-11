@@ -96,6 +96,8 @@ describe('DotAssetPickerStore', () => {
     let store: InstanceType<typeof DotAssetPickerStore>;
     let contentDriveService: SpyObject<DotContentDriveService>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
+    let folderService: SpyObject<DotFolderService>;
+    let siteService: SpyObject<DotSiteService>;
 
     // Deliberately NO provideRouter / RouterTestingModule here — see the "no router" describe below.
     const createService = createServiceFactory({
@@ -121,6 +123,15 @@ describe('DotAssetPickerStore', () => {
         store = spectator.service;
         contentDriveService = spectator.inject(DotContentDriveService, true);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
+        folderService = spectator.inject(DotFolderService, true);
+        siteService = spectator.inject(DotSiteService, true);
+
+        // `mockProvider` builds one mock per file and `clearAllMocks` only clears calls, not
+        // implementations — so re-seed the defaults here or a test that overrides a return value
+        // leaks into every test after it.
+        contentDriveService.search.mockReturnValue(of(EMPTY_RESPONSE));
+        folderService.searchFolders.mockReturnValue(of(EMPTY_FOLDERS));
+        siteService.getSites.mockReturnValue(of(SITES_RESPONSE));
     });
 
     afterEach(() => jest.clearAllMocks());
@@ -399,14 +410,6 @@ describe('DotAssetPickerStore', () => {
     });
 
     describe('folder tree', () => {
-        let folderService: SpyObject<DotFolderService>;
-        let siteService: SpyObject<DotSiteService>;
-
-        beforeEach(() => {
-            folderService = spectator.inject(DotFolderService, true);
-            siteService = spectator.inject(DotSiteService, true);
-        });
-
         it('should load the tree when the picker is configured', () => {
             store.initPicker(FILE_FIELD_CONFIG);
 
@@ -666,6 +669,36 @@ describe('DotAssetPickerStore', () => {
                 store.setTreeSearch('images');
 
                 expect(store.$request().filters?.text).toBe('');
+            });
+
+            it('should keep the browsed site in the tree when the term matches no hostname', () => {
+                // The sites query is filtered by the same term, so searching for a FOLDER name drops
+                // the site out of the results. Losing it meant no folder search ran at all and the
+                // sidebar went empty.
+                siteService.getSites.mockReturnValue(
+                    of({ sites: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } })
+                );
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                store.setTreeSearch('images');
+
+                expect(store.folders().map((node) => node.key)).toContain(SITE.identifier);
+                expect(folderService.searchFolders).toHaveBeenCalledWith(
+                    expect.objectContaining({ recursive: true, name: 'images' })
+                );
+            });
+
+            it('should leave the highlight where it was', () => {
+                // `TreeLoadResult` treats an absent `selectedNode` as "leave it alone", but
+                // destructuring it into `patchState` made it a present `undefined` that wiped the
+                // signal — searching the tree must not move the upload target.
+                store.initPicker(FILE_FIELD_CONFIG);
+                const before = store.selectedNode();
+
+                store.setTreeSearch('images');
+
+                expect(store.selectedNode()).not.toBeUndefined();
+                expect(store.selectedNode()?.key).toBe(before?.key);
             });
         });
     });

@@ -3,6 +3,7 @@
 <div class="p-4">
     <dot-search-input
         data-testid="asset-picker-tree-search"
+        testId="asset-picker-tree-search-input"
         placeholder="dot.asset.picker.sidebar.search.placeholder"
         [value]="store.treeSearch()"
         (search)="store.setTreeSearch($event)" />

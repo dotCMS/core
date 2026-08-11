@@ -8,7 +8,7 @@
         [attr.aria-label]="$placeholder() | dm"
         autocomplete="off"
         class="w-full"
-        data-testId="search-input-field"
+        [attr.data-testId]="$testId()"
         [formControl]="searchControl" />
     @if ($text().length) {
         <p-inputicon

@@ -119,7 +119,7 @@ export class DotBrowsingService {
 
         return this.#siteService.getSites({ filter, per_page: perPage, page, system }).pipe(
             map(({ sites, pagination }) => ({
-                sites: sites.map((site) => this.#mapSiteToTreeNodeItem(site)),
+                sites: sites.map((site) => this.mapSiteToTreeNode(site)),
                 pagination
             }))
         );
@@ -147,7 +147,17 @@ export class DotBrowsingService {
         );
     }
 
-    #mapSiteToTreeNodeItem(site: { identifier: string; hostname: string }): TreeNodeItem {
+    /**
+     * Maps a site to its tree-root node shape.
+     *
+     * Public so a consumer can produce a root for a site it already knows about without a round
+     * trip — the AssetPicker needs the site it is browsing present in the tree even when a filtered
+     * sites query left it out. Keeping this the single source of the node shape is the point.
+     *
+     * @param {Object} site - Site identifier and hostname
+     * @returns {TreeNodeItem} The site as an expandable tree root
+     */
+    mapSiteToTreeNode(site: { identifier: string; hostname: string }): TreeNodeItem {
         return {
             key: site.identifier,
             label: site.hostname,

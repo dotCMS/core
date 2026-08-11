@@ -75,7 +75,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * A signal that takes an array of DotContentDriveItem objects.
      *
-     * @type {InputSignal<DotContentDriveItem[]>}
      * @alias items
      */
     $items = input<DotContentDriveItem[]>([], { alias: 'items' });
@@ -83,7 +82,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * A signal that takes the total number of items.
      *
-     * @type {InputSignal<number>}
      * @alias totalItems
      */
     $totalItems = input<number>(0, { alias: 'totalItems' });
@@ -91,7 +89,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * A signal that takes the loading state.
      *
-     * @type {InputSignal<boolean>}
      * @alias loading
      */
     $loading = input<boolean>(false, { alias: 'loading' });
@@ -99,7 +96,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * A signal that takes the offset.
      *
-     * @type {InputSignal<number>}
      * @alias offset
      */
     $offset = input<number>(0, { alias: 'offset' });
@@ -108,7 +104,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Extra, caller-provided columns appended after the fixed "type" column. Agnostic of how they
      * are sourced (Content Drive derives them from the selected content type's "Show In List" fields).
      *
-     * @type {InputSignal<DotFolderListViewColumn[]>}
      * @alias extraColumns
      */
     $extraColumns = input<DotFolderListViewColumn[]>([], { alias: 'extraColumns' });
@@ -153,7 +148,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the selected items.
      *
-     * @type {Output<DotContentDriveItem[]>}
      * @alias selectionChange
      */
     selectionChange = output<DotContentDriveItem[]>();
@@ -161,7 +155,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the pagination event.
      *
-     * @type {Output<LazyLoadEvent>}
      * @alias paginate
      */
     paginate = output<DotContentDrivePaginateEvent>();
@@ -169,7 +162,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the sort event.
      *
-     * @type {Output<SortEvent>}
      * @alias sort
      */
     sort = output<SortEvent>();
@@ -177,7 +169,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the right click event.
      *
-     * @type {Output<ContextMenuData>}
      * @alias rightClick
      */
     rightClick = output<ContextMenuData>();
@@ -185,7 +176,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the double click event.
      *
-     * @type {Output<DotContentDriveItem>}
      * @alias doubleClick
      */
     doubleClick = output<DotContentDriveItem>();
@@ -193,7 +183,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the drag start event.
      *
-     * @type {Output<DotContentDriveItem[]>}
      * @alias dragStart
      */
     dragStart = output<DotContentDriveItem[]>();
@@ -201,15 +190,13 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the drag end event.
      *
-     * @type {Output<void>}
      * @alias dragEnd
      */
     dragEnd = output<void>();
 
     /**
-     * An output that emits the drop event.
+     * An output that emits the drop event, carrying the target value.
      *
-     * @type {Output<DotContentDriveItem>} the target value
      * @alias drop
      */
     drop = output<DotContentDriveItem>();
@@ -217,7 +204,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * An output that emits the scroll event.
      *
-     * @type {Output<Event>}
      * @alias scroll
      */
     scroll = output<Event>();

@@ -31,24 +31,32 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 export class DotSearchInputComponent {
     /**
      * Current search term, owned by the host.
-     * @type {string}
      * @alias value
      */
     readonly $value = input('', { alias: 'value' });
 
     /**
      * i18n key for the input placeholder.
-     * @type {string}
      * @alias placeholder
      */
     readonly $placeholder = input('search', { alias: 'placeholder' });
 
     /**
      * Debounce (ms) applied before emitting. Read on every keystroke, so it can change at runtime.
-     * @type {number}
      * @alias debounceTime
      */
     readonly $debounceTime = input(DEFAULT_SEARCH_DEBOUNCE, { alias: 'debounceTime' });
+
+    /**
+     * `data-testId` for the input, so a host that renders more than one search box can tell them
+     * apart — the AssetPicker has both an asset search and a sites-and-folders search on screen at
+     * once, and a single hardcoded id made every selector ambiguous.
+     *
+     * Defaults to the original value, so existing consumers and their tests are unaffected.
+     *
+     * @alias testId
+     */
+    readonly $testId = input('search-input-field', { alias: 'testId' });
 
     /** Emits the trimmed term once the debounce window closes. */
     readonly search = output<string>();

@@ -270,6 +270,22 @@ describe('DotAssetPickerComponent', () => {
             expect(readLastAssetLocation()?.path).toBe('/images/');
         });
 
+        it('should tell the user when the asset can no longer be loaded', () => {
+            // The row was fetched minutes ago — by now it can be gone or permissions can have
+            // changed. Silently swallowing that left Confirm looking like it did nothing.
+            (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+                throwError(() => new Error('gone'))
+            );
+            const messageService = spectator.inject(MessageService, true);
+            const addSpy = jest.spyOn(messageService, 'add');
+
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(addSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
+            // The picker stays open so the user can pick something else.
+            expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
         it('should do nothing when called with no selection', () => {
             store.selectedAsset.set(null);
 

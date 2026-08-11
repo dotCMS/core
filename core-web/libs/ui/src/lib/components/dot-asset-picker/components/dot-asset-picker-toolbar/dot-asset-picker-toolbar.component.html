@@ -1,6 +1,7 @@
 <div class="flex w-full items-center gap-2">
     <dot-search-input
         class="min-w-0 flex-1"
+        testId="asset-picker-search-input"
         [value]="$searchTerm()"
         (search)="store.setSearch($event)" />
 
