@@ -45,8 +45,7 @@ interface DotAppsListState {
         DotAppsImportExportDialogComponent,
         DotPortletBaseComponent,
         DotMessagePipe
-    ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class DotAppsListComponent implements AfterViewInit {
     readonly #route = inject(ActivatedRoute);
