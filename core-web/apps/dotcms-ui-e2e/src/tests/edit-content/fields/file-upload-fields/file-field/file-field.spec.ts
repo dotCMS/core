@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { NewEditContentFormPage } from '@pages';
 import { expect, test } from '@playwright/test';
+import { Contentlet, createDotAsset, deleteContentlets } from '@requests/contentlets';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
+import { getDefaultSite } from '@requests/sites';
 import {
     createFakePayloadFileField,
     createFakePayloadTextField
@@ -10,6 +12,7 @@ import { uniqueSuffix } from '@utils/utils';
 
 import { FileField } from './helpers/file-field';
 
+import { AssetPickerDialog } from '../helpers/asset-picker-dialog';
 import { E2E_IMPORT_URL, createTestTextFile } from '../helpers/file-test-data';
 
 const FILE_FIELD_VARIABLE = 'fileField';
@@ -116,6 +119,80 @@ test('import image URL shows Edit image button', async ({ page }) => {
     await field.importFromUrl(E2E_IMPORT_URL);
     // File fields expose the image editor when the file is an image (#36363).
     await field.expectEditButtonVisible();
+});
+
+test.describe('select an existing file through the AssetPicker', () => {
+    let seededAsset: Contentlet | null = null;
+    let assetName: string;
+
+    // Seeded per test through the REST API: the picker only reads it, but a unique file name per
+    // test is what lets the search find exactly this asset regardless of what else the environment
+    // happens to contain.
+    test.beforeEach(async ({ request }) => {
+        const site = await getDefaultSite(request);
+        seededAsset = await createDotAsset(
+            request,
+            createTestTextFile(`e2e-picker-${uniqueSuffix()}.txt`),
+            site.identifier
+        );
+        assetName = seededAsset.title;
+    });
+
+    test.afterEach(async ({ request }) => {
+        if (seededAsset) {
+            await deleteContentlets(request, [seededAsset.identifier]);
+            seededAsset = null;
+        }
+    });
+
+    test('open the picker, select a file, and populate the field @critical', async ({ page }) => {
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new FileField(page, FILE_FIELD_VARIABLE);
+        await field.expectVisible();
+
+        const picker = new AssetPickerDialog(page);
+        await field.openSelectExistingDialog();
+        await picker.waitForVisible();
+
+        // Nothing picked yet, so there is nothing to confirm.
+        await picker.expectConfirmDisabled();
+
+        await picker.searchFor(assetName);
+        await picker.expectRowVisible(assetName);
+
+        // Clicking the title, not the row padding: the whole row is the selection target here.
+        await picker.selectRowByTitle(assetName);
+        await picker.expectRowSelected(assetName);
+        await picker.expectConfirmEnabled();
+
+        await picker.confirm();
+
+        await picker.expectClosed();
+        await field.expectPreviewVisible();
+        await field.expectPreviewShowsFileName(assetName);
+    });
+
+    test('cancel the picker and leave the field untouched', async ({ page }) => {
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new FileField(page, FILE_FIELD_VARIABLE);
+        await field.expectVisible();
+
+        const picker = new AssetPickerDialog(page);
+        await field.openSelectExistingDialog();
+        await picker.waitForVisible();
+
+        await picker.searchFor(assetName);
+        await picker.selectRowByTitle(assetName);
+        await picker.cancel();
+
+        await picker.expectClosed();
+        // Highlighting a row and backing out must not populate the field.
+        await field.expectPreviewHidden();
+    });
 });
 
 test.describe('required file field', () => {
