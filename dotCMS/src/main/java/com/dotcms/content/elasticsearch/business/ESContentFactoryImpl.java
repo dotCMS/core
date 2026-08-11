@@ -1282,16 +1282,18 @@ public class ESContentFactoryImpl implements ContentletFactory {
   public List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
     // Single pass: the cache lookup already knows which inodes missed, so collect them here
-    // rather than re-deriving the difference afterwards. CollectionUtils.subtract built a
-    // HashBag of the hit keys, walked the inodes against it and returned a list that was then
-    // copied into a second list - three allocations and an extra pass to recompute something
-    // this loop already knew.
+    // rather than re-deriving the difference afterwards. A hit only counts when the cached
+    // inode matches the requested one: the cache stores the CACHE_404_CONTENTLET sentinel
+    // under the requested key after a failed single-item lookup, and treating it as a hit
+    // would silently drop that inode from the result instead of falling through to the DB
+    // (the old CollectionUtils.subtract over conMap's keys had the same inode-equality
+    // semantics, since the sentinel's inode never matches a requested inode).
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     final List<String> missingCons = new ArrayList<>();
     for (final String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
-      if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-        conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
+      if (contentlet != null && i.equals(contentlet.getInode())) {
+        conMap.put(i, processCachedContentlet(contentlet));
       } else {
         missingCons.add(i);
       }
