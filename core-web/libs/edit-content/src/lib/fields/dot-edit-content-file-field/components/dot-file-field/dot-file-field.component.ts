@@ -21,11 +21,12 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter, map } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
 import {
     DotAiService,
     DotMessageService,
+    DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -33,10 +34,10 @@ import {
     DotCMSContentTypeField,
     DotCMSTempFile,
     DotFileMetadata,
-    DotGeneratedAIImage
+    DotGeneratedAIImage,
+    DotSite
 } from '@dotcms/dotcms-models';
 import { isImageFile } from '@dotcms/image-editor';
-import { GlobalStore } from '@dotcms/store';
 import {
     ASSET_PICKER_TITLE_KEYS,
     buildAssetPickerConfig,
@@ -155,7 +156,7 @@ export class DotFileFieldComponent
      */
     readonly #http = inject(HttpClient);
     /** Site the AssetPicker browses. Root-provided, so always available. */
-    readonly #globalStore = inject(GlobalStore);
+    readonly #siteService = inject(DotSiteService);
     /**
      * Supplies the locale when there is no contentlet yet (creating). Injected as `{ optional: true }`
      * because only the Angular edit-content layout provides it — the legacy web-component host
@@ -822,8 +823,15 @@ export class DotFileFieldComponent
      * doesn't narrow it at all. It browses `api/v1/drive/search`, unlike the browser selector the
      * block editor and custom fields still use.
      *
-     * Nothing happens when the field is disabled, or when no site has resolved yet — the picker
-     * would have nothing to browse.
+     * Nothing happens when the field is disabled, or when no site resolves — the picker would have
+     * nothing to browse.
+     *
+     * The site comes from `DotSiteService`, deliberately not from `GlobalStore`: this component also
+     * renders inside the legacy Dojo editor as the `dotcms-binary-field` custom element, which
+     * bootstraps without a router and without the app-shell providers. `GlobalStore` composes
+     * `withSystem`/`withBreadcrumbs`, so injecting it there threw NG0201 (`DotSystemConfigService`,
+     * then `Router`) and the whole Binary Field rendered blank. One HTTP call on an explicit click
+     * is a cheap price for a component that has to run in both hosts.
      *
      * @memberof DotEditContentFileFieldComponent
      */
@@ -832,14 +840,25 @@ export class DotFileFieldComponent
             return;
         }
 
-        const site = this.#globalStore.siteDetails();
+        this.#siteService
+            .getCurrentSite()
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (site) => {
+                    // Opening a picker that can't browse anything is worse than not opening it.
+                    if (site) {
+                        this.#openAssetPicker(site);
+                    }
+                },
+                // Nothing to browse and nothing to say beyond that — the picker simply doesn't open.
+                error: () => {
+                    /* noop */
+                }
+            });
+    }
 
-        // Opening a picker that can't browse anything is worse than not opening it. In practice the
-        // site resolves long before the editor reaches a field, so this is a cold-start guard.
-        if (!site) {
-            return;
-        }
-
+    /** Opens the picker for a resolved site. Split out so the site lookup above stays readable. */
+    #openAssetPicker(site: DotSite) {
         const isImage = this.$field().fieldType === INPUT_TYPES.Image;
 
         const mode = isImage ? 'image' : 'file';

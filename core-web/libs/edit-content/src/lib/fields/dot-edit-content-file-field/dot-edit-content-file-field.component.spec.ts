@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, signal, WritableSignal } from '@angular/core';
+import { Component } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -11,12 +11,12 @@ import {
     DotAiService,
     DotContentletService,
     DotMessageService,
+    DotSiteService,
     DotUploadFileService,
     DotUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 import {
     DotAssetPickerComponent,
     DotAssetPickerConfig,
@@ -57,7 +57,7 @@ const mockLauncher = {
     open: jest.fn().mockReturnValue(of(null))
 };
 
-/** The AssetPicker needs a site to browse; GlobalStore supplies it. */
+/** The AssetPicker needs a site to browse. */
 const SITE_MOCK: DotSite = {
     identifier: 'site-1',
     hostname: 'demo.dotcms.com',
@@ -85,7 +85,9 @@ describe('DotFileFieldComponent', () => {
         // We also provide them (and mock the upload service's transitive deps) at
         // the module level so the harness can resolve them, then spy per test.
         providers: [
-            mockProvider(GlobalStore, { siteDetails: signal(SITE_MOCK) }),
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest.fn().mockReturnValue(of(SITE_MOCK))
+            }),
             FileFieldStore,
             DialogService,
             DotFileFieldUploadService,
@@ -621,8 +623,14 @@ describe('DotFileFieldComponent', () => {
 
     describe('select existing asset (AssetPicker)', () => {
         /** The site signal is created once by the factory, so a test that nulls it would leak. */
+        /**
+         * `DotSiteService` is root-provided and mocked once for the file, so re-seed the return
+         * value per test rather than mutating a signal.
+         */
         const setSite = (site: DotSite | null) =>
-            (spectator.inject(GlobalStore).siteDetails as WritableSignal<DotSite | null>).set(site);
+            (spectator.inject(DotSiteService).getCurrentSite as jest.Mock).mockReturnValue(
+                site ? of(site) : of(null)
+            );
 
         const openPicker = (field: DotCMSContentTypeField, contentlet?: DotCMSContentlet) => {
             setup(field, contentlet);
@@ -761,7 +769,7 @@ describe('DotFileFieldComponent', () => {
                 setup(FILE_FIELD_MOCK);
                 spectator.detectChanges();
 
-                // Cold start: GlobalStore has not loaded a site.
+                // Cold start: no site resolves.
                 setSite(null);
 
                 const dialogService = spectator.inject(DialogService, true);
