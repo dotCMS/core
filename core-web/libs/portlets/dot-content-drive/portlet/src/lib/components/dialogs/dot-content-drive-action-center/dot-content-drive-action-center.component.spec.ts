@@ -7,8 +7,15 @@ import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotFormatDateService,
+    DotLanguagesService,
+    DotMessageService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
 
@@ -108,7 +115,11 @@ describe('DotContentDriveActionCenterComponent', () => {
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
-            })
+            }),
+            // Pulled in by the Content Drive grid, which the action preview renders for real.
+            mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
+            mockProvider(DotFormatDateService)
         ],
         detectChanges: false
     });
@@ -170,15 +181,81 @@ describe('DotContentDriveActionCenterComponent', () => {
         spectator.detectChanges();
     };
 
-    /** Clicks the real checkbox of the first preview row, dropping it from the included set. */
-    const uncheckFirstRow = (): void => {
-        const checkbox = spectator
-            .queryAll('[data-testid="preview-row"]')[0]
-            .querySelector('[data-testid="preview-row-checkbox"] input');
+    /** Every row the preview is listing. The preview renders the Content Drive grid. */
+    const previewRows = (): HTMLElement[] => spectator.queryAll('[data-testid="item-row"]');
 
-        spectator.click(checkbox);
+    /** Clicks a preview row's real checkbox, toggling it in or out of the included set. */
+    const toggleRow = (index: number): void => {
+        spectator.click(previewRows()[index].querySelector('input'));
         spectator.detectChanges();
     };
+
+    /** Drops the first preview row from the included set. */
+    const uncheckFirstRow = (): void => toggleRow(0);
+
+    /**
+     * Rows whose lock belongs to another user, marked in the preview so the user can drop them.
+     *
+     * The point of routing quick actions through a preview at all: the Unlock row warns that some
+     * locks are not the user's, and this is the only place that says *which*.
+     */
+    describe('marking locks held by another user', () => {
+        const lockedSelection = [
+            contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+            contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+        ];
+
+        it('should mark only the rows the current user does not hold', () => {
+            mockSelectedItems.set(lockedSelection);
+
+            openQuickActionPreview('UNLOCK');
+
+            expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(1);
+            expect(spectator.queryAll('[data-testid="lock-icon"]').length).toBe(1);
+        });
+
+        it('should mark nothing for an administrator', () => {
+            // Same signal as the row's warning: an admin releases every lock, so neither the
+            // warning nor the markers appear for them.
+            mockCurrentUserIsAdmin.set(true);
+            mockSelectedItems.set(lockedSelection);
+
+            openQuickActionPreview('UNLOCK');
+
+            expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(0);
+            expect(spectator.queryAll('[data-testid="lock-icon"]').length).toBe(2);
+        });
+
+        it('should keep marked rows checked, so the fired count matches what the row advertised', () => {
+            mockSelectedItems.set(lockedSelection);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine',
+                'theirs'
+            ]);
+        });
+
+        it('should drop a marked row from the payload once the user unchecks it', () => {
+            // The capability this screen exists for, end to end: see which locks are not yours,
+            // uncheck one, and fire without it.
+            mockSelectedItems.set(lockedSelection);
+            openQuickActionPreview('UNLOCK');
+
+            const markedRow = previewRows().findIndex((row) =>
+                row.querySelector('[data-testid="lock-foreign-icon"]')
+            );
+            toggleRow(markedRow);
+
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine'
+            ]);
+        });
+    });
 
     describe('loading the available actions', () => {
         it('should request bulk actions with the selected inodes', () => {
@@ -595,7 +672,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // not offer inode-2 as something the user could include.
             openQuickActionPreview('PUBLISH');
 
-            const rows = spectator.queryAll('[data-testid="preview-row"]');
+            const rows = previewRows();
 
             expect(rows).toHaveLength(1);
             expect(rows[0].textContent).toContain('Title inode-1');
@@ -817,7 +894,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         beforeEach(() => goToPreview());
 
         it('should list every selected contentlet, all included', () => {
-            expect(spectator.queryAll('[data-testid="preview-row"]').length).toBe(2);
+            expect(previewRows().length).toBe(2);
             expect(spectator.component['$includedCount']()).toBe(2);
         });
 
@@ -1027,10 +1104,14 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.click('[data-testid="continue-workflow-Blogs"]');
             spectator.detectChanges();
 
-            const rows = spectator.queryAll('[data-testid="preview-row"]');
+            const rows = previewRows();
 
             expect(rows.length).toBe(1);
-            expect(rows[0].getAttribute('data-inode')).toBe('blog-1');
+            // Identified by the title the row renders rather than an inode attribute: the grid
+            // carries no per-row identity attribute, and the title is what the user reads anyway.
+            expect(rows[0].querySelector('[data-testid="item-title-text"]').textContent).toContain(
+                'Title blog-1'
+            );
         });
 
         it('should fire only the eligible contentlet', () => {

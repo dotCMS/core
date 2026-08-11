@@ -30,10 +30,10 @@
     <ng-template #header>
         <tr data-testId="header-row">
             <th [style.width]="'3rem'">
-                <p-tableHeaderCheckbox data-testId="header-checkbox" />
+                <p-tableHeaderCheckbox [disabled]="$disabled()" data-testId="header-checkbox" />
             </th>
             @for (column of $columns(); track column.field) {
-                @if (column.sortable) {
+                @if (column.sortable && !$readOnly()) {
                     <th
                         class="whitespace-nowrap"
                         [pSortableColumn]="column.field"
@@ -63,6 +63,7 @@
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
+                [pSelectableRowDisabled]="$disabled()"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
@@ -72,8 +73,9 @@
                 (dragover)="onDragOver($event, item)"
                 (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
-                    <p-tableCheckbox [value]="item" />
+                    <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
                 </td>
+                @if ($visibleColumnSet().has('title')) {
                 <td
                     class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                     data-testId="item-title">
@@ -129,11 +131,15 @@
                         }
                     </span>
                 </td>
+                }
+                @if ($visibleColumnSet().has('live')) {
                 <td data-testId="item-status">
                     @if (!isFolder) {
                         <dot-contentlet-status-badge [state]="item" />
                     }
                 </td>
+                }
+                @if ($visibleColumnSet().has('languageId')) {
                 <td data-testId="item-language">
                     @if (!isFolder) {
                         <p-tag
@@ -143,11 +149,14 @@
                     }
                 </td>
 
+                }
                 <!-- Clipped like the title: the column is a fixed 15%, so a long content type
                      variable name would otherwise wrap and grow the row past its neighbours. -->
+                @if ($visibleColumnSet().has('contentType')) {
                 <td class="truncate" data-testId="item-content-type">
                     {{ (isFolder ? 'Folder' : item.contentType) | dm }}
                 </td>
+                }
                 @for (column of $safeExtraColumns(); track column.field) {
                     <td class="truncate" [attr.data-testid]="'item-extra-' + column.field">
                         @if (!isFolder) {
@@ -209,12 +218,17 @@
                         }
                     </td>
                 }
+                @if ($visibleColumnSet().has('modUser')) {
                 <td data-testId="item-mod-user-name">
                     {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
                 </td>
-                <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
-                <!-- The cell stays even when empty so the column count (and every colspan derived
-                     from it) is the same in both modes. -->
+                }
+                @if ($visibleColumnSet().has('modDate')) {
+                    <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
+                }
+                <!-- The cell stays even when the kebab is hidden so the column count (and every
+                     colspan derived from it) matches the header. -->
+                @if ($visibleColumnSet().has('actions')) {
                 <td data-testId="item-actions" class="text-center">
                     @if (!$readOnly()) {
                         <p-button
@@ -228,6 +242,7 @@
                             aria-label="More actions" />
                     }
                 </td>
+                }
             </tr>
         }
     </ng-template>

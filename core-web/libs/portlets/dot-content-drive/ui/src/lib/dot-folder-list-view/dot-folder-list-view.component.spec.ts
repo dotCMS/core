@@ -6,7 +6,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { Table, TableCheckbox, TableHeaderCheckbox } from 'primeng/table';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -420,6 +420,201 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('.p-paginator')).toBeTruthy();
+        });
+    });
+
+    /**
+     * Freezes the selection while the caller is mid-flight. `loading` is about rows arriving; this
+     * is about the set the user has already picked being acted on, where letting them change it
+     * would desync what the dialog shows from what was actually submitted.
+     */
+    describe('disabled', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+        });
+
+        it('should leave the checkboxes usable by default', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(TableCheckbox).disabled()).toBeFalsy();
+            expect(spectator.query(TableHeaderCheckbox).disabled()).toBeFalsy();
+        });
+
+        it('should freeze the row and header checkboxes while disabled', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(TableCheckbox).disabled()).toBe(true);
+            expect(spectator.query(TableHeaderCheckbox).disabled()).toBe(true);
+        });
+
+        it('should select a row by clicking it when not disabled', () => {
+            spectator.detectChanges();
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            spectator.click(byTestId('item-row'));
+
+            expect(selectionChangeSpy).toHaveBeenCalled();
+        });
+
+        it('should not select a row by clicking it while disabled', () => {
+            // Rows are selectable by click, not only by checkbox — freezing the boxes alone would
+            // leave a way straight around the freeze.
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            spectator.click(byTestId('item-row'));
+
+            expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * Which of the fixed columns to render. The full set assumes the portlet's full width; inside a
+     * dialog it overflows, squeezing the title to an ellipsis and pushing the rest out of view.
+     */
+    describe('visibleColumns', () => {
+        /** Header cells excluding the leading checkbox column. */
+        const headerCells = (): HTMLElement[] => spectator.queryAll('thead th').slice(1);
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+        });
+
+        it('should render every fixed column by default', () => {
+            spectator.detectChanges();
+
+            expect(headerCells().length).toBe(HEADER_COLUMNS.length);
+        });
+
+        it('should render only the requested columns', () => {
+            spectator.setInput('visibleColumns', ['title', 'live', 'modUser']);
+            spectator.detectChanges();
+
+            expect(headerCells().length).toBe(3);
+        });
+
+        it('should drop the body cells of the columns it hides', () => {
+            // Header and body have to agree, or the cells shift out from under their headings.
+            spectator.setInput('visibleColumns', ['title', 'live', 'modUser']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-title'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-status'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-mod-user-name'))).toBeTruthy();
+
+            expect(spectator.query(byTestId('item-language'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-content-type'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-mod-date'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-actions'))).toBeFalsy();
+        });
+
+        it('should keep the requested columns in their canonical order', () => {
+            // Display order stays the table's, not the order the caller happened to list.
+            spectator.setInput('visibleColumns', ['modUser', 'title']);
+            spectator.detectChanges();
+
+            expect(headerCells().map((cell) => cell.textContent.trim())).toEqual([
+                'name',
+                'Edited-By'
+            ]);
+        });
+
+        it('should keep the leading checkbox column whatever is hidden', () => {
+            spectator.setInput('visibleColumns', ['title']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('header-checkbox'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+        });
+
+        it('should rescale a subset so the columns still fill the table', () => {
+            // `table-layout: fixed` shares leftover width across *every* column, including the 3rem
+            // checkbox one. A subset adding up to 57% therefore opens a gutter between the checkbox
+            // and the first heading instead of widening the title.
+            spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+            spectator.detectChanges();
+
+            const total = headerCells()
+                .map((cell) => Number.parseFloat(cell.style.width))
+                .reduce((sum, width) => sum + width, 0);
+
+            expect(total).toBeCloseTo(100);
+        });
+
+        it('should keep the relative proportions of the columns it keeps', () => {
+            // 32 : 10 : 15 in HEADER_COLUMNS — rescaling must not flatten them to equal thirds.
+            spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+            spectator.detectChanges();
+
+            const [title, status, type] = headerCells().map((cell) =>
+                Number.parseFloat(cell.style.width)
+            );
+
+            expect(title / status).toBeCloseTo(3.2, 1);
+            expect(type / status).toBeCloseTo(1.5, 1);
+        });
+
+        it('should leave the widths of the full column set untouched', () => {
+            spectator.detectChanges();
+
+            expect(headerCells().map((cell) => cell.style.width)).toEqual(
+                HEADER_COLUMNS.map((column) => column.width)
+            );
+        });
+
+        it('should still append caller-provided extra columns', () => {
+            // Extras are explicitly passed in, so they are never what the caller meant to hide.
+            spectator.setInput('visibleColumns', ['title']);
+            spectator.setInput('extraColumns', [
+                { field: 'author', header: 'Author', order: 1, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerCells().length).toBe(2);
+            expect(spectator.query('[data-testid="item-extra-author"]')).toBeTruthy();
+        });
+    });
+
+    /**
+     * Sorting is a browsing affordance: it reorders a page of results the parent then re-fetches.
+     * A confirmation list has nothing to re-fetch, and re-ordering the rows a user is checking off
+     * only loses their place — so `readOnly` takes the sort controls with it.
+     */
+    describe('sorting under readOnly', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+        });
+
+        it('should offer sortable headers by default', () => {
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(byTestId('sort-icon')).length).toBeGreaterThan(0);
+            expect(spectator.queryAll(byTestId('header-column-sortable')).length).toBeGreaterThan(
+                0
+            );
+        });
+
+        it('should render no sort controls while readOnly', () => {
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(byTestId('sort-icon')).length).toBe(0);
+            expect(spectator.queryAll(byTestId('header-column-sortable')).length).toBe(0);
+        });
+
+        it('should not emit sort when a header is clicked while readOnly', () => {
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+
+            spectator.click(spectator.queryAll('thead th')[1]);
+
+            expect(sortSpy).not.toHaveBeenCalled();
         });
     });
 

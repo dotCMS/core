@@ -199,6 +199,27 @@ export class DotFolderListViewComponent implements OnInit {
     $lazy = input<boolean>(true, { alias: 'lazy' });
 
     /**
+     * Which of the fixed columns to render, by field. Empty (the default) renders them all.
+     *
+     * The full set assumes the portlet's width; in a dialog it overflows and squeezes the title to
+     * an ellipsis. Caller-provided `extraColumns` are unaffected — those were asked for explicitly.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias visibleColumns
+     */
+    $visibleColumns = input<string[]>([], { alias: 'visibleColumns' });
+
+    /**
+     * Freezes the selection while the caller is acting on it. Distinct from `loading`, which is
+     * about rows arriving: this stops the picked set changing mid-flight and desyncing from what
+     * was submitted.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias disabled
+     */
+    $disabled = input<boolean>(false, { alias: 'disabled' });
+
+    /**
      * Inodes whose lock is held by somebody other than the current user, marked so a bulk action
      * that may be refused on them is visible before firing. The caller decides — the judgement needs
      * the user's admin role, which this table has no business knowing.
@@ -315,17 +336,33 @@ export class DotFolderListViewComponent implements OnInit {
      */
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
         const extras = this.$sizedExtraColumns();
+        // Filtered off `HEADER_COLUMNS` rather than off the caller's list, so display order stays
+        // the table's and an unknown field is simply ignored.
+        const requested = this.$visibleColumns();
+        const fixed = requested.length
+            ? this.#fillWidth(HEADER_COLUMNS.filter((column) => requested.includes(column.field)))
+            : HEADER_COLUMNS;
+
         if (!extras.length) {
-            return HEADER_COLUMNS;
+            return fixed;
         }
 
-        const columns = [...HEADER_COLUMNS];
+        const columns = [...fixed];
         const typeIndex = columns.findIndex((column) => column.field === 'contentType');
+        // Appends when the "type" column is hidden, so extras never fall off the end silently.
         const insertAt = typeIndex === -1 ? columns.length : typeIndex + 1;
         columns.splice(insertAt, 0, ...extras);
 
         return columns;
     });
+
+    /**
+     * Fields actually being rendered. The body checks against this so its cells can never disagree
+     * with the header — a mismatch shifts every cell out from under its heading.
+     */
+    protected readonly $visibleColumnSet = computed(
+        () => new Set(this.$columns().map((column) => column.field))
+    );
 
     /** Total column count including the leading checkbox column — drives colspan/skeleton span. */
     protected readonly $columnSpan = computed(() => this.$columns().length + 1);
@@ -397,6 +434,39 @@ export class DotFolderListViewComponent implements OnInit {
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
      */
     private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
+    /**
+     * Rescales a subset of the fixed columns so their percentage widths add back up to 100%,
+     * keeping their proportions to one another.
+     *
+     * `HEADER_COLUMNS` is authored to fill the table exactly. Take three of seven and the rest is
+     * leftover — which `table-layout: fixed` shares across *every* column, the 3rem checkbox one
+     * included. The visible result is a gutter between the checkbox and the first heading rather
+     * than a wider title column.
+     *
+     * Left alone when any visible column carries a non-percentage width: there is nothing
+     * meaningful to rescale a `12rem` against a `32%`.
+     */
+    #fillWidth(columns: DotFolderListViewColumn[]): DotFolderListViewColumn[] {
+        const widths = columns.map((column) =>
+            column.width?.endsWith('%') ? Number.parseFloat(column.width) : NaN
+        );
+
+        if (widths.some((width) => !Number.isFinite(width))) {
+            return columns;
+        }
+
+        const total = widths.reduce((sum, width) => sum + width, 0);
+
+        if (!total) {
+            return columns;
+        }
+
+        return columns.map((column, index) => ({
+            ...column,
+            width: `${((widths[index] / total) * 100).toFixed(2)}%`
+        }));
+    }
 
     /**
      * Resolves an extra column's width. Explicit width wins; otherwise text/number columns size to

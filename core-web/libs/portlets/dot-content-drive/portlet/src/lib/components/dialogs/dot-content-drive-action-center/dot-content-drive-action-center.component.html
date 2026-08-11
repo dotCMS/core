@@ -330,6 +330,7 @@
                 [items]="$previewItems()"
                 [selection]="$includedItems()"
                 [disabled]="$executing()"
+                [lockedByOthers]="$lockedByOthers()"
                 data-testid="action-preview"
                 (selectionChange)="onIncludedItemsChange($event)" />
         </div>

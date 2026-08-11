@@ -1,46 +1,28 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { TableModule } from 'primeng/table';
-
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import {
-    DotContentletStatusBadgeComponent,
-    DotContentThumbnailComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
-
-/**
- * Rows per page in the preview table.
- *
- * Matches the grid's own `MIN_ROWS_PER_PAGE`, so a selection that fit on one page of the grid also
- * fits on one page here.
- */
-export const PREVIEW_ROWS_PER_PAGE = 20;
+import { DotCMSContentlet, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
 /**
  * The contentlets a workflow action is about to run on, as a checkable table.
  *
- * Purely presentational: the parent owns the included set and the disabled state, so this component
- * holds no state of its own and injects nothing. Columns are deliberately limited to what is needed
- * to recognise a row — title, publish status and content type — rather than mirroring the grid.
+ * A configuration of the Content Drive grid rather than a table of its own. It used to be a
+ * hand-rolled copy that deliberately followed the grid's markup — two near-identical tables that
+ * drifted apart every time either was touched, and the copy never grew the grid's per-row lock icon,
+ * which is precisely what this screen exists to show.
  *
- * Rows are keyed on `inode`, **not** `identifier` as the main grid does. Language variants of one
- * contentlet share an identifier but have distinct inodes, and inodes are what gets fired; keying on
- * identifier would collapse two variants into a single selection entry.
+ * Purely presentational: the parent owns the included set, the disabled state and which rows carry a
+ * foreign lock, so this holds no state and injects nothing.
  */
 @Component({
     selector: 'dot-content-drive-action-preview',
-    imports: [
-        TableModule,
-        DotContentletStatusBadgeComponent,
-        DotContentThumbnailComponent,
-        DotMessagePipe
-    ],
+    imports: [DotFolderListViewComponent],
     templateUrl: './dot-content-drive-action-preview.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // A shrinkable flex column so `scrollHeight="flex"` has a bounded height to resolve against:
-    // the table fills the dialog and scrolls its own body, keeping the column headers pinned and the
-    // paginator out of the scroll region. Without `min-h-0` this grows to fit every row instead.
+    // A shrinkable flex column so the grid's `scrollHeight="flex"` has a bounded height to resolve
+    // against: the table fills the dialog and scrolls its own body, keeping the column headers
+    // pinned and the paginator out of the scroll region. Without `min-h-0` this grows to fit every
+    // row instead.
     host: { class: 'flex min-h-0 flex-1 flex-col' }
 })
 export class DotContentDriveActionPreviewComponent {
@@ -50,18 +32,27 @@ export class DotContentDriveActionPreviewComponent {
     readonly selection = input<DotCMSContentlet[]>([]);
     /** Freezes every checkbox, used while an action is in flight. */
     readonly disabled = input<boolean>(false);
+    /**
+     * Inodes whose lock belongs to another user, marked so the user can drop them before firing.
+     * Decided by the parent, which knows the current user's admin role.
+     */
+    readonly lockedByOthers = input<string[]>([]);
 
     readonly selectionChange = output<DotCMSContentlet[]>();
 
-    protected readonly ROWS_PER_PAGE = PREVIEW_ROWS_PER_PAGE;
+    /**
+     * Columns the preview keeps, out of the grid's full set: the title (with its thumbnail), the
+     * publish status and the content type — enough to recognise a row and no more. Locale,
+     * edited-by, last-edited and the actions column are dropped; the dialog is far narrower than the
+     * portlet and the full set overflows it.
+     */
+    protected readonly PREVIEW_COLUMNS = ['title', 'live', 'contentType'];
 
     /**
-     * Paginate only once the selection outgrows a page. Below that the paginator is dead weight on
-     * what is meant to be a quick confirmation step.
+     * The grid speaks `DotContentDriveItem` (contentlets *or* folders); a preview only ever lists
+     * contentlets, so the emitted rows are narrowed back on the way out.
      */
-    protected readonly $paginate = computed(() => this.items().length > PREVIEW_ROWS_PER_PAGE);
-
-    protected onSelectionChange(selection: DotCMSContentlet[]): void {
-        this.selectionChange.emit(selection);
+    protected onSelectionChange(selection: DotContentDriveItem[]): void {
+        this.selectionChange.emit(selection as DotCMSContentlet[]);
     }
 }
