@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -48,8 +49,15 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import org.apache.commons.io.output.StringBuilderWriter;
 
 public class VelocityLiveMode extends VelocityModeHandler {
+
+    /**
+     * Initial size of the in-memory buffer used when minification is on. Big enough that a typical
+     * page never triggers a grow-and-copy, and small enough to be irrelevant if a page is tiny.
+     */
+    private static final int MERGE_BUFFER_INITIAL_CAPACITY = 32 * 1024;
 
     final static ThreadLocal<ByteArrayOutputStream> byteArrayLocal = ThreadLocal.withInitial(
             ByteArrayOutputStream::new);
@@ -247,7 +255,25 @@ public class VelocityLiveMode extends VelocityModeHandler {
      */
     private void writePage(final Writer out, final IHTMLPage htmlPage) {
         final Context context = VelocityUtil.getInstance().getContext(request, response);
-        this.getTemplate(htmlPage, mode).merge(context, out);
+
+        if (!HtmlMinifier.isEnabled()) {
+            this.getTemplate(htmlPage, mode).merge(context, out);
+            return;
+        }
+
+        // Merge into memory first so the markup can be minified as a whole. What is written here is
+        // also what gets stored in the page cache, so minification happens once per cache fill
+        // rather than on every cache hit.
+        //
+        // StringBuilderWriter rather than StringWriter: the latter is backed by a synchronized
+        // StringBuffer, and Velocity emits a page as many hundreds of small writes, so the lock is
+        // taken on every one of them. Sizing the buffer up front avoids the repeated grow-and-copy.
+        // minifyBestEffort, not minifyIfEnabled, because the flag was already read above and reading
+        // it twice per render buys nothing.
+        final StringBuilderWriter merged = new StringBuilderWriter(MERGE_BUFFER_INITIAL_CAPACITY);
+        this.getTemplate(htmlPage, mode).merge(context, merged);
+        Try.run(() -> out.write(HtmlMinifier.minifyBestEffort(merged.toString())))
+                .getOrElseThrow(DotRuntimeException::new);
     }
 
 
