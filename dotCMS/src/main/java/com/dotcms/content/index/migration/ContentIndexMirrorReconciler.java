@@ -225,10 +225,16 @@ public class ContentIndexMirrorReconciler {
      * also have a live version. Verified against a live install: 686/685, matching the index document
      * counts exactly.</p>
      *
-     * <p>Both aggregates resolve through <strong>index-only scans</strong> — {@code COUNT(*)} over any
-     * index of the table, {@code COUNT(live_inode)} over {@code idx_contentlet_vi_live} with an
-     * {@code IS NOT NULL} condition — so this reads narrow btrees, never the heap. It runs on an
-     * admin-only endpoint on demand and once per crawl, never on a write path.</p>
+     * <p><strong>Cost.</strong> PostgreSQL runs this as a {@code Parallel Seq Scan}: asking for
+     * {@code COUNT(live_inode)} needs the column, so the heap is read. Measured on local copies —
+     * 171k rows / 15&nbsp;ms, 394k / 21&nbsp;ms, 453k / 22&nbsp;ms — i.e. roughly linear at ~50&nbsp;ns
+     * per row (warm cache; a cold one pays the disk I/O). It runs on an admin-only endpoint on demand
+     * and once per crawl, never on a write path.</p>
+     *
+     * <p>Kept as <em>one</em> statement deliberately. Splitting it lets {@code COUNT(*)} alone drop to a
+     * {@code Parallel Index Only Scan} (17&nbsp;ms), but the live half stays a sequential scan anyway —
+     * nearly every row has a live version, so the index buys the planner nothing — and the two together
+     * measured 41&nbsp;ms against 28&nbsp;ms for the combined form.</p>
      *
      * <p>Exact rather than the {@code pg_class.reltuples} estimate on purpose: the estimate drifts a few
      * points in either direction between {@code ANALYZE} runs, which surfaces as coverage slightly over

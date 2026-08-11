@@ -510,10 +510,13 @@ through the write-path gate above.
   **The denominator is an exact count.** `SELECT COUNT(*) AS working, COUNT(live_inode) AS live FROM
   contentlet_version_info` — one row per `(identifier, lang, variant_id)`, the same unit as an index
   document, so a complete index reads exactly `100.0` (verified against a live install: 686/685,
-  matching the index counts exactly). Both aggregates resolve through **index-only scans**
-  (`COUNT(live_inode)` over `idx_contentlet_vi_live` with an `IS NOT NULL` condition), so they read
-  narrow btrees and never the heap; it runs on an admin-only endpoint on demand and once per crawl,
-  never on a write path. Not the `pg_class.reltuples` estimate on purpose: that drifts a few points
+  matching the index counts exactly). PostgreSQL runs it as a `Parallel Seq Scan` — `COUNT(live_inode)`
+  needs the column, so the heap is read — measured at **15 ms / 171k rows, 21 ms / 394k, 22 ms / 453k**,
+  roughly linear at ~50 ns per row on a warm cache. It runs on an admin-only endpoint on demand and once
+  per crawl, never on a write path. Kept as one statement on purpose: splitting it lets `COUNT(*)` alone
+  use a `Parallel Index Only Scan` (17 ms), but the live half stays a sequential scan regardless (nearly
+  every row has a live version, so the index buys nothing), and the two together measured 41 ms against
+  28 ms combined. Not the `pg_class.reltuples` estimate on purpose: that drifts a few points
   between `ANALYZE` runs and surfaced as coverage slightly over 100%, which reads as a defect. With
   exact counts, above 100% means the index holds documents the database no longer has — orphans from a
   delete that never propagated, worth looking at rather than rounding away. Site Search rows have no
