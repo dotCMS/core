@@ -1,6 +1,7 @@
 package com.dotcms.content.index.migration;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -47,14 +48,29 @@ public record MirrorStatus(
     /**
      * One engine's copy of the index.
      *
+     * <p>The alias is reported <em>per engine</em> on purpose: during the migration an index can carry
+     * its alias on one engine and not on the other (e.g. an index created before dual-write started,
+     * whose counterpart was built later), and that asymmetry is precisely what an operator needs to
+     * see. Collapsing both sides into one field would hide it.</p>
+     *
      * @param exists       whether this engine holds the index
      * @param docCount     exact document count (0 when absent, -1 when the count query failed)
      * @param physicalName the full index name as stored on that engine's server — cluster-prefixed and,
      *                     for OpenSearch, {@code .os}-tagged (e.g. {@code cluster_08abc3.live_20260406}
      *                     on ES, {@code cluster_08abc3.live_20260406.os} on OS). Reported whether or not
      *                     the copy exists, so a missing copy shows the name to look for.
+     * @param alias        the alias this engine has attached to the index, or {@code null} when it has
+     *                     none — and always {@code null} for the content indices, which are addressed by
+     *                     name only. Omitted from the JSON when {@code null}.
      */
-    public record EngineCopy(boolean exists, long docCount, String physicalName) {}
+    public record EngineCopy(boolean exists, long docCount, String physicalName,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String alias) {
+
+        /** An engine copy with no alias — the shape the content indices use. */
+        public EngineCopy(final boolean exists, final long docCount, final String physicalName) {
+            this(exists, docCount, physicalName, null);
+        }
+    }
 
     /** Whether this index needs operator action (a re-crawl / reindex) before the phase change. */
     public boolean needsAttention() {

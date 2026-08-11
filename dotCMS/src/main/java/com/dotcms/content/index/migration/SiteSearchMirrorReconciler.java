@@ -10,9 +10,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 /**
  * Site Search half of the migration-readiness report (issue #36360): compares every logical
@@ -52,14 +55,29 @@ public class SiteSearchMirrorReconciler {
     public List<MirrorStatus> statuses() {
         final TreeSet<String> names = new TreeSet<>(esImpl.listIndices());
         names.addAll(osImpl.listIndices());
+        // One alias lookup per engine for the whole set — not one per index. Operators identify a
+        // site-search index by its alias, never by its sitesearch_<timestamp>_<uuid> name, so the
+        // report is unusable without it (issue #36983).
+        final Map<String, String> esAliases = indexToAlias(esImpl);
+        final Map<String, String> osAliases = indexToAlias(osImpl);
         final List<MirrorStatus> statuses = new ArrayList<>(names.size());
         for (final String name : names) {
-            statuses.add(statusFor(name));
+            statuses.add(statusFor(name, esAliases.get(name), osAliases.get(name)));
         }
         return statuses;
     }
 
-    private MirrorStatus statusFor(final String name) {
+    /**
+     * Reverses one engine's {@code alias -> index} map into {@code index -> alias}. Both leaves return
+     * logical (untagged) index names, so the keys line up with {@link SiteSearchAPI#listIndices()}.
+     */
+    private static Map<String, String> indexToAlias(final SiteSearchAPI engine) {
+        final Map<String, String> reversed = new HashMap<>();
+        engine.getAliasToIndexMap().forEach((alias, index) -> reversed.put(index, alias));
+        return reversed;
+    }
+
+    private MirrorStatus statusFor(final String name, final String esAlias, final String osAlias) {
         final boolean esExists = esImpl.existsOnAllWriteEngines(name);
         final boolean osExists = osImpl.existsOnAllWriteEngines(name);
         final long esCount = esExists ? esImpl.documentCount(name) : 0L;
@@ -70,24 +88,59 @@ public class SiteSearchMirrorReconciler {
         final String osPhysical = IndexTag.OS.tag(esPhysical);
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
         return new MirrorStatus(name, IndexKind.SITE_SEARCH,
-                new MirrorStatus.EngineCopy(esExists, esCount, esPhysical),
-                new MirrorStatus.EngineCopy(osExists, osCount, osPhysical),
-                verdict, recommend(name, verdict));
+                new MirrorStatus.EngineCopy(esExists, esCount, esPhysical, esAlias),
+                new MirrorStatus.EngineCopy(osExists, osCount, osPhysical, osAlias),
+                verdict, recommend(name, verdict, esAlias, osAlias));
     }
 
-    private static String recommend(final String name, final Verdict verdict) {
+    /**
+     * A site-search index name: {@code sitesearch_<timestamp>[_<uuid>]}. Used to spot an alias that is
+     * really an index name — see {@link #corruptedAlias(String, String)}.
+     */
+    private static final Pattern INDEX_NAME_SHAPED =
+            Pattern.compile("^" + SiteSearchAPI.ES_SITE_SEARCH_NAME + "_\\d{8,}.*", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * The alias of {@code name} on either engine when it is really an INDEX NAME rather than an alias —
+     * the fingerprint of the defect fixed in issue #36983, where a crawl re-applied the name of the
+     * index it had just deleted as the new index's alias. The fix stops it from happening again but
+     * cannot restore an alias already overwritten, so the report surfaces it: this is the only way an
+     * operator can tell which indices still need their alias restored.
+     *
+     * @return the offending alias, or {@code null} when neither engine's alias looks like an index name
+     */
+    private static String corruptedAlias(final String esAlias, final String osAlias) {
+        if (esAlias != null && INDEX_NAME_SHAPED.matcher(esAlias).matches()) {
+            return esAlias;
+        }
+        if (osAlias != null && INDEX_NAME_SHAPED.matcher(osAlias).matches()) {
+            return osAlias;
+        }
+        return null;
+    }
+
+    private static String recommend(final String name, final Verdict verdict, final String esAlias,
+            final String osAlias) {
+        // Reported alongside the sync verdict, never as part of it: the verdict measures data
+        // integrity (existence + counts), while a damaged alias is an identification problem. Folding
+        // it into the verdict would block a phase change over something that costs no data.
+        final String corrupted = corruptedAlias(esAlias, osAlias);
+        final String aliasNote = corrupted == null ? "" : String.format(
+                " NOTE: the alias '%s' is an index name, not a real alias — a crawl overwrote the "
+                        + "original alias of '%s' (issue #36983). Re-crawl this index with the intended "
+                        + "alias to restore it.", corrupted, name);
         switch (verdict) {
             case IN_SYNC:
-                return "In sync — no action needed.";
+                return "In sync — no action needed." + aliasNote;
             case MISSING_COUNTERPART:
                 return String.format("A copy of site-search index '%s' is missing on one engine. "
                         + "Re-crawl it (Site Search → Run now) to rebuild the counterpart before "
-                        + "promoting to the OpenSearch-only phase.", name);
+                        + "promoting to the OpenSearch-only phase.", name) + aliasNote;
             case COUNT_DRIFT:
             default:
                 return String.format("The two copies of site-search index '%s' hold a different "
                         + "number of documents. Re-crawl it (Site Search → Run now) to rebuild "
-                        + "the counterpart before promoting the phase.", name);
+                        + "the counterpart before promoting the phase.", name) + aliasNote;
         }
     }
 }

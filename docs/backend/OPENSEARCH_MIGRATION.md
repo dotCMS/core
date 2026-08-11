@@ -380,6 +380,18 @@ through the write-path gate above.
   (original) — negative = behind, positive = ahead, `null` when a count is unknown — with verdict `IN_SYNC` /
   `MISSING_COUNTERPART` / `COUNT_DRIFT`. The top level also carries the `clusterId` embedded in every
   physical name. The response is the model itself (no `ResponseEntityView` envelope).
+- **Site Search entries also carry the `alias`, per engine.** `es.alias` / `os.alias` hold the alias
+  that engine has attached to the index (omitted when there is none; never present on content rows,
+  which are addressed by name only). Per engine on purpose: an index can hold its alias on one side
+  and not the other — e.g. created before dual-write started, counterpart built later — and that
+  asymmetry is what the operator needs to see. It is what makes the report usable at all, since a
+  site-search index is known by its alias, never by its `sitesearch_<timestamp>_<uuid>` name. One
+  alias lookup per engine covers the whole set, not one per index. When an alias is itself shaped
+  like an index name, `recommendation` appends a NOTE: that is the fingerprint of the crawl overwrite
+  fixed in issue #36983 — the fix stops new occurrences but cannot restore an alias already lost, so
+  this is the only way to find the indices that still need theirs restored. It never changes
+  `verdict`: the verdict measures data integrity (existence + counts), while a damaged alias costs no
+  data and must not block a phase change.
 - **Stateless, from live counts.** Every field is derived at request time. Counts are **exact** — the
   Site Search half uses `SiteSearchAPI.documentCount` and the content half reads each engine leaf's
   `getIndicesStats()` (index `_stats` `primaries.docs.count`), never a search total (which the ES/OS
