@@ -31,6 +31,8 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
     /**
      * Failed publish attempts per topic. Keyed by topic because one provider instance serves
      * every topic in the JVM, so a single total could not be attributed to the cache transport.
+     *
+     * Keys are normalized through {@link #topicKey(String)}; see that method for why.
      */
     private final Map<String, AtomicLong> failedByTopic = new ConcurrentHashMap<>();
     
@@ -143,8 +145,28 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
     }
 
     private void recordFailure(final DotPubSubEvent event) {
-        failedByTopic.computeIfAbsent(String.valueOf(event.getTopic()), t -> new AtomicLong(0))
-                .incrementAndGet();
+        failedByTopic.computeIfAbsent(topicKey(String.valueOf(event.getTopic())),
+                t -> new AtomicLong(0)).incrementAndGet();
+    }
+
+    /**
+     * Normalizes a topic into the key {@link #failedByTopic} is indexed by.
+     *
+     * Writes and reads reach this map by different routes that do not agree on case.
+     * {@code DotPubSubEvent.Builder.withTopic} lowercases, so anything recorded from an event is
+     * already lowercase; the read side goes through {@code DotPubSubTopic.getTopic()}, which
+     * returns {@code String.valueOf(getKey())} with no normalization at all. Those happen to match
+     * today only because every current key is already lowercase
+     * ({@code CacheTransportTopic.CACHE_TOPIC} is {@code "dotcache_topic"}).
+     *
+     * A future topic key with an uppercase character would make the lookup miss silently, and
+     * {@link #getFailedPublishCount(String)} would report zero failures while invalidations were
+     * being lost -- precisely the kind of blind spot issue #36803 exists to remove. Normalizing on
+     * both sides here keeps the map self-consistent regardless of what a caller passes, rather than
+     * relying on every caller knowing this convention.
+     */
+    private static String topicKey(final String topic) {
+        return topic == null ? "null" : topic.toLowerCase();
     }
 
     /**
@@ -156,7 +178,7 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
      */
     @Override
     public long getFailedPublishCount(final String topic) {
-        final AtomicLong failed = failedByTopic.get(topic);
+        final AtomicLong failed = failedByTopic.get(topicKey(topic));
         return failed == null ? 0 : failed.get();
     }
 

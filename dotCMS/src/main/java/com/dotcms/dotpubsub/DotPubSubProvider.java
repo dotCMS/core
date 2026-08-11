@@ -86,6 +86,11 @@ public interface DotPubSubProvider {
      * (cache invalidation, OSGi restart, cluster management), so a JVM-wide total could not be
      * attributed to the cache transport.
      *
+     * The topic key is matched case-insensitively, so a caller may pass either
+     * {@link DotPubSubEvent#getTopic()} (already lowercased by the event builder) or
+     * {@link DotPubSubTopic#getTopic()} (not normalized) and get the same answer. Implementations
+     * that key their own storage by topic must normalize it the same way.
+     *
      * @param topic the topic key, as returned by {@link DotPubSubEvent#getTopic()}
      * @return the failure count, or 0 for providers that publish synchronously
      */

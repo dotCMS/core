@@ -113,6 +113,32 @@ public class QueuingPubSubWrapperTest {
         assertEquals(0, wrapper.getFailedPublishCount("never-used-topic"));
     }
 
+    /**
+     * Method to test: {@link QueuingPubSubWrapper#getFailedPublishCount(String)}
+     * Given Scenario: the failure is recorded from an event, whose topic
+     * {@code DotPubSubEvent.Builder.withTopic} has lowercased, but the lookup arrives with the
+     * topic key un-normalized -- which is what {@code DotPubSubTopic.getTopic()} returns, since it
+     * is a bare {@code String.valueOf(getKey())}.
+     * Expected Result: the count is found regardless of case. Without normalization this misses
+     * silently and reports zero failures while invalidations are being lost, which is the same
+     * class of blind spot #36803 removes. It happens to work today only because every current
+     * topic key is already lowercase.
+     */
+    @Test
+    public void test_failure_lookup_is_case_insensitive() throws Exception {
+        final QueuingPubSubWrapper wrapper = new QueuingPubSubWrapper(new AlwaysFailsProvider());
+
+        wrapper.publish(event("DotCache_Topic", "inval-mixed-case"));
+
+        awaitFailures(wrapper, "dotcache_topic", 1);
+        assertEquals("recorded under the lowercased key the event builder produced",
+                1, wrapper.getFailedPublishCount("dotcache_topic"));
+        assertEquals("and still found when the caller passes the un-normalized topic key",
+                1, wrapper.getFailedPublishCount("DotCache_Topic"));
+        assertEquals("any casing resolves to the same counter",
+                1, wrapper.getFailedPublishCount("DOTCACHE_TOPIC"));
+    }
+
     private static class AlwaysFailsProvider extends NullDotPubSubProvider {
         @Override
         public boolean publish(final DotPubSubEvent event) {
