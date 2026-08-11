@@ -12,8 +12,8 @@
     [lazy]="true"
     [lazyLoadOnInit]="true"
     [scrollable]="true"
-    [(selection)]="selectedItems"
-    (selectionChange)="onSelectionChange()"
+    [selection]="$tableSelection()"
+    (selectionChange)="onSelectionChange($event)"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
     [first]="$offset()"
@@ -97,9 +97,12 @@
                                 [attr.data-table-id]="item.identifier"></i>
                         }
                     </div>
+                    <!-- `title` keeps the full text reachable on hover: the column is a fixed width
+                         and `truncate` clips anything longer, so without it the rest is unreadable. -->
                     <span
                         data-testId="item-title-text"
                         class="block cursor-pointer truncate"
+                        [title]="isFolder ? item.name : item.title"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ isFolder ? item.name : item.title }}
                     </span>
@@ -127,7 +130,9 @@
                     }
                 </td>
 
-                <td data-testId="item-content-type">
+                <!-- Clipped like the title: the column is a fixed 15%, so a long content type
+                     variable name would otherwise wrap and grow the row past its neighbours. -->
+                <td class="truncate" data-testId="item-content-type">
                     {{ (isFolder ? 'Folder' : item.contentType) | dm }}
                 </td>
                 @for (column of $safeExtraColumns(); track column.field) {

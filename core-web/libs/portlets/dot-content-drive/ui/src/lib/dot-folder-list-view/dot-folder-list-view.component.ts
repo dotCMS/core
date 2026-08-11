@@ -181,12 +181,37 @@ export class DotFolderListViewComponent implements OnInit {
     scroll = output<Event>();
 
     /**
-     * An array of selected items.
+     * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
+     * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
+     * table, which keeps its own set and clears it whenever `items` changes.
+     *
+     * @type {InputSignal<DotContentDriveItem[] | undefined>}
+     * @alias selection
+     */
+    $selection = input<DotContentDriveItem[] | undefined>(undefined, { alias: 'selection' });
+
+    /** Checked set while uncontrolled. Ignored as long as `selection` is provided. */
+    readonly #internalSelection = signal<DotContentDriveItem[]>([]);
+
+    /** What the table renders: the caller's set when provided, otherwise our own. */
+    protected readonly $tableSelection = computed<DotContentDriveItem[]>(
+        () => this.$selection() ?? this.#internalSelection()
+    );
+
+    /**
+     * The effective selection. Assigning sets the uncontrolled set; a caller-provided `selection`
+     * always wins on read, so a controlled table cannot be moved from the inside.
      *
      * @type {DotContentDriveItem[]}
      * @alias selectedItems
      */
-    selectedItems = [];
+    get selectedItems(): DotContentDriveItem[] {
+        return this.$tableSelection();
+    }
+
+    set selectedItems(items: DotContentDriveItem[]) {
+        this.#internalSelection.set(items ?? []);
+    }
 
     readonly MIN_ROWS_PER_PAGE = 20;
     protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
@@ -303,11 +328,15 @@ export class DotFolderListViewComponent implements OnInit {
     });
 
     /**
-     * Effect that cleans the selected items when the items change
+     * Effect that cleans the selected items when the items change.
+     *
+     * Only ever touches the uncontrolled set — `$tableSelection` prefers the caller's, so this can
+     * no longer discard a selection the parent owns (in the action preview the rows and the
+     * selection are the same data, and clearing here would empty the payload about to be fired).
      */
     protected readonly $cleanSelectedItems = effect(() => {
         this.$items();
-        this.selectedItems = [];
+        this.#internalSelection.set([]);
     });
 
     /**
@@ -429,10 +458,16 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
-     * Handles selection changes in the table and emits selected items
+     * Handles selection changes in the table and emits selected items.
+     *
+     * Records the set for the uncontrolled case and always reports it. A controlled table renders
+     * the caller's set until the caller echoes this back, so the parent can decline a change.
+     *
+     * @param items The table's new selection
      */
-    onSelectionChange() {
-        this.selectionChange.emit(this.selectedItems);
+    onSelectionChange(items: DotContentDriveItem[]) {
+        this.#internalSelection.set(items ?? []);
+        this.selectionChange.emit(items ?? []);
     }
 
     /**

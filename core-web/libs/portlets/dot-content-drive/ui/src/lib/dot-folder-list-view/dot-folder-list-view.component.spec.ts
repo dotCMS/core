@@ -6,6 +6,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { Table } from 'primeng/table';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -460,6 +461,54 @@ describe('DotFolderListViewComponent', () => {
             expect(itemRow).toBeTruthy();
         });
 
+        /**
+         * Long values must clip, never widen the table or grow the row.
+         *
+         * The columns carry fixed percentage widths, which only hold under `table-layout: fixed` —
+         * with the default `auto` layout a long title stretches the table past its container and
+         * pushes the trailing columns behind a horizontal scrollbar.
+         */
+        describe('overflowing cell values', () => {
+            const longTitle = 'Easy Snowboard Tricks You can Start Using Right Away';
+
+            it('should lay the table out with fixed columns so the widths are honoured', () => {
+                expect(spectator.query('table').style.tableLayout).toBe('fixed');
+            });
+
+            it('should truncate a long title rather than widen the table', () => {
+                spectator.setInput('items', [{ ...firstItem, title: longTitle }]);
+                spectator.detectChanges();
+
+                const title = spectator.query(byTestId('item-title-text'));
+
+                expect(title.classList.contains('truncate')).toBe(true);
+            });
+
+            it('should keep the full title reachable on hover once it is clipped', () => {
+                // Truncating without this loses the information outright — the row shows an ellipsis
+                // and there is no way to read the rest.
+                spectator.setInput('items', [{ ...firstItem, title: longTitle }]);
+                spectator.detectChanges();
+
+                const title = spectator.query(byTestId('item-title-text'));
+
+                expect(title.getAttribute('title')).toBe(longTitle);
+            });
+
+            it('should truncate a long content type instead of wrapping the row', () => {
+                // The type column is a fixed 15%; without clipping a long variable name wraps to a
+                // second line and the row grows taller than its neighbours.
+                spectator.setInput('items', [
+                    { ...firstItem, contentType: 'AVeryLongContentTypeVariableName' }
+                ]);
+                spectator.detectChanges();
+
+                const contentType = spectator.query(byTestId('item-content-type'));
+
+                expect(contentType.classList.contains('truncate')).toBe(true);
+            });
+        });
+
         it('should have a checkbox column', () => {
             const checkboxColumn = spectator.query(byTestId('header-checkbox'));
 
@@ -771,6 +820,91 @@ describe('DotFolderListViewComponent', () => {
 
             // Selected items should be cleared
             expect(spectator.component.selectedItems).toEqual([]);
+        });
+
+        /**
+         * A caller-provided `selection` makes the table controlled: the parent owns the checked set
+         * and this component only reports changes to it. Without an input the table stays
+         * uncontrolled and keeps the behaviour the two cases above describe.
+         *
+         * The Action Center's action preview needs the controlled mode — it lets the user uncheck
+         * rows before firing, and that set has to live in the dialog, not in the table.
+         */
+        describe('caller-provided selection', () => {
+            const [firstItem, secondItem, thirdItem] = mockItems;
+
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.detectChanges();
+            });
+
+            it('should render the caller-provided selection as the checked set', () => {
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
+            });
+
+            it('should pass the caller-provided selection down to the table', () => {
+                // Guards the template binding, not just the component field: an internal signal that
+                // never reaches `p-table` would leave every checkbox unchecked.
+                spectator.setInput('selection', [firstItem]);
+                spectator.detectChanges();
+
+                expect(spectator.query(Table).selection).toEqual([firstItem]);
+            });
+
+            it('should follow the caller-provided selection when it changes', () => {
+                spectator.setInput('selection', [firstItem]);
+                spectator.detectChanges();
+
+                spectator.setInput('selection', [secondItem, thirdItem]);
+                spectator.detectChanges();
+
+                expect(spectator.component.selectedItems).toEqual([secondItem, thirdItem]);
+            });
+
+            it('should NOT discard a caller-provided selection when items change', () => {
+                // The regression this whole mode exists to avoid. The clearing effect above is right
+                // for the browsing grid — a new page of results has nothing to do with the old
+                // selection — but in the preview the rows and the selection are the same data, so
+                // clearing on an items change would empty the payload the user is about to fire.
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                spectator.setInput('items', [...mockItems]);
+                spectator.detectChanges();
+
+                expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
+            });
+
+            it('should emit selectionChange without taking ownership of the set', () => {
+                // Controlled means the parent decides: this reports the user's intent and waits to
+                // be told the new set, rather than applying it locally and drifting from the parent.
+                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+                spectator.setInput('selection', [firstItem]);
+                spectator.detectChanges();
+
+                spectator.component.onSelectionChange([firstItem, secondItem]);
+
+                expect(selectionChangeSpy).toHaveBeenCalledWith([firstItem, secondItem]);
+                expect(spectator.component.selectedItems).toEqual([firstItem]);
+            });
+
+            it('should drag the caller-provided selection', () => {
+                // `onDragStart` reads the effective selection; it must see the caller's, not a
+                // stale internal one. (The preview sets `readOnly`, but the input pair is
+                // independent of that and the grid should stay coherent either way.)
+                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                spectator.component.onDragStart(createDragStartEvent(), firstItem);
+
+                expect(dragStartSpy).toHaveBeenCalledWith([firstItem, secondItem]);
+            });
         });
     });
 
