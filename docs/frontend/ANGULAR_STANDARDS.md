@@ -1,22 +1,36 @@
 # Angular Development Standards
 
-This document is the single source of truth for Angular development in the dotCMS frontend (Angular v20+, signals, standalone components, modern control flow). It merges project standards with the [Angular style guide](https://angular.dev/style-guide) and essentials.
+This document is the single source of truth for Angular development in the dotCMS frontend (Angular 22, signals, standalone components, modern control flow). It merges project standards with the [Angular style guide](https://angular.dev/style-guide) and essentials.
 
 ## Tech Stack Configuration
-- **Angular**: 22.0.7 standalone components
+
+> **Versions are MAJOR-only on purpose.** `core-web/package.json` is the source of truth for the exact pinned versions — read it there instead of copying patch numbers into docs.
+
+- **Angular**: 22.x standalone components
 - **Node.js**: 22.22.3+ (pinned via `.nvmrc` / `nodejs-parent/pom.xml`)
-- **UI**: PrimeNG 21.1.3, PrimeIcons (`pi pi-*`), Tailwind CSS 4.x
-- **State**: NgRx Signals 21.x, Component Store  
-- **Build**: Nx 23.1.x
+- **Package manager**: pnpm 10.x (pinned by the `packageManager` field in `core-web/package.json`). `core-web/pnpm-lock.yaml` is the only lockfile — do NOT use `npm install` or any other package manager
+- **UI**: PrimeNG 21.x, Tailwind CSS 4.x
+- **Icons**: Material Symbols (see [Icons](#icons-material-symbols)); PrimeIcons (`pi pi-*`) is legacy-only
+- **State**: NgRx Signals 21.x, Component Store
+- **Build**: Nx 23.x
 - **TypeScript**: 6.x
-- **Testing**: Jest + Spectator (REQUIRED)
+- **Testing**: Jest 30.x + Spectator, imported from `@openng/spectator` (REQUIRED)
+
+## Reuse Before Creating (Required)
+
+Before creating a new component, verify a suitable one does not already exist:
+
+1. **dotCMS components first** — `libs/ui` (`@dotcms/ui`) and the existing feature libs
+2. **Then PrimeNG**
+3. **Only then** create a new component — and justify why the existing options do not fit
+
+This is the norm, not a suggestion. A new component that duplicates an existing one is a defect, not a feature.
 
 ## Angular Best Practices
 - Always use standalone components over `NgModules`
 - Do NOT set `standalone: true` inside the `@Component`, `@Directive` and `@Pipe` decorators (it is implied by default)
 - Use signals for state management
 - Implement lazy loading for feature routes
-- Always use `OnPush` change detection strategy
 - Use `NgOptimizedImage` for all static images (does not work for inline base64 images)
 - Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
 - For signals, use the `$` prefix to indicate that it is a signal, example: `$mySignal`
@@ -24,14 +38,20 @@ This document is the single source of truth for Angular development in the dotCM
 
 > **Naming in this document**: All code examples below use the `$` prefix for signals (including `input()`, `output()`, `computed()`, `signal()`) and the `$` suffix for observables.
 
+## Change Detection
+
+`OnPush` is the Angular framework default as of **v22** — see [Advanced component configuration](https://angular.dev/guide/components/advanced-configuration#changedetectionstrategy).
+
+- **New components**: do NOT set `changeDetection` in the `@Component` decorator. The default is already `OnPush`.
+- **Existing components marked `ChangeDetectionStrategy.Eager`**: leave them alone. `Eager` is the opt-in eager mode, renamed from `Default` in v22. PR #36907 applied it to legacy components during the Angular 22 upgrade — do NOT convert them to `OnPush` when touching the file for unrelated work.
+
 ## Component Rules
 - Keep components small and focused on a single responsibility
 - Use `input()` signal instead of decorators: [Angular Inputs](https://angular.dev/guide/components/inputs)
 - Use `output()` function instead of decorators: [Angular Outputs](https://angular.dev/guide/components/outputs)
 - Use `computed()` for derived state: [Signals](https://angular.dev/guide/signals)
-- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
-- Prefer inline templates for small components; use separate files for larger ones
-- Prefer Reactive forms instead of Template-driven ones
+- Always split logic, template and styles into separate files — see [File Structure Requirements](#file-structure-requirements-critical)
+- **Signal Forms first** for new forms — see [Forms](#forms-signal-forms-first)
 - Do NOT use `ngClass`, use `class` bindings instead: [CSS class and style bindings](https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings)
 - Do NOT use `ngStyle`, use `style` bindings instead: [CSS class and style bindings](https://angular.dev/guide/templates/binding#css-class-and-style-property-bindings)
 - Do NOT use `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
@@ -41,15 +61,69 @@ This document is the single source of truth for Angular development in the dotCM
 - Prefer type inference when the type is obvious
 - Avoid the `any` type; use `unknown` when the type is uncertain
 
+### TypeScript 6 transitional flag
+`core-web/tsconfig.base.json` sets `"ignoreDeprecations": "6.0"`. This flag is **transitional**: it unblocks APIs that TypeScript 6 deprecated so the existing codebase keeps compiling during the migration.
+
+- **New code must not rely on the deprecated APIs it unblocks.** Write against the current, non-deprecated TypeScript surface.
+- Do NOT remove the flag as part of unrelated work — retiring it is tracked separately.
+
 ## Accessibility Requirements
 - **AXE**: All components must pass AXE accessibility checks
 - **WCAG AA**: Follow WCAG AA minimums (focus management, color contrast, ARIA attributes where needed)
+
+## Icons (Material Symbols)
+
+Use **Material Symbols** for icons in markup you author:
+
+```html
+<span class="material-symbols-outlined">drag_indicator</span>
+```
+
+The icon name goes in the element's **text content**, not the class. Fonts are self-hosted via `libs/dotcms-scss/shared/_material-symbols-outlined.scss` (and `_material-symbols-rounded.scss`), loaded through `libs/dotcms-scss/angular/styles.scss`.
+
+- Existing **PrimeIcons** (`pi pi-*`) stay as they are — do NOT mass-migrate them.
+- Icons rendered internally by PrimeNG components are out of scope — changing those is a theming concern.
+- Do NOT use the deprecated `dot-icon` component in `libs/ui`.
 
 ## State Management (Signals)
 - **Feature-level state**: Use NgRx Signal Store; see [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md). Avoid manual signal soup in components.
 - Use signals for local component state; use `computed()` for derived state.
 - Keep state transformations pure and predictable.
 - Do NOT use `mutate()` on signals; use `update()` or `set()` instead.
+
+## Component State Handling (Required)
+
+Every component that renders data MUST explicitly handle all of its states: **loading**, **empty**, **error**, and **loaded**. Never leave a blank render path.
+
+- Model the states explicitly — a `$loading` signal, an `$error` signal, and the data signal itself (or a single status signal from the store).
+- Use `@if` / `@else` for the loading and error branches.
+- Use `@empty` on every `@for` block so an empty collection renders an empty state instead of nothing.
+- If a state is genuinely impossible, say so in the template with a `@default` / `@else` branch rather than omitting it.
+
+## Error Handling (Required)
+
+Every data path must handle errors. No silent failures, no unguarded `.subscribe()`, no empty `catchError`. Errors must be surfaced to the user.
+
+- Services: use `catchError` and either rethrow a typed error or return a safe fallback — never swallow.
+- Components: subscribe with an `error` callback (or handle the error state coming from the store) and write it into an error signal that the template renders.
+- Never leave the user on a spinner: any failure must clear the loading state.
+
+## Forms (Signal Forms First)
+
+**New forms use Signal Forms** — `@angular/forms/signals`, available since Angular v21 and shipped in the Angular 22.x this workspace runs. Signal Forms keep form state in signals, so they compose directly with the rest of the signal-based state in a component.
+
+```typescript
+import { form, Control } from '@angular/forms/signals';
+
+protected readonly $model = signal({ name: '', email: '' });
+protected readonly userForm = form(this.$model);
+```
+
+- **New forms**: Signal Forms.
+- **Existing Reactive Forms**: leave them as they are. They remain valid and are NOT to be mass-migrated — convert only when you are already rewriting the form for other reasons.
+- **Template-driven forms**: not for new work.
+
+Use `@angular/forms/signals/compat` when a Signal Form has to interoperate with an existing Reactive Forms control.
 
 ## Template Rules
 - Keep templates simple; avoid complex logic in the template
@@ -61,48 +135,44 @@ This document is the single source of truth for Angular development in the dotCM
 - For external `templateUrl` / `styleUrls`, use paths relative to the component TS file
 
 ## Modern Template Syntax (Required)
-Use Angular's new control flow syntax instead of structural directives:
+Use Angular's new control flow syntax instead of structural directives. This example also shows the four required states (loading, error, empty, loaded):
 
-```typescript
-@Component({
-  template: `
-    <!-- Use @if instead of *ngIf (signals: $ prefix) -->
-    @if ($isLoading()) {
-      <dot-spinner />
-    } @else {
-      <dot-content />
-    }
+```html
+<!-- Use @if / @else instead of *ngIf — loading and error are explicit branches -->
+@if ($loading()) {
+  <dot-spinner data-testid="loading-indicator" />
+} @else if ($error()) {
+  <dot-error [message]="$error()!" data-testid="error-message" />
+} @else {
+  <!-- Use @for instead of *ngFor, and always provide @empty -->
+  @for (item of $items(); track item.id) {
+    <div [data-testid]="'item-' + item.id">{{ item.name }}</div>
+  } @empty {
+    <dot-empty-state data-testid="empty-state" />
+  }
+}
 
-    <!-- Use @for instead of *ngFor -->
-    @for (item of $items(); track item.id) {
-      <div [data-testid]="'item-' + item.id">{{ item.name }}</div>
-    } @empty {
-      <dot-empty-state />
-    }
+<!-- Use @switch instead of [ngSwitch] — @default covers the remaining states -->
+@switch ($status()) {
+  @case ('loading') { <dot-loading /> }
+  @case ('error') { <dot-error [message]="$errorMessage()" /> }
+  @default { <dot-content /> }
+}
 
-    <!-- Use @switch instead of [ngSwitch] -->
-    @switch ($status()) {
-      @case ('loading') { <dot-loading /> }
-      @case ('error') { <dot-error [message]="$errorMessage()" /> }
-      @default { <dot-content /> }
-    }
+<!-- Use @let for reused signal values -->
+@let user = $currentUser();
+<h1>{{ user.name }}</h1>
+<p>Email: {{ user.email }}</p>
+@if (user.isAdmin) {
+  <dot-admin-panel />
+}
 
-    <!-- Use @let for reused signal values -->
-    @let user = $currentUser();
-    <h1>{{ user.name }}</h1>
-    <p>Email: {{ user.email }}</p>
-    @if (user.isAdmin) {
-      <dot-admin-panel />
-    }
-
-    <!-- Use @defer for lazy loading -->
-    @defer (on viewport) {
-      <dot-data-grid [data]="$gridData()" />
-    } @loading {
-      <dot-skeleton />
-    }
-  `
-})
+<!-- Use @defer for lazy loading -->
+@defer (on viewport) {
+  <dot-data-grid [data]="$gridData()" />
+} @loading {
+  <dot-skeleton />
+}
 ```
 
 ## File Structure Requirements (Critical)
@@ -131,7 +201,7 @@ feature/
 ✅ Use separate files:
 ```typescript
 @Component({
-  selector: "dot-feature", 
+  selector: "dot-feature",
   templateUrl: "./feature.component.html",
   styleUrls: ["./feature.component.scss"] // Note: plural styleUrls
 })
@@ -145,54 +215,67 @@ feature/
   selector: 'dot-my-component',
   imports: [CommonModule, PrimeNGModule],
   templateUrl: './my-component.component.html',
-  styleUrls: ['./my-component.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./my-component.component.scss']
 })
-export class MyComponent implements OnInit, OnDestroy {
-  // 1. Private fields (observables: $ suffix)
-  private readonly destroy$ = new Subject<void>();
-
-  // 2. Dependency Injection
+export class MyComponent implements OnInit {
+  // 1. Dependency Injection
+  private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(MyStore);
   private readonly service = inject(MyService);
 
-  // 3. Input/Output signals ($ prefix)
+  // 2. Input/Output signals ($ prefix)
   readonly $name = input<string>();
   readonly $config = input<Config>();
   readonly $itemSelected = output<Item>();
 
-  // 4. State signals ($ prefix); observables ($ suffix)
+  // 3. State signals ($ prefix); observables ($ suffix)
   protected readonly $loading = signal(false);
+  protected readonly $error = signal<string | null>(null);
   protected readonly vm$ = this.store.vm$;
 
-  // 5. Computed signals ($ prefix)
+  // 4. Computed signals ($ prefix)
   protected readonly $state = computed(() => this.store.state());
 
-  // 6. Lifecycle hooks
+  // 5. Lifecycle hooks
   ngOnInit(): void {
-    this.store.loadData().pipe(takeUntil(this.destroy$)).subscribe();
+    this.$loading.set(true);
+
+    this.store
+      .loadData()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.$loading.set(false),
+        error: (err) => {
+          // Required: surface the failure and clear the loading state
+          this.$error.set('Failed to load data');
+          this.$loading.set(false);
+          console.error('Error loading data:', err);
+        }
+      });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  // 7. Public methods
+  // 6. Public methods
   onAction(item: Item): void {
     this.$itemSelected.emit(item);
   }
 }
 ```
 
+### Subscription Teardown
+Use `inject(DestroyRef)` + `takeUntilDestroyed(this.destroyRef)` from `@angular/core/rxjs-interop` for every subscription that outlives a single emission. It removes the need for `OnDestroy` boilerplate entirely.
+
+> **Legacy pattern**: older code (concentrated in `apps/dotcms-ui`) still uses a `destroy$` subject with `takeUntil(this.destroy$)` and `ngOnDestroy()`. That code is NOT to be mass-migrated — leave it as you find it. All **new** code uses `takeUntilDestroyed()`.
+
 ### Import Order Convention
 ```typescript
 // 1. Angular Core
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 
 // 2. RxJS
-import { Subject, takeUntil } from 'rxjs';
+import { EMPTY } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 // 3. Third-party Libraries
 import { ButtonModule } from 'primeng/button';
@@ -212,29 +295,69 @@ import type { MyConfig } from './models/my.model';
 @Component({
   selector: 'dot-my-component',
   imports: [CommonModule, FormsModule],
-  template: `
-    @if ($condition()) {
-      <div>{{ $data() }}</div>
-    }
-    @for (item of $items(); track item.id) {
-      <div [data-testid]="'item-' + item.id">{{ item.name }}</div>
-    }
-  `
+  templateUrl: './my-component.component.html',
+  styleUrls: ['./my-component.component.scss']
 })
 export class MyComponent {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly service = inject(MyService);
+
   // Input signals ($ prefix)
   readonly $data = input<string>();
   readonly $condition = input<boolean>();
-  readonly $items = input<Item[]>();
 
   // Output signals ($ prefix)
   readonly $change = output<string>();
 
+  // State signals ($ prefix) — loading, error and data are all explicit
+  protected readonly $loading = signal(false);
+  protected readonly $error = signal<string | null>(null);
+  protected readonly $items = signal<Item[]>([]);
+
   // Computed signals ($ prefix)
   readonly $isValid = computed(() => this.$condition() && this.$data());
 
-  // State signals ($ prefix)
-  protected readonly $loading = signal(false);
+  loadItems(): void {
+    this.$loading.set(true);
+    this.$error.set(null);
+
+    this.service
+      .getItems()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          this.$items.set(items);
+          this.$loading.set(false);
+        },
+        error: (err) => {
+          this.$error.set('Failed to load items');
+          this.$loading.set(false);
+          console.error('Error loading items:', err);
+        }
+      });
+  }
+}
+```
+
+Template (`my-component.component.html`) — use the `$` prefix when reading signals, and cover every state:
+```html
+@if ($loading()) {
+  <dot-spinner data-testid="loading-indicator" />
+} @else if ($error()) {
+  <div class="dot-my-component__error" data-testid="error-message">
+    <span class="material-symbols-outlined">error</span>
+    {{ $error() }}
+  </div>
+} @else {
+  @if ($isValid()) {
+    <div data-testid="valid-data">{{ $data() }}</div>
+  }
+
+  @for (item of $items(); track item.id) {
+    <div [data-testid]="'item-' + item.id">{{ item.name }}</div>
+  } @empty {
+    <dot-empty-state data-testid="empty-state" />
+  }
 }
 ```
 
@@ -253,17 +376,26 @@ const button = spectator.query(byTestId('submit-button'));
 spectator.setInput('inputProperty', 'value');
 
 // ✅ CSS class verification - separate string arguments
-expect(icon).toHaveClass('pi', 'pi-update');
+expect(icon).toHaveClass('material-symbols-outlined', 'text-2xl');
+
+// ✅ Material Symbols: the icon name is the element's text content, not a class
+expect(icon).toHaveText('update');
 
 // ✅ Test user interactions, not implementation details
 spectator.click(byTestId('refresh-button'));
 expect(spectator.query(byTestId('success-message'))).toBeVisible();
+
+// ✅ Cover every state the component renders
+expect(spectator.query(byTestId('loading-indicator'))).toBeVisible();
+expect(spectator.query(byTestId('empty-state'))).toBeVisible();
+expect(spectator.query(byTestId('error-message'))).toBeVisible();
 ```
 
 ## Services
 - Design services around a single responsibility
 - Use `providedIn: 'root'` for singleton services
 - Use the `inject()` function instead of constructor injection
+- Handle errors with `catchError` — rethrow a typed error or return a safe fallback, never swallow it
 
 ## Resources
 - [Angular style guide](https://angular.dev/style-guide)
@@ -273,28 +405,35 @@ expect(spectator.query(byTestId('success-message'))).toBeVisible();
 - [Dependency injection](https://angular.dev/essentials/dependency-injection)
 
 ## Build Commands
+Nx is not installed globally — always run it through pnpm.
+
 ```bash
 # Development server
-nx run dotcms-ui:serve          # → http://localhost:4200/dotAdmin
+pnpm nx run dotcms-ui:serve     # → http://localhost:4200/dotAdmin
 
 # Testing
-nx run dotcms-ui:test          # Run tests
+pnpm nx run dotcms-ui:test      # Run tests
 
 # Build
-nx build dotcms-ui             # Production build
+pnpm nx build dotcms-ui         # Production build
 
 # Dependencies
-yarn install                   # NOT npm install
+pnpm install                    # NOT npm install
 ```
 
 ## Critical Requirements
 > **Security**: All frontend code must follow [Security Principles](../core/SECURITY_PRINCIPLES.md)
 > **Progressive Enhancement**: When editing existing code, see [Progressive Enhancement](../core/PROGRESSIVE_ENHANCEMENT.md)
+- **Reuse first**: Check `libs/ui` (`@dotcms/ui`), then PrimeNG, before creating a component
+- **All states**: loading, empty, error and loaded must be handled — no blank render paths
+- **Error handling**: No silent failures; errors are surfaced to the user
+- **Icons**: Material Symbols for new markup; PrimeIcons is legacy-only
 - **data-testid**: Required for all testable elements
 - **setInput()**: Never set component inputs directly
-- **Spectator**: Required testing framework
+- **Spectator**: Required testing framework (`@openng/spectator`)
 - **Signals**: Required for new component state
 - **Standalone**: All new components must be standalone
+- **Three files**: `.ts` + `.html` + `.scss` per component
 
 ## See also
 - [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
