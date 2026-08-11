@@ -426,33 +426,31 @@ through the write-path gate above.
   this is the only way to find the indices that still need theirs restored. It never changes
   `verdict`: the verdict measures data integrity (existence + counts), while a damaged alias costs no
   data and must not block a phase change.
-- **Stateless, from live counts.** Every field is derived at request time. Counts are **exact** — the
-  Site Search half uses `SiteSearchAPI.documentCount` and the content half reads each engine leaf's
-  `getIndicesStats()` (index `_stats` `primaries.docs.count`), never a search total (which the ES/OS
+- **Stateless, from live counts.** Every field is derived at request time. Counts are **exact and
+  current**: both halves issue a real count query per index — Site Search through
+  `SiteSearchAPI.documentCount`, the content half through
+  `ContentletIndexOperations.getIndexDocumentCount`. Neither uses a search hit total (which the ES/OS
   clients cap at 10,000 and would hide drift on large indices). Both reconcilers query the two engine
   leaves directly, not the phase-aware router, so the report shows both sides in every phase.
-- **The content counts can lag a write by a few seconds — this is not a stale report.** The two halves
-  read the count differently: Site Search issues a count query (search API, `size:0`), while the
-  content half reads `_stats` `primaries.docs.count`, a per-shard counter that only moves once the
-  shard refreshes. A document that was just written is therefore *already searchable* while the
-  content row still shows the previous number; it catches up within ~1–3s (measured locally, not a
-  contract — an asynchronous indexing policy can make it longer). The endpoint decides whether a
-  **phase change** is safe, so a few seconds of lag is irrelevant to its purpose — but do not use it
-  as a real-time write monitor.
-
-  To confirm a single write landed, ask for the **document**, not the count — that answer is immediate
-  and independent of `_stats`:
+- **Why the count is a query and not `_stats` `docs.count`.** The content half still calls
+  `getIndicesStats()` — but only to decide **existence**, one call per engine covering the whole index
+  set, so both slots are settled from a single snapshot. The count itself must not come from there:
+  `docs.count` is a per-shard counter that only advances when the shard refreshes, so it trails a
+  just-written document by seconds. During that window the document is already searchable while the
+  report still shows the previous number — and a support technician checking whether a publish reached
+  OpenSearch reads that as a **lost write**. This endpoint is the source of truth for exactly that
+  question, so it must never report a number the engine can already contradict (issue #36983).
+- **What a count still cannot tell you.** A number that does not move is not proof that nothing was
+  written: the document id is `identifier_languageId_variant`, so re-publishing content already present
+  in that index is an **update**, and the total stays put. And in a dual-write phase the OpenSearch copy
+  only ever receives what changes *from that point on* — a mirror sitting at 15 of 683 documents is the
+  expected state until a full reindex, so a `+1` there is easy to misread as "nothing happened". To
+  settle it for one specific write, ask for the **document**:
 
   ```bash
   curl -s "http://<os-host>:9200/<clusterPrefix><index>.os/_doc/<identifier>_<languageId>_DEFAULT"
   # "found": true with the modDate of your edit ⇒ the dual-write landed
   ```
-
-  Also note what a growing count does *not* prove and an unchanged one does not disprove: the document
-  id is `identifier_languageId_variant`, so re-publishing content already present in that index is an
-  **update** and leaves the count untouched. And in a dual-write phase the OpenSearch copy only ever
-  receives what changes *from that point on* — a mirror sitting at 15 of 683 documents is the expected
-  state until a full reindex, so a `+1` there is easy to misread as "nothing happened".
 - **`safeToRollback` needs no history.** A downgrade routes reads back to Elasticsearch, so it is
   unsafe when any index's ES copy is behind its OpenSearch counterpart (`esDocCount < osDocCount`, or
   the ES copy missing) — that delta, typically content written while OpenSearch served reads, would be
