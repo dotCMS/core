@@ -181,6 +181,13 @@ export class DotExperimentsListComponent {
      * misconfiguration screen: only `NOT_CONFIGURED` means "never set up", every other
      * non-OK status is a broken configuration.
      */
+    /**
+     * True until the Analytics health check answers. Neither branch of the gate can be trusted
+     * yet, so the template renders an empty shell rather than flashing the list and then
+     * replacing it with the misconfiguration notice.
+     */
+    readonly $isGatePending = computed<boolean>(() => this.store.healthStatus() === null);
+
     readonly $misconfiguredConfiguration = computed<PrincipalConfiguration>(() => {
         const isNotConfigured = this.store.healthStatus() === HealthStatusTypes.NOT_CONFIGURED;
 

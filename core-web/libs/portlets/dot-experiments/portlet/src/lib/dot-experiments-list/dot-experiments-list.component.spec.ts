@@ -415,6 +415,20 @@ describe('DotExperimentsListComponent', () => {
             expect(container?.textContent).toContain(copy.subtitle);
         });
 
+        it('should render neither branch while the health check is still in flight', () => {
+            // Showing the list first and swapping to the notice a moment later makes the
+            // portlet visibly jump on entry, so nothing is committed until the gate answers.
+            storeMock.isMisconfigured.mockReturnValue(false);
+            storeMock.healthStatus.mockReturnValue(null);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-gate-pending'))).not.toBeNull();
+            expect(spectator.query(byTestId('experiments-misconfiguration'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-search-input'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-status-filter'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-table-wrapper'))).toBeNull();
+        });
+
         it('should hide the toolbar, the filters and the table', () => {
             renderMisconfigured(HealthStatusTypes.NOT_CONFIGURED);
 

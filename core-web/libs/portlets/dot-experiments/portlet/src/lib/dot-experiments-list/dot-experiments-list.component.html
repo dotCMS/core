@@ -1,4 +1,9 @@
-@if (store.isMisconfigured()) {
+@if ($isGatePending()) {
+    <!-- The Analytics health check decides between the list and the misconfiguration notice.
+         Rendering either one before it answers makes the portlet visibly swap layouts on
+         entry, so hold an empty shell until the gate resolves. -->
+    <div class="flex min-h-0 flex-1" data-testid="experiments-gate-pending"></div>
+} @else if (store.isMisconfigured()) {
     <div
         class="flex min-h-0 flex-1 items-center justify-center p-6"
         data-testid="experiments-misconfiguration">
