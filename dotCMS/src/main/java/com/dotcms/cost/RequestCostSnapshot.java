@@ -23,6 +23,22 @@ public final class RequestCostSnapshot {
     public final long lifetimeRequests;
     public final double lifetimeTokens;
     public final double lifetimeAvgTokensPerRequest;
+    /**
+     * Tokens consumed by work that ran outside any HTTP request — site-search reindexing,
+     * scheduled publishing, remote/push publishing, content indexing, embedding generation.
+     * <p>
+     * Reported <strong>separately</strong> from {@code windowTokens} / {@code lifetimeTokens},
+     * which remain request-only. Total cluster consumption is the sum of the two. Keeping them
+     * apart means every field has one meaning: {@code windowTokens} still divides by
+     * {@code windowRequests} to give {@code windowAvgTokensPerRequest}, which it would not if
+     * background work were folded in.
+     * <p>
+     * Before these fields existed this cost was not merely unattributed, it was discarded —
+     * {@code incrementCost} returned early when no request was on the thread, so reindexing and
+     * scheduled publishing reached the collector as zero.
+     */
+    public final double windowJobTokens;
+    public final double lifetimeJobTokens;
 
     public RequestCostSnapshot(
             final String clusterId,
@@ -34,7 +50,9 @@ public final class RequestCostSnapshot {
             final double windowAvgTokensPerRequest,
             final long lifetimeRequests,
             final double lifetimeTokens,
-            final double lifetimeAvgTokensPerRequest) {
+            final double lifetimeAvgTokensPerRequest,
+            final double windowJobTokens,
+            final double lifetimeJobTokens) {
         this.clusterId = clusterId;
         this.serverId = serverId;
         this.timestamp = timestamp;
@@ -45,5 +63,7 @@ public final class RequestCostSnapshot {
         this.lifetimeRequests = lifetimeRequests;
         this.lifetimeTokens = lifetimeTokens;
         this.lifetimeAvgTokensPerRequest = lifetimeAvgTokensPerRequest;
+        this.windowJobTokens = windowJobTokens;
+        this.lifetimeJobTokens = lifetimeJobTokens;
     }
 }

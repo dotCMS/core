@@ -9,6 +9,8 @@
 
 package com.dotcms.enterprise.priv;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
@@ -204,6 +206,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the data.
 	 */
+	@RequestCost(Price.ES_QUERY)
 	private SearchResponse esSearchRaw(JSONObject jsonObject, boolean live, User user,
             boolean respectFrontendRoles, int limit, int offset, String sortBy)
 			throws DotSecurityException, DotDataException {
