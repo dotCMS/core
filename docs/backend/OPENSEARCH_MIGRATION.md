@@ -431,6 +431,28 @@ through the write-path gate above.
   `getIndicesStats()` (index `_stats` `primaries.docs.count`), never a search total (which the ES/OS
   clients cap at 10,000 and would hide drift on large indices). Both reconcilers query the two engine
   leaves directly, not the phase-aware router, so the report shows both sides in every phase.
+- **The content counts can lag a write by a few seconds — this is not a stale report.** The two halves
+  read the count differently: Site Search issues a count query (search API, `size:0`), while the
+  content half reads `_stats` `primaries.docs.count`, a per-shard counter that only moves once the
+  shard refreshes. A document that was just written is therefore *already searchable* while the
+  content row still shows the previous number; it catches up within ~1–3s (measured locally, not a
+  contract — an asynchronous indexing policy can make it longer). The endpoint decides whether a
+  **phase change** is safe, so a few seconds of lag is irrelevant to its purpose — but do not use it
+  as a real-time write monitor.
+
+  To confirm a single write landed, ask for the **document**, not the count — that answer is immediate
+  and independent of `_stats`:
+
+  ```bash
+  curl -s "http://<os-host>:9200/<clusterPrefix><index>.os/_doc/<identifier>_<languageId>_DEFAULT"
+  # "found": true with the modDate of your edit ⇒ the dual-write landed
+  ```
+
+  Also note what a growing count does *not* prove and an unchanged one does not disprove: the document
+  id is `identifier_languageId_variant`, so re-publishing content already present in that index is an
+  **update** and leaves the count untouched. And in a dual-write phase the OpenSearch copy only ever
+  receives what changes *from that point on* — a mirror sitting at 15 of 683 documents is the expected
+  state until a full reindex, so a `+1` there is easy to misread as "nothing happened".
 - **`safeToRollback` needs no history.** A downgrade routes reads back to Elasticsearch, so it is
   unsafe when any index's ES copy is behind its OpenSearch counterpart (`esDocCount < osDocCount`, or
   the ES copy missing) — that delta, typically content written while OpenSearch served reads, would be
