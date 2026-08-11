@@ -59,6 +59,49 @@ export interface DotActionCenterQuickAction {
 }
 
 /**
+ * Caller state a quick action's predicates need but cannot read off a row.
+ */
+export interface DotActionCenterContext {
+    /**
+     * Whether the current user holds the CMS Administrator role, from the store's
+     * `currentUserIsAdmin`. `false` while the flag is still resolving, which makes an unresolved
+     * flag behave like a non-admin — see {@link isLockedByAnotherUser}.
+     */
+    isAdmin: boolean;
+}
+
+/**
+ * Whether a row's lock belongs to somebody other than the current user *and* that matters.
+ *
+ * The single definition of "foreign lock" for the whole Action Center: the Unlock row's warning
+ * count and the preview's per-row marker both key off this, so the number on the row and the rows
+ * marked in the preview can never disagree.
+ *
+ * `contentEditable` is the closest thing the grid has to a lock owner. `BrowserAPIImpl.WfData`
+ * derives it as `lockedBy == currentUser` (plus WRITE on the contentlet), so it is `false` on a row
+ * locked by anyone else — but it never consults the user's role.
+ *
+ * The server-side gate, `ESContentletAPIImpl.canLock`, returns `true` for a CMS Administrator
+ * *before* it looks at the lock owner. So an admin unlocks every row regardless of who holds it, and
+ * warning them is noise about an outcome that will not happen. `isAdmin` is what removes that.
+ *
+ * One known false positive remains, and it over-warns rather than under-warns: a user holding EDIT
+ * at the **content-type** level rather than on the contentlet. `contentEditable` checks WRITE on the
+ * contentlet only, while `canLock` accepts EDIT on either. Removing it needs per-row unlockability
+ * from the server (a `BrowserAPIImpl` change), which is why the hint says "may require" rather than
+ * predicting failure.
+ *
+ * @param item - The row to test
+ * @param context - Caller state; an unresolved admin flag counts as a non-admin, so the warning
+ * errs toward showing rather than silently dropping a heads-up a non-admin needed
+ * @returns `true` when the row should be flagged as locked by another user
+ */
+export const isLockedByAnotherUser = (
+    item: DotCMSContentlet,
+    { isAdmin }: DotActionCenterContext
+): boolean => !isAdmin && !!item.locked && !item.contentEditable;
+
+/**
  * Quick actions offered in the Action Center.
  *
  * **The order of this array is the display order and is fixed** — Lock, Unlock, Publish, Unpublish,
@@ -91,7 +134,7 @@ const QUICK_ACTIONS: {
     confirmMessage?: string;
     pendingHint?: string;
     /** Counted among the eligible items to produce `warningCount`. */
-    warnWhen?: (item: DotCMSContentlet) => boolean;
+    warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
     /** Explains what `warnWhen` matched. Required whenever `warnWhen` is set. */
     warningHint?: string;
 }[] = [
@@ -124,24 +167,12 @@ const QUICK_ACTIONS: {
         // `locked` alone would do — archive refuses locked content — but the archived exclusion is
         // spelled out so the pair reads the same way.
         eligibleWhen: (item) => !!item.locked && !item.archived,
-        // A lock belonging to someone else can only be released by a CMS Administrator, and the
-        // grid has no idea whether the current user holds that role. So these items are counted,
-        // fired, and reported on rather than filtered out: `contentEditable` is false on a locked
-        // row the current user does not hold.
-        //
-        // Two known false positives, both of which over-warn rather than under-warn, and which is
-        // why the hint says "may require" instead of predicting failure:
-        //
-        // 1. **Administrators.** `contentEditable` comes from `BrowserAPIImpl.WfData`, which is
-        //    `lockedBy == currentUser` and never consults the role. `canLock` returns true for a
-        //    CMS Admin before it ever looks at the lock owner, so an admin is warned about rows
-        //    they will unlock successfully.
-        // 2. **Content-type-level EDIT.** `contentEditable` checks WRITE on the contentlet, while
-        //    `canLock` accepts EDIT on either the contentlet or its content type.
-        //
-        // Removing either means plumbing the caller's admin flag (`DotCurrentUser.admin`) down to
-        // here, which is also what the preview needs to mark the offending rows.
-        warnWhen: (item) => !item.contentEditable,
+        // A lock belonging to someone else can only be released by its holder or a CMS
+        // Administrator. Flagged rather than filtered out: the items are still counted, fired and
+        // reported on, because only the server can decide. See `isLockedByAnotherUser` for what the
+        // flag can and cannot know — notably that it goes quiet for an administrator, who unlocks
+        // every row regardless of who holds it.
+        warnWhen: isLockedByAnotherUser,
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
     },
     {
@@ -227,9 +258,14 @@ export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
  * no action could apply.
  *
  * @param items - The raw selection from the grid
+ * @param context - Caller state the predicates need, currently the user's admin flag. Defaults to a
+ * non-admin so a caller that has nothing to say still gets the safe, over-warning behaviour
  * @returns Every quick action in display order, each with its eligible count (possibly `0`)
  */
-export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQuickAction[] => {
+export const getQuickActions = (
+    items: DotContentDriveItem[],
+    context: DotActionCenterContext = { isAdmin: false }
+): DotActionCenterQuickAction[] => {
     const contentlets = excludeFolders(items);
 
     if (!contentlets.length) {
@@ -243,8 +279,9 @@ export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQu
         const eligibleInodes = eligible.map((item) => item.inode);
         // Counted over `eligible` rather than the whole selection: warning about items the action
         // was never going to touch would make the number meaningless.
-        const warningCount = quickAction.warnWhen
-            ? eligible.filter(quickAction.warnWhen).length
+        const { warnWhen } = quickAction;
+        const warningCount = warnWhen
+            ? eligible.filter((item) => warnWhen(item, context)).length
             : 0;
 
         return {

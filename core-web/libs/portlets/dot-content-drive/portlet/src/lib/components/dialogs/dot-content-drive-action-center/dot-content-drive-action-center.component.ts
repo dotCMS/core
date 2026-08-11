@@ -250,7 +250,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
         // Fed the already-filtered contentlets rather than the raw selection, so folder exclusion is
         // derived once here instead of again inside the util.
-        getQuickActions(this.$contentlets())
+        //
+        // The admin flag comes from the store, resolved once on portlet init, rather than being
+        // fetched when this dialog opens: reopening the Action Center is cheap and common, and a
+        // per-open request would leave the first render of every open warning as a non-admin until
+        // it answered. Read as a signal so a late resolution still recomputes the rows.
+        getQuickActions(this.$contentlets(), { isAdmin: this.#store.currentUserIsAdmin() })
     );
 
     /** Number of contentlets still checked in the preview. */

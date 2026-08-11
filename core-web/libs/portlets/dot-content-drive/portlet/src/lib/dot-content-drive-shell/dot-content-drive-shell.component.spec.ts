@@ -215,6 +215,8 @@ describe('DotContentDriveShellComponent', () => {
                     setSort: jest.fn(),
                     selectedItems: jest.fn().mockReturnValue([]),
                     setSelectedItems: jest.fn(),
+                    // Read by the Action Center, which the shell renders for real inside the dialog.
+                    currentUserIsAdmin: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,

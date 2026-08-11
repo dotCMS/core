@@ -85,6 +85,9 @@ describe('DotContentDriveActionCenterComponent', () => {
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
+    // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
+    const mockCurrentUserIsAdmin = signal<boolean>(false);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
@@ -93,6 +96,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 actionExecution: mockActionExecution,
+                currentUserIsAdmin: mockCurrentUserIsAdmin,
                 loadItems: jest.fn(),
                 setStatus: jest.fn(),
                 setSelectedItems: jest.fn(),
@@ -115,6 +119,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-2', live: true })
         ]);
         mockActionExecution.set(undefined);
+        mockCurrentUserIsAdmin.set(false);
 
         spectator = createComponent();
 
@@ -478,6 +483,54 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should not flag the Unlock row for an administrator', () => {
+            // The warning exists to tell a user their unlock may be refused. An admin's never is,
+            // so for the one role that could act on it the warning is pure noise.
+            mockCurrentUserIsAdmin.set(true);
+            mockSelectedItems.set([
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should drop the Unlock warning when the admin flag resolves late', () => {
+            // The flag starts `false` and is patched in when `getCurrentUser` answers, which can
+            // land after the dialog has rendered. `$quickActions` reads it as a signal so the row
+            // recomputes rather than keeping the warning it opened with.
+            mockSelectedItems.set([
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeTruthy();
+
+            mockCurrentUserIsAdmin.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should still fire every locked item for an administrator', () => {
+            // The warning going quiet must not change the payload: Unlock still attempts all of
+            // them, the same set a non-admin would have fired.
+            mockCurrentUserIsAdmin.set(true);
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine',
+                'theirs'
+            ]);
         });
 
         it('should still fire every locked item when some are held by other users', () => {

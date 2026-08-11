@@ -222,6 +222,19 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * `isTreeVisuallyExpanded` (the computed both should render from) and `setTreeForceCollapsed`.
      */
     isTreeForceCollapsed: boolean;
+    /**
+     * Whether the logged-in user holds the CMS Administrator role, from
+     * `DotCurrentUserService.getCurrentUser()`.
+     *
+     * Fetched once on portlet init rather than per consumer: it never changes within a session, and
+     * the Action Center needs it the instant the dialog opens.
+     *
+     * `false` until the request answers, which deliberately means an unresolved flag behaves exactly
+     * like a non-admin. The only consumer is the Unlock warning, whose copy says a foreign lock
+     * *may* require administrator permission — so an unresolved flag over-warns rather than letting
+     * a non-admin fire with no heads-up at all.
+     */
+    currentUserIsAdmin: boolean;
 }
 
 /**

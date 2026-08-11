@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import {
     DotContentDriveService,
+    DotCurrentUserService,
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
@@ -16,6 +17,7 @@ import {
 import {
     DotContentDriveItem,
     DotContentDriveSearchResponse,
+    DotCurrentUser,
     DotFireDefaultActionResult,
     DotSite
 } from '@dotcms/dotcms-models';
@@ -37,6 +39,8 @@ import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/model
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
+    /** Feeds the store's one-shot current-user fetch; re-created per test so emissions don't leak. */
+    let currentUser$: Subject<DotCurrentUser>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -50,6 +54,12 @@ describe('DotContentDriveStore', () => {
                 siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
             }),
             mockProvider(DotContentDriveService),
+            // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
+            // rather than a fixed `of(...)` so a test can control *when* — the store subscribes
+            // during construction, and "hasn't answered yet" is a case the flag has to get right.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn(() => currentUser$)
+            }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
@@ -69,6 +79,8 @@ describe('DotContentDriveStore', () => {
     });
 
     beforeEach(() => {
+        // Assigned before the store is built: `onInit` subscribes straight away.
+        currentUser$ = new Subject<DotCurrentUser>();
         spectator = createService();
         store = spectator.service;
     });
@@ -83,6 +95,53 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
+        });
+    });
+
+    describe('currentUserIsAdmin', () => {
+        it('should start false, before the request has answered', () => {
+            // The unresolved case. Nothing waits on the flag, so consumers read this default — the
+            // non-admin behaviour, i.e. the Unlock row keeps warning. Over-warning is the safe way
+            // to fail here; the copy already says a foreign lock *may* be refused.
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should resolve to true for a CMS Administrator', () => {
+            currentUser$.next({ admin: true } as DotCurrentUser);
+
+            expect(store.currentUserIsAdmin()).toBe(true);
+        });
+
+        it('should resolve to false for a non-administrator', () => {
+            currentUser$.next({ admin: false } as DotCurrentUser);
+
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should stay false when the request fails', () => {
+            // A portlet that cannot answer "is this an admin?" should still work: the role only
+            // softens a warning, so a failure is swallowed rather than surfaced.
+            currentUser$.error(new HttpErrorResponse({ status: 500 }));
+
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should not re-fetch the current user as the store changes', () => {
+            // The role is fixed for the session, so state changes that re-run the store's effects
+            // must not re-request it. Measured as a delta rather than an absolute count: the spy is
+            // shared by the factory, so it carries calls from earlier tests.
+            const { getCurrentUser } = spectator.inject(DotCurrentUserService, true);
+            const callsAfterInit = getCurrentUser.mock.calls.length;
+
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setPath('/some/other/path/');
+
+            expect(getCurrentUser.mock.calls.length).toBe(callsAfterInit);
         });
     });
 
@@ -706,6 +765,10 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
             }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
             mockProvider(DotContentDriveService, {
                 search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
@@ -754,6 +817,10 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
                 search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
@@ -849,6 +916,10 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             }),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
                 search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
@@ -1128,6 +1199,10 @@ describe('DotContentDriveStore - withActionExecution', () => {
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
                 search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
