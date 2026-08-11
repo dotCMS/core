@@ -66,8 +66,8 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     LeakyTokenBucketImpl() {
         this(
                 Config.getBooleanProperty("RATE_LIMIT_ENABLED", false),
-                Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 500),
-                Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 10000)
+                Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 5000),
+                Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 100000)
         );
     }
 

@@ -331,6 +331,169 @@ describe('DotCategoriesListStore', () => {
             expect(categoriesService.getCategoriesPaginated).toHaveBeenCalled();
         });
 
+        it('should show a success toast with the deleted count when nothing failed', () => {
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'categories.delete.success'
+            });
+        });
+
+        it('should report descendants separately when the cascade removed more than was selected', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({
+                    entity: {
+                        successCount: 1,
+                        skippedCount: 0,
+                        deletedCount: 15,
+                        fails: []
+                    }
+                })
+            );
+            store.setSelectedCategories([MOCK_CATEGORIES[0]]);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'categories.delete.success.with-descendants'
+            });
+        });
+
+        it('should use the plain success message when the categories had no descendants', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({
+                    entity: {
+                        successCount: 2,
+                        skippedCount: 0,
+                        deletedCount: 2,
+                        fails: []
+                    }
+                })
+            );
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'categories.delete.success'
+            });
+        });
+
+        it('should fall back to the selected count when the backend omits deletedCount', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({ entity: { successCount: 2, skippedCount: 0, fails: [] } })
+            );
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'categories.delete.success'
+            });
+        });
+
+        it('should report descendants on a partial failure too', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({
+                    entity: {
+                        successCount: 1,
+                        skippedCount: 0,
+                        deletedCount: 15,
+                        fails: [{ element: 'inode-2', errorMessage: 'Category does not exist' }]
+                    }
+                })
+            );
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'categories.delete.partial-success.with-descendants'
+                })
+            );
+        });
+
+        it('should show a warning toast with deduped reasons on a partial failure', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({
+                    entity: {
+                        successCount: 1,
+                        skippedCount: 0,
+                        fails: [
+                            { element: 'inode-2', errorMessage: 'Category does not exist' },
+                            { element: 'inode-3', errorMessage: 'Category does not exist' }
+                        ]
+                    }
+                })
+            );
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'categories.delete.partial-success',
+                    detail: 'Category does not exist'
+                })
+            );
+        });
+
+        it('should show an error toast when nothing was deleted', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({
+                    entity: {
+                        successCount: 0,
+                        skippedCount: 0,
+                        fails: [
+                            {
+                                element: 'inode-1',
+                                errorMessage: "Insufficient permissions to delete Category 'A'"
+                            }
+                        ]
+                    }
+                })
+            );
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(spectator.inject(MessageService).add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'categories.delete.failed',
+                    detail: "Insufficient permissions to delete Category 'A'"
+                })
+            );
+        });
+
+        it('should reload the list even when some categories failed to delete', () => {
+            categoriesService.deleteCategories.mockReturnValue(
+                of({
+                    entity: {
+                        successCount: 1,
+                        skippedCount: 0,
+                        fails: [{ element: 'inode-2', errorMessage: 'Category does not exist' }]
+                    }
+                })
+            );
+            categoriesService.getCategoriesPaginated.mockClear();
+            store.setSelectedCategories(MOCK_CATEGORIES);
+
+            store.deleteCategories();
+
+            expect(categoriesService.getCategoriesPaginated).toHaveBeenCalled();
+            expect(store.selectedCategories()).toEqual([]);
+        });
+
         it('should handle delete error', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 throwError(() => new Error('delete fail'))
