@@ -6,6 +6,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentStatusFilterComponent } from './dot-experiment-status-filter.component';
 
+import { DEFAULT_EXPERIMENTS_LIST_STATUSES } from '../../store/dot-experiments-list.store';
+
 const STATUS_COUNTS: Record<DotExperimentStatus, number> = {
     [DotExperimentStatus.DRAFT]: 3,
     [DotExperimentStatus.SCHEDULED]: 1,
@@ -159,6 +161,34 @@ describe('DotExperimentStatusFilterComponent', () => {
             const chip = spectator.query(byTestId('experiment-status-filter-chip'));
 
             expect(chip?.textContent).toContain('Draft, Running');
+        });
+
+        it('should read as unfiltered when the selection is the default', () => {
+            // The default (everything but ARCHIVED) is "not filtered", not a filter — the chip
+            // must stay neutral rather than sitting permanently highlighted, matching the
+            // content-drive filters and the URL contract, which writes no `status` param.
+            setUp([...DEFAULT_EXPERIMENTS_LIST_STATUSES]);
+
+            const chip = spectator.query(byTestId('experiment-status-filter-chip'));
+
+            expect(chip?.className).not.toContain('bg-primary-100');
+            expect(chip?.textContent).not.toContain('Draft');
+        });
+
+        it('should read as filtered once the default is narrowed', () => {
+            setUp([DotExperimentStatus.DRAFT]);
+
+            const chip = spectator.query(byTestId('experiment-status-filter-chip'));
+
+            expect(chip?.className).toContain('bg-primary-100');
+        });
+
+        it('should ignore ordering when comparing against the default', () => {
+            setUp([...DEFAULT_EXPERIMENTS_LIST_STATUSES].reverse());
+
+            const chip = spectator.query(byTestId('experiment-status-filter-chip'));
+
+            expect(chip?.className).not.toContain('bg-primary-100');
         });
     });
 });

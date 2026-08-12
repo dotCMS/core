@@ -44,7 +44,6 @@ import {
     DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
-    ExperimentsStatusIcons,
     ExperimentsStatusList,
     GOALS_METADATA_MAP,
     HealthStatusTypes
@@ -109,7 +108,6 @@ interface ExperimentRow {
     /** Only archived experiments show the (still inactive) restore affordance. */
     isArchived: boolean;
     statusSeverity: TagSeverity;
-    statusIcon: string;
     statusLabelKey: string;
 }
 
@@ -181,7 +179,6 @@ export class DotExperimentsListComponent {
                 canArchive: isAllowed('archive', experiment.status),
                 isArchived: experiment.status === DotExperimentStatus.ARCHIVED,
                 statusSeverity: STATUS_SEVERITIES[experiment.status] ?? 'secondary',
-                statusIcon: ExperimentsStatusIcons[experiment.status] ?? '',
                 statusLabelKey: STATUS_LABEL_KEYS.get(experiment.status) ?? ''
             };
         });

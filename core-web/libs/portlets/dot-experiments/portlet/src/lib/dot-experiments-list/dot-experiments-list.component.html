@@ -72,7 +72,10 @@
             data-testid="experiments-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>{{ 'experiments.list.header.experiment' | dm }}</th>
+                    <!-- Experiment holds a name plus a description underneath and is the column
+                         that grows with real data, so it takes a fixed share up front rather
+                         than letting the browser reflow every other column around it. -->
+                    <th class="w-2/5">{{ 'experiments.list.header.experiment' | dm }}</th>
                     <th>{{ 'experiments.list.header.page' | dm }}</th>
                     <th>{{ 'experiments.list.header.goal' | dm }}</th>
                     <th class="text-center">{{ 'experiments.list.header.variants' | dm }}</th>
@@ -82,7 +85,9 @@
                         {{ 'experiments.list.header.modified' | dm }}
                         <p-sortIcon field="modDate" />
                     </th>
-                    <th class="w-64 text-right">{{ 'experiments.list.header.actions' | dm }}</th>
+                    <!-- Unnamed, like content-drive: the row actions reveal on hover, so a
+                         header label would announce a column that is usually empty. -->
+                    <th class="w-24"></th>
                 </tr>
             </ng-template>
 
@@ -100,7 +105,7 @@
                         }
                     </tr>
                 } @else {
-                    <tr data-testid="experiment-row">
+                    <tr class="group" data-testid="experiment-row">
                         <td data-testid="experiment-name">
                             <div class="flex flex-col">
                                 <span class="font-medium">{{ row.experiment.name }}</span>
@@ -123,7 +128,6 @@
                         <td data-testid="experiment-schedule">{{ row.schedule }}</td>
                         <td data-testid="experiment-status">
                             <p-tag
-                                [icon]="row.statusIcon"
                                 [severity]="row.statusSeverity"
                                 [value]="row.statusLabelKey | dm"
                                 data-testid="experiment-status-tag" />
@@ -132,11 +136,15 @@
                             {{ row.experiment.modDate | date: 'MMM d, y' }}
                         </td>
                         <td>
-                            <div class="flex items-center justify-end gap-1">
-                                <!-- The design leads this cell with "View Results" / "Configure",
-                                     but both screens land with #36990+; a disabled button that
-                                     cannot go anywhere is noise, so the row exposes only the
-                                     actions it can actually perform (AC10). -->
+                            <!-- Revealed on row hover, like content-drive. Opacity rather than a
+                                 conditional so the cell keeps its width and the row never shifts
+                                 as the pointer crosses it; `focus-within` keeps the actions
+                                 reachable by keyboard, where there is no hover.
+                                 The design leads this cell with "View Results" / "Configure", but
+                                 both screens land with #36990+; a control that cannot go anywhere
+                                 is noise, so the row shows only what it can perform (AC10). -->
+                            <div
+                                class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
                                 @if (row.canArchive) {
                                     <p-button
                                         [text]="true"

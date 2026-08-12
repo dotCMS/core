@@ -159,6 +159,13 @@ export const DotExperimentsListStore = signalStore(
         const filteredExperiments = computed<DotExperiment[]>(() => {
             const selectedStatuses = store.selectedStatuses();
 
+            // An empty selection is "no status filter", not "match nothing". Clearing the chip
+            // must widen the list back to everything, the way clearing any other filter does —
+            // otherwise the only way out of an empty table is to re-pick every status.
+            if (!selectedStatuses.length) {
+                return searchedExperiments();
+            }
+
             return searchedExperiments().filter((experiment) =>
                 selectedStatuses.includes(experiment.status)
             );

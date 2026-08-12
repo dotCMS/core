@@ -502,6 +502,32 @@ describe('DotExperimentsListStore', () => {
 
             expect(store.filteredExperiments()).toEqual([EXPERIMENT_ARCHIVED]);
         });
+
+        it('should show every status when the selection is cleared', () => {
+            // An empty selection means "no status filter", not "match nothing" — clearing the
+            // chip has to widen the list back out, otherwise the only escape from an empty
+            // table is re-picking every status one at a time.
+            dispatcher.dispatch(dotExperimentsListEvents.statusesChanged([]));
+
+            expect(store.filteredExperiments()).toEqual(store.searchedExperiments());
+            expect(store.filteredExperiments().length).toBeGreaterThan(0);
+        });
+
+        it('should still honour the search when the status selection is cleared', () => {
+            dispatcher.dispatch(dotExperimentsListEvents.statusesChanged([]));
+            dispatcher.dispatch(dotExperimentsListEvents.filterChanged(EXPERIMENT_DRAFT.name));
+
+            expect(store.filteredExperiments()).toEqual([EXPERIMENT_DRAFT]);
+        });
+
+        it('should reset paging when the status selection changes', () => {
+            dispatcher.dispatch(dotExperimentsListEvents.pageChanged({ page: 3, perPage: 10 }));
+            dispatcher.dispatch(
+                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.DRAFT])
+            );
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
     });
 
     describe('sorting', () => {

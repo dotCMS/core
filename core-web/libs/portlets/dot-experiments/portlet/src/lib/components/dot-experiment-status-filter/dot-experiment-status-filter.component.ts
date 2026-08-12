@@ -17,6 +17,13 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
 import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DEFAULT_EXPERIMENTS_LIST_STATUSES } from '../../store/dot-experiments-list.store';
+
+/** True when the selection is the default set, whatever order it arrived in. */
+const isDefaultSelection = (statuses: DotExperimentStatus[]): boolean =>
+    statuses.length === DEFAULT_EXPERIMENTS_LIST_STATUSES.length &&
+    DEFAULT_EXPERIMENTS_LIST_STATUSES.every((status) => statuses.includes(status));
+
 /** A single status entry rendered inside the filter listbox. */
 interface StatusFilterOption {
     value: DotExperimentStatus;
@@ -81,12 +88,25 @@ export class DotExperimentStatusFilterComponent {
         });
     });
 
-    /** Labels of the applied statuses — what the chip renders. */
+    /**
+     * Labels the chip renders, and what makes it read as active.
+     *
+     * The default selection (every status but ARCHIVED) is "not filtered", not a filter, so it
+     * renders as an empty selection: the chip stays neutral like the content-drive filters
+     * instead of sitting permanently highlighted. Same notion as the URL contract, where the
+     * default writes no `status` param.
+     */
     protected readonly $selectedLabels = computed<string[]>(() => {
-        const selected = new Set(this.$selectedStatuses());
+        const selected = this.$selectedStatuses();
+
+        if (isDefaultSelection(selected)) {
+            return [];
+        }
+
+        const set = new Set(selected);
 
         return this.$options()
-            .filter(({ value }) => selected.has(value))
+            .filter(({ value }) => set.has(value))
             .map(({ label }) => label);
     });
 
