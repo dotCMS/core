@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from functools import lru_cache
 
 import requests
 
@@ -42,19 +43,33 @@ def _hub_message(resp: requests.Response) -> str:
         return ""
 
 
+@lru_cache(maxsize=4)
+def _jwt(username: str, password: str) -> str:
+    """Cached per credential pair: one login per process, not one per request."""
+    return hub_login(username, password)
+
+
 def _auth_headers() -> dict[str, str]:
     """Hub JWT header, or {} when no creds are in the environment."""
     username = os.environ.get("DOCKER_USERNAME")
     password = os.environ.get("DOCKER_TOKEN")
     if not username or not password:
         return {}
-    return {"Authorization": f"JWT {hub_login(username, password)}"}
+    return {"Authorization": f"JWT {_jwt(username, password)}"}
 
 
-def list_tags(repo: str) -> list[Tag]:
-    """All tags in the repo with their manifest digests, following pagination."""
+def list_tags(repo: str, *, name_filter: str = "") -> list[Tag]:
+    """Tags in the repo with their manifest digests, following pagination.
+
+    `name_filter` applies Hub's SUBSTRING filter (`?name=`), which is what keeps the
+    common path off the ~79-page full listing. It is observed behaviour rather than a
+    documented contract; if Hub ever drops it the filtered queries simply return the
+    whole repo and callers still get a correct — merely slower — answer.
+    """
     namespace, name = repo.split("/", 1)
     url = f"{_HUB}/namespaces/{namespace}/repositories/{name}/tags?page_size=100"
+    if name_filter:
+        url += f"&name={name_filter}"
     # One login per walk, not per page: the JWT outlives a full 79-page listing.
     headers = _auth_headers()
     out: list[Tag] = []

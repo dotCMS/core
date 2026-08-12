@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import pytest
 
+from evergreen_tracks.registry import _jwt
+
 
 @pytest.fixture(autouse=True)
 def _no_ambient_hub_creds(monkeypatch):
@@ -15,6 +17,13 @@ def _no_ambient_hub_creds(monkeypatch):
 
     In conftest rather than one test module so it covers every module, including ones
     not written yet: the trap is invisible until someone's shell happens to have creds.
+
+    Also drops the memoised JWT. `_jwt` is deliberately cached — one Hub login per
+    process rather than one per request — but that cache outlives a test, so without
+    this a later test using the same credentials silently reuses an earlier test's
+    token. Verified: two tests with identical creds and different tokens, and the
+    second one saw the first one's JWT.
     """
     monkeypatch.delenv("DOCKER_USERNAME", raising=False)
     monkeypatch.delenv("DOCKER_TOKEN", raising=False)
+    _jwt.cache_clear()
