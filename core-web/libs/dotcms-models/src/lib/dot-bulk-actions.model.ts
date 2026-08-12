@@ -129,14 +129,6 @@ export interface DotActionCenterWorkflowAction {
     nextAssign: string;
     /** Whether the assignable role list should follow the role hierarchy. Pairs with `nextAssign`. */
     roleHierarchyForAssign: boolean;
-    /**
-     * True when the action needs *any* extra input beyond the selection.
-     *
-     * Convenience roll-up of {@link inputs} — it says the action needs a configuration step, not that
-     * the dialog is unable to offer one. Use {@link DotActionCenterActionInputs} to decide what to
-     * render, and `hasUnsupportedInput` to decide whether the row is still disabled.
-     */
-    requiresInput: boolean;
     /** True when `count` is an upper bound because a Velocity condition was not evaluated. */
     approximateCount: boolean;
     /**

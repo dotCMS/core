@@ -1,15 +1,6 @@
 import { catchError, of, take } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    input,
-    OnInit,
-    output,
-    signal
-} from '@angular/core';
+import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectModule } from 'primeng/select';
@@ -64,7 +55,6 @@ export const toBundle = (value: DotBundle | string | null | undefined): DotBundl
     // Neither is `providedIn: 'root'`, and `AddToBundleService` needs the current user to look up
     // that user's unsent bundles. `DotAddToBundleComponent` provides the same pair.
     providers: [AddToBundleService, DotCurrentUserService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     // A plain block: the host owns the scrolling column these sections sit in.
     host: { class: 'block' }
 })

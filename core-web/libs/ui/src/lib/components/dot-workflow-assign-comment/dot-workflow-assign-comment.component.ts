@@ -1,15 +1,6 @@
 import { catchError, of, take } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    input,
-    output,
-    signal
-} from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectModule } from 'primeng/select';
@@ -48,7 +39,6 @@ export interface DotWorkflowAssignCommentValue {
     imports: [FormsModule, SelectModule, TextareaModule, DotMessagePipe],
     templateUrl: './dot-workflow-assign-comment.component.html',
     providers: [DotRolesService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' }
 })
 export class DotWorkflowAssignCommentComponent {

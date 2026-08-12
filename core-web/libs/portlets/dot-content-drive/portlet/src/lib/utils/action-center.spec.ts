@@ -364,7 +364,6 @@ describe('action-center utils', () => {
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.pendingHint).toBeUndefined();
             expect(addToBundle?.count).toBe(1);
         });
 
@@ -486,7 +485,7 @@ describe('action-center utils', () => {
             expect(toActionCenterSchemes(view)).toEqual([]);
         });
 
-        it('should flag actions needing extra input', () => {
+        it('should carry the input flags the API advertises', () => {
             const view = bulkActionView('System Workflow', [
                 [
                     1,
@@ -503,7 +502,7 @@ describe('action-center utils', () => {
             const byId = new Map(
                 toActionCenterSchemes(view)[0].actions.map((action) => [
                     action.id,
-                    action.requiresInput
+                    Object.values(action.inputs).some(Boolean)
                 ])
             );
 
@@ -735,7 +734,6 @@ describe('action-center utils', () => {
             name: 'Copy',
             count: 1,
             inputs: NO_INPUTS,
-            requiresInput: false,
             approximateCount: false,
             contentTypes
         });

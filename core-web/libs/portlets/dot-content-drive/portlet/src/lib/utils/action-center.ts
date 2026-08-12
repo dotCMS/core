@@ -43,8 +43,6 @@ export interface DotActionCenterQuickAction {
     danger: boolean;
     /** i18n key for a confirm prompt before fire. */
     confirmMessage?: string;
-    /** i18n key when the action is always disabled (e.g. not implemented yet). */
-    pendingHint?: string;
     /**
      * Eligible items likely to fail — heads-up only; they are still fired.
      * See Unlock in {@link QUICK_ACTIONS}.
@@ -80,8 +78,6 @@ interface DotActionCenterQuickActionDef {
     eligibleWhen: (item: DotCMSContentlet) => boolean;
     /** i18n key for confirm before fire (destructive actions). */
     confirmMessage?: string;
-    /** i18n key when always disabled. */
-    pendingHint?: string;
     /** Among eligible items; feeds `warningCount`. */
     warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
@@ -108,9 +104,8 @@ export const isLockedByAnotherUser = (
  *
  * Order: Lock, Unlock, Publish, Unpublish, Archive, Delete, Unarchive, Add to Bundle.
  *
- * v1 notes:
- * - All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`.
- * - Add to Bundle is always disabled (needs picker + enterprise gate).
+ * All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`; Add to
+ * Bundle posts to the legacy bundle servlet and collects a target first.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
@@ -238,7 +233,6 @@ export const getQuickActions = (
             eligibleInodes,
             count: eligibleInodes.length,
             confirmMessage: quickAction.confirmMessage,
-            pendingHint: quickAction.pendingHint,
             warningCount,
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined
         };
@@ -469,8 +463,8 @@ export const toHostFolderValue = (pathToMove: string | null | undefined): string
 /**
  * Maps API `CountWorkflowAction` → UI shape.
  *
- * The four input flags are carried through individually rather than collapsed, because the dialog now
- * handles one of them (move) and still has to refuse the other three.
+ * The four input flags are carried through individually rather than collapsed: each maps to a section
+ * the configuration screen renders, and a roll-up boolean would say nothing about which.
  */
 const toActionCenterAction = (
     countAction: DotCountWorkflowAction
@@ -493,7 +487,6 @@ const toActionCenterAction = (
         // does not need a second lookup to find the role list it should offer.
         nextAssign: workflowAction.nextAssign,
         roleHierarchyForAssign: workflowAction.roleHierarchyForAssign,
-        requiresInput: Object.values(inputs).some(Boolean),
         approximateCount: conditionPresent,
         // Filled by `mergeActionCenterSchemes`.
         contentTypes: []

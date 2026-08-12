@@ -1,15 +1,6 @@
 import { catchError, of, take } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    input,
-    output,
-    signal
-} from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
@@ -79,7 +70,6 @@ export interface DotWorkflowPushPublishValue {
     ],
     templateUrl: './dot-workflow-push-publish.component.html',
     providers: [DotPushPublishFiltersService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' }
 })
 export class DotWorkflowPushPublishComponent {

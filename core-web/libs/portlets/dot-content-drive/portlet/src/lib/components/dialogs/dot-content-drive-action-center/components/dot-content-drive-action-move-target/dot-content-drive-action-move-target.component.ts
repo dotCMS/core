@@ -1,12 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    input,
-    linkedSignal,
-    output,
-    signal
-} from '@angular/core';
+import { Component, computed, input, linkedSignal, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DotHostFolderFieldComponent } from '@dotcms/edit-content';
@@ -38,7 +30,6 @@ import { toHostFolderValue, toPathToMove } from '../../../../../utils/action-cen
     // its own, so a form binding is the only channel it exposes.
     imports: [DotHostFolderFieldComponent, DotMessagePipe, FormsModule],
     templateUrl: './dot-content-drive-action-move-target.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     // A plain block: the host owns the scrolling column these sections sit in.
     host: { class: 'block' }
 })
