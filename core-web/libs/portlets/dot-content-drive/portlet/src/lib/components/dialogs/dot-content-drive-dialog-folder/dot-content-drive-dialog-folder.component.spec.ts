@@ -403,27 +403,6 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
         });
 
-        it('should commit the typed extension when the field loses focus', () => {
-            // Clicking outside the input (Save, another tab) used to discard the typed extension:
-            // PrimeNG only auto-commits on blur when `typeahead` is off, which it is not here.
-            const input = type('*.png');
-            input.dispatchEvent(new Event('blur', { bubbles: true }));
-            jest.runOnlyPendingTimers();
-            spectator.detectChanges();
-
-            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.png']);
-            expect(renderedChips()).toEqual(['*.png']);
-        });
-
-        it('should not commit anything on blur when the input is empty', () => {
-            const input = extensionsInput();
-            input.dispatchEvent(new Event('blur', { bubbles: true }));
-            jest.runOnlyPendingTimers();
-            spectator.detectChanges();
-
-            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([]);
-        });
-
         it('should not add duplicate extension on enter key', () => {
             component.folderForm.patchValue({
                 allowedFileExtensions: ['*.pdf']

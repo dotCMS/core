@@ -191,32 +191,6 @@ export class DotContentDriveDialogFolderComponent {
     }
 
     /**
-     * Commits whatever is still typed in the field when it loses focus, so clicking outside the
-     * input (Save, another tab, the dialog body) does not silently discard the extension the user
-     * just typed. PrimeNG's own `addOnBlur` only applies when `typeahead` is off, which it is not
-     * here, so the commit has to happen from the component.
-     *
-     * @param {Event} event - The blur event emitted by the AutoComplete
-     */
-    onExtensionsBlur(event: Event) {
-        const input = event.target as HTMLInputElement;
-        const pending = input?.value?.trim();
-
-        if (!pending) {
-            return;
-        }
-
-        // Deferred on purpose: clicking a suggestion blurs the input *before* the option click
-        // lands, and PrimeNG clears the input when it adds that option. Re-reading the input on
-        // the next tick keeps this path from adding the raw text on top of the picked suggestion.
-        setTimeout(() => {
-            if (input.value?.trim() === pending) {
-                this.#addExtension(event, pending);
-            }
-        });
-    }
-
-    /**
      * Adds the currently typed extension as a chip.
      *
      * The value is pushed through the AutoComplete's own model instead of
@@ -225,12 +199,11 @@ export class DotContentDriveDialogFolderComponent {
      * is not part of the active filter. That left the form value and the visible chips out of
      * sync — the previously saved extension stayed in the form value and came back on reload.
      *
-     * @param {Event} event - The originating keyboard/blur event
-     * @param {string} [value] - Extension to add; defaults to the text currently in the input
+     * @param {Event} event - The originating keyboard event
      */
-    #addExtension(event: Event, value?: string) {
+    #addExtension(event: Event) {
         const input = event.target as HTMLInputElement;
-        const extension = (value ?? input?.value ?? '').trim();
+        const extension = (input?.value ?? '').trim();
 
         if (!extension) {
             return;
