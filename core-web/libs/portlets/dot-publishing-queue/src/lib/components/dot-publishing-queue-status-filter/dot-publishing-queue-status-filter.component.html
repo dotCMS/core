@@ -5,7 +5,7 @@
     (removed)="onRemoveAll()"
     data-testid="pq-status-filter-chip" />
 
-<p-popover #popover styleClass="dot-chip-filter-panel" (onHide)="listbox.resetFilter()">
+<p-popover #popover (onHide)="listbox.resetFilter()">
     <p-listbox
         #listbox
         [(ngModel)]="$selected"

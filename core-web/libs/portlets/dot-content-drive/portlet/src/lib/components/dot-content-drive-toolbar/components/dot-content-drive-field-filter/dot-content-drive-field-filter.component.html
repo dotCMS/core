@@ -5,11 +5,7 @@
     (removed)="onRemove()"
     [attr.data-testid]="'field-filter-chip-' + $field().variable" />
 
-<p-popover
-    #popover
-    styleClass="dot-chip-filter-panel"
-    (onShow)="$popoverOpen.set(true)"
-    (onHide)="$popoverOpen.set(false)">
+<p-popover #popover (onShow)="$popoverOpen.set(true)" (onHide)="$popoverOpen.set(false)">
     @if ($popoverOpen()) {
         @switch ($control()) {
             @case ('text') {

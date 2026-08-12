@@ -5,11 +5,7 @@
     (removed)="onClearAll()"
     data-testid="content-type-filter-chip" />
 
-<p-popover
-    #popover
-    styleClass="dot-chip-filter-panel"
-    (onShow)="$popoverOpen.set(true)"
-    (onHide)="onPanelHide()">
+<p-popover #popover (onShow)="$popoverOpen.set(true)" (onHide)="onPanelHide()">
     @if ($popoverOpen()) {
         <div
             class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[min-content] overflow-hidden"

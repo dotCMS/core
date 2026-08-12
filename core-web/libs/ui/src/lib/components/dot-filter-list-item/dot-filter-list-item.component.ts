@@ -11,7 +11,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex items-center gap-2 w-full min-w-0 py-3'
+        class: 'flex items-center gap-2 w-full min-w-0'
     }
 })
 export class DotFilterListItemComponent {

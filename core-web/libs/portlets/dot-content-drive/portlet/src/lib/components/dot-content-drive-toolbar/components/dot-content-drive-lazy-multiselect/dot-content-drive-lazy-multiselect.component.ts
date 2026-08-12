@@ -22,7 +22,7 @@ import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
 import { catchError, debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotFilterListItemComponent, DotMessagePipe, LISTBOX_OPTION_HEIGHT } from '@dotcms/ui';
 
 import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 
@@ -45,11 +45,10 @@ export type DotLazyMultiselectLoader = (params: {
 }) => Observable<DotLazyMultiselectPage>;
 
 /**
- * Row height (px) for the virtual scroller — matches the content-type filter's listbox, measured
- * against PrimeNG v21 option styling (`--p-listbox-option-padding: 0 1rem` from
- * the chip-filter panel styles plus the `dot-filter-list-item` `py-3` host class).
+ * Row height (px) for the virtual scroller. Taken from the theme, which fixes every listbox
+ * option to the same height, so this can never drift from what is actually rendered.
  */
-const ITEM_HEIGHT = 40.6;
+const ITEM_HEIGHT = LISTBOX_OPTION_HEIGHT;
 /** Page size requested from the loader. */
 const PER_PAGE = 20;
 
