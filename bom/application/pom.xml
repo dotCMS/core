@@ -281,6 +281,11 @@
                 <version>1.6.1_2</version>
             </dependency>
             <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.21.1</version>
+            </dependency>
+            <dependency>
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.jstl</artifactId>
                 <version>1.0.5_2</version>
