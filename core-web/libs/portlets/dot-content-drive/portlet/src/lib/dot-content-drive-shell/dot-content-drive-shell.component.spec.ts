@@ -97,6 +97,7 @@ describe('DotContentDriveShellComponent', () => {
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let messageService: SpyObject<MessageService>;
+    let dotMessageService: SpyObject<DotMessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let filtersSignal: ReturnType<typeof signal>;
@@ -215,6 +216,8 @@ describe('DotContentDriveShellComponent', () => {
                     setSort: jest.fn(),
                     selectedItems: jest.fn().mockReturnValue([]),
                     setSelectedItems: jest.fn(),
+                    // Read by the Action Center, which the shell renders for real inside the dialog.
+                    currentUserIsAdmin: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
@@ -313,6 +316,7 @@ describe('DotContentDriveShellComponent', () => {
         router = spectator.inject(Router);
         location = spectator.inject(Location);
         messageService = spectator.inject(MessageService);
+        dotMessageService = spectator.inject(DotMessageService);
         uploadService = spectator.inject(DotUploadFileService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
     });
@@ -358,12 +362,14 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
                     severity: 'warn',
-                    detail: 'content-drive.action-center.toast.executed-with-fails'
+                    detail: 'content-drive.action-center.toast.executed-partial'
                 })
             );
         });
 
-        it('should surface skipped items when nothing failed', () => {
+        it('should warn when items were skipped, even though nothing failed', () => {
+            // A skip is still a shortfall from what the user asked for: those items did not get the
+            // action. A green success toast would overstate the outcome.
             settle({
                 actionName: 'Send for Review',
                 successCount: 1,
@@ -373,9 +379,50 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    severity: 'success',
-                    detail: 'content-drive.action-center.toast.executed-with-skips'
+                    severity: 'warn',
+                    detail: 'content-drive.action-center.toast.executed-partial'
                 })
+            );
+        });
+
+        it('should report both numbers when a run skipped some items and failed others', () => {
+            // The bug: the ladder treated these as mutually exclusive, so a mixed result showed the
+            // failure copy alone and blamed permissions or locks for the whole shortfall — when part
+            // of it was items merely sitting on a step the action does not own. The user's next move
+            // (go unlock things) was then wrong.
+            settle({
+                actionName: 'Send for Review',
+                successCount: 3,
+                skippedCount: 2,
+                failCount: 1
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.executed-partial',
+                'Send for Review',
+                '3',
+                '1',
+                '2'
+            );
+        });
+
+        it('should not name a cause the result does not carry', () => {
+            // Both counts are always passed, so a fails-only run still renders "0 skipped". That is
+            // the honest reading — the message names each cause and its number, rather than
+            // attributing the whole shortfall to one of them.
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.executed-partial',
+                'Publish',
+                '1',
+                '1',
+                '0'
             );
         });
 

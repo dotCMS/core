@@ -39,6 +39,7 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
+    isLockedByAnotherUser,
     mergeActionCenterSchemes
 } from '../../../utils/action-center';
 
@@ -250,7 +251,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
         // Fed the already-filtered contentlets rather than the raw selection, so folder exclusion is
         // derived once here instead of again inside the util.
-        getQuickActions(this.$contentlets())
+        //
+        // The admin flag comes from the store, resolved once on portlet init, rather than being
+        // fetched when this dialog opens: reopening the Action Center is cheap and common, and a
+        // per-open request would leave the first render of every open warning as a non-admin until
+        // it answered. Read as a signal so a late resolution still recomputes the rows.
+        getQuickActions(this.$contentlets(), { isAdmin: this.#store.currentUserIsAdmin() })
     );
 
     /** Number of contentlets still checked in the preview. */
@@ -295,6 +301,24 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
+
+    /**
+     * Inodes among the preview's rows whose lock belongs to another user, for the table to mark.
+     *
+     * Derived from `isLockedByAnotherUser` — the same predicate behind the Unlock row's
+     * `warningCount` — so the number the row advertises and the rows marked here cannot disagree,
+     * and an administrator sees neither.
+     *
+     * Applied to every action's preview, not just Unlock: a lock held by somebody else can fail a
+     * Publish or an Archive just as readily, and the row is worth flagging wherever it is listed.
+     */
+    protected readonly $lockedByOthers = computed(() => {
+        const context = { isAdmin: this.#store.currentUserIsAdmin() };
+
+        return this.$previewItems()
+            .filter((item) => isLockedByAnotherUser(item, context))
+            .map((item) => item.inode);
+    });
 
     ngOnInit(): void {
         this.loadWorkflowActions();

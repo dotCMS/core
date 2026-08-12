@@ -26,6 +26,20 @@ export const DOT_FOLDER_LIST_VIEW_COLUMN_TYPE = {
 export type DotFolderListViewColumnType =
     (typeof DOT_FOLDER_LIST_VIEW_COLUMN_TYPE)[keyof typeof DOT_FOLDER_LIST_VIEW_COLUMN_TYPE];
 
+/**
+ * The table's fixed columns, by field. A closed set so `visibleColumns` and the body's per-cell
+ * checks are compiler-checked against `HEADER_COLUMNS` — a typo used to render nothing at all.
+ * Caller-provided extra columns are not part of this; their fields are arbitrary.
+ */
+export type DotFolderListViewColumnField =
+    | 'title'
+    | 'live'
+    | 'languageId'
+    | 'contentType'
+    | 'modUser'
+    | 'modDate'
+    | 'actions';
+
 export interface DotFolderListViewColumn {
     field: string;
     header: string;
