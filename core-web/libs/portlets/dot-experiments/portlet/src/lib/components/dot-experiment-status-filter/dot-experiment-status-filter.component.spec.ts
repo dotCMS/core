@@ -6,7 +6,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentStatusFilterComponent } from './dot-experiment-status-filter.component';
 
-import { DEFAULT_EXPERIMENTS_LIST_STATUSES } from '../../store/dot-experiments-list.store';
+import { DEFAULT_EXPERIMENTS_LIST_STATUSES } from '../../shared/constants';
 
 const STATUS_COUNTS: Record<DotExperimentStatus, number> = {
     [DotExperimentStatus.DRAFT]: 3,

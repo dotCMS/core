@@ -1,6 +1,24 @@
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
 
-import { ExperimentRow, TagSeverity } from './models';
+import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './models';
+
+export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
+export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
+export const DEFAULT_EXPERIMENTS_LIST_ORDER_BY = 'modDate';
+export const DEFAULT_EXPERIMENTS_LIST_DIRECTION: DotExperimentsListSortDirection = 'DESC';
+
+/**
+ * No status is selected by default: the filter starts empty, like every other filter in the
+ * admin, so nothing is pre-ticked and the chip reads as unfiltered.
+ */
+export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
+
+/**
+ * Statuses hidden while the filter is empty. Archived experiments are opt-in — an unfiltered
+ * list means "everything still in play", and archived rows would otherwise pad it out
+ * permanently with work nobody is looking at. Selecting ARCHIVED shows them.
+ */
+export const OPT_IN_STATUSES: readonly DotExperimentStatus[] = [DotExperimentStatus.ARCHIVED];
 
 /**
  * Copied from `DotExperimentsUiHeaderComponent` so a status looks identical here and in the

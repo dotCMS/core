@@ -1,9 +1,8 @@
 import { Dispatcher, EventCreator } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
-import { Location } from '@angular/common';
 import { provideLocationMocks } from '@angular/common/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
 
@@ -20,16 +19,17 @@ import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing'
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
-import { SEARCH_DEBOUNCE_MS } from '../shared/constants';
-import { dotExperimentsListEvents } from '../store/dot-experiments-list.events';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
-    DotExperimentsListStore
-} from '../store/dot-experiments-list.store';
+    SEARCH_DEBOUNCE_MS
+} from '../shared/constants';
+import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
+import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
+import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 
 const PAGE_ID = 'page-1';
 
@@ -233,7 +233,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.detectChanges();
 
             expect(dispatchedEvents()).not.toContainEqual(
-                dotExperimentsListEvents.filterChanged('summer')
+                dotExperimentsListPageEvents.filterChanged('summer')
             );
 
             // It settles a Resource, so the timer alone is not enough — microtasks have to
@@ -243,7 +243,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListEvents.filterChanged('summer')
+                dotExperimentsListPageEvents.filterChanged('summer')
             );
         });
 
@@ -259,7 +259,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.detectChanges();
 
             expect(dispatchedEvents()).not.toContainEqual(
-                dotExperimentsListEvents.filterChanged('summer')
+                dotExperimentsListPageEvents.filterChanged('summer')
             );
         });
     });
@@ -400,24 +400,36 @@ describe('DotExperimentsListComponent', () => {
             runMenuItem(MENU_ITEM.archive);
 
             expect(dispatchedEvents()).not.toContainEqual(
-                dotExperimentsListEvents.archiveRequested(experiment)
+                dotExperimentsListPageEvents.archiveExperiment(experiment)
             );
 
             acceptConfirmation();
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListEvents.archiveRequested(experiment)
+                dotExperimentsListPageEvents.archiveExperiment(experiment)
             );
         });
 
         it.each([
-            [DotExperimentStatus.DRAFT, MENU_ITEM.delete, dotExperimentsListEvents.deleteRequested],
-            [DotExperimentStatus.RUNNING, MENU_ITEM.end, dotExperimentsListEvents.endRequested],
-            [DotExperimentStatus.RUNNING, MENU_ITEM.abort, dotExperimentsListEvents.abortRequested],
+            [
+                DotExperimentStatus.DRAFT,
+                MENU_ITEM.delete,
+                dotExperimentsListPageEvents.deleteExperiment
+            ],
+            [
+                DotExperimentStatus.RUNNING,
+                MENU_ITEM.end,
+                dotExperimentsListPageEvents.endExperiment
+            ],
+            [
+                DotExperimentStatus.RUNNING,
+                MENU_ITEM.abort,
+                dotExperimentsListPageEvents.abortExperiment
+            ],
             [
                 DotExperimentStatus.SCHEDULED,
                 MENU_ITEM.cancelSchedule,
-                dotExperimentsListEvents.cancelScheduleRequested
+                dotExperimentsListPageEvents.cancelScheduleExperiment
             ]
         ])(
             'should confirm %s / %s before dispatching',
@@ -457,11 +469,11 @@ describe('DotExperimentsListComponent', () => {
 
     describe('success toasts', () => {
         it.each([
-            ['archived', dotExperimentsListEvents.archiveSucceeded],
-            ['deleted', dotExperimentsListEvents.deleteSucceeded],
-            ['ended', dotExperimentsListEvents.endSucceeded],
-            ['aborted', dotExperimentsListEvents.abortSucceeded],
-            ['unscheduled', dotExperimentsListEvents.cancelScheduleSucceeded]
+            ['archived', dotExperimentsApiEvents.archiveSucceeded],
+            ['deleted', dotExperimentsApiEvents.deleteSucceeded],
+            ['ended', dotExperimentsApiEvents.endSucceeded],
+            ['aborted', dotExperimentsApiEvents.abortSucceeded],
+            ['unscheduled', dotExperimentsApiEvents.cancelScheduleSucceeded]
         ])('should push a success toast once the experiment is %s', (expectedVerb, event) => {
             const experiment = renderRowWith(DotExperimentStatus.DRAFT);
             const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
@@ -549,7 +561,9 @@ describe('DotExperimentsListComponent', () => {
 
             clickButton('experiments-error');
 
-            expect(dispatchedEvents()).toContainEqual(dotExperimentsListEvents.listRequested());
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.loadExperiments()
+            );
         });
 
         it('should not render the error state on a healthy load', () => {
@@ -608,69 +622,6 @@ describe('DotExperimentsListComponent', () => {
             expect(spectator.query(byTestId('experiments-misconfiguration'))).toBeNull();
             expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
             expect(spectator.query(byTestId('experiment-row'))).not.toBeNull();
-        });
-    });
-
-    describe('url write-back', () => {
-        let router: Router;
-        let go: jest.SpyInstance;
-
-        /** Navigates first, then flushes the sync effect with the store values under test. */
-        const flushUrlEffect = async (url: string) => {
-            router = spectator.inject(Router);
-            await router.navigateByUrl(url);
-            go = jest.spyOn(spectator.inject(Location), 'go');
-            spectator.detectChanges();
-        };
-
-        const writtenUrl = (): string => go.mock.calls[0][0] as string;
-
-        it('should strip every param whose value equals its default', async () => {
-            await flushUrlEffect('/experiments?page=3&per_page=10&filter=old&status=DRAFT');
-
-            expect(writtenUrl()).toBe('/experiments');
-        });
-
-        it('should write only the params that differ from their defaults', async () => {
-            storeMock.page.mockReturnValue(2);
-            storeMock.perPage.mockReturnValue(10);
-            storeMock.filter.mockReturnValue('summer');
-            storeMock.direction.mockReturnValue('ASC');
-
-            await flushUrlEffect('/experiments');
-
-            const params = new URLSearchParams(writtenUrl().split('?')[1]);
-            expect(params.get('page')).toBe('2');
-            expect(params.get('per_page')).toBe('10');
-            expect(params.get('filter')).toBe('summer');
-            expect(params.get('direction')).toBe('ASC');
-            expect(params.get('orderby')).toBeNull();
-            expect(params.getAll('status')).toEqual([]);
-        });
-
-        it('should write a repeatable status param for a non-default selection', async () => {
-            storeMock.selectedStatuses.mockReturnValue([
-                DotExperimentStatus.DRAFT,
-                DotExperimentStatus.ARCHIVED
-            ]);
-
-            await flushUrlEffect('/experiments');
-
-            const params = new URLSearchParams(writtenUrl().split('?')[1]);
-            expect(params.getAll('status')).toEqual([
-                DotExperimentStatus.DRAFT,
-                DotExperimentStatus.ARCHIVED
-            ]);
-        });
-
-        it('should not write the status param when the default selection is reordered', async () => {
-            storeMock.selectedStatuses.mockReturnValue(
-                [...DEFAULT_EXPERIMENTS_LIST_STATUSES].reverse()
-            );
-
-            await flushUrlEffect('/experiments?status=DRAFT');
-
-            expect(writtenUrl()).toBe('/experiments');
         });
     });
 });

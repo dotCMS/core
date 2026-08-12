@@ -1,21 +1,14 @@
-import { tapResponse } from '@ngrx/operators';
+import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
-import {
-    Dispatcher,
-    EventCreator,
-    Events,
-    on,
-    withEventHandlers,
-    withReducer
-} from '@ngrx/signals/events';
-import { EMPTY, Observable, SubscriptionLike } from 'rxjs';
+import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
+import { EMPTY, SubscriptionLike } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
-import { mergeMap, switchMap } from 'rxjs/operators';
+import { filter, map, mergeMap, switchMap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -31,12 +24,26 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
+import { dotExperimentsApiEvents } from './dot-experiments-api.events';
+import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
+
 import {
-    DotExperimentPageInfo,
-    dotExperimentsListEvents,
-    DotExperimentsListSortDirection,
-    DotExperimentsListViewState
-} from './dot-experiments-list.events';
+    DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+    DEFAULT_EXPERIMENTS_LIST_PAGE,
+    DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+    DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    OPT_IN_STATUSES
+} from '../shared/constants';
+import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
+import {
+    distinctPageIds,
+    emptyStatusCounts,
+    fromRouteParams,
+    parseViewState,
+    toPageInfoByPageId,
+    toQueryParams
+} from '../util/dot-experiments-list-store.util';
 
 /** Full state of the experiments list. */
 export interface DotExperimentsListState extends DotExperimentsListViewState {
@@ -49,24 +56,6 @@ export interface DotExperimentsListState extends DotExperimentsListViewState {
     pageInfoByPageId: Record<string, DotExperimentPageInfo>;
     error: unknown;
 }
-
-export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
-export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
-export const DEFAULT_EXPERIMENTS_LIST_ORDER_BY = 'modDate';
-export const DEFAULT_EXPERIMENTS_LIST_DIRECTION: DotExperimentsListSortDirection = 'DESC';
-
-/**
- * No status is selected by default: the filter starts empty, like every other filter in the
- * admin, so nothing is pre-ticked and the chip reads as unfiltered.
- */
-export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
-
-/**
- * Statuses hidden while the filter is empty. Archived experiments are opt-in — an unfiltered
- * list means "everything still in play", and archived rows would otherwise pad it out
- * permanently with work nobody is looking at. Selecting ARCHIVED shows them.
- */
-const OPT_IN_STATUSES: readonly DotExperimentStatus[] = [DotExperimentStatus.ARCHIVED];
 
 const initialState: DotExperimentsListState = {
     status: ComponentStatus.LOADING,
@@ -220,22 +209,22 @@ export const DotExperimentsListStore = signalStore(
         };
     }),
     withReducer<DotExperimentsListState>(
-        on(dotExperimentsListEvents.healthCheckSucceeded, ({ payload }) => ({
+        on(dotExperimentsApiEvents.healthCheckSucceeded, ({ payload }) => ({
             healthStatus: payload,
             // A non-OK gate stops the flow here: nothing else is fetched, so settle instead of
             // leaving the table stuck on its skeleton.
             status:
                 payload === HealthStatusTypes.OK ? ComponentStatus.LOADING : ComponentStatus.LOADED
         })),
-        on(dotExperimentsListEvents.healthCheckFailed, ({ payload }) => ({
+        on(dotExperimentsApiEvents.healthCheckFailed, ({ payload }) => ({
             status: ComponentStatus.ERROR,
             error: payload
         })),
-        on(dotExperimentsListEvents.listRequested, () => ({
+        on(dotExperimentsListPageEvents.loadExperiments, () => ({
             status: ComponentStatus.LOADING,
             error: null
         })),
-        on(dotExperimentsListEvents.listSucceeded, ({ payload }) => ({
+        on(dotExperimentsApiEvents.listSucceeded, ({ payload }) => ({
             experiments: payload,
             pageInfoByPageId: {},
             // Stay in `loading` until the page lookup resolves: without it the site filter fails
@@ -243,241 +232,291 @@ export const DotExperimentsListStore = signalStore(
             status: payload.length > 0 ? ComponentStatus.LOADING : ComponentStatus.LOADED,
             error: null
         })),
-        on(dotExperimentsListEvents.listFailed, ({ payload }) => ({
+        on(dotExperimentsApiEvents.listFailed, ({ payload }) => ({
             status: ComponentStatus.ERROR,
             experiments: [],
             pageInfoByPageId: {},
             error: payload
         })),
-        on(dotExperimentsListEvents.pageInfoSucceeded, ({ payload }) => ({
+        on(dotExperimentsApiEvents.pageInfoSucceeded, ({ payload }) => ({
             pageInfoByPageId: payload,
             status: ComponentStatus.LOADED
         })),
         // Without page info no experiment can be attributed to a site, so this is a failed load
         // rather than an empty list.
-        on(dotExperimentsListEvents.pageInfoFailed, ({ payload }) => ({
+        on(dotExperimentsApiEvents.pageInfoFailed, ({ payload }) => ({
             status: ComponentStatus.ERROR,
             pageInfoByPageId: {},
             error: payload
         })),
-        on(dotExperimentsListEvents.filterChanged, ({ payload }) => ({
+        on(dotExperimentsListPageEvents.filterChanged, ({ payload }) => ({
             filter: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
-        on(dotExperimentsListEvents.statusesChanged, ({ payload }) => ({
+        on(dotExperimentsListPageEvents.statusesChanged, ({ payload }) => ({
             selectedStatuses: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
-        on(dotExperimentsListEvents.pageChanged, ({ payload }) => ({
+        on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
             page: payload.page,
             perPage: payload.perPage
         })),
-        on(dotExperimentsListEvents.sortChanged, ({ payload }) => ({
+        on(dotExperimentsListPageEvents.sortChanged, ({ payload }) => ({
             orderBy: payload.orderBy,
             direction: payload.direction,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
-        on(dotExperimentsListEvents.hydratedFromUrl, ({ payload }) => ({ ...payload })),
+        on(dotExperimentsListPageEvents.hydratedFromUrl, ({ payload }) => ({ ...payload })),
         // A site switch keeps search, sort and status selection but always restarts paging.
-        on(dotExperimentsListEvents.siteChanged, () => ({
+        on(dotExperimentsListPageEvents.siteChanged, () => ({
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             status: ComponentStatus.LOADING
         })),
         on(
-            dotExperimentsListEvents.archiveRequested,
-            dotExperimentsListEvents.deleteRequested,
-            dotExperimentsListEvents.endRequested,
-            dotExperimentsListEvents.abortRequested,
-            dotExperimentsListEvents.cancelScheduleRequested,
+            dotExperimentsListPageEvents.archiveExperiment,
+            dotExperimentsListPageEvents.deleteExperiment,
+            dotExperimentsListPageEvents.endExperiment,
+            dotExperimentsListPageEvents.abortExperiment,
+            dotExperimentsListPageEvents.cancelScheduleExperiment,
             () => ({ status: ComponentStatus.LOADING })
         ),
         // A failed action leaves the list usable instead of blanking it with an error screen.
         on(
-            dotExperimentsListEvents.archiveFailed,
-            dotExperimentsListEvents.deleteFailed,
-            dotExperimentsListEvents.endFailed,
-            dotExperimentsListEvents.abortFailed,
-            dotExperimentsListEvents.cancelScheduleFailed,
+            dotExperimentsApiEvents.archiveFailed,
+            dotExperimentsApiEvents.deleteFailed,
+            dotExperimentsApiEvents.endFailed,
+            dotExperimentsApiEvents.abortFailed,
+            dotExperimentsApiEvents.cancelScheduleFailed,
             () => ({ status: ComponentStatus.LOADED })
         )
     ),
-    withEventHandlers(() => {
-        const events = inject(Events);
-        const dispatcher = inject(Dispatcher);
-        const experimentsService = inject(DotExperimentsService);
-        const contentSearchService = inject(DotContentSearchService);
-        const httpErrorManager = inject(DotHttpErrorManagerService);
+    withEventHandlers(
+        (
+            store,
+            events = inject(Events),
+            experimentsService = inject(DotExperimentsService),
+            contentSearchService = inject(DotContentSearchService),
+            httpErrorManager = inject(DotHttpErrorManagerService)
+        ) => {
+            /**
+             * Turns a failed row action into its `Failed` event, after routing the error through
+             * the shared manager. Only the toast differs between actions, so this is the one
+             * piece of the CRUD flows worth naming.
+             */
+            const toFailure =
+                <T>(failed: (error: HttpErrorResponse) => T) =>
+                (error: HttpErrorResponse): T => {
+                    httpErrorManager.handle(error);
 
-        /**
-         * Runs one row action and reloads the list on success. The confirmation has already been
-         * accepted in the component by the time the `Requested` event lands here.
-         */
-        const runAction = ({ requested, succeeded, failed, execute }: CrudFlow) =>
-            events.on(requested).pipe(
-                mergeMap(({ payload }) =>
-                    execute(payload).pipe(
-                        tapResponse({
-                            next: () => {
-                                dispatcher.dispatch(succeeded(payload));
-                                dispatcher.dispatch(dotExperimentsListEvents.listRequested());
-                            },
-                            error: (error: HttpErrorResponse) => {
-                                httpErrorManager.handle(error);
-                                dispatcher.dispatch(failed(error));
-                            }
-                        })
+                    return failed(error);
+                };
+
+            return {
+                healthCheck$: events.on(dotExperimentsListPageEvents.checkHealth).pipe(
+                    switchMap(() =>
+                        experimentsService.healthCheck().pipe(
+                            mapResponse({
+                                next: (healthStatus) =>
+                                    dotExperimentsApiEvents.healthCheckSucceeded(healthStatus),
+                                error: toFailure(dotExperimentsApiEvents.healthCheckFailed)
+                            })
+                        )
                     )
-                )
-            );
+                ),
 
-        return {
-            healthCheck$: events.on(dotExperimentsListEvents.healthCheckRequested).pipe(
-                switchMap(() =>
-                    experimentsService.healthCheck().pipe(
-                        tapResponse({
-                            next: (healthStatus) => {
-                                dispatcher.dispatch(
-                                    dotExperimentsListEvents.healthCheckSucceeded(healthStatus)
-                                );
+                // Querying experiments on a broken Analytics install is pointless, so the first
+                // load hangs off the gate rather than off init.
+                loadAfterHealthCheck$: events.on(dotExperimentsApiEvents.healthCheckSucceeded).pipe(
+                    filter(({ payload }) => payload === HealthStatusTypes.OK),
+                    map(() => dotExperimentsListPageEvents.loadExperiments())
+                ),
 
-                                // Querying experiments on a broken Analytics install is pointless.
-                                if (healthStatus === HealthStatusTypes.OK) {
-                                    dispatcher.dispatch(dotExperimentsListEvents.listRequested());
-                                }
-                            },
-                            error: (error: HttpErrorResponse) => {
-                                httpErrorManager.handle(error);
-                                dispatcher.dispatch(
-                                    dotExperimentsListEvents.healthCheckFailed(error)
-                                );
-                            }
-                        })
+                loadList$: events.on(dotExperimentsListPageEvents.loadExperiments).pipe(
+                    switchMap(() =>
+                        experimentsService.getAllUnfiltered().pipe(
+                            mapResponse({
+                                next: (experiments) =>
+                                    dotExperimentsApiEvents.listSucceeded(experiments),
+                                error: toFailure(dotExperimentsApiEvents.listFailed)
+                            })
+                        )
                     )
-                )
-            ),
+                ),
 
-            loadList$: events.on(dotExperimentsListEvents.listRequested).pipe(
-                switchMap(() =>
-                    experimentsService.getAllUnfiltered().pipe(
-                        tapResponse({
-                            next: (experiments) =>
-                                dispatcher.dispatch(
-                                    dotExperimentsListEvents.listSucceeded(experiments)
-                                ),
-                            error: (error: HttpErrorResponse) => {
-                                httpErrorManager.handle(error);
-                                dispatcher.dispatch(dotExperimentsListEvents.listFailed(error));
-                            }
-                        })
-                    )
-                )
-            ),
+                resolvePageInfo$: events.on(dotExperimentsApiEvents.listSucceeded).pipe(
+                    switchMap(({ payload }) => {
+                        const pageIds = distinctPageIds(payload);
 
-            resolvePageInfo$: events.on(dotExperimentsListEvents.listSucceeded).pipe(
-                switchMap(({ payload }) => {
-                    const pageIds = distinctPageIds(payload);
+                        if (pageIds.length === 0) {
+                            return EMPTY;
+                        }
 
-                    if (pageIds.length === 0) {
-                        return EMPTY;
-                    }
-
-                    return contentSearchService
-                        .get<ContentSearchEntity>({
-                            query: `+contentType:htmlpageasset +working:true +identifier:(${pageIds.join(' ')})`,
-                            limit: pageIds.length
-                        })
-                        .pipe(
-                            tapResponse({
-                                next: (entity) =>
-                                    dispatcher.dispatch(
-                                        dotExperimentsListEvents.pageInfoSucceeded(
+                        return contentSearchService
+                            .get<ContentSearchEntity>({
+                                query: `+contentType:htmlpageasset +working:true +identifier:(${pageIds.join(' ')})`,
+                                limit: pageIds.length
+                            })
+                            .pipe(
+                                mapResponse({
+                                    next: (entity) =>
+                                        dotExperimentsApiEvents.pageInfoSucceeded(
                                             toPageInfoByPageId(
                                                 entity?.jsonObjectView?.contentlets ?? []
                                             )
-                                        )
-                                    ),
-                                error: (error: HttpErrorResponse) => {
-                                    httpErrorManager.handle(error);
-                                    dispatcher.dispatch(
-                                        dotExperimentsListEvents.pageInfoFailed(error)
-                                    );
-                                }
+                                        ),
+                                    error: toFailure(dotExperimentsApiEvents.pageInfoFailed)
+                                })
+                            );
+                    })
+                ),
+
+                // Each row action is written out rather than generated from a table, so the
+                // service call behind an action is readable where the action is declared.
+                // `mergeMap`, not `switchMap`: acting on a second row must not cancel the first.
+                // The confirmation is already accepted in the component by the time these run.
+                archive$: events.on(dotExperimentsListPageEvents.archiveExperiment).pipe(
+                    mergeMap(({ payload }) =>
+                        experimentsService.archive(payload.id).pipe(
+                            mapResponse({
+                                next: () => dotExperimentsApiEvents.archiveSucceeded(payload),
+                                error: toFailure(dotExperimentsApiEvents.archiveFailed)
                             })
-                        );
-                })
-            ),
+                        )
+                    )
+                ),
 
-            archive$: runAction({
-                requested: dotExperimentsListEvents.archiveRequested,
-                succeeded: dotExperimentsListEvents.archiveSucceeded,
-                failed: dotExperimentsListEvents.archiveFailed,
-                execute: (experiment) => experimentsService.archive(experiment.id)
-            }),
+                delete$: events.on(dotExperimentsListPageEvents.deleteExperiment).pipe(
+                    mergeMap(({ payload }) =>
+                        experimentsService.delete(payload.id).pipe(
+                            mapResponse({
+                                next: () => dotExperimentsApiEvents.deleteSucceeded(payload),
+                                error: toFailure(dotExperimentsApiEvents.deleteFailed)
+                            })
+                        )
+                    )
+                ),
 
-            delete$: runAction({
-                requested: dotExperimentsListEvents.deleteRequested,
-                succeeded: dotExperimentsListEvents.deleteSucceeded,
-                failed: dotExperimentsListEvents.deleteFailed,
-                execute: (experiment) => experimentsService.delete(experiment.id)
-            }),
+                end$: events.on(dotExperimentsListPageEvents.endExperiment).pipe(
+                    mergeMap(({ payload }) =>
+                        experimentsService.stop(payload.id).pipe(
+                            mapResponse({
+                                next: () => dotExperimentsApiEvents.endSucceeded(payload),
+                                error: toFailure(dotExperimentsApiEvents.endFailed)
+                            })
+                        )
+                    )
+                ),
 
-            end$: runAction({
-                requested: dotExperimentsListEvents.endRequested,
-                succeeded: dotExperimentsListEvents.endSucceeded,
-                failed: dotExperimentsListEvents.endFailed,
-                execute: (experiment) => experimentsService.stop(experiment.id)
-            }),
+                // There is no dedicated abort endpoint; aborting a running experiment cancels it,
+                // same as the legacy per-page list store does.
+                abort$: events.on(dotExperimentsListPageEvents.abortExperiment).pipe(
+                    mergeMap(({ payload }) =>
+                        experimentsService.cancelSchedule(payload.id).pipe(
+                            mapResponse({
+                                next: () => dotExperimentsApiEvents.abortSucceeded(payload),
+                                error: toFailure(dotExperimentsApiEvents.abortFailed)
+                            })
+                        )
+                    )
+                ),
 
-            // There is no dedicated abort endpoint; aborting a running experiment cancels it,
-            // same as the legacy per-page list store does.
-            abort$: runAction({
-                requested: dotExperimentsListEvents.abortRequested,
-                succeeded: dotExperimentsListEvents.abortSucceeded,
-                failed: dotExperimentsListEvents.abortFailed,
-                execute: (experiment) => experimentsService.cancelSchedule(experiment.id)
-            }),
+                cancelSchedule$: events
+                    .on(dotExperimentsListPageEvents.cancelScheduleExperiment)
+                    .pipe(
+                        mergeMap(({ payload }) =>
+                            experimentsService.cancelSchedule(payload.id).pipe(
+                                mapResponse({
+                                    next: () =>
+                                        dotExperimentsApiEvents.cancelScheduleSucceeded(payload),
+                                    error: toFailure(dotExperimentsApiEvents.cancelScheduleFailed)
+                                })
+                            )
+                        )
+                    ),
 
-            cancelSchedule$: runAction({
-                requested: dotExperimentsListEvents.cancelScheduleRequested,
-                succeeded: dotExperimentsListEvents.cancelScheduleSucceeded,
-                failed: dotExperimentsListEvents.cancelScheduleFailed,
-                execute: (experiment) => experimentsService.cancelSchedule(experiment.id)
-            })
-        };
-    }),
+                // Every row action mutates the server-side list, so all five reload through the
+                // same path instead of each repeating the request.
+                reloadAfterAction$: events
+                    .on(
+                        dotExperimentsApiEvents.archiveSucceeded,
+                        dotExperimentsApiEvents.deleteSucceeded,
+                        dotExperimentsApiEvents.endSucceeded,
+                        dotExperimentsApiEvents.abortSucceeded,
+                        dotExperimentsApiEvents.cancelScheduleSucceeded
+                    )
+                    .pipe(map(() => dotExperimentsListPageEvents.loadExperiments()))
+            };
+        }
+    ),
     withHooks((store) => {
         const route = inject(ActivatedRoute);
+        const router = inject(Router);
         const location = inject(Location);
         const globalStore = inject(GlobalStore);
         const dispatcher = inject(Dispatcher);
 
         let siteEffect: EffectRef;
+        let syncUrlEffect: EffectRef;
         let locationSubscription: SubscriptionLike;
+
+        /**
+         * `Location.go` rather than `Router.navigate`: the view state is derived client-side, so
+         * a filter change must not re-run the route. The guard keeps a no-op write (most notably
+         * the one this effect triggers on its own hydration) from pushing a duplicate history
+         * entry.
+         */
+        const writeUrl = (queryParams: Record<string, string | string[] | null>): void => {
+            const newUrl = router
+                .createUrlTree([], { queryParams, queryParamsHandling: 'merge' })
+                .toString();
+
+            if (newUrl !== location.path(true)) {
+                location.go(newUrl);
+            }
+        };
 
         return {
             onInit() {
                 // Hydrate before the first fetch so the initial render already honours the URL.
                 dispatcher.dispatch(
-                    dotExperimentsListEvents.hydratedFromUrl(
+                    dotExperimentsListPageEvents.hydratedFromUrl(
                         parseViewState(fromRouteParams(route.snapshot.queryParams))
                     )
                 );
                 // The health gate owns the first fetch: the list is only requested once
                 // Analytics reports `OK`.
-                dispatcher.dispatch(dotExperimentsListEvents.healthCheckRequested());
+                dispatcher.dispatch(dotExperimentsListPageEvents.checkHealth());
 
                 /**
-                 * Back/Forward re-hydration. The component writes the view state with
-                 * `Location.go`/`replaceState` (which do not notify), so only a real popstate
-                 * reaches here — re-read the restored URL and fold it back in. No reload is
+                 * Back/Forward re-hydration. `writeUrl` above uses `Location.go` (which does not
+                 * notify), so only a real popstate reaches here — re-read the restored URL and fold it back in. No reload is
                  * needed: paging, sorting and filtering are all derived client-side.
                  */
                 locationSubscription = location.subscribe((event) => {
                     const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
 
                     dispatcher.dispatch(
-                        dotExperimentsListEvents.hydratedFromUrl(parseViewState(params))
+                        dotExperimentsListPageEvents.hydratedFromUrl(parseViewState(params))
                     );
+                });
+
+                /**
+                 * Mirrors the view state back into the URL, so the list is shareable and
+                 * survives a reload. Lives here rather than in the component because the store
+                 * already owns the other half of this contract — it parses the URL on entry and
+                 * on popstate — and splitting read from write invites the two to drift.
+                 */
+                syncUrlEffect = effect(() => {
+                    const queryParams = toQueryParams({
+                        filter: store.filter(),
+                        selectedStatuses: store.selectedStatuses(),
+                        page: store.page(),
+                        perPage: store.perPage(),
+                        orderBy: store.orderBy(),
+                        direction: store.direction()
+                    });
+
+                    untracked(() => writeUrl(queryParams));
                 });
 
                 // Site is resolved asynchronously, so seed with whatever is known at init and only
@@ -494,19 +533,22 @@ export const DotExperimentsListStore = signalStore(
                     knownSiteId = currentSiteId;
 
                     untracked(() => {
-                        dispatcher.dispatch(dotExperimentsListEvents.siteChanged(currentSiteId));
+                        dispatcher.dispatch(
+                            dotExperimentsListPageEvents.siteChanged(currentSiteId)
+                        );
 
                         // Same rule as the initial load: never query experiments on an install
                         // whose Analytics app is not configured. Without this the switch would
                         // fire a request behind the misconfiguration screen.
                         if (store.healthStatus() === HealthStatusTypes.OK) {
-                            dispatcher.dispatch(dotExperimentsListEvents.listRequested());
+                            dispatcher.dispatch(dotExperimentsListPageEvents.loadExperiments());
                         }
                     });
                 });
             },
             onDestroy() {
                 siteEffect?.destroy();
+                syncUrlEffect?.destroy();
                 locationSubscription?.unsubscribe();
             }
         };
@@ -515,97 +557,3 @@ export const DotExperimentsListStore = signalStore(
 
 /** Injectable type of {@link DotExperimentsListStore}, for typing component/service fields. */
 export type DotExperimentsListStore = InstanceType<typeof DotExperimentsListStore>;
-
-/** One row action: which events frame it and which service call performs it. */
-interface CrudFlow {
-    requested: EventCreator<string, DotExperiment>;
-    succeeded: EventCreator<string, DotExperiment>;
-    failed: EventCreator<string, unknown>;
-    execute: (experiment: DotExperiment) => Observable<unknown>;
-}
-
-/** Reads query params from either an `ActivatedRoute` snapshot or a parsed popstate URL. */
-interface QueryParamReader {
-    get(key: string): string | null;
-    getAll(key: string): string[];
-}
-
-function fromRouteParams(params: Params): QueryParamReader {
-    const values = (key: string): string[] => {
-        const value: unknown = params[key];
-
-        if (value == null) {
-            return [];
-        }
-
-        return Array.isArray(value) ? value.map(String) : [String(value)];
-    };
-
-    return {
-        get: (key) => values(key)[0] ?? null,
-        getAll: values
-    };
-}
-
-function parseViewState(reader: QueryParamReader): DotExperimentsListViewState {
-    return {
-        filter: reader.get('filter') ?? '',
-        selectedStatuses: parseStatuses(reader.getAll('status')),
-        page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
-        perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
-        orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
-        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
-    };
-}
-
-/**
- * An absent `status` param means "the default selection"; a present but unusable one (e.g.
- * `?status=`) means the user deselected everything, which is not the same thing.
- */
-function parseStatuses(rawStatuses: string[]): DotExperimentStatus[] {
-    if (rawStatuses.length === 0) {
-        return DEFAULT_EXPERIMENTS_LIST_STATUSES;
-    }
-
-    const allStatuses = Object.values(DotExperimentStatus);
-
-    return rawStatuses
-        .map((rawStatus) => rawStatus.toUpperCase() as DotExperimentStatus)
-        .filter((status) => allStatuses.includes(status));
-}
-
-function parsePositiveInteger(rawValue: string | null, fallback: number): number {
-    const parsed = Number.parseInt(rawValue ?? '', 10);
-
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function distinctPageIds(experiments: DotExperiment[]): string[] {
-    return [...new Set(experiments.map(({ pageId }) => pageId).filter(Boolean))];
-}
-
-function toPageInfoByPageId(
-    contentlets: DotCMSContentlet[]
-): Record<string, DotExperimentPageInfo> {
-    return contentlets.reduce<Record<string, DotExperimentPageInfo>>((pageInfo, contentlet) => {
-        if (contentlet.identifier) {
-            pageInfo[contentlet.identifier] = {
-                url: contentlet.url ?? '',
-                host: contentlet.host ?? ''
-            };
-        }
-
-        return pageInfo;
-    }, {});
-}
-
-function emptyStatusCounts(): Record<DotExperimentStatus, number> {
-    return Object.values(DotExperimentStatus).reduce(
-        (counts, status) => {
-            counts[status] = 0;
-
-            return counts;
-        },
-        {} as Record<DotExperimentStatus, number>
-    );
-}

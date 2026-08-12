@@ -5,7 +5,7 @@ import { NEVER, of, throwError } from 'rxjs';
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal, WritableSignal } from '@angular/core';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, provideRouter } from '@angular/router';
 
 import {
     DotContentSearchService,
@@ -22,13 +22,15 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { dotExperimentsListEvents } from './dot-experiments-list.events';
+import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
+import { DotExperimentsListStore } from './dot-experiments-list.store';
+
 import {
+    DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_STATUSES,
-    DotExperimentsListStore
-} from './dot-experiments-list.store';
+    DEFAULT_EXPERIMENTS_LIST_STATUSES
+} from '../shared/constants';
 
 const CURRENT_SITE_ID = 'site-1';
 const OTHER_SITE_ID = 'site-2';
@@ -128,6 +130,8 @@ describe('DotExperimentsListStore', () => {
     const cancelSchedule = jest.fn();
     const contentSearchGet = jest.fn();
     const locationSubscribe = jest.fn();
+    const locationGo = jest.fn();
+    const locationPath = jest.fn();
 
     let currentSiteId: WritableSignal<string | null>;
     let queryParams: Params;
@@ -153,8 +157,15 @@ describe('DotExperimentsListStore', () => {
                     return currentSiteId;
                 }
             }),
-            // The store subscribes to Location (popstate re-hydration).
-            mockProvider(Location, { subscribe: locationSubscribe }),
+            // The store subscribes to Location (popstate re-hydration) and writes the view
+            // state back through it. A real Router builds the URL, so the write-back tests
+            // exercise the actual `createUrlTree` merge rather than a stubbed string.
+            provideRouter([]),
+            mockProvider(Location, {
+                subscribe: locationSubscribe,
+                go: locationGo,
+                path: locationPath
+            }),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -195,6 +206,9 @@ describe('DotExperimentsListStore', () => {
         stop.mockReturnValue(of({}));
         cancelSchedule.mockReturnValue(of({}));
         locationSubscribe.mockReturnValue({ unsubscribe: jest.fn() });
+        // Whatever the effect computes will differ from this, so a write always happens unless
+        // a test says otherwise.
+        locationPath.mockReturnValue('/stale');
 
         currentSiteId = signal<string | null>(CURRENT_SITE_ID);
         queryParams = {};
@@ -256,8 +270,10 @@ describe('DotExperimentsListStore', () => {
             const dispatchedTypes = dispatchSpy.mock.calls.map(([event]) => event.type);
             expect(healthCheck).toHaveBeenCalledTimes(1);
             expect(
-                dispatchedTypes.indexOf(dotExperimentsListEvents.healthCheckRequested.type)
-            ).toBeLessThan(dispatchedTypes.indexOf(dotExperimentsListEvents.listRequested.type));
+                dispatchedTypes.indexOf(dotExperimentsListPageEvents.checkHealth.type)
+            ).toBeLessThan(
+                dispatchedTypes.indexOf(dotExperimentsListPageEvents.loadExperiments.type)
+            );
 
             dispatchSpy.mockRestore();
         });
@@ -345,28 +361,28 @@ describe('DotExperimentsListStore', () => {
         const CRUD_CASES: CrudCase[] = [
             {
                 action: 'archive',
-                requested: dotExperimentsListEvents.archiveRequested,
+                requested: dotExperimentsListPageEvents.archiveExperiment,
                 serviceCall: archive
             },
             {
                 action: 'delete',
-                requested: dotExperimentsListEvents.deleteRequested,
+                requested: dotExperimentsListPageEvents.deleteExperiment,
                 serviceCall: remove
             },
             {
                 action: 'end',
-                requested: dotExperimentsListEvents.endRequested,
+                requested: dotExperimentsListPageEvents.endExperiment,
                 serviceCall: stop
             },
             // `abort` deliberately cancels the schedule, mirroring the legacy per-page store.
             {
                 action: 'abort',
-                requested: dotExperimentsListEvents.abortRequested,
+                requested: dotExperimentsListPageEvents.abortExperiment,
                 serviceCall: cancelSchedule
             },
             {
                 action: 'cancelSchedule',
-                requested: dotExperimentsListEvents.cancelScheduleRequested,
+                requested: dotExperimentsListPageEvents.cancelScheduleExperiment,
                 serviceCall: cancelSchedule
             }
         ];
@@ -425,25 +441,25 @@ describe('DotExperimentsListStore', () => {
         beforeEach(() => initStore());
 
         it('should match the experiment name case-insensitively', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged('ALPHA'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('ALPHA'));
 
             expect(store.searchedExperiments()).toEqual([EXPERIMENT_DRAFT]);
         });
 
         it('should match the resolved page path', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged('/CheckOut'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('/CheckOut'));
 
             expect(store.searchedExperiments()).toEqual([EXPERIMENT_RUNNING]);
         });
 
         it('should return nothing when neither name nor page path match', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged('no-match'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('no-match'));
 
             expect(store.searchedExperiments()).toEqual([]);
         });
 
         it('should never match an experiment outside the current site', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged('gamma'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('gamma'));
 
             expect(store.searchedExperiments()).toEqual([]);
         });
@@ -466,7 +482,7 @@ describe('DotExperimentsListStore', () => {
             const countsBefore = store.statusCounts();
 
             dispatcher.dispatch(
-                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.DRAFT])
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.DRAFT])
             );
 
             expect(store.statusCounts()).toEqual(countsBefore);
@@ -474,7 +490,7 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should follow the search term', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged('delta'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('delta'));
 
             expect(store.statusCounts()).toEqual({
                 [DotExperimentStatus.DRAFT]: 0,
@@ -500,7 +516,7 @@ describe('DotExperimentsListStore', () => {
             expect(store.filteredExperiments()).not.toContain(EXPERIMENT_ARCHIVED);
 
             dispatcher.dispatch(
-                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.ARCHIVED])
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.ARCHIVED])
             );
 
             expect(store.filteredExperiments()).toEqual([EXPERIMENT_ARCHIVED]);
@@ -511,9 +527,9 @@ describe('DotExperimentsListStore', () => {
             // chip widens the list back out rather than emptying the table. Archived is the
             // one exception: it stays opt-in.
             dispatcher.dispatch(
-                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.DRAFT])
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.DRAFT])
             );
-            dispatcher.dispatch(dotExperimentsListEvents.statusesChanged([]));
+            dispatcher.dispatch(dotExperimentsListPageEvents.statusesChanged([]));
 
             const expected = store
                 .searchedExperiments()
@@ -525,16 +541,16 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should still honour the search when the status selection is cleared', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.statusesChanged([]));
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged(EXPERIMENT_DRAFT.name));
+            dispatcher.dispatch(dotExperimentsListPageEvents.statusesChanged([]));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged(EXPERIMENT_DRAFT.name));
 
             expect(store.filteredExperiments()).toEqual([EXPERIMENT_DRAFT]);
         });
 
         it('should reset paging when the status selection changes', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.pageChanged({ page: 3, perPage: 10 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 10 }));
             dispatcher.dispatch(
-                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.DRAFT])
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.DRAFT])
             );
 
             expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
@@ -550,7 +566,7 @@ describe('DotExperimentsListStore', () => {
 
         it('should sort by modDate ASC when the direction flips', () => {
             dispatcher.dispatch(
-                dotExperimentsListEvents.sortChanged({ orderBy: 'modDate', direction: 'ASC' })
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'modDate', direction: 'ASC' })
             );
 
             expect(store.sortedExperiments()).toEqual([EXPERIMENT_RUNNING, EXPERIMENT_DRAFT]);
@@ -558,7 +574,7 @@ describe('DotExperimentsListStore', () => {
 
         it('should keep the API order for a column that is not sortable yet', () => {
             dispatcher.dispatch(
-                dotExperimentsListEvents.sortChanged({ orderBy: 'name', direction: 'ASC' })
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'name', direction: 'ASC' })
             );
 
             expect(store.sortedExperiments()).toEqual([EXPERIMENT_DRAFT, EXPERIMENT_RUNNING]);
@@ -569,15 +585,15 @@ describe('DotExperimentsListStore', () => {
         beforeEach(() => initStore());
 
         it('should return the slice of the requested page', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.pageChanged({ page: 1, perPage: 1 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 1, perPage: 1 }));
             expect(store.pagedExperiments()).toEqual([EXPERIMENT_DRAFT]);
 
-            dispatcher.dispatch(dotExperimentsListEvents.pageChanged({ page: 2, perPage: 1 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 1 }));
             expect(store.pagedExperiments()).toEqual([EXPERIMENT_RUNNING]);
         });
 
         it('should count every filtered experiment, not just the current page', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.pageChanged({ page: 1, perPage: 1 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 1, perPage: 1 }));
 
             expect(store.totalRecords()).toBe(2);
         });
@@ -645,12 +661,12 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             const dispatchedTypes = dispatchSpy.mock.calls.map(([event]) => event.type);
-            expect(dispatchedTypes.indexOf(dotExperimentsListEvents.hydratedFromUrl.type)).toBe(0);
+            expect(dispatchedTypes.indexOf(dotExperimentsListPageEvents.hydratedFromUrl.type)).toBe(
+                0
+            );
+            expect(dispatchedTypes.indexOf(dotExperimentsListPageEvents.checkHealth.type)).toBe(1);
             expect(
-                dispatchedTypes.indexOf(dotExperimentsListEvents.healthCheckRequested.type)
-            ).toBe(1);
-            expect(
-                dispatchedTypes.indexOf(dotExperimentsListEvents.listRequested.type)
+                dispatchedTypes.indexOf(dotExperimentsListPageEvents.loadExperiments.type)
             ).toBeGreaterThan(1);
 
             dispatchSpy.mockRestore();
@@ -661,14 +677,14 @@ describe('DotExperimentsListStore', () => {
         beforeEach(() => initStore());
 
         it('should keep the view state, restart paging and reload the list', () => {
-            dispatcher.dispatch(dotExperimentsListEvents.filterChanged('alpha'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
             dispatcher.dispatch(
-                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.DRAFT])
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.DRAFT])
             );
             dispatcher.dispatch(
-                dotExperimentsListEvents.sortChanged({ orderBy: 'modDate', direction: 'ASC' })
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'modDate', direction: 'ASC' })
             );
-            dispatcher.dispatch(dotExperimentsListEvents.pageChanged({ page: 3, perPage: 10 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 10 }));
 
             currentSiteId.set(OTHER_SITE_ID);
             spectator.flushEffects();
@@ -704,6 +720,84 @@ describe('DotExperimentsListStore', () => {
             // site would query experiments behind the misconfiguration screen.
             expect(getAllUnfiltered).not.toHaveBeenCalled();
             expect(store.isMisconfigured()).toBe(true);
+        });
+    });
+
+    describe('url write-back', () => {
+        const lastWrittenUrl = (): string => locationGo.mock.calls.at(-1)?.[0] as string;
+
+        const writtenParams = (): URLSearchParams =>
+            new URLSearchParams(lastWrittenUrl().split('?')[1] ?? '');
+
+        it('should write no query params while every value is its default', () => {
+            initStore();
+
+            expect(lastWrittenUrl()).not.toContain('?');
+        });
+
+        it('should write only the params that differ from their defaults', () => {
+            initStore();
+
+            // Paging last: changing the filter or the sort resets the page to the first one.
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('summer'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.sortChanged({
+                    orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+                    direction: 'ASC'
+                })
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 10 }));
+            spectator.flushEffects();
+
+            const params = writtenParams();
+
+            expect(params.get('page')).toBe('2');
+            expect(params.get('per_page')).toBe('10');
+            expect(params.get('filter')).toBe('summer');
+            expect(params.get('direction')).toBe('ASC');
+            // Left at its default, so it is absent rather than restated.
+            expect(params.get('orderby')).toBeNull();
+        });
+
+        it('should repeat the status param once per selected status', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([
+                    DotExperimentStatus.DRAFT,
+                    DotExperimentStatus.ARCHIVED
+                ])
+            );
+            spectator.flushEffects();
+
+            expect(writtenParams().getAll('status')).toEqual([
+                DotExperimentStatus.DRAFT,
+                DotExperimentStatus.ARCHIVED
+            ]);
+        });
+
+        it('should drop the status param when the selection returns to the default', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.DRAFT])
+            );
+            spectator.flushEffects();
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged(DEFAULT_EXPERIMENTS_LIST_STATUSES)
+            );
+            spectator.flushEffects();
+
+            expect(writtenParams().getAll('status')).toEqual([]);
+        });
+
+        it('should not rewrite the URL when it already matches the view state', () => {
+            // The URL the effect is about to compute for a pristine view state.
+            locationPath.mockReturnValue('/');
+
+            initStore();
+
+            expect(locationGo).not.toHaveBeenCalled();
         });
     });
 });

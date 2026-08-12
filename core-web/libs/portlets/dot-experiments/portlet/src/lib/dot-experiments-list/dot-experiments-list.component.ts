@@ -1,6 +1,6 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
 
-import { DatePipe, Location } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
     Component,
     computed,
@@ -14,7 +14,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -36,7 +35,6 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
-    AllowedActionsByExperimentStatus,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
@@ -64,20 +62,15 @@ import {
     STATUS_SEVERITIES,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
-import { ExperimentListAction, ExperimentRow } from '../shared/models';
-import { dotExperimentsListEvents } from '../store/dot-experiments-list.events';
-import {
-    DEFAULT_EXPERIMENTS_LIST_DIRECTION,
-    DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
-    DEFAULT_EXPERIMENTS_LIST_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_STATUSES,
-    DotExperimentsListStore
-} from '../store/dot-experiments-list.store';
+import { ExperimentRow } from '../shared/models';
+import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
+import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
+import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 import {
     ExperimentScheduleLabels,
     formatSchedule,
     goalTypeOf,
+    isAllowed,
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
@@ -196,10 +189,10 @@ export class DotExperimentsListComponent {
     /** Identifier of the experiment being added to a bundle, or `null` when the dialog is closed. */
     readonly $addToBundleAssetId = signal<string | null>(null);
 
-    readonly #dispatch = injectDispatch(dotExperimentsListEvents);
+    // The page dispatches only page events; `…Succeeded` / `…Failed` are the API's to raise, and
+    // are listened to (never dispatched) here — see `#listenForActionSuccess`.
+    readonly #dispatch = injectDispatch(dotExperimentsListPageEvents);
     readonly #events = inject(Events);
-    readonly #router = inject(Router);
-    readonly #location = inject(Location);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
@@ -255,27 +248,6 @@ export class DotExperimentsListComponent {
     };
 
     /**
-     * Mirrors the view state into the URL so the list is shareable and survives a reload.
-     * Values equal to their default are written as `null`, which removes the param — a plain
-     * `/experiments` URL therefore stays free of query params. `Location.go` is used instead of
-     * `Router.navigate` so a filter change never reloads the route.
-     */
-    protected readonly syncUrlEffect = effect(() => {
-        const queryParams: Record<string, string | string[] | null> = {
-            page: nullWhenDefault(this.store.page(), DEFAULT_EXPERIMENTS_LIST_PAGE),
-            per_page: nullWhenDefault(this.store.perPage(), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
-            orderby: nullWhenDefault(this.store.orderBy(), DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
-            direction: nullWhenDefault(this.store.direction(), DEFAULT_EXPERIMENTS_LIST_DIRECTION),
-            filter: this.store.filter() || null,
-            status: isDefaultStatusSelection(this.store.selectedStatuses())
-                ? null
-                : this.store.selectedStatuses()
-        };
-
-        untracked(() => this.#writeUrl(queryParams));
-    });
-
-    /**
      * Pushes the settled search term into the store.
      *
      * Guarded against the store's own value: on entry the debounced term and the store agree
@@ -302,7 +274,7 @@ export class DotExperimentsListComponent {
 
     /** Re-runs the load after a failure; the store returns to `loading` and then resolves. */
     onRetry(): void {
-        this.#dispatch.listRequested();
+        this.#dispatch.loadExperiments();
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {
@@ -332,7 +304,7 @@ export class DotExperimentsListComponent {
             headerKey: 'experiments.action.archive',
             messageKey: 'experiments.action.archive.confirm-question',
             acceptLabelKey: 'experiments.action.archive',
-            accept: () => this.#dispatch.archiveRequested(experiment)
+            accept: () => this.#dispatch.archiveExperiment(experiment)
         });
     }
 
@@ -362,7 +334,7 @@ export class DotExperimentsListComponent {
                         headerKey: 'experiments.configure.scheduling.cancel',
                         messageKey: 'experiments.action.cancel.schedule-confirm',
                         acceptLabelKey: 'dot.common.dialog.accept',
-                        accept: () => this.#dispatch.cancelScheduleRequested(experiment)
+                        accept: () => this.#dispatch.cancelScheduleExperiment(experiment)
                     })
             },
             {
@@ -374,7 +346,7 @@ export class DotExperimentsListComponent {
                         headerKey: 'experiments.action.end-experiment',
                         messageKey: 'experiments.action.stop.delete-confirm',
                         acceptLabelKey: 'experiments.action.end',
-                        accept: () => this.#dispatch.endRequested(experiment)
+                        accept: () => this.#dispatch.endExperiment(experiment)
                     })
             },
             {
@@ -386,7 +358,7 @@ export class DotExperimentsListComponent {
                         headerKey: 'experiments.action.abort.experiment',
                         messageKey: 'experiments.action.abort.confirm.message',
                         acceptLabelKey: 'experiments.action.abort.experiment',
-                        accept: () => this.#dispatch.abortRequested(experiment)
+                        accept: () => this.#dispatch.abortExperiment(experiment)
                     })
             },
             {
@@ -399,7 +371,7 @@ export class DotExperimentsListComponent {
                         messageKey: 'experiments.action.delete.confirm-question',
                         messageArg: experiment.name,
                         acceptLabelKey: 'experiments.action.delete',
-                        accept: () => this.#dispatch.deleteRequested(experiment)
+                        accept: () => this.#dispatch.deleteExperiment(experiment)
                     })
             },
             {
@@ -455,14 +427,14 @@ export class DotExperimentsListComponent {
     #listenForActionSuccess(): void {
         const successMessages: ReadonlyArray<[EventCreator<string, DotExperiment>, string]> = [
             [
-                dotExperimentsListEvents.archiveSucceeded,
+                dotExperimentsApiEvents.archiveSucceeded,
                 'experiments.action.archive.confirm-message'
             ],
-            [dotExperimentsListEvents.deleteSucceeded, 'experiments.action.delete.confirm-message'],
-            [dotExperimentsListEvents.endSucceeded, 'experiments.action.stop.confirm-message'],
-            [dotExperimentsListEvents.abortSucceeded, 'experiments.notification.abort'],
+            [dotExperimentsApiEvents.deleteSucceeded, 'experiments.action.delete.confirm-message'],
+            [dotExperimentsApiEvents.endSucceeded, 'experiments.action.stop.confirm-message'],
+            [dotExperimentsApiEvents.abortSucceeded, 'experiments.notification.abort'],
             [
-                dotExperimentsListEvents.cancelScheduleSucceeded,
+                dotExperimentsApiEvents.cancelScheduleSucceeded,
                 'experiments.notification.cancel.schedule'
             ]
         ];
@@ -481,34 +453,4 @@ export class DotExperimentsListComponent {
                 );
         });
     }
-
-    #writeUrl(queryParams: Record<string, string | string[] | null>): void {
-        const newUrl = this.#router
-            .createUrlTree([], { queryParams, queryParamsHandling: 'merge' })
-            .toString();
-
-        if (newUrl !== this.#location.path(true)) {
-            this.#location.go(newUrl);
-        }
-    }
-}
-
-function isAllowed(action: ExperimentListAction, status: DotExperimentStatus): boolean {
-    return AllowedActionsByExperimentStatus[action].includes(status);
-}
-
-/** Defaults are never written to the URL, so a pristine list has no query params at all. */
-function nullWhenDefault<T extends string | number>(value: T, defaultValue: T): string | null {
-    return value === defaultValue ? null : String(value);
-}
-
-/** Order-insensitive set comparison: a reordered default selection is still the default. */
-function isDefaultStatusSelection(statuses: DotExperimentStatus[]): boolean {
-    if (statuses.length !== DEFAULT_EXPERIMENTS_LIST_STATUSES.length) {
-        return false;
-    }
-
-    const selected = new Set(statuses);
-
-    return DEFAULT_EXPERIMENTS_LIST_STATUSES.every((status) => selected.has(status));
 }

@@ -1,9 +1,13 @@
-import type {
-    GOAL_TYPES,
-    Goals,
-    RangeOfDateAndTime,
-    TrafficProportion
+import {
+    AllowedActionsByExperimentStatus,
+    type GOAL_TYPES,
+    type Goals,
+    type DotExperimentStatus,
+    type RangeOfDateAndTime,
+    type TrafficProportion
 } from '@dotcms/dotcms-models';
+
+import { ExperimentListAction } from '../shared/models';
 
 /** Day-level format shared by every schedule cell of the experiments list (e.g. `Jun 25, 2026`). */
 const SCHEDULE_DATE_FORMAT: Intl.DateTimeFormatOptions = {
@@ -98,4 +102,9 @@ function toDisplayDate(epochMillis: number | null | undefined, locale?: string):
     }
 
     return new Intl.DateTimeFormat(locale, SCHEDULE_DATE_FORMAT).format(date);
+}
+
+/** Whether an action is offered for a status, per the shared `AllowedActionsByExperimentStatus`. */
+export function isAllowed(action: ExperimentListAction, status: DotExperimentStatus): boolean {
+    return AllowedActionsByExperimentStatus[action].includes(status);
 }
