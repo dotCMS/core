@@ -13,6 +13,7 @@ import {
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
@@ -224,7 +225,7 @@ describe('DotExperimentsListStore', () => {
                 'page-2': { url: '/checkout', host: CURRENT_SITE_ID },
                 'page-3': { url: '/remote', host: OTHER_SITE_ID }
             });
-            expect(store.status()).toBe('loaded');
+            expect(store.status()).toBe(ComponentStatus.LOADED);
         });
 
         it('should stay loading while the page lookup is in flight', () => {
@@ -233,7 +234,7 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             expect(store.experiments()).toEqual(EXPERIMENTS);
-            expect(store.status()).toBe('loading');
+            expect(store.status()).toBe(ComponentStatus.LOADING);
         });
 
         it('should skip the page lookup and land loaded when the list is empty', () => {
@@ -242,7 +243,7 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             expect(contentSearchGet).not.toHaveBeenCalled();
-            expect(store.status()).toBe('loaded');
+            expect(store.status()).toBe(ComponentStatus.LOADED);
         });
     });
 
@@ -267,7 +268,7 @@ describe('DotExperimentsListStore', () => {
             expect(store.healthStatus()).toBe(HealthStatusTypes.OK);
             expect(store.isMisconfigured()).toBe(false);
             expect(getAllUnfiltered).toHaveBeenCalledTimes(1);
-            expect(store.status()).toBe('loaded');
+            expect(store.status()).toBe(ComponentStatus.LOADED);
         });
 
         it.each([HealthStatusTypes.NOT_CONFIGURED, HealthStatusTypes.CONFIGURATION_ERROR])(
@@ -281,7 +282,7 @@ describe('DotExperimentsListStore', () => {
                 expect(store.isMisconfigured()).toBe(true);
                 expect(getAllUnfiltered).not.toHaveBeenCalled();
                 expect(contentSearchGet).not.toHaveBeenCalled();
-                expect(store.status()).toBe('loaded');
+                expect(store.status()).toBe(ComponentStatus.LOADED);
             }
         );
 
@@ -292,7 +293,7 @@ describe('DotExperimentsListStore', () => {
 
             expect(store.healthStatus()).toBeNull();
             expect(store.isMisconfigured()).toBe(false);
-            expect(store.status()).toBe('loading');
+            expect(store.status()).toBe(ComponentStatus.LOADING);
             expect(getAllUnfiltered).not.toHaveBeenCalled();
         });
 
@@ -302,7 +303,7 @@ describe('DotExperimentsListStore', () => {
 
             initStore();
 
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe(ComponentStatus.ERROR);
             expect(store.error()).toBe(error);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(getAllUnfiltered).not.toHaveBeenCalled();
@@ -316,7 +317,7 @@ describe('DotExperimentsListStore', () => {
 
             initStore();
 
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe(ComponentStatus.ERROR);
             expect(store.experiments()).toEqual([]);
             expect(store.error()).toBe(error);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
@@ -328,7 +329,7 @@ describe('DotExperimentsListStore', () => {
 
             initStore();
 
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe(ComponentStatus.ERROR);
             expect(store.pageInfoByPageId()).toEqual({});
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
         });
@@ -378,7 +379,7 @@ describe('DotExperimentsListStore', () => {
 
                 expect(serviceCall).toHaveBeenCalledWith(EXPERIMENT_DRAFT.id);
                 expect(getAllUnfiltered).toHaveBeenCalledTimes(2);
-                expect(store.status()).toBe('loaded');
+                expect(store.status()).toBe(ComponentStatus.LOADED);
             });
 
             it('should report the failure and keep the list usable on error', () => {
@@ -388,7 +389,7 @@ describe('DotExperimentsListStore', () => {
                 dispatcher.dispatch(requested(EXPERIMENT_DRAFT));
 
                 expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-                expect(store.status()).toBe('loaded');
+                expect(store.status()).toBe(ComponentStatus.LOADED);
                 expect(getAllUnfiltered).toHaveBeenCalledTimes(1);
             });
         });

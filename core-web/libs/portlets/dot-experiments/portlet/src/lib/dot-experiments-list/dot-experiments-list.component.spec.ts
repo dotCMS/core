@@ -10,6 +10,7 @@ import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
+    ComponentStatus,
     DotExperiment,
     DotExperimentStatus,
     DotMessageSeverity,
@@ -52,6 +53,8 @@ const experimentWith = (status: DotExperimentStatus): DotExperiment => ({
 
 /** Kebab item ids, as declared by the component. */
 const MENU_ITEM = {
+    archive: 'experiments-archive',
+    restore: 'experiments-restore',
     cancelSchedule: 'experiments-cancel-schedule',
     end: 'experiments-end',
     abort: 'experiments-abort',
@@ -110,7 +113,7 @@ const createStoreMock = () => ({
     statusCounts: jest.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
     selectedStatuses: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
     filter: jest.fn().mockReturnValue(''),
-    status: jest.fn().mockReturnValue('loaded'),
+    status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
     page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
     perPage: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
     orderBy: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
@@ -299,41 +302,62 @@ describe('DotExperimentsListComponent', () => {
                     MENU_ITEM.addToBundle
                 ]
             ],
-            [DotExperimentStatus.ENDED, [MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]],
-            [DotExperimentStatus.ARCHIVED, [MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]]
+            [
+                DotExperimentStatus.ENDED,
+                [MENU_ITEM.archive, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+            ],
+            [
+                DotExperimentStatus.ARCHIVED,
+                [MENU_ITEM.restore, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+            ]
         ])('should only offer the actions allowed for %s', (status, expectedItemIds) => {
             renderRowWith(status);
 
             expect(visibleMenuItemIds().sort()).toEqual([...expectedItemIds].sort());
         });
 
-        it.each([
-            [DotExperimentStatus.ENDED, [ARCHIVE_LABEL, ACTIONS_MENU_LABEL]],
-            [DotExperimentStatus.ARCHIVED, [RESTORE_LABEL, ACTIONS_MENU_LABEL]],
-            [DotExperimentStatus.DRAFT, [ACTIONS_MENU_LABEL]],
-            [DotExperimentStatus.RUNNING, [ACTIONS_MENU_LABEL]],
-            [DotExperimentStatus.SCHEDULED, [ACTIONS_MENU_LABEL]]
-        ])('should render only the allowed icon buttons for %s', (status, expectedLabels) => {
-            renderRowWith(status);
+        it.each(Object.values(DotExperimentStatus))(
+            'should expose the kebab as the only control for %s',
+            (status) => {
+                // Every action lives in the menu, archive and restore included, so the cell
+                // holds exactly one button whatever the row's status.
+                renderRowWith(status);
 
-            const labels = Array.from(
-                spectator
-                    .query(byTestId('experiment-row'))
-                    ?.querySelectorAll('td:last-child p-button[aria-label]') ?? []
-            ).map((button) => button.getAttribute('aria-label'));
+                const labels = Array.from(
+                    spectator
+                        .query(byTestId('experiment-row'))
+                        ?.querySelectorAll('td:last-child p-button[aria-label]') ?? []
+                ).map((button) => button.getAttribute('aria-label'));
 
-            expect(labels).toEqual(expectedLabels);
+                expect(labels).toEqual([ACTIONS_MENU_LABEL]);
+            }
+        );
+
+        // One status per test: the store mock's signals are plain `jest.fn()`s, so a second
+        // `renderRowWith` in the same test would not recompute the row.
+        it('should offer archive in the kebab once the experiment has ended', () => {
+            renderRowWith(DotExperimentStatus.ENDED);
+
+            expect(visibleMenuItemIds()).toContain(MENU_ITEM.archive);
         });
 
-        it('should render the restore affordance disabled — there is no restore transition yet', () => {
+        it('should not offer archive while the experiment is still running', () => {
+            renderRowWith(DotExperimentStatus.RUNNING);
+
+            expect(visibleMenuItemIds()).not.toContain(MENU_ITEM.archive);
+        });
+
+        it('should offer restore disabled on archived rows — no restore transition yet', () => {
             renderRowWith(DotExperimentStatus.ARCHIVED);
+            clickButton('experiment-actions-btn');
 
-            const restore = spectator
-                .query(byTestId('experiment-restore-btn'))
-                ?.querySelector('button');
+            const restore = spectator.component
+                .$rowMenuItems()
+                .find(({ id }) => id === MENU_ITEM.restore) as MenuItem;
 
-            expect(restore).not.toBeNull();
-            expect((restore as HTMLButtonElement).disabled).toBe(true);
+            expect(restore.visible).toBe(true);
+            expect(restore.disabled).toBe(true);
+            expect(restore.command).toBeUndefined();
         });
 
         it('should not render a configure or view-results control', () => {
@@ -373,7 +397,7 @@ describe('DotExperimentsListComponent', () => {
         it('should dispatch archiveRequested once the archive confirmation is accepted', () => {
             const experiment = renderRowWith(DotExperimentStatus.ENDED);
 
-            clickButton('experiment-archive-btn');
+            runMenuItem(MENU_ITEM.archive);
 
             expect(dispatchedEvents()).not.toContainEqual(
                 dotExperimentsListEvents.archiveRequested(experiment)
@@ -470,7 +494,7 @@ describe('DotExperimentsListComponent', () => {
 
     describe('loading state', () => {
         it('should render skeleton rows while the list is loading', () => {
-            storeMock.status.mockReturnValue('loading');
+            storeMock.status.mockReturnValue(ComponentStatus.LOADING);
             spectator.detectChanges();
 
             expect(spectator.queryAll(byTestId('experiments-loading-row')).length).toBeGreaterThan(
@@ -481,7 +505,7 @@ describe('DotExperimentsListComponent', () => {
 
         it('should not show the empty state while loading', () => {
             // Otherwise a slow load momentarily claims there are no experiments.
-            storeMock.status.mockReturnValue('loading');
+            storeMock.status.mockReturnValue(ComponentStatus.LOADING);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
@@ -491,7 +515,7 @@ describe('DotExperimentsListComponent', () => {
             // Paging and filtering re-enter 'loading' with rows already on screen; replacing
             // them with skeletons on every keystroke would make the table flicker.
             const experiment = renderRowWith(DotExperimentStatus.DRAFT);
-            storeMock.status.mockReturnValue('loading');
+            storeMock.status.mockReturnValue(ComponentStatus.LOADING);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('experiment-name'))?.textContent).toContain(
@@ -502,7 +526,7 @@ describe('DotExperimentsListComponent', () => {
 
     describe('load error', () => {
         const renderError = () => {
-            storeMock.status.mockReturnValue('error');
+            storeMock.status.mockReturnValue(ComponentStatus.ERROR);
             spectator.detectChanges();
         };
 

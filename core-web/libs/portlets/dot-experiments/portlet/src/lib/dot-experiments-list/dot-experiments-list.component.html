@@ -6,7 +6,7 @@
             [configuration]="$misconfiguredConfiguration()"
             [hideContactUsLink]="true" />
     </div>
-} @else if (store.status() === 'error') {
+} @else if ($hasError()) {
     <!-- A failed load gets its own state with a way out, rather than rendering as an empty
          table. Retry re-runs the request; the toast from DotHttpErrorManagerService already
          carried the detail. -->
@@ -143,44 +143,16 @@
                             {{ row.experiment.modDate | date: 'MMM d, y' }}
                         </td>
                         <td>
-                            <!-- Revealed on row hover, like content-drive. Opacity rather than a
-                                 conditional so the cell keeps its width and the row never shifts
-                                 as the pointer crosses it; `focus-within` keeps the actions
-                                 reachable by keyboard, where there is no hover.
+                            <!-- One control: every row action lives in the kebab, archive and
+                                 restore included. Revealed on row hover like content-drive, with
+                                 opacity rather than a conditional so the cell keeps its width and
+                                 the row never shifts as the pointer crosses it; `focus-within`
+                                 keeps it reachable by keyboard, where there is no hover.
                                  The design leads this cell with "View Results" / "Configure", but
-                                 both screens land with #36990+; a control that cannot go anywhere
-                                 is noise, so the row shows only what it can perform (AC10). -->
+                                 both screens land with #36990+, and a control that cannot go
+                                 anywhere is noise (AC10). -->
                             <div
                                 class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
-                                @if (row.canArchive) {
-                                    <p-button
-                                        [text]="true"
-                                        severity="secondary"
-                                        (onClick)="confirmArchive(row.experiment)"
-                                        [attr.aria-label]="'experiments.action.archive' | dm"
-                                        data-testid="experiment-archive-btn">
-                                        <span
-                                            class="material-symbols-rounded text-xl! leading-none!"
-                                            aria-hidden="true">
-                                            archive
-                                        </span>
-                                    </p-button>
-                                }
-                                @if (row.isArchived) {
-                                    <!-- Restoring an archived experiment has no backend transition yet -->
-                                    <p-button
-                                        [text]="true"
-                                        severity="secondary"
-                                        [disabled]="true"
-                                        [attr.aria-label]="'experiments.action.restore' | dm"
-                                        data-testid="experiment-restore-btn">
-                                        <span
-                                            class="material-symbols-rounded text-xl! leading-none!"
-                                            aria-hidden="true">
-                                            unarchive
-                                        </span>
-                                    </p-button>
-                                }
                                 <p-button
                                     [text]="true"
                                     severity="secondary"

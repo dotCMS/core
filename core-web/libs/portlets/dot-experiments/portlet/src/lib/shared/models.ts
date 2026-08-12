@@ -14,9 +14,6 @@ export interface ExperimentRow {
     goalLabelKey: string | null;
     variants: number;
     schedule: string;
-    canArchive: boolean;
-    /** Only archived experiments show the (still inactive) restore affordance. */
-    isArchived: boolean;
     statusSeverity: TagSeverity;
     statusLabelKey: string;
 }

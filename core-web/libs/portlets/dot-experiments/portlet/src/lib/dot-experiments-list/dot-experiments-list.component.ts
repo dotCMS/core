@@ -37,6 +37,7 @@ import {
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
+    ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
@@ -131,8 +132,6 @@ export class DotExperimentsListComponent {
                 goalLabelKey: goalType ? GOALS_METADATA_MAP[goalType].label : null,
                 variants: variantsCount(experiment.trafficProportion),
                 schedule: formatSchedule(experiment.scheduling, scheduleLabels),
-                canArchive: isAllowed('archive', experiment.status),
-                isArchived: experiment.status === DotExperimentStatus.ARCHIVED,
                 statusSeverity: STATUS_SEVERITIES[experiment.status] ?? 'secondary',
                 statusLabelKey: STATUS_LABEL_KEYS.get(experiment.status) ?? ''
             };
@@ -159,8 +158,11 @@ export class DotExperimentsListComponent {
      * since loading happens on every entry and a broken Analytics install does not.
      */
     readonly $isLoading = computed<boolean>(
-        () => this.store.healthStatus() === null || this.store.status() === 'loading'
+        () => this.store.healthStatus() === null || this.store.status() === ComponentStatus.LOADING
     );
+
+    /** Only a failed load reaches this; a failed CRUD action returns the store to `LOADED`. */
+    readonly $hasError = computed<boolean>(() => this.store.status() === ComponentStatus.ERROR);
 
     /**
      * Copy shown instead of the list when Analytics is not usable. Mirrors the legacy
@@ -338,6 +340,19 @@ export class DotExperimentsListComponent {
         const { status } = experiment;
 
         return [
+            {
+                id: 'experiments-archive',
+                label: this.#dotMessageService.get('experiments.action.archive'),
+                visible: isAllowed('archive', status),
+                command: () => this.confirmArchive(experiment)
+            },
+            {
+                id: 'experiments-restore',
+                label: this.#dotMessageService.get('experiments.action.restore'),
+                visible: status === DotExperimentStatus.ARCHIVED,
+                // No restore transition exists yet — it lands with #36988.
+                disabled: true
+            },
             {
                 id: 'experiments-cancel-schedule',
                 label: this.#dotMessageService.get('experiments.configure.scheduling.cancel'),

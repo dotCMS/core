@@ -23,6 +23,7 @@ import {
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
@@ -37,12 +38,9 @@ import {
     DotExperimentsListViewState
 } from './dot-experiments-list.events';
 
-/** Lifecycle of the experiments list: `error` only ever comes from a failed load, never from a CRUD action. */
-export type DotExperimentsListStatus = 'loading' | 'loaded' | 'error';
-
 /** Full state of the experiments list. */
 export interface DotExperimentsListState extends DotExperimentsListViewState {
-    status: DotExperimentsListStatus;
+    status: ComponentStatus;
     /** Analytics health, `null` until the gate resolves. Anything but `OK` blocks the list. */
     healthStatus: HealthStatusTypes | null;
     /** Every experiment returned by the API, across all sites. Narrowed by `siteScopedExperiments`. */
@@ -71,7 +69,7 @@ export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
 const OPT_IN_STATUSES: readonly DotExperimentStatus[] = [DotExperimentStatus.ARCHIVED];
 
 const initialState: DotExperimentsListState = {
-    status: 'loading',
+    status: ComponentStatus.LOADING,
     healthStatus: null,
     experiments: [],
     pageInfoByPageId: {},
@@ -226,14 +224,15 @@ export const DotExperimentsListStore = signalStore(
             healthStatus: payload,
             // A non-OK gate stops the flow here: nothing else is fetched, so settle instead of
             // leaving the table stuck on its skeleton.
-            status: payload === HealthStatusTypes.OK ? ('loading' as const) : ('loaded' as const)
+            status:
+                payload === HealthStatusTypes.OK ? ComponentStatus.LOADING : ComponentStatus.LOADED
         })),
         on(dotExperimentsListEvents.healthCheckFailed, ({ payload }) => ({
-            status: 'error' as const,
+            status: ComponentStatus.ERROR,
             error: payload
         })),
         on(dotExperimentsListEvents.listRequested, () => ({
-            status: 'loading' as const,
+            status: ComponentStatus.LOADING,
             error: null
         })),
         on(dotExperimentsListEvents.listSucceeded, ({ payload }) => ({
@@ -241,23 +240,23 @@ export const DotExperimentsListStore = signalStore(
             pageInfoByPageId: {},
             // Stay in `loading` until the page lookup resolves: without it the site filter fails
             // closed and the table would flash an empty "loaded" list first.
-            status: payload.length > 0 ? ('loading' as const) : ('loaded' as const),
+            status: payload.length > 0 ? ComponentStatus.LOADING : ComponentStatus.LOADED,
             error: null
         })),
         on(dotExperimentsListEvents.listFailed, ({ payload }) => ({
-            status: 'error' as const,
+            status: ComponentStatus.ERROR,
             experiments: [],
             pageInfoByPageId: {},
             error: payload
         })),
         on(dotExperimentsListEvents.pageInfoSucceeded, ({ payload }) => ({
             pageInfoByPageId: payload,
-            status: 'loaded' as const
+            status: ComponentStatus.LOADED
         })),
         // Without page info no experiment can be attributed to a site, so this is a failed load
         // rather than an empty list.
         on(dotExperimentsListEvents.pageInfoFailed, ({ payload }) => ({
-            status: 'error' as const,
+            status: ComponentStatus.ERROR,
             pageInfoByPageId: {},
             error: payload
         })),
@@ -282,7 +281,7 @@ export const DotExperimentsListStore = signalStore(
         // A site switch keeps search, sort and status selection but always restarts paging.
         on(dotExperimentsListEvents.siteChanged, () => ({
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
-            status: 'loading' as const
+            status: ComponentStatus.LOADING
         })),
         on(
             dotExperimentsListEvents.archiveRequested,
@@ -290,7 +289,7 @@ export const DotExperimentsListStore = signalStore(
             dotExperimentsListEvents.endRequested,
             dotExperimentsListEvents.abortRequested,
             dotExperimentsListEvents.cancelScheduleRequested,
-            () => ({ status: 'loading' as const })
+            () => ({ status: ComponentStatus.LOADING })
         ),
         // A failed action leaves the list usable instead of blanking it with an error screen.
         on(
@@ -299,7 +298,7 @@ export const DotExperimentsListStore = signalStore(
             dotExperimentsListEvents.endFailed,
             dotExperimentsListEvents.abortFailed,
             dotExperimentsListEvents.cancelScheduleFailed,
-            () => ({ status: 'loaded' as const })
+            () => ({ status: ComponentStatus.LOADED })
         )
     ),
     withEventHandlers(() => {
