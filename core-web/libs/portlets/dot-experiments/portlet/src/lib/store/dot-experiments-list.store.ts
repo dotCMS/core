@@ -57,10 +57,18 @@ export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
 export const DEFAULT_EXPERIMENTS_LIST_ORDER_BY = 'modDate';
 export const DEFAULT_EXPERIMENTS_LIST_DIRECTION: DotExperimentsListSortDirection = 'DESC';
 
-/** Archived experiments are hidden until the user explicitly asks for them. */
-export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = Object.values(
-    DotExperimentStatus
-).filter((status) => status !== DotExperimentStatus.ARCHIVED);
+/**
+ * No status is selected by default: the filter starts empty, like every other filter in the
+ * admin, so nothing is pre-ticked and the chip reads as unfiltered.
+ */
+export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
+
+/**
+ * Statuses hidden while the filter is empty. Archived experiments are opt-in — an unfiltered
+ * list means "everything still in play", and archived rows would otherwise pad it out
+ * permanently with work nobody is looking at. Selecting ARCHIVED shows them.
+ */
+const OPT_IN_STATUSES: readonly DotExperimentStatus[] = [DotExperimentStatus.ARCHIVED];
 
 const initialState: DotExperimentsListState = {
     status: 'loading',
@@ -159,11 +167,14 @@ export const DotExperimentsListStore = signalStore(
         const filteredExperiments = computed<DotExperiment[]>(() => {
             const selectedStatuses = store.selectedStatuses();
 
-            // An empty selection is "no status filter", not "match nothing". Clearing the chip
-            // must widen the list back to everything, the way clearing any other filter does —
-            // otherwise the only way out of an empty table is to re-pick every status.
+            // An empty selection is "no status filter", not "match nothing" — clearing the chip
+            // widens the list back out the way clearing any other filter does, rather than
+            // leaving an empty table whose only escape is re-picking every status.
+            // Archived stays out of that default view; it is opt-in.
             if (!selectedStatuses.length) {
-                return searchedExperiments();
+                return searchedExperiments().filter(
+                    (experiment) => !OPT_IN_STATUSES.includes(experiment.status)
+                );
             }
 
             return searchedExperiments().filter((experiment) =>

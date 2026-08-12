@@ -488,9 +488,11 @@ describe('DotExperimentsListStore', () => {
     describe('status selection', () => {
         beforeEach(() => initStore());
 
-        it('should select every status except ARCHIVED by default', () => {
-            expect(store.selectedStatuses()).toEqual(DEFAULT_EXPERIMENTS_LIST_STATUSES);
-            expect(store.selectedStatuses()).not.toContain(DotExperimentStatus.ARCHIVED);
+        it('should start with nothing selected', () => {
+            // The filter opens unticked like every other filter in the admin, so the chip
+            // reads as unfiltered rather than permanently highlighted.
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(DEFAULT_EXPERIMENTS_LIST_STATUSES).toEqual([]);
         });
 
         it('should hide archived experiments until they are explicitly selected', () => {
@@ -503,14 +505,22 @@ describe('DotExperimentsListStore', () => {
             expect(store.filteredExperiments()).toEqual([EXPERIMENT_ARCHIVED]);
         });
 
-        it('should show every status when the selection is cleared', () => {
+        it('should show every active status when the selection is cleared', () => {
             // An empty selection means "no status filter", not "match nothing" — clearing the
-            // chip has to widen the list back out, otherwise the only escape from an empty
-            // table is re-picking every status one at a time.
+            // chip widens the list back out rather than emptying the table. Archived is the
+            // one exception: it stays opt-in.
+            dispatcher.dispatch(
+                dotExperimentsListEvents.statusesChanged([DotExperimentStatus.DRAFT])
+            );
             dispatcher.dispatch(dotExperimentsListEvents.statusesChanged([]));
 
-            expect(store.filteredExperiments()).toEqual(store.searchedExperiments());
+            const expected = store
+                .searchedExperiments()
+                .filter(({ status }) => status !== DotExperimentStatus.ARCHIVED);
+
+            expect(store.filteredExperiments()).toEqual(expected);
             expect(store.filteredExperiments().length).toBeGreaterThan(0);
+            expect(store.filteredExperiments()).not.toContain(EXPERIMENT_ARCHIVED);
         });
 
         it('should still honour the search when the status selection is cleared', () => {
