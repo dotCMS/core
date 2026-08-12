@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { delay, of, throwError } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
@@ -469,6 +469,48 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(chips).toEqual(
                 editSpectator.component.folderForm.get('allowedFileExtensions')?.value
             );
+        });
+
+        describe('when the folder loads after the user has started typing', () => {
+            // `getContentTypes` is mocked once for the whole file, so restore it or the delayed
+            // observable leaks into every test that runs after this one.
+            afterEach(() => {
+                (
+                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
+                ).mockReturnValue(of(mockFileAssetTypes));
+            });
+
+            it('should still render a chip for every saved extension', () => {
+                // Regression: the patch that loads the folder waits on the content-type request, so
+                // it can land after the user has typed and narrowed the suggestions. PrimeNG rebuilds
+                // the chips from that narrowed list on the write, keeping only what it matches, so a
+                // saved extension outside the filter lost its chip while staying in the form value —
+                // and the next add rebuilt the control from those pruned chips, deleting it for good.
+                (
+                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
+                ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
+
+                const late = createComponent({
+                    props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+                });
+                late.detectChanges();
+
+                const autoComplete = late.query(AutoComplete) as AutoComplete;
+                const input = autoComplete.inputEL.nativeElement as HTMLInputElement;
+
+                input.value = '*.j';
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                jest.advanceTimersByTime(500);
+                late.detectChanges();
+
+                jest.advanceTimersByTime(1000);
+                late.detectChanges();
+
+                expect(autoComplete.modelValue()).toEqual(['*.jpg', '*.svg']);
+                expect(autoComplete.modelValue()).toEqual(
+                    late.component.folderForm.get('allowedFileExtensions')?.value
+                );
+            });
         });
 
         it('should replace the saved extension when it is removed and a new one is typed', () => {

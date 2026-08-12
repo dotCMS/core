@@ -137,15 +137,16 @@ export class DotContentDriveDialogFolderComponent {
 
         if (folder && assetType) {
             const cleanName = folder.name;
+            const savedExtensions = folder.filesMasks?.trim().length
+                ? folder.filesMasks.split(',')
+                : [];
 
             this.$originalName.set(cleanName);
 
             this.folderForm.patchValue({
                 title: folder.title,
                 sortOrder: folder.sortOrder,
-                allowedFileExtensions: folder.filesMasks?.trim().length
-                    ? folder.filesMasks.split(',')
-                    : [],
+                allowedFileExtensions: savedExtensions,
                 defaultFileAssetType: assetType.variable,
                 // Normalize to the uppercase enum the radio options use (DOTASSET/FILEASSET),
                 // matching the defensive `.toUpperCase()` in the shell (#resolvePreferredBaseType)
@@ -155,6 +156,15 @@ export class DotContentDriveDialogFolderComponent {
                 showOnMenu: folder.showOnMenu,
                 name: cleanName
             });
+
+            // Restate the chips from what was loaded, because the patch above cannot be trusted to
+            // render it. PrimeNG rebuilds the chips from the current `suggestions` on every write to
+            // the control, keeping only what it can match there — and this patch waits on the
+            // content-type request, so it can land after the user has already typed and narrowed
+            // that list. Any saved extension outside the filter would be pruned from the chips while
+            // staying in the form value, and the next add rebuilds the control from those pruned
+            // chips, deleting it for good. Writing the model directly skips that matching entirely.
+            this.$extensionsAutoComplete()?.writeModelValue(savedExtensions);
         }
     });
 
