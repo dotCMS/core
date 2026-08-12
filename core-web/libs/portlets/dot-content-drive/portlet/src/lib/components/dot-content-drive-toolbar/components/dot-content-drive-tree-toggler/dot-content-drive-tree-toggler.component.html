@@ -1,8 +1,10 @@
-<svg
+<!-- Same glyph UVE uses to toggle the palette and the quick-edit panel, rendered from the Material
+     Symbols font rather than UVE's exported SVG. UVE's asset hardcodes the primary blue in both
+     states, so the color is set here rather than inherited from the button. -->
+<i
     pButtonIcon
-    class="size-5"
-    fill="currentColor"
-    viewBox="0 0 24 24"
+    class="material-symbols-outlined text-[1.25rem]! leading-none text-primary"
+    aria-hidden="true"
     data-testid="tree-toggle-icon">
-    <use href="./assets/dot-content-drive/tree-folder.svg#tree-folder"></use>
-</svg>
+    left_panel_open
+</i>
