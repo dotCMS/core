@@ -9,12 +9,14 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotFormatDateService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
@@ -75,6 +77,19 @@ const BULK_ACTIONS_RESPONSE = {
                                 assignable: false,
                                 commentable: false
                             }
+                        },
+                        {
+                            // The one input the dialog can collect: reachable, unlike `action-pp`.
+                            count: 2,
+                            pushPublish: false,
+                            moveable: true,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-move',
+                                name: 'Move',
+                                assignable: false,
+                                commentable: false
+                            }
                         }
                     ]
                 }
@@ -95,6 +110,11 @@ describe('DotContentDriveActionCenterComponent', () => {
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
+    // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
+    const mockCurrentSite = signal<{ hostname: string } | undefined>({
+        hostname: 'demo.dotcms.com'
+    });
+    const mockPath = signal<string>('/blogs');
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
@@ -104,6 +124,9 @@ describe('DotContentDriveActionCenterComponent', () => {
                 selectedItems: mockSelectedItems,
                 actionExecution: mockActionExecution,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
+                // The folder being browsed, which seeds the move destination picker.
+                currentSite: mockCurrentSite,
+                path: mockPath,
                 loadItems: jest.fn(),
                 setStatus: jest.fn(),
                 setSelectedItems: jest.fn(),
@@ -119,7 +142,16 @@ describe('DotContentDriveActionCenterComponent', () => {
             // Pulled in by the Content Drive grid, which the action preview renders for real.
             mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
-            mockProvider(DotFormatDateService)
+            mockProvider(DotFormatDateService),
+            // Pulled in by the folder picker's own store, which the move configuration step renders
+            // for real. Mocked rather than stubbed out with a fake child component: whether that
+            // component can actually be instantiated inside this dialog is the thing worth proving.
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotBrowsingService, {
+                getSitesTreePath: jest.fn(() => of([])),
+                getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
+                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(null))
+            })
         ],
         detectChanges: false
     });
@@ -131,6 +163,8 @@ describe('DotContentDriveActionCenterComponent', () => {
         ]);
         mockActionExecution.set(undefined);
         mockCurrentUserIsAdmin.set(false);
+        mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
+        mockPath.set('/blogs');
 
         spectator = createComponent();
 
@@ -820,7 +854,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
         });
 
-        it('should disable actions that need extra input', () => {
+        it('should disable actions needing an input the dialog cannot collect', () => {
             spectator.detectChanges();
 
             const pushPublish = spectator.query(
@@ -828,6 +862,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             ) as HTMLInputElement;
 
             expect(pushPublish.disabled).toBe(true);
+        });
+
+        it('should enable a move action, whose input the dialog collects', () => {
+            // The distinction the granular flags exist for: `requiresInput` is true for both of
+            // these rows, but only push-publish is unreachable.
+            spectator.detectChanges();
+
+            const move = spectator.query(
+                '[data-testid="workflow-action-action-move"] input'
+            ) as HTMLInputElement;
+
+            expect(move.disabled).toBe(false);
         });
 
         it('should not open the preview when the action applies to nothing', () => {
@@ -951,7 +997,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeWorkflowAction).toHaveBeenCalledWith(
                 'action-review',
                 expect.any(String),
-                ['inode-1', 'inode-2']
+                ['inode-1', 'inode-2'],
+                // No move actionlet on this action, so the destination stays empty and the server
+                // ignores it.
+                { pathToMove: '' }
             );
         });
 
@@ -965,7 +1014,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeWorkflowAction).toHaveBeenCalledWith(
                 'action-review',
                 expect.any(String),
-                ['inode-2']
+                ['inode-2'],
+                { pathToMove: '' }
             );
         });
 
@@ -1031,6 +1081,216 @@ describe('DotContentDriveActionCenterComponent', () => {
 
                 expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
             });
+        });
+    });
+
+    describe('move configuration step', () => {
+        /** Arms the move action and drills in, which stops on the configuration step. */
+        const goToConfigure = (): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-move');
+            spectator.detectChanges();
+            spectator.click('[data-testid="continue-workflow-editorial"]');
+            spectator.detectChanges();
+        };
+
+        /**
+         * Picks a destination, standing in for the step component's `pathToMoveChange`.
+         *
+         * Driven through the output rather than the real picker: that component owns an HTTP-backed
+         * sites/folders store, and the `hostname:/path` → `//hostname/path` conversion it performs on
+         * the way out is unit-tested in `action-center.spec.ts`. What matters here is what the dialog
+         * does with an already-chosen path.
+         */
+        const chooseDestination = (pathToMove = '//demo.dotcms.com/application'): void => {
+            spectator.component['onPathToMoveChange'](pathToMove);
+            spectator.detectChanges();
+        };
+
+        beforeEach(() => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2' })
+            ]);
+        });
+
+        it('should stop on the configuration step instead of the preview', () => {
+            goToConfigure();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+        });
+
+        it('should title the dialog header with the action and the item count', () => {
+            // The count has to survive into this step: it is the only place it appears, since the
+            // step deliberately does not repeat the row list.
+            goToConfigure();
+
+            expect(store.setDialogDrillDown).toHaveBeenLastCalledWith({
+                header: 'Move',
+                itemCount: 2
+            });
+        });
+
+        it('should seed the destination with the folder being browsed', () => {
+            // So the picker opens on the current location rather than the bare site list.
+            goToConfigure();
+
+            expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/blogs');
+        });
+
+        it('should keep Continue disabled while the destination is the current folder', () => {
+            // The consequence of seeding: a destination is present from the outset, so Continue has
+            // to gate on it having *changed*, not merely on it being set. Otherwise one click fires a
+            // move of every item to where it already is.
+            goToConfigure();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should keep Continue disabled when the destination is cleared', () => {
+            goToConfigure();
+            chooseDestination('');
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should refuse to fire a move to the folder the items are already in', () => {
+            goToConfigure();
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should enable Continue once a destination is chosen', () => {
+            goToConfigure();
+            chooseDestination();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(false);
+        });
+
+        it('should reach the preview once a destination is chosen', () => {
+            goToConfigure();
+            chooseDestination();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+            expect(previewRows().length).toBe(2);
+        });
+
+        it('should fire with the chosen destination', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-move',
+                'Move',
+                ['inode-1', 'inode-2'],
+                { pathToMove: '//demo.dotcms.com/application' }
+            );
+        });
+
+        it('should honour rows unchecked after the destination was chosen', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-move',
+                'Move',
+                ['inode-2'],
+                { pathToMove: '//demo.dotcms.com/application' }
+            );
+        });
+
+        it('should refuse to fire a move with no destination', () => {
+            // Reachable only by skipping the guarded Continue, but the cost of getting here is a
+            // run where every item fails, so the commit point refuses it too.
+            goToConfigure();
+            chooseDestination('');
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should step back from the preview to the configuration step', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            // Back to the picker, not past it to the action list — otherwise correcting a
+            // destination would mean re-picking the action and re-trimming the rows.
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-center"]')).toBeNull();
+        });
+
+        it('should keep the chosen destination when stepping back to correct it', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/application');
+        });
+
+        it('should drop the destination when returning to the action list', () => {
+            // A path belongs to the run being set up; carrying it into another action's step would
+            // pre-fill a decision never made for that action.
+            goToConfigure();
+            chooseDestination();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pathToMove']()).toBe('');
+            expect(store.clearDialogDrillDown).toHaveBeenCalled();
+        });
+
+        it('should keep the configuration step inert while an action is in flight', () => {
+            goToConfigure();
+            chooseDestination();
+            mockActionExecution.set({ actionName: 'Move', total: 2 });
+            spectator.detectChanges();
+
+            spectator.component['onContinueFromConfigure']();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
         });
     });
 
@@ -1138,7 +1398,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeWorkflowAction).toHaveBeenCalledWith(
                 'copy-blog',
                 expect.any(String),
-                ['blog-1']
+                ['blog-1'],
+                { pathToMove: '' }
             );
         });
 

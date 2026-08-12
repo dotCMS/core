@@ -89,15 +89,43 @@ export interface DotActionCenterScheme {
 }
 
 /**
+ * Runtime inputs a workflow action needs before it can fire.
+ *
+ * These are the four — and only four — input kinds the backend advertises. `WorkflowResource`'s
+ * `createActionInputViews()` is the sole producer of the `actionInputs[]` contract and emits exactly
+ * these ids, so the set is closed by the API rather than by convention: an actionlet cannot ask for
+ * anything else at fire time (every other actionlet takes its parameters at scheme-design time).
+ *
+ * Kept as separate flags rather than folded into one boolean because they are independent — a single
+ * approval action can be assignable *and* commentable *and* push-publish — and because the dialog can
+ * collect some of them but not yet all.
+ */
+export interface DotActionCenterActionInputs {
+    /** Has a move actionlet with no configured path — needs a target path. */
+    moveable: boolean;
+    /** Has a push-publish actionlet — needs environments, dates and a filter. */
+    pushPublish: boolean;
+    /** Needs an assignee (user or role). */
+    assignable: boolean;
+    /** Needs a workflow comment. */
+    commentable: boolean;
+}
+
+/**
  * A single selectable workflow action in the Action Center.
  */
 export interface DotActionCenterWorkflowAction {
     id: string;
     name: string;
     count: number;
+    /** Which runtime inputs the action needs before it can fire. */
+    inputs: DotActionCenterActionInputs;
     /**
-     * True when the action cannot be fired from the dialog without collecting extra input
-     * (assign/comment, push-publish settings, or a move target path). Disabled in v1.
+     * True when the action needs *any* extra input beyond the selection.
+     *
+     * Convenience roll-up of {@link inputs} — it says the action needs a configuration step, not that
+     * the dialog is unable to offer one. Use {@link DotActionCenterActionInputs} to decide what to
+     * render, and `hasUnsupportedInput` to decide whether the row is still disabled.
      */
     requiresInput: boolean;
     /** True when `count` is an upper bound because a Velocity condition was not evaluated. */

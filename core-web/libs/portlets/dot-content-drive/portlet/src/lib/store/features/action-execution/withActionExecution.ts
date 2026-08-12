@@ -150,11 +150,17 @@ export function withActionExecution() {
                      * Contentlets whose scheme does not own the action are skipped server-side and
                      * reported in `skippedCount`, so a mixed-type selection partially skips by
                      * design — the result carries that through to the toast.
+                     *
+                     * `inputs.pathToMove` carries the destination for an action wiring the Move
+                     * actionlet, in the `//hostname/path` form the actionlet reads. It is ignored by
+                     * every other action, which is why it stays optional rather than becoming a
+                     * separate method: the request shape is identical either way.
                      */
                     executeWorkflowAction: (
                         workflowActionId: string,
                         actionName: string,
-                        contentletIds: string[]
+                        contentletIds: string[],
+                        inputs?: { pathToMove?: string }
                     ): void => {
                         if (!contentletIds.length || store.actionExecution()) {
                             return;
@@ -171,7 +177,9 @@ export function withActionExecution() {
                             additionalParams: {
                                 assignComment: { assign: '', comment: '' },
                                 pushPublish: {},
-                                additionalParamsMap: { _path_to_move: '' }
+                                additionalParamsMap: {
+                                    _path_to_move: inputs?.pathToMove ?? ''
+                                }
                             }
                         };
 

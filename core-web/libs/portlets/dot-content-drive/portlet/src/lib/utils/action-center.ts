@@ -369,20 +369,111 @@ export const eligibleContentlets = (
 };
 
 /**
+ * Input kinds the dialog cannot collect yet.
+ *
+ * Move is absent because the configuration step supplies a target path (see
+ * {@link requiresMovePath}). Push-publish and assign/comment still have no step, so an action needing
+ * either stays disabled — the row is greyed with the `requires-input` hint rather than opening a
+ * screen that cannot produce a valid payload.
+ */
+const UNSUPPORTED_INPUTS = ['pushPublish', 'assignable', 'commentable'] as const;
+
+/**
+ * True when the action needs an input the dialog has no way to collect, so the row stays disabled.
+ *
+ * Split from `requiresInput` deliberately: that flag says "needs a configuration step", this one says
+ * "needs one we haven't built". Enabling a kind of input is then a matter of removing it from
+ * {@link UNSUPPORTED_INPUTS} and rendering its step, with no change to how rows are gated.
+ */
+export const hasUnsupportedInput = (action: DotActionCenterWorkflowAction): boolean =>
+    UNSUPPORTED_INPUTS.some((input) => action.inputs[input]);
+
+/**
+ * True when the action needs a move target path and nothing else — the one input the dialog collects.
+ *
+ * `moveable` is only set when the action's move actionlet has an *empty* path parameter; a move action
+ * with a path configured in the scheme fires with no input at all, and the backend never flags it.
+ */
+export const requiresMovePath = (
+    action: DotActionCenterWorkflowAction | undefined
+): action is DotActionCenterWorkflowAction =>
+    !!action && action.inputs.moveable && !hasUnsupportedInput(action);
+
+/**
+ * Converts the host/folder field's value into the `_path_to_move` the bulk endpoint expects.
+ *
+ * `DotHostFolderFieldComponent` writes `hostname:/folder/path` — the format the Site-or-Folder *content
+ * field* persists. `MoveContentActionlet` reads `//hostname/folder/path` instead, the same shape Content
+ * Drive's drag-and-drop move already builds. Neither side is wrong; they are different contracts that
+ * happen to meet here, so the seam gets one named function instead of an inline template expression.
+ *
+ * Returns an empty string for an unset or unrecognised value, which callers treat as "no path chosen"
+ * — never a silently malformed path that the server would reject with "The host path is not valid".
+ */
+export const toPathToMove = (hostFolderValue: string | null | undefined): string => {
+    const separatorIndex = hostFolderValue?.indexOf(':') ?? -1;
+
+    if (!hostFolderValue || separatorIndex < 1) {
+        return '';
+    }
+
+    const hostname = hostFolderValue.slice(0, separatorIndex);
+    const path = hostFolderValue.slice(separatorIndex + 1);
+
+    return `//${hostname}${path.startsWith('/') ? path : `/${path}`}`;
+};
+
+/**
+ * Inverse of {@link toPathToMove}: `//hostname/path` → the `hostname:/path` the picker reads.
+ *
+ * Used to seed the picker with the folder Content Drive is currently browsing, which is what makes it
+ * open on the tree already expanded to that folder rather than at the site list. The picker has no
+ * separate "start here" input — `writeValue` is the only channel that drives its initial load — so the
+ * starting location has to arrive as a value.
+ *
+ * Returns an empty string for anything it cannot parse, which leaves the picker unseeded rather than
+ * feeding it a path it would fail to resolve.
+ */
+export const toHostFolderValue = (pathToMove: string | null | undefined): string => {
+    if (!pathToMove?.startsWith('//')) {
+        return '';
+    }
+
+    const withoutPrefix = pathToMove.slice(2);
+    const separatorIndex = withoutPrefix.indexOf('/');
+
+    if (separatorIndex < 1) {
+        // A bare `//hostname` is the site root; the picker still expects an explicit path.
+        return withoutPrefix ? `${withoutPrefix}:/` : '';
+    }
+
+    return `${withoutPrefix.slice(0, separatorIndex)}:${withoutPrefix.slice(separatorIndex)}`;
+};
+
+/**
  * Maps API `CountWorkflowAction` → UI shape.
- * `requiresInput` covers push-publish, move path, or assign/comment — v1 disables these.
+ *
+ * The four input flags are carried through individually rather than collapsed, because the dialog now
+ * handles one of them (move) and still has to refuse the other three.
  */
 const toActionCenterAction = (
     countAction: DotCountWorkflowAction
 ): DotActionCenterWorkflowAction => {
     const { workflowAction, pushPublish, moveable, conditionPresent, count } = countAction;
 
+    const inputs = {
+        moveable,
+        pushPublish,
+        assignable: workflowAction.assignable,
+        commentable: workflowAction.commentable
+    };
+
     return {
         id: workflowAction.id,
         name: workflowAction.name,
         count,
-        requiresInput:
-            pushPublish || moveable || workflowAction.assignable || workflowAction.commentable,
+        inputs,
+        requiresInput: Object.values(inputs).some(Boolean),
         approximateCount: conditionPresent,
         // Filled by `mergeActionCenterSchemes`.
         contentTypes: []

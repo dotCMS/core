@@ -30,6 +30,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
@@ -39,12 +40,14 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
+    hasUnsupportedInput,
     isLockedByAnotherUser,
-    mergeActionCenterSchemes
+    mergeActionCenterSchemes,
+    requiresMovePath
 } from '../../../utils/action-center';
 
-/** The two screens the dialog switches between. */
-type DotActionCenterView = 'actions' | 'preview';
+/** The screens the dialog switches between. */
+type DotActionCenterView = 'actions' | 'configure' | 'preview';
 
 /**
  * Bulk action dialog for the current Content Drive selection, offered from one contentlet upward.
@@ -61,6 +64,11 @@ type DotActionCenterView = 'actions' | 'preview';
  *
  * **Both sections commit the same way**: picking an action opens a **preview** screen (`$view`)
  * listing the contentlets it will run on with a checkbox each, and nothing is sent until Execute.
+ *
+ * An action that needs input first gets a **configuration** screen ahead of the preview, so the flow is
+ * `pick → configure → preview → execute`. Only a move target is collected today (see
+ * `DotContentDriveActionMoveTargetComponent`); the preview deliberately stays last, keeping the rows
+ * and the Execute button together as the final screen for every action.
  *
  * This used to be workflow-only, on the reasoning that a quick action's count is derived from the
  * rows themselves and so "which items is this about to touch?" had an obvious answer. That confused
@@ -81,9 +89,11 @@ type DotActionCenterView = 'actions' | 'preview';
  * - **One action per execute.** No endpoint fires multiple different actions in one call, and firing
  *   one action moves contentlets to a new step — which invalidates the other actions' counts. The
  *   legacy JSP dialog has the same constraint (one button, one fire).
- * - **Actions needing extra input are disabled** (`requiresInput`): push-publish settings, a move
- *   target path, or an assign/comment prompt. Wiring those means reusing
- *   `DotWorkflowEventHandlerService`, which is out of scope here.
+ * - **Push-publish and assign/comment actions are still disabled** (`hasUnsupportedInput`). Both have
+ *   embeddable forms in `apps/dotcms-ui` (`DotPushPublishFormComponent`,
+ *   `DotCommentAndAssignFormComponent`) that would need promoting to a lib before a portlet can import
+ *   them; until then a row needing either stays greyed rather than opening a step that cannot produce a
+ *   valid payload.
  * Renders inside the shell's shared dialog rather than owning one, so there is a single dialog and a
  * single open/close path. The shell sizes this type's content box as a flex column; this component
  * fills it with a pinned summary, a scrolling body and a pinned footer.
@@ -100,6 +110,7 @@ type DotActionCenterView = 'actions' | 'preview';
         BadgeModule,
         ButtonModule,
         ConfirmDialogModule,
+        DotContentDriveActionMoveTargetComponent,
         DotContentDriveActionPreviewComponent,
         DotMessagePipe,
         FormsModule,
@@ -222,10 +233,57 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected readonly $executing = computed(() => !!this.#store.actionExecution());
     /**
-     * Which screen is showing. Quick actions never leave `'actions'`; picking a workflow action and
-     * continuing swaps to `'preview'`.
+     * Which screen is showing.
+     *
+     * Quick actions always go straight to `'preview'`; a workflow action goes through `'configure'`
+     * first when it needs a target path, so the order is `pick → configure → preview → execute`.
+     *
+     * The configuration step sits *before* the preview rather than after it so the preview stays the
+     * last thing seen before committing — the same position it holds for every other action, with the
+     * checkbox list and the Execute button together. Putting it after would mean the user confirms a
+     * set of rows and then leaves that screen to fill in a form, which reads as a second commit.
      */
     protected readonly $view = signal<DotActionCenterView>('actions');
+    /**
+     * The bulk move destination as `//hostname/path`, or `''` while nothing is chosen.
+     *
+     * Lives here rather than in the step component because it has to survive navigating forward to the
+     * preview and back again — the step is destroyed by the `@switch` on `$view`, and a user who
+     * returns to correct their selection should not find the picker reset.
+     */
+    protected readonly $pathToMove = signal<string>('');
+
+    /**
+     * The folder Content Drive is currently browsing, as `//hostname/path`.
+     *
+     * Seeds the destination picker so it opens on the current location instead of the bare site list.
+     * The same string the store builds for its own search (`assetPath`), so the two cannot drift.
+     *
+     * Note this is the *browsing* path, not any contentlet's own folder: with a search or filter
+     * applied the selection can span folders, and no single "current path" exists for it. As a place
+     * to start navigating from it is right either way, which is all it is used for.
+     */
+    protected readonly $currentPath = computed(() => {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        return hostname ? `//${hostname}${this.#store.path() || '/'}` : '';
+    });
+
+    /**
+     * True when the destination is still the folder the picker opened on.
+     *
+     * Gates Continue. Seeding the picker means a destination is present from the outset, so without
+     * this a single click would fire a workflow action moving every item to where it already is —
+     * a new version, a step transition and a reindex each, for no change.
+     */
+    protected readonly $destinationUnchanged = computed(
+        () => !!this.$pathToMove() && this.$pathToMove() === this.$currentPath()
+    );
+
+    /** Whether the configuration step has enough to move on to the preview. */
+    protected readonly $canLeaveConfigure = computed(
+        () => !!this.$pathToMove() && !this.$destinationUnchanged()
+    );
     /**
      * The contentlets still checked in the preview — exactly what gets fired.
      *
@@ -261,6 +319,17 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     /** Number of contentlets still checked in the preview. */
     protected readonly $includedCount = computed(() => this.$includedItems().length);
+
+    /**
+     * Label for the preview's back control, which names where it actually goes.
+     *
+     * "Back to actions" would be a lie on a move, where back lands on the destination picker.
+     */
+    protected readonly $backLabel = computed(() =>
+        requiresMovePath(this.$selectedAction())
+            ? 'content-drive.action-center.back.configure'
+            : 'content-drive.action-center.back'
+    );
 
     /**
      * The single armed workflow action, resolved across every scheme.
@@ -332,6 +401,28 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         const selectedId = this.$selectedActionId();
 
         return !!selectedId && scheme.actions.some((action) => action.id === selectedId);
+    }
+
+    /**
+     * True when the action row cannot be armed because it needs an input the dialog cannot collect.
+     *
+     * Replaces the blanket `requiresInput` gate: a move action is now reachable, because Continue
+     * routes it through the configuration step that supplies its path. Push-publish and assign/comment
+     * remain disabled — they still have no step, and opening one for them would only lead to an
+     * Execute that cannot build a valid payload.
+     */
+    protected actionIsBlocked(action: DotActionCenterWorkflowAction): boolean {
+        return hasUnsupportedInput(action);
+    }
+
+    /**
+     * Hint shown on a workflow action row. Empty for a row that can be used, so no tooltip appears.
+     *
+     * A move action gets no hint at all now that it works; only the still-unsupported kinds explain
+     * themselves.
+     */
+    protected workflowActionHint(action: DotActionCenterWorkflowAction): string {
+        return this.actionIsBlocked(action) ? 'content-drive.action-center.requires-input' : '';
     }
 
     /**
@@ -481,15 +572,71 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         }
 
         this.$includedItems.set(previewItems);
-        this.$view.set('preview');
+
+        // An action needing a destination stops here for it; every other action goes straight to the
+        // preview. The header carries the item count either way, so the configuration step keeps the
+        // "N items" context without repeating the row list.
+        if (requiresMovePath(action)) {
+            // Mirrors what the seeded picker is showing, so the two agree from the first render.
+            // `$destinationUnchanged` is what keeps this from arming Execute on a no-op.
+            this.$pathToMove.set(this.$currentPath());
+            this.$view.set('configure');
+        } else {
+            this.$view.set('preview');
+        }
+
         this.publishDrillDownHeader(action.name, previewItems.length);
+    }
+
+    /** Records the destination chosen in the configuration step. */
+    protected onPathToMoveChange(pathToMove: string): void {
+        this.$pathToMove.set(pathToMove);
+    }
+
+    /**
+     * Leaves the configuration step for the preview, once a destination is chosen.
+     *
+     * Guarded rather than relying on the disabled button alone, so the step cannot be skipped past by
+     * a stray call and reach Execute with an empty path — which the server would reject with an
+     * opaque "The host path is not valid".
+     */
+    protected onContinueFromConfigure(): void {
+        if (!this.$canLeaveConfigure() || this.$executing()) {
+            return;
+        }
+
+        this.$view.set('preview');
+    }
+
+    /**
+     * Steps back one screen: the preview returns to the configuration step when the action has one,
+     * otherwise straight to the action list.
+     *
+     * A single back control that always returned to the list would throw away a chosen destination on
+     * the way past it.
+     */
+    protected onBack(): void {
+        if (this.$executing()) {
+            return;
+        }
+
+        if (this.$view() === 'preview' && requiresMovePath(this.$selectedAction())) {
+            this.$view.set('configure');
+
+            return;
+        }
+
+        this.onBackToActions();
     }
 
     /**
      * Returns to the action list.
      *
      * `$selectedActionId` is deliberately kept, so the radio is still armed on return and re-opening
-     * the preview does not mean re-picking the action.
+     * the preview does not mean re-picking the action. The chosen destination is *not* kept: the radio
+     * survives so the action does not need re-picking, but a path belongs to the run being set up, and
+     * carrying it into a different action's configuration step would pre-fill a decision never made
+     * for it.
      */
     protected onBackToActions(): void {
         if (this.$executing()) {
@@ -499,6 +646,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.$view.set('actions');
         this.$includedItems.set([]);
         this.$pendingQuickAction.set(null);
+        this.$pathToMove.set('');
         this.#store.clearDialogDrillDown();
     }
 
@@ -534,15 +682,27 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected onExecuteWorkflowAction(): void {
         const workflowActionId = this.$selectedActionId();
+        const action = this.$selectedAction();
         const contentletIds = this.$includedItems().map((item) => item.inode);
 
         if (!workflowActionId || !contentletIds.length) {
             return;
         }
 
-        const actionName = this.$selectedAction()?.name ?? workflowActionId;
+        const pathToMove = this.$pathToMove();
 
-        this.#store.executeWorkflowAction(workflowActionId, actionName, contentletIds);
+        // A move with no destination — or one still pointing at the folder the items are already in —
+        // is refused here rather than sent. An empty path would answer 200 with every item failed, and
+        // a same-folder move would burn a version and a reindex per item to change nothing.
+        if (requiresMovePath(action) && !this.$canLeaveConfigure()) {
+            return;
+        }
+
+        const actionName = action?.name ?? workflowActionId;
+
+        this.#store.executeWorkflowAction(workflowActionId, actionName, contentletIds, {
+            pathToMove
+        });
         this.handOffToToolbar();
     }
 

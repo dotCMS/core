@@ -1,0 +1,35 @@
+<!--
+    Body only — no header and no footer. The dialog header is the shell's (retitled to the action name
+    via drill-down state) and the Continue button lives in the Action Center's own pinned footer, which
+    owns the in-flight disabled state. Rendering either here would duplicate it.
+-->
+<div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5" data-testid="move-target">
+    <div class="form">
+        <div class="field">
+            <label for="moveTargetFolder">
+                {{ 'content-drive.action-center.move.destination' | dm }}
+            </label>
+
+            <!--
+                `isRequired` is fixed true: the step's only purpose is to produce a destination, so
+                there is no variant of it where the field is optional. It also makes the picker resolve
+                folders rather than stopping at sites, since a site root is a valid move target.
+            -->
+            <dot-host-folder-field
+                id="moveTargetFolder"
+                [hasError]="$hasError()"
+                [isRequired]="true"
+                [disabled]="disabled()"
+                [ngModel]="$hostFolderValue()"
+                data-testid="move-target-picker"
+                (ngModelChange)="onHostFolderValueChange($event)" />
+
+            <small class="text-surface-500">
+                {{
+                    'content-drive.action-center.move.destination.hint'
+                        | dm: [itemCount().toString()]
+                }}
+            </small>
+        </div>
+    </div>
+</div>
