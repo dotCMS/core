@@ -350,6 +350,14 @@ export class DotContentDriveDialogFolderComponent {
 
         if (formValue.allowedFileExtensions.length > 0) {
             data.fileMasks = formValue.allowedFileExtensions;
+        } else if (this.$folder()) {
+            // Clearing every extension on an existing folder. The backend skips the write when
+            // `fileMasks` is absent *or* an empty list (`UtilMethods.isSet` is false for both), so
+            // neither can express "clear" and the saved list would come back on the next load. A
+            // single blank mask joins to an empty string server-side, which is how a folder with no
+            // restrictions is stored and reads back as no extensions. On create there is nothing to
+            // clear, so the field stays omitted.
+            data.fileMasks = [''];
         }
 
         if (formValue.defaultFileAssetType && formValue.defaultFileAssetType.trim() !== '') {

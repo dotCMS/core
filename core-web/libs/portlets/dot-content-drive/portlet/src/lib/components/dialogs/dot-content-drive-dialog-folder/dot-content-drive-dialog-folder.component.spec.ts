@@ -1167,6 +1167,26 @@ describe('DotContentDriveDialogFolderComponent', () => {
             });
         });
 
+        it('should send a blank mask when every extension is removed, so the saved list is cleared', () => {
+            // The backend skips the write when `fileMasks` is absent or an empty list, so neither
+            // can express "clear" and the saved extensions came back on the next load. A single
+            // blank mask joins to an empty string server-side, which is how a folder with no
+            // restrictions is stored.
+            component.folderForm.patchValue({ allowedFileExtensions: [] });
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ fileMasks: [''] })
+                })
+            );
+        });
+
         it('should reload content drive, load folders and close dialog on success', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
