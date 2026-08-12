@@ -19,6 +19,7 @@ import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing'
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
+import { SEARCH_DEBOUNCE_MS } from '../shared/constants';
 import { dotExperimentsListEvents } from '../store/dot-experiments-list.events';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
@@ -206,21 +207,47 @@ describe('DotExperimentsListComponent', () => {
         beforeEach(() => jest.useFakeTimers());
         afterEach(() => jest.useRealTimers());
 
-        it('should dispatch filterChanged only after the debounce window', () => {
-            spectator.detectChanges();
-
+        const type = (text: string) =>
             spectator.typeInElement(
-                'summer',
+                text,
                 spectator.query(byTestId('experiments-search-input')) as HTMLInputElement
             );
+
+        it('should dispatch filterChanged only after the debounce window', async () => {
+            spectator.detectChanges();
+
+            type('summer');
+            // `debounced` arms itself inside an internal effect that reads the source, so the
+            // timer is not even scheduled until a change-detection pass runs.
+            spectator.detectChanges();
 
             expect(dispatchedEvents()).not.toContainEqual(
                 dotExperimentsListEvents.filterChanged('summer')
             );
 
-            jest.advanceTimersByTime(300);
+            // It settles a Resource, so the timer alone is not enough — microtasks have to
+            // drain too, hence the async variant. The dispatch then lands in an effect on the
+            // next pass, rather than inside the timer callback as the rxjs version did.
+            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListEvents.filterChanged('summer')
+            );
+        });
+
+        it('should not re-dispatch when the settled term already matches the store', async () => {
+            // Stands in for `distinctUntilChanged`: re-typing the same text, or arriving with a
+            // hydrated `?filter=`, must not push a redundant filterChanged.
+            storeMock.filter.mockReturnValue('summer');
+            spectator.detectChanges();
+
+            type('summer');
+            spectator.detectChanges();
+            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            expect(dispatchedEvents()).not.toContainEqual(
                 dotExperimentsListEvents.filterChanged('summer')
             );
         });

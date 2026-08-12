@@ -1,14 +1,14 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
-import { Subject } from 'rxjs';
 
 import { DatePipe, Location } from '@angular/common';
 import {
-    ChangeDetectionStrategy,
     Component,
     computed,
+    debounced,
     DestroyRef,
     effect,
     inject,
+    linkedSignal,
     signal,
     untracked
 } from '@angular/core';
@@ -28,8 +28,6 @@ import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
-
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
@@ -58,6 +56,7 @@ import { DotExperimentStatusFilterComponent } from '../components/dot-experiment
 import {
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
+    SEARCH_DEBOUNCE_MS,
     SKELETON_COLUMNS,
     SKELETON_ROW_COUNT,
     STATUS_LABEL_KEYS,
@@ -108,7 +107,6 @@ import {
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
     providers: [DotExperimentsListStore, ConfirmationService, DotExperimentsService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotExperimentsListComponent {
@@ -202,7 +200,18 @@ export class DotExperimentsListComponent {
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
     readonly #destroyRef = inject(DestroyRef);
 
-    readonly #searchSubject = new Subject<string>();
+    /**
+     * Raw search-box text. A `linkedSignal` rather than a plain one so it re-seeds from the store
+     * whenever the filter changes underneath it — URL hydration on entry, and back/forward — while
+     * staying writable by the input.
+     */
+    readonly $searchTerm = linkedSignal<string>(() => this.store.filter());
+
+    /**
+     * Debounced view of the search box, using Angular's `debounced` rather than an rxjs
+     * `Subject` + `debounceTime`. Experimental in 22.0, so it may change shape.
+     */
+    readonly #debouncedSearch = debounced(() => this.$searchTerm(), SEARCH_DEBOUNCE_MS);
 
     /**
      * Translated fallbacks handed to `formatSchedule`, which stays free of user-facing English.
@@ -248,16 +257,25 @@ export class DotExperimentsListComponent {
         untracked(() => this.#writeUrl(queryParams));
     });
 
+    /**
+     * Pushes the settled search term into the store.
+     *
+     * Guarded against the store's own value: on entry the debounced term and the store agree
+     * (both seeded from the URL), so nothing is dispatched and a hydrated `?filter=` survives.
+     * It also stands in for `distinctUntilChanged` — re-typing the same text dispatches nothing.
+     */
+    protected readonly dispatchSearchEffect = effect(() => {
+        const term = this.#debouncedSearch.value();
+
+        untracked(() => {
+            if (term !== this.store.filter()) {
+                this.#dispatch.filterChanged(term);
+            }
+        });
+    });
+
     constructor() {
-        this.#searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((value) => this.#dispatch.filterChanged(value));
-
         this.#listenForActionSuccess();
-    }
-
-    onSearch(value: string): void {
-        this.#searchSubject.next(value);
     }
 
     onStatusesChange(statuses: DotExperimentStatus[]): void {

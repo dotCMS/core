@@ -1,12 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    input,
-    linkedSignal,
-    output
-} from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -46,8 +38,7 @@ interface StatusFilterOption {
         DotFilterListItemComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-experiment-status-filter.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-experiment-status-filter.component.html'
 })
 export class DotExperimentStatusFilterComponent {
     readonly #dotMessageService = inject(DotMessageService);

@@ -35,3 +35,6 @@ export const NO_GOAL_PLACEHOLDER = '—';
 
 /** Height of the status filter's option list before it scrolls. */
 export const LISTBOX_SCROLL_HEIGHT = '320px';
+
+/** Idle time before a search term is applied, in ms. */
+export const SEARCH_DEBOUNCE_MS = 300;

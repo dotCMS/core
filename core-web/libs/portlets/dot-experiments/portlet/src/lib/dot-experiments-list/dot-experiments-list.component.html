@@ -23,8 +23,7 @@
                 <input
                     pInputText
                     type="text"
-                    [ngModel]="store.filter()"
-                    (ngModelChange)="onSearch($event)"
+                    [(ngModel)]="$searchTerm"
                     [placeholder]="'experiments.list.search.placeholder' | dm"
                     [attr.aria-label]="'experiments.list.search.placeholder' | dm"
                     data-testid="experiments-search-input"
