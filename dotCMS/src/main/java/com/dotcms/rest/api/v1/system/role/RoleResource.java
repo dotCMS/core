@@ -363,8 +363,11 @@ public class RoleResource implements Serializable {
 		operationId = "updateRole",
 		summary = "Update a role",
 		description = "Updates an existing role's name, key, description, can-grant flags and parent. " +
-				"A null parentRoleId turns the role into a root role. Reparenting under the role's own " +
-				"descendant is rejected. System and locked roles cannot be updated. Note: the role is " +
+				"PUT is a full replace: every field of the role is overwritten from the request body, so " +
+				"clients must send the complete role representation — omitted fields are reset (booleans " +
+				"default to false, omitted roleKey/description are cleared, omitted parentRoleId reparents " +
+				"to root). A null parentRoleId turns the role into a root role. Reparenting under the role's " +
+				"own descendant is rejected. System and locked roles cannot be updated. Note: the role is " +
 				"updated in place — grants and permissions attached to the role are preserved."
 	)
 	@ApiResponses(value = {

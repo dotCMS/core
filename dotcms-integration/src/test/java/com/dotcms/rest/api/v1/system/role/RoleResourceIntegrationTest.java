@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
@@ -389,6 +390,42 @@ public class RoleResourceIntegrationTest {
         }
 
         assertEquals(originalName, roleAPI.loadRoleById(role.getId()).getName());
+    }
+
+    /**
+     * Given Scenario: PUT is a full replace — a minimal form (only the required roleName) is
+     * sent for a role that has key, description, can-grant flags, and a parent.
+     * Expected Result: every omitted field is overwritten: flags reset to false, roleKey and
+     * description become null, and the role is reparented to root. This pins the documented
+     * full-replace contract (clients must send the complete role representation) so any future
+     * drift to merge/PATCH semantics is a deliberate, test-breaking change.
+     */
+    @Test
+    public void testUpdateRole_fullReplace_omittedFieldsAreReset() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role role = new RoleDataGen()
+                .parent(parent.getId())
+                .key("full-replace-key-" + uniq())
+                .description("full replace description")
+                .editUsers(true)
+                .editPermissions(true)
+                .editLayouts(true)
+                .nextPersisted();
+
+        final RoleForm minimalForm = new RoleForm.Builder()
+                .roleName(role.getName())
+                .build();
+
+        resource.updateRole(adminRequest(), new MockHttpResponse().response(), role.getId(), minimalForm);
+
+        final Role reloaded = roleAPI.loadRoleById(role.getId());
+        assertFalse(reloaded.isEditUsers());
+        assertFalse(reloaded.isEditPermissions());
+        assertFalse(reloaded.isEditLayouts());
+        // the persistence layer normalizes omitted (null) values to empty strings
+        assertFalse(UtilMethods.isSet(reloaded.getRoleKey()));
+        assertFalse(UtilMethods.isSet(reloaded.getDescription()));
+        assertEquals(role.getId(), reloaded.getParent());
     }
 
     /**
