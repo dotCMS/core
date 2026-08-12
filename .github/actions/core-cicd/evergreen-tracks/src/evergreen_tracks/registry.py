@@ -34,6 +34,14 @@ def _digest_of(result: dict) -> str | None:
     return None
 
 
+def _hub_message(resp: requests.Response) -> str:
+    """Hub's own error text, when the body carries one."""
+    try:
+        return (resp.json() or {}).get("message") or ""
+    except ValueError:
+        return ""
+
+
 def _auth_headers() -> dict[str, str]:
     """Hub JWT header, or {} when no creds are in the environment."""
     username = os.environ.get("DOCKER_USERNAME")
@@ -53,10 +61,16 @@ def list_tags(repo: str) -> list[Tag]:
     while url:
         resp = requests.get(url, headers=headers, timeout=_TIMEOUT)
         if resp.status_code == 403 and not headers:
+            # Quote Hub's own reason rather than asserting one. The offset cap is the
+            # only anonymous 403 observed here (a missing repo or namespace 404s), but
+            # the cap keys off the OFFSET alone — even a repo with 3 tags 403s on
+            # page 11 — so "this repo has too many tags" would be an invented cause.
+            # Credentials are the remedy either way.
             raise RuntimeError(
-                f"Docker Hub refused anonymous pagination of {repo} at {url}. "
-                "Set DOCKER_USERNAME and DOCKER_TOKEN — Hub caps anonymous "
-                "requests at offset 1000 and this repo has more tags than that."
+                f"Docker Hub refused an anonymous read of {repo} at {url} — "
+                f"{_hub_message(resp) or f'HTTP {resp.status_code}'}. "
+                "Set DOCKER_USERNAME and DOCKER_TOKEN: anonymous requests cannot page "
+                "past offset 1000."
             )
         resp.raise_for_status()
         body = resp.json()
