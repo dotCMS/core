@@ -440,8 +440,24 @@ Run a full reindex first.
 It is **advisory only**: it never stops the crawl, and any failure to measure is swallowed — a
 diagnostic must not be able to break indexing. Only the engine the phase actually reads from is
 checked, so an incomplete OpenSearch mirror stays silent in Phases 0/1 where the crawl queries a
-complete Elasticsearch. Threshold: `SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT` (default `95`;
-`0` disables the check).
+complete Elasticsearch.
+
+**Off by default — switch it on while you are investigating.** Set
+`SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT` to the percentage below which you want the warning
+(`95` is the intended value: warn when the index is missing more than 5% of the content). `0`, the
+default, means the check never runs.
+
+It is opt-in because measuring is not free and buys no behaviour: each crawl that has it enabled
+costs one sequential scan of `contentlet_version_info` — a single statement returning both the
+working and live denominators — plus one stats call and one document count per engine, six engine
+round-trips in all. Measured at ~15 ms for 171k rows, ~22 ms for 453k (roughly 10 ms of that is
+fixed parallel-scan setup, so smaller tables do not get proportionally cheaper). Negligible against
+a crawl that runs for minutes, but it is a recurring cost on a schedule for a message only someone
+diagnosing a migration is looking for. Turn it on, read it, turn it off.
+
+Two guards run before anything touches the database, both plain config reads: the switch above, and
+the migration phase — Phase 0 is skipped even when enabled, since with no second engine there is no
+mirror that could have been left behind.
 
 Note the readiness endpoint does catch the precondition: an unreconciled content mirror shows as
 `COUNT_DRIFT` on `WORKING`/`LIVE` with `safeToAdvance: false`. It only *reports*, though — nothing

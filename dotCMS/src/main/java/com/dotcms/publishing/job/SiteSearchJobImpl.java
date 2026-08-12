@@ -418,13 +418,21 @@ public class SiteSearchJobImpl {
     }
 
     /**
-     * Config key for the indexed percentage below which a crawl is warned about. Percentage of the content the
-     * database says exists; {@code 0} disables the check.
+     * Config key that turns the incomplete-content-index check on: the indexed percentage below which a
+     * crawl is warned about. {@code 0} — the default — leaves the check off entirely.
+     *
+     * <p>Opt-in on purpose. Measuring costs a sequential scan of {@code contentlet_version_info} plus a
+     * stats call and a count query per engine, on every crawl, and it buys a diagnostic rather than
+     * correct behaviour — nothing downstream reads the result, the crawl runs identically either way.
+     * A cost every install pays on a schedule is the wrong trade for a message only someone
+     * investigating a migration is looking for; that person can turn it on, read it, and turn it back
+     * off. {@code 95} is the value to set — warn when the index serving the crawl is missing more than
+     * 5% of the content.</p>
      */
     static final String MIN_CONTENT_INDEXED_KEY = "SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT";
 
-    /** Default: warn when the content index serving the crawl is missing more than 5% of the content. */
-    static final double DEFAULT_MIN_CONTENT_INDEXED = 95.0;
+    /** Off. The check does nothing until an operator sets {@link #MIN_CONTENT_INDEXED_KEY}. */
+    static final double DEFAULT_MIN_CONTENT_INDEXED = 0;
 
     /**
      * The warning to emit before crawling when the content index this crawl will read from is
@@ -442,22 +450,25 @@ public class SiteSearchJobImpl {
      * stops the crawl, and any failure to compute it is swallowed, because a diagnostic must not be
      * able to break indexing.</p>
      *
-     * <p><strong>Skipped outright before the migration starts.</strong> Measuring costs a sequential
-     * scan of {@code contentlet_version_info} plus a stats call and a count query per engine, and in
-     * Phase 0 it can only ever report the single Elasticsearch index every other part of the product
-     * already depends on — there is no second engine whose copy could have been silently left behind,
-     * which is the failure this exists to catch. So an install that is not migrating pays nothing for
-     * it on every crawl. Checked first, and it is a plain config read.</p>
+     * <p><strong>Measures nothing unless asked to.</strong> Two guards, both plain config reads, before
+     * anything touches the database or an engine:</p>
+     * <ol>
+     *   <li>{@link #MIN_CONTENT_INDEXED_KEY} is off by default, so no install pays for this on a
+     *       schedule — see that constant for why it is opt-in.</li>
+     *   <li>Even when switched on, Phase 0 is skipped: there is no second engine whose copy could have
+     *       been silently left behind, which is the failure this exists to catch, so it could only ever
+     *       report the single Elasticsearch index the whole product already depends on.</li>
+     * </ol>
      */
     @VisibleForTesting
     Optional<String> incompleteContentIndexWarning() {
-        final MigrationPhase phase = MigrationPhase.current();
-        if (phase.isMigrationNotStarted()) {
-            return Optional.empty();
-        }
         final double threshold = Config.getFloatProperty(
                 MIN_CONTENT_INDEXED_KEY, (float) DEFAULT_MIN_CONTENT_INDEXED);
         if (threshold <= 0) {
+            return Optional.empty();
+        }
+        final MigrationPhase phase = MigrationPhase.current();
+        if (phase.isMigrationNotStarted()) {
             return Optional.empty();
         }
         final boolean readsOpenSearch = phase.isReadEnabled();

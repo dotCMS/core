@@ -142,13 +142,38 @@ public class SiteSearchJobAliasResolutionTest {
     }
 
     /**
+     * A job whose mirror supplier records whether it was consulted, so a test can assert that no
+     * measurement happened at all — not merely that it produced no warning.
+     */
+    private SiteSearchJobImpl jobRecordingWhetherItMeasured(final AtomicBoolean measured) {
+        return new SiteSearchJobImpl(mock(IndiciesAPI.class), siteSearchAPI, mock(HostAPI.class),
+                mock(UserAPI.class), mock(SiteSearchAuditAPI.class), mock(PublisherAPI.class),
+                () -> {
+                    measured.set(true);
+                    return List.of(contentRow(686L, 686, 21));
+                });
+    }
+
+    /** Opts the check in (it is off by default) and puts the install in the given phase. */
+    private static void optIn(final String phase) {
+        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, "95");
+        Config.setProperty(MigrationPhase.FLAG_KEY, phase);
+    }
+
+    /** Back to the shipped defaults: check off, migration not started. */
+    private static void restoreDefaults() {
+        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
+        Config.setProperty(MigrationPhase.FLAG_KEY, null);
+    }
+
+    /**
      * The case this exists for: a Phase-3 crawl reading an OpenSearch content index that was never
      * rebuilt. The crawl queries that index to build its corpus, so it can only produce a partial Site
      * Search index — and reindexing the content afterwards does not repair it.
      */
     @Test
     public void test_incompleteContentIndexOnTheReadEngine_isWarnedAbout() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "3"); // reads = OpenSearch
+        optIn("3"); // reads = OpenSearch
         try {
             final Optional<String> warning = jobSeeing(contentRow(686L, 686, 21))
                     .incompleteContentIndexWarning();
@@ -158,7 +183,7 @@ public class SiteSearchJobAliasResolutionTest {
             assertTrue(warning.get().contains("OpenSearch"));
             assertTrue(warning.get().contains("3.06%"));
         } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 
@@ -169,43 +194,43 @@ public class SiteSearchJobAliasResolutionTest {
      */
     @Test
     public void test_incompleteCopyOnTheEngineNotBeingRead_isNotWarnedAbout() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "1"); // reads = Elasticsearch
+        optIn("1"); // reads = Elasticsearch
         try {
             assertFalse(jobSeeing(contentRow(686L, 686, 21))
                     .incompleteContentIndexWarning().isPresent());
         } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 
     /** A complete index says nothing. */
     @Test
     public void test_completeContentIndex_isNotWarnedAbout() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        optIn("3");
         try {
             assertFalse(jobSeeing(contentRow(686L, 686, 686))
                     .incompleteContentIndexWarning().isPresent());
         } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 
     /** Without a database denominator there is no coverage to judge — silence, not a false alarm. */
     @Test
     public void test_noDatabaseDenominator_isNotWarnedAbout() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        optIn("3");
         try {
             assertFalse(jobSeeing(contentRow(null, 686, 21))
                     .incompleteContentIndexWarning().isPresent());
         } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 
     /** The check is advisory: if it cannot be computed, the crawl proceeds silently. */
     @Test
     public void test_failureToMeasure_isSwallowed() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        optIn("3");
         try {
             final SiteSearchJobImpl failing = new SiteSearchJobImpl(mock(IndiciesAPI.class),
                     siteSearchAPI, mock(HostAPI.class), mock(UserAPI.class),
@@ -214,14 +239,16 @@ public class SiteSearchJobAliasResolutionTest {
 
             assertFalse(failing.incompleteContentIndexWarning().isPresent());
         } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 
     /**
-     * Before the migration starts there is no second engine that could have been left behind, so the
-     * check must not run at all — it costs a sequential scan of {@code contentlet_version_info} plus a
-     * stats call and a count query per engine, on every crawl, to say nothing.
+     * The default: nobody asked for the check, so nothing is measured — not even in the phase where the
+     * warning would have something to say. Measuring costs a sequential scan of
+     * {@code contentlet_version_info} plus a stats call and a count query per engine, on every crawl,
+     * and it changes nothing about how the crawl runs; an install must not pay that on a schedule for a
+     * diagnostic.
      *
      * <p>Asserted by recording whether the supplier was consulted, NOT by having it throw: the
      * measurement runs inside a vavr {@code Try}, which swallows {@link Throwable}, so a thrown
@@ -230,37 +257,50 @@ public class SiteSearchJobAliasResolutionTest {
      * passes when the work ran and merely found nothing to report.</p>
      */
     @Test
-    public void test_migrationNotStarted_doesNotMeasureAtAll() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "0");
+    public void test_notOptedIn_doesNotMeasureAtAll() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "3"); // the phase that WOULD warn
         try {
             final AtomicBoolean measured = new AtomicBoolean(false);
-            final SiteSearchJobImpl phaseZero = new SiteSearchJobImpl(mock(IndiciesAPI.class),
-                    siteSearchAPI, mock(HostAPI.class), mock(UserAPI.class),
-                    mock(SiteSearchAuditAPI.class), mock(PublisherAPI.class),
-                    () -> {
-                        measured.set(true);
-                        return List.of(contentRow(686L, 686, 21));
-                    });
 
-            assertFalse(phaseZero.incompleteContentIndexWarning().isPresent());
-            assertFalse("The content mirror must not be measured before the migration starts",
+            assertFalse(jobRecordingWhetherItMeasured(measured)
+                    .incompleteContentIndexWarning().isPresent());
+            assertFalse("The content mirror must not be measured unless the check is switched on",
                     measured.get());
         } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 
-    /** The threshold is configurable, and 0 disables the check outright. */
+    /**
+     * Even switched on, the check does not run before the migration starts: there is no second engine
+     * whose copy could have been left behind, which is the failure it exists to catch, so it could only
+     * ever report the one Elasticsearch index the whole product already depends on.
+     */
+    @Test
+    public void test_migrationNotStarted_doesNotMeasureAtAll() {
+        optIn("0");
+        try {
+            final AtomicBoolean measured = new AtomicBoolean(false);
+
+            assertFalse(jobRecordingWhetherItMeasured(measured)
+                    .incompleteContentIndexWarning().isPresent());
+            assertFalse("The content mirror must not be measured before the migration starts",
+                    measured.get());
+        } finally {
+            restoreDefaults();
+        }
+    }
+
+    /** Explicitly setting the threshold to 0 switches the check back off. */
     @Test
     public void test_thresholdZero_disablesTheCheck() {
-        Config.setProperty(MigrationPhase.FLAG_KEY, "3");
+        optIn("3");
         Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, "0");
         try {
             assertFalse(jobSeeing(contentRow(686L, 686, 21))
                     .incompleteContentIndexWarning().isPresent());
         } finally {
-            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            restoreDefaults();
         }
     }
 }
