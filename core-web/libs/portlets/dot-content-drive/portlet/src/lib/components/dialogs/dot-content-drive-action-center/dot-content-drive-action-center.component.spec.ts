@@ -197,7 +197,7 @@ describe('DotContentDriveActionCenterComponent', () => {
     /** Arms the action and drills into its preview. */
     const goToPreview = (): void => {
         armAction();
-        spectator.click('[data-testid="continue-workflow-editorial"]');
+        spectator.click('[data-testid="action-center-continue"]');
         spectator.detectChanges();
     };
 
@@ -820,7 +820,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             // PrimeNG puts `disabled` on the inner <button>, not on the p-button host.
             const continueButton = spectator.query(
-                '[data-testid="continue-workflow-editorial"] button'
+                '[data-testid="action-center-continue"] button'
             ) as HTMLButtonElement;
 
             expect(continueButton.disabled).toBe(true);
@@ -829,7 +829,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should open the preview instead of firing when Continue is clicked', () => {
             armAction();
 
-            spectator.click('[data-testid="continue-workflow-editorial"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
@@ -908,7 +908,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 spectator.detectChanges();
 
                 const continueButton = spectator.query(
-                    '[data-testid="continue-workflow-editorial"] button'
+                    '[data-testid="action-center-continue"] button'
                 ) as HTMLButtonElement;
 
                 expect(continueButton.disabled).toBe(true);
@@ -1090,7 +1090,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('action-move');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-editorial"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
         };
 
@@ -1373,7 +1373,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             const rows = previewRows();
@@ -1390,7 +1390,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             spectator.click('[data-testid="action-preview-execute"]');
@@ -1407,7 +1407,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             expect(store.setDialogDrillDown).toHaveBeenCalledWith({
@@ -1421,7 +1421,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
@@ -1474,15 +1474,34 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
     });
 
-    describe('done', () => {
-        it('should close the dialog without firing anything', () => {
+    describe('the action list footer', () => {
+        it('should offer one Continue for the whole screen, not one per scheme', () => {
+            // A per-panel button repeated a single global decision — only one action can be armed
+            // across every scheme — and sat below a scrolling list, so the radio and the button
+            // acting on it could not be seen at once.
             spectator.detectChanges();
 
-            spectator.click('[data-testid="action-center-done"]');
+            expect(spectator.queryAll('[data-testid^="continue-workflow-"]')).toEqual([]);
+            expect(spectator.query('[data-testid="action-center-continue"]')).toBeTruthy();
+        });
 
-            expect(store.closeDialog).toHaveBeenCalled();
-            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
-            expect(store.executeQuickAction).not.toHaveBeenCalled();
+        it('should arm the footer Continue from any scheme panel', () => {
+            armAction();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-center-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(false);
+        });
+
+        it('should no longer close the dialog from the action list', () => {
+            // Done is gone: the screen's one button now advances instead of dismissing. Closing is
+            // the shell's job, through the X, ESC and the mask.
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-center-done"]')).toBeNull();
+            expect(store.closeDialog).not.toHaveBeenCalled();
         });
     });
 });

@@ -7,7 +7,7 @@
     template fills the column with two rows: a `flex-1 overflow-y-auto` body — the dialog's only
     scroll container — and a footer pinned as its sibling.
 
-    The footer is a flex sibling rather than PrimeNG's `#footer` slot so that the Done button can stay
+    The footer is a flex sibling rather than PrimeNG's `#footer` slot so that its button can stay
     disabled while an action is in flight; that state lives here, not in the shell.
 
     Styled against the design prototype (remix_-content-drive/components/ActionCenterDialog.tsx).
@@ -239,27 +239,6 @@
                                                 </label>
                                             }
                                         </div>
-
-                                        <!-- Opens the preview rather than firing: labelled Continue so it
-                                         does not read as a second Execute alongside the preview's. -->
-                                        <div
-                                            class="flex justify-end border-t border-surface-100 bg-surface-50 p-4">
-                                            <p-button
-                                                size="small"
-                                                icon="pi pi-arrow-right"
-                                                iconPos="right"
-                                                styleClass="uppercase tracking-wider font-bold"
-                                                [label]="
-                                                    'content-drive.action-center.continue' | dm
-                                                "
-                                                [disabled]="
-                                                    !schemeOwnsSelection(scheme) || $executing()
-                                                "
-                                                [attr.data-testid]="
-                                                    'continue-workflow-' + scheme.id
-                                                "
-                                                (click)="onContinueToPreview()" />
-                                        </div>
                                     </p-accordion-content>
                                 </p-accordion-panel>
                             }
@@ -268,7 +247,15 @@
                 </section>
             </div>
 
-            <!-- Pinned footer: a sibling of the scroll container, so it stays put as the body scrolls. -->
+            <!--
+                Pinned footer: a sibling of the scroll container, so it stays put as the body scrolls.
+
+                One Continue for the whole screen, rather than one per scheme panel. Only one action can
+                be armed at a time across every scheme, so a per-panel button repeated a single global
+                decision N times and put it below a scrolling list — the arming click and the button
+                acting on it could not be seen together. Quick actions do not route through here: they
+                commit on click and open their own preview.
+            -->
             <div
                 class="flex shrink-0 items-center justify-between border-t border-surface-100 px-6 py-4"
                 data-testid="action-center-footer">
@@ -276,10 +263,13 @@
                     {{ 'content-drive.action-center.one-at-a-time' | dm }}
                 </span>
                 <p-button
-                    [label]="'content-drive.action-center.done' | dm"
-                    [disabled]="$executing()"
-                    data-testid="action-center-done"
-                    (click)="onDone()" />
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    styleClass="font-bold"
+                    [label]="'content-drive.action-center.continue' | dm"
+                    [disabled]="!$selectedActionId() || $executing()"
+                    data-testid="action-center-continue"
+                    (click)="onContinueToPreview()" />
             </div>
         }
         @case ('configure') {

@@ -394,8 +394,11 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Returns the scheme that owns the currently selected action, if any. Used to enable only that
-     * scheme's Execute button, keeping execution to one action at a time.
+     * Whether the armed action belongs to this scheme.
+     *
+     * Drives the panel header's "1 Selected" badge, which is what tells the user where their armed
+     * action lives once they have scrolled or collapsed the panel — the footer's Continue says an
+     * action is armed but not which panel holds it.
      */
     protected schemeOwnsSelection(scheme: DotActionCenterScheme): boolean {
         const selectedId = this.$selectedActionId();
@@ -724,15 +727,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         if (!stillVisible) {
             this.$selectedActionId.set(null);
         }
-    }
-
-    /**
-     * Closes the dialog without firing anything.
-     *
-     * X / ESC / mask closes are handled by the shell, which owns the shared dialog.
-     */
-    protected onDone(): void {
-        this.#store.closeDialog();
     }
 
     /**
