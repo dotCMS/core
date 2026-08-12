@@ -262,8 +262,6 @@ export class DotContentDriveToolbarComponent {
         });
     }
 
-    /** The tree's VISUAL expanded state — see `isTreeVisuallyExpanded` on the store. */
-    readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
 
