@@ -6,6 +6,7 @@ import {
     inject,
     input,
     signal,
+    viewChild,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -18,11 +19,12 @@ import {
 } from '@angular/forms';
 
 import { MessageService } from 'primeng/api';
-import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
@@ -59,6 +61,7 @@ interface FolderForm {
         ToggleSwitchModule,
         ButtonModule,
         InputNumberModule,
+        ProgressSpinnerModule,
         AutoCompleteModule,
         AutoFocusModule,
         RadioButtonModule,
@@ -84,8 +87,21 @@ export class DotContentDriveDialogFolderComponent {
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
     );
 
+    /**
+     * Whether the form can be shown yet.
+     *
+     * The values come from the folder plus the fetched file-asset types, so rendering earlier means
+     * rendering a form that {@link setFolderFormEffect} then patches under the user: anything typed
+     * in the meantime is silently overwritten. It also used to prune the extension chips, because
+     * PrimeNG rebuilds those from whatever the user had filtered the suggestions down to.
+     */
+    readonly $formReady = computed(() => !!this.$fileAssetTypes());
+
     /** Options for the "Upload Behavior" radio group (bound to the `defaultBaseType` control). */
     protected readonly uploadBehaviorOptions = FOLDER_UPLOAD_BEHAVIOR_OPTIONS;
+
+    /** Allowed-file-extensions field; chips are added through its own model. See {@link #addExtension}. */
+    readonly $extensionsAutoComplete = viewChild<AutoComplete>('extensionsAutoComplete');
 
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
@@ -108,8 +124,17 @@ export class DotContentDriveDialogFolderComponent {
     /** Signal tracking changes to the folder URL form control */
     $name = toSignal(this.folderForm.get('name')?.valueChanges);
 
-    /** Signal containing the filtered list of allowed file extensions for autocomplete */
-    $filteredAllowedFileExtensions = signal<string[]>(SUGGESTED_ALLOWED_FILE_EXTENSIONS);
+    /**
+     * Suggestions offered while the user types; {@link onCompleteMethod} fills it per keystroke.
+     *
+     * It starts empty on purpose. PrimeNG rebuilds the chips from this list on every write to the
+     * control, keeping only the values it can find here — so a saved extension the list does not
+     * carry (say `*.svg`) would be dropped from the chips while staying in the form value:
+     * invisible to the user, impossible to remove, and sent right back on save. With nothing to
+     * match against, PrimeNG keeps the written value verbatim and the chips mirror the control.
+     * Nothing is lost visually: the panel only opens once a keystroke has produced suggestions.
+     */
+    $filteredAllowedFileExtensions = signal<string[]>([]);
 
     /** Signal tracking the loading state during folder creation */
     $isLoading = signal(false);
@@ -183,22 +208,38 @@ export class DotContentDriveDialogFolderComponent {
         // text from persisting into the next entry, which was resetting the current selection.
         event.preventDefault();
 
+        this.#addExtension(event);
+    }
+
+    /**
+     * Adds the currently typed extension as a chip.
+     *
+     * The value is pushed through the AutoComplete's own model instead of
+     * `control.setValue([...current, value])`: PrimeNG's `writeControlValue` re-derives the chips
+     * from the current `suggestions` list, so writing the whole array back drops every entry that
+     * is not part of the active filter. That left the form value and the visible chips out of
+     * sync — the previously saved extension stayed in the form value and came back on reload.
+     *
+     * @param {Event} event - The originating keyboard event
+     */
+    #addExtension(event: Event) {
         const input = event.target as HTMLInputElement;
-        const value = input.value.trim();
+        const extension = (input?.value ?? '').trim();
 
-        if (value) {
-            const currentExtensions = this.folderForm.get('allowedFileExtensions')?.value ?? [];
-            const isDuplicate = currentExtensions.includes(value);
+        if (!extension) {
+            return;
+        }
 
-            if (!isDuplicate) {
-                this.folderForm
-                    .get('allowedFileExtensions')
-                    ?.setValue([...currentExtensions, value]);
-            }
+        const currentExtensions = this.folderForm.controls.allowedFileExtensions.value ?? [];
 
+        if (currentExtensions.includes(extension)) {
             // Clear the input so the next extension starts fresh and existing chips are preserved.
             input.value = '';
+
+            return;
         }
+
+        this.$extensionsAutoComplete()?.onOptionSelect(event, extension);
     }
 
     /**
@@ -321,6 +362,14 @@ export class DotContentDriveDialogFolderComponent {
 
         if (formValue.allowedFileExtensions.length > 0) {
             data.fileMasks = formValue.allowedFileExtensions;
+        } else if (this.$folder()) {
+            // Clearing every extension on an existing folder. The backend skips the write when
+            // `fileMasks` is absent *or* an empty list (`UtilMethods.isSet` is false for both), so
+            // neither can express "clear" and the saved list would come back on the next load. A
+            // single blank mask joins to an empty string server-side, which is how a folder with no
+            // restrictions is stored and reads back as no extensions. On create there is nothing to
+            // clear, so the field stays omitted.
+            data.fileMasks = [''];
         }
 
         if (formValue.defaultFileAssetType && formValue.defaultFileAssetType.trim() !== '') {

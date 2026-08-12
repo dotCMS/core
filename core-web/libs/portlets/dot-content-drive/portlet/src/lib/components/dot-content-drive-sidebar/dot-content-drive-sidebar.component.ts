@@ -28,7 +28,6 @@ import {
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { appendLoadMoreNodes } from '../../utils/functions';
-import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
  *
@@ -39,7 +38,7 @@ import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolba
     selector: 'dot-content-drive-sidebar',
     templateUrl: './dot-content-drive-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent],
+    imports: [DotTreeFolderComponent],
     host: { class: 'w-full h-full grid grid-rows-[min-content_1fr]' },
     styles: `
         :host ::ng-deep .p-tree {

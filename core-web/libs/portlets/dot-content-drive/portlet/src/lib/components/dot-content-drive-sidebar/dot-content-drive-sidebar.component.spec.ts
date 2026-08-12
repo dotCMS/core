@@ -961,9 +961,10 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     describe('Tree Toggler', () => {
-        it('should render dot-content-drive-tree-toggler component', () => {
+        it('should not render its own toggler, since the toolbar keeps one in both states', () => {
             const treeToggler = spectator.query('[data-testid="tree-toggler"]');
-            expect(treeToggler).toBeTruthy();
+
+            expect(treeToggler).toBeNull();
         });
     });
 
