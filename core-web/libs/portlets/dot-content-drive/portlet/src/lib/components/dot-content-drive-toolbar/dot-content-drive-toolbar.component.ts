@@ -378,14 +378,6 @@ export class DotContentDriveToolbarComponent {
         this.$actionExecution() ? 'content-drive.action-center.busy' : ''
     );
 
-    readonly $togglerStyles = computed(() => ({
-        opacity: this.$treeExpanded() ? '0' : '1',
-        visibility: this.$treeExpanded() ? 'hidden' : 'visible',
-        transition: 'all 0.3s ease-in-out',
-        width: this.$treeExpanded() ? '0' : undefined,
-        minWidth: this.$treeExpanded() ? '0' : undefined
-    }));
-
     /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
     #animationTimeout: ReturnType<typeof setTimeout> | undefined;
 

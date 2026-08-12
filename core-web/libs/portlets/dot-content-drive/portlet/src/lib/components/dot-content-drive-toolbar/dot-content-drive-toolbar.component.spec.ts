@@ -192,15 +192,19 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should hide the tree toggler with styles when tree is expanded', () => {
+        it('should keep the tree toggler in place when the tree is expanded', () => {
+            // The toggler used to collapse to nothing once the tree opened, handing over to a
+            // second copy inside the sidebar. It now stays beside the search input in both states,
+            // which is how UVE keeps its palette and quick-edit toggles in the toolbar.
             isTreeExpandedSignal.set(true);
             spectator.detectChanges();
 
             const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
+
             expect(toggler).toBeTruthy();
-            expect(toggler.style.opacity).toBe('0');
-            expect(toggler.style.visibility).toBe('hidden');
-            expect(toggler.style.width).toBe('0px');
+            expect(toggler.style.visibility).not.toBe('hidden');
+            expect(toggler.style.opacity).not.toBe('0');
+            expect(toggler.style.width).not.toBe('0px');
         });
     });
 

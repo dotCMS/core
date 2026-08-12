@@ -1,10 +1,18 @@
-<!-- Same glyph UVE uses to toggle the palette and the quick-edit panel, rendered from the Material
-     Symbols font rather than UVE's exported SVG. UVE's asset hardcodes the primary blue in both
-     states, so the color is set here rather than inherited from the button. -->
-<i
-    pButtonIcon
-    class="material-symbols-outlined text-[1.25rem]! leading-none text-primary"
-    aria-hidden="true"
-    data-testid="tree-toggle-icon">
-    left_panel_open
-</i>
+<!-- UVE's own palette / quick-edit toggle assets, kept as images rather than Material Symbols
+     glyphs on purpose: the pair carries the blue fill and the two files differ only in how much of
+     the panel is filled, which is the state cue. Both are rendered and toggled with `hidden` so
+     neither has to be fetched mid-interaction. -->
+<img
+    class="size-5"
+    src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+    alt=""
+    draggable="false"
+    data-testid="tree-toggle-open-icon"
+    [class.hidden]="!$treeExpanded()" />
+<img
+    class="size-5"
+    src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+    alt=""
+    draggable="false"
+    data-testid="tree-toggle-close-icon"
+    [class.hidden]="$treeExpanded()" />

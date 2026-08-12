@@ -14,6 +14,7 @@ describe('DotContentDriveTreeTogglerComponent', () => {
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: jest.fn().mockReturnValue(true),
+                isTreeVisuallyExpanded: jest.fn().mockReturnValue(true),
                 setIsTreeExpanded: jest.fn()
             })
         ],
@@ -29,10 +30,11 @@ describe('DotContentDriveTreeTogglerComponent', () => {
         jest.clearAllMocks();
     });
 
-    it('should render the tree toggle icon', () => {
+    it('should render both panel glyphs, so neither is fetched mid-interaction', () => {
         spectator.detectChanges();
-        const icon = spectator.query('[data-testid="tree-toggle-icon"]');
-        expect(icon).toBeTruthy();
+
+        expect(spectator.query('[data-testid="tree-toggle-open-icon"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="tree-toggle-close-icon"]')).toBeTruthy();
     });
 
     it('should collapse the tree when clicked and currently expanded', () => {
