@@ -7,19 +7,6 @@ from evergreen_tracks.registry import list_tags
 TAGS_URL = "https://hub.docker.com/v2/namespaces/dotcms/repositories/dotcms-test/tags"
 
 
-@pytest.fixture(autouse=True)
-def _no_ambient_hub_creds(monkeypatch):
-    """Neutralise DOCKER_USERNAME / DOCKER_TOKEN inherited from the shell.
-
-    `list_tags` reads them to decide whether to authenticate, so a developer or runner
-    with Docker creds exported would send the anonymous-path tests through a real
-    `hub_login()` POST that `responses` never registered — turning a deterministic test
-    into an environment-dependent one. Tests that WANT auth set the vars themselves.
-    """
-    monkeypatch.delenv("DOCKER_USERNAME", raising=False)
-    monkeypatch.delenv("DOCKER_TOKEN", raising=False)
-
-
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "hub_tags.json"
 
 
