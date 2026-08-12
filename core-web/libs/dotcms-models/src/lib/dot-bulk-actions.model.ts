@@ -121,6 +121,15 @@ export interface DotActionCenterWorkflowAction {
     /** Which runtime inputs the action needs before it can fire. */
     inputs: DotActionCenterActionInputs;
     /**
+     * The action's default assignee role, which scopes the roles an assignable action may be given to.
+     *
+     * Carried from the underlying `DotCMSWorkflowAction` because the assignee picker needs it to ask
+     * the backend for the right role list; it is meaningless when `inputs.assignable` is false.
+     */
+    nextAssign: string;
+    /** Whether the assignable role list should follow the role hierarchy. Pairs with `nextAssign`. */
+    roleHierarchyForAssign: boolean;
+    /**
      * True when the action needs *any* extra input beyond the selection.
      *
      * Convenience roll-up of {@link inputs} — it says the action needs a configuration step, not that

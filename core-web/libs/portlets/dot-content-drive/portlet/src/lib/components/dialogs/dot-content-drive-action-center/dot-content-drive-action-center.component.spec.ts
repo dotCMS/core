@@ -14,11 +14,13 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
-    DotWorkflowsActionsService
+    DotRolesService,
+    DotWorkflowsActionsService,
+    PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotBrowsingService } from '@dotcms/ui';
+import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
@@ -81,7 +83,6 @@ const BULK_ACTIONS_RESPONSE = {
                             }
                         },
                         {
-                            // The one input the dialog can collect: reachable, unlike `action-pp`.
                             count: 2,
                             pushPublish: false,
                             moveable: true,
@@ -92,6 +93,34 @@ const BULK_ACTIONS_RESPONSE = {
                                 assignable: false,
                                 commentable: false
                             }
+                        },
+                        {
+                            // Assignable and commentable, which is still one screen.
+                            count: 2,
+                            pushPublish: false,
+                            moveable: false,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-assign',
+                                name: 'Send to Legal',
+                                assignable: true,
+                                commentable: true,
+                                nextAssign: 'role-legal',
+                                roleHierarchyForAssign: true
+                            }
+                        },
+                        {
+                            // Two screens' worth, which is what stays disabled.
+                            count: 2,
+                            pushPublish: true,
+                            moveable: false,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-approve',
+                                name: 'Approve and Push',
+                                assignable: true,
+                                commentable: false
+                            }
                         }
                     ]
                 }
@@ -99,6 +128,18 @@ const BULK_ACTIONS_RESPONSE = {
         }
     ]
 } as DotBulkActionView;
+
+/**
+ * What the fire carries when the action declared no inputs.
+ *
+ * Every slot is sent on every fire — the request shape is identical either way, and the server reads
+ * only the parts the action asked for.
+ */
+const NO_INPUTS_SENT = {
+    pathToMove: '',
+    assignComment: { assign: '', comment: '' },
+    pushPublish: undefined
+};
 
 describe('DotContentDriveActionCenterComponent', () => {
     let spectator: Spectator<DotContentDriveActionCenterComponent>;
@@ -144,7 +185,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             }),
             // Pulled in by the Content Drive grid, which the action preview renders for real.
             mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
-            mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
+            // `DotcmsConfigServiceMock` has no `getTimeZones` (it lives in a separate mock), and the
+            // push publish step loads timezones on init.
+            mockProvider(DotcmsConfigService, {
+                ...new DotcmsConfigServiceMock(),
+                getTimeZones: jest.fn(() => of([]))
+            }),
+            // Backs the env selector embedded in the push publish step.
+            mockProvider(PushPublishService, {
+                getEnvironments: jest.fn(() => of([])),
+                lastEnvironmentPushed: null
+            }),
+            mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
             mockProvider(DotFormatDateService),
             // Pulled in by the folder picker's own store, which the move configuration step renders
             // for real. Mocked rather than stubbed out with a fake child component: whether that
@@ -863,26 +915,32 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
         });
 
-        it('should disable actions needing an input the dialog cannot collect', () => {
+        it('should disable an action needing more than one configuration screen', () => {
+            // The remaining gap: `configure` shows one screen at a time, so push-publish *and*
+            // assignable cannot both be collected in one pass yet.
             spectator.detectChanges();
 
-            const pushPublish = spectator.query(
-                '[data-testid="workflow-action-action-pp"] input'
+            const approve = spectator.query(
+                '[data-testid="workflow-action-action-approve"] input'
             ) as HTMLInputElement;
 
-            expect(pushPublish.disabled).toBe(true);
+            expect(approve.disabled).toBe(true);
         });
 
-        it('should enable a move action, whose input the dialog collects', () => {
-            // The distinction the granular flags exist for: `requiresInput` is true for both of
-            // these rows, but only push-publish is unreachable.
+        it.each([
+            ['a move path', 'action-move'],
+            ['an assignee and a comment', 'action-assign'],
+            ['push publish', 'action-pp']
+        ])('should enable an action needing only %s', (_label, actionId) => {
+            // The distinction the granular flags exist for: `requiresInput` is true for all of these
+            // rows, and every one of them is now reachable.
             spectator.detectChanges();
 
-            const move = spectator.query(
-                '[data-testid="workflow-action-action-move"] input'
+            const row = spectator.query(
+                `[data-testid="workflow-action-${actionId}"] input`
             ) as HTMLInputElement;
 
-            expect(move.disabled).toBe(false);
+            expect(row.disabled).toBe(false);
         });
 
         it('should not open the preview when the action applies to nothing', () => {
@@ -1007,9 +1065,9 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'action-review',
                 expect.any(String),
                 ['inode-1', 'inode-2'],
-                // No move actionlet on this action, so the destination stays empty and the server
-                // ignores it.
-                { pathToMove: '' }
+                // This action declares no inputs, so every slot goes out empty and the server
+                // ignores them.
+                NO_INPUTS_SENT
             );
         });
 
@@ -1024,7 +1082,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'action-review',
                 expect.any(String),
                 ['inode-2'],
-                { pathToMove: '' }
+                NO_INPUTS_SENT
             );
         });
 
@@ -1216,7 +1274,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'action-move',
                 'Move',
                 ['inode-1', 'inode-2'],
-                { pathToMove: '//demo.dotcms.com/application' }
+                { ...NO_INPUTS_SENT, pathToMove: '//demo.dotcms.com/application' }
             );
         });
 
@@ -1233,7 +1291,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'action-move',
                 'Move',
                 ['inode-2'],
-                { pathToMove: '//demo.dotcms.com/application' }
+                { ...NO_INPUTS_SENT, pathToMove: '//demo.dotcms.com/application' }
             );
         });
 
@@ -1408,7 +1466,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'copy-blog',
                 expect.any(String),
                 ['blog-1'],
-                { pathToMove: '' }
+                NO_INPUTS_SENT
             );
         });
 
@@ -1630,6 +1688,162 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
             expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeNull();
+        });
+    });
+
+    describe('single-input workflow actions', () => {
+        /** Arms an action and drills in, which stops on its configuration screen. */
+        const goToConfigure = (actionId: string): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set(actionId);
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        describe('assign and comment', () => {
+            it('should open the assign/comment screen, not the move or bundle one', () => {
+                goToConfigure('action-assign');
+
+                expect(
+                    spectator.query('[data-testid="action-configure-assign-comment"]')
+                ).toBeTruthy();
+                expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeNull();
+                expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            });
+
+            it('should pass the action assign metadata to the step', () => {
+                // Asserted on the child's inputs rather than on `DotRolesService`: the step provides
+                // that service itself, so a host-level mock is not the instance it calls. What is the
+                // dialog's job — and what these two fields exist on the UI action shape for — is
+                // handing the step the right role scope. The lookup itself is the step's own spec.
+                goToConfigure('action-assign');
+
+                const step = spectator.query(DotWorkflowAssignCommentComponent);
+
+                expect(step?.roleId()).toBe('role-legal');
+                expect(step?.roleHierarchy()).toBe(true);
+                expect(step?.assignable()).toBe(true);
+                expect(step?.commentable()).toBe(true);
+            });
+
+            it('should defer to the step for validity', () => {
+                // Whether an assignee is required depends on roles only the step loaded.
+                goToConfigure('action-assign');
+                const continueButton = () =>
+                    spectator.query(
+                        '[data-testid="action-configure-continue"] button'
+                    ) as HTMLButtonElement;
+
+                spectator.component['$assignCommentValid'].set(false);
+                spectator.detectChanges();
+                expect(continueButton().disabled).toBe(true);
+
+                spectator.component['$assignCommentValid'].set(true);
+                spectator.detectChanges();
+                expect(continueButton().disabled).toBe(false);
+            });
+
+            it('should fire with the assignee and comment collected', () => {
+                goToConfigure('action-assign');
+                spectator.component['onAssignCommentChange']({
+                    assign: 'role-legal',
+                    comment: 'Please review'
+                });
+                spectator.component['$assignCommentValid'].set(true);
+                spectator.detectChanges();
+
+                spectator.click('[data-testid="action-configure-continue"]');
+                spectator.detectChanges();
+                spectator.click('[data-testid="action-preview-execute"]');
+
+                expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                    'action-assign',
+                    'Send to Legal',
+                    ['inode-1', 'inode-2'],
+                    expect.objectContaining({
+                        assignComment: { assign: 'role-legal', comment: 'Please review' }
+                    })
+                );
+            });
+        });
+
+        describe('push publish', () => {
+            it('should open the push publish screen', () => {
+                goToConfigure('action-pp');
+
+                expect(
+                    spectator.query('[data-testid="action-configure-push-publish"]')
+                ).toBeTruthy();
+                expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            });
+
+            it('should defer to the step for validity', () => {
+                goToConfigure('action-pp');
+                const continueButton = () =>
+                    spectator.query(
+                        '[data-testid="action-configure-continue"] button'
+                    ) as HTMLButtonElement;
+
+                expect(continueButton().disabled).toBe(true);
+
+                spectator.component['$pushPublishValid'].set(true);
+                spectator.detectChanges();
+                expect(continueButton().disabled).toBe(false);
+            });
+
+            it('should fire with the push publish settings collected', () => {
+                const settings = {
+                    whereToSend: 'env-1',
+                    iWantTo: 'publish' as const,
+                    publishDate: '2026-08-12',
+                    publishTime: '10-30',
+                    expireDate: '2026-08-12',
+                    expireTime: '10-30',
+                    filterKey: 'filter-b',
+                    timezoneId: 'Europe/Madrid'
+                };
+
+                goToConfigure('action-pp');
+                spectator.component['onPushPublishChange'](settings);
+                spectator.component['$pushPublishValid'].set(true);
+                spectator.detectChanges();
+
+                spectator.click('[data-testid="action-configure-continue"]');
+                spectator.detectChanges();
+                spectator.click('[data-testid="action-preview-execute"]');
+
+                expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                    'action-pp',
+                    'Push Publish',
+                    ['inode-1', 'inode-2'],
+                    expect.objectContaining({ pushPublish: settings })
+                );
+            });
+
+            it('should refuse to fire before the step is satisfied', () => {
+                // Reachable only by skipping the guarded Continue; a push with no environment has
+                // nowhere to go, so the commit point refuses it too.
+                goToConfigure('action-pp');
+                spectator.component['$view'].set('preview');
+                spectator.detectChanges();
+
+                spectator.click('[data-testid="action-preview-execute"]');
+
+                expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should drop collected settings when returning to the action list', () => {
+            goToConfigure('action-pp');
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pushPublish']()).toBeNull();
+            expect(spectator.component['$pushPublishValid']()).toBe(false);
         });
     });
 

@@ -156,16 +156,21 @@ export function withActionExecution() {
                      * reported in `skippedCount`, so a mixed-type selection partially skips by
                      * design — the result carries that through to the toast.
                      *
-                     * `inputs.pathToMove` carries the destination for an action wiring the Move
-                     * actionlet, in the `//hostname/path` form the actionlet reads. It is ignored by
-                     * every other action, which is why it stays optional rather than becoming a
-                     * separate method: the request shape is identical either way.
+                     * `inputs` carries whatever the action declared it needs — a move destination in the
+                     * `//hostname/path` form the actionlet reads, an assignee and comment, push publish
+                     * settings. Each is ignored by an action that did not ask for it, which is why they
+                     * stay optional on one method rather than becoming three: the request shape is
+                     * identical either way, and only the filled-in parts are read server-side.
                      */
                     executeWorkflowAction: (
                         workflowActionId: string,
                         actionName: string,
                         contentletIds: string[],
-                        inputs?: { pathToMove?: string }
+                        inputs?: {
+                            pathToMove?: string;
+                            assignComment?: { assign: string; comment: string };
+                            pushPublish?: DotActionBulkRequestOptions['additionalParams']['pushPublish'];
+                        }
                     ): void => {
                         if (!contentletIds.length || store.actionExecution()) {
                             return;
@@ -180,8 +185,11 @@ export function withActionExecution() {
                             workflowActionId,
                             contentletIds,
                             additionalParams: {
-                                assignComment: { assign: '', comment: '' },
-                                pushPublish: {},
+                                assignComment: inputs?.assignComment ?? {
+                                    assign: '',
+                                    comment: ''
+                                },
+                                pushPublish: inputs?.pushPublish ?? {},
                                 additionalParamsMap: {
                                     _path_to_move: inputs?.pathToMove ?? ''
                                 }

@@ -304,6 +304,32 @@
                         data-testid="action-configure-bundle-target"
                         (bundleChange)="onBundleChange($event)" />
                 }
+                @case ('assignComment') {
+                    <!--
+                        Padded here rather than inside the shared component: it lives in `libs/ui` and
+                        should not assume this dialog's insets.
+                    -->
+                    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                        <dot-workflow-assign-comment
+                            [assignable]="!!$selectedAction()?.inputs.assignable"
+                            [commentable]="!!$selectedAction()?.inputs.commentable"
+                            [roleId]="$selectedAction()?.nextAssign ?? ''"
+                            [roleHierarchy]="!!$selectedAction()?.roleHierarchyForAssign"
+                            [disabled]="$executing()"
+                            data-testid="action-configure-assign-comment"
+                            (valueChange)="onAssignCommentChange($event)"
+                            (validChange)="$assignCommentValid.set($event)" />
+                    </div>
+                }
+                @case ('pushPublish') {
+                    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                        <dot-workflow-push-publish
+                            [disabled]="$executing()"
+                            data-testid="action-configure-push-publish"
+                            (valueChange)="onPushPublishChange($event)"
+                            (validChange)="$pushPublishValid.set($event)" />
+                    </div>
+                }
                 @default {
                     <dot-content-drive-action-move-target
                         [itemCount]="$includedCount()"
@@ -321,6 +347,14 @@
                     @if ($configureKind() === 'bundle') {
                         @if (!$selectedBundle()) {
                             {{ 'content-drive.action-center.bundle.no-target' | dm }}
+                        }
+                    } @else if ($configureKind() === 'assignComment') {
+                        @if (!$assignCommentValid()) {
+                            {{ 'content-drive.action-center.assign.no-assignee' | dm }}
+                        }
+                    } @else if ($configureKind() === 'pushPublish') {
+                        @if (!$pushPublishValid()) {
+                            {{ 'content-drive.action-center.push-publish.no-environment' | dm }}
                         }
                     } @else if (!$pathToMove()) {
                         <!-- Two distinct move states, because "you haven't chosen" and "you chose the

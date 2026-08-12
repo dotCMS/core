@@ -29,7 +29,13 @@ import {
     DotBundle,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotWorkflowAssignCommentComponent,
+    DotWorkflowAssignCommentValue,
+    DotWorkflowPushPublishComponent,
+    DotWorkflowPushPublishValue
+} from '@dotcms/ui';
 
 import {
     DotContentDriveActionBundleTargetComponent,
@@ -42,6 +48,7 @@ import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
+    DotActionInputKind,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
@@ -49,15 +56,20 @@ import {
     hasUnsupportedInput,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
-    requiresMovePath,
+    requiredInputKinds,
     toDistinctIdentifiers
 } from '../../../utils/action-center';
 
 /** The screens the dialog switches between. */
 type DotActionCenterView = 'actions' | 'configure' | 'preview';
 
-/** What the `configure` screen is collecting, or `null` when the action needs nothing. */
-type DotActionCenterConfigureKind = 'move' | 'bundle' | null;
+/**
+ * What the `configure` screen is collecting, or `null` when the action needs nothing.
+ *
+ * `bundle` is the quick action's own kind; the rest mirror {@link DotActionInputKind}. Exactly one is
+ * shown at a time — an action needing two is still gated by `hasUnsupportedInput`.
+ */
+type DotActionCenterConfigureKind = DotActionInputKind | 'bundle' | null;
 
 /**
  * Bulk action dialog for the current Content Drive selection, offered from one contentlet upward.
@@ -124,6 +136,8 @@ type DotActionCenterConfigureKind = 'move' | 'bundle' | null;
         DotContentDriveActionMoveTargetComponent,
         DotContentDriveActionPreviewComponent,
         DotMessagePipe,
+        DotWorkflowAssignCommentComponent,
+        DotWorkflowPushPublishComponent,
         FormsModule,
         MessageModule,
         RadioButtonModule,
@@ -295,6 +309,22 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $selectedBundle = signal<DotBundle | null>(null);
 
     /**
+     * Assignee and comment collected for an assignable/commentable action.
+     *
+     * The step reports its own validity rather than this component re-deriving it: whether an assignee
+     * is required depends on roles the step loaded, which only it knows.
+     */
+    protected readonly $assignComment = signal<DotWorkflowAssignCommentValue>({
+        assign: '',
+        comment: ''
+    });
+    protected readonly $assignCommentValid = signal<boolean>(false);
+
+    /** Push publish settings, already in the shape the fire request wants. */
+    protected readonly $pushPublish = signal<DotWorkflowPushPublishValue | null>(null);
+    protected readonly $pushPublishValid = signal<boolean>(false);
+
+    /**
      * Which configuration step the armed action needs, or `null` when it fires straight from the
      * selection.
      *
@@ -309,7 +339,11 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return quickAction.id === ADD_TO_BUNDLE_ACTION_ID ? 'bundle' : null;
         }
 
-        return requiresMovePath(this.$selectedAction()) ? 'move' : null;
+        const kinds = requiredInputKinds(this.$selectedAction());
+
+        // Only a single kind is renderable today; two or more is what keeps the row disabled, so
+        // reaching here with more than one would mean the gate leaked.
+        return kinds.length === 1 ? kinds[0] : null;
     });
 
     /**
@@ -333,6 +367,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 return !!this.$pathToMove() && !this.$destinationUnchanged();
             case 'bundle':
                 return !!this.$selectedBundle();
+            case 'assignComment':
+                return this.$assignCommentValid();
+            case 'pushPublish':
+                return this.$pushPublishValid();
             default:
                 // Nothing to collect, so nothing can block leaving.
                 return true;
@@ -379,11 +417,17 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      *
      * "Back to actions" would be a lie on a move, where back lands on the destination picker.
      */
-    protected readonly $backLabel = computed(() =>
-        requiresMovePath(this.$selectedAction())
-            ? 'content-drive.action-center.back.configure'
-            : 'content-drive.action-center.back'
-    );
+    protected readonly $backLabel = computed(() => {
+        switch (this.$configureKind()) {
+            case 'move':
+                return 'content-drive.action-center.back.configure';
+            case null:
+                return 'content-drive.action-center.back';
+            default:
+                // Every other kind is a form rather than a picker, so "destination" would be wrong.
+                return 'content-drive.action-center.back.settings';
+        }
+    });
 
     /**
      * The single armed workflow action, resolved across every scheme.
@@ -670,14 +714,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // An action needing a destination stops here for it; every other action goes straight to the
         // preview. The header carries the item count either way, so the configuration step keeps the
         // "N items" context without repeating the row list.
-        if (this.$configureKind() === 'move') {
+        const configureKind = this.$configureKind();
+
+        if (configureKind === 'move') {
             // Mirrors what the seeded picker is showing, so the two agree from the first render.
             // `$destinationUnchanged` is what keeps this from arming Execute on a no-op.
             this.$pathToMove.set(this.$currentPath());
-            this.$view.set('configure');
-        } else {
-            this.$view.set('preview');
         }
+
+        this.$view.set(configureKind ? 'configure' : 'preview');
 
         this.publishDrillDownHeader(action.name, previewItems.length);
     }
@@ -690,6 +735,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /** Records the bundle chosen in the configuration step. */
     protected onBundleChange(bundle: DotBundle | null): void {
         this.$selectedBundle.set(bundle);
+    }
+
+    protected onAssignCommentChange(value: DotWorkflowAssignCommentValue): void {
+        this.$assignComment.set(value);
+    }
+
+    protected onPushPublishChange(value: DotWorkflowPushPublishValue): void {
+        this.$pushPublish.set(value);
     }
 
     /**
@@ -747,6 +800,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.$pendingQuickAction.set(null);
         this.$pathToMove.set('');
         this.$selectedBundle.set(null);
+        this.$assignComment.set({ assign: '', comment: '' });
+        this.$assignCommentValid.set(false);
+        this.$pushPublish.set(null);
+        this.$pushPublishValid.set(false);
         this.#store.clearDialogDrillDown();
     }
 
@@ -789,19 +846,20 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
-        const pathToMove = this.$pathToMove();
-
-        // A move with no destination — or one still pointing at the folder the items are already in —
-        // is refused here rather than sent. An empty path would answer 200 with every item failed, and
-        // a same-folder move would burn a version and a reindex per item to change nothing.
-        if (requiresMovePath(action) && !this.$canLeaveConfigure()) {
+        // Anything the action declared an input for must be complete before firing. Refused here as
+        // well as by the disabled Continue: an empty move path answers 200 with every item failed, a
+        // same-folder move burns a version and a reindex per item to change nothing, and a push
+        // publish with no environment has nowhere to go.
+        if (this.$configureKind() && !this.$canLeaveConfigure()) {
             return;
         }
 
         const actionName = action?.name ?? workflowActionId;
 
         this.#store.executeWorkflowAction(workflowActionId, actionName, contentletIds, {
-            pathToMove
+            pathToMove: this.$pathToMove(),
+            assignComment: this.$assignComment(),
+            pushPublish: this.$pushPublish() ?? undefined
         });
         this.handOffToToolbar();
     }

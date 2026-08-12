@@ -389,20 +389,49 @@ export const eligibleContentlets = (
  * either stays disabled — the row is greyed with the `requires-input` hint rather than opening a
  * screen that cannot produce a valid payload.
  */
-const UNSUPPORTED_INPUTS = ['pushPublish', 'assignable', 'commentable'] as const;
 
 /**
- * True when the action needs an input the dialog has no way to collect, so the row stays disabled.
+ * A configuration screen the dialog knows how to render.
  *
- * Split from `requiresInput` deliberately: that flag says "needs a configuration step", this one says
- * "needs one we haven't built". Enabling a kind of input is then a matter of removing it from
- * {@link UNSUPPORTED_INPUTS} and rendering its step, with no change to how rows are gated.
+ * Note `assignComment` is **one** kind covering two flags: `DotWorkflowAssignCommentComponent` renders
+ * an assignee, a comment, or both, so an action declaring both still needs a single screen.
+ */
+export type DotActionInputKind = 'move' | 'assignComment' | 'pushPublish';
+
+/**
+ * The configuration screens an action needs, in the order they would be shown.
+ *
+ * Order matches the legacy wizard's — assign/comment before push publish — so a user moving between the
+ * two dialogs meets the same sequence.
+ */
+export const requiredInputKinds = (
+    action: DotActionCenterWorkflowAction | undefined
+): DotActionInputKind[] => {
+    if (!action) {
+        return [];
+    }
+
+    const { moveable, assignable, commentable, pushPublish } = action.inputs;
+
+    return [
+        ...(moveable ? (['move'] as const) : []),
+        ...(assignable || commentable ? (['assignComment'] as const) : []),
+        ...(pushPublish ? (['pushPublish'] as const) : [])
+    ];
+};
+
+/**
+ * True when the action needs more than one configuration screen, which the dialog cannot yet show.
+ *
+ * The one remaining gap. Every individual input kind now has a body, but the `configure` view renders
+ * exactly one at a time — so an action that is, say, push-publish *and* assignable stays disabled until
+ * the step can stack them. That is the whole of what the `requires-input` hint now covers.
  */
 export const hasUnsupportedInput = (action: DotActionCenterWorkflowAction): boolean =>
-    UNSUPPORTED_INPUTS.some((input) => action.inputs[input]);
+    requiredInputKinds(action).length > 1;
 
 /**
- * True when the action needs a move target path and nothing else — the one input the dialog collects.
+ * True when the action needs a move target path and nothing else.
  *
  * `moveable` is only set when the action's move actionlet has an *empty* path parameter; a move action
  * with a path configured in the scheme fires with no input at all, and the backend never flags it.
@@ -410,7 +439,7 @@ export const hasUnsupportedInput = (action: DotActionCenterWorkflowAction): bool
 export const requiresMovePath = (
     action: DotActionCenterWorkflowAction | undefined
 ): action is DotActionCenterWorkflowAction =>
-    !!action && action.inputs.moveable && !hasUnsupportedInput(action);
+    !!action && requiredInputKinds(action).length === 1 && action.inputs.moveable;
 
 /**
  * Converts the host/folder field's value into the `_path_to_move` the bulk endpoint expects.
@@ -486,6 +515,10 @@ const toActionCenterAction = (
         name: workflowAction.name,
         count,
         inputs,
+        // Only meaningful for an assignable action, but carried unconditionally so the assignee picker
+        // does not need a second lookup to find the role list it should offer.
+        nextAssign: workflowAction.nextAssign,
+        roleHierarchyForAssign: workflowAction.roleHierarchyForAssign,
         requiresInput: Object.values(inputs).some(Boolean),
         approximateCount: conditionPresent,
         // Filled by `mergeActionCenterSchemes`.

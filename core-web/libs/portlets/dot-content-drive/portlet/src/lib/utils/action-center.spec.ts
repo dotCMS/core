@@ -16,6 +16,7 @@ import {
     hasUnsupportedInput,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
+    requiredInputKinds,
     requiresMovePath,
     toActionCenterSchemes,
     toContentletInodes,
@@ -769,19 +770,54 @@ describe('action-center utils', () => {
 
     describe('hasUnsupportedInput', () => {
         it.each([
-            ['push publish', { pushPublish: true }],
-            ['assignable', { assignable: true }],
-            ['commentable', { commentable: true }]
+            ['nothing', {}],
+            ['a move path', { moveable: true }],
+            ['an assignee', { assignable: true }],
+            ['a comment', { commentable: true }],
+            // One screen, not two: the assign/comment step renders both fields.
+            ['both an assignee and a comment', { assignable: true, commentable: true }],
+            ['push publish', { pushPublish: true }]
+        ])('should allow an action needing %s', (_label, inputs) => {
+            expect(hasUnsupportedInput(actionWithInputs(inputs))).toBe(false);
+        });
+
+        it.each([
+            ['a move path and an assignee', { moveable: true, assignable: true }],
+            ['push publish and a comment', { pushPublish: true, commentable: true }],
+            ['a move path and push publish', { moveable: true, pushPublish: true }],
+            [
+                'all three kinds',
+                { moveable: true, assignable: true, commentable: true, pushPublish: true }
+            ]
         ])('should block an action needing %s', (_label, inputs) => {
+            // The remaining gap: `configure` renders one screen at a time, so two kinds cannot be
+            // collected in one pass yet.
             expect(hasUnsupportedInput(actionWithInputs(inputs))).toBe(true);
         });
+    });
 
-        it('should not block a move, whose input the dialog collects', () => {
-            expect(hasUnsupportedInput(actionWithInputs({ moveable: true }))).toBe(false);
+    describe('requiredInputKinds', () => {
+        it('should return nothing for an action that fires from the selection alone', () => {
+            expect(requiredInputKinds(actionWithInputs({}))).toEqual([]);
         });
 
-        it('should not block an action needing nothing', () => {
-            expect(hasUnsupportedInput(actionWithInputs({}))).toBe(false);
+        it('should collapse assignable and commentable into one screen', () => {
+            expect(
+                requiredInputKinds(actionWithInputs({ assignable: true, commentable: true }))
+            ).toEqual(['assignComment']);
+        });
+
+        it('should order the screens as the legacy wizard does', () => {
+            // Assign/comment before push publish, so the sequence matches the old dialog.
+            expect(
+                requiredInputKinds(
+                    actionWithInputs({ pushPublish: true, commentable: true, moveable: true })
+                )
+            ).toEqual(['move', 'assignComment', 'pushPublish']);
+        });
+
+        it('should return nothing when there is no action', () => {
+            expect(requiredInputKinds(undefined)).toEqual([]);
         });
     });
 
