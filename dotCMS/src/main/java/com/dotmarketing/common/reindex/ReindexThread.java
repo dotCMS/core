@@ -7,6 +7,7 @@ import com.dotcms.business.SystemCache;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ReindexPoolExhaustedException;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
@@ -88,6 +89,14 @@ public class ReindexThread {
 
     private final long SLEEP = Config.getLongProperty("REINDEX_THREAD_SLEEP", 250);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
+
+    /**
+     * Back-off while the mapping guard is refusing work because its storage is unreachable. Much
+     * longer than {@link #SLEEP_ON_ERROR}: nothing is being failed or retried, we are only waiting
+     * for the underlying dependency to answer again.
+     */
+    private final int SLEEP_WHEN_DEGRADED =
+            Config.getIntProperty("REINDEX_THREAD_SLEEP_WHEN_DEGRADED", 30000);
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS =
@@ -237,8 +246,20 @@ public class ReindexThread {
                     Logger.debug(this, "ReindexThread stopping due to shutdown: " + ex.getMessage());
                     break;
                 }
-                Logger.error(this, "ReindexThread Exception", ex);
-                ThreadUtils.sleep(SLEEP_ON_ERROR);
+                if (ex instanceof ReindexPoolExhaustedException) {
+                    // The mapping guard refused the batch because the storage it needs is not
+                    // answering. No journal entry was failed, so the work is still queued — back
+                    // off hard rather than spinning through the journal at SLEEP_ON_ERROR speed
+                    // (issue #37038). The guard's own counters recover on their own, so indexing
+                    // resumes here without a restart.
+                    Logger.errorEvery(ReindexThread.class, "reindex-thread-pool-degraded",
+                            "--- ReindexThread is backing off: " + ex.getMessage(),
+                            SLEEP_WHEN_DEGRADED);
+                    ThreadUtils.sleep(SLEEP_WHEN_DEGRADED);
+                } else {
+                    Logger.error(this, "ReindexThread Exception", ex);
+                    ThreadUtils.sleep(SLEEP_ON_ERROR);
+                }
             } finally {
                 DbConnectionFactory.closeSilently();
             }
