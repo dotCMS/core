@@ -44,7 +44,6 @@ import {
     DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
-    ExperimentsStatusList,
     GOALS_METADATA_MAP,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
@@ -56,6 +55,16 @@ import {
 } from '@dotcms/ui';
 
 import { DotExperimentStatusFilterComponent } from '../components/dot-experiment-status-filter/dot-experiment-status-filter.component';
+import {
+    NO_GOAL_PLACEHOLDER,
+    ROWS_PER_PAGE_OPTIONS,
+    SKELETON_COLUMNS,
+    SKELETON_ROW_COUNT,
+    STATUS_LABEL_KEYS,
+    STATUS_SEVERITIES,
+    SUCCESS_MESSAGE_LIFE
+} from '../shared/constants';
+import { ExperimentListAction, ExperimentRow } from '../shared/models';
 import { dotExperimentsListEvents } from '../store/dot-experiments-list.events';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
@@ -72,58 +81,6 @@ import {
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
-
-/** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
-type ExperimentListAction = keyof typeof AllowedActionsByExperimentStatus;
-
-/** `warn` (not `warning`) is PrimeNG's spelling — anything else yields no `p-tag-*` class. */
-type TagSeverity = 'success' | 'info' | 'warn' | 'secondary';
-
-/**
- * Copied from `DotExperimentsUiHeaderComponent` so a status looks identical here and in the
- * UVE header. Duplicated rather than imported: the header is legacy code left untouched.
- */
-const STATUS_SEVERITIES: Record<DotExperimentStatus, TagSeverity> = {
-    [DotExperimentStatus.RUNNING]: 'success',
-    [DotExperimentStatus.SCHEDULED]: 'info',
-    [DotExperimentStatus.DRAFT]: 'warn',
-    [DotExperimentStatus.ENDED]: 'info',
-    [DotExperimentStatus.ARCHIVED]: 'secondary'
-};
-
-/** Existing lowercase i18n keys (`draft`, `running`, …) already declared by `ExperimentsStatusList`. */
-const STATUS_LABEL_KEYS = new Map<string, string>(
-    ExperimentsStatusList.map(({ value, label }) => [value, label])
-);
-
-/** A table row: the experiment plus everything the template would otherwise have to derive. */
-interface ExperimentRow {
-    experiment: DotExperiment;
-    pagePath: string;
-    /** i18n key of the primary goal type, or `null` when the experiment has no goal. */
-    goalLabelKey: string | null;
-    variants: number;
-    schedule: string;
-    canArchive: boolean;
-    /** Only archived experiments show the (still inactive) restore affordance. */
-    isArchived: boolean;
-    statusSeverity: TagSeverity;
-    statusLabelKey: string;
-}
-
-/** Lifetime of the success toasts pushed after a row action. */
-const SUCCESS_MESSAGE_LIFE = 5000;
-
-const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
-
-/** Placeholder rows drawn while the first page is still loading. */
-const SKELETON_ROW_COUNT = 5;
-
-/** One skeleton cell per table column. */
-const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
-
-/** Placeholder rendered in the Goal column when no goal is configured. */
-const NO_GOAL_PLACEHOLDER = '—';
 
 @Component({
     selector: 'dot-experiments-list',
@@ -165,7 +122,7 @@ export class DotExperimentsListComponent {
     /** Rows currently rendered by the table, already resolved for display. */
     readonly $rows = computed<ExperimentRow[]>(() => {
         const pageInfoByPageId = this.store.pageInfoByPageId();
-        const scheduleLabels = this.#scheduleLabels();
+        const scheduleLabels = this.#scheduleLabels;
 
         return this.store.pagedExperiments().map((experiment) => {
             const goalType = goalTypeOf(experiment.goals);
@@ -196,18 +153,6 @@ export class DotExperimentsListComponent {
             : rows;
     });
 
-    readonly $emptyConfiguration = computed<PrincipalConfiguration>(() => ({
-        title: this.#dotMessageService.get('experiments.list.empty.title'),
-        subtitle: this.#dotMessageService.get('experiments.list.empty.description'),
-        icon: 'science',
-        iconStyle: 'material-symbols-rounded'
-    }));
-
-    /**
-     * Copy shown instead of the list when Analytics is not usable. Mirrors the legacy
-     * misconfiguration screen: only `NOT_CONFIGURED` means "never set up", every other
-     * non-OK status is a broken configuration.
-     */
     /**
      * True until the Analytics health check answers. Neither branch of the gate can be trusted
      * yet, so the template renders an empty shell rather than flashing the list and then
@@ -215,6 +160,11 @@ export class DotExperimentsListComponent {
      */
     readonly $isGatePending = computed<boolean>(() => this.store.healthStatus() === null);
 
+    /**
+     * Copy shown instead of the list when Analytics is not usable. Mirrors the legacy
+     * misconfiguration screen: only `NOT_CONFIGURED` means "never set up", every other
+     * non-OK status is a broken configuration. Genuinely reactive — it reads `healthStatus`.
+     */
     readonly $misconfiguredConfiguration = computed<PrincipalConfiguration>(() => {
         const isNotConfigured = this.store.healthStatus() === HealthStatusTypes.NOT_CONFIGURED;
 
@@ -254,11 +204,28 @@ export class DotExperimentsListComponent {
 
     readonly #searchSubject = new Subject<string>();
 
-    /** Translated fallbacks handed to `formatSchedule`, which stays free of user-facing English. */
-    readonly #scheduleLabels = computed<ExperimentScheduleLabels>(() => ({
+    /**
+     * Translated fallbacks handed to `formatSchedule`, which stays free of user-facing English.
+     *
+     * Resolved once, not `computed`: `DotMessageService.get` is a plain lookup with no signal
+     * behind it, so a computed would memoise on first read and never recompute — reactivity it
+     * does not have. Messages are loaded before the portlet renders and only change on reload.
+     */
+    readonly #scheduleLabels: ExperimentScheduleLabels = {
         open: this.#dotMessageService.get('experiments.list.schedule.open'),
         none: this.#dotMessageService.get('experiments.list.schedule.none')
-    }));
+    };
+
+    /**
+     * Empty-state copy. Resolved once for the same reason as `#scheduleLabels`, and declared
+     * after the injections because field initialisers run in declaration order.
+     */
+    readonly emptyConfiguration: PrincipalConfiguration = {
+        title: this.#dotMessageService.get('experiments.list.empty.title'),
+        subtitle: this.#dotMessageService.get('experiments.list.empty.description'),
+        icon: 'science',
+        iconStyle: 'material-symbols-rounded'
+    };
 
     /**
      * Mirrors the view state into the URL so the list is shareable and survives a reload.
