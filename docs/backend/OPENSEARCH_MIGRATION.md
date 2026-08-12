@@ -7,6 +7,27 @@ No downtime, no data loss, no visible behavior change for the end user.
 
 ---
 
+## Configuration
+
+Everything that changes migration behaviour, in one place. Set in
+`dotmarketing-config.properties` or the equivalent environment variable; all are read per use, so
+none needs a restart. Defaults are the shipped values — an install that sets nothing is in Phase 0
+with every diagnostic off.
+
+| Property | Default | What it does |
+|---|---|---|
+| `FEATURE_FLAG_OPEN_SEARCH_PHASE` | `0` | The migration phase, `0`–`3`: which engines receive writes and which serves reads. The one setting that changes behaviour rather than reporting — see [Migration Phases](#migration-phases) and [Phase Transitions](#phase-transitions). An absent or unrecognized value means Phase 0. |
+| `DOTCMS_SHADOW_WRITE_LOG_LEVEL` | `WARN` | Log level for failures of the shadow (non-primary) write leg in Phases 1/2, which are fire-and-forget. The primary leg always logs at `ERROR` regardless. |
+| `OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` | `os_migration_qa` | Role key required — **in addition to** CMS admin — to read the [migration-readiness endpoint](#migration-readiness-endpoint-pre-phase-change-advisory). Anyone without it gets a 403. |
+| `SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT` | `0` (off) | Opt-in diagnostic: warns when a Site Search crawl is about to read a materially incomplete content index. Set to the percentage below which you want the warning — `95` is the intended value. Costs a sequential scan of `contentlet_version_info` plus six engine round-trips **per crawl** while enabled, so turn it on to investigate and back off afterwards. See [the crawl warning](#site-search-mirror-reconciliation-write-path--self-heal-on-crawl). |
+
+Connection settings for the OpenSearch client itself (endpoints, timeouts, retries) are separate and
+live in `OSIndexProperty`; note that `OS_HOSTNAME` / `OS_PORT` / `OS_PROTOCOL` fall back to their
+`ES_*` equivalents when unset, so an install that never configured OpenSearch still resolves an
+endpoint rather than failing loudly.
+
+---
+
 ## Migration Phases
 
 Controlled via feature flag: `FEATURE_FLAG_OPEN_SEARCH_PHASE`
