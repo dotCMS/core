@@ -1,6 +1,6 @@
 import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
 
-import { TagSeverity } from './models';
+import { ExperimentRow, TagSeverity } from './models';
 
 /**
  * Copied from `DotExperimentsUiHeaderComponent` so a status looks identical here and in the
@@ -26,6 +26,18 @@ export const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 
 /** Placeholder rows drawn while the first page is still loading. */
 export const SKELETON_ROW_COUNT = 5;
+
+/**
+ * Placeholder rows fed to the table while the first page loads.
+ *
+ * Empty objects rather than `null`: PrimeNG's table skips falsy rows entirely, so a
+ * `null`-filled array renders no `<tr>` at all and the skeleton never appears. Their fields are
+ * never read — the body template branches on the loading signal and renders skeleton cells.
+ */
+export const SKELETON_ROWS: ExperimentRow[] = Array.from(
+    { length: SKELETON_ROW_COUNT },
+    () => ({}) as ExperimentRow
+);
 
 /** One skeleton cell per table column. */
 export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);

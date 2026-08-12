@@ -468,6 +468,38 @@ describe('DotExperimentsListComponent', () => {
         });
     });
 
+    describe('loading state', () => {
+        it('should render skeleton rows while the list is loading', () => {
+            storeMock.status.mockReturnValue('loading');
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(byTestId('experiments-loading-row')).length).toBeGreaterThan(
+                0
+            );
+            expect(spectator.query(byTestId('experiment-row'))).toBeNull();
+        });
+
+        it('should not show the empty state while loading', () => {
+            // Otherwise a slow load momentarily claims there are no experiments.
+            storeMock.status.mockReturnValue('loading');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+
+        it('should keep showing rows while a reload is in flight', () => {
+            // Paging and filtering re-enter 'loading' with rows already on screen; replacing
+            // them with skeletons on every keystroke would make the table flicker.
+            const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.status.mockReturnValue('loading');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiment-name'))?.textContent).toContain(
+                experiment.name
+            );
+        });
+    });
+
     describe('load error', () => {
         const renderError = () => {
             storeMock.status.mockReturnValue('error');
@@ -522,18 +554,18 @@ describe('DotExperimentsListComponent', () => {
             expect(container?.textContent).toContain(copy.subtitle);
         });
 
-        it('should render neither branch while the health check is still in flight', () => {
-            // Showing the list first and swapping to the notice a moment later makes the
-            // portlet visibly jump on entry, so nothing is committed until the gate answers.
+        it('should show the loading skeleton while the health check is still in flight', () => {
+            // The gate counts as loading: the skeleton is on screen from the first paint and
+            // resolves seamlessly into rows, rather than a blank shell that then fills in.
             storeMock.isMisconfigured.mockReturnValue(false);
             storeMock.healthStatus.mockReturnValue(null);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('experiments-gate-pending'))).not.toBeNull();
+            expect(spectator.queryAll(byTestId('experiments-loading-row')).length).toBeGreaterThan(
+                0
+            );
             expect(spectator.query(byTestId('experiments-misconfiguration'))).toBeNull();
-            expect(spectator.query(byTestId('experiments-search-input'))).toBeNull();
-            expect(spectator.query(byTestId('experiments-status-filter'))).toBeNull();
-            expect(spectator.query(byTestId('experiments-table-wrapper'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
         });
 
         it('should hide the toolbar, the filters and the table', () => {

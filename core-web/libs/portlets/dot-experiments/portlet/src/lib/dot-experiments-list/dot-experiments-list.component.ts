@@ -58,7 +58,7 @@ import {
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
     SKELETON_COLUMNS,
-    SKELETON_ROW_COUNT,
+    SKELETON_ROWS,
     STATUS_LABEL_KEYS,
     STATUS_SEVERITIES,
     SUCCESS_MESSAGE_LIFE
@@ -143,20 +143,24 @@ export class DotExperimentsListComponent {
      * What the table renders. During the very first load there is nothing to show yet, so the
      * value is padded with placeholders and the body template swaps every cell for a skeleton.
      */
-    readonly $tableValue = computed<(ExperimentRow | null)[]>(() => {
+    readonly $tableValue = computed<ExperimentRow[]>(() => {
         const rows = this.$rows();
 
-        return this.store.status() === 'loading' && rows.length === 0
-            ? new Array<null>(SKELETON_ROW_COUNT).fill(null)
-            : rows;
+        return this.$isLoading() && rows.length === 0 ? SKELETON_ROWS : rows;
     });
 
     /**
-     * True until the Analytics health check answers. Neither branch of the gate can be trusted
-     * yet, so the template renders an empty shell rather than flashing the list and then
-     * replacing it with the misconfiguration notice.
+     * The screen is loading while the Analytics health check is still out (`healthStatus` null)
+     * as well as while the list itself is in flight.
+     *
+     * Folding the two together means the skeleton is on screen from the first paint instead of
+     * a blank shell, and the skeleton → rows transition is seamless because both render the
+     * same table. The trade-off is a swap when the gate comes back misconfigured — acceptable,
+     * since loading happens on every entry and a broken Analytics install does not.
      */
-    readonly $isGatePending = computed<boolean>(() => this.store.healthStatus() === null);
+    readonly $isLoading = computed<boolean>(
+        () => this.store.healthStatus() === null || this.store.status() === 'loading'
+    );
 
     /**
      * Copy shown instead of the list when Analytics is not usable. Mirrors the legacy

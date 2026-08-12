@@ -1,9 +1,4 @@
-@if ($isGatePending()) {
-    <!-- The Analytics health check decides between the list and the misconfiguration notice.
-         Rendering either one before it answers makes the portlet visibly swap layouts on
-         entry, so hold an empty shell until the gate resolves. -->
-    <div class="flex min-h-0 flex-1" data-testid="experiments-gate-pending"></div>
-} @else if (store.isMisconfigured()) {
+@if (store.isMisconfigured()) {
     <div
         class="flex min-h-0 flex-1 items-center justify-center p-6"
         data-testid="experiments-misconfiguration">
@@ -74,13 +69,13 @@
             [rows]="store.perPage()"
             [totalRecords]="store.totalRecords()"
             [first]="(store.page() - 1) * store.perPage()"
+            dataKey="experiment.id"
             [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
             [rowHover]="true"
             [scrollable]="true"
             scrollHeight="flex"
             [sortField]="store.orderBy()"
             [sortOrder]="store.direction() === 'DESC' ? -1 : 1"
-            dataKey="experiment.id"
             data-testid="experiments-table">
             <ng-template pTemplate="header">
                 <tr>
@@ -104,7 +99,7 @@
             </ng-template>
 
             <ng-template pTemplate="body" let-row>
-                @if (store.status() === 'loading') {
+                @if ($isLoading()) {
                     <tr
                         data-testid="experiments-loading-row"
                         class="h-17 cursor-default hover:bg-transparent!">
