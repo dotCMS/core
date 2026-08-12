@@ -1,6 +1,6 @@
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
-import { buildManifest, verifyPage } from './page-verify';
+import { buildManifest, MAX_INCLUDED_HTML_CHARS, verifyPage } from './page-verify';
 
 const DEFAULT_CONTAINER = '//demo.dotcms.com/application/containers/default/';
 
@@ -57,7 +57,7 @@ function renderResponse(opts: {
 
 function manifestFrom(
     body: ReturnType<typeof renderResponse>,
-    over?: { status?: number; mode?: 'LIVE' | 'WORKING' }
+    over?: { status?: number; mode?: 'LIVE' | 'WORKING'; includeHtml?: boolean }
 ) {
     return buildManifest({
         path: '/about-us',
@@ -66,7 +66,8 @@ function manifestFrom(
         mode: over?.mode ?? 'LIVE',
         languageId: 1,
         status: over?.status ?? 200,
-        body
+        body,
+        includeHtml: over?.includeHtml
     });
 }
 
@@ -122,6 +123,45 @@ describe('buildManifest verdicts', () => {
         expect(m.diagnosis).toMatch(/cache is stale.*cachettl.*re-publish/i);
     });
 
+    it('verdict "not-assembled" when distinctive slot HTML is absent from a non-empty page', () => {
+        const slotHtml = '<section class="awazon-book-grid"><h2>Featured books</h2></section>';
+        const shell = `<html><head><title>Awazon</title></head><body><main></main>${'x'.repeat(3000)}</body></html>`;
+        const m = manifestFrom(
+            renderResponse({ pageRendered: shell, slot1Html: slotHtml, slot1Content: 4 })
+        );
+
+        expect(m.pageBytes).toBeGreaterThan(slot(m, '1')?.bytes ?? 0);
+        expect(slot(m, '1')?.verdict).toBe('not-assembled');
+        expect(m.warnings.some((warning) => /layout loop.*column\.draw/i.test(warning))).toBe(true);
+        expect(m.diagnosis).toMatch(/absent from the assembled page/i);
+    });
+
+    it('recognizes assembled content despite whitespace and entity encoding changes', () => {
+        const m = manifestFrom(
+            renderResponse({
+                slot1Html:
+                    '<section class="awazon-book-grid"><p>Books &amp; stories for everyone</p></section>',
+                slot1Content: 1,
+                pageRendered:
+                    '<html><body><section class="awazon-book-grid">\n<p>Books & stories for everyone</p></section></body></html>'
+            })
+        );
+
+        expect(slot(m, '1')?.verdict).toBe('ok');
+    });
+
+    it('does not invent not-assembled when the slot has no reliable distinctive evidence', () => {
+        const m = manifestFrom(
+            renderResponse({
+                slot1Html: '<div>hi</div>',
+                slot1Content: 1,
+                pageRendered: '<html><body>shell</body></html>'
+            })
+        );
+
+        expect(slot(m, '1')?.verdict).toBe('ok');
+    });
+
     it('flags 200-but-empty as a swallowed #dotParse error (200 != rendered)', () => {
         const m = manifestFrom(
             renderResponse({ pageRendered: '   \n  ', slot1Html: '', slot1Content: 0 })
@@ -135,6 +175,22 @@ describe('buildManifest verdicts', () => {
         const m = manifestFrom(renderResponse({ slot1Html: 'abcde', slot1Content: 1 }));
         expect(slot(m, '1')?.bytes).toBe(5);
         expect(m.pageBytes).toBeGreaterThan(0);
+    });
+
+    it('includes bounded assembled HTML only when requested', () => {
+        const longHtml = `<html>${'x'.repeat(MAX_INCLUDED_HTML_CHARS + 50)}</html>`;
+        const omitted = manifestFrom(renderResponse({ pageRendered: longHtml }));
+        const included = manifestFrom(renderResponse({ pageRendered: longHtml }), {
+            includeHtml: true
+        });
+
+        expect(omitted.html).toBeUndefined();
+        expect(included.html).toMatchObject({
+            totalChars: longHtml.length,
+            truncated: true,
+            limit: MAX_INCLUDED_HTML_CHARS
+        });
+        expect(included.html?.content).toHaveLength(MAX_INCLUDED_HTML_CHARS);
     });
 
     it('enumerates slots in layout order', () => {
@@ -179,13 +235,15 @@ describe('verifyPage', () => {
         identifier: 'site-uuid-1',
         hostname: 'demo.dotcms.com',
         isDefault: true,
-        archived: false
+        archived: false,
+        live: true
     };
     const OTHER_SITE = {
         identifier: 'site-uuid-2',
         hostname: 'other.example.com',
         isDefault: false,
-        archived: false
+        archived: false,
+        live: true
     };
 
     function fakeRuntime(over?: { render?: unknown; sites?: unknown[]; renderThrows?: unknown }) {

@@ -16,6 +16,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
         + "discriminator that selects the concrete field type; the remaining properties apply across field types.")
 public class ContentTypeFieldView {
 
+    @Schema(description = "Field identifier. Preserve this when updating an existing field.")
+    private String id;
+
+    @Schema(description = "Identifier of the content type that owns this field.")
+    private String contentTypeId;
+
     @Schema(
             requiredMode = Schema.RequiredMode.REQUIRED,
             description = "Field type, as a case-insensitive short field-type name (the discriminator that "
@@ -104,6 +110,14 @@ public class ContentTypeFieldView {
 
     public String getClazz() {
         return clazz;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getContentTypeId() {
+        return contentTypeId;
     }
 
     public String getName() {

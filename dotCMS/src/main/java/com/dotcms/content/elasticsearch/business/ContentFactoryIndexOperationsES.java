@@ -398,11 +398,20 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         return searchSourceBuilder;
     }
 
+    /**
+     * Adds keyword-field sorts. The public/canonical form remains an unsuffixed field name;
+     * accepting an existing {@code _dotraw} suffix is a compatibility path and must not append a
+     * second suffix. Thus existing consumers keep the same generated field while callers that
+     * historically supplied the mapped field directly no longer target a nonexistent mapping.
+     */
     public static void addBuilderSort(@NotNull String sortBy, SearchSourceBuilder srb) {
         String[] sortByArr = sortBy.split(",");
         for (String sort : sortByArr) {
             String[] x = sort.trim().split(" ");
-            srb.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
+            final String requestedField = x[0].toLowerCase();
+            final String field = requestedField.endsWith("_dotraw")
+                    ? requestedField : requestedField + "_dotraw";
+            srb.sort(SortBuilders.fieldSort(field)
                     .order(x.length > 1 && x[1].equalsIgnoreCase("desc") ?
                             SortOrder.DESC : SortOrder.ASC));
         }

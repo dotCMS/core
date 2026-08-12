@@ -38,7 +38,17 @@ export const schema = {
         .string()
         .min(1)
         .describe(
-            'Page URL path, e.g. "/about-us" or "/store/index". A page identifier (UUID) is also accepted.'
+            'Page URL path, e.g. "/about-us", host-qualified path such as "//demo.dotcms.com/about-us", or a page identifier. Bare paths/identifiers require site.'
+        ),
+    // Conditionally required: a host-qualified path already supplies the site. Marking this field
+    // required in JSON Schema would incorrectly reject the supported `//hostname/path` form; the
+    // resolver enforces that exactly one source of site identity is present before any request.
+    site: z
+        .string()
+        .min(1)
+        .optional()
+        .describe(
+            'Site hostname or identifier (UUID). Required for a bare path or page identifier. Omit only when path is host-qualified as "//hostname/path".'
         ),
     slots: z
         .array(
@@ -99,7 +109,12 @@ Ops (per entry in \`slots[]\`):
   - set              — replace the slot's content with exactly these ids ([] clears the slot)
   - remove           — remove these ids from the slot
 
-Shape: { path, slots: [{ slot, contentlets, op? }, ...] }. One atomic write across all listed slots
+Targeting: pass \`site\` with every bare path/identifier, or use a host-qualified path such as
+\`//awazon.dotcms.site/index\`. The tool resolves the hostname to \`host_id\` before reading the page
+and never silently falls back to the default site. If explicit and embedded sites conflict, it
+fails before making a request.
+
+Shape: { path, site?, slots: [{ slot, contentlets, op? }, ...] }. One atomic write across all listed slots
 — placing content in a single slot is just an array of one: slots: [{ slot, contentlets }].
 
 Modes: "merge" (default) keeps every slot you don't address. "replace" treats the slots you pass as
@@ -108,7 +123,7 @@ the whole page and clears all others — use it only for deliberate whole-page a
 Scope: \`variantName\` (default DEFAULT) and \`languageId\` (default 1) target a specific A/B variant
 and language.
 
-Returns a manifest: { pageId, url, variantName, languageId, mode, slots: [{ identifier, uuid,
+Returns a manifest: { pageId, site, url, variantName, languageId, mode, slots: [{ identifier, uuid,
 before[], after[], changed }], warnings[] }. \`warnings\` flags any slot that lost content and
 explains a net-loss 409 (refresh and retry). Contentlets whose type isn't allowed in a container are
 rejected by the backend; archived/missing ids are skipped and show up as a slot that didn't gain them.
@@ -133,6 +148,7 @@ export default async function handler(
         const options: PagePlaceContentOptions = {
             dotcms: runtimeFromEnv(extra?.sessionId),
             path: args.path,
+            site: args.site,
             slots: args.slots,
             variantName: args.variantName,
             languageId: args.languageId,

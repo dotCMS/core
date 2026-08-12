@@ -1,5 +1,7 @@
 import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
+import { resolveSite } from './resolve';
+
 /** Render modes the verify tool supports. LIVE = published; WORKING = latest saved (pre-publish). */
 export type VerifyMode = 'LIVE' | 'WORKING';
 
@@ -18,8 +20,15 @@ export const DEFAULT_LANGUAGE_ID = 1;
  *                      bug — use page_place_content to add content.
  * - cache-stale      — the slot rendered HTML, but the full page.rendered came back empty → a
  *                      page-level cache problem. Set cachettl "0" and re-publish.
+ * - not-assembled    — the slot rendered HTML in isolation, but distinctive evidence from that
+ *                      HTML is absent from the assembled page → the template/theme omitted it.
  */
-export type SlotVerdict = 'ok' | 'empty-vtl-error' | 'empty-no-content' | 'cache-stale';
+export type SlotVerdict =
+    | 'ok'
+    | 'empty-vtl-error'
+    | 'empty-no-content'
+    | 'cache-stale'
+    | 'not-assembled';
 
 export interface VerifySlotResult {
     /** Container key as the layout addresses it (path for file containers, id for db containers). */
@@ -57,6 +66,21 @@ export interface VerifyPageOptions {
     languageId?: number;
     /** Render mode. Default "LIVE" (published). "WORKING" checks the latest saved, pre-publish. */
     mode?: VerifyMode;
+    /** Include a bounded prefix of the assembled page HTML in the manifest. Default false. */
+    includeHtml?: boolean;
+}
+
+export interface VerifyHtmlResult {
+    /** Bounded prefix of the assembled page HTML. */
+    content: string;
+    /** Total JavaScript character count before truncation. */
+    totalChars: number;
+    /** Total UTF-8 byte count before truncation. */
+    totalBytes: number;
+    /** True when content is only a prefix of the assembled HTML. */
+    truncated: boolean;
+    /** Maximum number of characters returned in content. */
+    limit: number;
 }
 
 export interface VerifyPageManifest {
@@ -84,7 +108,11 @@ export interface VerifyPageManifest {
     warnings: string[];
     /** One-line summary plus the next action to take. */
     diagnosis: string;
+    /** Bounded assembled HTML, present only when includeHtml=true. */
+    html?: VerifyHtmlResult;
 }
+
+export const MAX_INCLUDED_HTML_CHARS = 20_000;
 
 /**
  * Verify that a dotCMS page actually renders — the layer that catches a blank slot, a swallowed
@@ -132,7 +160,8 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
         mode,
         languageId,
         status,
-        body
+        body,
+        includeHtml: options.includeHtml ?? false
     });
 }
 
@@ -165,6 +194,7 @@ export function buildManifest(input: {
     languageId: number;
     status: number;
     body: RenderResponse;
+    includeHtml?: boolean;
 }): VerifyPageManifest {
     const entity = input.body.entity ?? {};
     const page = entity.page ?? {};
@@ -185,7 +215,7 @@ export function buildManifest(input: {
                 if (!container || !uuid) {
                     continue;
                 }
-                slots.push(classifySlot(containers, container, uuid, pageRendered));
+                slots.push(classifySlot(containers, container, uuid, pageHtml));
             }
         }
     }
@@ -194,7 +224,7 @@ export function buildManifest(input: {
     const warnings = collectWarnings(slots, pageRendered, input.status, urlMap, input.mode);
     const diagnosis = diagnose(slots, pageRendered, input.status, urlMap, input.mode);
 
-    return {
+    const manifest: VerifyPageManifest = {
         path: input.path,
         url,
         site: input.siteLabel,
@@ -208,6 +238,18 @@ export function buildManifest(input: {
         warnings,
         diagnosis
     };
+
+    if (input.includeHtml) {
+        manifest.html = {
+            content: pageHtml.slice(0, MAX_INCLUDED_HTML_CHARS),
+            totalChars: pageHtml.length,
+            totalBytes: pageBytes,
+            truncated: pageHtml.length > MAX_INCLUDED_HTML_CHARS,
+            limit: MAX_INCLUDED_HTML_CHARS
+        };
+    }
+
+    return manifest;
 }
 
 /** Classify one slot from the render response. */
@@ -215,18 +257,25 @@ function classifySlot(
     containers: Record<string, RenderedContainer>,
     container: string,
     uuid: string,
-    pageRendered: boolean
+    pageHtml: string
 ): VerifySlotResult {
     const raw = findContainer(containers, container);
     const html = lookupByUuid(raw?.rendered, uuid) ?? '';
     const contentCount = (lookupByUuid(raw?.contentlets, uuid) ?? []).length;
     const rendered = !isBlank(html);
+    const pageRendered = !isBlank(pageHtml);
     const bytes = byteLength(html);
 
     let verdict: SlotVerdict;
     if (rendered) {
         // The slot produced HTML. If the assembled page did NOT, that is a page-level cache problem.
-        verdict = pageRendered ? 'ok' : 'cache-stale';
+        if (!pageRendered) {
+            verdict = 'cache-stale';
+        } else if (!slotEvidenceAppearsInPage(html, pageHtml)) {
+            verdict = 'not-assembled';
+        } else {
+            verdict = 'ok';
+        }
     } else if (contentCount > 0) {
         // Content is placed but rendered to nothing → the container/widget VTL failed.
         verdict = 'empty-vtl-error';
@@ -288,6 +337,13 @@ function collectWarnings(
                 `Slot ${slot.container} [uuid ${slot.uuid}] rendered content but the page did not — ` +
                     'page-level cache is stale. Set cachettl "0" and re-publish the page.'
             );
+        } else if (slot.verdict === 'not-assembled') {
+            warnings.push(
+                `Slot ${slot.container} [uuid ${slot.uuid}] rendered content, but its HTML is ` +
+                    'absent from the assembled page — the template/theme layout loop is not ' +
+                    "emitting this container. Inspect the theme's row/column loop and use " +
+                    '$render.eval($column.draw()).'
+            );
         }
     }
 
@@ -334,6 +390,11 @@ function diagnose(
         return 'Slots rendered but the assembled page.rendered is empty — page-level cache is stale. Next: set cachettl "0" and re-publish the page.';
     }
 
+    const notAssembled = slots.find((s) => s.verdict === 'not-assembled');
+    if (notAssembled) {
+        return `Slot ${notAssembled.container} [uuid ${notAssembled.uuid}] rendered in isolation but is absent from the assembled page. Next: inspect the theme's row/column loop and ensure it emits $render.eval($column.draw()).`;
+    }
+
     if (!pageRendered) {
         return `HTTP 200 but the page rendered empty (a swallowed #dotParse error, or nothing is placed). Next: check per-slot verdicts${mode === 'LIVE' ? ' and confirm the page is published' : ''}.`;
     }
@@ -359,30 +420,6 @@ function diagnose(
     }
 
     return `Page rendered successfully in ${mode} mode — all ${slots.length} slot(s) produced content.`;
-}
-
-/**
- * Resolve a site (hostname OR identifier UUID) to its identifier + hostname, from the runtime's
- * cached site context. Mirrors page_create's resolveSiteId, but also returns the hostname for the
- * manifest's `site` label.
- */
-async function resolveSite(
-    dotcms: DotCMSRuntime,
-    site: string
-): Promise<{ identifier: string; hostname: string }> {
-    const wanted = site.trim();
-    const { sites } = await dotcms.loadContext();
-
-    const match = sites.find((s) => s.identifier === wanted || s.hostname === wanted);
-    if (match) {
-        return { identifier: match.identifier, hostname: match.hostname };
-    }
-
-    const available = sites.map((s) => s.hostname).join(', ') || '(none found)';
-    throw new Error(
-        `Site "${site}" was not found (neither a known hostname nor a site identifier). ` +
-            `Available sites: ${available}.`
-    );
 }
 
 /** GET the render endpoint, capturing the HTTP status even on a non-2xx so verdicts can use it. */
@@ -452,6 +489,78 @@ function lookupByUuid<T>(map: Record<string, T> | undefined, uuid: string): T | 
 
 function stripUuidPrefix(uuid: string): string {
     return uuid.startsWith('uuid-') ? uuid.slice('uuid-'.length) : uuid;
+}
+
+/**
+ * Confirm assembly using several short, normalized pieces of evidence rather than an exact HTML
+ * substring. Theme assembly may rewrite whitespace and entity encoding, so exact matching would
+ * label healthy pages as broken. If no reliable evidence can be extracted, return true (unknown)
+ * instead of issuing a false failure.
+ */
+function slotEvidenceAppearsInPage(slotHtml: string, pageHtml: string): boolean {
+    const candidates = assemblyEvidence(slotHtml);
+    if (candidates.length === 0) {
+        return true;
+    }
+    const normalizedPage = normalizeEvidence(pageHtml);
+    return candidates.some((candidate) => normalizedPage.includes(candidate));
+}
+
+function assemblyEvidence(html: string): string[] {
+    const candidates: string[] = [];
+    const attributePattern = /\b(?:id|data-[\w:-]+)\s*=\s*["']([^"']+)["']/gi;
+    for (const match of html.matchAll(attributePattern)) {
+        addEvidence(candidates, match[1], 6);
+    }
+
+    const classPattern = /\bclass\s*=\s*["']([^"']+)["']/gi;
+    for (const match of html.matchAll(classPattern)) {
+        for (const className of match[1].split(/\s+/)) {
+            addEvidence(candidates, className, 8);
+        }
+    }
+
+    const visibleText = decodeEntities(
+        html
+            .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+            .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+    );
+    for (const textRun of visibleText.split(/\s{2,}|[.!?]\s+/)) {
+        addEvidence(candidates, textRun, 12);
+    }
+
+    return [...new Set(candidates)].slice(0, 12);
+}
+
+function addEvidence(target: string[], raw: string, minimumLength: number): void {
+    const normalized = normalizeEvidence(raw);
+    if (normalized.length >= minimumLength) {
+        target.push(normalized);
+    }
+}
+
+function normalizeEvidence(value: string): string {
+    return decodeEntities(value).replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function decodeEntities(value: string): string {
+    const named: Record<string, string> = {
+        amp: '&',
+        apos: "'",
+        gt: '>',
+        lt: '<',
+        nbsp: ' ',
+        quot: '"'
+    };
+    return value.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, token: string) => {
+        if (token[0] !== '#') {
+            return named[token.toLowerCase()] ?? entity;
+        }
+        const hex = token[1]?.toLowerCase() === 'x';
+        const codePoint = Number.parseInt(token.slice(hex ? 2 : 1), hex ? 16 : 10);
+        return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : entity;
+    });
 }
 
 /** Empty or whitespace-only (comments/blank lines count as "not rendered" for verdict purposes). */

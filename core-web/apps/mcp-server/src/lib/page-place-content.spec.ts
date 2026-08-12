@@ -1,6 +1,9 @@
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
-import { placeContent } from './page-place-content';
+import {
+    placeContent as placeContentImpl,
+    type PagePlaceContentOptions
+} from './page-place-content';
 
 /**
  * A page with two slots on the default file container (uuids "1" and "2") and one system-container
@@ -10,6 +13,11 @@ import { placeContent } from './page-place-content';
  */
 const DEFAULT_CONTAINER = '//demo.dotcms.com/application/containers/default/';
 const SYSTEM_CONTAINER = 'SYSTEM_CONTAINER';
+
+/** Existing behavior tests target the demo site explicitly; targeting-specific tests call impl. */
+function placeContent(options: PagePlaceContentOptions) {
+    return placeContentImpl({ site: 'demo.dotcms.com', ...options });
+}
 
 function pageJson() {
     return {
@@ -79,7 +87,22 @@ function fakeRuntime(overrides?: {
     });
     const loadContext = jest.fn(async () => ({
         contentTypes: [],
-        sites: [],
+        sites: [
+            {
+                identifier: 'site-demo',
+                hostname: 'demo.dotcms.com',
+                isDefault: true,
+                archived: false,
+                live: true
+            },
+            {
+                identifier: 'site-awazon',
+                hostname: 'awazon.dotcms.site',
+                isDefault: false,
+                archived: false,
+                live: true
+            }
+        ],
         languages: [],
         currentUser: null
     }));
@@ -97,6 +120,50 @@ function slot(body: PostedEntry[], identifier: string, uuid: string): string[] {
 }
 
 describe('placeContent', () => {
+    it('requires site for a bare path before making any page request', async () => {
+        const { runtime, calls } = fakeRuntime();
+
+        await expect(
+            placeContentImpl({
+                dotcms: runtime,
+                path: '/about-us',
+                slots: [{ slot: 1, contentlets: ['x'] }]
+            })
+        ).rejects.toThrow(/`site` is required.*wrong page/i);
+
+        expect(calls).toHaveLength(0);
+    });
+
+    it('normalizes a host-qualified path and sends that site as host_id', async () => {
+        const { runtime, calls } = fakeRuntime();
+
+        const manifest = await placeContentImpl({
+            dotcms: runtime,
+            path: '//awazon.dotcms.site/about-us',
+            slots: [{ slot: 1, contentlets: ['x'] }]
+        });
+
+        const read = calls.find((call) => call.path.startsWith('/api/v1/page/json'));
+        expect(read?.path).toBe('/api/v1/page/json/about-us');
+        expect(read?.query).toMatchObject({ host_id: 'site-awazon' });
+        expect(manifest.site).toBe('awazon.dotcms.site');
+    });
+
+    it('rejects conflicting explicit and host-qualified sites before reading the page', async () => {
+        const { runtime, calls } = fakeRuntime();
+
+        await expect(
+            placeContentImpl({
+                dotcms: runtime,
+                path: '//awazon.dotcms.site/about-us',
+                site: 'demo.dotcms.com',
+                slots: [{ slot: 1, contentlets: ['x'] }]
+            })
+        ).rejects.toThrow(/Conflicting sites/i);
+
+        expect(calls).toHaveLength(0);
+    });
+
     it('posts the COMPLETE container map, not just the touched slot', async () => {
         const { runtime, calls } = fakeRuntime();
 

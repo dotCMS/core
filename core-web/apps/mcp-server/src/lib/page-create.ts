@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
+import { resolveLanguageId, resolveSite } from './resolve';
 import { errorMessage } from './runtime';
 
 /** The default page content type when the caller does not name one. */
@@ -231,19 +232,7 @@ interface ContentTypeDefinition {
  * context (already loaded), mirroring how resolvePageContentType uses cached content types.
  */
 async function resolveSiteId(dotcms: DotCMSRuntime, site: string): Promise<string> {
-    const wanted = site.trim();
-    const { sites } = await dotcms.loadContext();
-
-    const match = sites.find((s) => s.identifier === wanted || s.hostname === wanted);
-    if (match) {
-        return match.identifier;
-    }
-
-    const available = sites.map((s) => s.hostname).join(', ') || '(none found)';
-    throw new Error(
-        `Site "${site}" was not found (neither a known hostname nor a site identifier). ` +
-            `Available sites: ${available}.`
-    );
+    return (await resolveSite(dotcms, site)).identifier;
 }
 
 /**
@@ -260,7 +249,12 @@ async function resolvePageContentType(
 ): Promise<ContentTypeDefinition> {
     const wanted = (requested ?? DEFAULT_PAGE_CONTENT_TYPE).trim();
 
-    const context = await dotcms.loadContext();
+    // The cache is consulted for the id and for a candidate list, but it does NOT decide
+    // whether the type exists: the definition fetch below is a live call that answers the
+    // same question authoritatively. Gating on the cache meant that when the one-time
+    // context load failed — leaving `contentTypes` empty for the whole session — even the
+    // default `htmlpageasset` was rejected as "not found".
+    const context = await safeLoadContext(dotcms);
     const summary = context.contentTypes.find((ct) => ct.variable === wanted || ct.id === wanted);
 
     // Computed lazily — the happy path never needs the list of page types for an error message.
@@ -268,29 +262,60 @@ async function resolvePageContentType(
         context.contentTypes
             .filter((ct) => ct.baseType === PAGE_BASE_TYPE)
             .map((ct) => ct.variable)
-            .join(', ') || '(none found)';
+            .join(', ') || '(unknown — the session content-type list did not load)';
 
-    if (!summary) {
+    let definition: ContentTypeDefinition | undefined;
+    try {
+        definition = await fetchContentTypeDefinition(dotcms, summary?.id || wanted);
+    } catch (error) {
+        if (!(error instanceof HttpError) || error.status !== 404) {
+            throw error;
+        }
+        // 404 → not found, handled below alongside the empty-entity case.
+    }
+
+    if (!definition) {
         throw new Error(
-            `Content type "${wanted}" was not found. Available page content types: ${availablePageTypes()}.`
+            `Content type "${wanted}" was not found on this instance. ` +
+                `Available page content types: ${availablePageTypes()}.`
         );
     }
 
-    if (summary.baseType !== PAGE_BASE_TYPE) {
+    // Checked against the FETCHED definition, not the cached summary — the fetch is the
+    // authority and is present on every path.
+    if (definition.baseType !== PAGE_BASE_TYPE) {
         throw new Error(
-            `Content type "${summary.variable}" is base type ${summary.baseType}, not a page (HTMLPAGE). ` +
-                `page_create only creates pages. Available page content types: ${availablePageTypes()}.`
+            `Content type "${definition.variable}" is base type ${definition.baseType}, not a page ` +
+                `(HTMLPAGE). page_create only creates pages. Available page content types: ` +
+                `${availablePageTypes()}.`
         );
     }
 
-    return fetchContentTypeDefinition(dotcms, summary.id || summary.variable);
+    return definition;
+}
+
+/**
+ * `loadContext()` with its failure absorbed — the context is an accelerator here, and every
+ * caller below has a live path that does not need it. See lib/resolve.ts for the full
+ * rationale on why an empty cache must never be read as "this does not exist".
+ */
+async function safeLoadContext(dotcms: DotCMSRuntime) {
+    try {
+        return await dotcms.loadContext();
+    } catch (error) {
+        console.error(
+            `[context] load failed during content-type resolution: ${errorMessage(error)}`
+        );
+
+        return { contentTypes: [], sites: [], languages: [], currentUser: null };
+    }
 }
 
 /** Fetch the full content-type definition (including fields) by id or variable. */
 async function fetchContentTypeDefinition(
     dotcms: DotCMSRuntime,
     idOrVar: string
-): Promise<ContentTypeDefinition> {
+): Promise<ContentTypeDefinition | undefined> {
     const response = await dotcms.request({
         path: `/api/v1/contenttype/id/${encodeURIComponent(idOrVar)}`
     });
@@ -309,10 +334,20 @@ async function fetchContentTypeDefinition(
               }))
         : [];
 
+    const variable = optionalString(entity, 'variable');
+    const baseType = optionalString(entity, 'baseType');
+
+    // An empty/unrecognised entity means the type was not resolved. Returning a shape that
+    // defaults `baseType` to HTMLPAGE would assert the very thing the caller is being
+    // checked for, so the base-type guard would pass on a type that does not exist.
+    if (!variable || !baseType) {
+        return undefined;
+    }
+
     return {
         id: optionalString(entity, 'id') ?? idOrVar,
-        variable: optionalString(entity, 'variable') ?? idOrVar,
-        baseType: optionalString(entity, 'baseType') ?? PAGE_BASE_TYPE,
+        variable,
+        baseType,
         fields
     };
 }
@@ -585,38 +620,6 @@ async function isLive(dotcms: DotCMSRuntime, identifier?: string): Promise<boole
         // A failed liveness check is not a failed create — surface it as a non-live result.
         return false;
     }
-}
-
-/**
- * Resolve the language id against the instance's real languages.
- *
- * `site` and `contentType` are both validated against cached context with a candidate list on
- * failure; `languageId` was not, and dotCMS silently falls back to the default language for an
- * unknown id rather than rejecting it. So an unrecognised id did not fail — it quietly wrote to
- * a DIFFERENT language than the caller named, while the manifest echoed the id they asked for.
- *
- * The default also stops being a hardcoded `?? 1`: the instance's own default language is the
- * right fallback, and on some instances that is not id 1.
- */
-async function resolveLanguageId(dotcms: DotCMSRuntime, languageId?: number): Promise<number> {
-    const { languages } = await dotcms.loadContext();
-
-    if (languageId === undefined) {
-        return languages[0]?.id ?? 1;
-    }
-
-    if (languages.some((language) => language.id === languageId)) {
-        return languageId;
-    }
-
-    const available =
-        languages.map((language) => `${language.id} (${language.isoCode})`).join(', ') ||
-        '(none found)';
-    throw new Error(
-        `languageId ${languageId} does not exist on this instance. dotCMS would silently fall ` +
-            `back to the default language and create the page in the WRONG language rather ` +
-            `than reject it, so this is refused up front. Available languages: ${available}.`
-    );
 }
 
 /**

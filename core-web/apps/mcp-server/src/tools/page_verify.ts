@@ -27,6 +27,12 @@ export const schema = {
         .describe(
             'Render mode. "LIVE" (default) = what the public sees (published). "WORKING" = latest ' +
                 'saved, for a pre-publish check. An unpublished edit renders stale in LIVE.'
+        ),
+    includeHtml: z
+        .boolean()
+        .optional()
+        .describe(
+            'Include a bounded prefix of the assembled page HTML for diagnosis. Default false; returns at most 20,000 characters with truncation metadata.'
         )
 };
 
@@ -57,6 +63,9 @@ Per-slot \`verdict\`:
                        Use page_place_content to fill it.
   - cache-stale      — the slot rendered HTML but page.rendered is empty → page-level cache. Set
                        cachettl "0" and re-publish.
+  - not-assembled    — the slot rendered in isolation but distinctive HTML evidence is absent from
+                       page.rendered → inspect the theme row/column loop and emit
+                       $render.eval($column.draw()).
 
 LIVE vs WORKING: an unpublished edit renders stale in LIVE. Use mode "WORKING" for a pre-publish
 check; the result flags that it reflects unpublished edits.
@@ -67,6 +76,9 @@ contentlet (vs. the no-match/404 branch).
 Returns a manifest: { path, url, site, mode, languageId, httpStatus, pageRendered, pageBytes,
 slots: [{ container, uuid, rendered, bytes, contentCount, verdict }], urlMap, warnings, diagnosis }.
 The \`diagnosis\` is a one-line summary plus the next action to take — read it first.
+
+Set \`includeHtml: true\` to add \`html: { content, totalChars, totalBytes, truncated, limit }\`.
+The content is capped at 20,000 characters so a diagnostic call cannot flood model context.
 
 Out of scope: visual/screenshot checks, accessibility, performance, multi-page crawl (one page per
 call). This verifies DEFAULT-variant rendering — the render endpoint does not take a variant.`,
@@ -89,7 +101,8 @@ export default async function handler(
             path: args.path,
             site: args.site,
             languageId: args.languageId,
-            mode: args.mode
+            mode: args.mode,
+            includeHtml: args.includeHtml
         };
 
         const manifest = await verifyPage(options);

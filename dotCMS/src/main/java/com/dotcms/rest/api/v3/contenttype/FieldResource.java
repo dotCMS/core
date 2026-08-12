@@ -96,9 +96,27 @@ public class FieldResource {
     @Operation(
             operationId = "updateContentTypeField",
             summary = "Updates a field in a Content Type",
-            description = "Updates a field in a Content Type. The request body must have the follow " +
-                    "syntax:",
+            description = "Updates a field in a Content Type. The request body is wrapped in a required " +
+                    "top-level `field` property. To update a constant field such as a WIDGET's `widgetCode`, " +
+                    "fetch the existing field, preserve its attributes, change `values`, and send " +
+                    "`{\"field\":{...}}`.",
             tags = {"Content Type Field"},
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Field update wrapper. The top-level `field` property is required.",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = UpdateFieldRequestView.class),
+                            examples = @ExampleObject(value = "{\n" +
+                                    "  \"field\": {\n" +
+                                    "    \"id\": \"<widgetCode-field-id>\",\n" +
+                                    "    \"contentTypeId\": \"<widget-content-type-id>\",\n" +
+                                    "    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableConstantField\",\n" +
+                                    "    \"name\": \"Widget Code\",\n" +
+                                    "    \"variable\": \"widgetCode\",\n" +
+                                    "    \"dataType\": \"LONG_TEXT\",\n" +
+                                    "    \"values\": \"#dotParse('/application/vtl/widget.vtl')\"\n" +
+                                    "  }\n" +
+                                    "}"))),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -236,9 +254,7 @@ public class FieldResource {
             @PathParam("id") @Parameter(
                     description = "The ID of the Field that is being updated.",
                     schema = @Schema(type = "String")) final String fieldId,
-            @Parameter(
-                    description = "The object containing the updated attributes of the Field.",
-                    schema = @Schema(type = "UpdateFieldForm")) final UpdateFieldForm updateFieldForm,
+            final UpdateFieldForm updateFieldForm,
             @Context final HttpServletRequest httpRequest)
             throws DotDataException, DotSecurityException {
         final InitDataObject initData =

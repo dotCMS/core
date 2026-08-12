@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
+import { resolveSite } from './resolve';
 import { errorMessage } from './runtime';
 
 /** The default variant when the caller does not name one. */
@@ -29,8 +30,13 @@ export interface SlotAssignment {
 
 export interface PagePlaceContentOptions {
     dotcms: DotCMSRuntime;
-    /** Page URL path (e.g. "/about-us") or a page identifier (UUID). */
+    /** Page URL path (e.g. "/about-us"), host-qualified path, or a page identifier (UUID). */
     path: string;
+    /**
+     * Site hostname or identifier. Required unless `path` is host-qualified as
+     * `//hostname/path`; the qualified form supplies this value implicitly.
+     */
+    site?: string;
     /**
      * One or more slot assignments applied in a single atomic write. Placing content in one slot is
      * just an array of one: `[{ slot, contentlets }]`.
@@ -65,6 +71,8 @@ export interface SlotResult {
 export interface PagePlaceContentManifest {
     /** Identifier of the page whose content was written. */
     pageId: string;
+    /** Hostname of the site whose page was updated. */
+    site: string;
     /** The page's url path. */
     url: string;
     /** Variant the write targeted. */
@@ -110,12 +118,14 @@ export async function placeContent(
     const variantName = options.variantName ?? DEFAULT_VARIANT;
     const languageId = options.languageId ?? DEFAULT_LANGUAGE_ID;
     const assignments = validateAssignments(options.slots);
+    const target = await resolvePageTarget(options.dotcms, options.path, options.site);
 
     // Read the page's current content. This is the whole point of merge mode, but replace mode needs
     // it too — to validate the addressed slots exist and to build the before/after diff.
     const { pageId, url, slots } = await loadPageSlots(
         options.dotcms,
-        options.path,
+        target.path,
+        target.siteId,
         languageId,
         variantName
     );
@@ -173,7 +183,60 @@ export async function placeContent(
         };
     });
 
-    return { pageId, url, variantName, languageId, mode, slots: slotResults, warnings };
+    return {
+        pageId,
+        site: target.hostname,
+        url,
+        variantName,
+        languageId,
+        mode,
+        slots: slotResults,
+        warnings
+    };
+}
+
+/** Resolve explicit or host-qualified page targeting without ever falling back to a default site. */
+async function resolvePageTarget(
+    dotcms: DotCMSRuntime,
+    rawPath: string,
+    explicitSite?: string
+): Promise<{ path: string; siteId: string; hostname: string }> {
+    const trimmed = rawPath.trim();
+    const qualified = /^\/\/([^/]+)(\/.*)?$/.exec(trimmed);
+    const qualifiedHost = qualified?.[1];
+    const pagePath = qualified ? qualified[2] || '/' : trimmed;
+    const requestedSite = explicitSite?.trim();
+
+    if (!requestedSite && !qualifiedHost) {
+        throw new Error(
+            '`site` is required for page placement when `path` is not host-qualified. ' +
+                'Pass a site hostname/identifier or use `//hostname/path`; refusing to choose the ' +
+                'default site prevents writes to the wrong page on multi-site instances.'
+        );
+    }
+
+    // Resolved through the shared resolver, which falls back to a direct lookup rather than
+    // treating an empty session cache as proof a site does not exist. Each resolver throws
+    // its own explanatory error, so an unknown site still fails here — just for the right
+    // reason, and before any request is made.
+    const explicit = requestedSite ? await resolveSite(dotcms, requestedSite) : undefined;
+    const embedded = qualifiedHost ? await resolveSite(dotcms, qualifiedHost) : undefined;
+
+    if (explicit && embedded && explicit.identifier !== embedded.identifier) {
+        throw new Error(
+            `Conflicting sites: path targets "${qualifiedHost}" but site targets ` +
+                `"${requestedSite}". Pass one site consistently; no request was made.`
+        );
+    }
+
+    const site = explicit ?? embedded;
+    // The branches above make this unreachable, but keep the guard for type safety and future edits.
+    if (!site) {
+        throw new Error('Page placement site could not be resolved.');
+    }
+
+    const normalizedPath = pagePath.startsWith('/') ? pagePath : `/${pagePath}`;
+    return { path: normalizedPath, siteId: site.identifier, hostname: site.hostname };
 }
 
 /**
@@ -401,6 +464,7 @@ interface LayoutRow {
 async function loadPageSlots(
     dotcms: DotCMSRuntime,
     path: string,
+    siteId: string,
     languageId: number,
     variantName: string
 ): Promise<{ pageId: string; url: string; slots: PageSlot[] }> {
@@ -411,7 +475,7 @@ async function loadPageSlots(
     // target variant — clobbering its real contents and reporting a bogus before/after diff.
     const response = (await dotcms.request({
         path: `/api/v1/page/json${uri}`,
-        query: { variantName, language_id: languageId }
+        query: { variantName, language_id: languageId, host_id: siteId }
     })) as PageJsonResponse;
 
     const entity = response.entity;

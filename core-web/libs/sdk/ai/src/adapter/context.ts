@@ -14,6 +14,7 @@ export interface SiteSummary {
     hostname: string;
     isDefault: boolean;
     archived: boolean;
+    live: boolean;
 }
 
 export interface LanguageSummary {
@@ -95,21 +96,35 @@ async function loadContentTypes(request: RequestFn): Promise<ContentTypeSummary[
 }
 
 async function loadSites(request: RequestFn): Promise<SiteSummary[]> {
-    const raw = await request({
-        method: 'GET',
-        path: '/api/v1/site',
-        query: { per_page: 200 }
-    });
-    const list = asArray(unwrapEntity(raw));
-    return list.map((item) => {
+    const pageSize = 200;
+    const all: unknown[] = [];
+
+    // `archive=true` means "include archived" and also asks the backend for stopped sites;
+    // without it the endpoint returns only the active selector list. Keep paging until the
+    // server returns a short page so the injected global is a catalog, not the first 200 sites.
+    for (let page = 0; page < 100; page += 1) {
+        const raw = await request({
+            method: 'GET',
+            path: '/api/v1/site',
+            query: { per_page: pageSize, page, archive: true }
+        });
+        const batch = asArray(unwrapEntity(raw));
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+    }
+
+    const sites = all.map((item) => {
         const s = item as Record<string, unknown>;
         return {
             identifier: asString(s.identifier),
-            hostname: asString(s.hostname ?? s.hostName),
+            hostname: asString(s.hostname ?? s.hostName ?? s.siteName),
             isDefault: asBool(s.default ?? s.isDefault),
-            archived: asBool(s.archived)
+            archived: asBool(s.archived ?? s.isArchived),
+            live: asBool(s.live ?? s.isLive)
         };
     });
+
+    return [...new Map(sites.map((site) => [site.identifier, site])).values()];
 }
 
 async function loadLanguages(request: RequestFn): Promise<LanguageSummary[]> {

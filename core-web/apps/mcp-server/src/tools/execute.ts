@@ -36,13 +36,23 @@ This is a **JavaScript sandbox, NOT Velocity/VTL**:
 
 Pre-loaded instance context (available as globals — no API calls needed to read these):
   - contentTypes: Array<{ id, name, variable, baseType, host?, folder? }>
-  - sites: Array<{ identifier, hostname, isDefault, archived }>
+  - sites: Array<{ identifier, hostname, isDefault, archived, live }> — all accessible non-system
+           sites, including stopped and archived states
   - languages: Array<{ id, languageCode, countryCode, language, country, isoCode }>
   - currentUser: { userId, email, givenName?, surname?, admin, roles? } | null
   Examples:
     const blog = contentTypes.find(c => c.variable === 'Blog');
     const defaultSite = sites.find(s => s.isDefault);
     const en = languages.find(l => l.languageCode === 'en');
+
+The pre-loaded globals are a snapshot taken at the start of one tool invocation and do not mutate
+halfway through the current script. Each MCP invocation constructs fresh runtime context, so a
+subsequent call sees successful changes to sites, content types, or languages without maintaining
+resource-specific invalidation rules.
+
+Do not use \`PUT /api/v1/site/switch/{id}\` as a targeting mechanism. MCP API requests are
+independent and session-scoped site selection is not guaranteed to carry to the next request.
+Pass explicit site/host identifiers (for example \`host_id\` or \`contentHost\`) instead.
 
 Always use the \`search\` tool first to discover the correct endpoint path and request/response schema before calling \`execute\`.
 
@@ -96,6 +106,12 @@ Workflow fires and Elasticsearch (indexPolicy):
 
 - Use \`DEFER\` for isolated, one-off fires where nothing depends on immediate index visibility.
 - Reserve \`FORCE\` for debugging and testing only — it is heavy on the cluster.
+
+Velocity \`$dotcontent.pull\` sorting:
+- Pass content field variables in canonical unsuffixed form, e.g. \`Book.title asc\`. The search
+  layer selects the keyword mapping by appending \`_dotraw\` internally.
+- Already-suffixed input such as \`Book.title_dotraw asc\` is accepted for compatibility and is
+  normalized without producing \`_dotraw_dotraw\`.
 
 Workflow action discovery (when you need a workflow action ID):
 - The 'fire' endpoints that take \`{actionId}\` in the path (e.g. PUT /api/v1/workflow/actions/{actionId}/fire and bulk fire) require a workflow action **UUID**, not the system action enum (NEW, EDIT, PUBLISH, …).

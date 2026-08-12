@@ -21,7 +21,10 @@ import java.util.Map;
  * @see ContentTypeFieldView
  */
 @Schema(description = "A content-type object, posted directly (NOT wrapped in a 'contentType' envelope). "
-        + "The endpoint also accepts an array of these objects to create several types in one call.")
+        + "The endpoint also accepts an array of these objects to create several types in one call. "
+        + "Creating clazz `WIDGET` automatically adds `widgetTitle`, `widgetUsage`, `widgetCode`, and "
+        + "`widgetPreexecute`. `widgetCode` is an ImmutableConstantField: its shared code belongs in the "
+        + "field's `values` property, not in individual widget contentlets.")
 public class ContentTypeRequestView {
 
     @Schema(

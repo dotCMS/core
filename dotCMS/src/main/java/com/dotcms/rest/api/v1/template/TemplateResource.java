@@ -324,7 +324,11 @@ public class TemplateResource {
                     "When `drawed` is true (a layout-designer template): `body` is REQUIRED and must be non-empty " +
                     "(a null body returns 400 'body required when drawed'), and `theme` MUST resolve to a theme " +
                     "**folder** identifier — a host id or other non-folder id returns 400 'theme must be a folder " +
-                    "identifier'. Provide `drawedBody` (the layout JSON) as well so the template is a real drawn template."
+                    "identifier'. Provide `drawedBody` (the layout JSON) as well so the template is a real drawn template.\n\n" +
+                    "For a themed drawn template, `body` is a generated compatibility shell and is not the render " +
+                    "source; rendering flows through the theme's `template.vtl` and `drawedBody`. The stored shell " +
+                    "may contain `/themes/null/` even when `theme` and `themeName` are correct. That value is benign " +
+                    "for this template kind, and PUT-updating `body` will only cause the shell to be regenerated."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -380,7 +384,11 @@ public class TemplateResource {
                     "(referred to as 'themeId' in other endpoints). Returns 404 if the template does not exist.\n\n" +
                     "When `drawed` is true: `body` is REQUIRED and non-empty (else 400 'body required when drawed'), " +
                     "and `theme` MUST resolve to a theme **folder** identifier (else 400 'theme must be a folder " +
-                    "identifier'). Include `drawedBody` (the layout JSON) so the template stays a real drawn template."
+                    "identifier'). Include `drawedBody` (the layout JSON) so the template stays a real drawn template.\n\n" +
+                    "For a themed drawn template, `body` is a generated compatibility shell and is not used to " +
+                    "assemble the rendered page; the theme's `template.vtl` and `drawedBody` are authoritative. A " +
+                    "persisted `/themes/null/` reference in that shell is benign, and changing `body` does not repair " +
+                    "or affect themed drawn rendering because the server regenerates it."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -1220,4 +1228,3 @@ public class TemplateResource {
         throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exist");
     }
 }
-

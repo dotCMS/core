@@ -504,6 +504,9 @@ public class ContentTypeResource implements Serializable {
 														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
+														   "**WIDGET content types:** Creating `clazz: WIDGET` automatically adds `widgetTitle`, `widgetUsage`, `widgetCode`, and `widgetPreexecute`. " +
+														   "`widgetCode` is an `ImmutableConstantField`; set the field's `values` property on the content type. " +
+														   "Putting `widgetCode` in a workflow contentlet body is silently ignored.\n\n" +
 														   "**Field object schema** (each item in `fields[]`):\n" +
 														   "- `clazz` *(string, required)* — the field type as a case-insensitive short name: " +
 														   "`TEXT`, `TEXT_AREA`, `STORY_BLOCK_FIELD`, `WYSIWYG`, `BINARY`, `IMAGE`, `FILE`, `TAG`, `CATEGORY`, " +
