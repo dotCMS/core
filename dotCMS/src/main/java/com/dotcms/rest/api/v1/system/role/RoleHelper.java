@@ -7,6 +7,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateRoleException;
 import com.dotmarketing.business.DuplicateRoleKeyException;
 import com.dotmarketing.business.Layout;
@@ -17,6 +18,9 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
@@ -151,6 +155,109 @@ public class RoleHelper {
                 "Date: " + date + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId());
 
         return updatedRole;
+    }
+
+    /**
+     * Deletes an existing role. The deletion CASCADES — legacy parity with
+     * {@code RoleAPIImpl.delete}: the role is removed from every user that has it, all its
+     * permissions are stripped, and its layout assignments are detached before the role row
+     * is removed. Deletion is blocked only where legacy blocks it (see #36939):
+     * <ul>
+     *   <li>missing role → {@link DoesNotExistException} (404)</li>
+     *   <li>system or locked role → {@link DotSecurityException} (403)</li>
+     *   <li>role with children → {@link ConflictException} (409); the legacy DWR endpoint
+     *       silently returned {@code false} for this case</li>
+     *   <li>role referenced by a workflow action's Assign To → {@link ConflictException} (409),
+     *       pre-checked here because the same check inside {@code RoleAPIImpl.delete} is
+     *       swallowed by its catch(Exception) and would surface as a generic failure</li>
+     * </ul>
+     *
+     * No transaction wrapper here: the pre-flights are reads and {@code roleAPI.delete} is
+     * already transactional.
+     *
+     * @param roleId  id of the role to delete
+     * @param modUser authenticated user performing the deletion (audit logging)
+     * @return number of users the role was removed from by the cascade
+     */
+    public int deleteRole(final String roleId, final User modUser)
+            throws DotDataException, DotSecurityException {
+
+        final Role role = this.roleAPI.loadRoleById(roleId);
+        if (null == role || !UtilMethods.isSet(role.getId())) {
+            throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        if (role.isSystem() || role.isLocked()) {
+            throw new DotSecurityException(
+                    String.format("Role '%s' (%s) is a system or locked role and cannot be deleted",
+                            role.getName(), role.getId()));
+        }
+
+        final List<String> children = role.getRoleChildren();
+        if (null != children && !children.isEmpty()) {
+            throw new ConflictException(String.format(
+                    "Role '%s' (%s) has %d child role(s) and cannot be deleted; delete or reparent its children first",
+                    role.getName(), role.getId(), children.size()));
+        }
+
+        this.checkNoDependentWorkflowActions(role);
+
+        final int usersAffected = this.roleAPI.findUserIdsForRole(role).size();
+
+        // the role row is gone after the delete, so the audit lines must carry enough to
+        // identify it (name/key) and its blast radius without a DB lookup
+        final String auditDetail = "Date: " + DateUtil.getCurrentDate()
+                + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId()
+                + "; Name: " + role.getName() + "; Key: " + role.getRoleKey()
+                + "; UsersAffected: " + usersAffected;
+
+        ActivityLogger.logInfo(getClass(), "Deleting Role", auditDetail);
+        AdminLogger.log(getClass(), "Deleting Role", auditDetail);
+
+        try {
+            this.roleAPI.delete(role);
+        } catch (final DotDataException | DotStateException e) {
+            ActivityLogger.logInfo(getClass(), "Error Deleting Role", auditDetail);
+            AdminLogger.log(getClass(), "Error Deleting Role", auditDetail);
+            throw e;
+        }
+
+        ActivityLogger.logInfo(getClass(), "Role Deleted", auditDetail);
+        AdminLogger.log(getClass(), "Role Deleted", auditDetail);
+
+        return usersAffected;
+    }
+
+    /**
+     * Pre-flight version of {@code RoleAPIImpl#findDependentWorkflowActions}: any workflow
+     * action whose Assign To references the role blocks the deletion with a structured 409
+     * naming the offending schemes and actions.
+     *
+     * @param role the role about to be deleted
+     */
+    private void checkNoDependentWorkflowActions(final Role role)
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final User systemUser = APILocator.systemUser();
+        final StringBuilder schemesAndActions = new StringBuilder();
+        for (final WorkflowScheme scheme : workflowAPI.findSchemes(true)) {
+            final List<WorkflowAction> actions = workflowAPI.findActions(scheme, systemUser,
+                    (WorkflowAction action) -> role.getId().equals(action.getNextAssign()));
+            if (!actions.isEmpty()) {
+                final String conflictingActions = actions.stream()
+                        .map(WorkflowAction::getName)
+                        .collect(Collectors.joining(", "));
+                schemesAndActions.append(scheme.getName()).append(" [action(s) : ")
+                        .append(conflictingActions).append("] ");
+            }
+        }
+
+        if (schemesAndActions.length() > 0) {
+            throw new ConflictException(String.format(
+                    "Please remove all references to the '%s' Role from the following Workflow Scheme Actions: %s",
+                    role.getName(), schemesAndActions));
+        }
     }
 
     /**

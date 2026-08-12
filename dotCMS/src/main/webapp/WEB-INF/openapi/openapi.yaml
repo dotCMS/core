@@ -15126,6 +15126,51 @@ paths:
       summary: Load user roles
       tags:
       - Roles
+  /v1/roles/{roleId}:
+    delete:
+      description: "Deletes a role. The deletion CASCADES and is not reversible: the\
+        \ role is removed from all users that have it, all permissions granted to\
+        \ the role are deleted, and its layout (tool-group) assignments are detached.\
+        \ The response reports how many users were affected. Deletion is rejected\
+        \ when the role has child roles or is referenced by a workflow action's Assign\
+        \ To (409), and for system or locked roles (403)."
+      operationId: deleteRole
+      parameters:
+      - description: Id of the role to delete
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDeletionView"
+          description: Role deleted successfully; usersAffected reports the cascade
+            blast radius
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role is a system\
+            \ or locked role"
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - the role has child roles, or a workflow action\
+            \ references it"
+      summary: Delete a role
+      tags:
+      - Roles
   /v1/roles/{roleId}/layouts:
     get:
       description: Returns a collection of layouts associated to a role
@@ -33323,6 +33368,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRoleDeletionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleDeletionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRoleDetailView:
       type: object
       properties:
@@ -35139,6 +35207,28 @@ components:
           type: boolean
         user:
           type: boolean
+    RoleDeletionView:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+          description: Whether the role was deleted
+          example: true
+        roleId:
+          type: string
+          description: Id of the deleted role
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        usersAffected:
+          type: integer
+          format: int32
+          description: Number of users the role was removed from by the cascading
+            deletion. Counts direct assignments only; users inheriting the role through
+            the role hierarchy are not included
+          example: 3
+      required:
+      - deleted
+      - roleId
+      - usersAffected
     RoleForm:
       type: object
       properties:

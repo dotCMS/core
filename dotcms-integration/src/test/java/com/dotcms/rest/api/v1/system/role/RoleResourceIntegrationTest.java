@@ -1,8 +1,12 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.WorkflowActionDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -12,10 +16,16 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
@@ -41,6 +51,7 @@ import static org.junit.Assert.fail;
  *
  * Covered here:
  * - PUT /api/v1/roles/{roleId} (update role + reparent) — issue #36936
+ * - DELETE /api/v1/roles/{roleId} (delete role, cascading) — issue #36939
  *
  * These tests invoke the resource directly with mock authenticated requests, following the
  * pattern established by {@code PermissionResourceIntegrationTest}.
@@ -97,6 +108,15 @@ public class RoleResourceIntegrationTest {
         request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER, user);
         return request;
+    }
+
+    private static HttpServletRequest anonymousRequest() {
+        return new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(
+                                new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request())
+                                .request())
+                        .request());
     }
 
     private static RoleForm.Builder formFrom(final Role role) {
@@ -555,5 +575,248 @@ public class RoleResourceIntegrationTest {
                 ((RoleResponseEntityView) restResponse.getEntity()).getEntity();
         assertNotNull(entity.get("id"));
         assertEquals(name, roleAPI.loadRoleById((String) entity.get("id")).getName());
+    }
+
+    // ==================== DELETE /v1/roles/{roleId} — #36939 ====================
+
+    /**
+     * Method to test: {@link RoleResource#deleteRole(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: An admin deletes a leaf role with no users, permissions, layouts, children,
+     * or workflow-action references.
+     * Expected Result: 200 with {deleted: true, roleId, usersAffected: 0}; the role no longer exists.
+     */
+    @Test
+    public void testDeleteRole_success_leafRole() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        final ResponseEntityRoleDeletionView view = resource.deleteRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId());
+
+        final RoleDeletionView entity = view.getEntity();
+        assertNotNull(entity);
+        assertTrue(entity.deleted());
+        assertEquals(role.getId(), entity.roleId());
+        assertEquals(0, entity.usersAffected());
+
+        final Role reloaded = roleAPI.loadRoleById(role.getId());
+        assertTrue(null == reloaded || !UtilMethods.isSet(reloaded.getId()));
+    }
+
+    /**
+     * Given Scenario: The role being deleted is assigned to a user, grants a permission on a host,
+     * and has a layout attached. This mirrors what legacy RoleAPIImpl.delete has always done: it
+     * CASCADES — removes the role from every user, strips its permissions, detaches its layouts,
+     * then deletes.
+     * Expected Result: 200 (NOT 409 — deleting a role means revoking that access, legacy parity),
+     * usersAffected reports the blast radius, and every dependent row is gone.
+     *
+     * ⚠️ This test intentionally pins the cascade. If it starts failing because the endpoint began
+     * blocking on assigned users, that is removed functionality, not a fix — see #36939 decisions.
+     */
+    @Test
+    public void testDeleteRole_withUsersAssigned_cascades() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        final User member = UserTestUtil.getUser("cascadeuser" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, member);
+        assertTrue(roleAPI.doesUserHaveRole(member, role));
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        permissionAPI.save(
+                new Permission(testHost.getPermissionId(), role.getId(), PermissionAPI.PERMISSION_READ, true),
+                testHost, APILocator.systemUser(), false);
+        assertFalse(permissionAPI.getPermissionsByRole(role, false).isEmpty());
+
+        final Layout layout = new LayoutDataGen().nextPersisted();
+        roleAPI.addLayoutToRole(layout, role);
+        assertFalse(APILocator.getLayoutAPI().loadLayoutsForRole(role).isEmpty());
+
+        final ResponseEntityRoleDeletionView view = resource.deleteRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId());
+
+        final RoleDeletionView entity = view.getEntity();
+        assertTrue(entity.deleted());
+        assertEquals(1, entity.usersAffected());
+
+        final Role reloaded = roleAPI.loadRoleById(role.getId());
+        assertTrue(null == reloaded || !UtilMethods.isSet(reloaded.getId()));
+        assertFalse(roleAPI.doesUserHaveRole(member, role.getId()));
+        assertTrue(permissionAPI.getPermissionsByRole(role, false).isEmpty());
+        assertTrue(APILocator.getLayoutAPI().loadLayoutsForRole(role).isEmpty());
+    }
+
+    /**
+     * Given Scenario: The role has a child role.
+     * Expected Result: 409 ConflictException reporting the child count; neither role is modified.
+     * Legacy parity: DWR RoleAjax#deleteRole silently returns false for roles with children —
+     * the pre-flight surfaces the same block as a structured conflict.
+     */
+    @Test
+    public void testDeleteRole_withChildren_conflict() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+
+        try {
+            resource.deleteRole(adminRequest(), new MockHttpResponse().response(), parent.getId());
+            fail("Should have thrown ConflictException for a role with children");
+        } catch (final ConflictException e) {
+            assertTrue("message should mention children: " + e.getMessage(),
+                    e.getMessage().toLowerCase().contains("child"));
+        }
+
+        assertNotNull(roleAPI.loadRoleById(parent.getId()));
+        assertEquals(parent.getId(), roleAPI.loadRoleById(child.getId()).getParent());
+    }
+
+    /**
+     * Given Scenario: A workflow action's "Assign To" (nextAssign) references the role.
+     * Expected Result: 409 ConflictException naming the workflow scheme and action; the role
+     * still exists. This dependency is enforced by RoleAPIImpl#findDependentWorkflowActions, but
+     * that check runs inside delete()'s catch(Exception) which re-wraps it into a generic
+     * DotDataException — the endpoint must pre-check it to produce this structured 409.
+     */
+    @Test
+    public void testDeleteRole_referencedByWorkflowAction_conflict() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        final WorkflowScheme scheme = new WorkflowDataGen()
+                .name("delete-role-scheme-" + uniq()).nextPersisted();
+        final WorkflowStep step = new WorkflowStepDataGen(scheme.getId()).nextPersisted();
+        final WorkflowAction action = new WorkflowActionDataGen(scheme.getId(), step.getId())
+                .nextAssign(role.getId())
+                .nextPersisted();
+
+        try {
+            resource.deleteRole(adminRequest(), new MockHttpResponse().response(), role.getId());
+            fail("Should have thrown ConflictException for a role referenced by a workflow action");
+        } catch (final ConflictException e) {
+            assertTrue("message should name the scheme: " + e.getMessage(),
+                    e.getMessage().contains(scheme.getName()));
+            assertTrue("message should name the action: " + e.getMessage(),
+                    e.getMessage().contains(action.getName()));
+        }
+
+        assertNotNull(roleAPI.loadRoleById(role.getId()));
+    }
+
+    /**
+     * Given Scenario: An admin attempts to delete a system role (a user's individual role is
+     * flagged system=true on creation).
+     * Expected Result: DotSecurityException (403); the role still exists.
+     */
+    @Test
+    public void testDeleteRole_systemRole_forbidden() throws Exception {
+        final Role systemRole = roleAPI.getUserRole(limitedUser);
+        assertTrue(systemRole.isSystem());
+
+        try {
+            resource.deleteRole(adminRequest(), new MockHttpResponse().response(), systemRole.getId());
+            fail("Should have thrown DotSecurityException for a system role");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+
+        assertNotNull(roleAPI.loadRoleById(systemRole.getId()));
+    }
+
+    /**
+     * Given Scenario: An admin attempts to delete a locked role.
+     * Expected Result: DotSecurityException (403); the role still exists. Legacy
+     * RoleAPIImpl.delete blocks locked roles with a DotStateException (~500); the pre-flight
+     * surfaces it as a clean 403.
+     */
+    @Test
+    public void testDeleteRole_lockedRole_forbidden() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        roleAPI.lock(role);
+
+        try {
+            resource.deleteRole(adminRequest(), new MockHttpResponse().response(), role.getId());
+            fail("Should have thrown DotSecurityException for a locked role");
+        } catch (final DotSecurityException e) {
+            // expected
+        } finally {
+            roleAPI.unLock(role);
+        }
+
+        assertNotNull(roleAPI.loadRoleById(role.getId()));
+    }
+
+    /**
+     * Given Scenario: The roleId path parameter does not match any role.
+     * Expected Result: 404 DoesNotExistException (resource-wide convention).
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void testDeleteRole_missingRole_notFound() throws Exception {
+        resource.deleteRole(adminRequest(), new MockHttpResponse().response(),
+                UUID.randomUUID().toString());
+    }
+
+    /**
+     * Given Scenario: An anonymous caller (no session user, no Authorization header) calls the
+     * endpoint.
+     * Expected Result: rejected by the InitBuilder's rejectWhenNoUser gate (401); the role
+     * still exists.
+     */
+    @Test
+    public void testDeleteRole_anonymous_unauthorized() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        try {
+            resource.deleteRole(anonymousRequest(),
+                    new MockHttpResponse().response(), role.getId());
+            fail("Should have thrown a security exception for an anonymous caller");
+        } catch (final com.dotcms.rest.exception.SecurityException e) {
+            // expected: rejectWhenNoUser → 401
+        }
+
+        assertNotNull(roleAPI.loadRoleById(role.getId()));
+    }
+
+    /**
+     * Given Scenario: A backend user without the roles portlet and without the CMS admin role
+     * calls the endpoint.
+     * Expected Result: rejected with a security exception (403); the role still exists.
+     */
+    @Test
+    public void testDeleteRole_nonAdmin_forbidden() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        try {
+            resource.deleteRole(requestFor(limitedUser),
+                    new MockHttpResponse().response(), role.getId());
+            fail("Should have thrown a security exception");
+        } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+            // expected: the InitBuilder portlet gate throws the REST SecurityException (→ 403),
+            // the CMS-admin check throws DotSecurityException (→ 403)
+        }
+
+        assertNotNull(roleAPI.loadRoleById(role.getId()));
+    }
+
+    /**
+     * Given Scenario: A backend user WITH access to the roles portlet but WITHOUT the CMS admin
+     * role calls the endpoint — exercises the CMS-admin gate specifically.
+     * Expected Result: rejected with a security exception (403); the role still exists.
+     */
+    @Test
+    public void testDeleteRole_rolesPortletUserWithoutAdmin_forbidden() throws Exception {
+        final Layout rolesLayout = new LayoutDataGen().portletIds("roles").nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(rolesLayout).nextPersisted();
+        final User portletUser = UserTestUtil.getUser("rolesdeleteuser" + uniq(), false, true);
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), portletUser);
+        roleAPI.addRoleToUser(portletRole, portletUser);
+
+        final Role role = new RoleDataGen().nextPersisted();
+
+        try {
+            resource.deleteRole(requestFor(portletUser),
+                    new MockHttpResponse().response(), role.getId());
+            fail("Should have thrown a security exception for a non-admin caller");
+        } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+            // expected: the CMS-admin check
+        }
+
+        assertNotNull(roleAPI.loadRoleById(role.getId()));
     }
 }

@@ -423,6 +423,63 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
+	 * Deletes an existing role. The deletion CASCADES, matching the legacy behavior the old
+	 * Roles &amp; Tools portlet has always had: the role is removed from every user that has it,
+	 * all its permissions are deleted, and its layout (tool-group) assignments are detached.
+	 * Deletion is blocked only where legacy blocks it: roles with children (409), roles
+	 * referenced by a workflow action's Assign To (409), and system or locked roles (403).
+	 * The caller must be a backend user with access to the Roles portlet and the CMS
+	 * Administrator role.
+	 */
+	@Operation(
+		operationId = "deleteRole",
+		summary = "Delete a role",
+		description = "Deletes a role. The deletion CASCADES and is not reversible: the role is " +
+				"removed from all users that have it, all permissions granted to the role are " +
+				"deleted, and its layout (tool-group) assignments are detached. The response " +
+				"reports how many users were affected. Deletion is rejected when the role has " +
+				"child roles or is referenced by a workflow action's Assign To (409), and for " +
+				"system or locked roles (403)."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role deleted successfully; usersAffected reports the cascade blast radius",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDeletionView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required, or the role is a system or locked role",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "409",
+					description = "Conflict - the role has child roles, or a workflow action references it",
+					content = @Content(mediaType = "application/json"))
+	})
+	@DELETE
+	@Path("/{roleId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDeletionView deleteRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to delete", required = true)
+			final @PathParam("roleId") String roleId) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		final int usersAffected = this.roleHelper.deleteRole(roleId, user);
+
+		return new ResponseEntityRoleDeletionView(RoleDeletionView.builder()
+				.deleted(true)
+				.roleId(roleId)
+				.usersAffected(usersAffected)
+				.build());
+	}
+
+	/**
 	 * Saves set of layout into a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
