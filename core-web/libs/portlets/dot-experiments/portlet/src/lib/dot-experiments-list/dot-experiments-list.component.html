@@ -133,20 +133,10 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-end gap-1">
-                                <!-- Leads the cell per the design: "View Results" where results
-                                     exist, "Configure" otherwise. Disabled until those screens
-                                     land (#36990+) so no row can route into the legacy UVE
-                                     experiments UI. -->
-                                <p-button
-                                    [label]="row.primaryActionLabelKey | dm"
-                                    [outlined]="true"
-                                    severity="secondary"
-                                    size="small"
-                                    [disabled]="true"
-                                    [pTooltip]="'experiments.list.action.coming-soon' | dm"
-                                    tooltipPosition="left"
-                                    data-testid="experiment-primary-action" />
-
+                                <!-- The design leads this cell with "View Results" / "Configure",
+                                     but both screens land with #36990+; a disabled button that
+                                     cannot go anywhere is noise, so the row exposes only the
+                                     actions it can actually perform (AC10). -->
                                 @if (row.canArchive) {
                                     <p-button
                                         [text]="true"

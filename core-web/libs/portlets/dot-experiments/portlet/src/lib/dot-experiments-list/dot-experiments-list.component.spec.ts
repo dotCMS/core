@@ -281,8 +281,6 @@ describe('DotExperimentsListComponent', () => {
         ])('should render only the allowed icon buttons for %s', (status, expectedLabels) => {
             renderRowWith(status);
 
-            // The primary action carries a visible label rather than an aria-label, so
-            // filtering on aria-label isolates the icon-only buttons this case is about.
             const labels = Array.from(
                 spectator
                     .query(byTestId('experiment-row'))
@@ -303,32 +301,14 @@ describe('DotExperimentsListComponent', () => {
             expect((restore as HTMLButtonElement).disabled).toBe(true);
         });
 
-        it.each([
-            [DotExperimentStatus.RUNNING, 'experiments.action.view.results'],
-            [DotExperimentStatus.ENDED, 'experiments.action.view.results'],
-            [DotExperimentStatus.DRAFT, 'experiments.list.action.configure'],
-            [DotExperimentStatus.SCHEDULED, 'experiments.list.action.configure'],
-            [DotExperimentStatus.ARCHIVED, 'experiments.list.action.configure']
-        ])('should label the primary action for %s from the results gate', (status, labelKey) => {
-            renderRowWith(status);
-
-            const primary = spectator.query(byTestId('experiment-primary-action'));
-
-            expect(primary?.textContent).toContain(messageServiceMock.get(labelKey));
-        });
-
-        it('should keep the primary action disabled until the configure and results screens land', () => {
-            // AC10: the row matches the design, but nothing may route into the legacy UVE
-            // experiments screens, so the control renders inert rather than navigating.
+        it('should not render a configure or view-results control', () => {
+            // AC10: the Configure and Results screens land with #36990+. Until then the cell
+            // exposes only actions the row can actually perform — a disabled button that
+            // cannot navigate is noise.
             Object.values(DotExperimentStatus).forEach((status) => {
                 renderRowWith(status);
 
-                const primary = spectator
-                    .query(byTestId('experiment-primary-action'))
-                    ?.querySelector('button');
-
-                expect(primary).not.toBeNull();
-                expect((primary as HTMLButtonElement).disabled).toBe(true);
+                expect(spectator.query(byTestId('experiment-primary-action'))).toBeNull();
             });
         });
 

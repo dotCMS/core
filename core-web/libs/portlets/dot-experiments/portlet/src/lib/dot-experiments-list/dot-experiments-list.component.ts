@@ -108,12 +108,6 @@ interface ExperimentRow {
     canArchive: boolean;
     /** Only archived experiments show the (still inactive) restore affordance. */
     isArchived: boolean;
-    /**
-     * Label of the row's primary action: results where the experiment has them, configuration
-     * otherwise. Rendered disabled until the Configure and Results screens land (#36990+), so
-     * the row matches the design without routing into the legacy UVE screens.
-     */
-    primaryActionLabelKey: string;
     statusSeverity: TagSeverity;
     statusIcon: string;
     statusLabelKey: string;
@@ -186,11 +180,6 @@ export class DotExperimentsListComponent {
                 schedule: formatSchedule(experiment.scheduling, scheduleLabels),
                 canArchive: isAllowed('archive', experiment.status),
                 isArchived: experiment.status === DotExperimentStatus.ARCHIVED,
-                // `results` is allowed exactly where the design shows "View Results"
-                // (RUNNING, ENDED), so derive from the gate rather than restating the statuses.
-                primaryActionLabelKey: isAllowed('results', experiment.status)
-                    ? 'experiments.action.view.results'
-                    : 'experiments.list.action.configure',
                 statusSeverity: STATUS_SEVERITIES[experiment.status] ?? 'secondary',
                 statusIcon: ExperimentsStatusIcons[experiment.status] ?? '',
                 statusLabelKey: STATUS_LABEL_KEYS.get(experiment.status) ?? ''
