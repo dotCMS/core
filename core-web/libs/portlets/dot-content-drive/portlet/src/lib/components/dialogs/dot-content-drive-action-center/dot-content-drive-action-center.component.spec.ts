@@ -135,6 +135,18 @@ const BULK_ACTIONS_RESPONSE = {
  * Every slot is sent on every fire — the request shape is identical either way, and the server reads
  * only the parts the action asked for.
  */
+/** A complete push publish payload, in the shape the step emits. */
+const PUSH_PUBLISH_SETTINGS = {
+    whereToSend: 'env-1',
+    iWantTo: 'publish' as const,
+    publishDate: '2026-08-12',
+    publishTime: '10-30',
+    expireDate: '2026-08-12',
+    expireTime: '10-30',
+    filterKey: 'filter-b',
+    timezoneId: 'Europe/Madrid'
+};
+
 const NO_INPUTS_SENT = {
     pathToMove: '',
     assignComment: { assign: '', comment: '' },
@@ -915,25 +927,16 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
         });
 
-        it('should disable an action needing more than one configuration screen', () => {
-            // The remaining gap: `configure` shows one screen at a time, so push-publish *and*
-            // assignable cannot both be collected in one pass yet.
-            spectator.detectChanges();
-
-            const approve = spectator.query(
-                '[data-testid="workflow-action-action-approve"] input'
-            ) as HTMLInputElement;
-
-            expect(approve.disabled).toBe(true);
-        });
-
         it.each([
+            ['nothing', 'action-review'],
             ['a move path', 'action-move'],
             ['an assignee and a comment', 'action-assign'],
-            ['push publish', 'action-pp']
-        ])('should enable an action needing only %s', (_label, actionId) => {
-            // The distinction the granular flags exist for: `requiresInput` is true for all of these
-            // rows, and every one of them is now reachable.
+            ['push publish', 'action-pp'],
+            // The row that used to be greyed: two sections now render together.
+            ['both an assignee and push publish', 'action-approve']
+        ])('should enable an action needing %s', (_label, actionId) => {
+            // No input gate remains: whatever an action declares gets a section on the configuration
+            // screen, so every row is armable.
             spectator.detectChanges();
 
             const row = spectator.query(
@@ -941,6 +944,16 @@ describe('DotContentDriveActionCenterComponent', () => {
             ) as HTMLInputElement;
 
             expect(row.disabled).toBe(false);
+        });
+
+        it('should offer no requires-input hint on any row', () => {
+            spectator.detectChanges();
+
+            expect(spectator.queryAll('.pi-info-circle[aria-hidden]').length).toBe(
+                // Only the approximate-count icons remain; none of the fixture's actions carry a
+                // condition, so there should be none at all.
+                0
+            );
         });
 
         it('should not open the preview when the action applies to nothing', () => {
@@ -1844,6 +1857,139 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.component['$pushPublish']()).toBeNull();
             expect(spectator.component['$pushPublishValid']()).toBe(false);
+        });
+    });
+
+    describe('actions needing several configuration sections', () => {
+        /** Arms `action-approve` (assignable + push publish) and drills into its configure screen. */
+        const goToConfigure = (): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-approve');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        /** Satisfies both sections, as their step components would. */
+        const satisfyBoth = (): void => {
+            spectator.component['onAssignCommentChange']({ assign: 'role-1', comment: '' });
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+        };
+
+        const continueButton = (): HTMLButtonElement =>
+            spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+        it('should render every section the action needs on one screen', () => {
+            goToConfigure();
+
+            expect(spectator.query('[data-testid="action-configure-assign-comment"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-configure-push-publish"]')).toBeTruthy();
+        });
+
+        it('should render them in the legacy wizard order', () => {
+            goToConfigure();
+
+            const order = spectator
+                .queryAll('[data-testid^="action-configure-section-"]')
+                .map((section) => section.getAttribute('data-testid'));
+
+            expect(order).toEqual([
+                'action-configure-section-assignComment',
+                'action-configure-section-pushPublish'
+            ]);
+        });
+
+        it('should label the sections once there is more than one', () => {
+            // A lone form is left unlabelled — the dialog header already names the action.
+            goToConfigure();
+
+            expect(spectator.queryAll('[data-testid^="action-configure-section-"] h3').length).toBe(
+                2
+            );
+        });
+
+        it('should keep Continue disabled until every section is satisfied', () => {
+            goToConfigure();
+            expect(continueButton().disabled).toBe(true);
+
+            // One of two is not enough.
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.detectChanges();
+            expect(continueButton().disabled).toBe(true);
+
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+            expect(continueButton().disabled).toBe(false);
+        });
+
+        it('should name the first unsatisfied section in the footer', () => {
+            // With sections stacked, the field holding Continue back can be scrolled out of view, so
+            // the footer has to say which one it is.
+            goToConfigure();
+            expect(spectator.component['$configureHint']()).toBe(
+                'content-drive.action-center.assign.no-assignee'
+            );
+
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component['$configureHint']()).toBe(
+                'content-drive.action-center.push-publish.no-environment'
+            );
+        });
+
+        it('should clear the hint once nothing is missing', () => {
+            goToConfigure();
+            satisfyBoth();
+
+            expect(spectator.component['$configureHint']()).toBe('');
+        });
+
+        it('should fire one request carrying both payloads', () => {
+            // The point of stacking: two sections, one execute. Both step components emit from an
+            // effect, so this also guards against one emission clobbering the other.
+            goToConfigure();
+            satisfyBoth();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledTimes(1);
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-approve',
+                'Approve and Push',
+                ['inode-1', 'inode-2'],
+                {
+                    pathToMove: '',
+                    assignComment: { assign: 'role-1', comment: '' },
+                    pushPublish: PUSH_PUBLISH_SETTINGS
+                }
+            );
+        });
+
+        it('should refuse to fire while a section is still unsatisfied', () => {
+            goToConfigure();
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should use the generic back label rather than the move-specific one', () => {
+            goToConfigure();
+
+            expect(spectator.component['$backLabel']()).toBe(
+                'content-drive.action-center.back.settings'
+            );
         });
     });
 

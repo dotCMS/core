@@ -65,7 +65,8 @@ export const toBundle = (value: DotBundle | string | null | undefined): DotBundl
     // that user's unsent bundles. `DotAddToBundleComponent` provides the same pair.
     providers: [AddToBundleService, DotCurrentUserService],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex min-h-0 flex-1 flex-col' }
+    // A plain block: the host owns the scrolling column these sections sit in.
+    host: { class: 'block' }
 })
 export class DotContentDriveActionBundleTargetComponent implements OnInit {
     readonly #addToBundleService = inject(AddToBundleService);

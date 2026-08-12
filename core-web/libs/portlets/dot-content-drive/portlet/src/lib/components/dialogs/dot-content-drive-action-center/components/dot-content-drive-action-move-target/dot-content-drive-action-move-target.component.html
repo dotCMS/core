@@ -2,8 +2,11 @@
     Body only — no header and no footer. The dialog header is the shell's (retitled to the action name
     via drill-down state) and the Continue button lives in the Action Center's own pinned footer, which
     owns the in-flight disabled state. Rendering either here would duplicate it.
+
+    No padding and no scrolling either: the host stacks this with other sections inside one scroll
+    container, and a second `overflow-y-auto` here would fight it for the height.
 -->
-<div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5" data-testid="move-target">
+<div data-testid="move-target">
     <div class="form">
         <div class="field">
             <label for="moveTargetFolder">

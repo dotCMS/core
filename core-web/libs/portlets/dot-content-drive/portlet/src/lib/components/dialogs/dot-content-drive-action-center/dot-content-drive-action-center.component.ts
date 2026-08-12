@@ -53,7 +53,6 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
-    hasUnsupportedInput,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
     requiredInputKinds,
@@ -64,12 +63,12 @@ import {
 type DotActionCenterView = 'actions' | 'configure' | 'preview';
 
 /**
- * What the `configure` screen is collecting, or `null` when the action needs nothing.
+ * A section the `configure` screen can render.
  *
- * `bundle` is the quick action's own kind; the rest mirror {@link DotActionInputKind}. Exactly one is
- * shown at a time — an action needing two is still gated by `hasUnsupportedInput`.
+ * `bundle` is the quick action's own kind; the rest mirror {@link DotActionInputKind}. An action can
+ * need several, and they all render on one screen.
  */
-type DotActionCenterConfigureKind = DotActionInputKind | 'bundle' | null;
+type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
 
 /**
  * Bulk action dialog for the current Content Drive selection, offered from one contentlet upward.
@@ -88,9 +87,10 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle' | null;
  * listing the contentlets it will run on with a checkbox each, and nothing is sent until Execute.
  *
  * An action that needs input first gets a **configuration** screen ahead of the preview, so the flow is
- * `pick → configure → preview → execute`. Only a move target is collected today (see
- * `DotContentDriveActionMoveTargetComponent`); the preview deliberately stays last, keeping the rows
- * and the Execute button together as the final screen for every action.
+ * `pick → configure → preview → execute`. Every input the action declares renders as a section on that
+ * one screen (see {@link $configureKinds}) rather than as a page each: an approval that assigns *and*
+ * push-publishes would otherwise turn one bulk action into a five-screen flow. The preview deliberately
+ * stays last, keeping the rows and the Execute button together as the final screen for every action.
  *
  * This used to be workflow-only, on the reasoning that a quick action's count is derived from the
  * rows themselves and so "which items is this about to touch?" had an obvious answer. That confused
@@ -111,11 +111,9 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle' | null;
  * - **One action per execute.** No endpoint fires multiple different actions in one call, and firing
  *   one action moves contentlets to a new step — which invalidates the other actions' counts. The
  *   legacy JSP dialog has the same constraint (one button, one fire).
- * - **Push-publish and assign/comment actions are still disabled** (`hasUnsupportedInput`). Both have
- *   embeddable forms in `apps/dotcms-ui` (`DotPushPublishFormComponent`,
- *   `DotCommentAndAssignFormComponent`) that would need promoting to a lib before a portlet can import
- *   them; until then a row needing either stays greyed rather than opening a step that cannot produce a
- *   valid payload.
+ * - **Every workflow action is reachable.** No row is greyed for needing input any more; whatever the
+ *   action declares in `actionInputs[]` gets a section on the configuration screen.
+ *
  * Renders inside the shell's shared dialog rather than owning one, so there is a single dialog and a
  * single open/close path. The shell sizes this type's content box as a flex column; this component
  * fills it with a pinned summary, a scrolling body and a pinned footer.
@@ -325,26 +323,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $pushPublishValid = signal<boolean>(false);
 
     /**
-     * Which configuration step the armed action needs, or `null` when it fires straight from the
-     * selection.
+     * Every configuration section the armed action needs, in render order. Empty when it fires straight
+     * from the selection.
      *
-     * One switch for both action sources, so the `configure` view has a single discriminator rather
-     * than the template asking two unrelated questions. Adding a step for push-publish later means one
-     * more case here and one more branch in the template.
+     * One list for both action sources, so the `configure` view has a single discriminator rather than
+     * the template asking two unrelated questions. All of them render together on one screen: an action
+     * can declare several inputs (an approval that assigns *and* push-publishes), and paging them would
+     * make a four- or five-screen flow out of one bulk action.
      */
-    protected readonly $configureKind = computed<DotActionCenterConfigureKind>(() => {
+    protected readonly $configureKinds = computed<DotActionCenterConfigureKind[]>(() => {
         const quickAction = this.$pendingQuickAction();
 
         if (quickAction) {
-            return quickAction.id === ADD_TO_BUNDLE_ACTION_ID ? 'bundle' : null;
+            return quickAction.id === ADD_TO_BUNDLE_ACTION_ID ? ['bundle'] : [];
         }
 
-        const kinds = requiredInputKinds(this.$selectedAction());
-
-        // Only a single kind is renderable today; two or more is what keeps the row disabled, so
-        // reaching here with more than one would mean the gate leaked.
-        return kinds.length === 1 ? kinds[0] : null;
+        return requiredInputKinds(this.$selectedAction());
     });
+
+    /** True when more than one section is on screen, which is what earns the dividers and headings. */
+    protected readonly $hasMultipleSections = computed(() => this.$configureKinds().length > 1);
 
     /**
      * Distinct assets an Add to Bundle would queue.
@@ -360,9 +358,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         () => this.$includedCount() - this.$bundleAssetCount()
     );
 
-    /** Whether the configuration step has enough to move on to the preview. */
-    protected readonly $canLeaveConfigure = computed(() => {
-        switch (this.$configureKind()) {
+    /**
+     * Whether one section has everything it needs.
+     *
+     * Move and bundle are judged here because the dialog owns their values; assign/comment and push
+     * publish report their own, since only they know what their loaded roles or environments make
+     * required.
+     */
+    protected sectionIsSatisfied(kind: DotActionCenterConfigureKind): boolean {
+        switch (kind) {
             case 'move':
                 return !!this.$pathToMove() && !this.$destinationUnchanged();
             case 'bundle':
@@ -372,8 +376,42 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             case 'pushPublish':
                 return this.$pushPublishValid();
             default:
-                // Nothing to collect, so nothing can block leaving.
                 return true;
+        }
+    }
+
+    /**
+     * Whether every section on screen has what it needs.
+     *
+     * Nothing to collect leaves this true, so an action with no inputs is never blocked.
+     */
+    protected readonly $canLeaveConfigure = computed(() =>
+        this.$configureKinds().every((kind) => this.sectionIsSatisfied(kind))
+    );
+
+    /**
+     * The hint for the first section still missing something, or `''` when nothing is.
+     *
+     * The cost of stacking sections is that an incomplete field can be scrolled out of view, leaving a
+     * disabled Continue with no visible cause. Naming the first unsatisfied section in the footer is
+     * what keeps that from being a dead end.
+     */
+    protected readonly $configureHint = computed(() => {
+        const unsatisfied = this.$configureKinds().find((kind) => !this.sectionIsSatisfied(kind));
+
+        switch (unsatisfied) {
+            case 'move':
+                return this.$pathToMove()
+                    ? 'content-drive.action-center.move.same-destination'
+                    : 'content-drive.action-center.move.no-destination';
+            case 'bundle':
+                return 'content-drive.action-center.bundle.no-target';
+            case 'assignComment':
+                return 'content-drive.action-center.assign.no-assignee';
+            case 'pushPublish':
+                return 'content-drive.action-center.push-publish.no-environment';
+            default:
+                return '';
         }
     });
     /**
@@ -418,15 +456,17 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * "Back to actions" would be a lie on a move, where back lands on the destination picker.
      */
     protected readonly $backLabel = computed(() => {
-        switch (this.$configureKind()) {
-            case 'move':
-                return 'content-drive.action-center.back.configure';
-            case null:
-                return 'content-drive.action-center.back';
-            default:
-                // Every other kind is a form rather than a picker, so "destination" would be wrong.
-                return 'content-drive.action-center.back.settings';
+        const kinds = this.$configureKinds();
+
+        if (!kinds.length) {
+            return 'content-drive.action-center.back';
         }
+
+        // "Back to destination" only when the destination picker is the whole screen; anything else is
+        // a form, or several, so the generic label is the honest one.
+        return kinds.length === 1 && kinds[0] === 'move'
+            ? 'content-drive.action-center.back.configure'
+            : 'content-drive.action-center.back.settings';
     });
 
     /**
@@ -505,28 +545,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * True when the action row cannot be armed because it needs an input the dialog cannot collect.
-     *
-     * Replaces the blanket `requiresInput` gate: a move action is now reachable, because Continue
-     * routes it through the configuration step that supplies its path. Push-publish and assign/comment
-     * remain disabled — they still have no step, and opening one for them would only lead to an
-     * Execute that cannot build a valid payload.
-     */
-    protected actionIsBlocked(action: DotActionCenterWorkflowAction): boolean {
-        return hasUnsupportedInput(action);
-    }
-
-    /**
-     * Hint shown on a workflow action row. Empty for a row that can be used, so no tooltip appears.
-     *
-     * A move action gets no hint at all now that it works; only the still-unsupported kinds explain
-     * themselves.
-     */
-    protected workflowActionHint(action: DotActionCenterWorkflowAction): string {
-        return this.actionIsBlocked(action) ? 'content-drive.action-center.requires-input' : '';
-    }
-
-    /**
      * Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears.
      *
      * `pendingHint` wins over the not-applicable message: an action that cannot run at all yet
@@ -566,7 +584,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.$includedItems.set(previewItems);
         // Add to Bundle needs a target first; every other quick action fires from the selection alone
         // and goes straight to its preview.
-        this.$view.set(this.$configureKind() ? 'configure' : 'preview');
+        this.$view.set(this.$configureKinds().length ? 'configure' : 'preview');
         this.publishDrillDownHeader(
             // Quick action names are i18n keys, unlike workflow actions which arrive pre-translated.
             this.#dotMessageService.get(quickAction.name),
@@ -714,15 +732,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // An action needing a destination stops here for it; every other action goes straight to the
         // preview. The header carries the item count either way, so the configuration step keeps the
         // "N items" context without repeating the row list.
-        const configureKind = this.$configureKind();
+        const configureKinds = this.$configureKinds();
 
-        if (configureKind === 'move') {
+        if (configureKinds.includes('move')) {
             // Mirrors what the seeded picker is showing, so the two agree from the first render.
             // `$destinationUnchanged` is what keeps this from arming Execute on a no-op.
             this.$pathToMove.set(this.$currentPath());
         }
 
-        this.$view.set(configureKind ? 'configure' : 'preview');
+        this.$view.set(configureKinds.length ? 'configure' : 'preview');
 
         this.publishDrillDownHeader(action.name, previewItems.length);
     }
@@ -772,7 +790,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
-        if (this.$view() === 'preview' && this.$configureKind()) {
+        if (this.$view() === 'preview' && this.$configureKinds().length) {
             this.$view.set('configure');
 
             return;
@@ -850,7 +868,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // well as by the disabled Continue: an empty move path answers 200 with every item failed, a
         // same-folder move burns a version and a reindex per item to change nothing, and a push
         // publish with no environment has nowhere to go.
-        if (this.$configureKind() && !this.$canLeaveConfigure()) {
+        if (this.$configureKinds().length && !this.$canLeaveConfigure()) {
             return;
         }
 

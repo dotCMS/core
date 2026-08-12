@@ -192,15 +192,15 @@
                                             @for (action of scheme.actions; track action.id) {
                                                 <label
                                                     class="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-surface-50"
-                                                    [class.opacity-60]="actionIsBlocked(action)"
                                                     [attr.for]="action.id">
+                                                    <!-- No input gate any more: whatever the action
+                                                         declares gets a section on the configuration
+                                                         screen, so every row is armable. -->
                                                     <p-radiobutton
                                                         name="actionCenterAction"
                                                         [inputId]="action.id"
                                                         [value]="action.id"
-                                                        [disabled]="
-                                                            actionIsBlocked(action) || $executing()
-                                                        "
+                                                        [disabled]="$executing()"
                                                         [ngModel]="$selectedActionId()"
                                                         [attr.data-testid]="
                                                             'workflow-action-' + action.id
@@ -213,13 +213,6 @@
                                                         class="text-sm font-semibold text-surface-700">
                                                         {{ action.name }}
                                                     </span>
-
-                                                    @if (workflowActionHint(action); as hint) {
-                                                        <i
-                                                            class="pi pi-info-circle text-xs text-surface-400"
-                                                            [pTooltip]="hint | dm"
-                                                            aria-hidden="true"></i>
-                                                    }
 
                                                     <span
                                                         class="ml-auto flex items-center gap-1 text-xs font-medium text-surface-400">
@@ -295,73 +288,86 @@
                     (click)="onBackToActions()" />
             </div>
 
-            @switch ($configureKind()) {
-                @case ('bundle') {
-                    <dot-content-drive-action-bundle-target
-                        [assetCount]="$bundleAssetCount()"
-                        [collapsedCount]="$bundleCollapsedCount()"
-                        [disabled]="$executing()"
-                        data-testid="action-configure-bundle-target"
-                        (bundleChange)="onBundleChange($event)" />
-                }
-                @case ('assignComment') {
+            <!--
+                One scroll container for every section, rather than each section owning its own. The
+                sections are siblings inside it, so `min-h-0` lives here and nowhere below — a section
+                with its own `flex-1 overflow-y-auto` would fight this one for the height and neither
+                would scroll.
+
+                Padding is here too rather than inside the step components: two of them live in
+                `libs/ui` and should not assume this dialog's insets.
+            -->
+            <div
+                class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
+                data-testid="action-configure-body">
+                @for (kind of $configureKinds(); track kind; let first = $first) {
                     <!--
-                        Padded here rather than inside the shared component: it lives in `libs/ui` and
-                        should not assume this dialog's insets.
+                        A divider and a heading only once there is more than one section, otherwise a
+                        lone form would be labelled twice — the dialog header already names the action.
                     -->
-                    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                        <dot-workflow-assign-comment
-                            [assignable]="!!$selectedAction()?.inputs.assignable"
-                            [commentable]="!!$selectedAction()?.inputs.commentable"
-                            [roleId]="$selectedAction()?.nextAssign ?? ''"
-                            [roleHierarchy]="!!$selectedAction()?.roleHierarchyForAssign"
-                            [disabled]="$executing()"
-                            data-testid="action-configure-assign-comment"
-                            (valueChange)="onAssignCommentChange($event)"
-                            (validChange)="$assignCommentValid.set($event)" />
-                    </div>
+                    <section
+                        [class.border-t]="!first"
+                        [class.border-surface-100]="!first"
+                        [class.pt-5]="!first"
+                        [attr.data-testid]="'action-configure-section-' + kind">
+                        @if ($hasMultipleSections()) {
+                            <h3
+                                class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                                {{ 'content-drive.action-center.section.' + kind | dm }}
+                            </h3>
+                        }
+
+                        @switch (kind) {
+                            @case ('bundle') {
+                                <dot-content-drive-action-bundle-target
+                                    [assetCount]="$bundleAssetCount()"
+                                    [collapsedCount]="$bundleCollapsedCount()"
+                                    [disabled]="$executing()"
+                                    data-testid="action-configure-bundle-target"
+                                    (bundleChange)="onBundleChange($event)" />
+                            }
+                            @case ('assignComment') {
+                                <dot-workflow-assign-comment
+                                    [assignable]="!!$selectedAction()?.inputs.assignable"
+                                    [commentable]="!!$selectedAction()?.inputs.commentable"
+                                    [roleId]="$selectedAction()?.nextAssign ?? ''"
+                                    [roleHierarchy]="!!$selectedAction()?.roleHierarchyForAssign"
+                                    [disabled]="$executing()"
+                                    data-testid="action-configure-assign-comment"
+                                    (valueChange)="onAssignCommentChange($event)"
+                                    (validChange)="$assignCommentValid.set($event)" />
+                            }
+                            @case ('pushPublish') {
+                                <dot-workflow-push-publish
+                                    [disabled]="$executing()"
+                                    data-testid="action-configure-push-publish"
+                                    (valueChange)="onPushPublishChange($event)"
+                                    (validChange)="$pushPublishValid.set($event)" />
+                            }
+                            @case ('move') {
+                                <dot-content-drive-action-move-target
+                                    [itemCount]="$includedCount()"
+                                    [disabled]="$executing()"
+                                    [startingPath]="$currentPath()"
+                                    data-testid="action-configure-move-target"
+                                    (pathToMoveChange)="onPathToMoveChange($event)" />
+                            }
+                        }
+                    </section>
                 }
-                @case ('pushPublish') {
-                    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                        <dot-workflow-push-publish
-                            [disabled]="$executing()"
-                            data-testid="action-configure-push-publish"
-                            (valueChange)="onPushPublishChange($event)"
-                            (validChange)="$pushPublishValid.set($event)" />
-                    </div>
-                }
-                @default {
-                    <dot-content-drive-action-move-target
-                        [itemCount]="$includedCount()"
-                        [disabled]="$executing()"
-                        [startingPath]="$currentPath()"
-                        data-testid="action-configure-move-target"
-                        (pathToMoveChange)="onPathToMoveChange($event)" />
-                }
-            }
+            </div>
 
             <div
                 class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
                 data-testid="action-configure-footer">
+                <!--
+                    Names the first section still missing something. With sections stacked, the field
+                    holding Continue back can be scrolled out of view, so the footer has to say which
+                    one it is.
+                -->
                 <span class="text-xs font-medium text-surface-400 italic">
-                    @if ($configureKind() === 'bundle') {
-                        @if (!$selectedBundle()) {
-                            {{ 'content-drive.action-center.bundle.no-target' | dm }}
-                        }
-                    } @else if ($configureKind() === 'assignComment') {
-                        @if (!$assignCommentValid()) {
-                            {{ 'content-drive.action-center.assign.no-assignee' | dm }}
-                        }
-                    } @else if ($configureKind() === 'pushPublish') {
-                        @if (!$pushPublishValid()) {
-                            {{ 'content-drive.action-center.push-publish.no-environment' | dm }}
-                        }
-                    } @else if (!$pathToMove()) {
-                        <!-- Two distinct move states, because "you haven't chosen" and "you chose the
-                             folder these items are already in" need different corrections. -->
-                        {{ 'content-drive.action-center.move.no-destination' | dm }}
-                    } @else if ($destinationUnchanged()) {
-                        {{ 'content-drive.action-center.move.same-destination' | dm }}
+                    @if ($configureHint(); as hint) {
+                        {{ hint | dm }}
                     }
                 </span>
                 <!-- Continue, not Execute: the preview still follows, and nothing has been sent yet. -->

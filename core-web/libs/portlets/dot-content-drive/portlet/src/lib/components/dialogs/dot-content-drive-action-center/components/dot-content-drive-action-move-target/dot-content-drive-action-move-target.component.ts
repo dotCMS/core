@@ -39,7 +39,8 @@ import { toHostFolderValue, toPathToMove } from '../../../../../utils/action-cen
     imports: [DotHostFolderFieldComponent, DotMessagePipe, FormsModule],
     templateUrl: './dot-content-drive-action-move-target.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex min-h-0 flex-1 flex-col' }
+    // A plain block: the host owns the scrolling column these sections sit in.
+    host: { class: 'block' }
 })
 export class DotContentDriveActionMoveTargetComponent {
     /** How many contentlets the move will run on, shown so the step keeps the count in view. */

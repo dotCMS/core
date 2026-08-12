@@ -13,11 +13,9 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
-    hasUnsupportedInput,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
     requiredInputKinds,
-    requiresMovePath,
     toActionCenterSchemes,
     toContentletInodes,
     toHostFolderValue,
@@ -768,34 +766,6 @@ describe('action-center utils', () => {
         });
     });
 
-    describe('hasUnsupportedInput', () => {
-        it.each([
-            ['nothing', {}],
-            ['a move path', { moveable: true }],
-            ['an assignee', { assignable: true }],
-            ['a comment', { commentable: true }],
-            // One screen, not two: the assign/comment step renders both fields.
-            ['both an assignee and a comment', { assignable: true, commentable: true }],
-            ['push publish', { pushPublish: true }]
-        ])('should allow an action needing %s', (_label, inputs) => {
-            expect(hasUnsupportedInput(actionWithInputs(inputs))).toBe(false);
-        });
-
-        it.each([
-            ['a move path and an assignee', { moveable: true, assignable: true }],
-            ['push publish and a comment', { pushPublish: true, commentable: true }],
-            ['a move path and push publish', { moveable: true, pushPublish: true }],
-            [
-                'all three kinds',
-                { moveable: true, assignable: true, commentable: true, pushPublish: true }
-            ]
-        ])('should block an action needing %s', (_label, inputs) => {
-            // The remaining gap: `configure` renders one screen at a time, so two kinds cannot be
-            // collected in one pass yet.
-            expect(hasUnsupportedInput(actionWithInputs(inputs))).toBe(true);
-        });
-    });
-
     describe('requiredInputKinds', () => {
         it('should return nothing for an action that fires from the selection alone', () => {
             expect(requiredInputKinds(actionWithInputs({}))).toEqual([]);
@@ -819,27 +789,23 @@ describe('action-center utils', () => {
         it('should return nothing when there is no action', () => {
             expect(requiredInputKinds(undefined)).toEqual([]);
         });
-    });
 
-    describe('requiresMovePath', () => {
-        it('should be true for a move-only action', () => {
-            expect(requiresMovePath(actionWithInputs({ moveable: true }))).toBe(true);
+        it.each([
+            ['a move path', { moveable: true }, ['move']],
+            ['an assignee', { assignable: true }, ['assignComment']],
+            ['a comment', { commentable: true }, ['assignComment']],
+            ['push publish', { pushPublish: true }, ['pushPublish']]
+        ])('should return one section for an action needing %s', (_label, inputs, expected) => {
+            expect(requiredInputKinds(actionWithInputs(inputs))).toEqual(expected);
         });
 
-        it('should be false for an action needing no input', () => {
-            expect(requiresMovePath(actionWithInputs({}))).toBe(false);
-        });
-
-        it('should be false for a move that also needs an input the dialog cannot collect', () => {
-            // Routing this to the destination picker would collect a path and then fire without the
-            // assignee the action also wants, so it stays disabled until that step exists too.
-            expect(requiresMovePath(actionWithInputs({ moveable: true, assignable: true }))).toBe(
-                false
-            );
-        });
-
-        it('should be false when there is no action', () => {
-            expect(requiresMovePath(undefined)).toBe(false);
+        it.each([
+            ['a move path and an assignee', { moveable: true, assignable: true }],
+            ['push publish and a comment', { pushPublish: true, commentable: true }],
+            ['a move path and push publish', { moveable: true, pushPublish: true }]
+        ])('should return every section for an action needing %s', (_label, inputs) => {
+            // Nothing is refused any more: all of them render together on one screen.
+            expect(requiredInputKinds(actionWithInputs(inputs)).length).toBe(2);
         });
     });
 

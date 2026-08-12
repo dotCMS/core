@@ -382,27 +382,22 @@ export const eligibleContentlets = (
 };
 
 /**
- * Input kinds the dialog cannot collect yet.
+ * A configuration section the dialog knows how to render.
  *
- * Move is absent because the configuration step supplies a target path (see
- * {@link requiresMovePath}). Push-publish and assign/comment still have no step, so an action needing
- * either stays disabled — the row is greyed with the `requires-input` hint rather than opening a
- * screen that cannot produce a valid payload.
- */
-
-/**
- * A configuration screen the dialog knows how to render.
- *
- * Note `assignComment` is **one** kind covering two flags: `DotWorkflowAssignCommentComponent` renders
- * an assignee, a comment, or both, so an action declaring both still needs a single screen.
+ * `assignComment` is **one** section covering two flags: `DotWorkflowAssignCommentComponent` renders an
+ * assignee, a comment, or both, so an action declaring both still needs a single section.
  */
 export type DotActionInputKind = 'move' | 'assignComment' | 'pushPublish';
 
 /**
- * The configuration screens an action needs, in the order they would be shown.
+ * The configuration sections an action needs, in the order they are shown.
  *
- * Order matches the legacy wizard's — assign/comment before push publish — so a user moving between the
- * two dialogs meets the same sequence.
+ * Every section is rendered together on one screen, so this is a render order rather than a page
+ * sequence. The order still matches the legacy wizard's — move and assign/comment before push publish —
+ * so a user moving between the two dialogs meets the same arrangement.
+ *
+ * An empty result means the action fires straight from the selection, and there is no configuration
+ * screen at all.
  */
 export const requiredInputKinds = (
     action: DotActionCenterWorkflowAction | undefined
@@ -419,27 +414,6 @@ export const requiredInputKinds = (
         ...(pushPublish ? (['pushPublish'] as const) : [])
     ];
 };
-
-/**
- * True when the action needs more than one configuration screen, which the dialog cannot yet show.
- *
- * The one remaining gap. Every individual input kind now has a body, but the `configure` view renders
- * exactly one at a time — so an action that is, say, push-publish *and* assignable stays disabled until
- * the step can stack them. That is the whole of what the `requires-input` hint now covers.
- */
-export const hasUnsupportedInput = (action: DotActionCenterWorkflowAction): boolean =>
-    requiredInputKinds(action).length > 1;
-
-/**
- * True when the action needs a move target path and nothing else.
- *
- * `moveable` is only set when the action's move actionlet has an *empty* path parameter; a move action
- * with a path configured in the scheme fires with no input at all, and the backend never flags it.
- */
-export const requiresMovePath = (
-    action: DotActionCenterWorkflowAction | undefined
-): action is DotActionCenterWorkflowAction =>
-    !!action && requiredInputKinds(action).length === 1 && action.inputs.moveable;
 
 /**
  * Converts the host/folder field's value into the `_path_to_move` the bulk endpoint expects.
