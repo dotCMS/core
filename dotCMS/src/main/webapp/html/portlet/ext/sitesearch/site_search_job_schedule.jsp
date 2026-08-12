@@ -2,6 +2,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@ include file="/html/common/init.jsp"%>
 <%
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();

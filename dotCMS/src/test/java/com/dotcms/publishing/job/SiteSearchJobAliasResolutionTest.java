@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -212,6 +213,38 @@ public class SiteSearchJobAliasResolutionTest {
                     () -> { throw new IllegalStateException("cluster down"); });
 
             assertFalse(failing.incompleteContentIndexWarning().isPresent());
+        } finally {
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+        }
+    }
+
+    /**
+     * Before the migration starts there is no second engine that could have been left behind, so the
+     * check must not run at all — it costs a sequential scan of {@code contentlet_version_info} plus a
+     * stats call and a count query per engine, on every crawl, to say nothing.
+     *
+     * <p>Asserted by recording whether the supplier was consulted, NOT by having it throw: the
+     * measurement runs inside a vavr {@code Try}, which swallows {@link Throwable}, so a thrown
+     * assertion would be absorbed and the test would pass against the very regression it guards. For
+     * the same reason a plain {@code assertFalse} on the result is not enough on its own — it also
+     * passes when the work ran and merely found nothing to report.</p>
+     */
+    @Test
+    public void test_migrationNotStarted_doesNotMeasureAtAll() {
+        Config.setProperty(MigrationPhase.FLAG_KEY, "0");
+        try {
+            final AtomicBoolean measured = new AtomicBoolean(false);
+            final SiteSearchJobImpl phaseZero = new SiteSearchJobImpl(mock(IndiciesAPI.class),
+                    siteSearchAPI, mock(HostAPI.class), mock(UserAPI.class),
+                    mock(SiteSearchAuditAPI.class), mock(PublisherAPI.class),
+                    () -> {
+                        measured.set(true);
+                        return List.of(contentRow(686L, 686, 21));
+                    });
+
+            assertFalse(phaseZero.incompleteContentIndexWarning().isPresent());
+            assertFalse("The content mirror must not be measured before the migration starts",
+                    measured.get());
         } finally {
             Config.setProperty(MigrationPhase.FLAG_KEY, null);
         }

@@ -163,6 +163,19 @@ public class SiteSearchJobImpl {
         HibernateUtil.startTransaction();
         try {
             final PreparedJobContext preparedJobContext = prepareJob(jobContext);
+
+            // Advisory, never a gate: the crawl reads the content index, so an incomplete one silently
+            // yields a partial Site Search index (issue #36983).
+            //
+            // Deliberately here and not inside prepareJob: measuring costs a sequential scan of
+            // contentlet_version_info plus a stats call and a count query per engine, and prepareJob
+            // holds a monitor on SiteSearchJobImpl.class — a JVM-wide lock every concurrent crawl on
+            // this node contends for. Nothing in the measurement depends on what prepareJob computes
+            // (it reads the content indices, not this job's), so it has no reason to hold that lock.
+            // Still before the publish loop, which is what the warning is about.
+            incompleteContentIndexWarning()
+                    .ifPresent(warning -> Logger.warn(SiteSearchJobImpl.class, warning));
+
             synchronized (preparedJobContext.lockKey()) {
                 for (final SiteSearchConfig config : preparedJobContext.getConfigs()) {
                     publisherAPI.publish(config, status);
@@ -335,11 +348,6 @@ public class SiteSearchJobImpl {
                 indexName = indexMetaData.getIndexName();
             }
 
-            // Advisory, never a gate: the crawl reads the content index, so an incomplete one silently
-            // yields a partial Site Search index (issue #36983).
-            incompleteContentIndexWarning()
-                    .ifPresent(warning -> Logger.warn(SiteSearchJobImpl.class, warning));
-
             Logger.info(SiteSearchJobImpl.class, () -> String
                     .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
                             BooleanUtils.toStringYesNo(incremental), indexName,
@@ -433,15 +441,26 @@ public class SiteSearchJobImpl {
      * other engine to compare with, which is exactly when this is most needed. Advisory only — it never
      * stops the crawl, and any failure to compute it is swallowed, because a diagnostic must not be
      * able to break indexing.</p>
+     *
+     * <p><strong>Skipped outright before the migration starts.</strong> Measuring costs a sequential
+     * scan of {@code contentlet_version_info} plus a stats call and a count query per engine, and in
+     * Phase 0 it can only ever report the single Elasticsearch index every other part of the product
+     * already depends on — there is no second engine whose copy could have been silently left behind,
+     * which is the failure this exists to catch. So an install that is not migrating pays nothing for
+     * it on every crawl. Checked first, and it is a plain config read.</p>
      */
     @VisibleForTesting
     Optional<String> incompleteContentIndexWarning() {
+        final MigrationPhase phase = MigrationPhase.current();
+        if (phase.isMigrationNotStarted()) {
+            return Optional.empty();
+        }
         final double threshold = Config.getFloatProperty(
                 MIN_CONTENT_INDEXED_KEY, (float) DEFAULT_MIN_CONTENT_INDEXED);
         if (threshold <= 0) {
             return Optional.empty();
         }
-        final boolean readsOpenSearch = MigrationPhase.current().isReadEnabled();
+        final boolean readsOpenSearch = phase.isReadEnabled();
         return Try.of(() -> contentMirrorStatuses.get().stream()
                         .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
                         .flatMap(Optional::stream)
