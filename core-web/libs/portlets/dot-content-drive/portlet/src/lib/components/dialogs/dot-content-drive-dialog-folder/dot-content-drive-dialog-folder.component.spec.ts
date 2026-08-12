@@ -493,12 +493,21 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 return loading;
             };
 
-            it('should show a spinner instead of the form', () => {
+            it('should show a spinner and render no field at all', () => {
+                // Not only the extensions field: no input may exist before the values that belong in
+                // it, or setFolderFormEffect overwrites whatever was typed in the meantime. The save
+                // button has to stay away too, since submitting now would persist an empty form over
+                // the folder's real data.
                 const loading = openWhileLoading();
 
                 expect(loading.query(byTestId('folder-form-loading'))).toBeTruthy();
+                expect(loading.query('#name')).toBeNull();
+                expect(loading.query('#title')).toBeNull();
                 expect(
                     loading.query('[data-testid="allowed-file-extensions-autocomplete"]')
+                ).toBeNull();
+                expect(
+                    loading.query('[data-testid="content-drive-dialog-folder-create"]')
                 ).toBeNull();
             });
 
