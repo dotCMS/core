@@ -11,6 +11,19 @@
             [configuration]="$misconfiguredConfiguration()"
             [hideContactUsLink]="true" />
     </div>
+} @else if (store.status() === 'error') {
+    <!-- A failed load gets its own state with a way out, rather than rendering as an empty
+         table. Retry re-runs the request; the toast from DotHttpErrorManagerService already
+         carried the detail. -->
+    <div
+        class="flex min-h-0 flex-1 items-center justify-center p-6"
+        data-testid="experiments-error">
+        <dot-empty-container
+            [configuration]="errorConfiguration"
+            [hideContactUsLink]="true"
+            [buttonLabel]="'experiments.list.error.retry' | dm"
+            (buttonAction)="onRetry()" />
+    </div>
 } @else {
     <p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
         <div class="flex w-full items-center gap-2 py-3">

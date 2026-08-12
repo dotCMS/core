@@ -237,6 +237,18 @@ export class DotExperimentsListComponent {
     };
 
     /**
+     * Shown when the load fails. The error itself is already surfaced by
+     * `DotHttpErrorManagerService`; this is the screen's own state, so a failed load reads as a
+     * failure with a way out rather than as an empty list.
+     */
+    readonly errorConfiguration: PrincipalConfiguration = {
+        title: this.#dotMessageService.get('experiments.list.error.title'),
+        subtitle: this.#dotMessageService.get('experiments.error.fetching.data'),
+        icon: 'error',
+        iconStyle: 'material-symbols-rounded'
+    };
+
+    /**
      * Mirrors the view state into the URL so the list is shareable and survives a reload.
      * Values equal to their default are written as `null`, which removes the param — a plain
      * `/experiments` URL therefore stays free of query params. `Location.go` is used instead of
@@ -280,6 +292,11 @@ export class DotExperimentsListComponent {
 
     onStatusesChange(statuses: DotExperimentStatus[]): void {
         this.#dispatch.statusesChanged(statuses);
+    }
+
+    /** Re-runs the load after a failure; the store returns to `loading` and then resolves. */
+    onRetry(): void {
+        this.#dispatch.listRequested();
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {

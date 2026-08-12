@@ -74,6 +74,11 @@ const MISCONFIGURATION_COPY = {
     subtitle: 'Review the Analytics app configuration'
 };
 
+const ERROR_COPY = {
+    title: 'Could not load experiments',
+    subtitle: 'Failed to retrieve experiments data'
+};
+
 const messageServiceMock = new MockDotMessageService({
     'experiments.analytics-app-no-configured.title': NOT_CONFIGURED_COPY.title,
     'experiments.analytics-app-no-configured.subtitle': NOT_CONFIGURED_COPY.subtitle,
@@ -86,7 +91,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.action.delete.confirm-message': 'Experiment {0} deleted',
     'experiments.action.stop.confirm-message': 'Experiment {0} ended',
     'experiments.notification.abort': 'Experiment {0} aborted',
-    'experiments.notification.cancel.schedule': 'Experiment {0} unscheduled'
+    'experiments.notification.cancel.schedule': 'Experiment {0} unscheduled',
+    'experiments.list.error.title': ERROR_COPY.title,
+    'experiments.error.fetching.data': ERROR_COPY.subtitle,
+    'experiments.list.error.retry': 'Retry'
 });
 
 /**
@@ -457,6 +465,41 @@ describe('DotExperimentsListComponent', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+    });
+
+    describe('load error', () => {
+        const renderError = () => {
+            storeMock.status.mockReturnValue('error');
+            spectator.detectChanges();
+        };
+
+        it('should render the error state instead of the table', () => {
+            // A failed load must not read as "no experiments" — the distinction matters, since
+            // an empty table invites the user to create one that may already exist.
+            renderError();
+
+            const error = spectator.query(byTestId('experiments-error'));
+
+            expect(error).not.toBeNull();
+            expect(error?.textContent).toContain(ERROR_COPY.title);
+            expect(error?.textContent).toContain(ERROR_COPY.subtitle);
+            expect(spectator.query(byTestId('experiments-table-wrapper'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+
+        it('should re-request the list when retry is pressed', () => {
+            renderError();
+
+            clickButton('experiments-error');
+
+            expect(dispatchedEvents()).toContainEqual(dotExperimentsListEvents.listRequested());
+        });
+
+        it('should not render the error state on a healthy load', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-error'))).toBeNull();
         });
     });
 
