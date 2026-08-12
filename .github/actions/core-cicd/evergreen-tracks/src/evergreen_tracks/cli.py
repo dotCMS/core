@@ -10,7 +10,7 @@ import logging
 import os
 import sys
 
-from .calver import newest, parse_release
+from .calver import age_days, newest, parse_release
 from .executor import delete_tag, hub_login, point_tag
 from .markers import TRACKS, held_tracks, hold_tag, tainted_versions, taint_tag
 from .planner import TrackState, plan
@@ -18,14 +18,84 @@ from .registry import list_tags
 
 log = logging.getLogger("evergreen_tracks")
 
+# How many months the narrow read path walks back before giving up and full-scanning.
+# Releases ship weekly, so promotion needs one or two months; the extra headroom is for
+# a quiet stretch or a track parked on something old by a hold.
+_MONTH_WALK_LIMIT = 6
+
 
 def _state(repo: str):
-    """Return (releases, tainted, held, name->digest) read from the registry."""
+    """Return (releases, tainted, held, name->digest) read from the registry.
+
+    The full ~79-page listing. Still the right tool for `admin` (rare, human-triggered,
+    and it addresses arbitrarily old versions) and the terminal fallback for promote.
+    """
     tags = list_tags(repo)
     names = [t.name for t in tags]
     digests = {t.name: t.digest for t in tags}
     releases = [r for r in (parse_release(n) for n in names) if r is not None]
     return releases, tainted_versions(names), held_tracks(names), digests
+
+
+def _month_str(date: dt.date) -> str:
+    return f"{date.year % 100:02d}.{date.month:02d}"
+
+
+def _prev_month(ym: str) -> str:
+    yy, mm = int(ym[:2]), int(ym[3:5])
+    return f"{yy - 1:02d}.12" if mm == 1 else f"{yy:02d}.{mm - 1:02d}"
+
+
+def _promote_state(repo: str, wanted: list[str], max_days: int, today: dt.date):
+    """`_state`, assembled from a handful of filtered reads instead of the full listing.
+
+    Moving a floating tag needs a few GA CalVer tags and three marker names, but the
+    full listing pages the whole repo — 7.8k tags, 79 calls, ~45s, against a Hub budget
+    of 180 requests/60s per IP. Hub's `name=` substring filter turns that into:
+
+      * one call per requested track  -> the `<track>` tag's digest, plus its
+        `<track>_hold` marker if one exists (both match the track name as a substring)
+      * one call per month of history -> that month's GA releases AND their
+        `<version>_tainted` markers, which share the version's month prefix
+
+    A month is one page (6-28 tags), so the daily standard+trailing promote is 3-4 calls.
+
+    Months are fetched newest-first and CONTIGUOUSLY, which is what makes the narrowed
+    pool safe for `planner.plan`'s forward-only guard. That guard only matters when a
+    track already sits on something NEWER than the newest eligible release — and any
+    such version lives in a month at or above the one the walk stopped on, so it has
+    necessarily already been read. A track on something OLDER resolves to "move
+    forward", which is the same decision the full listing produces. Nothing here can
+    move a track backwards that the full scan would have held.
+
+    Returns None if the walk window turns up nothing promotable at all, so the caller
+    can fall back to the full listing rather than silently reporting "no moves" — a
+    quiet stall is exactly how a broken read path would look.
+    """
+    digests: dict[str, str] = {}
+    names: list[str] = []
+
+    def absorb(tags) -> None:
+        for tag in tags:
+            digests.setdefault(tag.name, tag.digest)
+            names.append(tag.name)
+
+    # Track tags and their hold markers. `name=standard` also matches `standard_hold`;
+    # `name=latest` additionally drags in a dozen `*_latest_SNAPSHOT` build tags, which
+    # parse as neither releases nor markers and are simply ignored.
+    for track in wanted:
+        absorb(list_tags(repo, name_filter=track))
+
+    month = _month_str(today)
+    for walked in range(_MONTH_WALK_LIMIT):
+        absorb(list_tags(repo, name_filter=month))
+        releases = [r for r in (parse_release(n) for n in names) if r is not None]
+        tainted = tainted_versions(names)
+        if any(age_days(r, today) >= max_days and r.version not in tainted for r in releases):
+            log.info("read registry state in %d filtered call(s)", len(wanted) + walked + 1)
+            return releases, tainted, held_tracks(names), digests
+        month = _prev_month(month)
+    return None
 
 
 def _current_version(track: str, digests: dict[str, str], releases) -> str | None:
@@ -40,27 +110,39 @@ def _current_version(track: str, digests: dict[str, str], releases) -> str | Non
 
 
 def cmd_promote(args: argparse.Namespace) -> int:
-    releases, tainted, held, digests = _state(args.repo)
-    tracks = [
-        TrackState("latest", args.latest_days, _current_version("latest", digests, releases)),
-        TrackState("standard", args.standard_days, _current_version("standard", digests, releases)),
-        TrackState("trailing", args.trailing_days, _current_version("trailing", digests, releases)),
-    ]
-
     # Optional subset (e.g. --tracks latest): the release pipeline invokes this
     # engine on-demand to move only `latest` the instant a GA ships, while an
     # operator manually dispatches a full promote to age standard/trailing.
     # One engine, two triggers.
+    #
+    # Resolved BEFORE any registry read, so an unwanted track costs no calls at all.
+    wanted = set(TRACKS)
     if args.tracks:
         wanted = {t.strip() for t in args.tracks.split(",") if t.strip()}
         unknown = wanted - set(TRACKS)
         if unknown:
             log.error("unknown track(s): %s", ", ".join(sorted(unknown)))
             return 2
-        tracks = [t for t in tracks if t.name in wanted]
-        held = held & wanted
+    thresholds = {
+        "latest": args.latest_days,
+        "standard": args.standard_days,
+        "trailing": args.trailing_days,
+    }
+    ordered = [t for t in TRACKS if t in wanted]      # stable, TRACKS order
+    today = dt.date.today()
 
-    moves = plan(releases, tainted, held, tracks, today=dt.date.today())
+    state = _promote_state(args.repo, ordered, max(thresholds[t] for t in ordered), today)
+    if state is None:
+        log.info("no promotable release in the filtered window; reading the full tag listing")
+        state = _state(args.repo)
+    releases, tainted, held, digests = state
+    held = held & wanted
+
+    tracks = [
+        TrackState(t, thresholds[t], _current_version(t, digests, releases)) for t in ordered
+    ]
+
+    moves = plan(releases, tainted, held, tracks, today=today)
 
     # Held tracks are frozen against promotion; instead reconcile the floating
     # <track> tag to its <track>_hold marker digest so a divergence self-heals.

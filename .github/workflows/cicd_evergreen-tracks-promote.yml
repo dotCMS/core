@@ -81,17 +81,27 @@ jobs:
           REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
           STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
+          # Hub refuses ANONYMOUS pagination past offset 1000, and dotcms/dotcms is
+          # ~79 pages, so even this read-only dry-run needs credentials.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           echo "repo=$REPO (dry-run plan; trigger=${{ github.event_name }})"
           # --tracks standard,trailing: this workflow never moves `latest` — the
           # release pipeline owns it and moves it unattended (possibly mid-approval).
           # Scoping here keeps the drift check below immune to `latest` churn.
-          # 2>/dev/null: keep only the engine's stdout plan, drop uv's stderr chatter.
-          PLAN=$(uv run evergreen-tracks promote \
+          # stderr goes to a file, not /dev/null: it must stay off stdout (that is
+          # the plan text, diffed in `apply`) but discarding it cost us a whole
+          # morning once — a Hub 403 surfaced as a bare "exit code 1".
+          if ! PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
             --tracks standard,trailing \
             --standard-days "$STANDARD_DAYS" \
-            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+            --trailing-days "$TRAILING_DAYS" 2>plan.err); then
+            echo "::error::evergreen-tracks promote (dry-run) failed:"
+            cat plan.err >&2
+            exit 1
+          fi
           echo "$PLAN"
           {
             echo 'plan<<EVERGREEN_PLAN_EOF'
@@ -170,15 +180,22 @@ jobs:
           STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
           APPROVED_PLAN: ${{ needs.plan.outputs.plan }}
+          # Needed for the READ path too, not just the mutation — see the plan job.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           # Re-derive the plan from CURRENT registry state and confirm it still
           # matches the one the plan job produced. If a hold/taint changed in
           # between, fail rather than move tags nobody planned.
-          CURRENT_PLAN=$(uv run evergreen-tracks promote \
+          if ! CURRENT_PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
             --tracks standard,trailing \
             --standard-days "$STANDARD_DAYS" \
-            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+            --trailing-days "$TRAILING_DAYS" 2>current.err); then
+            echo "::error::evergreen-tracks promote (re-plan) failed:"
+            cat current.err >&2
+            exit 1
+          fi
           # A never-empty plan ("no track moves needed" at minimum) guards against
           # a silent pass if plan capture ever breaks (e.g. logging leaves stdout).
           if [ -z "$APPROVED_PLAN" ] || [ -z "$CURRENT_PLAN" ]; then

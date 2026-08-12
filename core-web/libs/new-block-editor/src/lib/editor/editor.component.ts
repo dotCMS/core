@@ -620,11 +620,12 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
         // Guard: skip when value is empty to avoid overriding CVA-set content on init;
         // skip when unchanged so two-way [value] + (valueChange) does not reset the cursor.
         // Also tracks `editor()` so the effect re-fires once the slow-path editor mounts.
+        // Skip while dragging — setContent mid-drag can turn a move into a duplicate (#36976).
         effect(() => {
             const v = this.value();
             if (!v) return;
             const ed = this.editor();
-            if (!ed) return;
+            if (!ed || ed.view.dragging) return;
             const parsed = normalizeEditorContent(v);
             if (editorContentMatchesParsed(ed, parsed)) return;
             ed.commands.setContent(
@@ -746,6 +747,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             this.pendingValue = content ?? '';
             return;
         }
+        if (ed.view.dragging) return;
         const parsed = normalizeEditorContent(content);
         if (editorContentMatchesParsed(ed, parsed)) return;
         ed.commands.setContent(
