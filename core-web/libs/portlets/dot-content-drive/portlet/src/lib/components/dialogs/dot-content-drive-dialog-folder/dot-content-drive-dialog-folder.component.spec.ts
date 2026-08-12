@@ -471,7 +471,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
         });
 
-        describe('when the folder loads after the user has started typing', () => {
+        describe('while the file asset types are still loading', () => {
             // `getContentTypes` is mocked once for the whole file, so restore it or the delayed
             // observable leaks into every test that runs after this one.
             afterEach(() => {
@@ -480,35 +480,43 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 ).mockReturnValue(of(mockFileAssetTypes));
             });
 
-            it('should still render a chip for every saved extension', () => {
-                // Regression: the patch that loads the folder waits on the content-type request, so
-                // it can land after the user has typed and narrowed the suggestions. PrimeNG rebuilds
-                // the chips from that narrowed list on the write, keeping only what it matches, so a
-                // saved extension outside the filter lost its chip while staying in the form value —
-                // and the next add rebuilt the control from those pruned chips, deleting it for good.
+            const openWhileLoading = () => {
                 (
                     spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
                 ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
 
-                const late = createComponent({
+                const loading = createComponent({
                     props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
                 });
-                late.detectChanges();
+                loading.detectChanges();
 
-                const autoComplete = late.query(AutoComplete) as AutoComplete;
-                const input = autoComplete.inputEL.nativeElement as HTMLInputElement;
+                return loading;
+            };
 
-                input.value = '*.j';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                jest.advanceTimersByTime(500);
-                late.detectChanges();
+            it('should show a spinner instead of the form', () => {
+                const loading = openWhileLoading();
+
+                expect(loading.query(byTestId('folder-form-loading'))).toBeTruthy();
+                expect(
+                    loading.query('[data-testid="allowed-file-extensions-autocomplete"]')
+                ).toBeNull();
+            });
+
+            it('should render the form already populated once they arrive', () => {
+                // The form must never be visible before its values: patching a form the user can
+                // already type into overwrites their input, and on this field it also pruned chips
+                // down to whatever the active suggestion filter matched.
+                const loading = openWhileLoading();
 
                 jest.advanceTimersByTime(1000);
-                late.detectChanges();
+                loading.detectChanges();
 
+                const autoComplete = loading.query(AutoComplete) as AutoComplete;
+
+                expect(loading.query(byTestId('folder-form-loading'))).toBeNull();
                 expect(autoComplete.modelValue()).toEqual(['*.jpg', '*.svg']);
                 expect(autoComplete.modelValue()).toEqual(
-                    late.component.folderForm.get('allowedFileExtensions')?.value
+                    loading.component.folderForm.get('allowedFileExtensions')?.value
                 );
             });
         });
