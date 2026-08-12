@@ -359,12 +359,14 @@ describe('action-center utils', () => {
             ).toEqual(expected);
         });
 
-        it('should mark Add to Bundle as pending so it can never be fired', () => {
+        it('should leave Add to Bundle selectable', () => {
+            // No longer pending: the bundle picker exists, so the row opens its configuration step.
             const addToBundle = getQuickActions([contentlet({ inode: 'a' })]).find(
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.pendingHint).toBeTruthy();
+            expect(addToBundle?.pendingHint).toBeUndefined();
+            expect(addToBundle?.count).toBe(1);
         });
 
         it('should count Add to Bundle against every selected contentlet', () => {

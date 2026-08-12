@@ -274,11 +274,12 @@
         }
         @case ('configure') {
             <!--
-            Configuration: the destination for a bulk move.
+            Configuration: whatever the armed action needs before it can run.
 
-            Same frame as the preview — a back bar, a body, a pinned footer — so moving between the two
-            steps does not reshape the dialog. The header is again the shell's, retitled to the action
-            name with the item count, which is how the count stays visible without repeating the rows.
+            One frame for every kind — a back bar, a body, a pinned footer — matching the preview's, so
+            moving between steps does not reshape the dialog and each kind only supplies the body and its
+            own validation hint. The header is again the shell's, retitled to the action name with the
+            item count, which is how the count stays visible without repeating the rows.
         -->
             <div
                 class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
@@ -294,20 +295,36 @@
                     (click)="onBackToActions()" />
             </div>
 
-            <dot-content-drive-action-move-target
-                [itemCount]="$includedCount()"
-                [disabled]="$executing()"
-                [startingPath]="$currentPath()"
-                data-testid="action-configure-move-target"
-                (pathToMoveChange)="onPathToMoveChange($event)" />
+            @switch ($configureKind()) {
+                @case ('bundle') {
+                    <dot-content-drive-action-bundle-target
+                        [assetCount]="$bundleAssetCount()"
+                        [collapsedCount]="$bundleCollapsedCount()"
+                        [disabled]="$executing()"
+                        data-testid="action-configure-bundle-target"
+                        (bundleChange)="onBundleChange($event)" />
+                }
+                @default {
+                    <dot-content-drive-action-move-target
+                        [itemCount]="$includedCount()"
+                        [disabled]="$executing()"
+                        [startingPath]="$currentPath()"
+                        data-testid="action-configure-move-target"
+                        (pathToMoveChange)="onPathToMoveChange($event)" />
+                }
+            }
 
             <div
                 class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
                 data-testid="action-configure-footer">
-                <!-- Two distinct states, because "you haven't chosen" and "you chose the folder these
-                     items are already in" need different corrections. -->
                 <span class="text-xs font-medium text-surface-400 italic">
-                    @if (!$pathToMove()) {
+                    @if ($configureKind() === 'bundle') {
+                        @if (!$selectedBundle()) {
+                            {{ 'content-drive.action-center.bundle.no-target' | dm }}
+                        }
+                    } @else if (!$pathToMove()) {
+                        <!-- Two distinct move states, because "you haven't chosen" and "you chose the
+                             folder these items are already in" need different corrections. -->
                         {{ 'content-drive.action-center.move.no-destination' | dm }}
                     } @else if ($destinationUnchanged()) {
                         {{ 'content-drive.action-center.move.same-destination' | dm }}

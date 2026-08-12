@@ -6,8 +6,12 @@ import { inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotActionBulkRequestOptions } from '@dotcms/dotcms-models';
+import {
+    AddToBundleService,
+    DotHttpErrorManagerService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { DotActionBulkRequestOptions, DotBundle } from '@dotcms/dotcms-models';
 
 import {
     DotContentDriveActionExecution,
@@ -52,7 +56,8 @@ export function withActionExecution() {
             (
                 store,
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
-                httpErrorManagerService = inject(DotHttpErrorManagerService)
+                httpErrorManagerService = inject(DotHttpErrorManagerService),
+                addToBundleService = inject(AddToBundleService)
             ) => {
                 /**
                  * Settles a finished run by publishing its result for the shell to present.
@@ -202,6 +207,63 @@ export function withActionExecution() {
                                     failCount: result?.fails?.length ?? 0
                                 })
                             );
+                    },
+
+                    /**
+                     * Adds the given contentlets to a bundle.
+                     *
+                     * Separate from the other two because it is not a workflow action at all: no
+                     * actionlet, no step transition, and it posts form-encoded to the legacy
+                     * `/DotAjaxDirector/…/addToBundle` servlet rather than a workflow endpoint. It
+                     * shares the execution *state* so the toolbar indicator, the "one at a time" guard
+                     * and the result toast all behave identically.
+                     *
+                     * Takes **identifiers**, not inodes — the one action here that does. A bundle holds
+                     * one entry per identifier, so language versions of a contentlet are one asset.
+                     *
+                     * `total` is the server's count of assets actually queued, already deduped and with
+                     * anything already in the bundle removed. It is reported rather than
+                     * `identifiers.length` so the toast cannot claim more than was added.
+                     */
+                    executeAddToBundle: (
+                        actionName: string,
+                        bundle: DotBundle,
+                        identifiers: string[]
+                    ): void => {
+                        if (!identifiers.length || store.actionExecution()) {
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecution: { actionName, total: identifiers.length },
+                            actionExecutionResult: undefined
+                        });
+
+                        addToBundleService
+                            // Comma-joined: the servlet splits `assetIdentifier` on "," and has
+                            // always accepted several ids that way, so bulk needs no new endpoint.
+                            .addToBundle(identifiers.join(','), bundle)
+                            .pipe(
+                                take(1),
+                                catchError((error) => {
+                                    patchState(store, { actionExecution: undefined });
+                                    httpErrorManagerService.handle(error);
+
+                                    return EMPTY;
+                                })
+                            )
+                            .subscribe((result) => {
+                                const failCount = result?.errors ?? 0;
+
+                                onSettled({
+                                    actionName,
+                                    // `total` counts everything queued, failures included, so the
+                                    // successes are what is left after removing them.
+                                    successCount: Math.max((result?.total ?? 0) - failCount, 0),
+                                    skippedCount: 0,
+                                    failCount
+                                });
+                            });
                     },
 
                     /** Called by the shell once the result has been presented. */

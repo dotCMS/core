@@ -176,15 +176,28 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
         danger: false,
-        // Count = full selection; shows coverage once the picker ships.
-        eligibleWhen: () => true,
-        pendingHint: 'content-drive.action-center.add-to-bundle.pending'
+        // Every contentlet can go in a bundle: there is no state that disqualifies one, unlike
+        // Publish or Unarchive. Coverage is the whole selection, minus the identifier collapse the
+        // configuration step explains.
+        eligibleWhen: () => true
     }
 ];
 
 /** Drops folders from a selection (bulk endpoints are contentlet-only). */
 export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[] =>
     items.filter((item): item is DotCMSContentlet => !isFolder(item));
+
+/**
+ * Distinct identifiers among the given contentlets, in first-seen order.
+ *
+ * Bundles hold one entry per identifier, so every language version of a contentlet is the same asset.
+ * The endpoint dedupes server-side either way ("Multiples languages have the same identifier"); doing
+ * it here as well is what lets the dialog say how many assets it is really about to add, instead of
+ * promising a row count the result will silently undercut.
+ */
+export const toDistinctIdentifiers = (contentlets: DotCMSContentlet[]): string[] => [
+    ...new Set(contentlets.map((item) => item.identifier).filter(Boolean))
+];
 
 /** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>

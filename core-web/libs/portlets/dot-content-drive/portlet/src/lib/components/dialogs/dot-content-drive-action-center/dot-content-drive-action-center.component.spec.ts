@@ -8,6 +8,8 @@ import { signal } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 
 import {
+    AddToBundleService,
+    DotCurrentUserService,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -134,7 +136,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 setDialogDrillDown: jest.fn(),
                 clearDialogDrillDown: jest.fn(),
                 executeQuickAction: jest.fn(),
-                executeWorkflowAction: jest.fn()
+                executeWorkflowAction: jest.fn(),
+                executeAddToBundle: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
@@ -147,6 +150,9 @@ describe('DotContentDriveActionCenterComponent', () => {
             // for real. Mocked rather than stubbed out with a fake child component: whether that
             // component can actually be instantiated inside this dialog is the thing worth proving.
             mockProvider(DotHttpErrorManagerService),
+            // Backs the bundle step's list of the current user's unsent bundles.
+            mockProvider(AddToBundleService, { getBundles: jest.fn(() => of([])) }),
+            mockProvider(DotCurrentUserService),
             mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn(() => of([])),
                 getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
@@ -419,7 +425,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(publish.disabled).toBe(false);
         });
 
-        it('should render Add to Bundle but keep it non-selectable', () => {
+        it('should keep Add to Bundle selectable', () => {
             spectator.detectChanges();
 
             const addToBundle = spectator.query(
@@ -427,15 +433,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             ) as HTMLButtonElement;
 
             expect(addToBundle).toBeTruthy();
-            expect(addToBundle.disabled).toBe(true);
+            expect(addToBundle.disabled).toBe(false);
         });
 
-        it('should not fire Add to Bundle even if its row is clicked', () => {
+        it('should open the bundle step rather than the preview for Add to Bundle', () => {
+            // The one quick action that cannot fire from the selection alone: every other row goes
+            // straight to its preview.
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
             spectator.detectChanges();
 
+            expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeTruthy();
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
@@ -1471,6 +1480,156 @@ describe('DotContentDriveActionCenterComponent', () => {
             goToPreview();
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeTruthy();
+        });
+    });
+
+    describe('add to bundle', () => {
+        const BUNDLE = { id: 'bundle-1', name: 'Release 1' };
+
+        /** Opens the bundle configuration step from the quick action row. */
+        const goToBundleStep = (): void => {
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+        };
+
+        /** Picks a bundle, standing in for the step component's `bundleChange`. */
+        const chooseBundle = (bundle = BUNDLE): void => {
+            spectator.component['onBundleChange'](bundle);
+            spectator.detectChanges();
+        };
+
+        it('should keep Continue disabled until a bundle is chosen', () => {
+            goToBundleStep();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should reach the preview once a bundle is chosen', () => {
+            goToBundleStep();
+            chooseBundle();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should queue identifiers rather than inodes', () => {
+            // The only action here that does: a bundle holds one entry per identifier.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-2', identifier: 'id-2' })
+            ]);
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
+                'id-1',
+                'id-2'
+            ]);
+        });
+
+        it('should collapse language versions of the same content into one asset', () => {
+            // Two rows, one identifier: the endpoint dedupes anyway, and sending both would let the
+            // dialog promise two assets when the result will honestly report one.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-en', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-es', identifier: 'id-1' })
+            ]);
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
+                'id-1'
+            ]);
+        });
+
+        it('should not fire a workflow action', () => {
+            // Add to Bundle is not a SystemAction and does not touch a workflow endpoint.
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should refuse to fire without a bundle', () => {
+            goToBundleStep();
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).not.toHaveBeenCalled();
+        });
+
+        it('should honour rows unchecked after the bundle was chosen', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-2', identifier: 'id-2' })
+            ]);
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
+                'id-2'
+            ]);
+        });
+
+        it('should step back from the preview to the bundle step', () => {
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeTruthy();
+        });
+
+        it('should drop the chosen bundle when returning to the action list', () => {
+            goToBundleStep();
+            chooseBundle();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$selectedBundle']()).toBeNull();
+        });
+
+        it('should render the move step for a move action, not the bundle one', () => {
+            // One `configure` view, two bodies: the discriminator has to pick the right one.
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-move');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeNull();
         });
     });
 
