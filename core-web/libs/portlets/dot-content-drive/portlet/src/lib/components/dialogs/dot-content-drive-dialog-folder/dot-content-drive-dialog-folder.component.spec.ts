@@ -29,6 +29,33 @@ const mockFileAssetTypes = [
     }
 ];
 
+/** An existing folder as it comes back from the backend, for the edit-mode flows. */
+const editableFolder = (overrides: Partial<DotContentDriveFolder> = {}): DotContentDriveFolder =>
+    ({
+        name: 'app',
+        title: 'App',
+        sortOrder: 1,
+        filesMasks: '',
+        defaultFileType: 'FileAsset',
+        showOnMenu: false,
+        __icon__: 'folderIcon',
+        description: '',
+        extension: 'folder',
+        hasTitleImage: false,
+        hostId: '1',
+        iDate: 1,
+        identifier: '1',
+        inode: '1',
+        mimeType: '',
+        modDate: 1,
+        owner: null,
+        parent: '',
+        path: '',
+        permissions: [],
+        type: 'folder',
+        ...overrides
+    }) as DotContentDriveFolder;
+
 describe('DotContentDriveDialogFolderComponent', () => {
     let spectator: Spectator<DotContentDriveDialogFolderComponent>;
     let component: DotContentDriveDialogFolderComponent;
@@ -332,6 +359,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
         /** The chips the field is actually showing, which must mirror the form control. */
         const renderedChips = () => (spectator.query(AutoComplete) as AutoComplete).modelValue();
 
+        /**
+         * A real Enter press. `code` matters: PrimeNG's own key handler switches on it, so without
+         * it only our `(keydown.enter)` binding (which matches on `key`) would run and the test
+         * would miss that PrimeNG handles the same press first, on the inner input.
+         */
+        const pressEnter = () =>
+            new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true });
+
         /** Types `text` and lets the AutoComplete debounce run so the suggestions get filtered. */
         const type = (text: string) => {
             const input = extensionsInput();
@@ -359,7 +394,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should add extension on enter key if not duplicate', () => {
             const input = type('*.pdf');
-            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toContain('*.pdf');
@@ -374,7 +409,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.png');
-            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([
@@ -394,7 +429,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.png');
-            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(renderedChips()).toEqual(['*.jpg', '*.png']);
@@ -410,11 +445,30 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.pdf');
-            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.pdf']);
             expect(input.value).toBe('');
+        });
+
+        it('should render a chip for every saved extension, including ones off the suggested list', () => {
+            // Regression: PrimeNG re-derives the chips from `suggestions` on every control write,
+            // including the one that loads the folder. An extension the suggested list does not
+            // carry was dropped from the chips while staying in the form value, so the user could
+            // neither see nor remove it and it was sent straight back on save. The folder is bound
+            // at creation time here because that is how the shell opens this dialog.
+            const editSpectator = createComponent({
+                props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+            });
+            editSpectator.detectChanges();
+
+            const chips = (editSpectator.query(AutoComplete) as AutoComplete).modelValue();
+
+            expect(chips).toEqual(['*.jpg', '*.svg']);
+            expect(chips).toEqual(
+                editSpectator.component.folderForm.get('allowedFileExtensions')?.value
+            );
         });
 
         it('should replace the saved extension when it is removed and a new one is typed', () => {
@@ -431,7 +485,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.png');
-            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.png']);
@@ -456,34 +510,6 @@ describe('DotContentDriveDialogFolderComponent', () => {
     });
 
     describe('upload behavior (defaultBaseType)', () => {
-        const editableFolder = (
-            overrides: Partial<DotContentDriveFolder> = {}
-        ): DotContentDriveFolder =>
-            ({
-                name: 'app',
-                title: 'App',
-                sortOrder: 1,
-                filesMasks: '',
-                defaultFileType: 'FileAsset',
-                showOnMenu: false,
-                __icon__: 'folderIcon',
-                description: '',
-                extension: 'folder',
-                hasTitleImage: false,
-                hostId: '1',
-                iDate: 1,
-                identifier: '1',
-                inode: '1',
-                mimeType: '',
-                modDate: 1,
-                owner: null,
-                parent: '',
-                path: '',
-                permissions: [],
-                type: 'folder',
-                ...overrides
-            }) as DotContentDriveFolder;
-
         it('should render the three upload-behavior options', () => {
             expect(spectator.query('[data-testid="upload-behavior-option-null"]')).toBeTruthy();
             expect(spectator.query('[data-testid="upload-behavior-option-DOTASSET"]')).toBeTruthy();

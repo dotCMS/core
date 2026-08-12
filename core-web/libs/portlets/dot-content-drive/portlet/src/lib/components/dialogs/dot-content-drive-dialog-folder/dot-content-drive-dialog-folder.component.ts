@@ -112,8 +112,17 @@ export class DotContentDriveDialogFolderComponent {
     /** Signal tracking changes to the folder URL form control */
     $name = toSignal(this.folderForm.get('name')?.valueChanges);
 
-    /** Signal containing the filtered list of allowed file extensions for autocomplete */
-    $filteredAllowedFileExtensions = signal<string[]>(SUGGESTED_ALLOWED_FILE_EXTENSIONS);
+    /**
+     * Suggestions offered while the user types; {@link onCompleteMethod} fills it per keystroke.
+     *
+     * It starts empty on purpose. PrimeNG rebuilds the chips from this list on every write to the
+     * control, keeping only the values it can find here — so a saved extension the list does not
+     * carry (say `*.svg`) would be dropped from the chips while staying in the form value:
+     * invisible to the user, impossible to remove, and sent right back on save. With nothing to
+     * match against, PrimeNG keeps the written value verbatim and the chips mirror the control.
+     * Nothing is lost visually: the panel only opens once a keystroke has produced suggestions.
+     */
+    $filteredAllowedFileExtensions = signal<string[]>([]);
 
     /** Signal tracking the loading state during folder creation */
     $isLoading = signal(false);
