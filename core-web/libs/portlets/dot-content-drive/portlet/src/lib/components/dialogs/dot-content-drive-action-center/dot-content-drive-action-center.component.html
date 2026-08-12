@@ -63,11 +63,7 @@
                                 <button
                                     type="button"
                                     class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
-                                    [disabled]="
-                                        $executing() ||
-                                        quickAction.count === 0 ||
-                                        !!quickAction.pendingHint
-                                    "
+                                    [disabled]="$executing() || quickAction.count === 0"
                                     [pTooltip]="quickActionHint(quickAction) | dm"
                                     [attr.data-testid]="'quick-action-' + quickAction.id"
                                     (click)="onSelectQuickAction(quickAction)">
@@ -265,7 +261,7 @@
                     (click)="onContinueToPreview()" />
             </div>
         }
-        @case ('configure') {
+        @default {
             <!--
             Configuration: whatever the armed action needs before it can run.
 
@@ -274,19 +270,37 @@
             own validation hint. The header is again the shell's, retitled to the action name with the
             item count, which is how the count stays visible without repeating the rows.
         -->
-            <div
-                class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
-                data-testid="action-configure-bar">
-                <p-button
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    size="small"
-                    [text]="true"
-                    [label]="'content-drive.action-center.back' | dm"
-                    [disabled]="$executing()"
-                    data-testid="action-configure-back"
-                    (click)="onBackToActions()" />
-            </div>
+            @if ($view() === 'configure') {
+                <div
+                    class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
+                    data-testid="action-configure-bar">
+                    <p-button
+                        icon="pi pi-arrow-left"
+                        severity="secondary"
+                        size="small"
+                        [text]="true"
+                        [label]="'content-drive.action-center.back' | dm"
+                        [disabled]="$executing()"
+                        data-testid="action-configure-back"
+                        (click)="onBackToActions()" />
+                </div>
+            } @else {
+                <div
+                    class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
+                    data-testid="action-preview-bar">
+                    <!-- Steps back to the configuration screen when the action has one, so a chosen
+                         destination is not thrown away on the way to the action list. -->
+                    <p-button
+                        icon="pi pi-arrow-left"
+                        severity="secondary"
+                        size="small"
+                        [text]="true"
+                        [label]="$backLabel() | dm"
+                        [disabled]="$executing()"
+                        data-testid="action-preview-back"
+                        (click)="onBack()" />
+                </div>
+            }
 
             <!--
                 One scroll container for every section, rather than each section owning its own. The
@@ -297,8 +311,15 @@
                 Padding is here too rather than inside the step components: two of them live in
                 `libs/ui` and should not assume this dialog's insets.
             -->
+            <!--
+                Hidden rather than removed while the preview is up. Destroying these sections would
+                destroy the user's input with them: each step component re-emits its own fresh state on
+                mount, so a re-created form does not merely forget what was typed, it overwrites the
+                copy the dialog was holding. Keeping them mounted is what makes Back non-destructive.
+            -->
             <div
                 class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
+                [class.hidden]="$view() !== 'configure'"
                 data-testid="action-configure-body">
                 @for (kind of $configureKinds(); track kind; let first = $first) {
                     <!--
@@ -348,7 +369,7 @@
                                 <dot-content-drive-action-move-target
                                     [itemCount]="$includedCount()"
                                     [disabled]="$executing()"
-                                    [startingPath]="$currentPath()"
+                                    [startingPath]="$pathToMove() || $currentPath()"
                                     data-testid="action-configure-move-target"
                                     (pathToMoveChange)="onPathToMoveChange($event)" />
                             }
@@ -357,111 +378,97 @@
                 }
             </div>
 
-            <div
-                class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
-                data-testid="action-configure-footer">
-                <!--
+            @if ($view() === 'configure') {
+                <div
+                    class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
+                    data-testid="action-configure-footer">
+                    <!--
                     Names the first section still missing something. With sections stacked, the field
                     holding Continue back can be scrolled out of view, so the footer has to say which
                     one it is.
                 -->
-                <span class="text-xs font-medium text-surface-400 italic">
-                    @if ($configureHint(); as hint) {
-                        {{ hint | dm }}
-                    }
-                </span>
-                <!-- Continue, not Execute: the preview still follows, and nothing has been sent yet. -->
-                <p-button
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
-                    styleClass="font-bold"
-                    [label]="'content-drive.action-center.continue' | dm"
-                    [disabled]="!$canLeaveConfigure() || $executing()"
-                    data-testid="action-configure-continue"
-                    (click)="onContinueFromConfigure()" />
-            </div>
-        }
-        @default {
-            <!--
-            Preview: what the armed action is about to run on, with a checkbox per row.
+                    <span class="text-xs font-medium text-surface-400 italic">
+                        @if ($configureHint(); as hint) {
+                            {{ hint | dm }}
+                        } @else if ($configureWarning(); as warning) {
+                            <!-- A valid choice that is probably not what was meant, so it reads as a
+                                 caution beside a usable Continue rather than a blocked one. -->
+                            <span class="text-orange-600" data-testid="action-configure-warning">
+                                {{ warning | dm }}
+                            </span>
+                        }
+                    </span>
+                    <!-- Continue, not Execute: the preview still follows, and nothing has been sent yet. -->
+                    <p-button
+                        icon="pi pi-arrow-right"
+                        iconPos="right"
+                        styleClass="font-bold"
+                        [label]="'content-drive.action-center.continue' | dm"
+                        [disabled]="!$canLeaveConfigure() || $executing()"
+                        data-testid="action-configure-continue"
+                        (click)="onContinueFromConfigure()" />
+                </div>
+            }
 
-            No title or count here — the shell's dialog header carries both (via the store's
-            drill-down state), so repeating them would render the header twice. Only the back control
-            lives in the body, where it can be disabled while an action is in flight.
-        -->
-            <div
-                class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
-                data-testid="action-preview-bar">
-                <!-- Steps back to the configuration screen when the action has one, so a chosen
-                 destination is not thrown away on the way to the action list. -->
-                <p-button
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    size="small"
-                    [text]="true"
-                    [label]="$backLabel() | dm"
-                    [disabled]="$executing()"
-                    data-testid="action-preview-back"
-                    (click)="onBack()" />
-            </div>
-
-            <!--
+            @if ($view() === 'preview') {
+                <!--
             No padding and no scroll of its own: the table goes edge to edge and owns the scrolling
             (`scrollable` + `scrollHeight="flex"`), so its column headers stay pinned and its
             paginator sits below the scroll region rather than at the bottom of a scrolled page.
         -->
-            <div class="flex min-h-0 flex-1 flex-col" data-testid="action-preview-body">
-                <!-- Workflow actions only. A quick action's count and its rows come from the same
+                <div class="flex min-h-0 flex-1 flex-col" data-testid="action-preview-body">
+                    <!-- Workflow actions only. A quick action's count and its rows come from the same
                  client-side filter, so it can never apply to fewer items than it lists. -->
-                @if (!$pendingQuickAction() && $selectedAction(); as action) {
-                    <!-- The rows are already narrowed to content types this action's scheme covers, but
+                    @if (!$pendingQuickAction() && $selectedAction(); as action) {
+                        <!-- The rows are already narrowed to content types this action's scheme covers, but
                      eligibility is also per workflow step: two contentlets of one type can sit on
                      different steps and only one may expose the action. `count` is the backend's true
                      total, so when it falls short of the rows shown, the rest get skipped — and the
                      endpoint never says which, so this warning is all the dialog can honestly show. -->
-                    @if ($previewCount() > action.count) {
-                        <!-- `shrink-0` keeps the warning pinned above the table instead of being
+                        @if ($previewCount() > action.count) {
+                            <!-- `shrink-0` keeps the warning pinned above the table instead of being
                          squeezed away once the rows fill the column. -->
-                        <p-message
-                            class="m-4 shrink-0"
-                            severity="warn"
-                            data-testid="action-preview-partial-match">
-                            {{
-                                'content-drive.action-center.preview.partial-match'
-                                    | dm: [action.count.toString(), $previewCount().toString()]
-                            }}
-                        </p-message>
+                            <p-message
+                                class="m-4 shrink-0"
+                                severity="warn"
+                                data-testid="action-preview-partial-match">
+                                {{
+                                    'content-drive.action-center.preview.partial-match'
+                                        | dm: [action.count.toString(), $previewCount().toString()]
+                                }}
+                            </p-message>
+                        }
                     }
-                }
 
-                <dot-content-drive-action-preview
-                    [items]="$previewItems()"
-                    [selection]="$includedItems()"
-                    [disabled]="$executing()"
-                    [lockedByOthers]="$lockedByOthers()"
-                    data-testid="action-preview"
-                    (selectionChange)="onIncludedItemsChange($event)" />
-            </div>
+                    <dot-content-drive-action-preview
+                        [items]="$previewItems()"
+                        [selection]="$includedItems()"
+                        [disabled]="$executing()"
+                        [lockedByOthers]="$lockedByOthers()"
+                        data-testid="action-preview"
+                        (selectionChange)="onIncludedItemsChange($event)" />
+                </div>
 
-            <div
-                class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
-                data-testid="action-preview-footer">
-                <span class="text-xs font-medium text-surface-400 italic">
-                    @if (!$includedCount()) {
-                        {{ 'content-drive.action-center.preview.none-included' | dm }}
-                    }
-                </span>
-                <!-- Just "Execute": the dialog header already names the action, so repeating it here
+                <div
+                    class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
+                    data-testid="action-preview-footer">
+                    <span class="text-xs font-medium text-surface-400 italic">
+                        @if (!$includedCount()) {
+                            {{ 'content-drive.action-center.preview.none-included' | dm }}
+                        }
+                    </span>
+                    <!-- Just "Execute": the dialog header already names the action, so repeating it here
                  said the same thing twice (and made the button grow with the action name). -->
-                <p-button
-                    styleClass="font-bold"
-                    [label]="'Execute' | dm"
-                    [badge]="$includedCount().toString()"
-                    [disabled]="!$includedCount() || $executing()"
-                    [loading]="$executing()"
-                    data-testid="action-preview-execute"
-                    (click)="onExecutePreview()" />
-            </div>
+                    <p-button
+                        styleClass="font-bold"
+                        [label]="'Execute' | dm"
+                        [badge]="$includedCount().toString()"
+                        [disabled]="!$includedCount() || $executing()"
+                        [loading]="$executing()"
+                        data-testid="action-preview-execute"
+                        (click)="onExecutePreview()" />
+                </div>
+            }
         }
     }
 

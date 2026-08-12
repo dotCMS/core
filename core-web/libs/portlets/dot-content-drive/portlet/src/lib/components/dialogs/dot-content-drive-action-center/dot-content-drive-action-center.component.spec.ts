@@ -220,7 +220,23 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn(() => of([])),
                 getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
-                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(null))
+                // Returns a real node, not `null`. This is what makes the picker's
+                // `ControlValueAccessor` actually push a value outward on load — the emission that
+                // silently overwrote a chosen destination when the step was re-created. A `null` here
+                // makes the whole class of bug invisible to these tests.
+                getCurrentSiteAsTreeNodeItem: jest.fn(() =>
+                    of({
+                        key: 'site-1',
+                        label: 'demo.dotcms.com',
+                        data: {
+                            id: 'site-1',
+                            hostname: 'demo.dotcms.com',
+                            path: '',
+                            type: 'site'
+                        },
+                        leaf: false
+                    })
+                )
             })
         ],
         detectChanges: false
@@ -1219,17 +1235,25 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/blogs');
         });
 
-        it('should keep Continue disabled while the destination is the current folder', () => {
-            // The consequence of seeding: a destination is present from the outset, so Continue has
-            // to gate on it having *changed*, not merely on it being set. Otherwise one click fires a
-            // move of every item to where it already is.
+        it('should warn but not block when the destination is the folder being browsed', () => {
+            // Advisory, not a gate. It compares against the *browsing* path, and with a search or
+            // filter applied the selection need not live there — blocking refused legitimate moves
+            // of filtered results to the site root.
             goToConfigure();
 
             const continueButton = spectator.query(
                 '[data-testid="action-configure-continue"] button'
             ) as HTMLButtonElement;
 
-            expect(continueButton.disabled).toBe(true);
+            expect(continueButton.disabled).toBe(false);
+            expect(spectator.query('[data-testid="action-configure-warning"]')).toBeTruthy();
+        });
+
+        it('should drop the warning once a different destination is chosen', () => {
+            goToConfigure();
+            chooseDestination();
+
+            expect(spectator.query('[data-testid="action-configure-warning"]')).toBeNull();
         });
 
         it('should keep Continue disabled when the destination is cleared', () => {
@@ -1243,14 +1267,21 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(continueButton.disabled).toBe(true);
         });
 
-        it('should refuse to fire a move to the folder the items are already in', () => {
+        it('should allow firing a move to the folder being browsed', () => {
+            // Wasteful, but the user's call — and the alternative blocked real moves. See the
+            // warning test above.
             goToConfigure();
-            spectator.component['$view'].set('preview');
-            spectator.detectChanges();
 
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-move',
+                'Move',
+                ['inode-1', 'inode-2'],
+                expect.objectContaining({ pathToMove: '//demo.dotcms.com/blogs' })
+            );
         });
 
         it('should enable Continue once a destination is chosen', () => {
@@ -1990,6 +2021,110 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.component['$backLabel']()).toBe(
                 'content-drive.action-center.back.settings'
             );
+        });
+    });
+
+    describe('surviving the trip to the preview and back', () => {
+        /**
+         * The regression guard for the two bugs found in review.
+         *
+         * Both had the same root cause: the `configure` block was destroyed on Continue, so stepping
+         * back re-created each step component — and every one of them emits its own fresh state on
+         * mount, overwriting what the dialog was holding rather than merely forgetting it. The step
+         * sections stay mounted now, so nothing is re-created and nothing re-emits.
+         */
+        const armAndConfigure = (actionId: string): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set(actionId);
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        const goToPreviewAndBack = (): void => {
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+        };
+
+        it('should keep a chosen move destination', () => {
+            armAndConfigure('action-move');
+            spectator.component['onPathToMoveChange']('//demo.dotcms.com/application');
+            spectator.detectChanges();
+
+            goToPreviewAndBack();
+
+            expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/application');
+        });
+
+        it('should not re-create the destination picker, which would re-seed and re-emit', () => {
+            // The picker is a `ControlValueAccessor` that pushes a value outward as soon as its store
+            // confirms a node. A re-created one would emit the *browsing* folder over the chosen
+            // destination — and in the window before that resolves, Execute could fire a path the UI
+            // never showed.
+            armAndConfigure('action-move');
+            const before = spectator.query('[data-testid="action-configure-move-target"]');
+
+            goToPreviewAndBack();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBe(before);
+        });
+
+        it('should keep a typed comment and chosen assignee', () => {
+            armAndConfigure('action-assign');
+            spectator.component['onAssignCommentChange']({
+                assign: 'role-legal',
+                comment: 'Please review'
+            });
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.detectChanges();
+
+            goToPreviewAndBack();
+
+            expect(spectator.component['$assignComment']()).toEqual({
+                assign: 'role-legal',
+                comment: 'Please review'
+            });
+        });
+
+        it('should keep push publish settings', () => {
+            armAndConfigure('action-pp');
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+
+            goToPreviewAndBack();
+
+            expect(spectator.component['$pushPublish']()).toEqual(PUSH_PUBLISH_SETTINGS);
+        });
+
+        it('should hide the sections behind the preview rather than removing them', () => {
+            armAndConfigure('action-pp');
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            const body = spectator.query('[data-testid="action-configure-body"]');
+
+            expect(body).toBeTruthy();
+            expect(body?.classList.contains('hidden')).toBe(true);
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should still discard everything when returning to the action list', () => {
+            // Back to actions is a real reset — a different action must not inherit the last one's
+            // answers.
+            armAndConfigure('action-pp');
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pushPublish']()).toBeNull();
         });
     });
 

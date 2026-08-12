@@ -261,15 +261,35 @@ export function withActionExecution() {
                                 })
                             )
                             .subscribe((result) => {
-                                const failCount = result?.errors ?? 0;
+                                // The servlet answers 200 for its own failures too: on a
+                                // `DotPublisherException` it writes `{"errors": "<message>"}` with no
+                                // `total`, and when the publisher returns nothing it writes no body at
+                                // all. Either shape would arrive here as a "success" — the first
+                                // producing `NaN` from `total - "<message>"`, the second reporting zero
+                                // of everything on what may well have worked. Neither is a result worth
+                                // showing, so both go to the error handler instead.
+                                if (typeof result?.errors !== 'number') {
+                                    patchState(store, { actionExecution: undefined });
+                                    httpErrorManagerService.handle(
+                                        new HttpErrorResponse({
+                                            status: 500,
+                                            statusText:
+                                                typeof result?.errors === 'string'
+                                                    ? result.errors
+                                                    : 'Adding to the bundle returned no result'
+                                        })
+                                    );
+
+                                    return;
+                                }
 
                                 onSettled({
                                     actionName,
                                     // `total` counts everything queued, failures included, so the
                                     // successes are what is left after removing them.
-                                    successCount: Math.max((result?.total ?? 0) - failCount, 0),
+                                    successCount: Math.max((result.total ?? 0) - result.errors, 0),
                                     skippedCount: 0,
-                                    failCount
+                                    failCount: result.errors
                                 });
                             });
                     },

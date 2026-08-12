@@ -295,9 +295,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /**
      * True when the destination is still the folder the picker opened on.
      *
-     * Gates Continue. Seeding the picker means a destination is present from the outset, so without
-     * this a single click would fire a workflow action moving every item to where it already is —
-     * a new version, a step transition and a reindex each, for no change.
+     * Advisory only — it warns, it does not block. Seeding the picker means a destination is present
+     * from the outset, and a move to where the items already are costs a version and a reindex each
+     * for no change, which is worth flagging.
+     *
+     * It cannot be a gate, because it compares against the *browsing* path and the selection does not
+     * have to live there. With a search or filter applied `path()` can be unset, making this the site
+     * root — so gating on it refused a perfectly legitimate move of filtered results to the root.
+     * Contentlets carry a folder inode but no path, so there is no client-side way to compare against
+     * where the items actually are. Warning is the honest amount of certainty available here.
      */
     protected readonly $destinationUnchanged = computed(
         () => !!this.$pathToMove() && this.$pathToMove() === this.$currentPath()
@@ -368,7 +374,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected sectionIsSatisfied(kind: DotActionCenterConfigureKind): boolean {
         switch (kind) {
             case 'move':
-                return !!this.$pathToMove() && !this.$destinationUnchanged();
+                return !!this.$pathToMove();
             case 'bundle':
                 return !!this.$selectedBundle();
             case 'assignComment':
@@ -396,14 +402,24 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * disabled Continue with no visible cause. Naming the first unsatisfied section in the footer is
      * what keeps that from being a dead end.
      */
+    /**
+     * Advisory shown when the chosen destination is the folder being browsed.
+     *
+     * Separate from {@link $configureHint}, which lists what is *missing*: this one accompanies a
+     * perfectly valid choice that is probably not what the user meant.
+     */
+    protected readonly $configureWarning = computed(() =>
+        this.$configureKinds().includes('move') && this.$destinationUnchanged()
+            ? 'content-drive.action-center.move.same-destination'
+            : ''
+    );
+
     protected readonly $configureHint = computed(() => {
         const unsatisfied = this.$configureKinds().find((kind) => !this.sectionIsSatisfied(kind));
 
         switch (unsatisfied) {
             case 'move':
-                return this.$pathToMove()
-                    ? 'content-drive.action-center.move.same-destination'
-                    : 'content-drive.action-center.move.no-destination';
+                return 'content-drive.action-center.move.no-destination';
             case 'bundle':
                 return 'content-drive.action-center.bundle.no-target';
             case 'assignComment':
@@ -544,17 +560,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         return !!selectedId && scheme.actions.some((action) => action.id === selectedId);
     }
 
-    /**
-     * Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears.
-     *
-     * `pendingHint` wins over the not-applicable message: an action that cannot run at all yet
-     * should say so rather than blame the current selection.
-     */
+    /** Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears. */
     protected quickActionHint(quickAction: DotActionCenterQuickAction): string {
-        if (quickAction.pendingHint) {
-            return quickAction.pendingHint;
-        }
-
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -568,9 +575,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        // `pendingHint` marks an action with no working implementation yet. Nothing carries one today,
-        // but the row is disabled when it does and this guards the path anyway.
-        if (!quickAction.count || quickAction.pendingHint) {
+        if (!quickAction.count) {
             return;
         }
 
@@ -736,7 +741,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
         if (configureKinds.includes('move')) {
             // Mirrors what the seeded picker is showing, so the two agree from the first render.
-            // `$destinationUnchanged` is what keeps this from arming Execute on a no-op.
+            // `$destinationUnchanged` warns if the user leaves it as-is; it no longer blocks.
             this.$pathToMove.set(this.$currentPath());
         }
 
