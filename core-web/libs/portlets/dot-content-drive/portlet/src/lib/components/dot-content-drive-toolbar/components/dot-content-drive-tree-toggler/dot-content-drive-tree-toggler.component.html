@@ -1,18 +1,39 @@
-<!-- UVE's own palette / quick-edit toggle assets, kept as images rather than Material Symbols
-     glyphs on purpose: the pair carries the blue fill and the two files differ only in how much of
-     the panel is filled, which is the state cue. Both are rendered and toggled with `hidden` so
-     neither has to be fetched mid-interaction. -->
-<img
-    class="size-5"
-    src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
-    alt=""
-    draggable="false"
-    data-testid="tree-toggle-open-icon"
-    [class.hidden]="!$treeExpanded()" />
-<img
-    class="size-5"
-    src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
-    alt=""
-    draggable="false"
-    data-testid="tree-toggle-close-icon"
-    [class.hidden]="$treeExpanded()" />
+<!-- A real p-button rather than button classes on the host: the host is a custom element, so it
+     could never take focus and the toggle was unreachable by keyboard. The accessible name has to
+     go through PrimeNG's `[ariaLabel]` input too — `[attr.aria-label]` would land on the
+     non-focusable `<p-button>` host, leaving the actual `<button>` unnamed. The name carries the
+     state, since both glyphs are decorative.
+
+     `p-button-icon-only` is set by hand because PrimeNG only derives it from the `icon` input, and
+     the glyphs are projected content here; without it the button takes label padding and renders as
+     a padded oval instead of a circle. -->
+
+<p-button
+    [text]="true"
+    [rounded]="true"
+    [disabled]="$treeForceCollapsed()"
+    styleClass="p-button-icon-only"
+    [ariaLabel]="
+        ($treeExpanded() ? 'content-drive.tree.collapse' : 'content-drive.tree.expand') | dm
+    "
+    (onClick)="toggleTree()"
+    data-testid="tree-toggler-button">
+    <!-- UVE's own palette / quick-edit toggle assets, kept as images rather than Material Symbols
+         glyphs on purpose: the pair carries the blue fill and the two files differ only in how much
+         of the panel is filled, which is the state cue. Both are rendered and toggled with `hidden`
+         so neither has to be fetched mid-interaction. -->
+    <img
+        class="size-5"
+        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+        alt=""
+        draggable="false"
+        data-testid="tree-toggle-open-icon"
+        [class.hidden]="!$treeExpanded()" />
+    <img
+        class="size-5"
+        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+        alt=""
+        draggable="false"
+        data-testid="tree-toggle-close-icon"
+        [class.hidden]="$treeExpanded()" />
+</p-button>

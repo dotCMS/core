@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { ButtonDirective } from 'primeng/button';
+import { ButtonModule } from 'primeng/button';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -8,10 +10,8 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     selector: 'dot-content-drive-tree-toggler',
     templateUrl: './dot-content-drive-tree-toggler.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    hostDirectives: [ButtonDirective],
-    host: {
-        class: 'p-button-icon-only p-button-rounded p-button-text p-button'
-    }
+    host: { class: 'flex' },
+    imports: [ButtonModule, DotMessagePipe]
 })
 export class DotContentDriveTreeTogglerComponent {
     #store = inject(DotContentDriveStore);
@@ -21,11 +21,20 @@ export class DotContentDriveTreeTogglerComponent {
      *
      * Reads the VISUAL state, not the stored preference: the Edit Content side panel can force the
      * tree collapsed on a narrow viewport without touching what the user chose, and the glyph has to
-     * follow what is actually on screen. Clicking still toggles the preference itself.
+     * follow what is actually on screen.
      */
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
 
-    @HostListener('click')
+    /**
+     * Whether the side panel is holding the tree collapsed, which disables this button.
+     *
+     * Toggling the stored preference while that is on moves nothing — the computed behind
+     * {@link $treeExpanded} ands the two together — so the button would look live and do nothing.
+     * Honoring the force-collapse means refusing the interaction until the panel releases it, rather
+     * than clearing a collapse the panel owns.
+     */
+    readonly $treeForceCollapsed = this.#store.isTreeForceCollapsed;
+
     toggleTree(): void {
         this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
     }

@@ -69,6 +69,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 // signal keeps these tests driving one value, since they don't need to distinguish
                 // the real preference from a panel-forced override.
                 isTreeVisuallyExpanded: isTreeExpandedSignal,
+                // The toggler disables itself while the side panel holds the tree collapsed.
+                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
