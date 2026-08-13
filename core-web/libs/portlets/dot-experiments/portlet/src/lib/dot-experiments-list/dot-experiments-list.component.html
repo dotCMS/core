@@ -31,11 +31,23 @@
                 <input
                     pInputText
                     type="text"
+                    autocomplete="off"
                     [(ngModel)]="$searchTerm"
                     [placeholder]="'experiments.list.search.placeholder' | dm"
                     [attr.aria-label]="'experiments.list.search.placeholder' | dm"
                     data-testid="experiments-search-input"
                     class="w-80" />
+                @if ($searchTerm()) {
+                    <p-inputIcon
+                        class="pi pi-times p-input-icon-right cursor-pointer"
+                        role="button"
+                        tabindex="0"
+                        [attr.aria-label]="'experiments.list.search.clear' | dm"
+                        (click)="onClearSearch()"
+                        (keydown.enter)="onClearSearch()"
+                        (keydown.space)="onClearSearch()"
+                        data-testid="experiments-search-clear" />
+                }
             </p-iconField>
 
             <dot-experiment-list-filter

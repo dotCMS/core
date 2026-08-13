@@ -683,4 +683,67 @@ describe('DotExperimentsListComponent', () => {
             );
         });
     });
+
+    describe('search clear', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+            // The component is created without an initial render, so the toolbar has to be
+            // rendered before anything can be typed into it.
+            spectator.detectChanges();
+        });
+        afterEach(() => jest.useRealTimers());
+
+        const searchInput = () =>
+            spectator.query(byTestId('experiments-search-input')) as HTMLInputElement;
+
+        it('should not offer a clear control while the box is empty', () => {
+            expect(spectator.query(byTestId('experiments-search-clear'))).toBeNull();
+        });
+
+        it('should offer a clear control once something is typed', () => {
+            spectator.typeInElement('alpha', searchInput());
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-search-clear'))).not.toBeNull();
+        });
+
+        it('should empty the box and hide itself when clicked', async () => {
+            spectator.typeInElement('alpha', searchInput());
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('experiments-search-clear')) as HTMLElement);
+            spectator.detectChanges();
+
+            // `NgModel` pushes the model back to the input on a microtask, so the DOM value is
+            // one tick behind the signal.
+            await jest.advanceTimersByTimeAsync(0);
+            spectator.detectChanges();
+
+            expect(searchInput().value).toBe('');
+            expect(spectator.query(byTestId('experiments-search-clear'))).toBeNull();
+        });
+
+        it('should dispatch the emptied term after the debounce window', async () => {
+            // Arrive at "a term is applied": type it, then let the store report it as applied.
+            // The mock's signals are plain functions, so the term has to be typed rather than
+            // seeded through `filter` — a linkedSignal would never recompute from it.
+            spectator.typeInElement('alpha', searchInput());
+            spectator.detectChanges();
+            storeMock.filter.mockReturnValue('alpha');
+            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('experiments-search-clear')) as HTMLElement);
+            spectator.detectChanges();
+
+            // Clearing writes the same signal typing does, so it settles through the debounce
+            // rather than dispatching straight away.
+            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.filterChanged('')
+            );
+        });
+    });
 });

@@ -298,6 +298,15 @@ export class DotExperimentsListComponent {
         }));
     });
 
+    /**
+     * Clears the search box. Writing the signal is enough: the debounced dispatch is driven from
+     * it, so the store follows on the next tick like any other edit — no separate dispatch here,
+     * which would race the debounce and apply the empty term twice.
+     */
+    onClearSearch(): void {
+        this.$searchTerm.set('');
+    }
+
     onStatusesChange(statuses: string[]): void {
         this.#dispatch.statusesChanged(statuses as DotExperimentStatus[]);
     }
