@@ -433,6 +433,16 @@ public class AppsAPIImpl implements AppsAPI {
                 // an unreadable store into a 500 on every /api/* request. Every caller here
                 // (EMA, InitRunner, the Apps portlet counts, telemetry, SAML) expects a set, not a
                 // throw.
+                //
+                // One consequence is deliberate and worth knowing: against an unreadable store the
+                // Apps portlet LIST shows every app as 0 configurations, while opening an app's
+                // DETAIL still raises, because getSecrets() is not swallowed. The list is a
+                // best-effort count and the detail view is authoritative. The split cannot be
+                // closed from this side -- this same method is called by EMAWebInterceptor on every
+                // /api/* request, so raising here returns a 500 for the whole API. Surfacing the
+                // condition in the list needs its own signal path alongside AppDescriptorLoadError.
+                // Note the old wipe-then-recreate behaviour also reported 0, so this is not a
+                // regression.
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error getting secret from `%s` ", key), e);
             }
