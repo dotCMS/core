@@ -1004,4 +1004,26 @@ describe('DotExperimentsListStore', () => {
             expect(cleared.getAll('goal')).toEqual([]);
         });
     });
+
+    describe('search over the rendered page path', () => {
+        it('should find a row by the pageId the Page column falls back to', () => {
+            // A page that resolves but carries no url: `resolvePagePath` renders the raw id in
+            // the column, so searching that id has to match or the row is unfindable.
+            getAllUnfiltered.mockReturnValue(
+                of([buildExperiment({ id: 'exp-x', pageId: 'page-9' })])
+            );
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [buildPageContentlet('page-9', '', CURRENT_SITE_ID)]
+                    }
+                })
+            );
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('page-9'));
+
+            expect(store.searchedExperiments().map(({ id }) => id)).toEqual(['exp-x']);
+        });
+    });
 });

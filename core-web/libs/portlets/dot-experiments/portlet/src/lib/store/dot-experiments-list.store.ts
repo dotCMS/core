@@ -50,6 +50,7 @@ import {
     resolvedPageInfo,
     toQueryParams
 } from '../util/dot-experiments-list-store.util';
+import { resolvePagePath } from '../util/dot-experiments-list.util';
 
 /** Full state of the experiments list. */
 export interface DotExperimentsListState extends DotExperimentsListViewState {
@@ -135,7 +136,10 @@ export const DotExperimentsListStore = signalStore(
             const pageInfoByPageId = store.pageInfoByPageId();
 
             return siteScopedExperiments().filter((experiment) => {
-                const pagePath = pageInfoByPageId[experiment.pageId]?.url ?? '';
+                // `resolvePagePath`, not the raw url, so this searches exactly what the Page
+                // column renders — including the pageId it falls back to when a page has no url.
+                // Otherwise a row showing an id could not be found by typing that id.
+                const pagePath = resolvePagePath(experiment.pageId, pageInfoByPageId);
 
                 // Every field the row actually shows as text: an experiment the user can read
                 // on screen should be findable by anything they can read on it.
