@@ -73,6 +73,8 @@ describe('DotUsersCreateComponent', () => {
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
                 getUser: jest.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
+                getUserRoles: jest.fn().mockReturnValue(of([])),
+                getAllRoles: jest.fn().mockReturnValue(of([])),
                 getUsersPaginated: jest.fn().mockReturnValue(
                     of({
                         entity: [],

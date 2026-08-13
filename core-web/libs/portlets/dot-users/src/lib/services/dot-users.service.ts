@@ -1,9 +1,9 @@
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
@@ -97,6 +97,39 @@ interface DotUserUpdateResponse {
     };
 }
 
+/**
+ * RoleView returned by the `/api/v1/roles/**` endpoints. `roleKey`
+ * is what the backend UserForm expects on save — create/update look
+ * each entry up via `roleAPI.loadRoleByKey(...)`. Not every role
+ * carries a roleKey (per-user personal roles typically don't), which
+ * the Roles tab filters out since they cannot be sent back on save.
+ *
+ * `roleChildren` is populated by `GET /api/v1/roles?loadChildrenRoles=true`
+ * — the root-roles endpoint returns each root with its immediate
+ * descendants nested. The service flattens the two levels into a
+ * single list with the `parent` field set so callers can walk the
+ * hierarchy with a plain parent-id lookup.
+ */
+export interface DotRoleView {
+    id: string;
+    name?: string;
+    description?: string;
+    roleKey?: string;
+    parent?: string;
+    editPermissions?: boolean;
+    editUsers?: boolean;
+    editLayouts?: boolean;
+    locked?: boolean;
+    system?: boolean;
+    dbfqn?: string;
+    fqn?: string;
+    roleChildren?: DotRoleView[];
+}
+
+interface DotRolesResponse {
+    entity: DotRoleView[];
+}
+
 export interface DotUsersPaginatedParams {
     filter?: string;
     page?: number;
@@ -173,5 +206,117 @@ export class DotUsersService {
         return this.#http
             .put<DotUserUpdateResponse>('/api/v1/users', payload)
             .pipe(map((response) => response.entity.user));
+    }
+
+    /**
+     * Loads every role the user currently holds. The Roles tab uses
+     * this to hydrate the Granted panel, and — on save — to preserve
+     * every non-access role membership by seeding the outbound
+     * `roles` list from this response.
+     */
+    getUserRoles(userIdOrEmail: string): Observable<DotRoleView[]> {
+        return this.#http
+            .get<DotRolesResponse>(
+                `/api/v1/roles/users/${encodeURIComponent(userIdOrEmail)}`
+            )
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * Loads every system role for the Roles tab shuttle, with the
+     * full parent/child hierarchy resolved. Backend endpoints only
+     * return one level of children per call, so we:
+     *   1. Fetch the roots via `/api/v1/roles?loadChildrenRoles=true`
+     *      → returns roots with their immediate children nested.
+     *   2. Recursively fetch `/api/v1/roles/{id}?loadChildrenRoles=true`
+     *      for every non-root role we've discovered so far, until a
+     *      round yields no new roles.
+     *
+     * `_search` would be a single call but returns `SmallRoleView`
+     * (no parent, no hierarchy), so a client-side tree cannot be
+     * reconstructed from it. The recursive walk keeps request count
+     * bounded by the number of non-root roles in the system.
+     */
+    getAllRoles(): Observable<DotRoleView[]> {
+        return this.#http
+            .get<DotRolesResponse>('/api/v1/roles', {
+                params: new HttpParams().set('loadChildrenRoles', 'true')
+            })
+            .pipe(
+                switchMap((response) => this.expandRoleTree(response.entity ?? []))
+            );
+    }
+
+    private expandRoleTree(roots: DotRoleView[]): Observable<DotRoleView[]> {
+        const flat: DotRoleView[] = [];
+        const seen = new Set<string>();
+
+        for (const root of roots) {
+            if (!seen.has(root.id)) {
+                flat.push({ ...root, roleChildren: undefined, parent: undefined });
+                seen.add(root.id);
+            }
+            for (const child of root.roleChildren ?? []) {
+                if (!seen.has(child.id)) {
+                    flat.push({ ...child, roleChildren: undefined, parent: root.id });
+                    seen.add(child.id);
+                }
+            }
+        }
+
+        const initialChildren = flat.filter((role) => role.parent);
+
+        return this.expandDescendants(initialChildren, flat, seen);
+    }
+
+    private expandDescendants(
+        toExpand: DotRoleView[],
+        flat: DotRoleView[],
+        seen: Set<string>
+    ): Observable<DotRoleView[]> {
+        if (toExpand.length === 0) {
+            return of(flat);
+        }
+
+        const requests = toExpand.map((role) =>
+            this.#http
+                .get<{ entity: DotRoleView }>(
+                    `/api/v1/roles/${encodeURIComponent(role.id)}`,
+                    { params: new HttpParams().set('loadChildrenRoles', 'true') }
+                )
+                .pipe(
+                    map((resp) => ({
+                        parentId: role.id,
+                        children: resp.entity.roleChildren ?? []
+                    })),
+                    // A failed lookup for one node shouldn't kill the whole
+                    // tree — treat it as "no discovered children" and move on.
+                    catchError(() =>
+                        of({ parentId: role.id, children: [] as DotRoleView[] })
+                    )
+                )
+        );
+
+        return forkJoin(requests).pipe(
+            switchMap((results) => {
+                const newlyDiscovered: DotRoleView[] = [];
+                for (const { parentId, children } of results) {
+                    for (const child of children) {
+                        if (!seen.has(child.id)) {
+                            const role: DotRoleView = {
+                                ...child,
+                                roleChildren: undefined,
+                                parent: parentId
+                            };
+                            flat.push(role);
+                            seen.add(child.id);
+                            newlyDiscovered.push(role);
+                        }
+                    }
+                }
+
+                return this.expandDescendants(newlyDiscovered, flat, seen);
+            })
+        );
     }
 }

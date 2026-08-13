@@ -1,3 +1,5 @@
+import { forkJoin, of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -18,7 +20,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 
-import { finalize, take } from 'rxjs/operators';
+import { catchError, finalize, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -173,6 +175,20 @@ export class DotUsersCreateComponent {
     protected readonly isLoading = signal(false);
 
     /**
+     * Role KEYS that hydrate the Roles tab's Granted panel. Sourced
+     * from `getUserRoles` on edit-mode open; stays empty in create
+     * mode.
+     */
+    protected readonly initialGrantedRoleKeys = signal<string[]>([]);
+
+    /**
+     * Latest snapshot from the Roles tab. Populated on every
+     * `grantedChange` emission and used to build the outbound
+     * `roles` field on save.
+     */
+    private readonly currentRoleKeys = signal<string[] | null>(null);
+
+    /**
      * ID list handed to the replacement picker so the user being
      * deleted is filtered out of the suggestion pool. Backed by a
      * getter so it stays trivially derivable from `this.user`.
@@ -279,22 +295,29 @@ export class DotUsersCreateComponent {
     }
 
     /**
-     * Fetches the full user detail — the list row does not carry
-     * `additionalInfo` (prefix/suffix/title/company/website), so we
-     * re-fetch to hydrate those fields. Access section stays disabled,
-     * so no need to reconcile its values against roles yet.
+     * Fetches the full user detail + the user's currently assigned
+     * roles in parallel. The list row does not carry `additionalInfo`
+     * so we re-fetch even though it already has a `DotUserListItem`,
+     * and the role keys seed the Roles tab's Granted panel.
+     *
+     * A failed roles fetch is non-fatal — we still hydrate the form
+     * and let the user proceed with the profile fields. The Roles
+     * tab just opens empty in that case; the shared error manager
+     * surfaces the failure.
      */
     private loadUserDetail(userId: string): void {
         this.isLoading.set(true);
-        this.usersService
-            .getUser(userId)
+        forkJoin({
+            user: this.usersService.getUser(userId),
+            roles: this.usersService.getUserRoles(userId).pipe(catchError(() => of([])))
+        })
             .pipe(
                 take(1),
                 finalize(() => this.isLoading.set(false)),
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe({
-                next: (user) => {
+                next: ({ user, roles }) => {
                     const additionalInfo = user.additionalInfo ?? {};
                     this.form.patchValue({
                         account: {
@@ -319,9 +342,23 @@ export class DotUsersCreateComponent {
                         }
                     });
                     this.form.markAsPristine();
+
+                    const roleKeys = roles
+                        .map((role) => role.roleKey)
+                        .filter((key): key is string => !!key);
+                    this.initialGrantedRoleKeys.set(roleKeys);
+                    // Seed the "current" mirror so save picks up the
+                    // hydrated list even if the user never touches the
+                    // Roles tab (currentRoleKeys stays null → no roles
+                    // sent → backend preserves membership).
+                    this.currentRoleKeys.set(roleKeys);
                 },
                 error: (error) => this.httpErrorManager.handle(error)
             });
+    }
+
+    protected onGrantedRolesChange(keys: string[]): void {
+        this.currentRoleKeys.set(keys);
     }
 
     private enableCreatePasswordValidators(): void {
@@ -344,12 +381,16 @@ export class DotUsersCreateComponent {
 
     /**
      * Builds the backend {@link DotUserFormPayload} from the current
-     * form value. Password and additionalInfo are omitted when empty so
-     * the backend keeps the existing values.
+     * form value. Password and additionalInfo are omitted when empty
+     * so the backend keeps the existing values.
      *
-     * Roles are intentionally NOT sent — the backend interprets a
-     * missing `roles` field as "leave role membership untouched"
-     * (UserResource#processRoles), which is exactly what Path A needs.
+     * Roles come from the Roles tab's `grantedChange` snapshot
+     * (`currentRoleKeys`). We only send `roles` when the user
+     * actually granted at least one role — an empty list on
+     * `PUT /api/v1/users` would wipe the user's role membership
+     * (UserResource#processRoles calls `removeRoles` then
+     * re-adds), and a missing/null `roles` field is the safer
+     * "leave untouched" signal in edit mode.
      */
     private buildPayload(): DotUserFormPayload {
         const raw = this.form.getRawValue();
@@ -383,6 +424,11 @@ export class DotUsersCreateComponent {
 
         if (Object.keys(additionalInfo).length > 0) {
             payload.additionalInfo = additionalInfo;
+        }
+
+        const roleKeys = this.currentRoleKeys();
+        if (roleKeys && roleKeys.length > 0) {
+            payload.roles = roleKeys;
         }
 
         return payload;
