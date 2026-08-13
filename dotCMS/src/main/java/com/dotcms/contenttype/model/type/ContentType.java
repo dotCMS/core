@@ -27,6 +27,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.Arrays;
+import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -534,6 +537,24 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
       );
     }
 
+    /**
+     * Finds the {@link BaseContentType} whose name or alternate name matches {@code id},
+     * without the exception-and-INFO-log that {@link BaseContentType#getBaseContentType(String)}
+     * raises on a miss. A miss is the NORMAL case here - the caller may equally be passing a
+     * concrete class simple name - so it must not be an exceptional path.
+     *
+     * @param id the discriminator value supplied by the caller
+     * @return the matching base type, or empty when {@code id} does not name one
+     */
+    private static Optional<BaseContentType> findBaseContentType(final String id) {
+      return Arrays.stream(BaseContentType.values())
+              .filter(baseType -> baseType != BaseContentType.ANY)
+              .filter(baseType -> baseType.name().equalsIgnoreCase(id)
+                      || (UtilMethods.isSet(baseType.alternateName)
+                              && baseType.alternateName.equalsIgnoreCase(id)))
+              .findFirst();
+    }
+
     @Override
     public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
       final String packageName = ContentType.class.getPackageName();
@@ -545,10 +566,15 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
         //     "KEY_VALUE"/"KeyValue", "DOTASSET"/"DotAsset"
         //   - the concrete simple class name -> "SimpleContentType", "WidgetContentType", ...
         // In every case we resolve to the generated Immutable* class Jackson expects.
-        final String simpleName = Try.of(() -> BaseContentType.getBaseContentType(id))
-                .filter(baseType -> baseType != BaseContentType.ANY)
+        // Resolved by lookup rather than by catching: BaseContentType.getBaseContentType
+        // logs at INFO and throws IllegalArgumentException on every miss, and the
+        // simple-class-name form below (still supported, e.g. "WidgetContentType") ALWAYS
+        // misses that lookup. Catching it per object meant one thrown exception and one INFO
+        // line for every content type in a push-publish bundle or CT import. Field.typeFromId
+        // already does the same job this way; the two now match.
+        final String simpleName = findBaseContentType(id)
                 .map(baseType -> baseType.immutableClass().getSimpleName())
-                .getOrElse(id);
+                .orElse(id);
         final String className = String.format("%s.Immutable%s", packageName, simpleName);
         return super.typeFromId(context, className);
       }

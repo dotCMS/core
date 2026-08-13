@@ -2625,59 +2625,114 @@ paths:
       - Accessibility Checker
   /v1/agents/a11y/active-run:
     get:
-      operationId: activeRun
+      description: "Returns the run the agent service currently associates with the\
+        \ calling user, so a client that reconnects (a reload, or a second tab) can\
+        \ rejoin a run already in progress instead of starting a duplicate."
+      operationId: getA11yAgentActiveRun
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: "The active or last run, relayed from the agent service"
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+      summary: Get the caller's active or most recent agent run
       tags:
       - Accessibility Agent
   /v1/agents/a11y/fix:
     post:
-      operationId: fix
+      description: "Resolves the page identifier to a live URL, URI and host id, mints\
+        \ a short-lived token for the calling user, and forwards the request to the\
+        \ configured a11y agent service. Returns the agent's report once the run completes.\
+        \ This call is synchronous and a full run can take minutes - use /fix/stream\
+        \ to receive progress as it happens. Requires the dotPageScanner-config App\
+        \ to carry the agent url and auth token."
+      operationId: runA11yAgentFix
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/A11yAgentFixForm"
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: "The agent's fix report, relayed verbatim from the agent service"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: "identifier is missing, or the page could not be resolved"
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: "The agent App is not configured, or the agent service failed"
+      summary: Run the accessibility fix agent on a page
       tags:
       - Accessibility Agent
   /v1/agents/a11y/fix/stream:
     post:
-      operationId: fixStream
+      description: "Same as /fix, but relays the agent's Server-Sent Events as they\
+        \ arrive rather than waiting for the run to finish. Frames carry the run id,\
+        \ phase steps, progress counts, heartbeats, and a terminal done, aborted or\
+        \ error event. A configuration failure is reported as an SSE error frame rather\
+        \ than an HTTP status, because the response has already begun."
+      operationId: streamA11yAgentFix
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/A11yAgentFixForm"
       responses:
-        default:
+        "200":
           content:
-            text/event-stream:
-              schema:
-                $ref: "#/components/schemas/EventOutput"
-          description: default response
+            text/event-stream: {}
+          description: SSE stream of agent events (text/event-stream)
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+      summary: "Run the accessibility fix agent, streaming progress over SSE"
       tags:
       - Accessibility Agent
   /v1/agents/a11y/stop:
     post:
-      operationId: stop
+      description: "Cooperatively stops the run identified by runId. The agent stops\
+        \ at its next safe checkpoint and the open /fix/stream connection receives\
+        \ a terminal aborted event carrying a partial report - fixes already applied\
+        \ are kept. Runs are addressed by runId rather than by caller identity, because\
+        \ the proxy mints a fresh token per request."
+      operationId: stopA11yAgentRun
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/A11yAgentStopForm"
       responses:
-        default:
+        "202":
           content:
             application/json: {}
-          description: default response
+          description: "Stop signalled, or no such run was active - both are success"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: runId is missing
+        "401":
+          content:
+            application/json: {}
+          description: Authentication required
+      summary: Stop an in-flight accessibility fix run
       tags:
       - Accessibility Agent
   /v1/ai/completions:
@@ -12657,7 +12712,7 @@ paths:
       - OSGi Plugins
   /v1/osgi/jar/{jar}/_stop:
     put:
-      operationId: stop_1
+      operationId: stop
       parameters:
       - in: path
         name: jar

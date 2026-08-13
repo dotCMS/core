@@ -5,9 +5,11 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,6 +18,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -43,6 +50,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -98,6 +106,32 @@ public class A11yAgentResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "runA11yAgentFix",
+            summary = "Run the accessibility fix agent on a page",
+            description = "Resolves the page identifier to a live URL, URI and host id, mints a "
+                    + "short-lived token for the calling user, and forwards the request to the "
+                    + "configured a11y agent service. Returns the agent's report once the run "
+                    + "completes. This call is synchronous and a full run can take minutes - use "
+                    + "/fix/stream to receive progress as it happens. Requires the "
+                    + "dotPageScanner-config App to carry the agent url and auth token."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "The agent's fix report, relayed verbatim from the agent service",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400",
+                    description = "identifier is missing, or the page could not be resolved",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "The agent App is not configured, or the agent service failed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class)))
+    })
     public Response fix(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -127,6 +161,23 @@ public class A11yAgentResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(SseFeature.SERVER_SENT_EVENTS)
+    @Operation(
+            operationId = "streamA11yAgentFix",
+            summary = "Run the accessibility fix agent, streaming progress over SSE",
+            description = "Same as /fix, but relays the agent's Server-Sent Events as they "
+                    + "arrive rather than waiting for the run to finish. Frames carry the run id, "
+                    + "phase steps, progress counts, heartbeats, and a terminal done, aborted or "
+                    + "error event. A configuration failure is reported as an SSE error frame "
+                    + "rather than an HTTP status, because the response has already begun."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "SSE stream of agent events (text/event-stream)",
+                    content = @Content(mediaType = SseFeature.SERVER_SENT_EVENTS)),
+            @ApiResponse(responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     public EventOutput fixStream(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -165,6 +216,27 @@ public class A11yAgentResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "stopA11yAgentRun",
+            summary = "Stop an in-flight accessibility fix run",
+            description = "Cooperatively stops the run identified by runId. The agent stops at "
+                    + "its next safe checkpoint and the open /fix/stream connection receives a "
+                    + "terminal aborted event carrying a partial report - fixes already applied "
+                    + "are kept. Runs are addressed by runId rather than by caller identity, "
+                    + "because the proxy mints a fresh token per request."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202",
+                    description = "Stop signalled, or no such run was active - both are success",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400",
+                    description = "runId is missing",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     public Response stop(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -182,7 +254,7 @@ public class A11yAgentResource {
             return ctx.errorResponse;
         }
 
-        final String payload = "{\"runId\":" + jsonString(body.runId()) + "}";
+        final String payload = writeJson(Map.of("runId", body.runId()));
         return forwardJson(ctx.agentUrl + "/stop", payload,
                 ctx.serviceAuthToken, ctx.shortLivedToken, "POST");
     }
@@ -198,6 +270,21 @@ public class A11yAgentResource {
     @Path("/active-run")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getA11yAgentActiveRun",
+            summary = "Get the caller's active or most recent agent run",
+            description = "Returns the run the agent service currently associates with the "
+                    + "calling user, so a client that reconnects (a reload, or a second tab) can "
+                    + "rejoin a run already in progress instead of starting a duplicate."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "The active or last run, relayed from the agent service",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     public Response activeRun(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) {
@@ -514,7 +601,7 @@ public class A11yAgentResource {
         // reaches the client instead of failing JSON.parse into a generic message.
         final String data = body.startsWith("{") || body.startsWith("[")
                 ? body
-                : "{\"message\":" + jsonString(body) + "}";
+                : writeJson(Map.of("message", body));
 
         try {
             output.write(new OutboundEvent.Builder()
@@ -537,8 +624,11 @@ public class A11yAgentResource {
     private static void writeErrorEvent(final EventOutput output, final int status,
             final String message) {
         try {
-            final String data = "{\"type\":\"error\",\"status\":" + status
-                    + ",\"message\":" + jsonString(message) + "}";
+            final Map<String, Object> error = new LinkedHashMap<>();
+            error.put("type", "error");
+            error.put("status", status);
+            error.put("message", message);
+            final String data = writeJson(error);
             output.write(new OutboundEvent.Builder()
                     .name("error")
                     .mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -638,6 +728,24 @@ public class A11yAgentResource {
         return Optional.of(new String[]{ base + "/agents/a11y", apiAuthToken });
     }
 
+    /**
+     * Mints the short-lived JWT the agent service uses to call back into dotCMS as this user.
+     *
+     * <p>On the {@code requestingIp} argument: it is AUDIT metadata recording who asked for the
+     * token, not an enforcement field, so passing the browser's address here is correct even
+     * though the agent calls back from a different egress. Enforcement is
+     * {@code ApiToken.allowNetwork}, checked by {@code JsonWebTokenFactory} via
+     * {@link ApiToken#isInIpRange(String)}; a null {@code allowNetwork} means unrestricted, and
+     * this token deliberately leaves it unset because the agent's egress address is not known
+     * to dotCMS. Setting it would need the operator to supply the agent's CIDR.</p>
+     *
+     * <p>The token carries the user's full rights for {@code DOT_PAGE_SCANNER_TOKEN_TTL_MS}
+     * (default 5 minutes) and is not revoked after use.</p>
+     *
+     * @param user    the authenticated backend user the token acts as
+     * @param request the originating request, used only for the audit IP
+     * @return the signed JWT, or null when minting failed
+     */
     private String mintShortLivedToken(final User user, final HttpServletRequest request) {
         try {
             final long ttlMs = Config.getLongProperty("DOT_PAGE_SCANNER_TOKEN_TTL_MS",
@@ -667,24 +775,49 @@ public class A11yAgentResource {
             final PageInfo p,
             final boolean skipCss) {
 
-        // The minted token goes in Authorization: Bearer (plan §8.2), not the body.
+        // The minted token goes in Authorization: Bearer (plan 8.2), not the body.
         // The body carries only the resolved page fields (FixRequestSchema contract).
-        // hostId is required at the top level by the agent; it is also kept inside
-        // `page` since the agent's page object still carries it.
-        return "{"
-                + "\"runId\":" + jsonString(runId) + ","
-                + "\"dotcmsBaseUrl\":" + jsonString(dotcmsBaseUrl) + ","
-                + "\"hostId\":" + jsonString(p.hostId) + ","
-                + "\"page\":{"
-                + "\"identifier\":" + jsonString(p.identifier) + ","
-                + "\"uri\":" + jsonString(p.uri) + ","
-                + "\"liveUrl\":" + jsonString(p.liveUrl) + ","
-                + "\"host\":" + jsonString(p.host) + ","
-                + "\"hostId\":" + jsonString(p.hostId) + ","
-                + "\"languageId\":" + p.languageId
-                + "},"
-                + "\"options\":{\"skipCss\":" + skipCss + "}"
-                + "}";
+        // hostId is required at the top level by the agent; it is also kept inside the
+        // page object since the agent still reads it there.
+        final Map<String, Object> page = new LinkedHashMap<>();
+        page.put("identifier", p.identifier);
+        page.put("uri", p.uri);
+        page.put("liveUrl", p.liveUrl);
+        page.put("host", p.host);
+        page.put("hostId", p.hostId);
+        page.put("languageId", p.languageId);
+
+        final Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("runId", runId);
+        payload.put("dotcmsBaseUrl", dotcmsBaseUrl);
+        payload.put("hostId", p.hostId);
+        payload.put("page", page);
+        payload.put("options", Map.of("skipCss", skipCss));
+
+        return writeJson(payload);
+    }
+
+    /**
+     * Serializes a payload with the shared Jackson mapper.
+     *
+     * <p>Jackson rather than string concatenation: the hand-rolled escaping this replaces
+     * covered only backslash, quote, newline, carriage return and tab, leaving the rest of the
+     * U+0000-U+001F control range (notably backspace and form feed) raw. A page title or URI
+     * carrying one of those produced JSON the agent could not parse, for a request that was
+     * otherwise perfectly valid.
+     *
+     * @param payload the object graph to serialize
+     * @return the JSON representation
+     */
+    private static String writeJson(final Object payload) {
+        try {
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            // Only reachable if the maps above stop being plain data, which would be a bug
+            // here rather than bad input - fail loudly instead of forwarding a malformed body.
+            throw new IllegalStateException("Unable to serialize the a11y agent payload", e);
+        }
     }
 
     private static String buildBaseUrl(final HttpServletRequest request) {
@@ -703,18 +836,6 @@ public class A11yAgentResource {
         return value.replaceAll("[^\\u0020-\\u007E\\u0080-\\u00FF]", "").trim();
     }
 
-    private static String jsonString(final String value) {
-        if (value == null) {
-            return "null";
-        }
-        return "\"" + value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-                + "\"";
-    }
 
     // -------------------------------------------------------------------------
     // Private record-like holders
