@@ -57,7 +57,6 @@
         </div>
     </p-toolbar>
 
-    <!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
     <div
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
         data-testid="experiments-table-wrapper">
@@ -79,27 +78,17 @@
             data-testid="experiments-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <!-- Every column below whose content is bounded gets that bound as its
-                         width: an enumerated label, a number, a date, a tag, a button. Experiment
-                         is the only one whose content is open-ended, so it takes `w-full` and
-                         absorbs whatever is left over — the name and description get the slack
-                         rather than the dates being padded out with it. -->
                     <th class="w-full">{{ 'experiments.list.header.experiment' | dm }}</th>
                     <th class="w-56">{{ 'experiments.list.header.page' | dm }}</th>
-                    <!-- Widest goal label is "Click on Element", which needs more than w-36
-                         once cell padding is counted. -->
                     <th class="w-44 whitespace-nowrap">
                         {{ 'experiments.list.header.goal' | dm }}
                     </th>
-                    <!-- The header word is wider than any count it sits over. -->
                     <th class="w-28 text-center! whitespace-nowrap">
                         {{ 'experiments.list.header.variants' | dm }}
                     </th>
-                    <!-- Two dates and a separator. -->
                     <th class="w-60 whitespace-nowrap">
                         {{ 'experiments.list.header.schedule' | dm }}
                     </th>
-                    <!-- Widest status tag is "Scheduled". -->
                     <th class="w-32 whitespace-nowrap">
                         {{ 'experiments.list.header.status' | dm }}
                     </th>
@@ -107,9 +96,6 @@
                         {{ 'experiments.list.header.modified' | dm }}
                         <p-sortIcon field="modDate" />
                     </th>
-                    <!-- Unnamed, like content-drive: the row actions reveal on hover, so a
-                         header label would announce a column that is usually empty. One small
-                         kebab is all it ever holds. -->
                     <th class="w-16"></th>
                 </tr>
             </ng-template>
@@ -130,9 +116,6 @@
                 } @else {
                     <tr class="group" data-testid="experiment-row">
                         <td class="max-w-0" data-testid="experiment-name">
-                            <!-- `min-w-0` so the flex children may shrink below their text width,
-                                 which is what lets `truncate` ellipsize instead of overflowing.
-                                 The full value stays reachable as a tooltip. -->
                             <div class="flex min-w-0 flex-col">
                                 <span class="truncate font-medium" [title]="row.experiment.name">
                                     {{ row.experiment.name }}
@@ -158,9 +141,6 @@
                         <td class="text-center!" data-testid="experiment-variants">
                             {{ row.variants }}
                         </td>
-                        <!-- The date range and the date below are single values that read as
-                             one line; wrapping them mid-range is what pushed rows to double
-                             height on a narrow viewport. -->
                         <td class="whitespace-nowrap" data-testid="experiment-schedule">
                             {{ row.schedule }}
                         </td>
@@ -174,14 +154,9 @@
                             {{ row.experiment.modDate | date: 'MMM d, y' }}
                         </td>
                         <td>
-                            <!-- One control: every row action lives in the kebab, archive and
-                                 restore included. Revealed on row hover like content-drive, with
-                                 opacity rather than a conditional so the cell keeps its width and
-                                 the row never shifts as the pointer crosses it; `focus-within`
-                                 keeps it reachable by keyboard, where there is no hover.
-                                 The design leads this cell with "View Results" / "Configure", but
-                                 both screens land with #36990+, and a control that cannot go
-                                 anywhere is noise (AC10). -->
+                            <!-- The design leads this cell with "View Results" / "Configure",
+                                 but both screens land with #36990+, so only the kebab is here
+                                 (AC10). -->
                             <div
                                 class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
                                 <p-button
