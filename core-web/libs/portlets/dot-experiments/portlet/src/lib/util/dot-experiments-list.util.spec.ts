@@ -8,13 +8,14 @@ import {
 } from '@dotcms/dotcms-models';
 
 import {
-    ExperimentPageInfoMap,
     ExperimentScheduleLabels,
     formatSchedule,
     goalTypeOf,
     resolvePagePath,
     variantsCount
 } from './dot-experiments-list.util';
+
+import { DotExperimentPageInfo } from '../shared/models';
 
 const LABELS: ExperimentScheduleLabels = {
     open: 'Until stopped',
@@ -122,7 +123,7 @@ describe('dot-experiments-list.util', () => {
     });
 
     describe('resolvePagePath', () => {
-        const PAGE_INFO: ExperimentPageInfoMap = {
+        const PAGE_INFO: Record<string, DotExperimentPageInfo> = {
             'page-1': { url: '/blog/index', host: 'host-1' },
             'page-empty-url': { url: '', host: 'host-1' }
         };

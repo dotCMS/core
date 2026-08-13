@@ -1,7 +1,7 @@
 import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
 import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { EMPTY, SubscriptionLike } from 'rxjs';
+import { of, SubscriptionLike } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -35,7 +35,8 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
-    OPT_IN_STATUSES
+    OPT_IN_STATUSES,
+    PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
 import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
 import {
@@ -46,7 +47,7 @@ import {
     fromRouteParams,
     goalTypeOfExperiment,
     parseViewState,
-    toPageInfoByPageId,
+    resolvedPageInfo,
     toQueryParams
 } from '../util/dot-experiments-list-store.util';
 
@@ -401,22 +402,23 @@ export const DotExperimentsListStore = signalStore(
                     switchMap(({ payload }) => {
                         const pageIds = distinctPageIds(payload);
 
+                        // Nothing to resolve, but the status still has to leave `loading`:
+                        // `listSucceeded` set it there for any non-empty payload, and no other
+                        // event would follow. Returning EMPTY left the skeleton spinning forever.
                         if (pageIds.length === 0) {
-                            return EMPTY;
+                            return of(dotExperimentsApiEvents.pageInfoSucceeded({}));
                         }
 
                         return contentSearchService
                             .get<ContentSearchEntity>({
                                 query: `+contentType:htmlpageasset +working:true +identifier:(${pageIds.join(' ')})`,
-                                limit: pageIds.length
+                                limit: pageIds.length * PAGE_LOOKUP_LANGUAGE_HEADROOM
                             })
                             .pipe(
                                 mapResponse({
                                     next: (entity) =>
                                         dotExperimentsApiEvents.pageInfoSucceeded(
-                                            toPageInfoByPageId(
-                                                entity?.jsonObjectView?.contentlets ?? []
-                                            )
+                                            resolvedPageInfo(entity, pageIds)
                                         ),
                                     error: toFailure(dotExperimentsApiEvents.pageInfoFailed)
                                 })

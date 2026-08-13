@@ -98,3 +98,17 @@ export const LISTBOX_SCROLL_HEIGHT = '320px';
 
 /** Idle time before a search term is applied, in ms. */
 export const SEARCH_DEBOUNCE_MS = 300;
+
+/**
+ * Multiplier applied to the page-lookup limit.
+ *
+ * Elasticsearch holds one document per identifier *and* language, so a multilingual site returns
+ * several documents per page. Limiting to the number of pages therefore truncated the response at
+ * HTTP 200, and every page that fell off the end took its experiments with it — the site filter
+ * fails closed, so they vanished from the list with no error to show for it.
+ *
+ * Any language's document carries the `host` and `url` this lookup needs, and duplicates collapse
+ * by identifier, so over-asking is harmless. This is deliberately far above any realistic language
+ * count rather than tuned; the shortfall check in the store is what catches it being wrong.
+ */
+export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;

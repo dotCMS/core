@@ -568,12 +568,16 @@ describe('DotExperimentsListComponent', () => {
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
         });
 
-        it('should re-request the list when retry is pressed', () => {
+        it('should re-run the health gate when retry is pressed, not just the list', () => {
             renderError();
 
             clickButton('experiments-error');
 
-            expect(dispatchedEvents()).toContainEqual(
+            // Requesting the list alone would fetch experiments the gate never cleared, and
+            // `$isLoading` keys off a null healthStatus — so the table would sit on skeletons
+            // even after the list came back.
+            expect(dispatchedEvents()).toContainEqual(dotExperimentsListPageEvents.checkHealth());
+            expect(dispatchedEvents()).not.toContainEqual(
                 dotExperimentsListPageEvents.loadExperiments()
             );
         });
@@ -762,6 +766,82 @@ describe('DotExperimentsListComponent', () => {
             expect(paginator?.querySelector('.p-paginator-pages')).toBeNull();
             expect(paginator?.querySelector('.p-paginator-prev')).not.toBeNull();
             expect(paginator?.querySelector('.p-paginator-next')).not.toBeNull();
+        });
+    });
+
+    describe('table events', () => {
+        it('should translate a lazy-load offset into a 1-based page', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onLazyLoad({ first: 50, rows: 25 });
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 25 })
+            );
+        });
+
+        it('should fall back to the store paging when the event omits it', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onLazyLoad({});
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.pageChanged({
+                    page: 1,
+                    perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE
+                })
+            );
+        });
+
+        it('should map the sort order onto a direction', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onLazyLoad({
+                first: 0,
+                rows: 25,
+                sortField: 'name',
+                sortOrder: -1
+            });
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'name', direction: 'DESC' })
+            );
+        });
+
+        it('should take the first field when the table reports an array', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onLazyLoad({
+                first: 0,
+                rows: 25,
+                sortField: ['status', 'name'],
+                sortOrder: 1
+            });
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'status', direction: 'ASC' })
+            );
+        });
+
+        it('should not dispatch a sort when the event carries no field', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+            // Rendering the table fires its own lazy load, and that one does carry the current
+            // sort field — so only what happens after this point is under test.
+            dispatch.mockClear();
+
+            spectator.component.onLazyLoad({ first: 0, rows: 25 });
+
+            expect(dispatchedEvents().some(({ type }) => type.includes('sortChanged'))).toBe(false);
+        });
+
+        it('should dispatch statusesChanged with the picked statuses', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onStatusesChange([DotExperimentStatus.ENDED]);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.ENDED])
+            );
         });
     });
 });

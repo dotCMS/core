@@ -7,7 +7,7 @@ import {
     type TrafficProportion
 } from '@dotcms/dotcms-models';
 
-import { ExperimentListAction } from '../shared/models';
+import { DotExperimentPageInfo, ExperimentListAction } from '../shared/models';
 
 /** Day-level format shared by every schedule cell of the experiments list (e.g. `Jun 25, 2026`). */
 const SCHEDULE_DATE_FORMAT: Intl.DateTimeFormatOptions = {
@@ -29,15 +29,6 @@ export interface ExperimentScheduleLabels {
     /** Shown when the experiment has no usable start date. */
     none: string;
 }
-
-/** Page metadata used to turn an experiment's `pageId` into something readable. */
-export interface ExperimentPageInfo {
-    url: string;
-    host: string;
-}
-
-/** Page metadata indexed by page identifier. */
-export type ExperimentPageInfoMap = Record<string, ExperimentPageInfo>;
 
 /**
  * Formats an experiment schedule as a single display string.
@@ -83,7 +74,10 @@ export function variantsCount(trafficProportion: TrafficProportion | null | unde
  * Resolves the readable page path for an experiment, falling back to the raw `pageId`
  * when the page is missing from the map (deleted page, or metadata not loaded yet).
  */
-export function resolvePagePath(pageId: string, pageInfoByPageId: ExperimentPageInfoMap): string {
+export function resolvePagePath(
+    pageId: string,
+    pageInfoByPageId: Record<string, DotExperimentPageInfo>
+): string {
     const url = pageInfoByPageId?.[pageId]?.url;
 
     return url ? url : pageId;

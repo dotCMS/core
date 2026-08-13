@@ -98,7 +98,7 @@ Each feature slice owns a named prefix in the flat state (e.g. `editor*`, `view*
 |-------|-------|------|
 | `eventGroup({ source, events: { name: type<Payload>() } })` | `*.events.ts` | One group per source; async flows use `Requested → Succeeded → Failed` triples |
 | `withReducer(on(event, ({ payload }, state) => newState))` | store | **Only** place state changes |
-| `withEventHandlers` | store | **Only** place for async/HTTP; `switchMap` so a re-trigger cancels the in-flight request |
+| `withEventHandlers` | store | **Only** place for async/HTTP. Handlers **return** their events — `withEventHandlers` dispatches whatever they emit, so no `Dispatcher` here. Use `switchMap` for loads so a re-trigger cancels the in-flight request, and `mergeMap` for per-row actions so acting on one row does not cancel another |
 | `injectDispatch(eventGroup)` | component | The store exposes **no methods** for state changes |
 
 ### Version note (critical)
@@ -109,14 +109,25 @@ The async hook in the installed `@ngrx/signals` (**21.1.1**) is **`withEventHand
 
 ### Error handling
 
-Same rules as the rest of this guide: the `Failed` handler routes through `DotHttpErrorManagerService.handle(error)` — no custom error UI. A failed LOAD sets `status: 'error'`; a failed CRUD action returns `status` to `'loaded'` so the list stays usable.
+Same rules as the rest of this guide: the `Failed` handler routes through `DotHttpErrorManagerService.handle(error)` — no custom error UI. A failed LOAD sets `status: ERROR`; a failed CRUD action returns `status` to `LOADED` so the list stays usable. Statuses come from the shared `ComponentStatus` in `@dotcms/dotcms-models` — do not declare a local union.
+
+Split the events by *source*, as the NgRx guide does: what the page asks for, and what the API
+answered. The page dispatches only the first group; handlers raise only the second, so the two
+halves of an async flow can never be confused. Name page events as commands.
 
 ```typescript
-// experiments-list.events.ts
-export const experimentsListEvents = eventGroup({
-    source: 'Experiments List',
+// experiments-list-page.events.ts — user intent and lifecycle
+export const experimentsListPageEvents = eventGroup({
+    source: 'Experiments List Page',
     events: {
-        listRequested: type<void>(),
+        loadExperiments: type<void>()
+    }
+});
+
+// experiments-api.events.ts — what came back
+export const experimentsApiEvents = eventGroup({
+    source: 'Experiments API',
+    events: {
         listSucceeded: type<DotExperiment[]>(),
         listFailed: type<unknown>()
     }
@@ -126,38 +137,39 @@ export const experimentsListEvents = eventGroup({
 export const ExperimentsListStore = signalStore(
     withState(initialState),
     withReducer(
-        on(experimentsListEvents.listRequested, (_event, state) => ({
+        // Both groups fold into the one reducer, so reading it tells you who caused each change.
+        on(experimentsListPageEvents.loadExperiments, (_event, state) => ({
             ...state,
-            status: 'loading' as const
+            status: ComponentStatus.LOADING
         })),
-        on(experimentsListEvents.listSucceeded, ({ payload }, state) => ({
+        on(experimentsApiEvents.listSucceeded, ({ payload }, state) => ({
             ...state,
             experiments: payload,
-            status: 'loaded' as const
+            status: ComponentStatus.LOADED
         })),
-        on(experimentsListEvents.listFailed, (_event, state) => ({
+        on(experimentsApiEvents.listFailed, (_event, state) => ({
             ...state,
-            status: 'error' as const
+            status: ComponentStatus.ERROR
         }))
     ),
     withEventHandlers(() => {
         const events = inject(Events);
-        const dispatcher = inject(Dispatcher);
         const service = inject(DotExperimentsService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
 
         return {
-            loadList$: events.on(experimentsListEvents.listRequested).pipe(
+            // Handlers RETURN their events; `withEventHandlers` dispatches whatever they emit, so
+            // no `Dispatcher` is injected here. `Dispatcher` is still needed in `withHooks`,
+            // where there is no stream to return into.
+            loadList$: events.on(experimentsListPageEvents.loadExperiments).pipe(
                 switchMap(() =>
                     service.getAll().pipe(
-                        tapResponse({
-                            next: (experiments) =>
-                                dispatcher.dispatch(
-                                    experimentsListEvents.listSucceeded(experiments)
-                                ),
+                        mapResponse({
+                            next: (experiments) => experimentsApiEvents.listSucceeded(experiments),
                             error: (error: HttpErrorResponse) => {
                                 httpErrorManager.handle(error);
-                                dispatcher.dispatch(experimentsListEvents.listFailed(error));
+
+                                return experimentsApiEvents.listFailed(error);
                             }
                         })
                     )
@@ -167,14 +179,14 @@ export const ExperimentsListStore = signalStore(
     })
 );
 
-// component
-readonly #dispatch = injectDispatch(experimentsListEvents);
+// component — dispatches page events only; API events are listened to, never dispatched here
+readonly #dispatch = injectDispatch(experimentsListPageEvents);
 ```
 
 ### Reference implementations
 
 - `libs/image-editor/src/lib/store/` — feature-sliced: `image-editor.events.ts` + `features/with-*.feature.ts`
-- `libs/portlets/dot-experiments/portlet/src/lib/site-wide/store/` — single-store list example
+- `libs/portlets/dot-experiments/portlet/src/lib/store/` — single-store list example, with the page/API event split below
 
 ## Nx Generator Post-Setup
 

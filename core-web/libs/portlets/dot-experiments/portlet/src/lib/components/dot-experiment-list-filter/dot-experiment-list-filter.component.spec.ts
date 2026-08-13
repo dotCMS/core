@@ -30,6 +30,26 @@ describe('DotExperimentListFilterComponent', () => {
         detectChanges: false
     });
 
+    /** The listbox lives inside the popover, which only renders once the chip opens it. */
+    const openPopover = (): void => {
+        spectator.click(spectator.query(byTestId('experiment-list-filter-chip')) as HTMLElement);
+        spectator.detectChanges();
+    };
+
+    /** Toggles an option the way a user does, so the model round-trip is exercised. */
+    const clickOption = (testId: string): void => {
+        openPopover();
+        spectator.click(spectator.query(byTestId(testId)) as HTMLElement);
+        spectator.detectChanges();
+    };
+
+    const captureSelectionChange = (): jest.Mock => {
+        const selectionChange = jest.fn();
+        spectator.output('selectionChange').subscribe(selectionChange);
+
+        return selectionChange;
+    };
+
     const setUp = (selected: string[] = []) => {
         spectator = createComponent({
             props: {
@@ -73,6 +93,35 @@ describe('DotExperimentListFilterComponent', () => {
     });
 
     describe('selection', () => {
+        it('should emit the whole selection when an option is toggled on', () => {
+            setUp(['DRAFT']);
+            const selectionChange = captureSelectionChange();
+
+            clickOption('option-ended');
+
+            // Emits its own state, not just the option that moved.
+            expect(selectionChange).toHaveBeenCalledWith(['DRAFT', 'ENDED']);
+        });
+
+        it('should emit the remainder when an option is toggled off', () => {
+            setUp(['DRAFT', 'ENDED']);
+            const selectionChange = captureSelectionChange();
+
+            clickOption('option-ended');
+
+            expect(selectionChange).toHaveBeenCalledWith(['DRAFT']);
+        });
+
+        it('should emit an empty array rather than null when the last option is unticked', () => {
+            setUp(['DRAFT']);
+            const selectionChange = captureSelectionChange();
+
+            clickOption('option-draft');
+
+            // PrimeNG can hand back null once nothing is selected; the store expects an array.
+            expect(selectionChange).toHaveBeenCalledWith([]);
+        });
+
         it('should emit the emptied selection when the chip is cleared', () => {
             setUp(['DRAFT']);
 

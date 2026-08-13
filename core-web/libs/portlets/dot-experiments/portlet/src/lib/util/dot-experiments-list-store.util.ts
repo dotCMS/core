@@ -251,3 +251,35 @@ function startTimeOf(experiment: DotExperiment): number {
     // Already an epoch, so it compares directly.
     return experiment.scheduling?.startDate ?? Number.POSITIVE_INFINITY;
 }
+
+/** Shape of the `/api/content/_search` entity the page lookup reads contentlets from. */
+interface PageLookupEntity {
+    jsonObjectView?: { contentlets?: DotCMSContentlet[] };
+}
+
+/**
+ * Page info for a lookup response, and a warning when the response did not cover every page
+ * asked for.
+ *
+ * An unresolved page is dropped by the site filter, which fails closed — so a short response
+ * shortens the list with no error anywhere and a total that agrees with it. That is
+ * indistinguishable from reality on screen, so the shortfall is at least made diagnosable here.
+ */
+export function resolvedPageInfo(
+    entity: PageLookupEntity | null | undefined,
+    requestedPageIds: string[]
+): Record<string, DotExperimentPageInfo> {
+    const pageInfo = toPageInfoByPageId(entity?.jsonObjectView?.contentlets ?? []);
+    const missing = requestedPageIds.filter((pageId) => !pageInfo[pageId]);
+
+    if (missing.length) {
+        console.warn(
+            `[experiments] page lookup resolved ${requestedPageIds.length - missing.length} of ${
+                requestedPageIds.length
+            } pages. Experiments on the rest are hidden from the list.`,
+            missing
+        );
+    }
+
+    return pageInfo;
+}

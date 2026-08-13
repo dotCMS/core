@@ -315,9 +315,15 @@ export class DotExperimentsListComponent {
         this.#dispatch.goalsChanged(goals as GOAL_TYPES[]);
     }
 
-    /** Re-runs the load after a failure; the store returns to `loading` and then resolves. */
+    /**
+     * Re-runs the whole flow from the health gate, not just the list.
+     *
+     * A failed health check leaves `healthStatus` null, so retrying the list alone would fetch
+     * experiments the gate never cleared — and `$isLoading` keys off that null, which would pin
+     * the table to skeletons even after the list came back. Re-checking sets it either way.
+     */
     onRetry(): void {
-        this.#dispatch.loadExperiments();
+        this.#dispatch.checkHealth();
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {

@@ -31,7 +31,8 @@ import {
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_STATUSES
+    DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
 
 const CURRENT_SITE_ID = 'site-1';
@@ -236,8 +237,43 @@ describe('DotExperimentsListStore', () => {
 
             expect(contentSearchGet).toHaveBeenCalledWith({
                 query: '+contentType:htmlpageasset +working:true +identifier:(page-1 page-2 page-3 page-orphan)',
-                limit: 4
+                // Not the page count: ES holds a document per identifier *and* language, so a
+                // page-count limit truncated the response on any multilingual site.
+                limit: 4 * PAGE_LOOKUP_LANGUAGE_HEADROOM
             });
+        });
+
+        it('should warn when the lookup does not cover every page asked for', () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation();
+            // page-2, page-3 and page-orphan are requested but absent from the response.
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [buildPageContentlet('page-1', '/home', CURRENT_SITE_ID)]
+                    }
+                })
+            );
+
+            initStore();
+
+            // Unresolved pages are dropped by the site filter, which fails closed — so without
+            // this the list just comes back short, with a total that agrees with it.
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringContaining('resolved 1 of 4 pages'),
+                expect.arrayContaining(['page-2', 'page-3', 'page-orphan'])
+            );
+            warn.mockRestore();
+        });
+
+        it('should settle out of loading when no experiment has a resolvable pageId', () => {
+            getAllUnfiltered.mockReturnValue(of([buildExperiment({ id: 'no-page', pageId: '' })]));
+
+            initStore();
+
+            // The lookup is skipped, so nothing else would move the status — it used to sit on
+            // `loading` forever, showing skeletons with no error and no way out.
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(contentSearchGet).not.toHaveBeenCalled();
         });
 
         it('should store the experiments and the resolved page info and end up loaded', () => {
