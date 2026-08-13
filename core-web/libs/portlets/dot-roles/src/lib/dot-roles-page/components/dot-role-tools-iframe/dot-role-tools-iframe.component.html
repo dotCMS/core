@@ -1,0 +1,11 @@
+@if ($iframeUrl(); as url) {
+    <iframe
+        class="size-full min-h-[500px] border-0"
+        [src]="url"
+        data-testid="tools-iframe"
+        [title]="'roles.tab.tools' | dm"></iframe>
+} @else {
+    <p class="text-color-secondary m-0 px-6 py-4" data-testid="tools-empty">
+        {{ 'roles.tools.select-role' | dm }}
+    </p>
+}

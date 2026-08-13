@@ -1,0 +1,42 @@
+@let role = store.selectedRole();
+@if (role) {
+    <header class="flex items-center justify-between gap-4 border-b border-surface-200 px-6 py-4">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-color-secondary text-3xl">
+                {{ $icon() }}
+            </span>
+            <div>
+                <h1 class="m-0 text-xl font-semibold">{{ role.name }}</h1>
+                <p class="text-color-secondary mt-0.5 mb-0 text-sm">
+                    {{ store.memberCount() }} {{ 'roles.header.users' | dm }}
+                    <span class="mx-1">·</span>
+                    {{ 'roles.header.tools-granted' | dm }}
+                </p>
+            </div>
+            @if (role.system) {
+                <span
+                    class="rounded-lg bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary"
+                    data-testid="chip-system">
+                    {{ 'roles.chip.system' | dm }}
+                </span>
+            }
+            @if (role.locked) {
+                <span
+                    class="rounded-lg bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary"
+                    data-testid="chip-locked">
+                    {{ 'roles.chip.locked' | dm }}
+                </span>
+            }
+        </div>
+
+        <button
+            pButton
+            type="button"
+            (click)="onEditRole()"
+            data-testid="edit-role-btn"
+            [outlined]="true"
+            [disabled]="store.isSystemRole()">
+            {{ 'roles.action.edit' | dm }}
+        </button>
+    </header>
+}
