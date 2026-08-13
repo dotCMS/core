@@ -16,7 +16,8 @@ import { take } from 'rxjs/operators';
 
 import { PushPublishService } from '@dotcms/data-access';
 import { DotEnvironment } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

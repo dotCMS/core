@@ -7,6 +7,13 @@ export * from './lib/components/add-to-bundle/dot-add-to-bundle.component';
 export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
 export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
+// Moved out of `apps/dotcms-ui` so libs can embed it without reaching back into the app
+// (`dotcms-ui` -> portlet -> `@components/*` -> `dotcms-ui` is a project cycle).
+export * from './lib/components/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
+// Workflow action input steps: embeddable, dialog-free forms that collect what an action declares in
+// its `actionInputs[]`. Consumers own the step frame and gate on `validChange`.
+export * from './lib/components/dot-workflow-assign-comment/dot-workflow-assign-comment.component';
+export * from './lib/components/dot-workflow-push-publish/dot-workflow-push-publish.component';
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';

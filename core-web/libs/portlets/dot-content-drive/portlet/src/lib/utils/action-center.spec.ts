@@ -15,8 +15,11 @@ import {
     groupByContentType,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
+    requiredInputKinds,
     toActionCenterSchemes,
-    toContentletInodes
+    toContentletInodes,
+    toHostFolderValue,
+    toPathToMove
 } from './action-center';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
@@ -34,6 +37,26 @@ const contentlet = (
 
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
+
+/** An action that fires straight from the selection. */
+const NO_INPUTS = {
+    moveable: false,
+    pushPublish: false,
+    assignable: false,
+    commentable: false
+};
+
+/** Builds a bare action carrying only the input flags under test. */
+const actionWithInputs = (
+    inputs: Partial<DotActionCenterWorkflowAction['inputs']>
+): DotActionCenterWorkflowAction =>
+    ({
+        id: 'a1',
+        name: 'Action',
+        count: 1,
+        inputs: { ...NO_INPUTS, ...inputs },
+        contentTypes: []
+    }) as DotActionCenterWorkflowAction;
 
 /**
  * Builds a `BulkActionView` fixture. `steps` is a list of `[stepCount, actions]` pairs so tests can
@@ -335,12 +358,13 @@ describe('action-center utils', () => {
             ).toEqual(expected);
         });
 
-        it('should mark Add to Bundle as pending so it can never be fired', () => {
+        it('should leave Add to Bundle selectable', () => {
+            // No longer pending: the bundle picker exists, so the row opens its configuration step.
             const addToBundle = getQuickActions([contentlet({ inode: 'a' })]).find(
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.pendingHint).toBeTruthy();
+            expect(addToBundle?.count).toBe(1);
         });
 
         it('should count Add to Bundle against every selected contentlet', () => {
@@ -461,7 +485,7 @@ describe('action-center utils', () => {
             expect(toActionCenterSchemes(view)).toEqual([]);
         });
 
-        it('should flag actions needing extra input', () => {
+        it('should carry the input flags the API advertises', () => {
             const view = bulkActionView('System Workflow', [
                 [
                     1,
@@ -478,7 +502,7 @@ describe('action-center utils', () => {
             const byId = new Map(
                 toActionCenterSchemes(view)[0].actions.map((action) => [
                     action.id,
-                    action.requiresInput
+                    Object.values(action.inputs).some(Boolean)
                 ])
             );
 
@@ -487,6 +511,43 @@ describe('action-center utils', () => {
             expect(byId.get('as')).toBe(true);
             expect(byId.get('cm')).toBe(true);
             expect(byId.get('ok')).toBe(false);
+        });
+
+        it('should carry each input flag through individually', () => {
+            // The roll-up is not enough: the dialog collects a move path but not the other three, so
+            // it has to be able to tell which kind an action is asking for.
+            const view = bulkActionView('System Workflow', [
+                [
+                    1,
+                    [
+                        {
+                            id: 'combo',
+                            name: 'Approve',
+                            count: 1,
+                            flags: { assignable: true, commentable: true, pushPublish: true }
+                        },
+                        { id: 'mv', name: 'Move', count: 1, flags: { moveable: true } }
+                    ]
+                ]
+            ]);
+
+            const byId = new Map(
+                toActionCenterSchemes(view)[0].actions.map((action) => [action.id, action.inputs])
+            );
+
+            // One action, three inputs at once — the case a single boolean cannot express.
+            expect(byId.get('combo')).toEqual({
+                moveable: false,
+                pushPublish: true,
+                assignable: true,
+                commentable: true
+            });
+            expect(byId.get('mv')).toEqual({
+                moveable: true,
+                pushPublish: false,
+                assignable: false,
+                commentable: false
+            });
         });
 
         it('should flag a count as approximate when the action has a condition', () => {
@@ -672,7 +733,7 @@ describe('action-center utils', () => {
             id: 'a1',
             name: 'Copy',
             count: 1,
-            requiresInput: false,
+            inputs: NO_INPUTS,
             approximateCount: false,
             contentTypes
         });
@@ -700,6 +761,113 @@ describe('action-center utils', () => {
 
         it('should return nothing when no contentlet matches', () => {
             expect(eligibleContentlets(action(['Unrelated']), items)).toEqual([]);
+        });
+    });
+
+    describe('requiredInputKinds', () => {
+        it('should return nothing for an action that fires from the selection alone', () => {
+            expect(requiredInputKinds(actionWithInputs({}))).toEqual([]);
+        });
+
+        it('should collapse assignable and commentable into one screen', () => {
+            expect(
+                requiredInputKinds(actionWithInputs({ assignable: true, commentable: true }))
+            ).toEqual(['assignComment']);
+        });
+
+        it('should order the screens as the legacy wizard does', () => {
+            // Assign/comment before push publish, so the sequence matches the old dialog.
+            expect(
+                requiredInputKinds(
+                    actionWithInputs({ pushPublish: true, commentable: true, moveable: true })
+                )
+            ).toEqual(['move', 'assignComment', 'pushPublish']);
+        });
+
+        it('should return nothing when there is no action', () => {
+            expect(requiredInputKinds(undefined)).toEqual([]);
+        });
+
+        it.each([
+            ['a move path', { moveable: true }, ['move']],
+            ['an assignee', { assignable: true }, ['assignComment']],
+            ['a comment', { commentable: true }, ['assignComment']],
+            ['push publish', { pushPublish: true }, ['pushPublish']]
+        ])('should return one section for an action needing %s', (_label, inputs, expected) => {
+            expect(requiredInputKinds(actionWithInputs(inputs))).toEqual(expected);
+        });
+
+        it.each([
+            ['a move path and an assignee', { moveable: true, assignable: true }],
+            ['push publish and a comment', { pushPublish: true, commentable: true }],
+            ['a move path and push publish', { moveable: true, pushPublish: true }]
+        ])('should return every section for an action needing %s', (_label, inputs) => {
+            // Nothing is refused any more: all of them render together on one screen.
+            expect(requiredInputKinds(actionWithInputs(inputs)).length).toBe(2);
+        });
+    });
+
+    describe('toPathToMove', () => {
+        it('should convert the picker value into the actionlet path format', () => {
+            expect(toPathToMove('demo.dotcms.com:/application/containers')).toBe(
+                '//demo.dotcms.com/application/containers'
+            );
+        });
+
+        it('should handle a site root', () => {
+            expect(toPathToMove('demo.dotcms.com:/')).toBe('//demo.dotcms.com/');
+        });
+
+        it('should insert the missing separator when the path has none', () => {
+            expect(toPathToMove('demo.dotcms.com:application')).toBe(
+                '//demo.dotcms.com/application'
+            );
+        });
+
+        it.each([
+            ['unset', undefined],
+            ['null', null],
+            ['empty', ''],
+            // No hostname to build a path from — `//:/x` would be sent as a valid-looking path and
+            // rejected server-side with an opaque error.
+            ['a leading separator', ':/application'],
+            ['no separator', 'demo.dotcms.com']
+        ])('should return nothing for %s', (_label, value) => {
+            expect(toPathToMove(value)).toBe('');
+        });
+    });
+
+    describe('toHostFolderValue', () => {
+        it('should convert the actionlet path into the picker format', () => {
+            expect(toHostFolderValue('//demo.dotcms.com/application/containers')).toBe(
+                'demo.dotcms.com:/application/containers'
+            );
+        });
+
+        it('should convert a site root', () => {
+            expect(toHostFolderValue('//demo.dotcms.com/')).toBe('demo.dotcms.com:/');
+        });
+
+        it('should treat a bare host as the site root', () => {
+            expect(toHostFolderValue('//demo.dotcms.com')).toBe('demo.dotcms.com:/');
+        });
+
+        it.each([
+            ['unset', undefined],
+            ['null', null],
+            ['empty', ''],
+            ['a missing prefix', 'demo.dotcms.com/application'],
+            ['only the prefix', '//']
+        ])('should return nothing for %s', (_label, value) => {
+            expect(toHostFolderValue(value)).toBe('');
+        });
+
+        it('should round-trip with toPathToMove', () => {
+            // The two conversions bracket the picker, so a value that survives one has to survive
+            // both — otherwise the seeded destination would differ from the one that gets sent.
+            const path = '//demo.dotcms.com/application/containers';
+
+            expect(toPathToMove(toHostFolderValue(path))).toBe(path);
         });
     });
 });
