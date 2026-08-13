@@ -26,6 +26,51 @@ function mockSseResponse(chunks: string[], { ok = true, status = 200 } = {}): Re
     return { ok, status, statusText: 'OK', body } as unknown as Response;
 }
 
+/**
+ * A response body the test drives read-by-read. Each entry is either a chunk to emit or a
+ * rejection, so a failure can be placed AFTER events have already been delivered — the case
+ * that distinguishes "the connection never opened" from "it died mid-run".
+ */
+function controllableSseResponse(steps: Array<string | Error>): {
+    response: Response;
+    reads: () => number;
+} {
+    const encoder = new TextEncoder();
+    let i = 0;
+    const body = {
+        getReader() {
+            return {
+                read() {
+                    if (i >= steps.length) {
+                        return Promise.resolve({ value: undefined, done: true });
+                    }
+                    const step = steps[i++];
+
+                    return step instanceof Error
+                        ? Promise.reject(step)
+                        : Promise.resolve({ value: encoder.encode(step), done: false });
+                }
+            };
+        }
+    } as unknown as ReadableStream<Uint8Array>;
+
+    return {
+        response: { ok: true, status: 200, statusText: 'OK', body } as unknown as Response,
+        reads: () => i
+    };
+}
+
+/** A body that never resolves a read, so the stream stays open until it is aborted. */
+function neverEndingSseResponse(): Response {
+    const body = {
+        getReader() {
+            return { read: () => new Promise<never>(() => undefined) };
+        }
+    } as unknown as ReadableStream<Uint8Array>;
+
+    return { ok: true, status: 200, statusText: 'OK', body } as unknown as Response;
+}
+
 interface DemoResult {
     total: number;
 }
@@ -302,6 +347,74 @@ describe('DotAgentRunService', () => {
             await expect(
                 firstValueFrom(service.run<DemoResult>('/url', {}).pipe(toArray()))
             ).rejects.toThrow(/Agent request failed \(500/);
+        });
+
+        it('aborts the in-flight request when the caller unsubscribes', async () => {
+            // The teardown `() => controller.abort()` is the ONLY thing stopping a running
+            // agent stream when the user navigates away or restarts a run. Nothing else in
+            // this suite touches it, so a refactor that dropped `signal` from the fetch call
+            // — or moved the abort — would leave every other test green while leaking a
+            // request per abandoned run.
+            fetchMock.mockResolvedValue(neverEndingSseResponse());
+
+            const subscription = service.run<DemoResult>('/url', {}).subscribe();
+            // Let the async fetch start so the signal is actually attached.
+            await Promise.resolve();
+
+            const signal = (fetchMock.mock.calls[0][1] as RequestInit).signal as AbortSignal;
+            expect(signal.aborted).toBe(false);
+
+            subscription.unsubscribe();
+
+            expect(signal.aborted).toBe(true);
+        });
+
+        it('errors the observable when fetch itself rejects', async () => {
+            // A network drop before any response — the connection never opened.
+            fetchMock.mockRejectedValue(new Error('network down'));
+
+            await expect(
+                firstValueFrom(service.run<DemoResult>('/url', {}).pipe(toArray()))
+            ).rejects.toThrow(/network down/);
+        });
+
+        it('errors the observable when the read fails mid-stream', async () => {
+            // The dangerous one: events were already delivered, so a swallowed failure here
+            // reads as a run that simply stopped talking rather than one that broke.
+            const { response } = controllableSseResponse([
+                'event: step\ndata: {"message":"working"}\n\n',
+                new Error('connection reset')
+            ]);
+            fetchMock.mockResolvedValue(response);
+
+            const events: AgentStreamEvent<DemoResult>[] = [];
+            await expect(
+                new Promise((resolve, reject) => {
+                    service.run<DemoResult>('/url', {}).subscribe({
+                        next: (event) => events.push(event),
+                        error: reject,
+                        complete: resolve
+                    });
+                })
+            ).rejects.toThrow(/connection reset/);
+
+            // The frames that DID arrive before the failure are still delivered.
+            expect(events).toEqual([{ type: 'step', step: { message: 'working' } }]);
+        });
+
+        it('does not error the observable when the read fails because we aborted', async () => {
+            // Unsubscribing rejects the pending read. That is our own doing, so it must not
+            // surface as a stream error to a consumer that has already walked away.
+            fetchMock.mockResolvedValue(neverEndingSseResponse());
+
+            const onError = jest.fn();
+            const subscription = service.run<DemoResult>('/url', {}).subscribe({ error: onError });
+            await Promise.resolve();
+
+            subscription.unsubscribe();
+            await Promise.resolve();
+
+            expect(onError).not.toHaveBeenCalled();
         });
     });
 
