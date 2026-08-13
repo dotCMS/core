@@ -13,7 +13,7 @@
         </ng-template>
         <div class="flex flex-col py-5">
             <form [formGroup]="form" class="p-fluid" data-testId="add-scheduling-form" novalidate>
-                <div class="flex flex-col gap-2 w-full mb-8">
+                <div class="mb-8 flex w-full flex-col gap-2">
                     <label for="initialDate">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
@@ -32,7 +32,7 @@
                         data-testId="scheduling-startDate"
                         formControlName="startDate" />
                 </div>
-                <div class="flex flex-col gap-2 w-full mb-8">
+                <div class="mb-8 flex w-full flex-col gap-2">
                     <label for="endTime">
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>

@@ -1,5 +1,5 @@
 <div [formGroup]="primaryFormGroup" class="flex flex-col gap-4">
-    <div class="flex-auto flex flex-col">
+    <div class="flex flex-auto flex-col">
         <h3 class="m-0 mb-3 text-base font-bold">
             {{ 'experiments.goal.reach_page.form.conditions.label' | dm }}
         </h3>
@@ -7,9 +7,9 @@
         @for (condition of conditionsFormArray.controls; track condition; let i = $index) {
             <ng-container formArrayName="conditions">
                 <div [formGroupName]="i" class="flex gap-3">
-                    <div class="field grow flex flex-col" formGroupName="value">
+                    <div class="field flex grow flex-col" formGroupName="value">
                         <label
-                            class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1"
+                            class="mb-3 block after:ml-1 after:text-red-500 after:content-['*']"
                             for="name">
                             {{
                                 'experiments.goal.url_parameter.form.conditions.parameter.label'
@@ -33,9 +33,9 @@
                         <dot-field-validation-message
                             [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']" />
                     </div>
-                    <div class="field flex-none flex flex-col w-60">
+                    <div class="field flex w-60 flex-none flex-col">
                         <label
-                            class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1"
+                            class="mb-3 block after:ml-1 after:text-red-500 after:content-['*']"
                             for="operator">
                             {{
                                 'experiments.goal.url_parameter.form.conditions.operator.label' | dm
@@ -56,9 +56,9 @@
                         <dot-field-validation-message
                             [field]="getConditionsFormArrayItemByIndex(i).controls['operator']" />
                     </div>
-                    <div class="field grow flex flex-col" formGroupName="value">
+                    <div class="field flex grow flex-col" formGroupName="value">
                         <label
-                            class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1"
+                            class="mb-3 block after:ml-1 after:text-red-500 after:content-['*']"
                             for="value">
                             {{ 'experiments.goal.url_parameter.form.conditions.value.label' | dm }}
                         </label>

@@ -12,7 +12,7 @@
                 dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}" />
         </ng-template>
         <div class="flex flex-col py-5">
-            <h5 class="font-bold text-lg m-0 mb-4">
+            <h5 class="m-0 mb-4 text-lg font-bold">
                 {{ 'experiments.configure.traffic.allocation' | dm }}
             </h5>
             <p class="mb-6">
@@ -21,7 +21,7 @@
             <form [formGroup]="form" class="p-fluid" novalidate>
                 <div class="field">
                     <p-slider [max]="100" [min]="1" formControlName="trafficAllocation" />
-                    <div class="flex justify-end items-baseline gap-2 mt-3">
+                    <div class="mt-3 flex items-baseline justify-end gap-2">
                         <input
                             [max]="100"
                             [min]="1"
@@ -31,7 +31,7 @@
                             maxlength="3"
                             pInputText
                             type="number" />
-                        <label class="font-bold text-lg" for="trafficAllocation">%</label>
+                        <label class="text-lg font-bold" for="trafficAllocation">%</label>
                     </div>
                 </div>
             </form>

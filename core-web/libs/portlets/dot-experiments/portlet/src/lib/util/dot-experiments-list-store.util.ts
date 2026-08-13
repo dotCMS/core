@@ -4,9 +4,9 @@ import {
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
+    ExperimentsStatusList,
     GOAL_TYPES
 } from '@dotcms/dotcms-models';
-import { ExperimentsStatusList } from '@dotcms/dotcms-models';
 
 import { goalTypeOf } from './dot-experiments-list.util';
 

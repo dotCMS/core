@@ -746,4 +746,22 @@ describe('DotExperimentsListComponent', () => {
             );
         });
     });
+
+    describe('paginator', () => {
+        it('should render the content-drive paginator shape: a page report, prev and next only', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            const paginator = spectator.query('p-paginator');
+
+            expect(paginator?.querySelector('.p-paginator-current')?.textContent).toContain(
+                'Page 1'
+            );
+            // First/last jumps and the numbered page links are both off, as in content-drive.
+            expect(paginator?.querySelector('.p-paginator-first')).toBeNull();
+            expect(paginator?.querySelector('.p-paginator-last')).toBeNull();
+            expect(paginator?.querySelector('.p-paginator-pages')).toBeNull();
+            expect(paginator?.querySelector('.p-paginator-prev')).not.toBeNull();
+            expect(paginator?.querySelector('.p-paginator-next')).not.toBeNull();
+        });
+    });
 });
