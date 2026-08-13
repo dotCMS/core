@@ -27,7 +27,7 @@
     </ng-template>
 
     <ng-template #rows let-row>
-        <div [class.font-bold]="row.isWinner" class="col-span-2 flex flex-wrap items-center gap-1">
+        <div [class.font-bold]="row.isWinner" class="col-span-2 flex items-center flex-wrap gap-1">
             @if (row.isWinner) {
                 <svg
                     class="h-5 min-w-[20px] fill-green-600"

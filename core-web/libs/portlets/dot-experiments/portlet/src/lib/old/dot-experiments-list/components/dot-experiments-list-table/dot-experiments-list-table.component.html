@@ -1,4 +1,4 @@
-<div class="dot-experiment-list-table mb-8 flex h-full flex-col gap-1">
+<div class="dot-experiment-list-table flex h-full flex-col gap-1 mb-8">
     @if ($experimentGroupedByStatus()?.length) {
         @for (group of $experimentGroupedByStatus() ?? []; track group.status) {
             <p-table [rowHover]="true" [value]="group.experiments" dataKey="id">

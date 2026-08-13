@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-2">
             @if ($title()) {
                 <div
-                    class="m-0 flex flex-row flex-wrap items-center text-base font-bold text-black"
+                    class="m-0 text-base font-bold text-black flex flex-row flex-wrap items-center"
                     data-testId="header-title">
                     <ng-container *dotStringTemplateOutlet="$title()">
                         {{ $title() }}
@@ -12,16 +12,16 @@
             }
             <div class="flex flex-col gap-4">
                 <div
-                    class="grid min-h-[35px] grid-cols-12 gap-4 rounded-md bg-gray-100 px-3 py-1 text-base font-bold text-gray-800">
+                    class="grid grid-cols-12 gap-4 py-1 px-3 text-base font-bold text-gray-800 bg-gray-100 rounded-md min-h-[35px]">
                     <ng-container
                         *ngTemplateOutlet="
                             headers || defaultHeaders;
                             context: { $implicit: $data() }
                         " />
                 </div>
-                <div class="flex flex-col gap-2 rounded-md bg-gray-100 px-3 py-1">
+                <div class="flex flex-col gap-2 bg-gray-100 rounded-md py-1 px-3">
                     @for (row of $data(); track row) {
-                        <div class="grid min-h-[35px] grid-cols-12 gap-4" data-testId="detail-row">
+                        <div class="grid grid-cols-12 gap-4 min-h-[35px]" data-testId="detail-row">
                             <ng-container
                                 *ngTemplateOutlet="
                                     rows || defaultRowsTemplate;
@@ -55,9 +55,9 @@
         </div>
     } @else {
         <div
-            class="flex h-[200px] flex-col items-center justify-center"
+            class="h-[200px] flex justify-center items-center flex-col"
             data-testId="empty-template">
-            <i class="material-symbols-outlined mb-2 text-red-500">table_chart</i>
+            <i class="material-symbols-outlined text-red-500 mb-2">table_chart</i>
             <p class="m-0 text-lg" data-testId="empty-title">
                 {{ 'experiments.reports.summary.empty.title' | dm }}
             </p>
