@@ -573,6 +573,138 @@ describe('DotContentDriveSidebarComponent', () => {
                 expect(contentDriveStore.updateFolders).toHaveBeenCalled();
             });
 
+            it('should render a pinned folder once when paging reaches its real position', () => {
+                // The hierarchy pins a deep-linked folder to the top of its level, out of sort
+                // order. Page far enough and the same folder comes back in its proper place.
+                const pinned: DotFolderTreeNodeItem = {
+                    key: 'z',
+                    label: '/big/z/',
+                    data: { id: 'z', hostname: 'demo.dotcms.com', path: '/big/z/', type: 'folder' },
+                    leaf: false,
+                    expanded: true,
+                    children: [
+                        {
+                            key: 'inner',
+                            label: '/big/z/inner/',
+                            data: {
+                                id: 'inner',
+                                hostname: 'demo.dotcms.com',
+                                path: '/big/z/inner/',
+                                type: 'folder'
+                            },
+                            leaf: true
+                        }
+                    ]
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    expanded: true,
+                    children: [pinned, loadMoreNode]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
+
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                key: 'z',
+                                label: '/big/z/',
+                                data: {
+                                    id: 'z',
+                                    hostname: 'demo.dotcms.com',
+                                    path: '/big/z/',
+                                    type: 'folder'
+                                },
+                                leaf: false
+                            }
+                        ],
+                        totalEntries: 1
+                    })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                expect(parent.children?.map((child) => child.key)).toEqual(['z']);
+                // The on-screen node is kept, not the bare copy from the page, so the branch the
+                // user already has open does not collapse under them.
+                expect(parent.children?.[0]).toBe(pinned);
+                expect(parent.children?.[0].children).toHaveLength(1);
+            });
+
+            it('should render a pinned root folder once when paging reaches its real position', () => {
+                const pinned: DotFolderTreeNodeItem = {
+                    key: 'z',
+                    label: '/z/',
+                    data: { id: 'z', hostname: 'demo.dotcms.com', path: '/z/', type: 'folder' },
+                    leaf: false
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                contentDriveStore.folders.mockReturnValue([realAllFolder, pinned, loadMoreNode]);
+
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                key: 'z',
+                                label: '/z/',
+                                data: {
+                                    id: 'z',
+                                    hostname: 'demo.dotcms.com',
+                                    path: '/z/',
+                                    type: 'folder'
+                                },
+                                leaf: false
+                            }
+                        ],
+                        totalEntries: 1
+                    })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                // Root folders are siblings of "All folders", so this branch merges the top-level
+                // array rather than a parent's children.
+                expect(contentDriveStore.updateFolders).toHaveBeenCalledWith([
+                    realAllFolder,
+                    pinned
+                ]);
+            });
+
             it('should keep a refreshed "Load more" node when more pages still remain', () => {
                 const loadMoreNode: DotFolderTreeNodeItem = {
                     key: 'load-more:/big/',
