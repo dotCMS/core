@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
+import org.quartz.JobDataMap;
 import org.junit.Test;
 
 /**
@@ -120,6 +121,87 @@ public class SiteSearchJobAliasResolutionTest {
 
         assertEquals("brand-new-alias", metaData.getAlias());
         assertTrue(metaData.isNewIndex());
+    }
+
+    // =======================================================================
+    // The repair must outlive the run that made it (issue #36983)
+    // =======================================================================
+
+    /**
+     * The heart of it: a job saved with a raw index name has its real alias recovered, and that
+     * recovery is written back to the job detail.
+     *
+     * <p>Without this the crawl still succeeds — but it deletes the index whose name is stored, so the
+     * NEXT run resolves that string to nothing, abandons the index it just built (which keeps the real
+     * alias and quietly stops being crawled) and starts a fresh one. The repair has to be persisted or
+     * it is only a per-run workaround.</p>
+     */
+    @Test
+    public void test_recoveredAlias_isWrittenBackToTheJobDetail() {
+        final JobDataMap dataMap = new JobDataMap();
+        dataMap.put(SiteSearchJobImpl.INDEX_ALIAS, EXISTING_INDEX);
+
+        SiteSearchJobImpl.persistResolvedAlias(dataMap, EXISTING_INDEX, CUSTOM_ALIAS);
+
+        assertEquals("The job must remember the alias, not the name of the index it just replaced",
+                CUSTOM_ALIAS, dataMap.getString(SiteSearchJobImpl.INDEX_ALIAS));
+    }
+
+    /** A job already holding a real alias is left untouched — nothing to repair, nothing to write. */
+    @Test
+    public void test_aliasAlreadyCorrect_isNotRewritten() {
+        final JobDataMap dataMap = new JobDataMap();
+        dataMap.put(SiteSearchJobImpl.INDEX_ALIAS, CUSTOM_ALIAS);
+
+        SiteSearchJobImpl.persistResolvedAlias(dataMap, CUSTOM_ALIAS, CUSTOM_ALIAS);
+
+        assertEquals(CUSTOM_ALIAS, dataMap.getString(SiteSearchJobImpl.INDEX_ALIAS));
+    }
+
+    /**
+     * An index with no alias leaves nothing stable to store — its name changes on every full crawl —
+     * so the stored value is left as it is rather than blanked.
+     */
+    @Test
+    public void test_noAliasToRecover_leavesTheJobDetailAlone() {
+        final JobDataMap dataMap = new JobDataMap();
+        dataMap.put(SiteSearchJobImpl.INDEX_ALIAS, EXISTING_INDEX);
+
+        SiteSearchJobImpl.persistResolvedAlias(dataMap, EXISTING_INDEX, null);
+
+        assertEquals(EXISTING_INDEX, dataMap.getString(SiteSearchJobImpl.INDEX_ALIAS));
+    }
+
+    // =======================================================================
+    // A dead index's name must never become a live index's alias (issue #36983)
+    // =======================================================================
+
+    /**
+     * The second half of the defect. A job pointing at a `sitesearch_<timestamp>` that no longer
+     * exists — deleted by an earlier crawl, or by hand — must NOT have that name stamped onto the new
+     * index as its alias, which is precisely the damage this issue is about.
+     */
+    @Test
+    public void test_staleIndexNameIsNotAdoptedAsANewIndexAlias() {
+        final IndexMetaData brandNew = new IndexMetaData(null, false, EXISTING_INDEX, true);
+
+        assertNull(SiteSearchJobImpl.aliasForNewIndex(brandNew, EXISTING_INDEX));
+    }
+
+    /** A real alias someone chose is still carried onto the new index. */
+    @Test
+    public void test_realAliasIsStillAdoptedAsANewIndexAlias() {
+        final IndexMetaData brandNew = new IndexMetaData(null, false, CUSTOM_ALIAS, true);
+
+        assertEquals(CUSTOM_ALIAS, SiteSearchJobImpl.aliasForNewIndex(brandNew, CUSTOM_ALIAS));
+    }
+
+    /** An existing index keeps its alias through the switch, so nothing is applied at creation. */
+    @Test
+    public void test_existingIndexGetsNoAliasAtCreationTime() {
+        final IndexMetaData existing = new IndexMetaData(EXISTING_INDEX, false, CUSTOM_ALIAS, false);
+
+        assertNull(SiteSearchJobImpl.aliasForNewIndex(existing, CUSTOM_ALIAS));
     }
 
     // =======================================================================

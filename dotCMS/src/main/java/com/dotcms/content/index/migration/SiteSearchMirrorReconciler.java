@@ -101,6 +101,19 @@ public class SiteSearchMirrorReconciler {
             Pattern.compile("^" + SiteSearchAPI.ES_SITE_SEARCH_NAME + "_\\d{8,}.*", Pattern.CASE_INSENSITIVE);
 
     /**
+     * Whether {@code candidate} is shaped like a crawl-generated site-search index name
+     * ({@code sitesearch_<timestamp>[_<uuid>]}) rather than a name a person would choose as an alias.
+     *
+     * <p>Shared with {@code SiteSearchJobImpl}, which refuses to adopt such a string as a new index's
+     * alias: a job whose stored alias is a stale index name would otherwise resurrect the name of an
+     * index the previous crawl deleted, which is the very defect this reconciler reports
+     * (issue #36983). One definition, so the detector and the preventer cannot drift apart.</p>
+     */
+    public static boolean isIndexNameShaped(final String candidate) {
+        return candidate != null && INDEX_NAME_SHAPED.matcher(candidate).matches();
+    }
+
+    /**
      * The alias of {@code name} on either engine when it is really an INDEX NAME rather than an alias —
      * the fingerprint of the defect fixed in issue #36983, where a crawl re-applied the name of the
      * index it had just deleted as the new index's alias. The fix stops it from happening again but
@@ -110,10 +123,10 @@ public class SiteSearchMirrorReconciler {
      * @return the offending alias, or {@code null} when neither engine's alias looks like an index name
      */
     private static String corruptedAlias(final String esAlias, final String osAlias) {
-        if (esAlias != null && INDEX_NAME_SHAPED.matcher(esAlias).matches()) {
+        if (isIndexNameShaped(esAlias)) {
             return esAlias;
         }
-        if (osAlias != null && INDEX_NAME_SHAPED.matcher(osAlias).matches()) {
+        if (isIndexNameShaped(osAlias)) {
             return osAlias;
         }
         return null;

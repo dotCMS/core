@@ -5,6 +5,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.content.index.migration.ContentIndexMirrorReconciler;
 import com.dotcms.content.index.migration.MirrorStatus;
+import com.dotcms.content.index.migration.SiteSearchMirrorReconciler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
@@ -282,6 +283,10 @@ public class SiteSearchJobImpl {
             // handed to the publisher, which re-applies it after the index switch — must use this
             // resolved value, never the raw stored string (issue #36983).
             final String resolvedAlias = indexMetaData.getAlias();
+            // A repair that is not written down is not a repair: it happens again on the next run, and
+            // by then the index whose alias we just recovered has been replaced, so the stored raw name
+            // resolves to nothing at all (issue #36983).
+            persistResolvedAlias(dataMap, indexAlias, resolvedAlias);
             final String newIndexName;
             final String indexName;
 
@@ -341,7 +346,7 @@ public class SiteSearchJobImpl {
                         uniqueFolderName();
                 // We use a new index name only on non-incremental
                 newIndexName = newIndexName();
-                final String newAlias = indexMetaData.isNewIndex() ? resolvedAlias : null;
+                final String newAlias = aliasForNewIndex(indexMetaData, resolvedAlias);
                 siteSearchAPI.createSiteSearchIndex(newIndexName, newAlias, 1);
                 // This is the old index we will swap from.
                 // if it doesnt exist. It doesnt matter here since we will end up with the new one.
@@ -579,6 +584,75 @@ public class SiteSearchJobImpl {
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Writes the alias resolved by {@link #getIndexMetaData(String)} back into the Quartz job detail,
+     * when it differs from the string that was stored there.
+     *
+     * <p><strong>Why this has to happen.</strong> The job detail is the job's only memory between
+     * runs. When it holds a raw index name — the damage the old scheduler did, see
+     * {@link #getIndexMetaData(String)} — the resolution recovers the index's real alias, and the
+     * crawl then completes correctly: the new index is built, the old one deleted, the alias
+     * re-applied. But the *stored* string is still the name of the index that crawl just deleted. On
+     * the next run it resolves to neither an alias nor an existing index, so the job treats itself as
+     * brand new: it stops tracking the index it has been maintaining (which keeps the real alias and
+     * silently goes stale, since nothing crawls it any more) and starts a fresh one. Persisting the
+     * resolved alias makes the repair permanent — the next run looks up a real alias and finds the
+     * index the previous crawl built.</p>
+     *
+     * <p>Persistence is Quartz's: {@code SiteSearchJobProxy} is a {@link org.quartz.StatefulJob}, and
+     * the JDBC job store re-persists the job detail's data map after every execution, including one
+     * that ended in an exception. That last part is fine here — an alias is a stable handle whether or
+     * not the crawl got as far as switching indices: if it failed early the original index still
+     * exists and still carries the alias we just stored.</p>
+     *
+     * <p>Only a resolved, non-empty alias is written. An index with no alias at all leaves nothing
+     * stable to store — its name changes on every full crawl — so that case is left alone; what stops
+     * it from resurrecting a dead index name is {@link #aliasForNewIndex(IndexMetaData, String)}.</p>
+     */
+    @VisibleForTesting
+    static void persistResolvedAlias(final JobDataMap dataMap, final String storedAlias,
+            final String resolvedAlias) {
+        if (!UtilMethods.isSet(resolvedAlias) || resolvedAlias.equals(storedAlias)) {
+            return;
+        }
+        dataMap.put(INDEX_ALIAS, resolvedAlias);
+        Logger.info(SiteSearchJobImpl.class, String.format(
+                "Site-search job stored `%s` where an alias was expected; recovered the index's real "
+                        + "alias `%s` and saved it to the job so the repair survives this run.",
+                storedAlias, resolvedAlias));
+    }
+
+    /**
+     * The alias to attach to a brand-new index at creation time, or {@code null} for none.
+     *
+     * <p>An existing index keeps its alias through the switch instead (the publisher re-applies it
+     * after deleting the old index), so this only ever applies when the job found nothing to track.</p>
+     *
+     * <p><strong>Never a generated index name.</strong> A job whose stored alias is a stale
+     * {@code sitesearch_<timestamp>_<uuid>} — left behind by the defect in issue #36983, or simply
+     * pointing at an index someone deleted by hand — would otherwise stamp the name of a dead index
+     * onto a live one as its alias, recreating exactly the damage this issue is about. A real alias a
+     * person chose is kept as before; only the machine-generated shape is refused, using the same
+     * definition the readiness report uses to flag these, so the detector and the preventer cannot
+     * drift apart.</p>
+     */
+    @VisibleForTesting
+    static String aliasForNewIndex(final IndexMetaData indexMetaData, final String resolvedAlias) {
+        if (!indexMetaData.isNewIndex()) {
+            return null;
+        }
+        if (SiteSearchMirrorReconciler.isIndexNameShaped(resolvedAlias)) {
+            Logger.warn(SiteSearchJobImpl.class, String.format(
+                    "Site-search job is scheduled against `%s`, which is an index name and no longer "
+                            + "exists — most likely the alias was overwritten by an earlier crawl "
+                            + "(issue #36983). Building a new index WITHOUT that alias rather than "
+                            + "stamping a dead index's name onto a live one. Re-save the job with the "
+                            + "intended alias.", resolvedAlias));
+            return null;
+        }
+        return resolvedAlias;
     }
 
     private static final Pattern invalidAliasNamePattern = Pattern.compile("[^a-zA-Z0-9-_]");
