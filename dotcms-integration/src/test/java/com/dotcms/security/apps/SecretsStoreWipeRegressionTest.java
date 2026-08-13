@@ -73,9 +73,16 @@ public class SecretsStoreWipeRegressionTest {
 
     @After
     public void tearDown() throws IOException {
-        Config.setProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, previousPath);
-        Config.setProperty(SECRETS_STORE_AUTO_RECREATE, previousAutoRecreate);
-        Config.setProperty(SECRETS_STORE_LOAD_TRIES, previousLoadTries);
+        // Each of these is null when the property was unset before the test, and
+        // Config.setProperty(key, null) does not reliably clear it -- it can leave the test's own
+        // value in place. Restore an explicit safe value instead, matching the guarded pattern in
+        // SecretsStoreKeyStoreImplTest. Both classes run in MainSuite3a, so leaking this temp path
+        // would point a sibling secrets test at a directory this method then deletes.
+        Config.setProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, previousPath == null ? "" : previousPath);
+        Config.setProperty(SECRETS_STORE_AUTO_RECREATE,
+                previousAutoRecreate == null ? "false" : previousAutoRecreate);
+        Config.setProperty(SECRETS_STORE_LOAD_TRIES,
+                previousLoadTries == null ? "3" : previousLoadTries);
 
         if (null != storeDir && Files.exists(storeDir)) {
             try (java.util.stream.Stream<Path> paths = Files.walk(storeDir)) {

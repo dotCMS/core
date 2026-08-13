@@ -7,8 +7,6 @@ import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -60,7 +58,11 @@ public class SiteAuthValidator implements AnalyticsValidator {
             } else {
                 Logger.warn(this, "HTTP Request object could not be retrieved");
             }
-        } catch (final DotDataException | DotSecurityException e) {
+            // Deliberately Exception, not just the checked DotDataException/DotSecurityException.
+            // Since issue #36724 the secrets store raises a DotRuntimeException when it cannot be
+            // read rather than silently wiping itself; that must surface as a normal validation
+            // failure on this analytics collection path, not as a raw runtime exception.
+        } catch (final Exception e) {
             final String errorMsg = String.format("Site Auth for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(SiteAuthValidator.class, errorMsg, e);

@@ -423,7 +423,16 @@ public class AppsAPIImpl implements AppsAPI {
         return siteIdentifiers.stream().filter(id -> {
             try {
                 return hasAnySecrets(key, id, user);
-            } catch (DotDataException | DotSecurityException e) {
+            } catch (Exception e) {
+                // Deliberately Exception, not just the checked DotDataException/DotSecurityException.
+                // This method's contract is already "if the secrets cannot be determined for this
+                // site, treat it as having none" -- it logs and returns false. Since issue #36724 the
+                // secrets store raises a DotRuntimeException when it cannot be read rather than
+                // silently wiping itself, and that slipped past the narrower catch: it escaped
+                // EMAWebInterceptor.intercept(), which the interceptor chain does not guard, turning
+                // an unreadable store into a 500 on every /api/* request. Every caller here
+                // (EMA, InitRunner, the Apps portlet counts, telemetry, SAML) expects a set, not a
+                // throw.
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error getting secret from `%s` ", key), e);
             }
