@@ -18,7 +18,6 @@ import { VelocityWarning } from '../../models/dot-velocity-playground.models';
  */
 @Component({
     selector: 'dot-velocity-playground-warnings',
-    standalone: true,
     imports: [MessageModule, TagModule, DotMessagePipe],
     templateUrl: './dot-velocity-playground-warnings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

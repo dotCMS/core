@@ -13,7 +13,6 @@ import { RouterOutlet } from '@angular/router';
  */
 @Component({
     selector: 'dot-a11y',
-    standalone: true,
     imports: [RouterOutlet],
     template: `
         <router-outlet />

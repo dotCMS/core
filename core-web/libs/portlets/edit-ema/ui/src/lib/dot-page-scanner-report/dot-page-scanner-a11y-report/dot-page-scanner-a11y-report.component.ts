@@ -11,7 +11,6 @@ import { A11yFindingType, A11yGroup } from '../models';
 
 @Component({
     selector: 'dot-page-scanner-a11y-report',
-    standalone: true,
     imports: [AccordionModule, CardModule, ChipModule, DotColorIconComponent, DotMessagePipe],
     templateUrl: './dot-page-scanner-a11y-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

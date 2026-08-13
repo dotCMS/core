@@ -64,7 +64,6 @@ interface SeverityRow {
  */
 @Component({
     selector: 'dot-a11y-run',
-    standalone: true,
     imports: [
         FormsModule,
         AccordionModule,
@@ -171,10 +170,10 @@ interface SeverityRow {
 export class DotA11yRunComponent {
     readonly store = inject(A11yRunStore);
 
-    private readonly markerService = inject(A11yMarkerService);
-    private readonly router = inject(Router);
-    private readonly location = inject(Location);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #markerService = inject(A11yMarkerService);
+    readonly #router = inject(Router);
+    readonly #location = inject(Location);
+    readonly #destroyRef = inject(DestroyRef);
 
     /**
      * The number shown in the ring center. Eased from its previous value up to
@@ -182,14 +181,14 @@ export class DotA11yRunComponent {
      * while fixing), so the score "rolls" in sync with the donut sweep instead of
      * snapping. See {@link animateCountTo}.
      */
-    readonly displayCount = signal(0);
+    readonly $displayCount = signal(0);
 
     /**
      * The source file whose diff the right pane is showing, or null for the preview.
      * Set from the changed-files accordion in the left panel; the preview stays
      * mounted underneath so returning to it doesn't reload the iframes.
      */
-    readonly diffFile = signal<PageDiffFile | null>(null);
+    readonly $diffFile = signal<PageDiffFile | null>(null);
 
     /**
      * Which of the side panel's accordion panels are open — the `scanner` (score,
@@ -198,29 +197,32 @@ export class DotA11yRunComponent {
      * the panels open and close independently and the user can watch a run while
      * reviewing the files it touched. The scanner starts open, files collapsed.
      */
-    readonly openPanels = signal<StudioPanel[]>(['scanner']);
+    readonly $openPanels = signal<StudioPanel[]>(['scanner']);
 
     /** How many source files differ between working and live, for the count badge. */
-    readonly changedFileCount = signal(0);
+    readonly $changedFileCount = signal(0);
 
     /** True when there's something to publish — drives the Publish bar. */
-    readonly hasChangedFiles = computed(() => this.changedFileCount() > 0);
+    readonly $hasChangedFiles = computed(() => this.$changedFileCount() > 0);
 
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
-    private countRaf: number | null = null;
+    #countRaf: number | null = null;
 
-    private readonly dm = inject(DotMessageService);
+    readonly #dm = inject(DotMessageService);
 
     /** Maps the agent stream + FixReport into shared activity-log bubbles. */
-    private readonly presenter = new A11yAgentPresenter(this.dm);
+    readonly #presenter = new A11yAgentPresenter(this.#dm);
 
     /**
      * The two side-by-side preview iframes. Markers are injected only into the
      * LIVE frame's (same-origin) document — it always still carries the original
      * scan's violations (see {@link showMarkers}).
      */
-    private readonly liveFrame = viewChild<ElementRef<HTMLIFrameElement>>('liveFrame');
-    private readonly previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
+    // NOTE: `private`, not `#`. Angular rejects an ES-private member for a signal query
+    // outright — "Cannot use 'viewChild' on a class member that is declared as ES private"
+    // — because the compiler has to write to the field from generated code.
+    private readonly $liveFrame = viewChild<ElementRef<HTMLIFrameElement>>('liveFrame');
+    private readonly $previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
 
     constructor() {
         // The page list hands the selected row over in the navigation's `state` (the
@@ -228,11 +230,11 @@ export class DotA11yRunComponent {
         // language). Adopt it, or bounce back to the list when there is none — which
         // is what a cold load, refresh, or pasted run URL looks like, since the run
         // route is reachable only THROUGH the list.
-        const row = readHandoverRow(this.location.getState());
+        const row = readHandoverRow(this.#location.getState());
         if (row) {
             this.store.openSelectedPage(row);
         } else {
-            this.toPageList();
+            this.#toPageList();
         }
 
         // Redraw both frames' marker layers whenever their scans (or the phase)
@@ -242,14 +244,14 @@ export class DotA11yRunComponent {
         // isn't published yet clears the preview markers while the live markers
         // (still-published violations) remain.
         effect(() => {
-            const show = this.showMarkers();
+            const show = this.$showMarkers();
             const previewGroups = this.store.a11yGroups();
             const liveGroups = this.store.liveA11yGroups();
-            this.markerService.render(
-                this.previewFrame()?.nativeElement,
+            this.#markerService.render(
+                this.$previewFrame()?.nativeElement,
                 show ? previewGroups : []
             );
-            this.markerService.render(this.liveFrame()?.nativeElement, show ? liveGroups : []);
+            this.#markerService.render(this.$liveFrame()?.nativeElement, show ? liveGroups : []);
         });
 
         // Roll the ring count up to the live open-count whenever it changes and a
@@ -259,11 +261,11 @@ export class DotA11yRunComponent {
         effect(() => {
             const target = this.store.openCount();
             const scanned = this.store.hasResults();
-            untracked(() => this.animateCountTo(scanned ? target : 0));
+            untracked(() => this.#animateCountTo(scanned ? target : 0));
         });
 
         // Cancel any in-flight count-up when the component is torn down.
-        this.destroyRef.onDestroy(() => this.cancelCount());
+        this.#destroyRef.onDestroy(() => this.#cancelCount());
     }
 
     /**
@@ -271,10 +273,10 @@ export class DotA11yRunComponent {
      * (easeOutCubic), synced with the donut's sweep. Snaps immediately when the
      * user prefers reduced motion or the delta is trivial.
      */
-    private animateCountTo(target: number): void {
-        this.cancelCount();
+    #animateCountTo(target: number): void {
+        this.#cancelCount();
 
-        const from = this.displayCount();
+        const from = this.$displayCount();
         if (from === target) {
             return;
         }
@@ -282,7 +284,7 @@ export class DotA11yRunComponent {
             typeof matchMedia === 'function' &&
             matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-            this.displayCount.set(target);
+            this.$displayCount.set(target);
 
             return;
         }
@@ -293,20 +295,20 @@ export class DotA11yRunComponent {
             start ??= now;
             const t = Math.min(1, (now - start) / duration);
             const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-            this.displayCount.set(Math.round(from + (target - from) * eased));
+            this.$displayCount.set(Math.round(from + (target - from) * eased));
             if (t < 1) {
-                this.countRaf = requestAnimationFrame(step);
+                this.#countRaf = requestAnimationFrame(step);
             } else {
-                this.countRaf = null;
+                this.#countRaf = null;
             }
         };
-        this.countRaf = requestAnimationFrame(step);
+        this.#countRaf = requestAnimationFrame(step);
     }
 
-    private cancelCount(): void {
-        if (this.countRaf !== null) {
-            cancelAnimationFrame(this.countRaf);
-            this.countRaf = null;
+    #cancelCount(): void {
+        if (this.#countRaf !== null) {
+            cancelAnimationFrame(this.#countRaf);
+            this.#countRaf = null;
         }
     }
 
@@ -319,8 +321,8 @@ export class DotA11yRunComponent {
      * yields `/agents/a11y/about-us`, which matches `**` again — the same component is
      * reused and the screen never changes.
      */
-    private toPageList(): void {
-        this.router.navigate([A11Y_PAGE_LIST_ROUTE]).catch(() => {
+    #toPageList(): void {
+        this.#router.navigate([A11Y_PAGE_LIST_ROUTE]).catch(() => {
             // Navigation cancelled (guard or a newer navigation superseded this
             // one). Nothing to recover — the router owns where we ended up.
         });
@@ -331,7 +333,7 @@ export class DotA11yRunComponent {
      * own `scroll` event, which would mirror straight back to A — an infinite
      * bounce. While we're programmatically scrolling the target, ignore its echo.
      */
-    private syncingScroll = false;
+    #syncingScroll = false;
 
     /**
      * LIVE iframe finished (re)loading — (re)draw its markers from the LIVE
@@ -339,11 +341,11 @@ export class DotA11yRunComponent {
      * the effect-drawn layer is gone and must be redrawn here.
      */
     onLiveLoad(): void {
-        this.markerService.render(
-            this.liveFrame()?.nativeElement,
-            this.showMarkers() ? this.store.liveA11yGroups() : []
+        this.#markerService.render(
+            this.$liveFrame()?.nativeElement,
+            this.$showMarkers() ? this.store.liveA11yGroups() : []
         );
-        this.wireScrollSync(this.liveFrame(), this.previewFrame());
+        this.#wireScrollSync(this.$liveFrame(), this.$previewFrame());
     }
 
     /**
@@ -351,11 +353,11 @@ export class DotA11yRunComponent {
      * (working) scan + (re)wire scroll sync.
      */
     onPreviewLoad(): void {
-        this.markerService.render(
-            this.previewFrame()?.nativeElement,
-            this.showMarkers() ? this.store.a11yGroups() : []
+        this.#markerService.render(
+            this.$previewFrame()?.nativeElement,
+            this.$showMarkers() ? this.store.a11yGroups() : []
         );
-        this.wireScrollSync(this.previewFrame(), this.liveFrame());
+        this.#wireScrollSync(this.$previewFrame(), this.$liveFrame());
     }
 
     /**
@@ -368,35 +370,35 @@ export class DotA11yRunComponent {
      * Wired on every `load`: a reload/navigation replaces the frame's window, which
      * drops the old listener for free, so we just attach a fresh one each time.
      */
-    private wireScrollSync(
+    #wireScrollSync(
         source: ElementRef<HTMLIFrameElement> | undefined,
         target: ElementRef<HTMLIFrameElement> | undefined
     ): void {
-        const srcWin = this.frameWindow(source);
+        const srcWin = this.#frameWindow(source);
         if (!srcWin) {
             return;
         }
         srcWin.addEventListener(
             'scroll',
             () => {
-                if (this.syncingScroll) {
+                if (this.#syncingScroll) {
                     return;
                 }
-                const tgtWin = this.frameWindow(target);
+                const tgtWin = this.#frameWindow(target);
                 if (!tgtWin) {
                     return;
                 }
-                this.syncingScroll = true;
+                this.#syncingScroll = true;
                 tgtWin.scrollTo(srcWin.scrollX, srcWin.scrollY);
                 // Release after the target's echoed scroll event has fired.
-                requestAnimationFrame(() => (this.syncingScroll = false));
+                requestAnimationFrame(() => (this.#syncingScroll = false));
             },
             { passive: true }
         );
     }
 
     /** The iframe's window; null when cross-origin or not yet loaded. */
-    private frameWindow(frame: ElementRef<HTMLIFrameElement> | undefined): Window | null {
+    #frameWindow(frame: ElementRef<HTMLIFrameElement> | undefined): Window | null {
         try {
             return frame?.nativeElement.contentWindow ?? null;
         } catch {
@@ -410,13 +412,13 @@ export class DotA11yRunComponent {
      * only shared gate is: a scan pass has run. Empty groups (e.g. the live scan
      * hasn't landed yet, or a frame came back clean) simply draw no markers.
      */
-    readonly showMarkers = computed<boolean>(() => this.store.hasResults());
+    readonly $showMarkers = computed<boolean>(() => this.store.hasResults());
 
     /**
      * The section-header label above the scrollable body, by phase:
      *   scanning → "SCAN", scanned → "BY ISSUE TYPE", fixing/done → "AGENT ACTIVITY".
      */
-    readonly logHeaderKey = computed<string>(() => {
+    readonly $logHeaderKey = computed<string>(() => {
         if (this.store.phase() === 'scanning') {
             return 'accessibility.studio.loghdr.scan';
         }
@@ -427,7 +429,7 @@ export class DotA11yRunComponent {
     });
 
     /** The working badge label beside the header ("SCANNING" / "WORKING"), or null. */
-    readonly logBadgeKey = computed<string | null>(() => {
+    readonly $logBadgeKey = computed<string | null>(() => {
         if (this.store.phase() === 'scanning') {
             return 'accessibility.studio.badge.scanning';
         }
@@ -438,7 +440,7 @@ export class DotA11yRunComponent {
     });
 
     /** Headline above the severity legend, by phase. */
-    readonly scoreHeadlineKey = computed<string>(() => {
+    readonly $scoreHeadlineKey = computed<string>(() => {
         if (this.store.phase() === 'fixing') {
             return 'accessibility.studio.score.fixing';
         }
@@ -454,7 +456,7 @@ export class DotA11yRunComponent {
      * scanned we hide empty buckets (matches the mockup); once fixing/done we keep
      * them so the user sees a bucket reach 0.
      */
-    readonly severityRows = computed<SeverityRow[]>(() => {
+    readonly $severityRows = computed<SeverityRow[]>(() => {
         const counts = this.store.severityCounts();
         const keepZeros = this.store.runStarted();
         return SEVERITY_ORDER.map((severity) => ({
@@ -471,7 +473,7 @@ export class DotA11yRunComponent {
      * by a live SSE stream plus a rAF count-up, so a template method would re-run for
      * every row many times a second.
      */
-    readonly issueTypeRows = computed(() =>
+    readonly $issueTypeRows = computed(() =>
         this.store.issueTypeRows().map((group) => ({
             ...group,
             color: SEVERITY_COLOR[impactToSeverity(group.impact)]
@@ -479,7 +481,7 @@ export class DotA11yRunComponent {
     );
 
     /** Needs-review rows with their "why a human is needed" i18n key resolved. */
-    readonly reviewRows = computed(() =>
+    readonly $reviewRows = computed(() =>
         this.store.reviewGroups().map((group) => ({
             ...group,
             reasonKey:
@@ -488,7 +490,7 @@ export class DotA11yRunComponent {
     );
 
     /** PrimeNG doughnut data — one arc per severity, colored by SEVERITY_COLOR. */
-    readonly donutData = computed(() => {
+    readonly $donutData = computed(() => {
         const counts = this.store.severityCounts();
         const open = this.store.openCount();
         const total = SEVERITY_ORDER.reduce((sum, s) => sum + counts[s], 0);
@@ -532,13 +534,13 @@ export class DotA11yRunComponent {
      *     by the log itself
      *   - after done   → the final report expanded into bubbles (scan/fixed/reported/rescan)
      */
-    readonly activityMessages = computed<AgentMessage[]>(() => {
+    readonly $activityMessages = computed<AgentMessage[]>(() => {
         if (this.store.phase() === 'fixing') {
-            return this.store.steps().map((step, i) => this.presenter.liveStep(step, i));
+            return this.store.steps().map((step, i) => this.#presenter.liveStep(step, i));
         }
         if (this.store.finished()) {
             const report = this.store.report();
-            return report ? this.presenter.resultMessages(report) : [];
+            return report ? this.#presenter.resultMessages(report) : [];
         }
         return [];
     });
@@ -551,7 +553,7 @@ export class DotA11yRunComponent {
      * keeps visibly changing; elapsed seconds on the current action ride along as
      * the sub-line.
      */
-    readonly workingMessage = computed<AgentMessage | null>(() => {
+    readonly $workingMessage = computed<AgentMessage | null>(() => {
         if (this.store.phase() !== 'fixing') {
             return null;
         }
@@ -561,7 +563,7 @@ export class DotA11yRunComponent {
         const sinceSec = Math.floor(sinceLastEventMs / 1000);
         const sub =
             sinceSec >= 3
-                ? this.dm.get('accessibility.studio.working.elapsed', String(sinceSec))
+                ? this.#dm.get('accessibility.studio.working.elapsed', String(sinceSec))
                 : undefined;
 
         return {
@@ -569,7 +571,7 @@ export class DotA11yRunComponent {
             // Unused: dot-agent-thinking renders its own spinner and reads only
             // text/sub. Kept non-empty only to satisfy AgentMessage.
             icon: '',
-            text: this.dm.get(this.workingReassuranceKey(sinceLastEventMs)),
+            text: this.#dm.get(this.#workingReassuranceKey(sinceLastEventMs)),
             sub,
             tone: 'info'
         };
@@ -581,7 +583,7 @@ export class DotA11yRunComponent {
      * run for minutes and no phrase should imply it's nearly done or freeze on one
      * message.
      */
-    private workingReassuranceKey(sinceLastEventMs: number): string {
+    #workingReassuranceKey(sinceLastEventMs: number): string {
         const KEYS = [
             'accessibility.studio.working.thinking',
             'accessibility.studio.working.analyzing',
@@ -595,14 +597,14 @@ export class DotA11yRunComponent {
     }
 
     /** Footer title + sub keys derived from the current phase — single switch. */
-    readonly footerKeys = computed(() => {
+    readonly $footerKeys = computed(() => {
         const p = this.store.phase();
         const base = `accessibility.studio.footer.${p}`;
         return { titleKey: `${base}.title`, subKey: `${base}.sub` };
     });
 
     /** Interpolation args for the footer title, by phase. */
-    readonly footerArgs = computed<string[]>(() => {
+    readonly $footerArgs = computed<string[]>(() => {
         switch (this.store.phase()) {
             case 'scanned':
                 return [this.store.openCount().toString()];
@@ -616,7 +618,7 @@ export class DotA11yRunComponent {
     });
 
     /** Small leading icon + bubble color for the footer copy, by phase. */
-    readonly footerIcon = computed<{ icon: string; cls: string } | null>(() => {
+    readonly $footerIcon = computed<{ icon: string; cls: string } | null>(() => {
         switch (this.store.phase()) {
             case 'scanned':
                 return { icon: 'pi pi-sparkles', cls: 'bg-primary-50 text-primary' };
@@ -653,7 +655,7 @@ export class DotA11yRunComponent {
      * rewrite. No such endpoint exists today; that gap is why the sentinel + proxy
      * pair exists. Delete both once it lands.
      */
-    private readonly previewPathPrefix = isDevMode() ? '/dot-page' : '';
+    readonly #previewPathPrefix = isDevMode() ? '/dot-page' : '';
 
     /**
      * The page rendered in the given mode. `host_id` disambiguates which site's
@@ -661,14 +663,14 @@ export class DotA11yRunComponent {
      * cache-busting `rev` forces the iframe to reload when the working render
      * changes (see {@link previewUrl}).
      */
-    private urlFor(mode: 'PREVIEW_MODE' | 'LIVE', rev = 0): string {
+    #urlFor(mode: 'PREVIEW_MODE' | 'LIVE', rev = 0): string {
         const page = this.store.selected();
         if (!page) {
             return '';
         }
         const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
         const bust = rev > 0 ? `&rev=${rev}` : '';
-        return `${this.previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${mode}${bust}`;
+        return `${this.#previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${mode}${bust}`;
     }
 
     /**
@@ -681,8 +683,10 @@ export class DotA11yRunComponent {
      * the final report) and the page updates visually. LIVE never changes mid-run
      * (it's the published render), so it takes no revision.
      */
-    readonly liveUrl = computed(() => this.urlFor('LIVE'));
-    readonly previewUrl = computed(() => this.urlFor('PREVIEW_MODE', this.store.previewRevision()));
+    readonly $liveUrl = computed(() => this.#urlFor('LIVE'));
+    readonly $previewUrl = computed(() =>
+        this.#urlFor('PREVIEW_MODE', this.store.previewRevision())
+    );
 
     /**
      * Back button / "All pages" — return to the page list. No store reset needed: the
@@ -690,7 +694,7 @@ export class DotA11yRunComponent {
      * the next run starts fresh.
      */
     backToPageList(): void {
-        this.toPageList();
+        this.#toPageList();
     }
 
     /**
@@ -699,7 +703,7 @@ export class DotA11yRunComponent {
      * this — it's the readable way to assert open state from tests.
      */
     isPanelOpen(panel: StudioPanel): boolean {
-        return this.openPanels().includes(panel);
+        return this.$openPanels().includes(panel);
     }
 
     /**
@@ -707,19 +711,19 @@ export class DotA11yRunComponent {
      * pressing "Review files" twice must not close the panel it just opened.
      */
     openPanel(panel: StudioPanel): void {
-        this.openPanels.update((current) =>
+        this.$openPanels.update((current) =>
             current.includes(panel) ? current : [...current, panel]
         );
     }
 
     /** A file was picked in (or cleared from) the changed-files list. */
     onDiffFileSelected(file: PageDiffFile | null): void {
-        this.diffFile.set(file);
+        this.$diffFile.set(file);
     }
 
     /** The changed-files list reports how many files differ, for the Publish gate. */
     onChangedFilesCount(count: number): void {
-        this.changedFileCount.set(count);
+        this.$changedFileCount.set(count);
     }
 
     /**
@@ -727,7 +731,7 @@ export class DotA11yRunComponent {
      * highlighted row follows via its `activeFileId` input, so the two stay in sync.
      */
     closeDiff(): void {
-        this.diffFile.set(null);
+        this.$diffFile.set(null);
     }
 
     /**

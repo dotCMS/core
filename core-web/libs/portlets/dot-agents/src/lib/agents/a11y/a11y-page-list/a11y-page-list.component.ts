@@ -25,7 +25,6 @@ import { A11yPageListStore } from '../store/a11y-page-list.store';
  */
 @Component({
     selector: 'dot-a11y-page-list',
-    standalone: true,
     imports: [
         FormsModule,
         TableModule,
@@ -50,19 +49,19 @@ export class DotA11yPageListComponent {
     /** Pass-through config: fixed table layout so column widths hold on empty state. */
     readonly $ptConfig = { table: { style: { 'table-layout': 'fixed' as const } } };
 
-    private readonly destroyRef = inject(DestroyRef);
-    private readonly router = inject(Router);
-    private readonly route = inject(ActivatedRoute);
-    private readonly searchSubject = new Subject<string>();
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #router = inject(Router);
+    readonly #route = inject(ActivatedRoute);
+    readonly #searchSubject = new Subject<string>();
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setFilter(value));
     }
 
     onSearch(value: string): void {
-        this.searchSubject.next(value);
+        this.#searchSubject.next(value);
     }
 
     /**
@@ -78,7 +77,7 @@ export class DotA11yPageListComponent {
     openPage(row: StudioPageRow): void {
         // "/blog/post/hello" → ['blog','post','hello'] (drop empty leading/trailing).
         const segments = row.path.split('/').filter(Boolean);
-        this.router.navigate(segments, { relativeTo: this.route, state: { row } });
+        this.#router.navigate(segments, { relativeTo: this.#route, state: { row } });
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {

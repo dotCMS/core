@@ -50,15 +50,14 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
  */
 @Component({
     selector: 'dot-a11y-diff-viewer',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex min-h-0 flex-col bg-surface-100' },
     templateUrl: './a11y-diff-viewer.component.html'
 })
 export class DotA11yDiffViewerComponent {
-    private readonly monacoLoader = inject(MonacoEditorLoaderService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #monacoLoader = inject(MonacoEditorLoaderService);
+    readonly #destroyRef = inject(DestroyRef);
 
     /** The file to diff. */
     readonly file = input<PageDiffFile | null>(null);
@@ -66,22 +65,25 @@ export class DotA11yDiffViewerComponent {
     /** The user asked to go back to the preview. */
     readonly closed = output<void>();
 
-    private readonly diffHost = viewChild<ElementRef<HTMLDivElement>>('diffHost');
+    // NOTE: `private`, not `#`. Angular rejects an ES-private member for a signal query
+    // outright — "Cannot use 'viewChild' on a class member that is declared as ES private"
+    // — because the compiler has to write to the field from generated code.
+    private readonly $diffHost = viewChild<ElementRef<HTMLDivElement>>('diffHost');
 
     /** True once the monaco global has loaded. */
-    private readonly monacoReady = signal(false);
+    readonly #monacoReady = signal(false);
 
-    private editor: MonacoDiffEditor | null = null;
+    #editor: MonacoDiffEditor | null = null;
 
     constructor() {
         // Wait for the AMD-loaded monaco global before creating the editor.
-        this.monacoLoader.isMonacoLoaded$
+        this.#monacoLoader.isMonacoLoaded$
             .pipe(
                 filter((loaded) => loaded),
                 take(1),
                 takeUntilDestroyed()
             )
-            .subscribe(() => this.monacoReady.set(true));
+            .subscribe(() => this.#monacoReady.set(true));
 
         // (Re)build the models whenever monaco is ready, a file is set, and the host
         // element exists. Depending on the `diffHost` viewChild signal matters: this
@@ -89,21 +91,21 @@ export class DotA11yDiffViewerComponent {
         // before the view renders and the host is still undefined — reading it here
         // makes the effect re-run once it appears, instead of silently bailing out.
         effect(() => {
-            const ready = this.monacoReady();
+            const ready = this.#monacoReady();
             const file = this.file();
-            const host = this.diffHost()?.nativeElement;
+            const host = this.$diffHost()?.nativeElement;
             untracked(() => {
                 if (ready && file && host) {
-                    this.renderDiff(host, file);
+                    this.#renderDiff(host, file);
                 }
             });
         });
 
-        this.destroyRef.onDestroy(() => this.disposeEditor());
+        this.#destroyRef.onDestroy(() => this.#disposeEditor());
     }
 
     /** Monaco language id for a file, from its extension. */
-    private languageFor(extension: string): string {
+    #languageFor(extension: string): string {
         return LANGUAGE_BY_EXTENSION[extension.toLowerCase()] ?? 'plaintext';
     }
 
@@ -111,14 +113,14 @@ export class DotA11yDiffViewerComponent {
      * Create (once) and populate the diff editor with the file's live (original) vs
      * working (modified) text. Read-only side-by-side.
      */
-    private renderDiff(host: HTMLElement, file: PageDiffFile): void {
+    #renderDiff(host: HTMLElement, file: PageDiffFile): void {
         const monaco = getMonaco();
         if (!monaco) {
             return;
         }
 
-        if (!this.editor) {
-            this.editor = monaco.editor.createDiffEditor(host, {
+        if (!this.#editor) {
+            this.#editor = monaco.editor.createDiffEditor(host, {
                 theme: 'vs',
                 readOnly: true,
                 originalEditable: false,
@@ -131,22 +133,22 @@ export class DotA11yDiffViewerComponent {
             });
         }
 
-        const language = this.languageFor(file.extension);
+        const language = this.#languageFor(file.extension);
         // Dispose the previous models before swapping so we don't leak them.
-        const previous = this.editor.getModel();
+        const previous = this.#editor.getModel();
         const original = monaco.editor.createModel(file.live, language);
         const modified = monaco.editor.createModel(file.working, language);
-        this.editor.setModel({ original, modified });
+        this.#editor.setModel({ original, modified });
         previous?.original?.dispose();
         previous?.modified?.dispose();
     }
 
-    private disposeEditor(): void {
-        const model = this.editor?.getModel();
+    #disposeEditor(): void {
+        const model = this.#editor?.getModel();
         model?.original?.dispose();
         model?.modified?.dispose();
-        this.editor?.dispose();
-        this.editor = null;
+        this.#editor?.dispose();
+        this.#editor = null;
     }
 }
 

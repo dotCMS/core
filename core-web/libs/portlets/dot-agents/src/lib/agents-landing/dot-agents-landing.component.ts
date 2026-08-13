@@ -17,7 +17,6 @@ import { DOT_AGENTS } from '../agent-registry';
  */
 @Component({
     selector: 'dot-agents-landing',
-    standalone: true,
     imports: [
         NgTemplateOutlet,
         RouterLink,

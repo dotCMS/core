@@ -71,12 +71,12 @@ export class DotAgentActivityLogComponent {
      */
     readonly workingFallbackKey = input<string>('agent.activity.working');
 
-    private readonly dm = inject(DotMessageService);
-    private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+    readonly #dm = inject(DotMessageService);
+    readonly #host = inject<ElementRef<HTMLElement>>(ElementRef);
 
     /** Primary line for the thinking indicator (working message, or the fallback). */
     readonly workingText = computed<string>(
-        () => this.workingMessage()?.text ?? this.dm.get(this.workingFallbackKey())
+        () => this.workingMessage()?.text ?? this.#dm.get(this.workingFallbackKey())
     );
 
     /** Optional secondary line for the thinking indicator (e.g. elapsed seconds). */
@@ -106,10 +106,10 @@ export class DotAgentActivityLogComponent {
             if (!count && !working) {
                 return;
             }
-            const scroller = this.scrollParent(this.host.nativeElement);
+            const scroller = this.#scrollParent(this.#host.nativeElement);
             // Measured BEFORE the write, or the comparison is against the value we are
             // about to set and every check trivially passes.
-            if (scroller && this.isPinnedToBottom(scroller)) {
+            if (scroller && this.#isPinnedToBottom(scroller)) {
                 scroller.scrollTop = scroller.scrollHeight;
             }
         });
@@ -122,7 +122,7 @@ export class DotAgentActivityLogComponent {
      * is normally in flight while content streams in — without it, sub-pixel rounding
      * alone would read as "the user scrolled away" and auto-scroll would stop for good.
      */
-    private isPinnedToBottom(scroller: HTMLElement): boolean {
+    #isPinnedToBottom(scroller: HTMLElement): boolean {
         const distanceFromBottom =
             scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
 
@@ -134,7 +134,7 @@ export class DotAgentActivityLogComponent {
      * (overflow auto/scroll and actually overflowing), or the host itself if it
      * scrolls. Returns null when nothing scrolls (the log grows freely).
      */
-    private scrollParent(from: HTMLElement): HTMLElement | null {
+    #scrollParent(from: HTMLElement): HTMLElement | null {
         let el: HTMLElement | null = from;
         while (el) {
             const overflowY = getComputedStyle(el).overflowY;

@@ -39,7 +39,11 @@ function cleanStepText(message: string): string {
  * {@link DotMessageService} for i18n, so it can be constructed anywhere.
  */
 export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
-    constructor(private readonly dm: DotMessageService) {}
+    readonly #dm: DotMessageService;
+
+    constructor(dm: DotMessageService) {
+        this.#dm = dm;
+    }
 
     /** A live step → an info bubble, icon chosen from the step's `phase` meta. */
     liveStep(step: AgentRunStep, index: number): AgentMessage {
@@ -67,8 +71,8 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
             {
                 id: 'scan',
                 icon: 'search',
-                text: this.dm.get('accessibility.studio.recipe.scan'),
-                sub: this.dm.get(
+                text: this.#dm.get('accessibility.studio.recipe.scan'),
+                sub: this.#dm.get(
                     'accessibility.studio.recipe.scan.sub',
                     String(report.scan.before.violations)
                 ),
@@ -77,14 +81,14 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
             {
                 id: 'locate',
                 icon: 'account_tree',
-                text: this.dm.get('accessibility.studio.recipe.locate'),
+                text: this.#dm.get('accessibility.studio.recipe.locate'),
                 tone: 'info'
             },
             ...fixed.map((r, i) => ({
                 id: `fixed-${i}`,
                 icon: 'check',
-                text: r.review ?? this.dm.get('accessibility.studio.recipe.fixed', r.ruleId),
-                sub: this.ruleAndFile(r),
+                text: r.review ?? this.#dm.get('accessibility.studio.recipe.fixed', r.ruleId),
+                sub: this.#ruleAndFile(r),
                 tone: 'success' as const
             })),
             ...reported.map((r, i) => ({
@@ -94,15 +98,15 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
                 text:
                     r.review ??
                     r.reason ??
-                    this.dm.get('accessibility.studio.recipe.flagged', r.ruleId),
-                sub: this.ruleAndFile(r),
+                    this.#dm.get('accessibility.studio.recipe.flagged', r.ruleId),
+                sub: this.#ruleAndFile(r),
                 tone: 'warning' as const
             })),
             {
                 id: 'rescan',
                 icon: 'verified',
-                text: this.dm.get('accessibility.studio.recipe.rescan'),
-                sub: this.dm.get(
+                text: this.#dm.get('accessibility.studio.recipe.rescan'),
+                sub: this.#dm.get(
                     'accessibility.studio.recipe.rescan.sub',
                     String(report.scan.before.violations),
                     String(report.scan.after.violations)
@@ -112,7 +116,7 @@ export class A11yAgentPresenter implements AgentMessagePresenter<FixReport> {
         ];
     }
 
-    private ruleAndFile(r: FixResult): string {
+    #ruleAndFile(r: FixResult): string {
         const file = r.file ? r.file.split('/').pop() : undefined;
         return file ? `${r.ruleId} · ${file}` : r.ruleId;
     }

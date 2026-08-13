@@ -62,7 +62,6 @@ export const DIFF_RELOAD_DEBOUNCE_MS = 400;
  */
 @Component({
     selector: 'dot-a11y-diff',
-    standalone: true,
     imports: [DotMessagePipe],
     templateUrl: './a11y-diff.component.html',
     providers: [DotPageSourcesService],
@@ -72,8 +71,8 @@ export const DIFF_RELOAD_DEBOUNCE_MS = 400;
 export class DotA11yDiffComponent {
     readonly store = inject(A11yRunStore);
 
-    private readonly sourcesService = inject(DotPageSourcesService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #sourcesService = inject(DotPageSourcesService);
+    readonly #destroyRef = inject(DestroyRef);
 
     /**
      * The file whose diff the right pane should show, or null for the preview.
@@ -97,21 +96,21 @@ export class DotA11yDiffComponent {
     readonly changedCount = output<number>();
 
     /** Changed files (working ≠ live); empty until the first load resolves. */
-    readonly files = signal<PageDiffFile[]>([]);
-    readonly status = signal<DiffStatus>('loading');
+    readonly $files = signal<PageDiffFile[]>([]);
+    readonly $status = signal<DiffStatus>('loading');
 
     /** Identifier of the file being diffed in the right pane; null → preview. */
-    readonly selectedId = computed(() => this.activeFileId());
+    readonly $selectedId = computed(() => this.activeFileId());
 
     /** The currently selected diff file. */
-    readonly selected = computed<PageDiffFile | null>(() => {
-        const id = this.selectedId();
+    readonly $selected = computed<PageDiffFile | null>(() => {
+        const id = this.$selectedId();
 
-        return this.files().find((f) => f.identifier === id) ?? null;
+        return this.$files().find((f) => f.identifier === id) ?? null;
     });
 
     /** True once loaded and there are no changed files to show. */
-    readonly empty = computed(() => this.status() === 'loaded' && this.files().length === 0);
+    readonly $empty = computed(() => this.$status() === 'loaded' && this.$files().length === 0);
 
     constructor() {
         // Load the file list as soon as the page is known — before any scan — and reload
@@ -147,44 +146,44 @@ export class DotA11yDiffComponent {
                 distinctUntilChanged((a, b) => a.key === b.key),
                 debounceTime(DIFF_RELOAD_DEBOUNCE_MS),
                 switchMap((request) => {
-                    this.status.set('loading');
+                    this.$status.set('loading');
 
-                    return this.sourcesService
+                    return this.#sourcesService
                         .getPageSources(request.path, request.hostId, request.languageId)
                         .pipe(
                             switchMap((sources) =>
-                                this.sourcesService.getDiffFiles(sources, request.languageId)
+                                this.#sourcesService.getDiffFiles(sources, request.languageId)
                             ),
                             map((files) => ({ files, failed: false })),
                             catchError(() => of({ files: [] as PageDiffFile[], failed: true }))
                         );
                 }),
-                takeUntilDestroyed(this.destroyRef)
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ files, failed }) => {
                 if (failed) {
-                    this.status.set('error');
+                    this.$status.set('error');
                     this.changedCount.emit(0);
 
                     return;
                 }
 
-                this.files.set(files);
+                this.$files.set(files);
                 // A reload can drop the file the right pane was showing (e.g. a
                 // publish makes working == live). Close the pane in that case so
                 // it isn't left diffing something no longer in the list.
-                const openId = this.selectedId();
+                const openId = this.$selectedId();
                 if (openId && !files.some((f) => f.identifier === openId)) {
                     this.fileSelected.emit(null);
                 }
-                this.status.set('loaded');
+                this.$status.set('loaded');
                 this.changedCount.emit(files.length);
             });
     }
 
     /** Open a file's diff in the right pane. */
     selectFile(identifier: string): void {
-        this.fileSelected.emit(this.files().find((f) => f.identifier === identifier) ?? null);
+        this.fileSelected.emit(this.$files().find((f) => f.identifier === identifier) ?? null);
     }
 
     /** Leave the diff view — the right pane goes back to the preview. */

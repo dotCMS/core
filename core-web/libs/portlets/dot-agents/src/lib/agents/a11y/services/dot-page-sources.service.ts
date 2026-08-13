@@ -79,7 +79,7 @@ export class DotPageSourcesService {
             return of([]);
         }
 
-        return forkJoin(files.map((file) => this.resolveDiffFile(file, languageId))).pipe(
+        return forkJoin(files.map((file) => this.#resolveDiffFile(file, languageId))).pipe(
             map((results) =>
                 results.filter((f): f is PageDiffFile => f !== null).sort(byOriginThenName)
             )
@@ -90,11 +90,8 @@ export class DotPageSourcesService {
      * Resolve a single file's working-vs-live diff, or `null` when it can't be
      * diffed (no versions, missing working/live, fetch error, or identical text).
      */
-    private resolveDiffFile(
-        file: PageSourceFile,
-        languageId: number
-    ): Observable<PageDiffFile | null> {
-        return this.getVersions(file.identifier, languageId).pipe(
+    #resolveDiffFile(file: PageSourceFile, languageId: number): Observable<PageDiffFile | null> {
+        return this.#getVersions(file.identifier, languageId).pipe(
             switchMap((versions) => {
                 const working = versions.find((v) => v.working);
                 const live = versions.find((v) => v.live);
@@ -113,10 +110,10 @@ export class DotPageSourcesService {
                 }
 
                 return forkJoin({
-                    working: this.fetchText(workingUrl),
+                    working: this.#fetchText(workingUrl),
                     // No live version is a fact (`''`, a brand-new working-only file);
                     // a failed fetch is not (`null`, handled below).
-                    live: liveUrl ? this.fetchText(liveUrl) : of<string | null>('')
+                    live: liveUrl ? this.#fetchText(liveUrl) : of<string | null>('')
                 }).pipe(
                     map(({ working: workingText, live: liveText }) => {
                         // Either side unknown → drop the file rather than diff against a
@@ -149,7 +146,7 @@ export class DotPageSourcesService {
      * flatten every group and filter by each version's own `languageId` — the
      * numeric id we already hold.
      */
-    private getVersions(identifier: string, languageId: number): Observable<DotCMSContentlet[]> {
+    #getVersions(identifier: string, languageId: number): Observable<DotCMSContentlet[]> {
         return this.#http
             .get<
                 DotCMSAPIResponse<{ versions: Record<string, DotCMSContentlet[]> }>
@@ -176,7 +173,7 @@ export class DotPageSourcesService {
      * every line, which is the single most misleading thing this panel could show, since
      * its entire job is to be the trustworthy account of what the agent changed.
      */
-    private fetchText(url: string): Observable<string | null> {
+    #fetchText(url: string): Observable<string | null> {
         return this.#http.get(url, { responseType: 'text' }).pipe(catchError(() => of(null)));
     }
 }

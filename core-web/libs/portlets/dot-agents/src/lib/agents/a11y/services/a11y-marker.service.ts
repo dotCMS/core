@@ -50,12 +50,12 @@ const COLOR = {
 export class A11yMarkerService {
     /** Remove any markers previously injected, then draw one per flagged element. */
     render(iframe: HTMLIFrameElement | null | undefined, groups: A11yGroup[]): void {
-        const doc = this.getDocument(iframe);
+        const doc = this.#getDocument(iframe);
         if (!doc?.body) {
             return;
         }
 
-        const layer = this.ensureLayer(doc);
+        const layer = this.#ensureLayer(doc);
         layer.replaceChildren();
 
         for (const group of groups) {
@@ -66,13 +66,13 @@ export class A11yMarkerService {
             }
             const palette = COLOR[group.type];
             for (const item of group.items) {
-                const el = this.safeQuery(doc, item.selector);
-                if (!el || this.isRootLevel(el)) {
+                const el = this.#safeQuery(doc, item.selector);
+                if (!el || this.#isRootLevel(el)) {
                     // Skip <html>/<body> and page-spanning roots — outlining the
                     // whole page is noise, not a useful marker.
                     continue;
                 }
-                const marker = this.buildMarker(doc, el, group, palette);
+                const marker = this.#buildMarker(doc, el, group, palette);
                 if (marker) {
                     layer.appendChild(marker);
                 }
@@ -82,13 +82,13 @@ export class A11yMarkerService {
 
     /** Remove all injected markers from the iframe (e.g. before a re-scan). */
     clear(iframe: HTMLIFrameElement | null | undefined): void {
-        const doc = this.getDocument(iframe);
+        const doc = this.#getDocument(iframe);
         if (doc) {
-            this.clearIn(doc);
+            this.#clearIn(doc);
         }
     }
 
-    private buildMarker(
+    #buildMarker(
         doc: Document,
         el: Element,
         group: A11yGroup,
@@ -130,7 +130,7 @@ export class A11yMarkerService {
      * <html> so its containing block is the initial containing block — document
      * coordinates map 1:1, unaffected by body margins/padding.
      */
-    private ensureLayer(doc: Document): HTMLElement {
+    #ensureLayer(doc: Document): HTMLElement {
         let layer = doc.getElementById(LAYER_ID);
         if (!layer) {
             layer = doc.createElement('div');
@@ -150,17 +150,17 @@ export class A11yMarkerService {
     }
 
     /** True for <html>/<body> — page-spanning roots we don't want to outline. */
-    private isRootLevel(el: Element): boolean {
+    #isRootLevel(el: Element): boolean {
         const tag = el.tagName?.toLowerCase();
         return tag === 'html' || tag === 'body';
     }
 
-    private clearIn(doc: Document): void {
+    #clearIn(doc: Document): void {
         doc.getElementById(LAYER_ID)?.remove();
     }
 
     /** Access the iframe document; null when cross-origin or not yet loaded. */
-    private getDocument(iframe: HTMLIFrameElement | null | undefined): Document | null {
+    #getDocument(iframe: HTMLIFrameElement | null | undefined): Document | null {
         try {
             return iframe?.contentDocument ?? null;
         } catch {
@@ -170,7 +170,7 @@ export class A11yMarkerService {
     }
 
     /** axe selectors can be exotic; guard against invalid querySelector input. */
-    private safeQuery(doc: Document, selector: string): Element | null {
+    #safeQuery(doc: Document, selector: string): Element | null {
         if (!selector) {
             return null;
         }
