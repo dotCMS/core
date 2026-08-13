@@ -24135,16 +24135,32 @@ components:
       properties:
         identifier:
           type: string
+          description: dotCMS content identifier of the page to fix
+          example: a9f30020-54ef-494e-92ed-645e757171c2
         languageId:
           type: integer
           format: int32
+          default: 1
+          description: Language id of the page version to fix
+          example: 1
         skipCss:
           type: boolean
+          default: false
+          description: When true the agent fixes only VTL and reports CSS contrast
+            issues instead of editing stylesheets
+          example: false
+      required:
+      - identifier
     A11yAgentStopForm:
       type: object
       properties:
         runId:
           type: string
+          description: Run id returned by /fix (report) or /fix/stream (the `run`
+            event)
+          example: r_1f0c2b7d9a4e4c1fb0d5e6a7c8b9d0e1
+      required:
+      - runId
     AIImageRequestDTO:
       type: object
       properties:

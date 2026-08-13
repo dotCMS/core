@@ -170,7 +170,7 @@ public class A11yAgentResource {
             @Context final HttpServletResponse response,
             final A11yAgentStopForm body) {
 
-        if (body == null || !UtilMethods.isSet(body.getRunId())) {
+        if (body == null || !UtilMethods.isSet(body.runId())) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseEntityView<>(new ErrorEntity(
                             "MISSING_RUN_ID", "runId is required")))
@@ -182,7 +182,7 @@ public class A11yAgentResource {
             return ctx.errorResponse;
         }
 
-        final String payload = "{\"runId\":" + jsonString(body.getRunId()) + "}";
+        final String payload = "{\"runId\":" + jsonString(body.runId()) + "}";
         return forwardJson(ctx.agentUrl + "/stop", payload,
                 ctx.serviceAuthToken, ctx.shortLivedToken, "POST");
     }
@@ -244,18 +244,18 @@ public class A11yAgentResource {
 
         final User user = initData.getUser();
 
-        if (body == null || !UtilMethods.isSet(body.getIdentifier())) {
+        if (body == null || !UtilMethods.isSet(body.identifier())) {
             return AgentContext.error(Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseEntityView<>(new ErrorEntity(
                             "MISSING_IDENTIFIER", "page.identifier is required")))
                     .build());
         }
 
-        final PageInfo pageInfo = resolvePage(body.getIdentifier(), body.getLanguageId(), request);
+        final PageInfo pageInfo = resolvePage(body.identifier(), body.languageId(), request);
         if (pageInfo == null) {
             return AgentContext.error(Response.status(Response.Status.NOT_FOUND)
                     .entity(new ResponseEntityView<>(new ErrorEntity(
-                            "PAGE_NOT_FOUND", "No page found for identifier: " + body.getIdentifier())))
+                            "PAGE_NOT_FOUND", "No page found for identifier: " + body.identifier())))
                     .build());
         }
 
@@ -270,7 +270,7 @@ public class A11yAgentResource {
         final String dotcmsBaseUrl = buildBaseUrl(request);
         final String runId = "r_" + UUID.randomUUID().toString().replace("-", "");
         final String payload = buildAgentPayload(runId, dotcmsBaseUrl, pageInfo,
-                body.isSkipCss());
+                body.skipCss());
 
         return new AgentContext(agentUrl, authToken, shortLivedToken, payload, null);
     }

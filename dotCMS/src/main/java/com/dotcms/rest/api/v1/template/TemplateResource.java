@@ -576,9 +576,12 @@ public class TemplateResource {
 
         if (templateForm.isDrawed()) {
 
+            // Identify the failing Template in every error below so Support can trace it.
+            final String templateRef = describeTemplate(template);
+
             // A drawn template's body is parsed by jsoup; a null body NPEs downstream.
             if (template.getBody() == null) {
-                throw new BadRequestException("body required when drawed");
+                throw new BadRequestException("body required when drawed for " + templateRef);
             }
 
             // 'theme' must resolve to a theme folder; FolderAPI.find returns null for a
@@ -587,7 +590,8 @@ public class TemplateResource {
                     .find(templateForm.getTheme(), user, respectAnonPerms);
             if (themeFolder == null || !InodeUtils.isSet(themeFolder.getInode())) {
                 throw new BadRequestException("theme must be a folder identifier; '"
-                        + templateForm.getTheme() + "' does not resolve to a folder");
+                        + templateForm.getTheme() + "' does not resolve to a folder for "
+                        + templateRef);
             }
 
             final String themeHostId = themeFolder.getHostId();
@@ -600,6 +604,21 @@ public class TemplateResource {
                     themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
             template.setBody(endBody.toString());
         }
+    }
+
+    /**
+     * Renders a Template as {@code Template 'title' [id]} for error messages, so Support can
+     * tell which Template failed. A Template being created has no identifier yet, in which
+     * case only the title is reported.
+     *
+     * @param template the Template being saved
+     * @return a human-readable reference to the Template
+     */
+    private static String describeTemplate(final Template template) {
+        final String title = UtilMethods.isSet(template.getTitle()) ? template.getTitle() : "unknown";
+        return UtilMethods.isSet(template.getIdentifier())
+                ? "Template '" + title + "' [" + template.getIdentifier() + "]"
+                : "new Template '" + title + "'";
     }
 
     /**
