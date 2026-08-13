@@ -10,7 +10,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotLanguage, ESContent } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { SubscriptionSlot } from './subscription-slot';
