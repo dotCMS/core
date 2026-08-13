@@ -2908,6 +2908,26 @@ paths:
           description: default response
       tags:
       - AI
+  /v1/ai/providers:
+    get:
+      description: "Returns, for every registered dotAI provider, the capabilities\
+        \ it supports (chat/embeddings/image) and the providerConfig fields each supported\
+        \ capability requires or accepts."
+      operationId: listAiProviders
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAiProviderListView"
+          description: Provider metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+      summary: List dotAI provider configuration metadata
+      tags:
+      - AI
   /v1/ai/search:
     get:
       operationId: searchByGet
@@ -30495,6 +30515,41 @@ components:
           type: object
           additionalProperties:
             type: object
+    ProviderField:
+      type: object
+      properties:
+        hint:
+          type: string
+        name:
+          type: string
+        required:
+          type: boolean
+        type:
+          type: string
+          enum:
+          - STRING
+          - NUMBER
+          - SECRET
+    ProviderMetadata:
+      type: object
+      properties:
+        fields:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/ProviderField"
+        provider:
+          type: string
+        supportedCapabilities:
+          type: array
+          items:
+            type: string
+            enum:
+            - CHAT
+            - EMBEDDINGS
+            - IMAGE
+          uniqueItems: true
     PublishingEndPoint:
       type: object
       properties:
@@ -31207,6 +31262,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/AddAssetsToBundleView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAiProviderListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderMetadata"
         errors:
           type: array
           items:
