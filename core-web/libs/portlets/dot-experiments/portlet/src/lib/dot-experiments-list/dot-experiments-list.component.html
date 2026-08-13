@@ -83,15 +83,18 @@
                          column that grows with real data. It is capped rather than given a share
                          of the table: a long name is truncated inside its own cell instead of
                          squeezing every other column until the dates wrap onto a second line. -->
-                    <th class="w-72 max-w-72">{{ 'experiments.list.header.experiment' | dm }}</th>
+                    <th class="w-80 max-w-80">{{ 'experiments.list.header.experiment' | dm }}</th>
                     <th>{{ 'experiments.list.header.page' | dm }}</th>
                     <th>{{ 'experiments.list.header.goal' | dm }}</th>
-                    <th class="text-center">{{ 'experiments.list.header.variants' | dm }}</th>
-                    <th class="whitespace-nowrap">
+                    <th class="text-center!">{{ 'experiments.list.header.variants' | dm }}</th>
+                    <!-- Sized for the widest thing each can hold — two dates and a separator
+                         here, one date for Modified — so the slack goes to the Experiment column
+                         instead of padding out the dates. -->
+                    <th class="w-60 whitespace-nowrap">
                         {{ 'experiments.list.header.schedule' | dm }}
                     </th>
                     <th>{{ 'experiments.list.header.status' | dm }}</th>
-                    <th pSortableColumn="modDate">
+                    <th class="w-36 whitespace-nowrap" pSortableColumn="modDate">
                         {{ 'experiments.list.header.modified' | dm }}
                         <p-sortIcon field="modDate" />
                     </th>
@@ -116,7 +119,7 @@
                     </tr>
                 } @else {
                     <tr class="group" data-testid="experiment-row">
-                        <td class="max-w-72" data-testid="experiment-name">
+                        <td class="max-w-80" data-testid="experiment-name">
                             <!-- `min-w-0` so the flex children may shrink below their text width,
                                  which is what lets `truncate` ellipsize instead of overflowing.
                                  The full value stays reachable as a tooltip. -->
@@ -139,7 +142,7 @@
                         <td data-testid="experiment-goal">
                             {{ row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER }}
                         </td>
-                        <td class="text-center" data-testid="experiment-variants">
+                        <td class="text-center!" data-testid="experiment-variants">
                             {{ row.variants }}
                         </td>
                         <!-- The date range and the date below are single values that read as
