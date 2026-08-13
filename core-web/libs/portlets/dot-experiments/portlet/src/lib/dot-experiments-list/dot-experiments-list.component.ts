@@ -65,7 +65,11 @@ import {
     STATUS_SEVERITIES,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
-import { ExperimentFilterOption, ExperimentRow } from '../shared/models';
+import {
+    DotExperimentsListSortDirection,
+    ExperimentFilterOption,
+    ExperimentRow
+} from '../shared/models';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
@@ -370,11 +374,17 @@ export class DotExperimentsListComponent {
 
         if (event.sortField) {
             const field = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
+            const direction: DotExperimentsListSortDirection =
+                event.sortOrder === -1 ? 'DESC' : 'ASC';
 
-            this.#dispatch.sortChanged({
-                orderBy: field,
-                direction: event.sortOrder === -1 ? 'DESC' : 'ASC'
-            });
+            // Only when the sort actually moved. PrimeNG's `createLazyLoadMetadata()` puts the
+            // current sortField and sortOrder on *every* lazy-load event — the initial render and
+            // each pagination included — and `sortChanged` resets the page. Dispatching it
+            // unconditionally meant paging to 2 immediately reset to 1, and a `?page=N` deep link
+            // was undone by the table's own first event.
+            if (field !== this.store.orderBy() || direction !== this.store.direction()) {
+                this.#dispatch.sortChanged({ orderBy: field, direction });
+            }
         }
     }
 

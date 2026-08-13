@@ -834,6 +834,46 @@ describe('DotExperimentsListComponent', () => {
             expect(dispatchedEvents().some(({ type }) => type.includes('sortChanged'))).toBe(false);
         });
 
+        it('should not dispatch a sort when the event only carries the sort already applied', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+            dispatch.mockClear();
+
+            // What PrimeNG actually emits when you click page 2: `createLazyLoadMetadata()` puts
+            // the *current* sortField and sortOrder on every lazy-load event, pagination included.
+            spectator.component.onLazyLoad({
+                first: 25,
+                rows: 25,
+                sortField: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+                sortOrder: -1
+            });
+
+            // Dispatching that no-op sort resets the page, so paging never advanced past 1 and a
+            // `?page=N` deep link snapped back on load.
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 25 })
+            );
+            expect(dispatchedEvents().some(({ type }) => type.includes('sortChanged'))).toBe(false);
+        });
+
+        it('should still dispatch a sort when the direction actually changes', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+            dispatch.mockClear();
+
+            spectator.component.onLazyLoad({
+                first: 0,
+                rows: 25,
+                sortField: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+                sortOrder: 1
+            });
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.sortChanged({
+                    orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+                    direction: 'ASC'
+                })
+            );
+        });
+
         it('should dispatch statusesChanged with the picked statuses', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
