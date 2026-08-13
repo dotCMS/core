@@ -43,7 +43,6 @@ import {
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 
 import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
-import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { PushPublishServiceMock } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 
 const messageServiceMock = new MockDotMessageService({

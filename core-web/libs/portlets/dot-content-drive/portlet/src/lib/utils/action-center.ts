@@ -43,8 +43,6 @@ export interface DotActionCenterQuickAction {
     danger: boolean;
     /** i18n key for a confirm prompt before fire. */
     confirmMessage?: string;
-    /** i18n key when the action is always disabled (e.g. not implemented yet). */
-    pendingHint?: string;
     /**
      * Eligible items likely to fail — heads-up only; they are still fired.
      * See Unlock in {@link QUICK_ACTIONS}.
@@ -80,8 +78,6 @@ interface DotActionCenterQuickActionDef {
     eligibleWhen: (item: DotCMSContentlet) => boolean;
     /** i18n key for confirm before fire (destructive actions). */
     confirmMessage?: string;
-    /** i18n key when always disabled. */
-    pendingHint?: string;
     /** Among eligible items; feeds `warningCount`. */
     warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
@@ -108,9 +104,8 @@ export const isLockedByAnotherUser = (
  *
  * Order: Lock, Unlock, Publish, Unpublish, Archive, Delete, Unarchive, Add to Bundle.
  *
- * v1 notes:
- * - All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`.
- * - Add to Bundle is always disabled (needs picker + enterprise gate).
+ * All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`; Add to
+ * Bundle posts to the legacy bundle servlet and collects a target first.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
@@ -176,15 +171,28 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
         danger: false,
-        // Count = full selection; shows coverage once the picker ships.
-        eligibleWhen: () => true,
-        pendingHint: 'content-drive.action-center.add-to-bundle.pending'
+        // Every contentlet can go in a bundle: there is no state that disqualifies one, unlike
+        // Publish or Unarchive. Coverage is the whole selection, minus the identifier collapse the
+        // configuration step explains.
+        eligibleWhen: () => true
     }
 ];
 
 /** Drops folders from a selection (bulk endpoints are contentlet-only). */
 export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[] =>
     items.filter((item): item is DotCMSContentlet => !isFolder(item));
+
+/**
+ * Distinct identifiers among the given contentlets, in first-seen order.
+ *
+ * Bundles hold one entry per identifier, so every language version of a contentlet is the same asset.
+ * The endpoint dedupes server-side either way ("Multiples languages have the same identifier"); doing
+ * it here as well is what lets the dialog say how many assets it is really about to add, instead of
+ * promising a row count the result will silently undercut.
+ */
+export const toDistinctIdentifiers = (contentlets: DotCMSContentlet[]): string[] => [
+    ...new Set(contentlets.map((item) => item.identifier).filter(Boolean))
+];
 
 /** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
@@ -225,7 +233,6 @@ export const getQuickActions = (
             eligibleInodes,
             count: eligibleInodes.length,
             confirmMessage: quickAction.confirmMessage,
-            pendingHint: quickAction.pendingHint,
             warningCount,
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined
         };
@@ -369,20 +376,117 @@ export const eligibleContentlets = (
 };
 
 /**
+ * A configuration section the dialog knows how to render.
+ *
+ * `assignComment` is **one** section covering two flags: `DotWorkflowAssignCommentComponent` renders an
+ * assignee, a comment, or both, so an action declaring both still needs a single section.
+ */
+export type DotActionInputKind = 'move' | 'assignComment' | 'pushPublish';
+
+/**
+ * The configuration sections an action needs, in the order they are shown.
+ *
+ * Every section is rendered together on one screen, so this is a render order rather than a page
+ * sequence. The order still matches the legacy wizard's — move and assign/comment before push publish —
+ * so a user moving between the two dialogs meets the same arrangement.
+ *
+ * An empty result means the action fires straight from the selection, and there is no configuration
+ * screen at all.
+ */
+export const requiredInputKinds = (
+    action: DotActionCenterWorkflowAction | undefined
+): DotActionInputKind[] => {
+    if (!action) {
+        return [];
+    }
+
+    const { moveable, assignable, commentable, pushPublish } = action.inputs;
+
+    return [
+        ...(moveable ? (['move'] as const) : []),
+        ...(assignable || commentable ? (['assignComment'] as const) : []),
+        ...(pushPublish ? (['pushPublish'] as const) : [])
+    ];
+};
+
+/**
+ * Converts the host/folder field's value into the `_path_to_move` the bulk endpoint expects.
+ *
+ * `DotHostFolderFieldComponent` writes `hostname:/folder/path` — the format the Site-or-Folder *content
+ * field* persists. `MoveContentActionlet` reads `//hostname/folder/path` instead, the same shape Content
+ * Drive's drag-and-drop move already builds. Neither side is wrong; they are different contracts that
+ * happen to meet here, so the seam gets one named function instead of an inline template expression.
+ *
+ * Returns an empty string for an unset or unrecognised value, which callers treat as "no path chosen"
+ * — never a silently malformed path that the server would reject with "The host path is not valid".
+ */
+export const toPathToMove = (hostFolderValue: string | null | undefined): string => {
+    const separatorIndex = hostFolderValue?.indexOf(':') ?? -1;
+
+    if (!hostFolderValue || separatorIndex < 1) {
+        return '';
+    }
+
+    const hostname = hostFolderValue.slice(0, separatorIndex);
+    const path = hostFolderValue.slice(separatorIndex + 1);
+
+    return `//${hostname}${path.startsWith('/') ? path : `/${path}`}`;
+};
+
+/**
+ * Inverse of {@link toPathToMove}: `//hostname/path` → the `hostname:/path` the picker reads.
+ *
+ * Used to seed the picker with the folder Content Drive is currently browsing, which is what makes it
+ * open on the tree already expanded to that folder rather than at the site list. The picker has no
+ * separate "start here" input — `writeValue` is the only channel that drives its initial load — so the
+ * starting location has to arrive as a value.
+ *
+ * Returns an empty string for anything it cannot parse, which leaves the picker unseeded rather than
+ * feeding it a path it would fail to resolve.
+ */
+export const toHostFolderValue = (pathToMove: string | null | undefined): string => {
+    if (!pathToMove?.startsWith('//')) {
+        return '';
+    }
+
+    const withoutPrefix = pathToMove.slice(2);
+    const separatorIndex = withoutPrefix.indexOf('/');
+
+    if (separatorIndex < 1) {
+        // A bare `//hostname` is the site root; the picker still expects an explicit path.
+        return withoutPrefix ? `${withoutPrefix}:/` : '';
+    }
+
+    return `${withoutPrefix.slice(0, separatorIndex)}:${withoutPrefix.slice(separatorIndex)}`;
+};
+
+/**
  * Maps API `CountWorkflowAction` → UI shape.
- * `requiresInput` covers push-publish, move path, or assign/comment — v1 disables these.
+ *
+ * The four input flags are carried through individually rather than collapsed: each maps to a section
+ * the configuration screen renders, and a roll-up boolean would say nothing about which.
  */
 const toActionCenterAction = (
     countAction: DotCountWorkflowAction
 ): DotActionCenterWorkflowAction => {
     const { workflowAction, pushPublish, moveable, conditionPresent, count } = countAction;
 
+    const inputs = {
+        moveable,
+        pushPublish,
+        assignable: workflowAction.assignable,
+        commentable: workflowAction.commentable
+    };
+
     return {
         id: workflowAction.id,
         name: workflowAction.name,
         count,
-        requiresInput:
-            pushPublish || moveable || workflowAction.assignable || workflowAction.commentable,
+        inputs,
+        // Only meaningful for an assignable action, but carried unconditionally so the assignee picker
+        // does not need a second lookup to find the role list it should offer.
+        nextAssign: workflowAction.nextAssign,
+        roleHierarchyForAssign: workflowAction.roleHierarchyForAssign,
         approximateCount: conditionPresent,
         // Filled by `mergeActionCenterSchemes`.
         contentTypes: []

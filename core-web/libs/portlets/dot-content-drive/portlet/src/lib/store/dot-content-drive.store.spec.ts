@@ -1,5 +1,10 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
+import {
+    createServiceFactory,
+    SpectatorService,
+    mockProvider,
+    SpyObject
+} from '@openng/spectator/jest';
 import { NEVER, of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -7,6 +12,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import {
+    AddToBundleService,
     DotContentDriveService,
     DotCurrentUserService,
     DotFolderService,
@@ -65,6 +71,8 @@ describe('DotContentDriveStore', () => {
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -786,6 +794,8 @@ describe('DotContentDriveStore - onInit', () => {
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -842,6 +852,8 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -938,6 +950,8 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1223,6 +1237,8 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 fireDefaultAction: jest.fn(),
                 bulkFire: jest.fn()
             }),
+            // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
+            mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
@@ -1417,6 +1433,97 @@ describe('DotContentDriveStore - withActionExecution', () => {
             );
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('executeAddToBundle', () => {
+        const BUNDLE = { id: 'bundle-1', name: 'Release 1' };
+        let addToBundleService: SpyObject<AddToBundleService>;
+
+        beforeEach(() => {
+            addToBundleService = spectator.inject(AddToBundleService);
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+        });
+
+        it('should post the identifiers comma-joined', () => {
+            // The servlet splits `assetIdentifier` on "," and has always accepted several ids that
+            // way, which is why bulk needs no new endpoint.
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,id-2', BUNDLE);
+        });
+
+        it('should report the server count of assets queued, not the number sent', () => {
+            // The server dedupes by identifier and drops anything already in the bundle, so `total`
+            // can be lower than what was posted. Reporting the input would overstate the result.
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0
+            });
+        });
+
+        it('should split failures out of the total', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 2,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        it('should never report a negative success count', () => {
+            // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(store.actionExecutionResult()?.successCount).toBe(0);
+        });
+
+        it('should mark the run in progress while it is in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(store.actionExecution()).toEqual({ actionName: 'Add to Bundle', total: 2 });
+        });
+
+        it('should refuse a second run while one is in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-2']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
 
             expect(httpErrorManager.handle).toHaveBeenCalled();
             expect(store.actionExecution()).toBeUndefined();

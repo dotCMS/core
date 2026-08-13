@@ -26,25 +26,49 @@ import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-acce
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
+    DotBundle,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotWorkflowAssignCommentComponent,
+    DotWorkflowAssignCommentValue,
+    DotWorkflowPushPublishComponent,
+    DotWorkflowPushPublishValue
+} from '@dotcms/ui';
 
+import {
+    DotContentDriveActionBundleTargetComponent,
+    rememberLastBundleUsed
+} from './components/dot-content-drive-action-bundle-target/dot-content-drive-action-bundle-target.component';
+import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
+    ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
+    DotActionInputKind,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
     groupByContentType,
     isLockedByAnotherUser,
-    mergeActionCenterSchemes
+    mergeActionCenterSchemes,
+    requiredInputKinds,
+    toDistinctIdentifiers
 } from '../../../utils/action-center';
 
-/** The two screens the dialog switches between. */
-type DotActionCenterView = 'actions' | 'preview';
+/** The screens the dialog switches between. */
+type DotActionCenterView = 'actions' | 'configure' | 'preview';
+
+/**
+ * A section the `configure` screen can render.
+ *
+ * `bundle` is the quick action's own kind; the rest mirror {@link DotActionInputKind}. An action can
+ * need several, and they all render on one screen.
+ */
+type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
 
 /**
  * Bulk action dialog for the current Content Drive selection, offered from one contentlet upward.
@@ -61,6 +85,12 @@ type DotActionCenterView = 'actions' | 'preview';
  *
  * **Both sections commit the same way**: picking an action opens a **preview** screen (`$view`)
  * listing the contentlets it will run on with a checkbox each, and nothing is sent until Execute.
+ *
+ * An action that needs input first gets a **configuration** screen ahead of the preview, so the flow is
+ * `pick → configure → preview → execute`. Every input the action declares renders as a section on that
+ * one screen (see {@link $configureKinds}) rather than as a page each: an approval that assigns *and*
+ * push-publishes would otherwise turn one bulk action into a five-screen flow. The preview deliberately
+ * stays last, keeping the rows and the Execute button together as the final screen for every action.
  *
  * This used to be workflow-only, on the reasoning that a quick action's count is derived from the
  * rows themselves and so "which items is this about to touch?" had an obvious answer. That confused
@@ -81,9 +111,9 @@ type DotActionCenterView = 'actions' | 'preview';
  * - **One action per execute.** No endpoint fires multiple different actions in one call, and firing
  *   one action moves contentlets to a new step — which invalidates the other actions' counts. The
  *   legacy JSP dialog has the same constraint (one button, one fire).
- * - **Actions needing extra input are disabled** (`requiresInput`): push-publish settings, a move
- *   target path, or an assign/comment prompt. Wiring those means reusing
- *   `DotWorkflowEventHandlerService`, which is out of scope here.
+ * - **Every workflow action is reachable.** No row is greyed for needing input any more; whatever the
+ *   action declares in `actionInputs[]` gets a section on the configuration screen.
+ *
  * Renders inside the shell's shared dialog rather than owning one, so there is a single dialog and a
  * single open/close path. The shell sizes this type's content box as a flex column; this component
  * fills it with a pinned summary, a scrolling body and a pinned footer.
@@ -100,8 +130,12 @@ type DotActionCenterView = 'actions' | 'preview';
         BadgeModule,
         ButtonModule,
         ConfirmDialogModule,
+        DotContentDriveActionBundleTargetComponent,
+        DotContentDriveActionMoveTargetComponent,
         DotContentDriveActionPreviewComponent,
         DotMessagePipe,
+        DotWorkflowAssignCommentComponent,
+        DotWorkflowPushPublishComponent,
         FormsModule,
         MessageModule,
         RadioButtonModule,
@@ -222,10 +256,180 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected readonly $executing = computed(() => !!this.#store.actionExecution());
     /**
-     * Which screen is showing. Quick actions never leave `'actions'`; picking a workflow action and
-     * continuing swaps to `'preview'`.
+     * Which screen is showing.
+     *
+     * Quick actions always go straight to `'preview'`; a workflow action goes through `'configure'`
+     * first when it needs a target path, so the order is `pick → configure → preview → execute`.
+     *
+     * The configuration step sits *before* the preview rather than after it so the preview stays the
+     * last thing seen before committing — the same position it holds for every other action, with the
+     * checkbox list and the Execute button together. Putting it after would mean the user confirms a
+     * set of rows and then leaves that screen to fill in a form, which reads as a second commit.
      */
     protected readonly $view = signal<DotActionCenterView>('actions');
+    /**
+     * The bulk move destination as `//hostname/path`, or `''` while nothing is chosen.
+     *
+     * Lives here rather than in the step component because it has to survive navigating forward to the
+     * preview and back again — the step is destroyed by the `@switch` on `$view`, and a user who
+     * returns to correct their selection should not find the picker reset.
+     */
+    protected readonly $pathToMove = signal<string>('');
+
+    /**
+     * The folder Content Drive is currently browsing, as `//hostname/path`.
+     *
+     * Seeds the destination picker so it opens on the current location instead of the bare site list.
+     * The same string the store builds for its own search (`assetPath`), so the two cannot drift.
+     *
+     * Note this is the *browsing* path, not any contentlet's own folder: with a search or filter
+     * applied the selection can span folders, and no single "current path" exists for it. As a place
+     * to start navigating from it is right either way, which is all it is used for.
+     */
+    protected readonly $currentPath = computed(() => {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        return hostname ? `//${hostname}${this.#store.path() || '/'}` : '';
+    });
+
+    /**
+     * True when the destination is still the folder the picker opened on.
+     *
+     * Advisory only — it warns, it does not block. Seeding the picker means a destination is present
+     * from the outset, and a move to where the items already are costs a version and a reindex each
+     * for no change, which is worth flagging.
+     *
+     * It cannot be a gate, because it compares against the *browsing* path and the selection does not
+     * have to live there. With a search or filter applied `path()` can be unset, making this the site
+     * root — so gating on it refused a perfectly legitimate move of filtered results to the root.
+     * Contentlets carry a folder inode but no path, so there is no client-side way to compare against
+     * where the items actually are. Warning is the honest amount of certainty available here.
+     */
+    protected readonly $destinationUnchanged = computed(
+        () => !!this.$pathToMove() && this.$pathToMove() === this.$currentPath()
+    );
+
+    /** The bundle chosen in the configuration step, or `null` while none is. */
+    protected readonly $selectedBundle = signal<DotBundle | null>(null);
+
+    /**
+     * Assignee and comment collected for an assignable/commentable action.
+     *
+     * The step reports its own validity rather than this component re-deriving it: whether an assignee
+     * is required depends on roles the step loaded, which only it knows.
+     */
+    protected readonly $assignComment = signal<DotWorkflowAssignCommentValue>({
+        assign: '',
+        comment: ''
+    });
+    protected readonly $assignCommentValid = signal<boolean>(false);
+
+    /** Push publish settings, already in the shape the fire request wants. */
+    protected readonly $pushPublish = signal<DotWorkflowPushPublishValue | null>(null);
+    protected readonly $pushPublishValid = signal<boolean>(false);
+
+    /**
+     * Every configuration section the armed action needs, in render order. Empty when it fires straight
+     * from the selection.
+     *
+     * One list for both action sources, so the `configure` view has a single discriminator rather than
+     * the template asking two unrelated questions. All of them render together on one screen: an action
+     * can declare several inputs (an approval that assigns *and* push-publishes), and paging them would
+     * make a four- or five-screen flow out of one bulk action.
+     */
+    protected readonly $configureKinds = computed<DotActionCenterConfigureKind[]>(() => {
+        const quickAction = this.$pendingQuickAction();
+
+        if (quickAction) {
+            return quickAction.id === ADD_TO_BUNDLE_ACTION_ID ? ['bundle'] : [];
+        }
+
+        return requiredInputKinds(this.$selectedAction());
+    });
+
+    /** True when more than one section is on screen, which is what earns the dividers and headings. */
+    protected readonly $hasMultipleSections = computed(() => this.$configureKinds().length > 1);
+
+    /**
+     * Distinct assets an Add to Bundle would queue.
+     *
+     * A bundle holds one entry per identifier, so language versions of a contentlet are one asset.
+     */
+    protected readonly $bundleAssetCount = computed(
+        () => toDistinctIdentifiers(this.$includedItems()).length
+    );
+
+    /** Rows the identifier collapse absorbs, so the step can say so before the fact. */
+    protected readonly $bundleCollapsedCount = computed(
+        () => this.$includedCount() - this.$bundleAssetCount()
+    );
+
+    /**
+     * Whether one section has everything it needs.
+     *
+     * Move and bundle are judged here because the dialog owns their values; assign/comment and push
+     * publish report their own, since only they know what their loaded roles or environments make
+     * required.
+     */
+    protected sectionIsSatisfied(kind: DotActionCenterConfigureKind): boolean {
+        switch (kind) {
+            case 'move':
+                return !!this.$pathToMove();
+            case 'bundle':
+                return !!this.$selectedBundle();
+            case 'assignComment':
+                return this.$assignCommentValid();
+            case 'pushPublish':
+                return this.$pushPublishValid();
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Whether every section on screen has what it needs.
+     *
+     * Nothing to collect leaves this true, so an action with no inputs is never blocked.
+     */
+    protected readonly $canLeaveConfigure = computed(() =>
+        this.$configureKinds().every((kind) => this.sectionIsSatisfied(kind))
+    );
+
+    /**
+     * The hint for the first section still missing something, or `''` when nothing is.
+     *
+     * The cost of stacking sections is that an incomplete field can be scrolled out of view, leaving a
+     * disabled Continue with no visible cause. Naming the first unsatisfied section in the footer is
+     * what keeps that from being a dead end.
+     */
+    /**
+     * Advisory shown when the chosen destination is the folder being browsed.
+     *
+     * Separate from {@link $configureHint}, which lists what is *missing*: this one accompanies a
+     * perfectly valid choice that is probably not what the user meant.
+     */
+    protected readonly $configureWarning = computed(() =>
+        this.$configureKinds().includes('move') && this.$destinationUnchanged()
+            ? 'content-drive.action-center.move.same-destination'
+            : ''
+    );
+
+    protected readonly $configureHint = computed(() => {
+        const unsatisfied = this.$configureKinds().find((kind) => !this.sectionIsSatisfied(kind));
+
+        switch (unsatisfied) {
+            case 'move':
+                return 'content-drive.action-center.move.no-destination';
+            case 'bundle':
+                return 'content-drive.action-center.bundle.no-target';
+            case 'assignComment':
+                return 'content-drive.action-center.assign.no-assignee';
+            case 'pushPublish':
+                return 'content-drive.action-center.push-publish.no-environment';
+            default:
+                return '';
+        }
+    });
     /**
      * The contentlets still checked in the preview — exactly what gets fired.
      *
@@ -261,6 +465,25 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     /** Number of contentlets still checked in the preview. */
     protected readonly $includedCount = computed(() => this.$includedItems().length);
+
+    /**
+     * Label for the preview's back control, which names where it actually goes.
+     *
+     * "Back to actions" would be a lie on a move, where back lands on the destination picker.
+     */
+    protected readonly $backLabel = computed(() => {
+        const kinds = this.$configureKinds();
+
+        if (!kinds.length) {
+            return 'content-drive.action-center.back';
+        }
+
+        // "Back to destination" only when the destination picker is the whole screen; anything else is
+        // a form, or several, so the generic label is the honest one.
+        return kinds.length === 1 && kinds[0] === 'move'
+            ? 'content-drive.action-center.back.configure'
+            : 'content-drive.action-center.back.settings';
+    });
 
     /**
      * The single armed workflow action, resolved across every scheme.
@@ -325,8 +548,11 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Returns the scheme that owns the currently selected action, if any. Used to enable only that
-     * scheme's Execute button, keeping execution to one action at a time.
+     * Whether the armed action belongs to this scheme.
+     *
+     * Drives the panel header's "1 Selected" badge, which is what tells the user where their armed
+     * action lives once they have scrolled or collapsed the panel — the footer's Continue says an
+     * action is armed but not which panel holds it.
      */
     protected schemeOwnsSelection(scheme: DotActionCenterScheme): boolean {
         const selectedId = this.$selectedActionId();
@@ -334,17 +560,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         return !!selectedId && scheme.actions.some((action) => action.id === selectedId);
     }
 
-    /**
-     * Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears.
-     *
-     * `pendingHint` wins over the not-applicable message: an action that cannot run at all yet
-     * should say so rather than blame the current selection.
-     */
+    /** Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears. */
     protected quickActionHint(quickAction: DotActionCenterQuickAction): string {
-        if (quickAction.pendingHint) {
-            return quickAction.pendingHint;
-        }
-
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -358,9 +575,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        // `pendingHint` marks an action with no working implementation yet (Add to Bundle needs a
-        // bundle picker). The row is disabled, but guard here too so it can never open.
-        if (!quickAction.count || quickAction.pendingHint) {
+        if (!quickAction.count) {
             return;
         }
 
@@ -372,7 +587,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         const previewItems = this.$previewItems();
 
         this.$includedItems.set(previewItems);
-        this.$view.set('preview');
+        // Add to Bundle needs a target first; every other quick action fires from the selection alone
+        // and goes straight to its preview.
+        this.$view.set(this.$configureKinds().length ? 'configure' : 'preview');
         this.publishDrillDownHeader(
             // Quick action names are i18n keys, unlike workflow actions which arrive pre-translated.
             this.#dotMessageService.get(quickAction.name),
@@ -411,6 +628,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
+        // Add to Bundle leaves the workflow path entirely — different endpoint, different id kind, and
+        // a target that has to be present. Handled before the confirm branch because it carries no
+        // `confirmMessage`: nothing is published or destroyed by queueing content into a bundle.
+        if (quickAction.id === ADD_TO_BUNDLE_ACTION_ID) {
+            this.fireAddToBundle(quickAction);
+
+            return;
+        }
+
         if (quickAction.confirmMessage) {
             this.#confirmationService.confirm({
                 message: this.#dotMessageService.get(quickAction.confirmMessage),
@@ -435,6 +661,32 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             quickAction.id,
             this.#dotMessageService.get(quickAction.name),
             inodes
+        );
+        this.handOffToToolbar();
+    }
+
+    /**
+     * Queues the checked contentlets into the chosen bundle.
+     *
+     * Sends **identifiers**, deduped: the only action here that does not speak inodes. Refuses without
+     * a bundle rather than posting — the servlet would create one named `""` or fail opaquely.
+     *
+     * The choice is remembered so the next visit — and the single-item dialog, which shares the key —
+     * opens on the same bundle.
+     */
+    private fireAddToBundle(quickAction: DotActionCenterQuickAction): void {
+        const bundle = this.$selectedBundle();
+        const identifiers = toDistinctIdentifiers(this.$includedItems());
+
+        if (!bundle || !identifiers.length) {
+            return;
+        }
+
+        rememberLastBundleUsed(bundle);
+        this.#store.executeAddToBundle(
+            this.#dotMessageService.get(quickAction.name),
+            bundle,
+            identifiers
         );
         this.handOffToToolbar();
     }
@@ -481,15 +733,85 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         }
 
         this.$includedItems.set(previewItems);
-        this.$view.set('preview');
+
+        // An action needing a destination stops here for it; every other action goes straight to the
+        // preview. The header carries the item count either way, so the configuration step keeps the
+        // "N items" context without repeating the row list.
+        const configureKinds = this.$configureKinds();
+
+        if (configureKinds.includes('move')) {
+            // Mirrors what the seeded picker is showing, so the two agree from the first render.
+            // `$destinationUnchanged` warns if the user leaves it as-is; it no longer blocks.
+            this.$pathToMove.set(this.$currentPath());
+        }
+
+        this.$view.set(configureKinds.length ? 'configure' : 'preview');
+
         this.publishDrillDownHeader(action.name, previewItems.length);
+    }
+
+    /** Records the destination chosen in the configuration step. */
+    protected onPathToMoveChange(pathToMove: string): void {
+        this.$pathToMove.set(pathToMove);
+    }
+
+    /** Records the bundle chosen in the configuration step. */
+    protected onBundleChange(bundle: DotBundle | null): void {
+        this.$selectedBundle.set(bundle);
+    }
+
+    protected onAssignCommentChange(value: DotWorkflowAssignCommentValue): void {
+        this.$assignComment.set(value);
+    }
+
+    protected onPushPublishChange(value: DotWorkflowPushPublishValue): void {
+        this.$pushPublish.set(value);
+    }
+
+    /**
+     * Leaves the configuration step for the preview, once a destination is chosen.
+     *
+     * Guarded rather than relying on the disabled button alone, so the step cannot be skipped past by
+     * a stray call and reach Execute with an empty path — which the server would reject with an
+     * opaque "The host path is not valid".
+     */
+    protected onContinueFromConfigure(): void {
+        if (!this.$canLeaveConfigure() || this.$executing()) {
+            return;
+        }
+
+        this.$view.set('preview');
+    }
+
+    /**
+     * Steps back one screen: the preview returns to the configuration step when the action has one,
+     * otherwise straight to the action list.
+     *
+     * A single back control that always returned to the list would throw away a chosen destination on
+     * the way past it.
+     */
+    protected onBack(): void {
+        if (this.$executing()) {
+            return;
+        }
+
+        if (this.$view() === 'preview' && this.$configureKinds().length) {
+            this.$view.set('configure');
+
+            return;
+        }
+
+        this.onBackToActions();
     }
 
     /**
      * Returns to the action list.
      *
      * `$selectedActionId` is deliberately kept, so the radio is still armed on return and re-opening
-     * the preview does not mean re-picking the action.
+     * the preview does not mean re-picking the action. The chosen destination is *not* kept: the radio
+     * survives so the action does not need re-picking, but a path belongs to the run being set up, and
+     * carrying it into a different action's configuration step would pre-fill a decision never made
+     * for it.
      */
     protected onBackToActions(): void {
         if (this.$executing()) {
@@ -499,6 +821,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.$view.set('actions');
         this.$includedItems.set([]);
         this.$pendingQuickAction.set(null);
+        this.$pathToMove.set('');
+        this.$selectedBundle.set(null);
+        this.$assignComment.set({ assign: '', comment: '' });
+        this.$assignCommentValid.set(false);
+        this.$pushPublish.set(null);
+        this.$pushPublishValid.set(false);
         this.#store.clearDialogDrillDown();
     }
 
@@ -534,15 +862,28 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected onExecuteWorkflowAction(): void {
         const workflowActionId = this.$selectedActionId();
+        const action = this.$selectedAction();
         const contentletIds = this.$includedItems().map((item) => item.inode);
 
         if (!workflowActionId || !contentletIds.length) {
             return;
         }
 
-        const actionName = this.$selectedAction()?.name ?? workflowActionId;
+        // Anything the action declared an input for must be complete before firing. Refused here as
+        // well as by the disabled Continue: an empty move path answers 200 with every item failed, a
+        // same-folder move burns a version and a reindex per item to change nothing, and a push
+        // publish with no environment has nowhere to go.
+        if (this.$configureKinds().length && !this.$canLeaveConfigure()) {
+            return;
+        }
 
-        this.#store.executeWorkflowAction(workflowActionId, actionName, contentletIds);
+        const actionName = action?.name ?? workflowActionId;
+
+        this.#store.executeWorkflowAction(workflowActionId, actionName, contentletIds, {
+            pathToMove: this.$pathToMove(),
+            assignComment: this.$assignComment(),
+            pushPublish: this.$pushPublish() ?? undefined
+        });
         this.handOffToToolbar();
     }
 
@@ -564,15 +905,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         if (!stillVisible) {
             this.$selectedActionId.set(null);
         }
-    }
-
-    /**
-     * Closes the dialog without firing anything.
-     *
-     * X / ESC / mask closes are handled by the shell, which owns the shared dialog.
-     */
-    protected onDone(): void {
-        this.#store.closeDialog();
     }
 
     /**

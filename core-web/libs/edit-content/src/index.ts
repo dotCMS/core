@@ -22,3 +22,8 @@ export type {
     InitLoadParams,
     SelectionMode
 } from './lib/fields/dot-edit-content-relationship-field/models/relationship.models';
+
+// Site/folder picker — reused by Content Drive's Action Center to collect a bulk move target.
+// Exported as the inner control rather than the `dot-edit-content-host-folder-field` wrapper: the
+// wrapper is card chrome bound to a `DotCMSContentTypeField`, which a bulk move has no equivalent of.
+export { DotHostFolderFieldComponent } from './lib/fields/dot-edit-content-host-folder-field/components/host-folder-field/host-folder-field.component';

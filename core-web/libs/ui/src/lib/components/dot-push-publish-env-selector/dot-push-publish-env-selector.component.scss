@@ -1,7 +1,7 @@
 @use "variables" as *;
 @use "mixins";
-@use "../../../../../../../../libs/dotcms-scss/shared/colors";
-@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/spacing";
 
 .p-multiselect {
     width: 100%;

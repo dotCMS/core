@@ -49,14 +49,22 @@ Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 // Site-search .os-aware alias resolution (issue #36360): resolve through the site-search API and
 // reverse (alias->index) into index->alias for per-row display. The content-index router (esapi)
 // misses site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
+// AllEngines (issue #36983): the rows below come from listIndices(), a union of both engines in the
+// dual-write phases, so a read-provider-only alias map blanks the Alias column for every index that
+// lives on the other engine (a Phase-0 index seen in Phase 2, a Phase-3 index seen in Phase 1).
 Map<String, String> alias = new java.util.HashMap<>();
-for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMap().entrySet()) {
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
 	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
 }
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
+
+// Phase-aware default (issue #36983): the legacy IndiciesInfo pointer freezes at the Elasticsearch-era
+// default from Phase 3 on, where activateIndex fans out to OpenSearch alone. Resolved once for every row.
+String defaultSiteSearchIndex = null;
+try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (Exception e) { Logger.warn(this.getClass(), "Could not resolve the default site-search index: " + e.getMessage()); }
 
 
 %>
@@ -128,7 +136,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<% ClusterIndexHealth health = map.get(x);       if (health == null) { health = map.get(IndexTag.OS.tag(x)); } %>
 		<% IndexStats status         = indexInfo.get(x); if (status == null) { status = indexInfo.get(IndexTag.OS.tag(x)); } %>
 
-		<%boolean active =x.equals(info.getSiteSearch());%>
+		<%boolean active = x.equals(defaultSiteSearchIndex);%>
 		<%	Date d = null;
 			String myDate = null;
 			try{
@@ -197,7 +205,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 <%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =x.equals(info.getSiteSearch());%>
+			<%boolean active = x.equals(defaultSiteSearchIndex);%>
 
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 

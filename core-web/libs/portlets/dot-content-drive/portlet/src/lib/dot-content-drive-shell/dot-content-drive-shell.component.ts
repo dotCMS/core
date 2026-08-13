@@ -26,6 +26,8 @@ import { ToastModule } from 'primeng/toast';
 import { catchError } from 'rxjs/operators';
 
 import {
+    AddToBundleService,
+    DotCurrentUserService,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -119,7 +121,12 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotContentDriveNavigationService,
         DotWorkflowsActionsService,
         MessageService,
-        DotFolderService
+        DotFolderService,
+        // Injected by the store's `withActionExecution` to fire Add to Bundle. Neither is
+        // `providedIn: 'root'`, and the bundle service resolves the current user to reach their
+        // bundles. `DotAddToBundleComponent` (single item, from the context menu) provides its own pair.
+        AddToBundleService,
+        DotCurrentUserService
     ],
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
