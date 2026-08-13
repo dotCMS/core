@@ -65,6 +65,7 @@ const EXPERIMENT_DRAFT = buildExperiment({
     id: 'exp-draft',
     pageId: 'page-1',
     name: 'Alpha campaign',
+    description: 'Checkout funnel rework',
     status: DotExperimentStatus.DRAFT,
     goals: buildGoals(GOAL_TYPES.BOUNCE_RATE),
     modDate: 300
@@ -74,6 +75,7 @@ const EXPERIMENT_RUNNING = buildExperiment({
     id: 'exp-running',
     pageId: 'page-2',
     name: 'Beta rollout',
+    description: 'Pricing page headline',
     status: DotExperimentStatus.RUNNING,
     goals: buildGoals(GOAL_TYPES.EXIT_RATE),
     modDate: 100
@@ -460,7 +462,31 @@ describe('DotExperimentsListStore', () => {
             expect(store.searchedExperiments()).toEqual([EXPERIMENT_RUNNING]);
         });
 
-        it('should return nothing when neither name nor page path match', () => {
+        it('should match the description', () => {
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('HEADLINE'));
+
+            expect(store.searchedExperiments()).toEqual([EXPERIMENT_RUNNING]);
+        });
+
+        it('should match on description even when the name does not contain the term', () => {
+            // 'funnel' appears only in the description, never in the name or the page path, so
+            // this fails outright if description is not one of the searched fields.
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('funnel'));
+
+            expect(store.searchedExperiments()).toEqual([EXPERIMENT_DRAFT]);
+        });
+
+        it('should tolerate an experiment with no description', () => {
+            // EXPERIMENT_ARCHIVED carries none; a term that matches its name must still work.
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.ARCHIVED])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('Delta'));
+
+            expect(store.searchedExperiments()).toEqual([EXPERIMENT_ARCHIVED]);
+        });
+
+        it('should return nothing when neither name, description nor page path match', () => {
             dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('no-match'));
 
             expect(store.searchedExperiments()).toEqual([]);

@@ -135,8 +135,11 @@ export const DotExperimentsListStore = signalStore(
             return siteScopedExperiments().filter((experiment) => {
                 const pagePath = pageInfoByPageId[experiment.pageId]?.url ?? '';
 
+                // Every field the row actually shows as text: an experiment the user can read
+                // on screen should be findable by anything they can read on it.
                 return (
                     experiment.name.toLowerCase().includes(term) ||
+                    (experiment.description ?? '').toLowerCase().includes(term) ||
                     pagePath.toLowerCase().includes(term)
                 );
             });
