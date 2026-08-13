@@ -5,7 +5,7 @@ Runs two OpenSearch clusters side-by-side for ES → OpenSearch migration testin
 | Service | Version | URL |
 |---|---|---|
 | OpenSearch 1.x (primary) | 1.3.x | https://localhost:9200 |
-| OpenSearch 3.x (shadow) | 3.4.0 | https://localhost:9201 |
+| OpenSearch 3.x (shadow) | 3.8.0 | https://localhost:9201 |
 | OS 1.x Dashboards | 1.3.x | http://localhost:5601 |
 | OS 3.x Dashboards | 3.0.0 | http://localhost:5602 |
 | dotCMS | latest | http://localhost:8082 |
