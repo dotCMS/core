@@ -58,10 +58,18 @@ public class SiteAuthValidator implements AnalyticsValidator {
             } else {
                 Logger.warn(this, "HTTP Request object could not be retrieved");
             }
-            // Deliberately Exception, not just the checked DotDataException/DotSecurityException.
-            // Since issue #36724 the secrets store raises a DotRuntimeException when it cannot be
-            // read rather than silently wiping itself; that must surface as a normal validation
-            // failure on this analytics collection path, not as a raw runtime exception.
+            // An AnalyticsValidationException is this pipeline's own signal -- ContentAnalyticsUtil
+            // raises it when the site cannot be resolved from the Origin/Referer headers -- and it
+            // already carries the message the caller is meant to see. Rethrow it untouched; the
+            // broader catch below would otherwise re-wrap it as "Site Auth for Site 'null' could
+            // not be verified: <original>" and change that message.
+        } catch (final AnalyticsValidationException e) {
+            throw e;
+            // Otherwise deliberately Exception, not just the checked DotDataException /
+            // DotSecurityException. Since issue #36724 the secrets store raises a
+            // DotRuntimeException when it cannot be read rather than silently wiping itself; that
+            // must surface as a normal validation failure on this analytics collection path, not
+            // as a raw runtime exception escaping into the request.
         } catch (final Exception e) {
             final String errorMsg = String.format("Site Auth for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
