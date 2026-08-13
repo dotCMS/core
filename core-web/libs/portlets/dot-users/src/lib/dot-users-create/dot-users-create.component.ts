@@ -1,3 +1,5 @@
+import { forkJoin, of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -240,6 +242,20 @@ export class DotUsersCreateComponent {
     protected readonly $isSaveDisabled = computed(() => !this.$dataReady());
 
     /**
+     * Role KEYS that hydrate the Roles tab's Granted panel. Sourced
+     * from `getUserRoles` on edit-mode open; stays empty in create
+     * mode.
+     */
+    protected readonly initialGrantedRoleKeys = signal<string[]>([]);
+
+    /**
+     * Latest snapshot from the Roles tab. Populated on every
+     * `grantedChange` emission and used to build the outbound
+     * `roles` field on save.
+     */
+    private readonly currentRoleKeys = signal<string[] | null>(null);
+
+    /**
      * ID list handed to the replacement picker so the user being
      * deleted is filtered out of the suggestion pool. Backed by a
      * getter so it stays trivially derivable from `this.user`.
@@ -415,7 +431,8 @@ export class DotUsersCreateComponent {
         if (!detail) {
             return;
         }
-        const roleKeySet = new Set(this.#store.roleKeys());
+        const roleKeys = this.#store.roleKeys();
+        const roleKeySet = new Set(roleKeys);
         const additionalInfo = this.#store.additionalInfo();
 
         this.form.patchValue({
@@ -440,6 +457,16 @@ export class DotUsersCreateComponent {
             }
         });
         this.form.markAsPristine();
+
+        // Seed the Roles-tab integration signals so the Granted panel
+        // opens with the user's current membership, and save picks up
+        // the same list if the user never touches the tab.
+        this.initialGrantedRoleKeys.set(roleKeys);
+        this.currentRoleKeys.set(roleKeys);
+    }
+
+    protected onGrantedRolesChange(keys: string[]): void {
+        this.currentRoleKeys.set(keys);
     }
 
     private enableCreatePasswordValidators(): void {
@@ -456,11 +483,12 @@ export class DotUsersCreateComponent {
      * Builds the backend {@link DotUserFormPayload} plus a
      * `gettingStartedChange` instruction for the store to chain.
      *
-     * Roles are computed as: cached role-key list → strip the three
-     * access-role keys → add back whichever access toggles are ON.
-     * The result replaces the user's full role membership on the
-     * backend (`UserResource#processRoles`), so leaving out the
-     * non-access role keys would silently wipe them.
+     * When the Roles tab has taken ownership of role membership (via
+     * `grantedChange`, tracked in `currentRoleKeys`), its snapshot is
+     * the source of truth for `payload.roles`. Otherwise we fall back
+     * to `mergeRoleKeysForSave`, which composes the outbound list
+     * from cached role keys + access-toggle deltas — safe when the
+     * user never opened the Roles tab.
      *
      * Password and additionalInfo are omitted when empty so the
      * backend keeps their existing values.
@@ -502,7 +530,15 @@ export class DotUsersCreateComponent {
 
         payload.additionalInfo = additionalInfo;
 
-        payload.roles = this.mergeRoleKeysForSave(access);
+        // Roles tab is the source of truth when the user interacted
+        // with it (currentRoleKeys is populated on every grantedChange
+        // and seeded from `store.roleKeys()` on load). Falling back to
+        // `mergeRoleKeysForSave` keeps create mode and no-Roles-tab
+        // saves working the same way as before the tab existed.
+        const currentRoleKeys = this.currentRoleKeys();
+        payload.roles = currentRoleKeys
+            ? this.filterOutgoingRoleKeys(currentRoleKeys)
+            : this.mergeRoleKeysForSave(access);
 
         let gettingStartedChange: 'add' | 'remove' | undefined;
         if (access.showGettingStarted !== this.#store.gettingStarted()) {
@@ -513,25 +549,31 @@ export class DotUsersCreateComponent {
     }
 
     /**
-     * Merges the cached role KEYS with the current Access toggles into
-     * the list the backend expects. In create mode the cache is empty,
-     * so the outbound list is just whichever access toggles are ON —
-     * safe because create semantics ADD roles instead of replacing.
-     *
-     * The user's implicit personal role (roleKey === userId) is
-     * filtered out because `UserResource#processRoles` first calls
+     * Strips the user's implicit personal role (roleKey === userId)
+     * from the outbound list. `UserResource#processRoles` first calls
      * `removeAllRolesFromUser` (no `editUsers` guard) and then tries
      * to re-add every key in the payload. Re-adding the personal role
      * fails at `RoleAPIImpl.addRoleToUser` because it has
      * `editUsers=false`, and the exception rolls the whole save back
      * with `"Cannot alter users on this role"`. Leaving that key out
      * of the payload keeps the save from tripping the guard.
-     *
-     * The trade-off: the backend still removes the personal role in
-     * step 1, so after the save the user is missing that link. In
-     * practice most permissions live on the well-known roles above,
-     * not the personal role — but this needs a proper backend fix
-     * (add an `editUsers` guard to `removeAllRolesFromUser`).
+     */
+    private filterOutgoingRoleKeys(keys: readonly string[]): string[] {
+        const personalRoleKey = this.user?.userId ?? '';
+        if (!personalRoleKey) {
+            return [...keys];
+        }
+
+        return keys.filter((key) => key !== personalRoleKey);
+    }
+
+    /**
+     * Merges the cached role KEYS with the current Access toggles into
+     * the list the backend expects. Used when the Roles tab hasn't
+     * taken ownership (create mode, or the user never opened the tab).
+     * In create mode the cache is empty, so the outbound list is just
+     * whichever access toggles are ON — safe because create semantics
+     * ADD roles instead of replacing.
      */
     private mergeRoleKeysForSave(access: {
         cmsAdmin: boolean;
@@ -539,16 +581,15 @@ export class DotUsersCreateComponent {
         frontend: boolean;
     }): string[] {
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
-        const personalRoleKey = this.user?.userId ?? '';
         const nonAccess = this.#store
             .roleKeys()
-            .filter((key) => !accessKeys.has(key) && key !== personalRoleKey);
+            .filter((key) => !accessKeys.has(key));
         const merged = new Set(nonAccess);
 
         if (access.cmsAdmin) merged.add(ACCESS_ROLE_KEYS.cmsAdmin);
         if (access.backend) merged.add(ACCESS_ROLE_KEYS.backend);
         if (access.frontend) merged.add(ACCESS_ROLE_KEYS.frontend);
 
-        return Array.from(merged);
+        return this.filterOutgoingRoleKeys(Array.from(merged));
     }
 }

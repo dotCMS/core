@@ -80,7 +80,10 @@
                 </p-tabpanel>
                 <p-tabpanel [value]="1" class="block min-h-0 flex-1 overflow-auto">
                     <div class="px-7 pt-6 pb-7">
-                        <dot-users-roles-tab data-testid="users-dialog-roles-tab" />
+                        <dot-users-roles-tab
+                            [initialGrantedKeys]="initialGrantedRoleKeys()"
+                            (grantedChange)="onGrantedRolesChange($event)"
+                            data-testid="users-dialog-roles-tab" />
                     </div>
                 </p-tabpanel>
                 <p-tabpanel [value]="2" class="block min-h-0 flex-1 overflow-auto">

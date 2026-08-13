@@ -56,6 +56,7 @@ describe('DotUsersCreateComponent', () => {
                         { id: 'role-personal', roleKey: 'user-42' }
                     ])
                 ),
+                getAllRoles: jest.fn().mockReturnValue(of([])),
                 getGettingStartedState: jest.fn().mockReturnValue(of(false)),
                 setGettingStarted: jest.fn().mockReturnValue(of({})),
                 getUsersPaginated: jest.fn().mockReturnValue(

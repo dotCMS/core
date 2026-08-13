@@ -33,28 +33,9 @@
                     {{ 'users.dialog.roles.empty' | dm }}
                 </p>
             } @else {
-                @for (view of availableTree(); track view.group) {
-                    <div class="mb-2">
-                        <button
-                            type="button"
-                            class="flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left text-sm font-medium hover:bg-surface-100"
-                            (click)="toggleGroup(view.group)"
-                            [attr.data-testid]="'users-roles-group-' + view.group">
-                            <span
-                                class="material-symbols-rounded text-lg! text-surface-500 transition-transform"
-                                [class.rotate-90]="isGroupOpen(view.group)"
-                                aria-hidden="true">
-                                chevron_right
-                            </span>
-                            {{ view.group }}
-                        </button>
-                        @if (isGroupOpen(view.group)) {
-                            @for (node of view.roots; track node.role.id) {
-                                <ng-container
-                                    *ngTemplateOutlet="nodeTpl; context: { $implicit: node }" />
-                            }
-                        }
-                    </div>
+                @for (node of availableTree(); track node.role.id) {
+                    <ng-container
+                        *ngTemplateOutlet="nodeTpl; context: { $implicit: node }" />
                 }
             }
         </div>
@@ -113,13 +94,13 @@
                     {{ 'users.dialog.roles.granted.empty' | dm }}
                 </p>
             } @else {
-                @for (role of grantedList(); track role.id) {
+                @for (role of grantedList(); track role.roleKey) {
                     <button
                         type="button"
                         class="flex w-full items-start gap-2 rounded-sm p-2 text-left hover:bg-surface-100"
-                        [class.bg-primary-50]="isSelectedGranted(role.id)"
-                        (click)="toggleGrantedSelection(role.id)"
-                        [attr.data-testid]="'users-roles-granted-item-' + role.id">
+                        [class.bg-primary-50]="isSelectedGranted(role.roleKey)"
+                        (click)="toggleGrantedSelection(role.roleKey)"
+                        [attr.data-testid]="'users-roles-granted-item-' + role.roleKey">
                         <span
                             class="material-symbols-rounded text-base! text-surface-500"
                             aria-hidden="true">
@@ -127,7 +108,11 @@
                         </span>
                         <span class="flex flex-col">
                             <span class="text-sm font-medium">{{ role.name }}</span>
-                            <span class="text-color-secondary text-xs">{{ role.group }}</span>
+                            @if (role.description) {
+                                <span class="text-color-secondary text-xs">
+                                    {{ role.description }}
+                                </span>
+                            }
                         </span>
                     </button>
                 }
@@ -137,11 +122,14 @@
 </div>
 
 <ng-template #nodeTpl let-node>
-    <div>
+    <div [class.mt-3]="node.level === 0" [class.first:mt-0]="node.level === 0">
         <button
             type="button"
-            class="flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left text-sm hover:bg-surface-100"
-            [class.bg-primary-50]="isSelectedAvailable(node.role.id)"
+            class="flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left hover:bg-surface-100"
+            [class.bg-primary-50]="isFullyChecked(node.role)"
+            [class.text-base]="node.level === 0"
+            [class.font-semibold]="node.level === 0"
+            [class.text-sm]="node.level > 0"
             [style.padding-left.rem]="node.level * 0.75"
             (click)="toggleAvailableSelection(node.role.id)"
             [attr.data-testid]="'users-roles-available-item-' + node.role.id">
@@ -156,12 +144,17 @@
             } @else {
                 <span class="inline-block w-4" aria-hidden="true"></span>
             }
-            <p-checkbox
-                [binary]="true"
-                [ngModel]="isSelectedAvailable(node.role.id)"
-                (ngModelChange)="toggleAvailableSelection(node.role.id)"
-                (click)="$event.stopPropagation()"
-                data-testid="users-roles-available-checkbox" />
+            @if (canSelectRole(node.role)) {
+                <p-checkbox
+                    [binary]="true"
+                    [ngModel]="isFullyChecked(node.role)"
+                    [indeterminate]="isPartiallyChecked(node.role)"
+                    (ngModelChange)="toggleAvailableSelection(node.role.id)"
+                    (click)="$event.stopPropagation()"
+                    data-testid="users-roles-available-checkbox" />
+            } @else {
+                <span class="inline-block w-6" aria-hidden="true"></span>
+            }
             <span class="material-symbols-rounded text-base! text-surface-500" aria-hidden="true">
                 folder
             </span>
