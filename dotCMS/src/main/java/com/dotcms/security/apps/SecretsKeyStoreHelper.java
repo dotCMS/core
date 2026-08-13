@@ -20,21 +20,26 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
 import java.security.KeyStore.SecretKeyEntry;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.List;
@@ -60,8 +65,24 @@ public class SecretsKeyStoreHelper {
     private static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
     private static final String SECRETS_STORE_KEYSTORE_TYPE = "pkcs12";
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
-    private static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
-    private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
+    static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
+
+    /**
+     * Whether an App secrets store that cannot be loaded may be backed up and replaced with an
+     * empty one. Defaults to {@code false}: the store on disk is the only copy of every App
+     * credential, and a backup taken at that point is encrypted with the password that just
+     * failed, so replacing it is not a recovery -- it is the data loss reported in issue #36724.
+     */
+    static final String SECRETS_STORE_AUTO_RECREATE = "SECRETS_STORE_AUTO_RECREATE";
+
+    /**
+     * Base delay between attempts to re-read the store. Multiplied by the attempt number, so the
+     * default rides out roughly 300ms of a concurrent write on another node.
+     */
+    private static final String SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS =
+            "SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS";
+
+    static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
     private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
     private final List<StoreCreatedListener> storeCreatedListeners;
@@ -124,33 +145,124 @@ public class SecretsKeyStoreHelper {
     */
     @VisibleForTesting
     KeyStore getSecretsStore() {
-        try {
-            final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-            final int maxLoadTries = Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 2);
+        return loadSecretsStore(true);
+    }
 
-            int tryCount = 1;
-            while (tryCount <= maxLoadTries) {
-                final File secretStoreFile = createStoreIfNeeded();
-                try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
-                    keyStore.load(inputStream, passwordSupplier.get());
-                    Logger.info(SecretsKeyStoreHelper.class,
-                            String.format("KeyStore loaded successfully after `%d` tries.", tryCount));
-                    break;
-                } catch (IOException gse) {
-                    //IOException wraps the underlying UnrecoverableKeyException
-                    Try.of(() -> handleStorageLoadException(gse));
-                    tryCount++;
+    /**
+     * @param allowRecreate whether a terminal failure may fall back to
+     *        {@link #handleUnrecoverableLoad(IOException, boolean)}'s destructive path. False on the
+     *        single retry after a recreate, so a store that still cannot be loaded raises instead of
+     *        recursing forever.
+     */
+    private KeyStore loadSecretsStore(final boolean allowRecreate) {
+
+        // Created at most once per call, deliberately OUTSIDE the retry loop below. Calling
+        // createStoreIfNeeded() on every attempt is what allowed a transient failure to be
+        // "recovered" into a brand new empty store: the first attempt deleted the file, the second
+        // recreated it empty, loaded it cleanly and reported success (issue #36724).
+        final File secretStoreFile = createStoreIfNeeded();
+
+        final int maxLoadTries = Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 3);
+        final long backoffMillis = Config
+                .getLongProperty(SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS, 100);
+
+        IOException lastFailure = null;
+
+        for (int tryCount = 1; tryCount <= maxLoadTries; tryCount++) {
+            try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
+
+                final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
+                keyStore.load(inputStream, passwordSupplier.get());
+
+                if (tryCount > 1) {
+                    Logger.info(SecretsKeyStoreHelper.class, String.format(
+                            "App secrets store recovered on attempt %d of %d.", tryCount,
+                            maxLoadTries));
                 }
+                return keyStore;
+
+            } catch (IOException e) {
+                lastFailure = e;
+
+                // An integrity failure is deterministic -- either the password is wrong or the
+                // bytes are genuinely corrupt. Re-reading cannot change the outcome, so stop
+                // rather than spend the remaining attempts on it.
+                if (isIntegrityFailure(e) || tryCount == maxLoadTries) {
+                    break;
+                }
+
+                Logger.warn(SecretsKeyStoreHelper.class, String.format(
+                        "Could not read the App secrets store on attempt %d of %d (%s); retrying."
+                                + " Another node may be writing it.",
+                        tryCount, maxLoadTries, e.getMessage()));
+
+                final long sleepMillis = backoffMillis * tryCount;
+                Try.run(() -> Thread.sleep(sleepMillis));
+
+            } catch (GeneralSecurityException e) {
+                Logger.error(this.getClass(),
+                        "Unable to load secrets store " + SECRETS_STORE_FILE + ": " + e.getMessage(), e);
+                throw new DotRuntimeException(e);
             }
-
-            return keyStore;
-
-        } catch (Exception e) {
-            Logger.debug(this.getClass(),
-                    "Unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
-            throw new DotRuntimeException(e);
         }
 
+        return handleUnrecoverableLoad(lastFailure, allowRecreate);
+    }
+
+    /**
+     * Distinguishes "cannot decrypt" from "cannot read".
+     *
+     * A PKCS12 integrity failure -- a wrong password, or corrupt content -- arrives as an
+     * {@link IOException} wrapping an {@link UnrecoverableKeyException}. A torn, truncated or
+     * missing file does not, and is worth retrying. Before issue #36724 both were handled
+     * identically, which is why a password mismatch destroyed the store just as readily as
+     * corruption did.
+     */
+    private static boolean isIntegrityFailure(final IOException e) {
+        return null != e && e.getCause() instanceof UnrecoverableKeyException;
+    }
+
+    /**
+     * Terminal handler for a store that could not be loaded after every attempt.
+     *
+     * It does not delete anything unless an operator has explicitly opted in via
+     * {@link #SECRETS_STORE_AUTO_RECREATE}. Because {@link #saveValue(String, char[])} loads the
+     * store before mutating it, throwing here also prevents a caller from writing a
+     * nearly-empty store over a file that is intact but merely unreadable by this node.
+     */
+    private KeyStore handleUnrecoverableLoad(final IOException cause, final boolean allowRecreate) {
+
+        final String diagnosis = isIntegrityFailure(cause)
+                ? "the store could not be decrypted. The password is derived from the cluster salt,"
+                        + " so this usually means the salt changed or SECRETS_KEYSTORE_PASSWORD_KEY"
+                        + " differs between nodes"
+                : "the store could not be read";
+
+        Try.run(this::sendFailureNotification);
+
+        if (!allowRecreate || !Config.getBooleanProperty(SECRETS_STORE_AUTO_RECREATE, false)) {
+            Logger.error(SecretsKeyStoreHelper.class, String.format(
+                    "Unable to load the App secrets store '%s': %s. The existing store has been LEFT"
+                            + " IN PLACE and no secrets were lost. Apps will not work until this is"
+                            + " resolved. Restore the correct salt/password, or set %s=true to back"
+                            + " it up and start over -- which DISCARDS every stored App credential.",
+                    secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
+
+            throw new DotRuntimeException(
+                    "Unable to load the App secrets store: " + diagnosis, cause);
+        }
+
+        Logger.error(SecretsKeyStoreHelper.class, String.format(
+                "Unable to load the App secrets store '%s': %s. %s is enabled, so it will be backed"
+                        + " up and replaced with an EMPTY store. Every App credential must be"
+                        + " re-entered; note the backup is encrypted with the same password that"
+                        + " just failed.",
+                secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
+
+        Sneaky.sneaked(this::backupAndRemoveKeyStore).run();
+        // allowRecreate=false: if the freshly created store also fails to load, raise rather than
+        // recurse into another backup-and-delete cycle.
+        return loadSecretsStore(false);
     }
 
 
@@ -163,18 +275,77 @@ public class SecretsKeyStoreHelper {
      */
     private KeyStore saveSecretsStore(final KeyStore keyStore) {
         final File secretStoreFile = new File(secretsKeyStorePath);
-        final File secretStoreFileTmp = new File(secretStoreFile.getParent(), "dotSecretsStore_" + System.currentTimeMillis() + ".p12.tmp");
+
+        // The tmp file must live in the destination's own directory: an atomic move is only
+        // available within a single filesystem.
+        final File secretStoreFileTmp = new File(secretStoreFile.getParent(),
+                SECRETS_STORE_FILE + "_" + System.currentTimeMillis() + ".tmp");
 
         secretStoreFileTmp.getParentFile().mkdirs();
-        try (OutputStream fos = Files.newOutputStream(secretStoreFileTmp.toPath())) {
-            keyStore.store(fos, passwordSupplier.get());
-            FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
-            secretStoreFileTmp.delete();
+        try {
+            try (FileOutputStream fos = new FileOutputStream(secretStoreFileTmp)) {
+                keyStore.store(fos, passwordSupplier.get());
+                fos.flush();
+                // The rename below must not publish bytes that are still buffered.
+                fos.getFD().sync();
+            }
+
+            restrictPermissions(secretStoreFileTmp);
+            publishAtomically(secretStoreFileTmp, secretStoreFile);
+
         } catch (Exception e) {
-            Logger.error(this.getClass(), "unable to save secrets store " + secretStoreFileTmp + ": " + e);
+            Logger.error(this.getClass(),
+                    "unable to save secrets store " + secretStoreFileTmp + ": " + e, e);
             throw new DotRuntimeException(e);
+        } finally {
+            // The old code only deleted the tmp file on the happy path, leaking a copy of every
+            // secret on any failure.
+            Try.run(() -> Files.deleteIfExists(secretStoreFileTmp.toPath()));
         }
         return keyStore;
+    }
+
+    /**
+     * Publishes the store by renaming the tmp file over it, so a concurrent reader -- including one
+     * on another cluster node sharing this file -- sees either the whole previous store or the whole
+     * new one. Never a partial write, and never a missing file.
+     *
+     * Deliberately not {@code FileUtil.copyFile}, which this method replaced. That utility exists
+     * for content versioning and either hard-links (deleting the destination first) or truncates the
+     * destination and streams the bytes back in. Both leave the shared store empty or partial for a
+     * window, which is defects B1 and B2 of issue #36724.
+     */
+    private static void publishAtomically(final File source, final File destination)
+            throws IOException {
+        try {
+            Files.move(source.toPath(), destination.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Logger.warn(SecretsKeyStoreHelper.class, String.format(
+                    "The filesystem holding '%s' does not support atomic moves; falling back to a"
+                            + " non-atomic replace. Concurrent readers on other nodes may observe a"
+                            + " partial store on this filesystem.", destination), e);
+            Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /**
+     * Restricts the file to owner read/write.
+     *
+     * Applied to the tmp file *before* it is moved into place, because the published store inherits
+     * the tmp file's permissions. Previously both the tmp file and the store were created with
+     * whatever the default umask allowed, in a directory shared across the cluster.
+     */
+    private static void restrictPermissions(final File file) {
+        try {
+            final Path path = file.toPath();
+            if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+                Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
+            }
+        } catch (Exception e) {
+            Logger.warn(SecretsKeyStoreHelper.class,
+                    "Unable to restrict permissions on the App secrets store: " + e.getMessage());
+        }
     }
 
     /**
@@ -375,22 +546,6 @@ public class SecretsKeyStoreHelper {
                 new I18NMessage("apps.fail.recover.secrets.notification", null), null, // no actions
                 NotificationLevel.WARNING, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
                 systemUser.getLocale());
-    }
-
-    /**
-     * handles the any security exception when loading the keyStore
-     * on failure the p12 store is back-up and then gets removed.
-     * @param gse
-     * @throws DotDataException
-     * @throws IOException
-     */
-    private boolean handleStorageLoadException(final IOException gse) throws DotDataException, IOException {
-        Logger.warn(SecretsKeyStoreHelper.class,
-                "Failed to recover secrets from key/store. The keyStore will be backup and then removed. A new empty store will be generated.",
-                gse);
-        backupAndRemoveKeyStore();
-        sendFailureNotification();
-        return true;
     }
 
     @FunctionalInterface
