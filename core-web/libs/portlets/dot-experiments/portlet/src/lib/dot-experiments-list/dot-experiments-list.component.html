@@ -79,28 +79,38 @@
             data-testid="experiments-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <!-- Experiment holds a name plus a description underneath and is the only
-                         column that grows with real data. It is capped rather than given a share
-                         of the table: a long name is truncated inside its own cell instead of
-                         squeezing every other column until the dates wrap onto a second line. -->
-                    <th class="w-80 max-w-80">{{ 'experiments.list.header.experiment' | dm }}</th>
-                    <th>{{ 'experiments.list.header.page' | dm }}</th>
-                    <th>{{ 'experiments.list.header.goal' | dm }}</th>
-                    <th class="text-center!">{{ 'experiments.list.header.variants' | dm }}</th>
-                    <!-- Sized for the widest thing each can hold — two dates and a separator
-                         here, one date for Modified — so the slack goes to the Experiment column
-                         instead of padding out the dates. -->
+                    <!-- Every column below whose content is bounded gets that bound as its
+                         width: an enumerated label, a number, a date, a tag, a button. Experiment
+                         is the only one whose content is open-ended, so it takes `w-full` and
+                         absorbs whatever is left over — the name and description get the slack
+                         rather than the dates being padded out with it. -->
+                    <th class="w-full">{{ 'experiments.list.header.experiment' | dm }}</th>
+                    <th class="w-56">{{ 'experiments.list.header.page' | dm }}</th>
+                    <!-- Widest goal label is "Click on Element", which needs more than w-36
+                         once cell padding is counted. -->
+                    <th class="w-44 whitespace-nowrap">
+                        {{ 'experiments.list.header.goal' | dm }}
+                    </th>
+                    <!-- The header word is wider than any count it sits over. -->
+                    <th class="w-28 text-center! whitespace-nowrap">
+                        {{ 'experiments.list.header.variants' | dm }}
+                    </th>
+                    <!-- Two dates and a separator. -->
                     <th class="w-60 whitespace-nowrap">
                         {{ 'experiments.list.header.schedule' | dm }}
                     </th>
-                    <th>{{ 'experiments.list.header.status' | dm }}</th>
-                    <th class="w-36 whitespace-nowrap" pSortableColumn="modDate">
+                    <!-- Widest status tag is "Scheduled". -->
+                    <th class="w-32 whitespace-nowrap">
+                        {{ 'experiments.list.header.status' | dm }}
+                    </th>
+                    <th class="w-32 whitespace-nowrap" pSortableColumn="modDate">
                         {{ 'experiments.list.header.modified' | dm }}
                         <p-sortIcon field="modDate" />
                     </th>
                     <!-- Unnamed, like content-drive: the row actions reveal on hover, so a
-                         header label would announce a column that is usually empty. -->
-                    <th class="w-24"></th>
+                         header label would announce a column that is usually empty. One small
+                         kebab is all it ever holds. -->
+                    <th class="w-16"></th>
                 </tr>
             </ng-template>
 
@@ -119,7 +129,7 @@
                     </tr>
                 } @else {
                     <tr class="group" data-testid="experiment-row">
-                        <td class="max-w-80" data-testid="experiment-name">
+                        <td class="max-w-0" data-testid="experiment-name">
                             <!-- `min-w-0` so the flex children may shrink below their text width,
                                  which is what lets `truncate` ellipsize instead of overflowing.
                                  The full value stays reachable as a tooltip. -->
@@ -136,10 +146,13 @@
                                 }
                             </div>
                         </td>
-                        <td class="font-mono text-sm" data-testid="experiment-page">
+                        <td
+                            class="max-w-56 truncate font-mono text-sm"
+                            [title]="row.pagePath"
+                            data-testid="experiment-page">
                             {{ row.pagePath }}
                         </td>
-                        <td data-testid="experiment-goal">
+                        <td class="whitespace-nowrap" data-testid="experiment-goal">
                             {{ row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER }}
                         </td>
                         <td class="text-center!" data-testid="experiment-variants">
