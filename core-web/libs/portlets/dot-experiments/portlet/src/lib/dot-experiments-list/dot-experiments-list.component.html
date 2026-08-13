@@ -155,7 +155,8 @@
                                 class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
                                 <p-button
                                     [text]="true"
-                                    severity="secondary"
+                                    [rounded]="true"
+                                    size="small"
                                     (onClick)="
                                         onRowMenuToggle(row.experiment); rowMenu.toggle($event)
                                     "
