@@ -82,151 +82,158 @@
     <div
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
         data-testid="experiments-table-wrapper">
-        <p-table
-            [value]="$tableValue()"
-            [tableStyle]="{ 'table-layout': 'fixed' }"
-            [lazy]="true"
-            (onLazyLoad)="onLazyLoad($event)"
-            [paginator]="true"
-            [showFirstLastIcon]="false"
-            [showPageLinks]="false"
-            [showCurrentPageReport]="true"
-            [currentPageReportTemplate]="`${('Page' | dm)} {currentPage}`"
-            [rows]="store.perPage()"
-            [totalRecords]="store.totalRecords()"
-            [first]="(store.page() - 1) * store.perPage()"
-            dataKey="experiment.id"
-            [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
-            [rowHover]="true"
-            [scrollable]="true"
-            scrollHeight="flex"
-            [sortField]="store.orderBy()"
-            [sortOrder]="store.direction() === 'DESC' ? -1 : 1"
-            data-testid="experiments-table">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th class="w-full" pSortableColumn="name">
-                        {{ 'experiments.list.header.experiment' | dm }}
-                        <p-sortIcon field="name" />
-                    </th>
-                    <th class="w-56" pSortableColumn="page">
-                        {{ 'experiments.list.header.page' | dm }}
-                        <p-sortIcon field="page" />
-                    </th>
-                    <th class="w-44 whitespace-nowrap" pSortableColumn="goal">
-                        {{ 'experiments.list.header.goal' | dm }}
-                        <p-sortIcon field="goal" />
-                    </th>
-                    <th class="w-28 text-center! whitespace-nowrap">
-                        {{ 'experiments.list.header.variants' | dm }}
-                    </th>
-                    <th class="w-60 whitespace-nowrap" pSortableColumn="schedule">
-                        {{ 'experiments.list.header.schedule' | dm }}
-                        <p-sortIcon field="schedule" />
-                    </th>
-                    <th class="w-32 whitespace-nowrap" pSortableColumn="status">
-                        {{ 'experiments.list.header.status' | dm }}
-                        <p-sortIcon field="status" />
-                    </th>
-                    <th class="w-32 whitespace-nowrap" pSortableColumn="modDate">
-                        {{ 'experiments.list.header.modified' | dm }}
-                        <p-sortIcon field="modDate" />
-                    </th>
-                    <th class="w-16"></th>
-                </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-row>
-                @if ($isLoading()) {
-                    <tr
-                        data-testid="experiments-loading-row"
-                        class="h-17 cursor-default hover:bg-transparent!">
-                        @for (column of SKELETON_COLUMNS; track column) {
-                            <td>
-                                <span class="flex h-full items-center">
-                                    <p-skeleton height="1.5rem" width="100%" />
-                                </span>
-                            </td>
-                        }
+        @if ($isEmpty()) {
+            <div class="flex min-h-0 flex-1 items-center justify-center p-6">
+                <dot-empty-container
+                    [configuration]="$emptyConfiguration()"
+                    [buttonLabel]="
+                        $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
+                    "
+                    [secondaryButton]="true"
+                    (buttonAction)="onClearFilters()"
+                    [hideContactUsLink]="true"
+                    data-testid="experiments-empty-state" />
+            </div>
+        } @else {
+            <p-table
+                [value]="$tableValue()"
+                [tableStyle]="{ 'table-layout': 'fixed' }"
+                [lazy]="true"
+                (onLazyLoad)="onLazyLoad($event)"
+                [paginator]="true"
+                [showFirstLastIcon]="false"
+                [showPageLinks]="false"
+                [showCurrentPageReport]="true"
+                [currentPageReportTemplate]="`${('Page' | dm)} {currentPage}`"
+                [rows]="store.perPage()"
+                [totalRecords]="store.totalRecords()"
+                [first]="(store.page() - 1) * store.perPage()"
+                dataKey="experiment.id"
+                [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
+                [rowHover]="true"
+                [scrollable]="true"
+                scrollHeight="flex"
+                [sortField]="store.orderBy()"
+                [sortOrder]="store.direction() === 'DESC' ? -1 : 1"
+                data-testid="experiments-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th class="w-full" pSortableColumn="name">
+                            {{ 'experiments.list.header.experiment' | dm }}
+                            <p-sortIcon field="name" />
+                        </th>
+                        <th class="w-56" pSortableColumn="page">
+                            {{ 'experiments.list.header.page' | dm }}
+                            <p-sortIcon field="page" />
+                        </th>
+                        <th class="w-44 whitespace-nowrap" pSortableColumn="goal">
+                            {{ 'experiments.list.header.goal' | dm }}
+                            <p-sortIcon field="goal" />
+                        </th>
+                        <th class="w-28 text-center! whitespace-nowrap">
+                            {{ 'experiments.list.header.variants' | dm }}
+                        </th>
+                        <th class="w-60 whitespace-nowrap" pSortableColumn="schedule">
+                            {{ 'experiments.list.header.schedule' | dm }}
+                            <p-sortIcon field="schedule" />
+                        </th>
+                        <th class="w-32 whitespace-nowrap" pSortableColumn="status">
+                            {{ 'experiments.list.header.status' | dm }}
+                            <p-sortIcon field="status" />
+                        </th>
+                        <th class="w-32 whitespace-nowrap" pSortableColumn="modDate">
+                            {{ 'experiments.list.header.modified' | dm }}
+                            <p-sortIcon field="modDate" />
+                        </th>
+                        <th class="w-16"></th>
                     </tr>
-                } @else {
-                    <tr class="group" data-testid="experiment-row">
-                        <td class="max-w-0" data-testid="experiment-name">
-                            <div class="flex min-w-0 flex-col">
-                                <span class="truncate font-medium" [title]="row.experiment.name">
-                                    {{ row.experiment.name }}
-                                </span>
-                                @if (row.experiment.description) {
-                                    <span
-                                        class="truncate text-sm text-surface-500"
-                                        [title]="row.experiment.description">
-                                        {{ row.experiment.description }}
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row>
+                    @if ($isLoading()) {
+                        <tr
+                            data-testid="experiments-loading-row"
+                            class="h-17 cursor-default hover:bg-transparent!">
+                            @for (column of SKELETON_COLUMNS; track column) {
+                                <td>
+                                    <span class="flex h-full items-center">
+                                        <p-skeleton height="1.5rem" width="100%" />
                                     </span>
-                                }
-                            </div>
-                        </td>
-                        <td
-                            class="max-w-56 truncate font-mono text-sm"
-                            [title]="row.pagePath"
-                            data-testid="experiment-page">
-                            {{ row.pagePath }}
-                        </td>
-                        <td class="whitespace-nowrap" data-testid="experiment-goal">
-                            {{ row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER }}
-                        </td>
-                        <td class="text-center!" data-testid="experiment-variants">
-                            {{ row.variants }}
-                        </td>
-                        <td class="whitespace-nowrap" data-testid="experiment-schedule">
-                            {{ row.schedule }}
-                        </td>
-                        <td data-testid="experiment-status">
-                            <p-tag
-                                [severity]="row.statusSeverity"
-                                [value]="row.statusLabelKey | dm"
-                                data-testid="experiment-status-tag" />
-                        </td>
-                        <td class="whitespace-nowrap" data-testid="experiment-modified">
-                            {{ row.experiment.modDate | date: 'MMM d, y' }}
-                        </td>
-                        <td>
-                            <!-- The design leads this cell with "View Results" / "Configure",
+                                </td>
+                            }
+                        </tr>
+                    } @else {
+                        <tr class="group" data-testid="experiment-row">
+                            <td class="max-w-0" data-testid="experiment-name">
+                                <div class="flex min-w-0 flex-col">
+                                    <span
+                                        class="truncate font-medium"
+                                        [title]="row.experiment.name">
+                                        {{ row.experiment.name }}
+                                    </span>
+                                    @if (row.experiment.description) {
+                                        <span
+                                            class="truncate text-sm text-surface-500"
+                                            [title]="row.experiment.description">
+                                            {{ row.experiment.description }}
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td
+                                class="max-w-56 truncate font-mono text-sm"
+                                [title]="row.pagePath"
+                                data-testid="experiment-page">
+                                {{ row.pagePath }}
+                            </td>
+                            <td class="whitespace-nowrap" data-testid="experiment-goal">
+                                {{
+                                    row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER
+                                }}
+                            </td>
+                            <td class="text-center!" data-testid="experiment-variants">
+                                {{ row.variants }}
+                            </td>
+                            <td class="whitespace-nowrap" data-testid="experiment-schedule">
+                                {{ row.schedule }}
+                            </td>
+                            <td data-testid="experiment-status">
+                                <p-tag
+                                    [severity]="row.statusSeverity"
+                                    [value]="row.statusLabelKey | dm"
+                                    data-testid="experiment-status-tag" />
+                            </td>
+                            <td class="whitespace-nowrap" data-testid="experiment-modified">
+                                {{ row.experiment.modDate | date: 'MMM d, y' }}
+                            </td>
+                            <td>
+                                <!-- The design leads this cell with "View Results" / "Configure",
                                  but both screens land with #36990+, so only the kebab is here
                                  (AC10). -->
-                            <div
-                                class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
-                                <p-button
-                                    [text]="true"
-                                    [rounded]="true"
-                                    size="small"
-                                    (onClick)="
-                                        onRowMenuToggle(row.experiment); rowMenu.toggle($event)
-                                    "
-                                    [attr.aria-label]="'experiments.list.actions.menu' | dm"
-                                    data-testid="experiment-actions-btn">
-                                    <span
-                                        class="material-symbols-rounded text-xl! leading-none!"
-                                        aria-hidden="true">
-                                        more_vert
-                                    </span>
-                                </p-button>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </ng-template>
-
-            <ng-template pTemplate="emptymessage">
-                <tr class="h-full hover:bg-transparent!">
-                    <td colspan="8" class="h-full border-none p-6">
-                        <dot-empty-container
-                            [configuration]="emptyConfiguration"
-                            [hideContactUsLink]="true"
-                            data-testid="experiments-empty-state" />
-                    </td>
-                </tr>
-            </ng-template>
-        </p-table>
+                                <div
+                                    class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                                    <p-button
+                                        [text]="true"
+                                        [rounded]="true"
+                                        size="small"
+                                        (onClick)="
+                                            onRowMenuToggle(row.experiment); rowMenu.toggle($event)
+                                        "
+                                        [attr.aria-label]="'experiments.list.actions.menu' | dm"
+                                        data-testid="experiment-actions-btn">
+                                        <span
+                                            class="material-symbols-rounded text-xl! leading-none!"
+                                            aria-hidden="true">
+                                            more_vert
+                                        </span>
+                                    </p-button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </ng-template>
+            </p-table>
+        }
     </div>
 
     <p-menu #rowMenu [model]="$rowMenuItems()" [popup]="true" appendTo="body" />

@@ -844,4 +844,78 @@ describe('DotExperimentsListComponent', () => {
             );
         });
     });
+
+    describe('empty states', () => {
+        const renderEmpty = () => {
+            storeMock.pagedExperiments.mockReturnValue([]);
+            storeMock.totalRecords.mockReturnValue(0);
+            spectator.detectChanges();
+        };
+
+        const emptyTitle = () =>
+            spectator.query(byTestId('experiments-empty-state'))?.textContent ?? '';
+
+        it('should replace the table so the message can centre in the space it leaves', () => {
+            renderEmpty();
+
+            // Rendered inside the table the message sat in a short band under the header, with
+            // the table's bottom border cutting across it.
+            expect(spectator.query(byTestId('experiments-empty-state'))).not.toBeNull();
+            expect(spectator.query(byTestId('experiments-table'))).toBeNull();
+        });
+
+        it('should say the site has none when nothing is filtered', () => {
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.empty.title');
+            expect(spectator.query(byTestId('experiments-empty-state'))?.textContent).not.toContain(
+                'experiments.list.no-results.clear'
+            );
+        });
+
+        it('should say nothing matched when a status is selected', () => {
+            storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.SCHEDULED]);
+            renderEmpty();
+
+            // The site may well have experiments; these filters are hiding them.
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        it('should say nothing matched when only a search term is set', () => {
+            storeMock.filter.mockReturnValue('nothing-matches-this');
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        it('should say nothing matched when only a goal is selected', () => {
+            storeMock.selectedGoals.mockReturnValue([GOAL_TYPES.BOUNCE_RATE]);
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        it('should offer a way out of the filtered empty state', () => {
+            storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.SCHEDULED]);
+            storeMock.selectedGoals.mockReturnValue([GOAL_TYPES.EXIT_RATE]);
+            renderEmpty();
+
+            spectator.component.onClearFilters();
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.statusesChanged([])
+            );
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.goalsChanged([])
+            );
+        });
+
+        it('should not show an empty state while the first load is still out', () => {
+            storeMock.healthStatus.mockReturnValue(null);
+            renderEmpty();
+
+            // Skeletons, not "no experiments" — the answer is not in yet.
+            expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+    });
 });

@@ -33,7 +33,7 @@ import {
 import { DotPushPublishDialogService, LoggerService } from '@dotcms/dotcms-js';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
@@ -90,9 +90,16 @@ describe('DotExperimentsListComponent dependency injection', () => {
         detectChanges: false
     });
 
+    const PAGE_ID = 'page-di-1';
+
     /**
      * The real store holds an empty shell until the Analytics gate answers, so the list is only
      * rendered after the health check — and the real service is what issues that request.
+     *
+     * A row is flushed rather than an empty list, deliberately: with nothing to show the table is
+     * replaced by the empty state, and none of the per-row children — the kebab, the tags, the
+     * action buttons — would be constructed. Those children are exactly what this spec is here to
+     * instantiate against a real injector.
      */
     const openList = () => {
         spectator.detectChanges();
@@ -102,7 +109,22 @@ describe('DotExperimentsListComponent dependency injection', () => {
             .flush({ entity: { health: HealthStatusTypes.OK } });
         httpTesting
             .expectOne((request) => request.url.endsWith('/api/v1/experiments'))
-            .flush({ entity: [] });
+            .flush({
+                entity: [{ ...getExperimentMock(0), id: 'exp-di-1', pageId: PAGE_ID }]
+            });
+        // The page lookup is what resolves the row's site; without it the site filter drops the
+        // experiment and we are back to an empty table.
+        httpTesting
+            .expectOne((request) => request.url.endsWith('/api/content/_search'))
+            .flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: [
+                            { identifier: PAGE_ID, url: '/di-page', host: CURRENT_SITE_ID }
+                        ]
+                    }
+                }
+            });
 
         spectator.detectChanges();
     };

@@ -100,6 +100,7 @@ import {
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',
+    styleUrls: ['./dot-experiments-list.component.scss'],
     // `DotExperimentsService` is `@Injectable()` with no `providedIn` and is not in the app-wide
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
@@ -231,12 +232,39 @@ export class DotExperimentsListComponent {
      * Empty-state copy. Resolved once for the same reason as `#scheduleLabels`, and declared
      * after the injections because field initialisers run in declaration order.
      */
-    readonly emptyConfiguration: PrincipalConfiguration = {
-        title: this.#dotMessageService.get('experiments.list.empty.title'),
-        subtitle: this.#dotMessageService.get('experiments.list.empty.description'),
-        icon: 'science',
-        iconStyle: 'material-symbols-rounded'
-    };
+    /** Any narrowing the user applied, as opposed to a site that simply has no experiments. */
+    readonly $hasActiveFilters = computed<boolean>(
+        () =>
+            this.store.filter().length > 0 ||
+            this.store.selectedStatuses().length > 0 ||
+            this.store.selectedGoals().length > 0
+    );
+
+    /** The table is replaced by an empty state once a settled load has nothing to show. */
+    readonly $isEmpty = computed<boolean>(
+        () => !this.$isLoading() && !this.$hasError() && this.$rows().length === 0
+    );
+
+    /**
+     * "Nothing here" and "nothing matched" are different situations and get different copy: the
+     * first is a site with no experiments, the second is the user's own filters hiding them, and
+     * only the second is worth offering a way out of.
+     */
+    readonly $emptyConfiguration = computed<PrincipalConfiguration>(() =>
+        this.$hasActiveFilters()
+            ? {
+                  title: this.#dotMessageService.get('experiments.list.no-results.title'),
+                  subtitle: this.#dotMessageService.get('experiments.list.no-results.description'),
+                  icon: 'filter_alt_off',
+                  iconStyle: 'material-symbols-rounded'
+              }
+            : {
+                  title: this.#dotMessageService.get('experiments.list.empty.title'),
+                  subtitle: this.#dotMessageService.get('experiments.list.empty.description'),
+                  icon: 'science',
+                  iconStyle: 'material-symbols-rounded'
+              }
+    );
 
     /**
      * Shown when the load fails. The error itself is already surfaced by
@@ -305,6 +333,13 @@ export class DotExperimentsListComponent {
      */
     onClearSearch(): void {
         this.$searchTerm.set('');
+    }
+
+    /** Clears every narrowing at once, from the no-results state. */
+    onClearFilters(): void {
+        this.$searchTerm.set('');
+        this.#dispatch.statusesChanged([]);
+        this.#dispatch.goalsChanged([]);
     }
 
     onStatusesChange(statuses: string[]): void {
