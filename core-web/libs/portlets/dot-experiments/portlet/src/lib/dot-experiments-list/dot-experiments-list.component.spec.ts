@@ -624,4 +624,18 @@ describe('DotExperimentsListComponent', () => {
             expect(spectator.query(byTestId('experiment-row'))).not.toBeNull();
         });
     });
+
+    describe('column widths', () => {
+        it('should lay the table out fixed so widths do not follow the visible rows', () => {
+            // Regression: with the default `auto` layout the browser sizes each column to its
+            // content, so filtering to a status whose rows carry no date range (Draft shows
+            // "Not scheduled") collapsed the Schedule column and shifted every column after it.
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            const table = spectator.query('table.p-datatable-table') as HTMLTableElement;
+
+            expect(table).not.toBeNull();
+            expect(table.style.tableLayout).toBe('fixed');
+        });
+    });
 });

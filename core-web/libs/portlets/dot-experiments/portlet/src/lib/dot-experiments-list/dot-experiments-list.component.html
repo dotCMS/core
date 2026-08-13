@@ -62,6 +62,7 @@
         data-testid="experiments-table-wrapper">
         <p-table
             [value]="$tableValue()"
+            [tableStyle]="{ 'table-layout': 'fixed' }"
             [lazy]="true"
             (onLazyLoad)="onLazyLoad($event)"
             [paginator]="true"
