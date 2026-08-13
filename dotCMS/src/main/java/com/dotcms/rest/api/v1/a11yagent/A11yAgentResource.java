@@ -53,7 +53,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * REST resource that acts as the a11y-fix agent proxy (plan §8).
@@ -355,9 +354,12 @@ public class A11yAgentResource {
         }
 
         final String dotcmsBaseUrl = buildBaseUrl(request);
-        final String runId = "r_" + UUID.randomUUID().toString().replace("-", "");
-        final String payload = buildAgentPayload(runId, dotcmsBaseUrl, pageInfo,
-                body.skipCss());
+        // No runId is minted here: the agent service owns run identity, so that it can key a
+        // run on the page being fixed (hostId + identifier + languageId, all sent below) and
+        // return the run already in flight instead of starting a second agent on the same
+        // page. The client learns the id from the stream's first `run` frame, and passes it
+        // back to /stop.
+        final String payload = buildAgentPayload(dotcmsBaseUrl, pageInfo, body.skipCss());
 
         return new AgentContext(agentUrl, authToken, shortLivedToken, payload, null);
     }
@@ -770,7 +772,6 @@ public class A11yAgentResource {
     // -------------------------------------------------------------------------
 
     private String buildAgentPayload(
-            final String runId,
             final String dotcmsBaseUrl,
             final PageInfo p,
             final boolean skipCss) {
@@ -788,7 +789,6 @@ public class A11yAgentResource {
         page.put("languageId", p.languageId);
 
         final Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("runId", runId);
         payload.put("dotcmsBaseUrl", dotcmsBaseUrl);
         payload.put("hostId", p.hostId);
         payload.put("page", page);
