@@ -80,11 +80,19 @@ public class ContentletIndexAPIImplMappingTimeoutIT extends IntegrationTestBase 
         @Override
         List<MappedDocument> mapEntry(final ReindexEntry idx) throws Exception {
             if (hungIdentifier.equals(idx.getIdentToIndex())) {
-                // Wedge like an unanswered native stat: ignore interrupts until released.
-                while (!release.await(30, TimeUnit.SECONDS)) {
-                    // keep waiting
+                // Wedge like an unanswered native stat. Swallowing the interrupt is the whole
+                // point: a task that lets InterruptedException escape *finishes*, gives its slot
+                // straight back and never counts as abandoned — which is correct behavior for
+                // merely-slow work, but makes it useless for simulating dead storage.
+                while (true) {
+                    try {
+                        if (release.await(30, TimeUnit.SECONDS)) {
+                            return List.of();
+                        }
+                    } catch (final InterruptedException ignored) {
+                        // a thread wedged in native I/O does not respond to interrupt
+                    }
                 }
-                return List.of();
             }
             final List<MappedDocument> documents = super.mapEntry(idx);
             mapped.add(idx.getIdentToIndex());
