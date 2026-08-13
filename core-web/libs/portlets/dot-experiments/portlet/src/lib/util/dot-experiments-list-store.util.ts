@@ -6,11 +6,13 @@ import {
     DotExperimentStatus,
     GOAL_TYPES
 } from '@dotcms/dotcms-models';
+import { ExperimentsStatusList } from '@dotcms/dotcms-models';
 
 import { goalTypeOf } from './dot-experiments-list.util';
 
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    EXPERIMENTS_LIST_SORT_FIELDS,
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
@@ -180,4 +182,72 @@ function isDefaultStatusSelection(statuses: DotExperimentStatus[]): boolean {
     const selected = new Set(statuses);
 
     return DEFAULT_EXPERIMENTS_LIST_STATUSES.every((status) => selected.has(status));
+}
+
+/** Comparator applied to a pair of experiments, before the direction factor. */
+type ExperimentComparator = (a: DotExperiment, b: DotExperiment) => number;
+
+/**
+ * Lifecycle order, not alphabetical: sorting by status is only useful if Draft, Scheduled,
+ * Running, Ended and Archived come out in the order an experiment actually moves through them.
+ * Taken from `ExperimentsStatusList`, which is the same order the filter lists them in.
+ */
+const STATUS_ORDER = new Map<string, number>(
+    ExperimentsStatusList.map(({ value }, index) => [value, index])
+);
+
+/** Case-insensitive, locale-aware, so `alpha` and `Alpha` sort together. */
+function compareText(a: string, b: string): number {
+    return a.localeCompare(b, undefined, { sensitivity: 'base' });
+}
+
+/**
+ * The comparator for a sortable column, or `null` for anything unrecognised — an unknown
+ * `orderby` (a hand-edited URL) then leaves the API order untouched rather than throwing.
+ *
+ * Missing values sort as empty or as `Infinity`, which puts unscheduled experiments and those
+ * with no goal at the end while ascending.
+ */
+export function comparatorFor(
+    field: string,
+    pageInfoByPageId: Record<string, DotExperimentPageInfo>
+): ExperimentComparator | null {
+    switch (field) {
+        case EXPERIMENTS_LIST_SORT_FIELDS.NAME:
+            return (a, b) => compareText(a.name, b.name);
+
+        case EXPERIMENTS_LIST_SORT_FIELDS.PAGE:
+            return (a, b) =>
+                compareText(
+                    pageInfoByPageId[a.pageId]?.url ?? '',
+                    pageInfoByPageId[b.pageId]?.url ?? ''
+                );
+
+        case EXPERIMENTS_LIST_SORT_FIELDS.GOAL:
+            return (a, b) =>
+                compareText(
+                    goalTypeOfExperiment(a) ?? '\uffff',
+                    goalTypeOfExperiment(b) ?? '\uffff'
+                );
+
+        case EXPERIMENTS_LIST_SORT_FIELDS.SCHEDULE:
+            return (a, b) => startTimeOf(a) - startTimeOf(b);
+
+        case EXPERIMENTS_LIST_SORT_FIELDS.STATUS:
+            return (a, b) =>
+                (STATUS_ORDER.get(a.status) ?? Number.MAX_SAFE_INTEGER) -
+                (STATUS_ORDER.get(b.status) ?? Number.MAX_SAFE_INTEGER);
+
+        case EXPERIMENTS_LIST_SORT_FIELDS.MOD_DATE:
+            return (a, b) => a.modDate - b.modDate;
+
+        default:
+            return null;
+    }
+}
+
+/** Unscheduled experiments have no start date, so they sort after every scheduled one. */
+function startTimeOf(experiment: DotExperiment): number {
+    // Already an epoch, so it compares directly.
+    return experiment.scheduling?.startDate ?? Number.POSITIVE_INFINITY;
 }

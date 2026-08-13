@@ -39,6 +39,7 @@ import {
 } from '../shared/constants';
 import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
 import {
+    comparatorFor,
     distinctPageIds,
     emptyGoalCounts,
     emptyStatusCounts,
@@ -217,15 +218,16 @@ export const DotExperimentsListStore = signalStore(
 
         const sortedExperiments = computed<DotExperiment[]>(() => {
             const experiments = filteredExperiments();
+            const compare = comparatorFor(store.orderBy(), store.pageInfoByPageId());
 
-            // `modDate` is the only sortable column for now; anything else keeps the API order.
-            if (store.orderBy() !== DEFAULT_EXPERIMENTS_LIST_ORDER_BY) {
+            // An unrecognised `orderby` keeps the API order rather than throwing.
+            if (!compare) {
                 return experiments;
             }
 
             const factor = store.direction() === 'ASC' ? 1 : -1;
 
-            return [...experiments].sort((a, b) => (a.modDate - b.modDate) * factor);
+            return [...experiments].sort((a, b) => compare(a, b) * factor);
         });
 
         const pagedExperiments = computed<DotExperiment[]>(() => {

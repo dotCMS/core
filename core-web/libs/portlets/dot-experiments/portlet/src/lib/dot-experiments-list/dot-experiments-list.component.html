@@ -101,19 +101,28 @@
             data-testid="experiments-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <th class="w-full">{{ 'experiments.list.header.experiment' | dm }}</th>
-                    <th class="w-56">{{ 'experiments.list.header.page' | dm }}</th>
-                    <th class="w-44 whitespace-nowrap">
+                    <th class="w-full" pSortableColumn="name">
+                        {{ 'experiments.list.header.experiment' | dm }}
+                        <p-sortIcon field="name" />
+                    </th>
+                    <th class="w-56" pSortableColumn="page">
+                        {{ 'experiments.list.header.page' | dm }}
+                        <p-sortIcon field="page" />
+                    </th>
+                    <th class="w-44 whitespace-nowrap" pSortableColumn="goal">
                         {{ 'experiments.list.header.goal' | dm }}
+                        <p-sortIcon field="goal" />
                     </th>
                     <th class="w-28 text-center! whitespace-nowrap">
                         {{ 'experiments.list.header.variants' | dm }}
                     </th>
-                    <th class="w-60 whitespace-nowrap">
+                    <th class="w-60 whitespace-nowrap" pSortableColumn="schedule">
                         {{ 'experiments.list.header.schedule' | dm }}
+                        <p-sortIcon field="schedule" />
                     </th>
-                    <th class="w-32 whitespace-nowrap">
+                    <th class="w-32 whitespace-nowrap" pSortableColumn="status">
                         {{ 'experiments.list.header.status' | dm }}
+                        <p-sortIcon field="status" />
                     </th>
                     <th class="w-32 whitespace-nowrap" pSortableColumn="modDate">
                         {{ 'experiments.list.header.modified' | dm }}

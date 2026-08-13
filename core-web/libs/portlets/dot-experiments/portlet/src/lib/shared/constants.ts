@@ -9,7 +9,24 @@ import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './m
 
 export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
 export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
-export const DEFAULT_EXPERIMENTS_LIST_ORDER_BY = 'modDate';
+/**
+ * Sortable columns. The values double as `pSortableColumn` fields, as the `orderby` URL param
+ * and as the comparator keys, so the three can never drift apart.
+ */
+export const EXPERIMENTS_LIST_SORT_FIELDS = {
+    NAME: 'name',
+    PAGE: 'page',
+    GOAL: 'goal',
+    SCHEDULE: 'schedule',
+    STATUS: 'status',
+    MOD_DATE: 'modDate'
+} as const;
+
+export type ExperimentsListSortField =
+    (typeof EXPERIMENTS_LIST_SORT_FIELDS)[keyof typeof EXPERIMENTS_LIST_SORT_FIELDS];
+
+export const DEFAULT_EXPERIMENTS_LIST_ORDER_BY: ExperimentsListSortField =
+    EXPERIMENTS_LIST_SORT_FIELDS.MOD_DATE;
 export const DEFAULT_EXPERIMENTS_LIST_DIRECTION: DotExperimentsListSortDirection = 'DESC';
 
 /**

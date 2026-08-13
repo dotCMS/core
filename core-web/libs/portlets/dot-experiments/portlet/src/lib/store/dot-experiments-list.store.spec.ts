@@ -606,9 +606,32 @@ describe('DotExperimentsListStore', () => {
             expect(store.sortedExperiments()).toEqual([EXPERIMENT_RUNNING, EXPERIMENT_DRAFT]);
         });
 
-        it('should keep the API order for a column that is not sortable yet', () => {
+        it('should sort by name, which is now a sortable column', () => {
             dispatcher.dispatch(
-                dotExperimentsListPageEvents.sortChanged({ orderBy: 'name', direction: 'ASC' })
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'name', direction: 'DESC' })
+            );
+
+            // 'Beta rollout' before 'Alpha campaign' — proves the column is wired through, and
+            // not just coincidentally in modDate order.
+            expect(store.sortedExperiments()).toEqual([EXPERIMENT_RUNNING, EXPERIMENT_DRAFT]);
+        });
+
+        it('should sort by the resolved page path', () => {
+            // /checkout before /home, which is the opposite of the default modDate order.
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.sortChanged({ orderBy: 'page', direction: 'ASC' })
+            );
+
+            expect(store.sortedExperiments()).toEqual([EXPERIMENT_RUNNING, EXPERIMENT_DRAFT]);
+        });
+
+        it('should keep the API order for an unrecognised column', () => {
+            // Reachable by hand-editing `?orderby=`, so it must not throw.
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.sortChanged({
+                    orderBy: 'not-a-column',
+                    direction: 'ASC'
+                })
             );
 
             expect(store.sortedExperiments()).toEqual([EXPERIMENT_DRAFT, EXPERIMENT_RUNNING]);
