@@ -17,6 +17,7 @@ import {
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
+    GOAL_TYPES,
     HealthStatusTypes,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
@@ -27,6 +28,7 @@ import { DotExperimentsListStore } from './dot-experiments-list.store';
 
 import {
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+    DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES
@@ -55,11 +57,16 @@ const buildExperiment = (experiment: Partial<DotExperiment>): DotExperiment => (
 const buildPageContentlet = (identifier: string, url: string, host: string): DotCMSContentlet =>
     ({ identifier, url, host }) as unknown as DotCMSContentlet;
 
+/** Goal, keyed by level exactly as the API returns it; only `primary` is ever shown. */
+const buildGoals = (type: GOAL_TYPES) =>
+    ({ primary: { type, conditions: [] } }) as unknown as DotExperiment['goals'];
+
 const EXPERIMENT_DRAFT = buildExperiment({
     id: 'exp-draft',
     pageId: 'page-1',
     name: 'Alpha campaign',
     status: DotExperimentStatus.DRAFT,
+    goals: buildGoals(GOAL_TYPES.BOUNCE_RATE),
     modDate: 300
 });
 
@@ -68,6 +75,7 @@ const EXPERIMENT_RUNNING = buildExperiment({
     pageId: 'page-2',
     name: 'Beta rollout',
     status: DotExperimentStatus.RUNNING,
+    goals: buildGoals(GOAL_TYPES.EXIT_RATE),
     modDate: 100
 });
 
@@ -798,6 +806,117 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             expect(locationGo).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('goal filter', () => {
+        it('should count the goals of the site scoped experiments', () => {
+            initStore();
+
+            // EXPERIMENT_OTHER_SITE and EXPERIMENT_ORPHAN never reach the list, so they cannot
+            // contribute; EXPERIMENT_ARCHIVED has no goal at all.
+            expect(store.goalCounts()[GOAL_TYPES.BOUNCE_RATE]).toBe(1);
+            expect(store.goalCounts()[GOAL_TYPES.EXIT_RATE]).toBe(1);
+            expect(store.goalCounts()[GOAL_TYPES.REACH_PAGE]).toBe(0);
+        });
+
+        it('should show every experiment while no goal is selected', () => {
+            initStore();
+
+            expect(store.selectedGoals()).toEqual(DEFAULT_EXPERIMENTS_LIST_GOALS);
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(
+                store.statusFilteredExperiments().map(({ id }) => id)
+            );
+        });
+
+        it('should keep only the experiments carrying the selected goal', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(['exp-draft']);
+        });
+
+        it('should drop experiments with no goal once any goal is selected', () => {
+            initStore();
+
+            // The archived one has no goal, so it matches nothing — this also pins that a
+            // goal filter does not resurrect it.
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.ARCHIVED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+
+            expect(store.filteredExperiments()).toEqual([]);
+        });
+
+        it('should narrow together with the status filter, not instead of it', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+
+            // Draft matches the goal but not the status; Running matches the status but not the
+            // goal. An AND leaves nothing.
+            expect(store.filteredExperiments()).toEqual([]);
+        });
+
+        it('should return to the first page when the goal selection changes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 10 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.EXIT_RATE]));
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        it('should hydrate the goal selection from the url', () => {
+            queryParams = { goal: 'exit_rate' };
+
+            initStore();
+
+            expect(store.selectedGoals()).toEqual([GOAL_TYPES.EXIT_RATE]);
+        });
+
+        it('should drop an unknown goal from the url', () => {
+            queryParams = { goal: ['EXIT_RATE', 'NOT_A_GOAL'] };
+
+            initStore();
+
+            expect(store.selectedGoals()).toEqual([GOAL_TYPES.EXIT_RATE]);
+        });
+
+        it('should write the selected goals to the url and drop the param when cleared', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([
+                    GOAL_TYPES.BOUNCE_RATE,
+                    GOAL_TYPES.EXIT_RATE
+                ])
+            );
+            spectator.flushEffects();
+
+            const written = new URLSearchParams(
+                (locationGo.mock.calls.at(-1)?.[0] as string).split('?')[1] ?? ''
+            );
+            expect(written.getAll('goal')).toEqual([GOAL_TYPES.BOUNCE_RATE, GOAL_TYPES.EXIT_RATE]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.goalsChanged([]));
+            spectator.flushEffects();
+
+            const cleared = new URLSearchParams(
+                (locationGo.mock.calls.at(-1)?.[0] as string).split('?')[1] ?? ''
+            );
+            expect(cleared.getAll('goal')).toEqual([]);
         });
     });
 });

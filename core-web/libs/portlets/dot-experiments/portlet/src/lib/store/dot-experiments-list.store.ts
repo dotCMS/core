@@ -20,6 +20,7 @@ import {
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
+    GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -29,6 +30,7 @@ import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events
 
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
@@ -38,8 +40,10 @@ import {
 import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
 import {
     distinctPageIds,
+    emptyGoalCounts,
     emptyStatusCounts,
     fromRouteParams,
+    goalTypeOfExperiment,
     parseViewState,
     toPageInfoByPageId,
     toQueryParams
@@ -64,6 +68,7 @@ const initialState: DotExperimentsListState = {
     pageInfoByPageId: {},
     filter: '',
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -151,7 +156,26 @@ export const DotExperimentsListStore = signalStore(
             return counts;
         });
 
-        const filteredExperiments = computed<DotExperiment[]>(() => {
+        /**
+         * Counts per goal, over the same set as `statusCounts` and independent of both
+         * selections for the same reason: picking a value must not move the numbers next to
+         * the values you have not picked yet.
+         */
+        const goalCounts = computed<Record<GOAL_TYPES, number>>(() => {
+            const counts = emptyGoalCounts();
+
+            for (const experiment of searchedExperiments()) {
+                const goal = goalTypeOfExperiment(experiment);
+
+                if (goal) {
+                    counts[goal] = (counts[goal] ?? 0) + 1;
+                }
+            }
+
+            return counts;
+        });
+
+        const statusFilteredExperiments = computed<DotExperiment[]>(() => {
             const selectedStatuses = store.selectedStatuses();
 
             // An empty selection is "no status filter", not "match nothing" — clearing the chip
@@ -167,6 +191,25 @@ export const DotExperimentsListStore = signalStore(
             return searchedExperiments().filter((experiment) =>
                 selectedStatuses.includes(experiment.status)
             );
+        });
+
+        /**
+         * The two chips narrow together: an experiment has to satisfy both. An experiment with
+         * no goal at all therefore drops out as soon as any goal is picked, since it matches
+         * none of them.
+         */
+        const filteredExperiments = computed<DotExperiment[]>(() => {
+            const selectedGoals = store.selectedGoals();
+
+            if (!selectedGoals.length) {
+                return statusFilteredExperiments();
+            }
+
+            return statusFilteredExperiments().filter((experiment) => {
+                const goal = goalTypeOfExperiment(experiment);
+
+                return goal !== null && selectedGoals.includes(goal);
+            });
         });
 
         const sortedExperiments = computed<DotExperiment[]>(() => {
@@ -193,6 +236,8 @@ export const DotExperimentsListStore = signalStore(
             siteScopedExperiments,
             searchedExperiments,
             statusCounts,
+            goalCounts,
+            statusFilteredExperiments,
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
@@ -255,6 +300,10 @@ export const DotExperimentsListStore = signalStore(
         })),
         on(dotExperimentsListPageEvents.statusesChanged, ({ payload }) => ({
             selectedStatuses: payload,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
+        on(dotExperimentsListPageEvents.goalsChanged, ({ payload }) => ({
+            selectedGoals: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
@@ -510,6 +559,7 @@ export const DotExperimentsListStore = signalStore(
                     const queryParams = toQueryParams({
                         filter: store.filter(),
                         selectedStatuses: store.selectedStatuses(),
+                        selectedGoals: store.selectedGoals(),
                         page: store.page(),
                         perPage: store.perPage(),
                         orderBy: store.orderBy(),

@@ -1,7 +1,8 @@
 import {
     AllowedActionsByExperimentStatus,
     DotExperiment,
-    DotExperimentStatus
+    DotExperimentStatus,
+    GOAL_TYPES
 } from '@dotcms/dotcms-models';
 
 /** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
@@ -24,6 +25,7 @@ export interface DotExperimentPageInfo {
 export interface DotExperimentsListViewState {
     filter: string;
     selectedStatuses: DotExperimentStatus[];
+    selectedGoals: GOAL_TYPES[];
     page: number;
     perPage: number;
     orderBy: string;
@@ -55,4 +57,14 @@ export interface ExperimentRow {
     schedule: string;
     statusSeverity: TagSeverity;
     statusLabelKey: string;
+}
+
+/** One selectable value inside a `dot-experiment-list-filter` popover. */
+export interface ExperimentFilterOption {
+    value: string;
+    /** Translated, human-readable name. */
+    label: string;
+    /** Count for this value, stringified for the list item's secondary slot. */
+    count: string;
+    testId: string;
 }

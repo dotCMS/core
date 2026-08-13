@@ -13,6 +13,7 @@ import {
     DotExperiment,
     DotExperimentStatus,
     DotMessageSeverity,
+    GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -22,6 +23,7 @@ import { DotExperimentsListComponent } from './dot-experiments-list.component';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+    DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
@@ -34,6 +36,14 @@ import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 const PAGE_ID = 'page-1';
 
 const PAGE_INFO = { [PAGE_ID]: { url: '/blog/index', host: 'host-1' } };
+
+const EMPTY_GOAL_COUNTS: Record<GOAL_TYPES, number> = {
+    [GOAL_TYPES.REACH_PAGE]: 0,
+    [GOAL_TYPES.BOUNCE_RATE]: 0,
+    [GOAL_TYPES.CLICK_ON_ELEMENT]: 0,
+    [GOAL_TYPES.URL_PARAMETER]: 0,
+    [GOAL_TYPES.EXIT_RATE]: 0
+};
 
 const EMPTY_STATUS_COUNTS: Record<DotExperimentStatus, number> = {
     [DotExperimentStatus.DRAFT]: 0,
@@ -112,6 +122,8 @@ const createStoreMock = () => ({
     pageInfoByPageId: jest.fn().mockReturnValue(PAGE_INFO),
     statusCounts: jest.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
     selectedStatuses: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
+    goalCounts: jest.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
+    selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
     filter: jest.fn().mockReturnValue(''),
     status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
     page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
@@ -611,6 +623,7 @@ describe('DotExperimentsListComponent', () => {
 
             expect(spectator.query(byTestId('experiments-search-input'))).toBeNull();
             expect(spectator.query(byTestId('experiments-status-filter'))).toBeNull();
+            expect(spectator.query(byTestId('experiments-goal-filter'))).toBeNull();
             expect(spectator.query(byTestId('experiments-table-wrapper'))).toBeNull();
             expect(spectator.query(byTestId('experiments-table'))).toBeNull();
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
@@ -636,6 +649,38 @@ describe('DotExperimentsListComponent', () => {
 
             expect(table).not.toBeNull();
             expect(table.style.tableLayout).toBe('fixed');
+        });
+    });
+
+    describe('filters', () => {
+        it('should render a chip for both status and goal', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query(byTestId('experiments-status-filter'))).not.toBeNull();
+            expect(spectator.query(byTestId('experiments-goal-filter'))).not.toBeNull();
+        });
+
+        it('should offer one option per goal, counted', () => {
+            storeMock.goalCounts.mockReturnValue({
+                ...EMPTY_GOAL_COUNTS,
+                [GOAL_TYPES.BOUNCE_RATE]: 4
+            });
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            const options = spectator.component['$goalFilterOptions']();
+
+            expect(options.length).toBe(Object.values(GOAL_TYPES).length);
+            expect(options.find(({ value }) => value === GOAL_TYPES.BOUNCE_RATE)?.count).toBe('4');
+        });
+
+        it('should dispatch goalsChanged with the picked goals', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onGoalsChange([GOAL_TYPES.EXIT_RATE]);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.EXIT_RATE])
+            );
         });
     });
 });

@@ -38,11 +38,21 @@
                     class="w-80" />
             </p-iconField>
 
-            <dot-experiment-status-filter
-                [selectedStatuses]="store.selectedStatuses()"
-                [statusCounts]="store.statusCounts()"
+            <dot-experiment-list-filter
+                [title]="'experiments.list.filter.status' | dm"
+                [emptyLabel]="'experiments.list.filter.all' | dm"
+                [options]="$statusFilterOptions()"
+                [selected]="store.selectedStatuses()"
                 (selectionChange)="onStatusesChange($event)"
                 data-testid="experiments-status-filter" />
+
+            <dot-experiment-list-filter
+                [title]="'experiments.list.filter.goal' | dm"
+                [emptyLabel]="'experiments.list.filter.all' | dm"
+                [options]="$goalFilterOptions()"
+                [selected]="store.selectedGoals()"
+                (selectionChange)="onGoalsChange($event)"
+                data-testid="experiments-goal-filter" />
 
             <!-- Creation lands with the New Experiment screen (#36990+); the button is placed
                  per the design but stays disabled so it cannot open anything yet. -->

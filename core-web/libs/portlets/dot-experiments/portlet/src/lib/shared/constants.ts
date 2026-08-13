@@ -1,4 +1,9 @@
-import { DotExperimentStatus, ExperimentsStatusList } from '@dotcms/dotcms-models';
+import {
+    DotExperimentStatus,
+    ExperimentsStatusList,
+    GOAL_TYPES,
+    GOALS_METADATA_MAP
+} from '@dotcms/dotcms-models';
 
 import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './models';
 
@@ -12,6 +17,14 @@ export const DEFAULT_EXPERIMENTS_LIST_DIRECTION: DotExperimentsListSortDirection
  * admin, so nothing is pre-ticked and the chip reads as unfiltered.
  */
 export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
+
+/** Same as the status filter: nothing pre-selected, so the chip reads as unfiltered. */
+export const DEFAULT_EXPERIMENTS_LIST_GOALS: GOAL_TYPES[] = [];
+
+/** i18n keys of the goal names, in the order the filter lists them. */
+export const GOAL_LABEL_KEYS = new Map<GOAL_TYPES, string>(
+    Object.values(GOAL_TYPES).map((goal) => [goal, GOALS_METADATA_MAP[goal].label])
+);
 
 /**
  * Statuses hidden while the filter is empty. Archived experiments are opt-in — an unfiltered

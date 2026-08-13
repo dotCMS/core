@@ -1,9 +1,17 @@
 import { Params } from '@angular/router';
 
-import { DotCMSContentlet, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotExperiment,
+    DotExperimentStatus,
+    GOAL_TYPES
+} from '@dotcms/dotcms-models';
+
+import { goalTypeOf } from './dot-experiments-list.util';
 
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
@@ -44,6 +52,7 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
     return {
         filter: reader.get('filter') ?? '',
         selectedStatuses: parseStatuses(reader.getAll('status')),
+        selectedGoals: parseGoals(reader.getAll('goal')),
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -65,6 +74,19 @@ export function parseStatuses(rawStatuses: string[]): DotExperimentStatus[] {
     return rawStatuses
         .map((rawStatus) => rawStatus.toUpperCase() as DotExperimentStatus)
         .filter((status) => allStatuses.includes(status));
+}
+
+/** Same rule as {@link parseStatuses}: unknown values are dropped rather than trusted. */
+export function parseGoals(rawGoals: string[]): GOAL_TYPES[] {
+    if (rawGoals.length === 0) {
+        return DEFAULT_EXPERIMENTS_LIST_GOALS;
+    }
+
+    const allGoals = Object.values(GOAL_TYPES);
+
+    return rawGoals
+        .map((rawGoal) => rawGoal.toUpperCase() as GOAL_TYPES)
+        .filter((goal) => allGoals.includes(goal));
 }
 
 export function parsePositiveInteger(rawValue: string | null, fallback: number): number {
@@ -90,6 +112,25 @@ export function toPageInfoByPageId(
 
         return pageInfo;
     }, {});
+}
+
+/**
+ * An experiment's goal type, or `null` when it has none. `goals` is keyed by level and the list
+ * only ever shows the primary one, which is the same one the Goal column renders.
+ */
+export function goalTypeOfExperiment(experiment: DotExperiment): GOAL_TYPES | null {
+    return goalTypeOf(experiment.goals);
+}
+
+export function emptyGoalCounts(): Record<GOAL_TYPES, number> {
+    return Object.values(GOAL_TYPES).reduce(
+        (counts, goal) => {
+            counts[goal] = 0;
+
+            return counts;
+        },
+        {} as Record<GOAL_TYPES, number>
+    );
 }
 
 export function emptyStatusCounts(): Record<DotExperimentStatus, number> {
@@ -118,7 +159,11 @@ export function toQueryParams(
         orderby: nullWhenDefault(view.orderBy, DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
         direction: nullWhenDefault(view.direction, DEFAULT_EXPERIMENTS_LIST_DIRECTION),
         filter: view.filter || null,
-        status: isDefaultStatusSelection(view.selectedStatuses) ? null : view.selectedStatuses
+        status: isDefaultStatusSelection(view.selectedStatuses) ? null : view.selectedStatuses,
+        goal:
+            view.selectedGoals.length === DEFAULT_EXPERIMENTS_LIST_GOALS.length
+                ? null
+                : view.selectedGoals
     };
 }
 

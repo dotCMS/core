@@ -1,7 +1,7 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperiment, DotExperimentStatus, GOAL_TYPES } from '@dotcms/dotcms-models';
 
 import {
     DotExperimentsListPageChange,
@@ -36,6 +36,7 @@ export const dotExperimentsListPageEvents = eventGroup({
         // View state (URL-backed)
         filterChanged: type<string>(),
         statusesChanged: type<DotExperimentStatus[]>(),
+        goalsChanged: type<GOAL_TYPES[]>(),
         pageChanged: type<DotExperimentsListPageChange>(),
         sortChanged: type<DotExperimentsListSortChange>(),
         hydratedFromUrl: type<DotExperimentsListViewState>(),

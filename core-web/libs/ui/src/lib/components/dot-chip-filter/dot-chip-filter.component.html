@@ -2,6 +2,8 @@
     <span class="font-semibold" data-testid="chip-title">{{ title() }}</span>
     @if (active()) {
         <span data-testid="chip-values">: {{ valuesLabel() }}</span>
+    } @else if (emptyLabel()) {
+        <span data-testid="chip-empty-label">: {{ emptyLabel() }}</span>
     }
 </span>
 @if (active()) {

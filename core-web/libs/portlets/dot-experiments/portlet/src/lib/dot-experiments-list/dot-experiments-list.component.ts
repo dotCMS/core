@@ -39,6 +39,8 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatus,
+    ExperimentsStatusList,
+    GOAL_TYPES,
     DotMessageSeverity,
     DotMessageType,
     GOALS_METADATA_MAP,
@@ -51,8 +53,9 @@ import {
     PrincipalConfiguration
 } from '@dotcms/ui';
 
-import { DotExperimentStatusFilterComponent } from '../components/dot-experiment-status-filter/dot-experiment-status-filter.component';
+import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
 import {
+    GOAL_LABEL_KEYS,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
@@ -62,7 +65,7 @@ import {
     STATUS_SEVERITIES,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
-import { ExperimentRow } from '../shared/models';
+import { ExperimentFilterOption, ExperimentRow } from '../shared/models';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
@@ -93,7 +96,7 @@ import {
         TooltipModule,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
-        DotExperimentStatusFilterComponent,
+        DotExperimentListFilterComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',
@@ -268,8 +271,39 @@ export class DotExperimentsListComponent {
         this.#listenForActionSuccess();
     }
 
-    onStatusesChange(statuses: DotExperimentStatus[]): void {
-        this.#dispatch.statusesChanged(statuses);
+    /**
+     * Options for the two chip filters. Both are built here rather than inside the filter so it
+     * stays domain-agnostic: it receives translated labels and counts and knows nothing about
+     * statuses or goals.
+     */
+    readonly $statusFilterOptions = computed<ExperimentFilterOption[]>(() => {
+        const counts = this.store.statusCounts();
+
+        return ExperimentsStatusList.map(({ label, value }) => ({
+            value,
+            label: this.#dotMessageService.get(label),
+            count: String(counts[value as DotExperimentStatus] ?? 0),
+            testId: `experiment-status-filter-option-${value.toLowerCase()}`
+        }));
+    });
+
+    readonly $goalFilterOptions = computed<ExperimentFilterOption[]>(() => {
+        const counts = this.store.goalCounts();
+
+        return [...GOAL_LABEL_KEYS].map(([goal, labelKey]) => ({
+            value: goal,
+            label: this.#dotMessageService.get(labelKey),
+            count: String(counts[goal] ?? 0),
+            testId: `experiment-goal-filter-option-${goal.toLowerCase()}`
+        }));
+    });
+
+    onStatusesChange(statuses: string[]): void {
+        this.#dispatch.statusesChanged(statuses as DotExperimentStatus[]);
+    }
+
+    onGoalsChange(goals: string[]): void {
+        this.#dispatch.goalsChanged(goals as GOAL_TYPES[]);
     }
 
     /** Re-runs the load after a failure; the store returns to `loading` and then resolves. */

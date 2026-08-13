@@ -1,19 +1,21 @@
 <dot-chip-filter
-    [title]="'experiments.list.filter.status' | dm"
+    [title]="$title()"
     [selections]="$selectedLabels()"
+    [emptyLabel]="$emptyLabel()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"
-    data-testid="experiment-status-filter-chip" />
+    data-testid="experiment-list-filter-chip" />
 
 <p-popover #popover>
     <p-listbox
-        [(ngModel)]="$selectedStatusValues"
+        [(ngModel)]="$selectedValues"
         [ngModelOptions]="{ standalone: true }"
         [options]="$options()"
         [multiple]="true"
         [checkbox]="true"
+        [showToggleAll]="false"
         [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-        [ariaLabel]="'experiments.list.filter.status' | dm"
+        [ariaLabel]="$title()"
         optionLabel="label"
         optionValue="value"
         (onChange)="onChange()">

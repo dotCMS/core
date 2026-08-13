@@ -34,6 +34,17 @@ export class DotChipFilterComponent {
     tabIndex = input<number>(0);
 
     /**
+     * Rendered in place of the selected values while nothing is selected, e.g. `All`.
+     *
+     * Opt-in: left empty the chip shows its bare title, which is how content-drive's chips read.
+     * Supply it where "nothing selected" would otherwise be ambiguous — an empty multi-select
+     * usually means *no* filter, i.e. everything, and that is worth saying out loud rather than
+     * adding an `All` row to the list. A row would be a second source of truth: checked `All`
+     * plus a de-selected item is a state that contradicts itself.
+     */
+    emptyLabel = input<string>('');
+
+    /**
      * Emits the originating DOM event so consumers can pass it to overlays
      * (e.g. p-popover) that need positioning info from `currentTarget`.
      */
