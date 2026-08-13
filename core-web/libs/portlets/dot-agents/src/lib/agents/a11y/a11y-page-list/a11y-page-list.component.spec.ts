@@ -107,4 +107,30 @@ describe('DotA11yPageListComponent', () => {
         expect(setFilter).toHaveBeenCalledWith('contact');
         jest.useRealTimers();
     });
+
+    describe('onLazyLoad', () => {
+        // PrimeNG's table reports a zero-based ROW OFFSET; the store wants a 1-based PAGE
+        // number. Off-by-one page math regresses quietly — the table still renders, just the
+        // wrong slice — so pin the conversion rather than trusting it by eye.
+        it('converts the first-row offset into a 1-based page number', () => {
+            spectator.component.onLazyLoad({ first: 25, rows: 25 });
+            expect(setPagination).toHaveBeenCalledWith(2, 25);
+        });
+
+        it('treats the first-row boundary as page 1', () => {
+            spectator.component.onLazyLoad({ first: 0, rows: 25 });
+            expect(setPagination).toHaveBeenCalledWith(1, 25);
+        });
+
+        it('handles a later page and a different page size', () => {
+            spectator.component.onLazyLoad({ first: 90, rows: 30 });
+            expect(setPagination).toHaveBeenCalledWith(4, 30);
+        });
+
+        it('falls back to the store values when the event omits them', () => {
+            // PrimeNG can emit a lazy-load event with neither field set.
+            spectator.component.onLazyLoad({});
+            expect(setPagination).toHaveBeenCalledWith(1, 25);
+        });
+    });
 });

@@ -97,6 +97,23 @@ describe('DotA11yRunComponent', () => {
     // The current site — the run rehydrate effect waits for it before fetching.
 
     // Two error groups (5 elements) + one warning group (2 elements).
+    /**
+     * The LIVE frame's findings, deliberately DIFFERENT from the preview's. The two frames
+     * run separate scans, so a test that fed both the same array could not tell a correct
+     * pairing from an inverted one.
+     */
+    const MOCK_LIVE_GROUPS: A11yGroup[] = [
+        {
+            code: 'link-name',
+            type: 'error',
+            message: 'Links must have discernible text',
+            impact: 'serious',
+            helpUrl: 'https://example.com/link-name',
+            items: [{ context: '<a>', selector: 'a.live-only' }],
+            count: 1
+        }
+    ];
+
     const MOCK_GROUPS: A11yGroup[] = [
         {
             code: 'image-alt',
@@ -146,7 +163,7 @@ describe('DotA11yRunComponent', () => {
         scanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
         liveScanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
         a11yGroups: () => (hasScan ? MOCK_GROUPS : []),
-        liveA11yGroups: () => (hasScan ? MOCK_GROUPS : []),
+        liveA11yGroups: () => (hasScan ? MOCK_LIVE_GROUPS : []),
         errorCount: () => (hasScan ? 5 : 0),
         warningCount: () => (hasScan ? 2 : 0),
         isWorking: () => phase === 'scanning' || phase === 'fixing',
@@ -492,6 +509,43 @@ describe('DotA11yRunComponent', () => {
         it('stays on after fixes exist (done) — the LIVE frame is still unfixed', () => {
             render('done', MOCK_FIX_REPORT);
             expect(spectator.component.$showMarkers()).toBe(true);
+        });
+
+        describe('what actually reaches the marker service', () => {
+            // The computed above is only the input. The behaviour is the effect calling
+            // render() with `show ? groups : []` for EACH frame, and the service was mocked
+            // and never asserted — so an inverted ternary, or the preview groups sent to the
+            // live frame, passed silently.
+            function renderCalls() {
+                const marker = spectator.inject(A11yMarkerService, true);
+
+                return (marker.render as jest.Mock).mock.calls;
+            }
+
+            it('draws each frame with its OWN scan findings', () => {
+                render('scanned', MOCK_FIX_REPORT);
+
+                const groupsByFrame = new Map(
+                    renderCalls().map(([frame, groups]) => [frame, groups])
+                );
+                const preview = spectator.query('[data-testid="studio-preview-iframe"]');
+                const live = spectator.query('[data-testid="studio-live-iframe"]');
+
+                expect(groupsByFrame.get(preview)).toEqual(MOCK_GROUPS);
+                expect(groupsByFrame.get(live)).toEqual(MOCK_LIVE_GROUPS);
+            });
+
+            it('clears BOTH frames rather than skipping the call when markers are off', () => {
+                // Passing [] is what erases a previously drawn layer; not calling at all
+                // would leave stale markers on screen.
+                render('ready');
+
+                const calls = renderCalls();
+                expect(calls.length).toBeGreaterThanOrEqual(2);
+                for (const [, groups] of calls) {
+                    expect(groups).toEqual([]);
+                }
+            });
         });
     });
 

@@ -331,6 +331,35 @@ describe('A11yRunStore', () => {
             expect(store.previewRevision()).toBe(2);
         });
 
+        it('survives a mid-fix rescan failure without derailing the run', () => {
+            // `rescanPreviewDuringFix` fires on every progress frame and swallows scan
+            // failures — a named failure mode with no coverage. The run must continue: the
+            // agent is still working, and the next progress frame retries. A scanner blip
+            // must not end a fix pass.
+            scannerService.checkA11y
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // preview scan
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // live comparison scan
+                .mockReturnValueOnce(throwError(() => new Error('scanner blip'))); // mid-fix
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } }
+                )
+            );
+
+            store.runScan();
+            const revisionBeforeFix = store.previewRevision();
+            store.startFix();
+
+            expect(store.phase()).toBe('fixing');
+            // The failed rescan writes nothing: no stale scanResult, and no reload of a
+            // preview that has not been re-read.
+            expect(store.previewRevision()).toBe(revisionBeforeFix);
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            // And it is not surfaced as a run error — the run is still going.
+            expect(store.runError()).toBeNull();
+        });
+
         it('fixedCount reflects the live progress.cleared while fixing', () => {
             agentService.fixStream.mockReturnValueOnce(
                 openStream(
