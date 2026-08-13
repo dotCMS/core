@@ -166,10 +166,17 @@ public record MirrorStatus(
      * rounding away.</p>
      *
      * @return the percentage, or {@code null} when there is no denominator ({@code databaseDocCount}
-     *         absent or zero) or the count was unmeasurable ({@code -1})
+     *         absent or zero), the count was unmeasurable ({@code -1}), or this engine has no copy of
+     *         the index at all
      */
     private Double indexedPercentOf(final EngineCopy copy) {
-        if (databaseDocCount == null || databaseDocCount <= 0 || copy.docCount() < 0) {
+        // A copy that does not exist counts 0 documents, but reporting 0.0% would say "this engine
+        // lost all its content" when the truth is "this engine has no such index" — two different
+        // facts, and the difference matters most in Phase 3, where every Elasticsearch copy is
+        // legitimately gone and would otherwise light the report up with zeroes. Absence is already
+        // stated by `exists` and by the MISSING_COUNTERPART verdict; this field stays silent.
+        if (!copy.exists() || databaseDocCount == null || databaseDocCount <= 0
+                || copy.docCount() < 0) {
             return null;
         }
         return Math.round(copy.docCount() * 10_000.0 / databaseDocCount) / 100.0;
@@ -177,14 +184,24 @@ public record MirrorStatus(
 
     /**
      * Classifies a mirror from raw existence + exact counts: a missing copy on either engine is
-     * {@link Verdict#MISSING_COUNTERPART}; both present with unequal counts is {@link Verdict#COUNT_DRIFT}
-     * (a failed count is reported as {@code -1}, which compares unequal and so surfaces as drift —
-     * fail-safe); otherwise {@link Verdict#IN_SYNC}.
+     * {@link Verdict#MISSING_COUNTERPART}; otherwise unequal counts are {@link Verdict#COUNT_DRIFT};
+     * otherwise {@link Verdict#IN_SYNC}.
+     *
+     * <p><strong>An unmeasurable count is never {@code IN_SYNC}.</strong> A failed count query is
+     * reported as {@code -1}, and it is checked explicitly rather than left to compare unequal: when
+     * <em>both</em> engines fail — one cluster under load, or a search user granted
+     * {@code indices:monitor/stats} but not {@code indices:data/read/count}, so existence resolves but
+     * counting does not — {@code -1 == -1} would otherwise read as a perfect match and the report
+     * would answer "safe to advance" about a mirror it never actually measured. Unknown degrades to
+     * drift, which is what {@code needsAttention()} and {@code safeToAdvance} act on.</p>
      */
     public static Verdict verdictFor(final boolean esExists, final boolean osExists,
             final long esDocCount, final long osDocCount) {
         if (!esExists || !osExists) {
             return Verdict.MISSING_COUNTERPART;
+        }
+        if (esDocCount < 0 || osDocCount < 0) {
+            return Verdict.COUNT_DRIFT;
         }
         if (esDocCount != osDocCount) {
             return Verdict.COUNT_DRIFT;

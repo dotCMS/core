@@ -287,4 +287,53 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(Verdict.COUNT_DRIFT, working.verdict());
         assertNull("an unmeasurable count has no drift percentage", working.driftPercent());
     }
+
+    /**
+     * The dangerous case: BOTH count queries fail. Both sides read {@code -1}, and left to plain
+     * equality {@code -1 == -1} would look like a perfect match — the report would answer "in sync,
+     * safe to advance" about a mirror it never measured. Existence still resolves here (the stats call
+     * succeeds), which is exactly how it happens in the field: a search user granted
+     * {@code indices:monitor/stats} but not {@code indices:data/read/count}, or a cluster too loaded to
+     * answer counts.
+     */
+    @Test
+    public void bothCountQueriesFailing_isNeverInSync() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        when(esOps.getIndexDocumentCount("cluster_x.working_1"))
+                .thenThrow(new DotRuntimeException("ES unreachable"));
+        when(osOps.getIndexDocumentCount("cluster_x.working_1.os"))
+                .thenThrow(new DotRuntimeException("OS unreachable"));
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
+
+        assertEquals(-1, working.es().docCount());
+        assertEquals(-1, working.os().docCount());
+        assertEquals("two unmeasurable counts must not read as a match",
+                Verdict.COUNT_DRIFT, working.verdict());
+        assertTrue("an unmeasured mirror needs attention", working.needsAttention());
+    }
+
+    /**
+     * An engine that has no copy of the index reports no indexed percentage at all — not {@code 0.0}.
+     * Zero would say "this engine lost all its content"; the truth is "there is no such index here",
+     * which `exists` and the MISSING_COUNTERPART verdict already state. It matters most in Phase 3,
+     * where every Elasticsearch copy is legitimately gone.
+     */
+    @Test
+    public void absentCopy_reportsNoIndexedPercentage() {
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(Map.of());
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(osOps, "working_1", 686);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
+                new DatabaseCounts(686L, 685L)).statuses().get(0);
+
+        assertFalse(working.es().exists());
+        assertNull("an absent copy has no completeness to report", working.esIndexedPercent());
+        assertEquals(100.0, working.osIndexedPercent(), 0.001);
+    }
 }

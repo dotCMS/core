@@ -481,6 +481,12 @@ public class SiteSearchJobImpl {
                         .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
                         .flatMap(Optional::stream)
                         .findFirst())
+                // Swallowed so a diagnostic can never break indexing, but never in silence: whoever
+                // switched this check on did it to learn something, and "no warning" would otherwise be
+                // indistinguishable from "the measurement blew up".
+                .onFailure(e -> Logger.warn(SiteSearchJobImpl.class,
+                        "Could not measure how complete the content index is before this Site Search "
+                                + "crawl; continuing without the check: " + e.getMessage()))
                 .getOrElse(Optional.empty());
     }
 
