@@ -279,6 +279,25 @@ public class SecretsStoreWipeRegressionTest {
         assertEquals("and must never be backed up or replaced", 0, countBackups());
         assertEquals("the owning node must still read its secret", CANARY_VALUE,
                 readSecret(nodeA, CANARY_KEY));
+
+        // The admin notification is a persisted row, so unlike the log line it must not repeat on
+        // an interval. A container run with the interval shortened to 10s produced 20 notification
+        // rows in five minutes before this was separated out.
+        assertTrue("the notification latch must be set after the first failure",
+                SecretsKeyStoreHelper.hasNotifiedLoadFailure());
+
+        // A second helper on the same broken store must not raise another notification: the latch
+        // is per JVM, not per instance, because an operator does not need the same instruction
+        // twice just because two components each hold a helper.
+        final SecretsKeyStoreHelper nodeC = helperWithPassword("yet-another-wrong-password");
+        try {
+            nodeC.getValue(CANARY_KEY);
+            fail("still unreadable for this password");
+        } catch (DotRuntimeException expected) {
+            // correct
+        }
+        assertTrue("latch stays set; no second notification",
+                SecretsKeyStoreHelper.hasNotifiedLoadFailure());
     }
 
     /**

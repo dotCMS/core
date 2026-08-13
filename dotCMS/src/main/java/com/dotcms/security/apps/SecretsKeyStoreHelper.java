@@ -43,6 +43,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
@@ -108,6 +109,24 @@ public class SecretsKeyStoreHelper {
      * two helpers pointed at different stores cannot silence each other.
      */
     private final AtomicLong lastLoadFailureReportAt = new AtomicLong(0);
+
+    /**
+     * Whether the admin notification for an unreadable store has already been raised in this JVM.
+     *
+     * Separate from {@link #lastLoadFailureReportAt}, and deliberately a one-shot latch rather than
+     * an interval: a log line is a stream, but a notification is a persisted row and a permanent
+     * item in an administrator's tray. Repeating it says nothing new. Measured on a container with
+     * the report interval shortened to 10s, a store left unreadable for five minutes produced 20
+     * notification rows; at the 60s default that is still thousands a day for a store nobody has
+     * got round to fixing. The recurring signal belongs in the log; the notification only has to
+     * say "go and look" once.
+     *
+     * Static, so it is one notification per JVM rather than per helper instance -- an operator does
+     * not need the same instruction twice because two components each hold a helper. A store that
+     * breaks again after being fixed re-notifies on the next restart, which in practice is how a
+     * salt or password change arrives anyway.
+     */
+    private static final AtomicBoolean LOAD_FAILURE_NOTIFIED = new AtomicBoolean(false);
 
     @VisibleForTesting
     public static String getSecretStorePath() {
@@ -244,12 +263,31 @@ public class SecretsKeyStoreHelper {
     }
 
     /**
-     * Whether an unreadable store should be reported now, rate-limited to one report per
-     * {@link #SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS}. The first failure always reports.
+     * Raises the admin notification for an unreadable store at most once per JVM.
+     * See {@link #LOAD_FAILURE_NOTIFIED}.
+     */
+    private void notifyLoadFailureOnce() {
+        if (LOAD_FAILURE_NOTIFIED.compareAndSet(false, true)) {
+            Try.run(this::sendFailureNotification);
+        }
+    }
+
+    /**
+     * Whether the admin notification has yet been raised in this JVM. Only for tests to assert the
+     * one-shot behaviour without generating notification rows.
+     */
+    @VisibleForTesting
+    static boolean hasNotifiedLoadFailure() {
+        return LOAD_FAILURE_NOTIFIED.get();
+    }
+
+    /**
+     * Whether the ERROR for an unreadable store should be logged now, rate-limited to one per
+     * {@link #SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS}. The first failure always logs.
      *
-     * Gates the admin notification as well as the log line: {@code sendFailureNotification()} writes
-     * a notification row, so firing it per read would turn a mismatched store into a steady write
-     * load against the database on top of the log noise.
+     * Covers the log line only. The admin notification is a separate one-shot latch --
+     * {@link #notifyLoadFailureOnce()} -- because a persisted notification row should not repeat on
+     * an interval the way a log line can.
      */
     @VisibleForTesting
     boolean shouldReportLoadFailure() {
@@ -290,11 +328,12 @@ public class SecretsKeyStoreHelper {
                                 + " %s=true to back it up and start over -- which DISCARDS every"
                                 + " stored App credential.",
                         secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
-                Try.run(this::sendFailureNotification);
             } else {
                 Logger.debug(SecretsKeyStoreHelper.class,
                         () -> "App secrets store is still unreadable: " + diagnosis);
             }
+
+            notifyLoadFailureOnce();
 
             throw new DotRuntimeException(
                     "Unable to load the App secrets store: " + diagnosis, cause);
