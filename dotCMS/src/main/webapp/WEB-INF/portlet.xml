@@ -530,4 +530,11 @@
         <portlet-url>/users</portlet-url>
     </portlet>
 
+    <portlet>
+        <portlet-name>roles-beta</portlet-name>
+        <display-name>Roles and Tools (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/roles</portlet-url>
+    </portlet>
+
 </portlet-app>
