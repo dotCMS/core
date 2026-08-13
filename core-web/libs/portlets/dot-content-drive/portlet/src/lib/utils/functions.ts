@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
@@ -329,12 +329,17 @@ export function getPathLeafName(folderPath: string): string {
  * deprecated for removal, returns a path's *subfolders* rather than the folder itself, and carries
  * no permissions.
  *
- * Resolves to `undefined` in two cases, both of which leave the folder unpinned. The `name` filter
- * needs {@link FOLDER_NAME_FILTER_MIN_LENGTH} characters, so a one-character folder name drops the
- * filter and falls back to the level's first page; and `name` is a case-insensitive *partial* match,
- * so a level holding more same-substring siblings than fit one page can still exclude the target.
- * Both need a level wide enough to have overflowed in the first place. An exact-match filter, or a
- * folder-search that accepts an identifier, would close them.
+ * Resolves to `undefined` rather than failing, in three cases, all of which leave the folder
+ * unpinned. The `name` filter needs {@link FOLDER_NAME_FILTER_MIN_LENGTH} characters, so a
+ * one-character folder name drops the filter and falls back to the level's first page; `name` is a
+ * case-insensitive *partial* match, so a level holding more same-substring siblings than fit one
+ * page can still exclude the target (both need a level wide enough to have overflowed in the first
+ * place; an exact-match or identifier filter would close them); and the request itself can fail.
+ *
+ * Swallowing that failure is the point. This is a best-effort extra request on top of the page the
+ * level already has, and its caller runs inside a `forkJoin`: letting a transient 500 through would
+ * reject the whole hierarchy load, which `loadFolders` turns into an empty tree. A folder that
+ * cannot be pinned must cost that folder's pin, not every readable folder on screen.
  *
  * @param {string} levelPath - Parent path being listed, e.g. `/a/`
  * @param {string} ancestorPath - Full path of the folder to resolve, e.g. `/a/b/`
@@ -367,7 +372,8 @@ export function resolveHierarchyAncestor(
                 folders
                     .map((view) => folderSearchViewToDotFolder(view, site.hostname))
                     .find((folder) => folder.path === ancestorPath)
-            )
+            ),
+            catchError(() => of(undefined))
         );
 }
 

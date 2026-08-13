@@ -43,8 +43,8 @@ export const createTreeNode = (
             type: 'folder',
             defaultBaseType: folder.defaultBaseType,
             // Carried so a right-click can gate the shared context menu and pre-populate the
-            // "Edit folder" dialog without refetching. `permissions` stays undefined for nodes
-            // built by the deep-link hierarchy load, which cannot request them.
+            // "Edit folder" dialog without refetching. Every folder-search call behind this one
+            // asks for `permissions`, so a node arrives ready to gate however it reached the tree.
             name: folder.name,
             title: folder.title,
             sortOrder: folder.sortOrder,

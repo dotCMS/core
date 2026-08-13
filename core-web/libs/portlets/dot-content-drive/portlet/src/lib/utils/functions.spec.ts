@@ -722,6 +722,27 @@ describe('Utility Functions', () => {
                 });
             });
 
+            it('should leave the tree standing when the pin request itself fails', (done) => {
+                // The pin is a best-effort extra request inside a forkJoin. Letting a transient
+                // failure through would reject the whole hierarchy load, which loadFolders turns
+                // into an empty tree — costing every readable folder to save one pin.
+                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) => {
+                    if (path === '/' && name) {
+                        return throwError(() => new Error('Service error'));
+                    }
+
+                    return path === '/' ? page(['a-one'], '/', 253) : page([], path, 0);
+                });
+
+                getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
+                    next: (levels) => {
+                        expect(levels[0].folders.map(({ path }) => path)).toEqual(['/a-one/']);
+                        done();
+                    },
+                    error: () => done(new Error('Should not have rejected the hierarchy load'))
+                });
+            });
+
             it('should derive nextPage from folders fetched, not from the pinned node', (done) => {
                 const fullPage = Array.from(
                     { length: FOLDER_TREE_HIERARCHY_PAGE_SIZE },

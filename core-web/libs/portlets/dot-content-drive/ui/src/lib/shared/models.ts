@@ -101,9 +101,11 @@ export type DotFolderTreeNodeContentData = TreeNodeContentData & {
     defaultFileType?: string;
     showOnMenu?: boolean;
     /**
-     * Permission types the user holds on this folder. `undefined` means "not resolved yet" — the
-     * deep-link hierarchy load cannot request permissions, so those nodes resolve them on demand
-     * on first right-click. An empty array is a final answer: the user holds none.
+     * Permission types the user holds on this folder. Every source that builds a folder node
+     * requests them — expand, load-more and the deep-link hierarchy load alike — so in practice
+     * this is populated and an empty array means the user holds none. Optional only because a
+     * folder can still arrive without it from a source that did not opt in, in which case gating
+     * degrades to "no actions" rather than throwing.
      */
     permissions?: PermissionType[];
 };
