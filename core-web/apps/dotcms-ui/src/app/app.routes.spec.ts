@@ -1,7 +1,7 @@
 import { Route, Routes } from '@angular/router';
 
-import { appRoutes } from './app.routes';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
+import { appRoutes } from './app.routes';
 
 /**
  * Guards the portlet route registration. `MenuGuardService` validates the FIRST url segment
