@@ -31,7 +31,7 @@ import { TabsModule } from 'primeng/tabs';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotContentDriveFolder, DotFolderEntity } from '@dotcms/dotcms-models';
+import { DotContentDriveActionableFolder, DotFolderEntity } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -81,7 +81,12 @@ export class DotContentDriveDialogFolderComponent {
 
     #hostName = this.#store.currentSite().hostname;
 
-    $folder = input<DotContentDriveFolder | undefined>(undefined, { alias: 'folder' });
+    /**
+     * The folder being edited, or `undefined` in create mode. Typed as the narrow
+     * {@link DotContentDriveActionableFolder} so both sources work: a full row from the table and a
+     * search view from the sidebar tree.
+     */
+    $folder = input<DotContentDriveActionableFolder | undefined>(undefined, { alias: 'folder' });
 
     readonly $fileAssetTypes = toSignal(
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
@@ -425,25 +430,51 @@ export class DotContentDriveDialogFolderComponent {
     }
 
     /**
+     * Path of the folder that will contain the folder being created or edited, without a trailing
+     * slash (empty at the site root).
+     *
+     * **Create** anchors on the folder currently open in the drive (`store.path()`), so the preview
+     * reflects where the new folder will land — even before a name is typed.
+     *
+     * **Edit** must anchor on the edited folder's *own* parent instead. The table only ever opens
+     * this dialog for a row of the open folder, so the two coincide there; the sidebar tree can open
+     * it for any folder at any depth, and anchoring on the open path would then build a path to a
+     * different folder entirely — saving would 404, or silently overwrite a same-named folder under
+     * the open one.
+     *
+     * @returns {string} The parent path, e.g. `/application/blog` or `''` at the site root
+     */
+    #getParentPath(): string {
+        const folder = this.$folder();
+
+        if (!folder) {
+            return this.#store.path()?.replace(/\/$/, '') ?? '';
+        }
+
+        const withoutTrailingSlash = folder.path.replace(/\/$/, '');
+        const lastSeparator = withoutTrailingSlash.lastIndexOf('/');
+
+        return lastSeparator <= 0 ? '' : withoutTrailingSlash.slice(0, lastSeparator);
+    }
+
+    /**
      * Generates the asset path for a given name
-     * Combines hostname, current path, and URL to create the complete folder path
+     * Combines hostname, parent path, and name to create the complete folder path
      * Ensures proper path formatting by removing trailing slashes
+     *
+     * Reads signals in a pure computed only; it never writes a form control, so it can't
+     * re-introduce the form-control-write feedback loop that the old title→name `urlEffect` caused.
      *
      * @param {string} name - The name of the folder
      * @returns {string} The asset path
      */
     #getAssetPath(name: string) {
         const slugName = this.#getSlugTitle(name);
-
-        // Always anchor on the currently opened folder (store.path()) so the preview reflects where
-        // the folder will actually be created — even before a name is typed. This reads a signal in
-        // a pure computed only; it never writes a form control, so it can't re-introduce the
-        // form-control-write feedback loop that the old title→name `urlEffect` caused.
-        const path = this.#store.path();
+        const parentPath = this.#getParentPath();
         let finalPath = this.#hostName;
 
-        if (path) {
-            finalPath += `${path.replace(/\/$/, '')}`;
+        if (parentPath) {
+            finalPath += parentPath;
         }
 
         if (!slugName) {
