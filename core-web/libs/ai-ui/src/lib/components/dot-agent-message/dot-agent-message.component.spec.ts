@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { DotAgentMessageComponent } from './dot-agent-message.component';
 
@@ -20,7 +20,7 @@ describe('DotAgentMessageComponent', () => {
     /** The tone accent dot-color-icon resolved onto its host custom property. */
     const chipColor = () =>
         spectator
-            .query('dot-color-icon')
+            .query(byTestId('agent-message-chip'))
             ?.getAttribute('style')
             ?.match(/--dot-color-icon-color:\s*([^;]+)/)?.[1]
             ?.trim();
@@ -30,18 +30,18 @@ describe('DotAgentMessageComponent', () => {
     });
 
     it('renders the message text and sub', () => {
-        expect(spectator.element).toHaveText('Fixed alt text');
-        expect(spectator.element).toHaveText('image-alt · hero.vtl');
+        expect(spectator.query(byTestId('agent-message-text'))).toHaveText('Fixed alt text');
+        expect(spectator.query(byTestId('agent-message-sub'))).toHaveText('image-alt · hero.vtl');
     });
 
     it('renders the icon as a material symbol ligature', () => {
-        const icon = spectator.query('.material-symbols-outlined');
+        const icon = spectator.query(byTestId('agent-message-icon'));
         expect(icon).toBeTruthy();
         expect(icon).toHaveText('check');
     });
 
     it('keeps the timeline-dot size override on the chip host', () => {
-        const chip = spectator.query('dot-color-icon');
+        const chip = spectator.query(byTestId('agent-message-chip'));
         expect(chip).toHaveClass('size-7.5!');
         expect(chip).toHaveClass('rounded-lg!');
     });
@@ -66,18 +66,18 @@ describe('DotAgentMessageComponent', () => {
             text: 'Scanning',
             tone: 'info'
         });
-        expect(spectator.element).not.toHaveText('·');
+        expect(spectator.query(byTestId('agent-message-sub'))).toBeNull();
     });
 
     it('hides the connector on the last bubble and shows it otherwise', () => {
         // Default: standalone/last → no connector.
-        expect(spectator.query('.w-0\\.5')).toBeNull();
+        expect(spectator.query(byTestId('agent-message-connector'))).toBeNull();
         spectator.setInput('last', false);
-        expect(spectator.query('.w-0\\.5')).not.toBeNull();
+        expect(spectator.query(byTestId('agent-message-connector'))).not.toBeNull();
     });
 
     it('renders the settled message icon (never a spinner)', () => {
-        expect(spectator.query('.material-symbols-outlined')).toHaveText('check');
-        expect(spectator.query('.pi-spinner')).toBeNull();
+        expect(spectator.query(byTestId('agent-message-icon'))).toHaveText('check');
+        expect(spectator.query(byTestId('agent-thinking-spinner'))).toBeNull();
     });
 });

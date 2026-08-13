@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { DotAgentThinkingComponent } from './dot-agent-thinking.component';
 
@@ -13,13 +13,13 @@ describe('DotAgentThinkingComponent', () => {
 
     it('renders a spinner + gradient-shimmer label', () => {
         // Spinner is the clear motion cue…
-        expect(spectator.query('i.pi-spinner')).toBeTruthy();
+        expect(spectator.query(byTestId('agent-thinking-spinner'))).toBeTruthy();
         // …and the label carries the shimmer class (styling is component CSS).
-        expect(spectator.query('.agent-shimmer')).toBeTruthy();
+        expect(spectator.query(byTestId('agent-thinking-text'))).toBeTruthy();
     });
 
     it('renders the primary text in the shimmer label', () => {
-        expect(spectator.query('.agent-shimmer')).toHaveText('Thinking…');
+        expect(spectator.query(byTestId('agent-thinking-text'))).toHaveText('Thinking…');
     });
 
     it('renders the sub-line when provided, omits it otherwise', () => {

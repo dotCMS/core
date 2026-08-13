@@ -134,7 +134,7 @@ describe('DotAgentActivityLogComponent', () => {
         expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
         const thinking = spectator.query(byTestId('agent-thinking'));
         expect(thinking).not.toBeNull();
-        expect(thinking?.querySelector('.agent-shimmer')).not.toBeNull();
+        expect(thinking?.querySelector('[data-testid="agent-thinking-text"]')).not.toBeNull();
     });
 
     it('renders the supplied workingMessage text + sub in the thinking indicator', () => {
@@ -164,6 +164,6 @@ describe('DotAgentActivityLogComponent', () => {
         expect(spectator.queryAll(byTestId('agent-message')).length).toBe(0);
         const thinking = spectator.query(byTestId('agent-thinking'));
         expect(thinking).toHaveText('my.working.key');
-        expect(thinking?.querySelector('.agent-shimmer')).not.toBeNull();
+        expect(thinking?.querySelector('[data-testid="agent-thinking-text"]')).not.toBeNull();
     });
 });
