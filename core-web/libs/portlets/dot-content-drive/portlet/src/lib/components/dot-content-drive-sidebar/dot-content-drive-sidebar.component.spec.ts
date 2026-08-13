@@ -15,7 +15,8 @@ import {
     DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
-    ALL_FOLDER
+    ALL_FOLDER,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -840,6 +841,81 @@ describe('DotContentDriveSidebarComponent', () => {
         });
     });
 
+    describe('revealing the folder the drive opened on', () => {
+        const targetNode: DotFolderTreeNodeItem = {
+            key: 'deep-folder',
+            label: '/documents/reports/',
+            data: {
+                id: 'deep-folder',
+                hostname: 'demo.dotcms.com',
+                path: '/documents/reports/',
+                type: 'folder'
+            },
+            leaf: false
+        };
+
+        let scrollIntoView: jest.Mock;
+
+        beforeEach(() => {
+            scrollIntoView = jest.fn();
+            const treeFolder = spectator.query(DotTreeFolderComponent);
+            jest.spyOn(treeFolder.elementRef.nativeElement, 'querySelector').mockReturnValue({
+                scrollIntoView
+            } as unknown as Element);
+        });
+
+        it('should bring the selected folder into view once the cold load finishes', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).toHaveBeenCalledWith({
+                // Instant: this is where the tree should have opened, not somewhere to animate to.
+                behavior: 'instant',
+                block: 'center'
+            });
+        });
+
+        it('should not scroll while the tree is still loading', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(true);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('should wait for the tree to render rather than scrolling as the store publishes', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+
+            // The loading placeholder is still mounted at this point, so there is no row yet.
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('should not scroll when the selection is a load-more sentinel', () => {
+            contentDriveStore.selectedNode.mockReturnValue({
+                key: 'load-more:/documents/',
+                label: '',
+                data: {
+                    type: LOAD_MORE_NODE_TYPE,
+                    id: 'load-more:/documents/',
+                    path: '/documents/',
+                    hostname: 'demo.dotcms.com',
+                    nextPage: 2,
+                    remaining: 5
+                }
+            } as DotFolderTreeNodeItem);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+    });
+
     describe('handleSelectedNodeFromTable', () => {
         it('should handle selectedNode with fromTable flag', () => {
             const mockScrollIntoView = jest.fn();
@@ -886,7 +962,9 @@ describe('DotContentDriveSidebarComponent', () => {
             // The method calls it with just segments, which defaults to this.$folders()
             expect(recursiveExpandSpy).toHaveBeenCalledWith(['documents']);
 
-            // Verify scrollIntoView was called if element was found
+            // The reveal waits for the tree to render the row before scrolling to it.
+            spectator.detectChanges();
+
             expect(mockScrollIntoView).toHaveBeenCalledWith({
                 behavior: 'smooth',
                 block: 'center'

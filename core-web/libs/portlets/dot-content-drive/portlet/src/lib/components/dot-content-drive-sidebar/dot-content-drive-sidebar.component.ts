@@ -1,10 +1,12 @@
 import { signalMethod } from '@ngrx/signals';
 
 import {
+    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     effect,
     inject,
+    Injector,
     output,
     untracked,
     viewChild
@@ -50,6 +52,7 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
 })
 export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);
+    readonly #injector = inject(Injector);
 
     readonly $loading = this.#store.sidebarLoading;
     readonly $folders = this.#store.folders;
@@ -90,14 +93,65 @@ export class DotContentDriveSidebarComponent {
 
         this.recursiveExpandOneNode(segments);
 
-        this.treeFolder()
-            ?.elementRef.nativeElement.querySelector(`[data-id="${data.id}"]`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        this.#revealNode(selectedNode, 'smooth');
+    });
+
+    /**
+     * Brings the folder the drive is open on into view once a cold load has rendered.
+     *
+     * The hierarchy load already expands the tree down to that folder, but a level can be hundreds
+     * of folders deep, so on a deep link it was drawn far below the fold with the viewport still at
+     * the top. Selecting a node in the tree must not scroll — it is under the cursor already — so
+     * this hangs off the load finishing rather than off the selection changing.
+     *
+     * Keyed off the load finishing rather than off the selection changing, because at the moment
+     * the store publishes a cold-loaded selection the tree is not on screen yet — the loading
+     * placeholder still is. Both reveals share {@link #revealSelectedNode}.
+     *
+     * @param {boolean} loading - The sidebar's loading state
+     */
+    readonly revealSelectedNodeOnLoad = signalMethod<boolean>((loading) => {
+        if (loading) {
+            return;
+        }
+
+        // Instant, not smooth: this is where the tree should have opened, not a place to animate to.
+        this.#revealNode(this.$selectedNode(), 'instant');
     });
 
     constructor() {
         // Call signalMethod with the signal - it will automatically subscribe to changes
         this.handleSelectedNodeFromTable(this.$selectedNode);
+        this.revealSelectedNodeOnLoad(this.$loading);
+    }
+
+    /**
+     * Scrolls a node's row into the middle of the tree's viewport, once the tree has actually
+     * rendered it.
+     *
+     * The wait matters for both callers. A cold load publishes its selection while the loading
+     * placeholder is still mounted, and the table's reveal runs straight after
+     * `recursiveExpandOneNode`, which only marks ancestors expanded — a branch whose children are
+     * still being fetched has no row to scroll to yet either.
+     *
+     * @param {DotFolderTreeNodeItem | undefined} node - The node to bring into view
+     * @param {ScrollBehavior} behavior - How to travel there
+     */
+    #revealNode(node: DotFolderTreeNodeItem | undefined, behavior: ScrollBehavior): void {
+        const data = node?.data;
+
+        if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+            return;
+        }
+
+        afterNextRender(
+            () => {
+                this.treeFolder()
+                    ?.elementRef.nativeElement.querySelector(`[data-id="${data.id}"]`)
+                    ?.scrollIntoView({ behavior, block: 'center' });
+            },
+            { injector: this.#injector }
+        );
     }
     /**
      * Handles node selection events
