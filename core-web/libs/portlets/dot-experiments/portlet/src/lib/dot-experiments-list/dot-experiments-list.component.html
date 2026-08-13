@@ -79,14 +79,17 @@
             data-testid="experiments-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <!-- Experiment holds a name plus a description underneath and is the column
-                         that grows with real data, so it takes a fixed share up front rather
-                         than letting the browser reflow every other column around it. -->
-                    <th class="w-2/5">{{ 'experiments.list.header.experiment' | dm }}</th>
+                    <!-- Experiment holds a name plus a description underneath and is the only
+                         column that grows with real data. It is capped rather than given a share
+                         of the table: a long name is truncated inside its own cell instead of
+                         squeezing every other column until the dates wrap onto a second line. -->
+                    <th class="w-72 max-w-72">{{ 'experiments.list.header.experiment' | dm }}</th>
                     <th>{{ 'experiments.list.header.page' | dm }}</th>
                     <th>{{ 'experiments.list.header.goal' | dm }}</th>
                     <th class="text-center">{{ 'experiments.list.header.variants' | dm }}</th>
-                    <th>{{ 'experiments.list.header.schedule' | dm }}</th>
+                    <th class="whitespace-nowrap">
+                        {{ 'experiments.list.header.schedule' | dm }}
+                    </th>
                     <th>{{ 'experiments.list.header.status' | dm }}</th>
                     <th pSortableColumn="modDate">
                         {{ 'experiments.list.header.modified' | dm }}
@@ -113,11 +116,18 @@
                     </tr>
                 } @else {
                     <tr class="group" data-testid="experiment-row">
-                        <td data-testid="experiment-name">
-                            <div class="flex flex-col">
-                                <span class="font-medium">{{ row.experiment.name }}</span>
+                        <td class="max-w-72" data-testid="experiment-name">
+                            <!-- `min-w-0` so the flex children may shrink below their text width,
+                                 which is what lets `truncate` ellipsize instead of overflowing.
+                                 The full value stays reachable as a tooltip. -->
+                            <div class="flex min-w-0 flex-col">
+                                <span class="truncate font-medium" [title]="row.experiment.name">
+                                    {{ row.experiment.name }}
+                                </span>
                                 @if (row.experiment.description) {
-                                    <span class="text-sm text-surface-500">
+                                    <span
+                                        class="truncate text-sm text-surface-500"
+                                        [title]="row.experiment.description">
                                         {{ row.experiment.description }}
                                     </span>
                                 }
@@ -132,14 +142,19 @@
                         <td class="text-center" data-testid="experiment-variants">
                             {{ row.variants }}
                         </td>
-                        <td data-testid="experiment-schedule">{{ row.schedule }}</td>
+                        <!-- The date range and the date below are single values that read as
+                             one line; wrapping them mid-range is what pushed rows to double
+                             height on a narrow viewport. -->
+                        <td class="whitespace-nowrap" data-testid="experiment-schedule">
+                            {{ row.schedule }}
+                        </td>
                         <td data-testid="experiment-status">
                             <p-tag
                                 [severity]="row.statusSeverity"
                                 [value]="row.statusLabelKey | dm"
                                 data-testid="experiment-status-tag" />
                         </td>
-                        <td data-testid="experiment-modified">
+                        <td class="whitespace-nowrap" data-testid="experiment-modified">
                             {{ row.experiment.modDate | date: 'MMM d, y' }}
                         </td>
                         <td>
