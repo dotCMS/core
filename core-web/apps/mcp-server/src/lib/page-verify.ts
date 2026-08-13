@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
+import { normalizePagePath } from './page-path';
 import { resolveSite } from './resolve';
 
 /** Render modes the verify tool supports. LIVE = published; WORKING = latest saved (pre-publish). */
@@ -139,9 +140,9 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
     // site, and we send no host_id (the render endpoint's documented default behavior).
     const resolvedSite = options.site ? await resolveSite(options.dotcms, options.site) : undefined;
 
-    const uri = options.path.trim().startsWith('/')
-        ? options.path.trim()
-        : `/${options.path.trim()}`;
+    // Normalized BEFORE it reaches the request URL: `/a/../b` used to render `/b` while the
+    // manifest reported `/a/../b`, and a `#` silently truncated the path.
+    const uri = normalizePagePath(options.path);
 
     const query: Record<string, string | number> = {
         language_id: languageId,

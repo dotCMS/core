@@ -1,6 +1,7 @@
 import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
 
-import { createPage, splitUrlPath } from './page-create';
+import { createPage } from './page-create';
+import { splitUrlPath } from './page-path';
 
 describe('splitUrlPath', () => {
     it('splits a path with an explicit leaf into folder + leaf', () => {

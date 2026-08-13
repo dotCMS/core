@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
+import { splitUrlPath } from './page-path';
 import { resolveLanguageId, resolveSite } from './resolve';
 import { errorMessage } from './runtime';
 
@@ -391,82 +392,6 @@ function hasValue(value: unknown): boolean {
     if (value == null) return false;
     if (typeof value === 'string') return value.trim().length > 0;
     return true;
-}
-
-/**
- * Split a page-relative URL into the parent folder and the leaf url stored on the page.
- *
- *   "/books/index" → { folder: "/books", url: "index", fullPath: "/books/index" }
- *   "/books"       → { folder: "/books", url: "index", fullPath: "/books/index" }
- *   "/about-us/"   → { folder: "/about-us", url: "index", fullPath: "/about-us/index" }
- *   "/"            → { folder: "/", url: "index", fullPath: "/index" }
- *
- * The input is first normalized through the URL API (against a throwaway base): this collapses
- * "."/".." segments and drops any query string or fragment. URL.pathname keeps percent-encoding
- * intact (notably so an encoded "%2F" can't smuggle a path separator), so we decode each segment
- * individually AFTER splitting — "/my%20books" → folder "my books".
- *
- * A decoded segment that still contains "/" is REJECTED rather than accepted. Splitting first
- * does not by itself make the slash inert: the folder is rebuilt with `folderSegments.join('/')`
- * below, which turns it straight back into a path boundary — so "/a/my%2Fbooks/index" and
- * "/a/my/books/index" would resolve to the same folder "/a/my/books", silently placing the page
- * somewhere the caller did not ask for. dotCMS folder names cannot contain a separator anyway,
- * so there is no legitimate input being turned away.
- * The folder-vs-leaf decision below stays ours: the URL API preserves a trailing slash but does
- * not know that "/about-us/" means a folder index while "/about-us" means a leaf url.
- *
- * dotCMS pages always have a leaf url (commonly "index"). If the caller gives a path with no
- * explicit leaf, we default the leaf to "index" under that folder, which matches how the admin UI
- * and the rest of the platform address a folder's default page.
- */
-export function splitUrlPath(urlPath: string): { folder: string; url: string; fullPath: string } {
-    const trimmed = urlPath.trim();
-    if (!trimmed.startsWith('/')) {
-        throw new Error(`urlPath must start with "/": "${urlPath}"`);
-    }
-
-    // Normalize via URL: decode %xx, collapse ./.., strip ?query/#fragment. The base is a
-    // throwaway — only `pathname` is read back out, so the host never leaks into the result.
-    let pathname: string;
-    try {
-        pathname = new URL(trimmed, 'http://_').pathname;
-    } catch {
-        throw new Error(`urlPath is not a valid path: "${urlPath}"`);
-    }
-
-    const segments = pathname
-        .split('/')
-        .filter(Boolean)
-        .map((segment) => decodeURIComponent(segment));
-
-    const smuggled = segments.find((segment) => segment.includes('/'));
-    if (smuggled !== undefined) {
-        throw new Error(
-            `urlPath segment "${smuggled}" contains an encoded path separator (%2F), which would ` +
-                `silently place the page under a DIFFERENT folder than the one named: ` +
-                `"${urlPath}" would resolve as if the slash had been written literally. dotCMS ` +
-                `folder names cannot contain "/", so write the path out plainly instead.`
-        );
-    }
-
-    // No segments → the site root; the page is the root index.
-    if (segments.length === 0) {
-        return { folder: '/', url: 'index', fullPath: '/index' };
-    }
-
-    // A trailing slash means the whole path IS the folder and the page is its index. Otherwise the
-    // last segment is the leaf url and everything before it is the folder. (segments is non-empty
-    // here — the length===0 case returned above.)
-    if (!pathname.endsWith('/')) {
-        const url = segments[segments.length - 1];
-        const folderSegments = segments.slice(0, -1);
-        const folder = folderSegments.length ? `/${folderSegments.join('/')}` : '/';
-        const fullPath = `${folder === '/' ? '' : folder}/${url}`;
-        return { folder, url, fullPath };
-    }
-
-    const folder = `/${segments.join('/')}`;
-    return { folder, url: 'index', fullPath: `${folder}/index` };
 }
 
 /**

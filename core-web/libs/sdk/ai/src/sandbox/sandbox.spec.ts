@@ -222,6 +222,16 @@ describe('resolveRef sandbox helper', () => {
                 Node: {
                     type: 'object',
                     properties: { child: { $ref: '#/components/schemas/Node' } }
+                },
+                // Mutually recursive, as the committed spec genuinely is
+                // (BodyPart -> MultiPart -> BodyPart).
+                BodyPart: {
+                    type: 'object',
+                    properties: { part: { $ref: '#/components/schemas/MultiPart' } }
+                },
+                MultiPart: {
+                    type: 'object',
+                    properties: { body: { $ref: '#/components/schemas/BodyPart' } }
                 }
             }
         }
@@ -259,6 +269,29 @@ describe('resolveRef sandbox helper', () => {
         const result = await runWithSpec(`return resolveRef('Node', 5);`);
         expect(result.success).toBe(true);
         // Should complete without infinite recursion; the deepest child stays a $ref.
+        expect(result.value).toBeDefined();
+    });
+
+    it('terminates on a MUTUALLY recursive pair', async () => {
+        // depth alone cannot save this one: each hop copies the whole target subtree, so a
+        // large requested depth over a cycle grows multiplicatively until the worker is
+        // killed for exhausting its heap.
+        const result = await runWithSpec(`return resolveRef('BodyPart', 5);`);
+        expect(result.success).toBe(true);
+        expect(result.value).toBeDefined();
+    });
+
+    it('clamps a large caller-chosen depth instead of exhausting the worker', async () => {
+        // Asking for a bigger number is exactly what a model does when depth 2 looks
+        // truncated, and `depth` is entirely model-chosen.
+        const result = await runWithSpec(`return resolveRef('Node', 500);`);
+        expect(result.success).toBe(true);
+        expect(JSON.stringify(result.value)).toContain('$ref');
+    });
+
+    it('survives a non-numeric depth', async () => {
+        const result = await runWithSpec(`return resolveRef('Page', 'deep');`);
+        expect(result.success).toBe(true);
         expect(result.value).toBeDefined();
     });
 

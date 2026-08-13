@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
+import { normalizePagePath } from './page-path';
 import { resolveSite } from './resolve';
 import { errorMessage } from './runtime';
 
@@ -235,7 +236,9 @@ async function resolvePageTarget(
         throw new Error('Page placement site could not be resolved.');
     }
 
-    const normalizedPath = pagePath.startsWith('/') ? pagePath : `/${pagePath}`;
+    // The manifest must echo the path actually operated on, not the raw input.
+    const normalizedPath = normalizePagePath(pagePath);
+
     return { path: normalizedPath, siteId: site.identifier, hostname: site.hostname };
 }
 
@@ -468,7 +471,8 @@ async function loadPageSlots(
     languageId: number,
     variantName: string
 ): Promise<{ pageId: string; url: string; slots: PageSlot[] }> {
-    const uri = path.trim().startsWith('/') ? path.trim() : `/${path.trim()}`;
+    // Normalized before interpolation — see lib/page-path.ts for why the raw form is unsafe.
+    const uri = normalizePagePath(path);
     // Read the SAME variant the write targets. Omitting `variantName` here reads DEFAULT,
     // so in `merge` mode on a non-DEFAULT variant the "before" slot map and the
     // untouched-slot preservation would be computed from DEFAULT and then written into the
