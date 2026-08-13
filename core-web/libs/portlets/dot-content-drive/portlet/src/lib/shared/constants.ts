@@ -28,20 +28,21 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
 export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
 
 /**
- * Page size for the deep-link / initial hierarchy fetch only.
- * One request per ancestor level (parallel); large enough that path segments past
- * the interactive page of 40 still appear so {@link buildTreeFolderNodes} can select them.
- * Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
+ * Page size for the deep-link / initial hierarchy fetch only. One request per ancestor level
+ * (parallel). Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
+ *
+ * Pinned to the backend's cap for `includePermissions=true`
+ * (`content.drive.folder.search.permissions.max.per.page`, default 200): anything larger is
+ * rejected with a 400, and the hierarchy load must carry permissions so every node the tree
+ * renders on first paint can gate its context menu without a second round-trip.
+ *
+ * An ancestor sorting past this page is fetched individually instead of by widening the page,
+ * see `getFolderHierarchyByPath`.
+ *
+ * Deliberately a whole multiple of {@link FOLDER_TREE_PAGE_SIZE}: load-more resumes in
+ * 40-sized pages, so the hierarchy's page count has to convert to a clean page boundary.
  */
-export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 10000;
-
-/**
- * Page size for the on-demand lookup that resolves a single folder's permissions when its tree node
- * was hydrated without them (see `getFolderPermissionsByPath`). Matches the backend cap for
- * `includePermissions=true` (`content.drive.folder.search.permissions.max.per.page`, default 200) —
- * requesting more would be rejected with a 400.
- */
-export const FOLDER_PERMISSIONS_LOOKUP_PAGE_SIZE = 200;
+export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
 
 /** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;

@@ -125,10 +125,14 @@ export type DotFolderTreeNodeItem = TreeNode<DotFolderTreeNodeData>;
 /**
  * @export
  * @interface DotContentDriveTreeRightClick
- * @description Right-click on a folder node in the sidebar tree. Carries the original event (the
- * shared context menu anchors itself to it) and the node that was clicked.
+ * @description Right-click on a folder row in the sidebar tree. Carries the original event (the
+ * shared context menu anchors itself to it) and the folder the row renders.
+ *
+ * Folder data rather than the `TreeNode`: the tree reads the clicked row straight from the DOM, as
+ * its drag-and-drop already does, instead of searching its own input for a matching node. That
+ * keeps the component presentational, and the data is all a consumer needs to act on the folder.
  */
 export interface DotContentDriveTreeRightClick {
     event: MouseEvent;
-    node: DotFolderTreeNodeItem;
+    data: DotFolderTreeNodeContentData;
 }

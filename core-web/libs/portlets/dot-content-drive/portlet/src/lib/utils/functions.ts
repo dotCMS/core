@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
@@ -14,8 +14,7 @@ import {
     DotFolder,
     DotSite,
     FolderSearchView,
-    LOAD_MORE_NODE_TYPE,
-    PermissionType
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
@@ -28,7 +27,6 @@ import {
     FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTI_VALUE_TYPES,
     FOLDER_NAME_FILTER_MIN_LENGTH,
-    FOLDER_PERMISSIONS_LOOKUP_PAGE_SIZE,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
     USER_SEARCHABLE_PREFIX,
@@ -292,18 +290,108 @@ export type FolderTreeHierarchyLevel = {
     path: string;
     folders: DotFolder[];
     totalEntries: number;
+    /**
+     * The 1-based page "Load more" should request next for this level, expressed in
+     * {@link FOLDER_TREE_PAGE_SIZE} units because that is what load-more pages by.
+     *
+     * Derived from the folders actually fetched, never from the rendered node count: a level can
+     * carry one extra folder that {@link resolveHierarchyAncestor} appended out of sort order, and
+     * counting that as paged-through would make load-more skip a page of real folders.
+     */
+    nextPage: number;
 };
+
+/**
+ * The last segment of a folder path: `/a/b/` → `b`, `/a/` → `a`.
+ *
+ * @param {string} folderPath - A folder's own path, with or without a trailing slash
+ * @returns {string} the folder's own name, or `''` for the site root
+ */
+export function getPathLeafName(folderPath: string): string {
+    const segments = folderPath.split('/').filter(Boolean);
+
+    return segments[segments.length - 1] ?? '';
+}
+
+/**
+ * Fetches one specific folder of a level directly, for the case where a deep-linked ancestor sorts
+ * past the level's first hierarchy page and would otherwise be missing from the tree.
+ *
+ * The tree has to show the folder the drive is open on. Widening the hierarchy page to guarantee
+ * that is not an option: `includePermissions=true` caps `per_page`
+ * (`content.drive.folder.search.permissions.max.per.page`), and the nodes on first paint need
+ * permissions to gate their context menu. Paging the level until the folder turns up is not one
+ * either: it trades one request for an unbounded chain to find something we already know the exact
+ * path of. So the level is queried once more, narrowed by the folder's own name, and matched on
+ * exact path.
+ *
+ * `POST /api/v1/folder/byPath` would be the natural "fetch this one folder" call, but it is
+ * deprecated for removal, returns a path's *subfolders* rather than the folder itself, and carries
+ * no permissions.
+ *
+ * Resolves to `undefined` in two cases, both of which leave the folder unpinned. The `name` filter
+ * needs {@link FOLDER_NAME_FILTER_MIN_LENGTH} characters, so a one-character folder name drops the
+ * filter and falls back to the level's first page; and `name` is a case-insensitive *partial* match,
+ * so a level holding more same-substring siblings than fit one page can still exclude the target.
+ * Both need a level wide enough to have overflowed in the first place. An exact-match filter, or a
+ * folder-search that accepts an identifier, would close them.
+ *
+ * @param {string} levelPath - Parent path being listed, e.g. `/a/`
+ * @param {string} ancestorPath - Full path of the folder to resolve, e.g. `/a/b/`
+ * @param {DotSite} site - The site to scope the search
+ * @param {DotFolderService} dotFolderService - The folder service
+ * @returns {Observable<DotFolder | undefined>} the folder, or `undefined` if it could not be reached
+ */
+export function resolveHierarchyAncestor(
+    levelPath: string,
+    ancestorPath: string,
+    site: DotSite,
+    dotFolderService: DotFolderService
+): Observable<DotFolder | undefined> {
+    const name = getPathLeafName(ancestorPath);
+
+    return dotFolderService
+        .searchFolders({
+            siteId: site.identifier,
+            path: levelPath,
+            recursive: false,
+            name: name.length >= FOLDER_NAME_FILTER_MIN_LENGTH ? name : undefined,
+            orderby: 'name',
+            direction: 'ASC',
+            page: 1,
+            per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+            includePermissions: true
+        })
+        .pipe(
+            map(({ folders }) =>
+                folders
+                    .map((view) => folderSearchViewToDotFolder(view, site.hostname))
+                    .find((folder) => folder.path === ancestorPath)
+            )
+        );
+}
 
 /**
  * Fetches the folders for every level of a target path using parallel search calls, so the sidebar
  * tree can be rendered expanded down to that path (deep-link restore).
  *
  * One `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the site root
- * (`'/'`) and descending through each parent path. Uses {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}
- * (large, page 1 only) so ancestors past the interactive page of 40 still resolve without a
- * sequential page-until-found waterfall. Interactive expand/load-more use
- * {@link getFolderNodesByPath} with {@link FOLDER_TREE_PAGE_SIZE}. Callers should append load-more
- * via {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds the returned page.
+ * (`'/'`) and descending through each parent path, all in parallel. Every level requests
+ * `includePermissions`, so each node the tree renders on first paint can gate its context menu
+ * without a second round-trip. That pins the page to {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}, the
+ * backend's cap when permissions are requested.
+ *
+ * Because the page is capped, a level wide enough can sort the next ancestor past it. The drive
+ * still has to show the folder it is open on, so that one folder is fetched individually (see
+ * {@link resolveHierarchyAncestor}) rather than the page being widened, and is *pinned to the top*
+ * of its level. Pinning rather than appending is deliberate: dropped in at the end it would read as
+ * the next folder in sort order, which it is not, and it would sit next to the level's "Load more"
+ * where it is easy to miss. At the top it reads as "the folder you are in". If the user later pages
+ * far enough to reach its real position, {@link mergeFolderNodePage} moves it there.
+ *
+ * Interactive expand/load-more use {@link getFolderNodesByPath} with {@link FOLDER_TREE_PAGE_SIZE}.
+ * Callers should append load-more via {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds
+ * the returned page.
  *
  * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
  * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
@@ -318,7 +406,12 @@ export function getFolderHierarchyByPath(
     // The root level (`'/'`) is always fetched first; deeper levels come from the target path.
     const paths = ['/', ...generateAllParentPaths(folderPath)];
 
-    const folderRequests = paths.map((path) =>
+    // Level `i` is the one that must contain `expectedPaths[i]` for the tree to keep descending.
+    // The deepest level has no entry here: it holds the target folder's own children, so there is
+    // nothing further to reach and its first page is all the tree needs.
+    const expectedPaths = generateAllParentPaths(folderPath);
+
+    const folderRequests = paths.map((path, levelIndex) =>
         dotFolderService
             .searchFolders({
                 siteId: site.identifier,
@@ -327,12 +420,8 @@ export function getFolderHierarchyByPath(
                 orderby: 'name',
                 direction: 'ASC',
                 page: 1,
-                // Deliberately NOT requesting `includePermissions` here: the backend caps the page
-                // size when permissions are requested (default 200) and rejects anything larger with
-                // a 400, and this call intentionally uses a much larger page to resolve deep-link
-                // ancestors in one shot. Nodes hydrated here therefore arrive without permissions;
-                // `getFolderPermissionsByPath` resolves them on demand when one is right-clicked.
-                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE
+                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+                includePermissions: true
             })
             .pipe(
                 map(({ folders, pagination }) => ({
@@ -340,8 +429,30 @@ export function getFolderHierarchyByPath(
                     folders: folders.map((view) =>
                         folderSearchViewToDotFolder(view, site.hostname)
                     ),
-                    totalEntries: pagination?.totalEntries ?? folders.length
-                }))
+                    totalEntries: pagination?.totalEntries ?? folders.length,
+                    // Whole pages consumed, converted to load-more's page size. Safe because the
+                    // hierarchy page is a multiple of it; a partial page means the level is fully
+                    // loaded and no "Load more" is appended, so the value goes unused.
+                    nextPage: Math.floor(folders.length / FOLDER_TREE_PAGE_SIZE) + 1
+                })),
+                switchMap((level) => {
+                    const expectedPath = expectedPaths[levelIndex];
+
+                    if (!expectedPath || level.folders.some(({ path }) => path === expectedPath)) {
+                        return of(level);
+                    }
+
+                    return resolveHierarchyAncestor(
+                        path,
+                        expectedPath,
+                        site,
+                        dotFolderService
+                    ).pipe(
+                        map((ancestor) =>
+                            ancestor ? { ...level, folders: [ancestor, ...level.folders] } : level
+                        )
+                    );
+                })
             )
     );
 
@@ -391,65 +502,6 @@ export function getFolderNodesByPath(
 }
 
 /**
- * The parent path of a folder path: `/a/b/` → `/a/`, `/b/` → `/`.
- * `GET /api/v1/folder/search` scopes a non-recursive search by the *parent* path, while tree nodes
- * carry their own full path.
- *
- * @param {string} folderPath - The folder's own path, with or without a trailing slash
- * @returns {string} the parent path, always trailing-slashed
- */
-export function getParentPath(folderPath: string): string {
-    const withoutTrailing = folderPath.endsWith('/') ? folderPath.slice(0, -1) : folderPath;
-    const lastSeparator = withoutTrailing.lastIndexOf('/');
-
-    return lastSeparator <= 0 ? '/' : withoutTrailing.slice(0, lastSeparator + 1);
-}
-
-/**
- * Resolves the permission types the current user holds on a single folder.
- *
- * Needed because the deep-link hierarchy load ({@link getFolderHierarchyByPath}) cannot request
- * permissions — its page size exceeds the backend cap — so the folders visible on first render
- * arrive without them. Without this, right-clicking those nodes would produce an empty menu that
- * is indistinguishable from "you have no rights on this folder".
- *
- * Queries the folder's own level, narrowed by name so the response stays small, and matches the
- * folder by id. Resolves to `undefined` when the folder is not found in the page, letting the
- * caller tell "no grants" (`[]`) from "could not resolve".
- *
- * @param {string} folderPath - The folder's own full path, e.g. `/a/b/`
- * @param {string} folderId - Identifier of the folder to match in the response
- * @param {string} folderName - The folder's own name, used to narrow the query
- * @param {DotSite} site - Site scoping the search
- * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<PermissionType[] | undefined>} the folder's permissions, if resolved
- */
-export function getFolderPermissionsByPath(
-    folderPath: string,
-    folderId: string,
-    folderName: string,
-    site: DotSite,
-    dotFolderService: DotFolderService
-): Observable<PermissionType[] | undefined> {
-    return dotFolderService
-        .searchFolders({
-            siteId: site.identifier,
-            path: getParentPath(folderPath),
-            recursive: false,
-            // The endpoint rejects a filter shorter than 2 characters, so single-character folder
-            // names fall back to an unfiltered page of the level.
-            name: folderName.length >= FOLDER_NAME_FILTER_MIN_LENGTH ? folderName : undefined,
-            page: 1,
-            per_page: FOLDER_PERMISSIONS_LOOKUP_PAGE_SIZE,
-            includePermissions: true
-        })
-        .pipe(
-            map(({ folders }) => folders.find((folder) => folder.id === folderId)),
-            map((folder) => folder?.permissions ?? undefined)
-        );
-}
-
-/**
  * Builds the synthetic "Load more" node appended to the end of a paginated folder level. It is not
  * a real folder: it is not selectable and carries the paging cursor (`nextPage`) and how many
  * folders still remain, so clicking it can fetch and append the next page.
@@ -478,6 +530,52 @@ export function buildLoadMoreNode(
 }
 
 /**
+ * Merges a freshly loaded page of folder nodes into the ones a level already shows.
+ *
+ * Plain concatenation is not enough because the hierarchy load can pin a folder to the top of a
+ * level out of sort order (see {@link getFolderHierarchyByPath}). Page far enough and that same
+ * folder arrives again in its real position, which would render it twice.
+ *
+ * The already-rendered node wins on identity but takes the incoming node's position: it may be
+ * expanded, hold loaded children and carry the current selection, none of which the fresh copy has.
+ * So the pinned folder stops being pinned and settles where it belongs, with its subtree intact.
+ *
+ * @param {DotFolderTreeNodeItem[]} loaded - Nodes already rendered for the level (no "Load more")
+ * @param {DotFolderTreeNodeItem[]} page - The newly fetched page, in sort order
+ * @returns {DotFolderTreeNodeItem[]} the merged level, free of duplicates
+ */
+export function mergeFolderNodePage(
+    loaded: DotFolderTreeNodeItem[],
+    page: DotFolderTreeNodeItem[]
+): DotFolderTreeNodeItem[] {
+    const nodeId = (node: DotFolderTreeNodeItem): string | undefined =>
+        node.data?.type !== LOAD_MORE_NODE_TYPE ? node.data?.id : undefined;
+
+    const existingById = new Map(
+        loaded.flatMap((node) => {
+            const id = nodeId(node);
+
+            return id ? [[id, node] as const] : [];
+        })
+    );
+
+    const incomingIds = new Set(page.flatMap((node) => nodeId(node) ?? []));
+
+    return [
+        ...loaded.filter((node) => {
+            const id = nodeId(node);
+
+            return !id || !incomingIds.has(id);
+        }),
+        ...page.map((node) => {
+            const id = nodeId(node);
+
+            return (id && existingById.get(id)) || node;
+        })
+    ];
+}
+
+/**
  * Appends a "Load more" sentinel when more folders remain beyond the loaded page.
  */
 export function appendLoadMoreNodes(
@@ -501,8 +599,9 @@ export function appendLoadMoreNodes(
  * Applies load-more sentinels to each level of a freshly built hierarchy.
  * Root-level sentinels sit as siblings of root folders; nested ones go under the parent node.
  *
- * Hierarchy always fetches page 1 (with {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}), so the next
- * interactive page is always `2` when `totalEntries` exceeds the returned folders.
+ * Each level carries its own `nextPage`, because the hierarchy pages at
+ * {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE} while load-more pages at {@link FOLDER_TREE_PAGE_SIZE}.
+ * Resuming at a fixed page would re-request folders already on screen.
  */
 export function applyLoadMoreToHierarchy(
     rootNodes: DotFolderTreeNodeItem[],
@@ -513,14 +612,12 @@ export function applyLoadMoreToHierarchy(
         return rootNodes;
     }
 
-    const nextPageAfterHierarchy = 2;
-
     const roots = appendLoadMoreNodes(
         rootNodes,
         levels[0].totalEntries,
         levels[0].path,
         hostname,
-        nextPageAfterHierarchy
+        levels[0].nextPage
     );
 
     for (let i = 1; i < levels.length; i++) {
@@ -536,7 +633,7 @@ export function applyLoadMoreToHierarchy(
             level.totalEntries,
             level.path,
             hostname,
-            nextPageAfterHierarchy
+            level.nextPage
         );
     }
 

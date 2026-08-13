@@ -3,14 +3,12 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
     effect,
     inject,
     output,
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import type {
     TreeNodeCollapseEvent,
@@ -31,7 +29,7 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { appendLoadMoreNodes } from '../../utils/functions';
+import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
  *
@@ -52,7 +50,6 @@ import { appendLoadMoreNodes } from '../../utils/functions';
 })
 export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);
-    readonly #destroyRef = inject(DestroyRef);
 
     readonly $loading = this.#store.sidebarLoading;
     readonly $folders = this.#store.folders;
@@ -174,7 +171,9 @@ export class DotContentDriveSidebarComponent {
                             folder.key !== ALL_FOLDER.key &&
                             folder.data?.type !== LOAD_MORE_NODE_TYPE
                     );
-                    const combined = [...loaded, ...folders];
+                    // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
+                    // the top of a level out of sort order, and paging far enough returns it again.
+                    const combined = mergeFolderNodePage(loaded, folders);
 
                     this.#store.updateFolders([
                         allFolder,
@@ -199,7 +198,9 @@ export class DotContentDriveSidebarComponent {
                 const loaded = (parent.children ?? []).filter(
                     (child) => child.data?.type !== LOAD_MORE_NODE_TYPE
                 );
-                const combined = [...loaded, ...folders];
+                // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
+                // the top of a level out of sort order, and paging far enough returns it again.
+                const combined = mergeFolderNodePage(loaded, folders);
 
                 parent.children = appendLoadMoreNodes(
                     combined,
@@ -241,38 +242,14 @@ export class DotContentDriveSidebarComponent {
      * Opens the shared folder context menu for a right-clicked tree node, giving the sidebar the
      * same folder actions the table offers.
      *
-     * Nodes loaded by expanding a folder already carry their permissions. Nodes hydrated by the
-     * deep-link hierarchy load do not (that call's page size exceeds the backend cap for
-     * `includePermissions`), so those resolve them on demand on first right-click and the result is
-     * cached back onto the node — a second right-click on the same folder opens immediately.
+     * Every folder node carries its permissions, whichever way it reached the tree: expand,
+     * load-more and the deep-link hierarchy load all request them. So this stays synchronous, and a
+     * right-click opens the menu immediately.
      *
-     * @param {DotContentDriveTreeRightClick} rightClick - The originating event and the clicked node
+     * @param {DotContentDriveTreeRightClick} rightClick - The originating event and clicked folder
      */
-    protected onNodeRightClick({ event, node }: DotContentDriveTreeRightClick): void {
-        const data = node.data;
-
-        if (!data || data.type === LOAD_MORE_NODE_TYPE) {
-            return;
-        }
-
-        if (data.permissions) {
-            this.#openContextMenu(event, data);
-
-            return;
-        }
-
-        this.#store
-            .loadFolderPermissions(data.path, data.id, data.name ?? '')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((permissions) => {
-                // Cache onto the node so the next right-click skips the lookup. `[]` is a valid
-                // cached answer ("no grants"); only an unresolved lookup stays undefined and retries.
-                if (permissions) {
-                    data.permissions = permissions;
-                }
-
-                this.#openContextMenu(event, { ...data, permissions: permissions ?? [] });
-            });
+    protected onNodeRightClick({ event, data }: DotContentDriveTreeRightClick): void {
+        this.#openContextMenu(event, data);
     }
 
     /**

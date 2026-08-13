@@ -12,10 +12,10 @@ import { DotFolder, PermissionType, PERMISSIONS_TYPE } from '@dotcms/dotcms-mode
 import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
+    DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
-    ALL_FOLDER,
-    LOAD_MORE_NODE_TYPE
+    ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -125,7 +125,6 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
-                loadFolderPermissions: jest.fn().mockReturnValue(of(undefined)),
                 patchContextMenu: jest.fn(),
                 updateFolders: jest.fn(),
                 setSelectedNode: jest.fn()
@@ -1161,39 +1160,34 @@ describe('DotContentDriveSidebarComponent', () => {
             // accumulate across tests in this file. Clear them (implementations are preserved) and
             // restore the default lookup so each case starts from a known state.
             jest.clearAllMocks();
-            contentDriveStore.loadFolderPermissions.mockReturnValue(of(undefined));
         });
 
-        const buildFolderNode = (permissions?: PermissionType[]): DotFolderTreeNodeItem => ({
-            key: 'docs-id',
-            label: '/documents/reports/',
-            data: {
-                id: 'docs-id',
-                inode: 'docs-inode',
-                hostname: 'demo.dotcms.com',
-                path: '/documents/reports/',
-                type: 'folder',
-                name: 'reports',
-                title: 'Reports',
-                sortOrder: 2,
-                filesMasks: '*.pdf',
-                defaultFileType: 'FileAsset',
-                defaultBaseType: 'DOTASSET',
-                showOnMenu: true,
-                permissions
-            }
+        const buildFolderData = (permissions?: PermissionType[]): DotFolderTreeNodeContentData => ({
+            id: 'docs-id',
+            inode: 'docs-inode',
+            hostname: 'demo.dotcms.com',
+            path: '/documents/reports/',
+            type: 'folder',
+            name: 'reports',
+            title: 'Reports',
+            sortOrder: 2,
+            filesMasks: '*.pdf',
+            defaultFileType: 'FileAsset',
+            defaultBaseType: 'DOTASSET',
+            showOnMenu: true,
+            permissions
         });
 
-        const rightClick = (node: DotFolderTreeNodeItem) => {
+        const rightClick = (data: DotFolderTreeNodeContentData) => {
             const event = new MouseEvent('contextmenu');
-            spectator.triggerEventHandler(DotTreeFolderComponent, 'rightClick', { event, node });
+            spectator.triggerEventHandler(DotTreeFolderComponent, 'rightClick', { event, data });
 
             return event;
         };
 
         it('should publish the folder to the store in the shape the menu and dialog consume', () => {
             const event = rightClick(
-                buildFolderNode([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT])
+                buildFolderData([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT])
             );
 
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith({
@@ -1214,17 +1208,21 @@ describe('DotContentDriveSidebarComponent', () => {
             });
         });
 
-        it('should not refetch permissions for a node that already carries them', () => {
-            rightClick(buildFolderNode([PERMISSIONS_TYPE.READ]));
+        it('should treat an empty permissions array as a resolved "no grants"', () => {
+            rightClick(buildFolderData([]));
 
-            expect(contentDriveStore.loadFolderPermissions).not.toHaveBeenCalled();
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentlet: expect.objectContaining({ permissions: [] })
+                })
+            );
         });
 
-        it('should treat an empty permissions array as resolved and not refetch', () => {
-            // `[]` is a final answer ("no grants"), unlike undefined ("never fetched").
-            rightClick(buildFolderNode([]));
+        it('should open an empty menu rather than throwing for a folder without permissions', () => {
+            // Every source now resolves permissions, but an older backend or a rolled-back search
+            // can still deliver a folder without them; gating must degrade, not blow up.
+            rightClick(buildFolderData(undefined));
 
-            expect(contentDriveStore.loadFolderPermissions).not.toHaveBeenCalled();
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
                 expect.objectContaining({
                     contentlet: expect.objectContaining({ permissions: [] })
@@ -1232,70 +1230,12 @@ describe('DotContentDriveSidebarComponent', () => {
             );
         });
 
-        it('should resolve permissions on demand for a node hydrated without them', () => {
-            contentDriveStore.loadFolderPermissions.mockReturnValue(
-                of([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT_PERMISSIONS])
-            );
-
-            rightClick(buildFolderNode(undefined));
-
-            expect(contentDriveStore.loadFolderPermissions).toHaveBeenCalledWith(
-                '/documents/reports/',
-                'docs-id',
-                'reports'
-            );
-            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    contentlet: expect.objectContaining({
-                        permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT_PERMISSIONS]
-                    })
-                })
-            );
-        });
-
-        it('should cache resolved permissions onto the node so the next right-click is instant', () => {
-            contentDriveStore.loadFolderPermissions.mockReturnValue(of([PERMISSIONS_TYPE.EDIT]));
-            const node = buildFolderNode(undefined);
-
-            rightClick(node);
-            rightClick(node);
-
-            expect(contentDriveStore.loadFolderPermissions).toHaveBeenCalledTimes(1);
-        });
-
-        it('should open an empty menu rather than throwing when the lookup cannot resolve', () => {
-            contentDriveStore.loadFolderPermissions.mockReturnValue(of(undefined));
-            const node = buildFolderNode(undefined);
-
-            rightClick(node);
+        it('should anchor the menu on the originating event', () => {
+            const event = rightClick(buildFolderData([PERMISSIONS_TYPE.EDIT]));
 
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    contentlet: expect.objectContaining({ permissions: [] })
-                })
+                expect.objectContaining({ triggeredEvent: event })
             );
-            // Unresolved stays unresolved, so a later right-click retries instead of caching a lie.
-            expect(node.data.permissions).toBeUndefined();
-        });
-
-        it('should ignore a "Load more" node', () => {
-            spectator.triggerEventHandler(DotTreeFolderComponent, 'rightClick', {
-                event: new MouseEvent('contextmenu'),
-                node: {
-                    key: 'load-more:/documents/',
-                    label: '',
-                    data: {
-                        type: LOAD_MORE_NODE_TYPE,
-                        id: 'load-more:/documents/',
-                        path: '/documents/',
-                        hostname: 'demo.dotcms.com',
-                        nextPage: 2,
-                        remaining: 5
-                    }
-                } as DotFolderTreeNodeItem
-            });
-
-            expect(contentDriveStore.patchContextMenu).not.toHaveBeenCalled();
         });
     });
 });

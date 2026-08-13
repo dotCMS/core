@@ -31,8 +31,7 @@ import {
     folderSearchViewToDotFolder,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
-    getFolderPermissionsByPath,
-    getParentPath,
+    getPathLeafName,
     getUserSearchableActive,
     isBinaryCheckboxField,
     isDateFieldFilterType,
@@ -40,7 +39,9 @@ import {
     isMultiValueFieldFilterType,
     parseUserSearchableValue,
     parseWorkflowFilter,
+    mergeFolderNodePage,
     parseWorkflowToken,
+    resolveHierarchyAncestor,
     serializeUserSearchableValue,
     toLocalIsoString,
     workflowEntryToToken
@@ -408,6 +409,19 @@ describe('Utility Functions', () => {
         it('should search the root and every parent path with the hierarchy page size', (done) => {
             const folderPath = '/main/sub-folder/inner-folder';
 
+            // Every level returns the ancestor the next one descends into, so the hierarchy
+            // resolves in one request per level with no follow-up lookups.
+            const childOf: Record<string, string> = {
+                '/': 'main',
+                '/main/': 'sub-folder',
+                '/main/sub-folder/': 'inner-folder'
+            };
+            mockDotFolderService.searchFolders.mockImplementation(({ path }) =>
+                searchResult(
+                    childOf[path] ? [createFakeFolderSearchView({ path, name: childOf[path] })] : []
+                )
+            );
+
             getFolderHierarchyByPath(folderPath, SITE, mockDotFolderService).subscribe({
                 next: () => {
                     expect(mockDotFolderService.searchFolders).toHaveBeenCalledTimes(4);
@@ -473,10 +487,10 @@ describe('Utility Functions', () => {
             });
         });
 
-        it('should not request permissions (its page size exceeds the backend cap)', (done) => {
+        it('should request permissions so first-paint nodes can gate their context menu', (done) => {
             getFolderHierarchyByPath('/main', SITE, mockDotFolderService).subscribe({
                 next: () => {
-                    expect(mockDotFolderService.searchFolders).not.toHaveBeenCalledWith(
+                    expect(mockDotFolderService.searchFolders).toHaveBeenCalledWith(
                         expect.objectContaining({ includePermissions: true })
                     );
                     done();
@@ -614,6 +628,126 @@ describe('Utility Functions', () => {
                     expect(error.message).toBe('Service error');
                     done();
                 }
+            });
+        });
+
+        describe('deep-link ancestor pinning', () => {
+            const page = (names: string[], parentPath: string, total: number) =>
+                of({
+                    folders: names.map((name) =>
+                        createFakeFolderSearchView({ id: `id-${name}`, name, path: parentPath })
+                    ),
+                    pagination: { totalEntries: total } as DotPagination
+                });
+
+            it('should pin an ancestor that sorts past the first page to the top of its level', (done) => {
+                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
+                    path === '/'
+                        ? name
+                            ? page(['zzz'], '/', 1)
+                            : page(['a-one', 'a-two'], '/', 253)
+                        : page([], path, 0)
+                );
+
+                getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
+                    next: (levels) => {
+                        // Top of the level, not appended after its siblings.
+                        expect(levels[0].folders.map(({ path }) => path)).toEqual([
+                            '/zzz/',
+                            '/a-one/',
+                            '/a-two/'
+                        ]);
+                        done();
+                    },
+                    error: done
+                });
+            });
+
+            it('should pin a nested ancestor into its own level, leaving the root level alone', (done) => {
+                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) => {
+                    if (path === '/') {
+                        return page(['parent'], '/', 1);
+                    }
+
+                    if (path === '/parent/') {
+                        return name
+                            ? page(['zzz'], '/parent/', 1)
+                            : page(['a-one'], '/parent/', 253);
+                    }
+
+                    return page([], path, 0);
+                });
+
+                getFolderHierarchyByPath('/parent/zzz/', SITE, mockDotFolderService).subscribe({
+                    next: (levels) => {
+                        expect(levels[0].folders.map(({ path }) => path)).toEqual(['/parent/']);
+                        expect(levels[1].folders.map(({ path }) => path)).toEqual([
+                            '/parent/zzz/',
+                            '/parent/a-one/'
+                        ]);
+                        done();
+                    },
+                    error: done
+                });
+            });
+
+            it('should not look the ancestor up when it is already on the first page', (done) => {
+                mockDotFolderService.searchFolders.mockImplementation(({ path }) =>
+                    path === '/' ? page(['zzz'], '/', 1) : page([], path, 0)
+                );
+
+                getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
+                    next: () => {
+                        // One request per level ('/' and '/zzz/'), no follow-up lookup.
+                        expect(mockDotFolderService.searchFolders).toHaveBeenCalledTimes(2);
+                        done();
+                    },
+                    error: done
+                });
+            });
+
+            it('should leave the level untouched when the ancestor cannot be resolved', (done) => {
+                // What a folder the user cannot READ looks like: filtered out of every response,
+                // never a 403. It must not be pinned, and the readable siblings must still render.
+                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
+                    path === '/' && !name ? page(['a-one'], '/', 253) : page([], path, 0)
+                );
+
+                getFolderHierarchyByPath('/secret/', SITE, mockDotFolderService).subscribe({
+                    next: (levels) => {
+                        expect(levels[0].folders.map(({ path }) => path)).toEqual(['/a-one/']);
+                        done();
+                    },
+                    error: done
+                });
+            });
+
+            it('should derive nextPage from folders fetched, not from the pinned node', (done) => {
+                const fullPage = Array.from(
+                    { length: FOLDER_TREE_HIERARCHY_PAGE_SIZE },
+                    (_, i) => `folder-${String(i).padStart(3, '0')}`
+                );
+
+                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
+                    path === '/'
+                        ? name
+                            ? page(['zzz'], '/', 1)
+                            : page(fullPage, '/', FOLDER_TREE_HIERARCHY_PAGE_SIZE + 53)
+                        : page([], path, 0)
+                );
+
+                getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
+                    next: (levels) => {
+                        // 200 fetched / 40 per load-more page + 1. The pinned node brings the
+                        // rendered count to 201, which must not shift the resume point.
+                        expect(levels[0].folders).toHaveLength(FOLDER_TREE_HIERARCHY_PAGE_SIZE + 1);
+                        expect(levels[0].nextPage).toBe(
+                            FOLDER_TREE_HIERARCHY_PAGE_SIZE / FOLDER_TREE_PAGE_SIZE + 1
+                        );
+                        done();
+                    },
+                    error: done
+                });
             });
         });
     });
@@ -841,7 +975,7 @@ describe('Utility Functions', () => {
     });
 
     describe('applyLoadMoreToHierarchy', () => {
-        it('should append a load-more sentinel with nextPage 2 when more entries remain', () => {
+        it('should append a load-more sentinel resuming at the level own nextPage', () => {
             const rootFolder = createTreeNode({
                 id: 'root-1',
                 inode: 'inode-1',
@@ -864,7 +998,10 @@ describe('Utility Functions', () => {
                                 addChildrenAllowed: true
                             }
                         ],
-                        totalEntries: 50
+                        totalEntries: 50,
+                        // The hierarchy pages at 200 while load-more pages at 40, so a level that
+                        // consumed one hierarchy page resumes at 40-sized page 6, not page 2.
+                        nextPage: 6
                     }
                 ],
                 'test.com'
@@ -875,7 +1012,7 @@ describe('Utility Functions', () => {
             expect(loadMore.data).toEqual(
                 expect.objectContaining({
                     type: 'load-more',
-                    nextPage: 2,
+                    nextPage: 6,
                     remaining: 49
                 })
             );
@@ -1323,20 +1460,19 @@ describe('folderSearchViewToDotFolder', () => {
     });
 });
 
-describe('getParentPath', () => {
+describe('getPathLeafName', () => {
     it.each([
-        ['/a/b/', '/a/'],
-        ['/a/b', '/a/'],
-        ['/b/', '/'],
-        ['/b', '/'],
-        ['/', '/'],
-        ['', '/']
-    ])('should resolve the parent of %s as %s', (path, expected) => {
-        expect(getParentPath(path)).toBe(expected);
+        ['/a/b/', 'b'],
+        ['/a/b', 'b'],
+        ['/b/', 'b'],
+        ['/', ''],
+        ['', '']
+    ])('should resolve the own name of %s as %s', (path, expected) => {
+        expect(getPathLeafName(path)).toBe(expected);
     });
 });
 
-describe('getFolderPermissionsByPath', () => {
+describe('resolveHierarchyAncestor', () => {
     let mockDotFolderService: { searchFolders: jest.Mock };
 
     const searchResult = (folders: FolderSearchView[]) =>
@@ -1346,11 +1482,10 @@ describe('getFolderPermissionsByPath', () => {
         mockDotFolderService = { searchFolders: jest.fn().mockReturnValue(searchResult([])) };
     });
 
-    it('should query the parent level with permissions, narrowed by folder name', (done) => {
-        getFolderPermissionsByPath(
+    it('should query the level with permissions, narrowed by the folder own name', (done) => {
+        resolveHierarchyAncestor(
+            '/main/',
             '/main/docs/',
-            'docs-id',
-            'docs',
             createFakeSite({ identifier: 'site-1', hostname: 'demo.dotcms.com' }),
             mockDotFolderService as unknown as DotFolderService
         ).subscribe({
@@ -1361,6 +1496,7 @@ describe('getFolderPermissionsByPath', () => {
                         path: '/main/',
                         recursive: false,
                         name: 'docs',
+                        per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
                         includePermissions: true
                     })
                 );
@@ -1371,10 +1507,9 @@ describe('getFolderPermissionsByPath', () => {
     });
 
     it('should omit the name filter when the folder name is too short for the endpoint', (done) => {
-        getFolderPermissionsByPath(
+        resolveHierarchyAncestor(
+            '/main/',
             '/main/a/',
-            'a-id',
-            'a',
             createFakeSite({ identifier: 'site-1' }),
             mockDotFolderService as unknown as DotFolderService
         ).subscribe({
@@ -1388,54 +1523,119 @@ describe('getFolderPermissionsByPath', () => {
         });
     });
 
-    it('should return the permissions of the matching folder', (done) => {
+    it('should return the folder matching the exact path, not a partial name match', (done) => {
         mockDotFolderService.searchFolders.mockReturnValue(
             searchResult([
                 createFakeFolderSearchView({
                     id: 'other',
+                    path: '/main/',
                     name: 'docs-archive',
                     permissions: [PERMISSIONS_TYPE.READ]
                 }),
                 createFakeFolderSearchView({
                     id: 'docs-id',
+                    path: '/main/',
                     name: 'docs',
                     permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
                 })
             ])
         );
 
-        getFolderPermissionsByPath(
+        resolveHierarchyAncestor(
+            '/main/',
             '/main/docs/',
-            'docs-id',
-            'docs',
-            createFakeSite({ identifier: 'site-1' }),
+            createFakeSite({ identifier: 'site-1', hostname: 'demo.dotcms.com' }),
             mockDotFolderService as unknown as DotFolderService
         ).subscribe({
-            next: (permissions) => {
-                expect(permissions).toEqual([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]);
+            next: (folder) => {
+                expect(folder?.id).toBe('docs-id');
+                expect(folder?.permissions).toEqual([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]);
                 done();
             },
             error: done
         });
     });
 
-    it('should resolve undefined when the folder is not in the page', (done) => {
+    it('should issue a single request and not page the level', (done) => {
         mockDotFolderService.searchFolders.mockReturnValue(
-            searchResult([createFakeFolderSearchView({ id: 'someone-else' })])
+            of({
+                folders: [createFakeFolderSearchView({ path: '/main/', name: 'someone-else' })],
+                pagination: { totalEntries: 5000 } as DotPagination
+            })
         );
 
-        getFolderPermissionsByPath(
+        resolveHierarchyAncestor(
+            '/main/',
             '/main/docs/',
-            'docs-id',
-            'docs',
-            createFakeSite({ identifier: 'site-1' }),
+            createFakeSite({ identifier: 'site-1', hostname: 'demo.dotcms.com' }),
             mockDotFolderService as unknown as DotFolderService
         ).subscribe({
-            next: (permissions) => {
-                expect(permissions).toBeUndefined();
+            next: (folder) => {
+                expect(folder).toBeUndefined();
+                expect(mockDotFolderService.searchFolders).toHaveBeenCalledTimes(1);
                 done();
             },
             error: done
         });
+    });
+});
+
+describe('mergeFolderNodePage', () => {
+    const node = (id: string, path: string) =>
+        createTreeNode({
+            id,
+            inode: `inode-${id}`,
+            hostName: 'test.com',
+            path,
+            addChildrenAllowed: true
+        });
+
+    const ids = (nodes: ReturnType<typeof node>[]) => nodes.map((item) => item.data?.id);
+
+    it('should append the page when nothing overlaps', () => {
+        const merged = mergeFolderNodePage([node('a', '/a/')], [node('b', '/b/')]);
+
+        expect(ids(merged)).toEqual(['a', 'b']);
+    });
+
+    it('should render a folder once when the page repeats one already on screen', () => {
+        // The hierarchy pinned `z` to the top; paging far enough returns it in sort order.
+        const merged = mergeFolderNodePage(
+            [node('z', '/z/'), node('a', '/a/')],
+            [node('b', '/b/'), node('z', '/z/')]
+        );
+
+        expect(ids(merged)).toEqual(['a', 'b', 'z']);
+    });
+
+    it('should move the repeated folder from its pinned slot to where it belongs', () => {
+        const merged = mergeFolderNodePage(
+            [node('z', '/z/'), node('a', '/a/')],
+            [node('z', '/z/'), node('b', '/b/')]
+        );
+
+        expect(ids(merged)).toEqual(['a', 'z', 'b']);
+    });
+
+    it('should keep the on-screen node, so its loaded children and expansion survive', () => {
+        const pinned = node('z', '/z/');
+        pinned.expanded = true;
+        pinned.children = [node('inner', '/z/inner/')];
+
+        const merged = mergeFolderNodePage([pinned, node('a', '/a/')], [node('z', '/z/')]);
+        const retained = merged[merged.length - 1];
+
+        // Identity matters: the incoming copy is a bare node with no children or expansion.
+        expect(retained).toBe(pinned);
+        expect(retained.expanded).toBe(true);
+        expect(retained.children).toHaveLength(1);
+    });
+
+    it('should leave a load-more sentinel in place rather than treating it as a folder', () => {
+        const loadMore = buildLoadMoreNode('/', 'test.com', 2, 5);
+
+        const merged = mergeFolderNodePage([node('a', '/a/'), loadMore], [node('b', '/b/')]);
+
+        expect(ids(merged)).toEqual(['a', loadMore.data?.id, 'b']);
     });
 });

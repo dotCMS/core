@@ -13,7 +13,6 @@ import { inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { PermissionType } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
@@ -22,8 +21,7 @@ import {
     applyLoadMoreToHierarchy,
     FolderTreeHierarchyLevel,
     getFolderHierarchyByPath,
-    getFolderNodesByPath,
-    getFolderPermissionsByPath
+    getFolderNodesByPath
 } from '../../../utils/functions';
 import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
@@ -121,43 +119,6 @@ export function withSidebar() {
                     { ...currentSite, hostname: host },
                     dotFolderService,
                     page
-                );
-            },
-            /**
-             * Resolves the permission types the current user holds on a single folder.
-             *
-             * Only needed for nodes hydrated by {@link loadFolders}: that call resolves the whole
-             * deep-link hierarchy in one large page, which exceeds the backend's cap for
-             * `includePermissions`, so those nodes arrive without permissions. Nodes loaded by
-             * expanding a folder already carry them and never reach this method.
-             *
-             * Emits `undefined` when the lookup fails or the folder is not found, so the caller can
-             * tell that apart from "the user holds no permissions" (`[]`).
-             */
-            loadFolderPermissions: (
-                folderPath: string,
-                folderId: string,
-                folderName: string
-            ): Observable<PermissionType[] | undefined> => {
-                const currentSite = store.currentSite();
-
-                if (!currentSite) {
-                    return of(undefined);
-                }
-
-                return getFolderPermissionsByPath(
-                    folderPath,
-                    folderId,
-                    folderName,
-                    currentSite,
-                    dotFolderService
-                ).pipe(
-                    take(1),
-                    catchError((response) => {
-                        console.error('Error loading folder permissions:', response);
-
-                        return of(undefined);
-                    })
                 );
             },
 

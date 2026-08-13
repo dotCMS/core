@@ -50,7 +50,7 @@ const editableFolder = (overrides: Partial<DotContentDriveFolder> = {}): DotCont
         modDate: 1,
         owner: null,
         parent: '',
-        path: '/documents/app/',
+        path: '',
         permissions: [],
         type: 'folder',
         ...overrides
@@ -569,6 +569,34 @@ describe('DotContentDriveDialogFolderComponent', () => {
     });
 
     describe('upload behavior (defaultBaseType)', () => {
+        const editableFolder = (
+            overrides: Partial<DotContentDriveFolder> = {}
+        ): DotContentDriveFolder =>
+            ({
+                name: 'app',
+                title: 'App',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1,
+                owner: null,
+                parent: '',
+                path: '/documents/app/',
+                permissions: [],
+                type: 'folder',
+                ...overrides
+            }) as DotContentDriveFolder;
+
         it('should render the three upload-behavior options', () => {
             expect(spectator.query('[data-testid="upload-behavior-option-null"]')).toBeTruthy();
             expect(spectator.query('[data-testid="upload-behavior-option-DOTASSET"]')).toBeTruthy();
