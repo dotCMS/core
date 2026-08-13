@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.vavr.control.Try;
@@ -371,8 +372,15 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
      * @throws DotDataException
      */
     @Override
+    public Optional<String> defaultIndexName() throws DotDataException {
+        return Optional.ofNullable(indiciesAPI.loadIndicies().getSiteSearch());
+    }
+
+    @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-       return  indexName.equals(indiciesAPI.loadIndicies().getSiteSearch());
+        // Defined in terms of defaultIndexName so "which index is the default" has one definition
+        // per engine (issue #36983).
+        return indexName != null && defaultIndexName().filter(indexName::equals).isPresent();
     }
 
     @Override
