@@ -440,7 +440,8 @@ public class AppsAPIImpl implements AppsAPI {
                 // best-effort count and the detail view is authoritative. The split cannot be
                 // closed from this side -- this same method is called by EMAWebInterceptor on every
                 // /api/* request, so raising here returns a 500 for the whole API. Surfacing the
-                // condition in the list needs its own signal path alongside AppDescriptorLoadError.
+                // condition in the list needs its own signal path alongside AppDescriptorLoadError;
+                // tracked in issue #37061.
                 // Note the old wipe-then-recreate behaviour also reported 0, so this is not a
                 // regression.
                 Logger.error(AppsAPIImpl.class,
