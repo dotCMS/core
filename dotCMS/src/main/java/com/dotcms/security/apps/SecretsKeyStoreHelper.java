@@ -43,6 +43,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -82,11 +83,31 @@ public class SecretsKeyStoreHelper {
     private static final String SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS =
             "SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS";
 
+    /**
+     * How often a persistently unreadable store may be reported.
+     *
+     * Every consumer of a secret wraps its read defensively -- typically
+     * {@code Try.of(() -> getSecrets(...)).getOrElse(Optional.empty())} -- so a store this node
+     * cannot open degrades each App to "not configured" rather than raising into the request. The
+     * upside is that a mismatched store never takes an instance down; the downside is that the
+     * ERROR logged here is the only signal, and it would otherwise be emitted on every read: once
+     * per page render that touches a secret, per login attempt, per content save. An actionable
+     * message repeated thousands of times is not actionable, so it is reported once per interval.
+     */
+    private static final String SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS =
+            "SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS";
+
     static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
     private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
     private final List<StoreCreatedListener> storeCreatedListeners;
     private final Supplier<char[]> passwordSupplier;
+
+    /**
+     * When this instance last reported an unreadable store. Per-instance rather than static so that
+     * two helpers pointed at different stores cannot silence each other.
+     */
+    private final AtomicLong lastLoadFailureReportAt = new AtomicLong(0);
 
     @VisibleForTesting
     public static String getSecretStorePath() {
@@ -223,6 +244,24 @@ public class SecretsKeyStoreHelper {
     }
 
     /**
+     * Whether an unreadable store should be reported now, rate-limited to one report per
+     * {@link #SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS}. The first failure always reports.
+     *
+     * Gates the admin notification as well as the log line: {@code sendFailureNotification()} writes
+     * a notification row, so firing it per read would turn a mismatched store into a steady write
+     * load against the database on top of the log noise.
+     */
+    @VisibleForTesting
+    boolean shouldReportLoadFailure() {
+        final long interval = Config
+                .getLongProperty(SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS, 60000);
+        final long now = System.currentTimeMillis();
+        final long last = lastLoadFailureReportAt.get();
+
+        return now - last > interval && lastLoadFailureReportAt.compareAndSet(last, now);
+    }
+
+    /**
      * Terminal handler for a store that could not be loaded after every attempt.
      *
      * It does not delete anything unless an operator has explicitly opted in via
@@ -238,20 +277,31 @@ public class SecretsKeyStoreHelper {
                         + " differs between nodes"
                 : "the store could not be read";
 
-        Try.run(this::sendFailureNotification);
-
         if (!allowRecreate || !Config.getBooleanProperty(SECRETS_STORE_AUTO_RECREATE, false)) {
-            Logger.error(SecretsKeyStoreHelper.class, String.format(
-                    "Unable to load the App secrets store '%s': %s. The existing store has been LEFT"
-                            + " IN PLACE and no secrets were lost. Apps will not work until this is"
-                            + " resolved. Restore the correct salt/password, or set %s=true to back"
-                            + " it up and start over -- which DISCARDS every stored App credential.",
-                    secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
+
+            // The store is preserved, so this state persists until an operator fixes it -- and every
+            // read lands here again. Report it periodically instead of once per read; see
+            // SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS.
+            if (shouldReportLoadFailure()) {
+                Logger.error(SecretsKeyStoreHelper.class, String.format(
+                        "Unable to load the App secrets store '%s': %s. The existing store has been"
+                                + " LEFT IN PLACE and no secrets were lost. Apps will not work until"
+                                + " this is resolved. Restore the correct salt/password, or set"
+                                + " %s=true to back it up and start over -- which DISCARDS every"
+                                + " stored App credential.",
+                        secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
+                Try.run(this::sendFailureNotification);
+            } else {
+                Logger.debug(SecretsKeyStoreHelper.class,
+                        () -> "App secrets store is still unreadable: " + diagnosis);
+            }
 
             throw new DotRuntimeException(
                     "Unable to load the App secrets store: " + diagnosis, cause);
         }
 
+        // The destructive path runs once and then succeeds, so it is never throttled.
+        Try.run(this::sendFailureNotification);
         Logger.error(SecretsKeyStoreHelper.class, String.format(
                 "Unable to load the App secrets store '%s': %s. %s is enabled, so it will be backed"
                         + " up and replaced with an EMPTY store. Every App credential must be"

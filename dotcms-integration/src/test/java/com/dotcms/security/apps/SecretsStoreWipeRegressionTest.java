@@ -239,6 +239,42 @@ public class SecretsStoreWipeRegressionTest {
     }
 
     /**
+     * Method to test: {@link SecretsKeyStoreHelper#shouldReportLoadFailure()}
+     * Given Scenario: a store this node cannot open. Every consumer wraps its read defensively, so
+     * the state persists and every subsequent read reaches the same failure handler.
+     * Expected Result: the failure is reported once, then suppressed until the interval elapses —
+     * while every read still raises. Without this the actionable ERROR (and the admin notification,
+     * which writes a row) would be emitted on every page render, login and content save.
+     */
+    @Test
+    public void test_repeatedLoadFailures_areReportedOnceButAlwaysRaise() throws Exception {
+        final SecretsKeyStoreHelper nodeA = helperWithPassword(PASSWORD_A);
+        nodeA.saveValue(CANARY_KEY, CANARY_VALUE.toCharArray());
+
+        final SecretsKeyStoreHelper nodeB = helperWithPassword(PASSWORD_B);
+
+        assertTrue("the first failure must always be reported", nodeB.shouldReportLoadFailure());
+        assertFalse("an immediately following failure must be suppressed",
+                nodeB.shouldReportLoadFailure());
+        assertFalse(nodeB.shouldReportLoadFailure());
+
+        // Suppressing the report must not suppress the failure itself.
+        for (int i = 0; i < 3; i++) {
+            try {
+                nodeB.getValue(CANARY_KEY);
+                fail("every read of an unreadable store must raise, reported or not");
+            } catch (DotRuntimeException expected) {
+                // correct
+            }
+        }
+
+        assertTrue("the store must survive every one of those attempts", Files.exists(storePath));
+        assertEquals("and must never be backed up or replaced", 0, countBackups());
+        assertEquals("the owning node must still read its secret", CANARY_VALUE,
+                readSecret(nodeA, CANARY_KEY));
+    }
+
+    /**
      * Method to test: file permissions on the published store.
      * Given Scenario: the store is written into a directory shared across the cluster.
      * Expected Result: it is readable only by its owner. Previously both the temp file and the store
