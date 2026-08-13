@@ -1,4 +1,5 @@
-import { A11yGroup } from './a11y-groups';
+import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
+
 import { impactToSeverity, severityBreakdown, SEVERITY_ORDER } from './a11y-severity';
 
 describe('a11y-severity', () => {

@@ -1,6 +1,6 @@
-import { A11yMarkerService } from './a11y-marker.service';
+import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
 
-import { A11yGroup } from '../models/a11y-groups';
+import { A11yMarkerService } from './a11y-marker.service';
 
 const GROUPS: A11yGroup[] = [
     {

@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
+import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotA11yRunComponent } from './a11y-run.component';
@@ -13,7 +14,6 @@ import { DotA11yRunComponent } from './a11y-run.component';
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11Y_PAGE_LIST_ROUTE } from '../a11y.constants';
-import { A11yGroup } from '../models/a11y-groups';
 import {
     FixReport,
     NEEDS_ATTENTION_STATUSES,

@@ -1,6 +1,4 @@
-import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
-
-import { A11yGroup } from './a11y-groups';
+import { A11yGroup, AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 
 /**
  * Severity model for the Studio score widget + issue-type list. Mirrors axe-core's
@@ -42,7 +40,7 @@ export const SEVERITY_COLOR: Record<Severity, string> = {
 };
 
 /** Map an axe impact (or null) to a Severity bucket — null → minor. */
-export function impactToSeverity(impact: AxeImpact | null): Severity {
+export function impactToSeverity(impact: AxeImpact): Severity {
     switch (impact) {
         case 'critical':
             return 'critical';

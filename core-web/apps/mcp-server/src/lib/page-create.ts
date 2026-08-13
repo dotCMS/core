@@ -1,5 +1,11 @@
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
+import {
+    HttpError,
+    type ContentTypeSummary,
+    type DotCMSRuntime,
+    type RequestOptions
+} from '@dotcms/ai/runtime';
 
+import { isContentLive } from './page-common';
 import { splitUrlPath } from './page-path';
 import { resolveLanguageId, resolveSite } from './resolve';
 import { errorMessage } from './runtime';
@@ -216,12 +222,19 @@ interface ContentTypeField {
     defaultValue?: unknown;
 }
 
-interface ContentTypeDefinition {
-    id: string;
-    variable: string;
-    baseType: string;
+/**
+ * A page content type as this file needs it: the three identity fields plus the field list.
+ *
+ * Derived from `ContentTypeSummary` rather than re-declared, so an upstream change to the
+ * response contract fails at COMPILE time here instead of silently drifting — a hand-written
+ * copy of a response shape cannot drift-check against anything.
+ *
+ * `Pick`, not `extends`, on purpose: `fetchContentTypeDefinition` never populates `name`, and
+ * inheriting the full summary would assert a field this value does not carry.
+ */
+type ContentTypeDefinition = Pick<ContentTypeSummary, 'id' | 'variable' | 'baseType'> & {
     fields: ContentTypeField[];
-}
+};
 
 /**
  * Resolve a site (given as a hostname OR an identifier UUID) to its identifier UUID.
@@ -535,14 +548,12 @@ async function isLive(dotcms: DotCMSRuntime, identifier?: string): Promise<boole
     }
 
     try {
-        const response = await dotcms.request({
-            path: `/api/v1/content/${encodeURIComponent(identifier)}`,
-            query: { depth: 0 }
-        });
-
-        return extractPageEntity(response)?.live === true;
+        return await isContentLive(dotcms, identifier);
     } catch {
-        // A failed liveness check is not a failed create — surface it as a non-live result.
+        // A failed liveness check is not a failed create — the page exists either way, so
+        // report it as not-verified-live rather than failing the whole operation. The
+        // shared probe deliberately throws; swallowing is this caller's choice, not the
+        // primitive's (see page-common.ts).
         return false;
     }
 }

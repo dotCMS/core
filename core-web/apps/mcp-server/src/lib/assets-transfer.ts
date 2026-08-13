@@ -4,6 +4,7 @@ import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } fr
 
 import { type DotCMSRuntime, isBinaryResponseEnvelope } from '@dotcms/ai/runtime';
 
+import { isContentLive } from './page-common';
 import { errorMessage } from './runtime';
 type OverwriteMode = 'skip' | 'overwrite' | 'error';
 
@@ -523,7 +524,7 @@ async function collectNotLive(
     warnings: string[]
 ): Promise<AssetManifestFile[]> {
     const results = await Promise.allSettled(
-        files.map((file) => isLive(dotcms, file.identifier as string))
+        files.map((file) => isContentLive(dotcms, file.identifier as string))
     );
 
     const notLive: AssetManifestFile[] = [];
@@ -543,17 +544,6 @@ async function collectNotLive(
     });
 
     return notLive;
-}
-
-async function isLive(dotcms: DotCMSRuntime, identifier: string): Promise<boolean> {
-    const response = (await dotcms.request({
-        path: `/api/v1/content/${encodeURIComponent(identifier)}`,
-        query: { depth: 0 }
-    })) as { entity?: { live?: boolean; contentlets?: Array<{ live?: boolean }> } };
-    const entity = response.entity;
-    const contentlet = entity?.contentlets?.[0] || entity;
-
-    return contentlet?.live === true;
 }
 
 /**

@@ -13,11 +13,15 @@ import { computed, inject, isDevMode } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { AgentHeartbeat, AgentProgress, AgentRunStep } from '@dotcms/dotcms-models';
-import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
+import {
+    A11yGroup,
+    DotPageScannerService,
+    PageScannerA11yResponse,
+    buildA11yGroups
+} from '@dotcms/portlets/dot-ema/ui';
 
 import { SubscriptionSlot } from './subscription-slot';
 
-import { A11yGroup, buildA11yGroups } from '../models/a11y-groups';
 import {
     impactToSeverity,
     SEVERITY_RANK,

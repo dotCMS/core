@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
+import { LayoutRow } from './page-common';
 import { normalizePagePath } from './page-path';
 import { resolveSite } from './resolve';
 
@@ -180,10 +181,6 @@ interface RenderedContainer {
     rendered?: Record<string, string>;
     /** Per-slot placed contentlets, keyed by uuid (ContainerRaw.getContentletsMap()). */
     contentlets?: Record<string, Array<{ identifier?: string }>>;
-}
-
-interface LayoutRow {
-    columns?: Array<{ containers?: Array<{ identifier?: string; uuid?: string }> }>;
 }
 
 /** Assemble the verdict manifest from a render response. Pure — no I/O, so it is unit-testable. */

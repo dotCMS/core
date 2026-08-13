@@ -1,6 +1,5 @@
-import { PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
-
 import { buildA11yGroups } from './a11y-groups';
+import { PageScannerA11yResponse } from './dot-page-scanner.service';
 
 /** Wrap axe nodes in the scanner response shape `buildA11yGroups` consumes. */
 function scanWith(target: string[] | undefined): PageScannerA11yResponse {

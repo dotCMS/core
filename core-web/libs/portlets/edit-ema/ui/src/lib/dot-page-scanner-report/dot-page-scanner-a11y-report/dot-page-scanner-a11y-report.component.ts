@@ -6,8 +6,8 @@ import { ChipModule } from 'primeng/chip';
 
 import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { AxeRule, PageScannerA11yResponse } from '../dot-page-scanner.service';
-import { A11yFindingType, A11yGroup } from '../models';
+import { buildA11yGroups } from '../a11y-groups';
+import { PageScannerA11yResponse } from '../dot-page-scanner.service';
 
 @Component({
     selector: 'dot-page-scanner-a11y-report',
@@ -18,7 +18,7 @@ import { A11yFindingType, A11yGroup } from '../models';
 export class DotPageScannerA11yReportComponent {
     a11yData = input.required<PageScannerA11yResponse>();
 
-    protected a11yGroups = computed(() => this.buildA11yGroups(this.a11yData()));
+    protected a11yGroups = computed(() => buildA11yGroups(this.a11yData()));
 
     /** One accordion group per axe rule that flagged at least one element. */
     protected errorCount = computed(() =>
@@ -43,38 +43,4 @@ export class DotPageScannerA11yReportComponent {
             }
         }
     };
-
-    private buildA11yGroups(data: PageScannerA11yResponse): A11yGroup[] {
-        const axe = data.axe;
-
-        return [
-            ...this.mapRules(axe?.violations ?? [], 'error'),
-            ...this.mapRules(axe?.incomplete ?? [], 'warning')
-        ];
-    }
-
-    /**
-     * Flatten raw axe rules into display groups. Each rule already groups the
-     * elements it flagged in its `nodes` array, so one rule maps to one group.
-     */
-    private mapRules(rules: AxeRule[], type: A11yFindingType): A11yGroup[] {
-        return rules.map((rule) => ({
-            code: rule.id,
-            type,
-            message: rule.description ?? rule.help ?? '',
-            impact: rule.impact ?? null,
-            helpUrl: rule.helpUrl ?? '',
-            items: (rule.nodes ?? []).map((node) => ({
-                context: node.html,
-                // LAST entry, not a join. axe's `target` is an ancestor CHAIN — one entry
-                // per frame or shadow-root boundary crossed on the way to the element — so
-                // the element's own selector is the last one. Joining them produced a
-                // selector LIST, which `querySelector` resolves to whichever matches
-                // FIRST: for `['iframe#promo', 'button.cta']` that is the iframe.
-                // Keep in sync with `a11y-groups.ts` in the dot-agents portlet.
-                selector: node.target?.at(-1) ?? ''
-            })),
-            count: rule.nodes?.length ?? 0
-        }));
-    }
 }

@@ -182,10 +182,10 @@ export const A11yPageListStore = signalStore(
 
             activeSearch.set(
                 contentSearchService
-                    .get<{
-                        jsonObjectView: { contentlets: DotCMSContentlet[] };
-                        resultsSize: number;
-                    }>({
+                    // `ESContent` rather than an inline restatement of the envelope: the
+                    // inline copy omitted `contentTook`/`queryTook`, so wanting query timing
+                    // later would mean a second partial copy instead of one shared type.
+                    .get<ESContent>({
                         query,
                         limit: store.rows(),
                         offset,

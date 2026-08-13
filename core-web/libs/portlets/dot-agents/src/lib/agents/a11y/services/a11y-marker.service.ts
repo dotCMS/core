@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { A11yGroup } from '../models/a11y-groups';
+import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
 
 /** Attribute tagging marker elements so we can find + clear them. */
 const MARKER_ATTR = 'data-a11y-marker';

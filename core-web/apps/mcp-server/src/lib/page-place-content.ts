@@ -1,5 +1,6 @@
 import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
 
+import { LayoutRow } from './page-common';
 import { normalizePagePath } from './page-path';
 import { resolveSite } from './resolve';
 import { errorMessage } from './runtime';
@@ -449,10 +450,6 @@ interface PageJsonResponse {
 
 interface RawContainer {
     contentlets?: Record<string, Array<{ identifier?: string; inode?: string }>>;
-}
-
-interface LayoutRow {
-    columns?: Array<{ containers?: Array<{ identifier?: string; uuid?: string }> }>;
 }
 
 /**
