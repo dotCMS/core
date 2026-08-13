@@ -1,0 +1,84 @@
+<header class="flex items-center justify-between">
+    <span class="text-color-secondary text-xs font-semibold tracking-wider uppercase">
+        {{ 'roles.panel.title' | dm }}
+    </span>
+    <button
+        pButton
+        type="button"
+        (click)="onAddRole()"
+        data-testid="new-role-btn"
+        [attr.aria-label]="'roles.action.new' | dm"
+        [outlined]="true"
+        size="small">
+        {{ 'roles.action.new' | dm }}
+    </button>
+</header>
+
+<div class="w-full">
+    <p-iconfield>
+        <p-inputicon>
+            <span class="material-symbols-outlined">search</span>
+        </p-inputicon>
+        <input
+            pInputText
+            type="text"
+            class="w-full"
+            [ngModel]="$filterInput()"
+            (ngModelChange)="onFilterChange($event)"
+            [placeholder]="'roles.filter.placeholder' | dm"
+            data-testid="filter-input"
+            [attr.aria-label]="'roles.filter.placeholder' | dm" />
+    </p-iconfield>
+</div>
+
+@if (store.status() === 'loading') {
+    <p class="text-color-secondary m-0 text-sm" data-testid="tree-loading">
+        {{ 'loading' | dm }}
+    </p>
+} @else if (store.status() === 'error') {
+    <p class="m-0 text-sm text-red-700" data-testid="tree-error">
+        {{ 'error.load-failed' | dm }}
+    </p>
+} @else {
+    @if ($treeNodes().length > 0) {
+        <p-tree
+            [value]="$treeNodes()"
+            [selection]="$selectedNode()"
+            selectionMode="single"
+            (onNodeSelect)="onNodeSelect($event)"
+            (onNodeDrop)="onNodeDrop($event)"
+            [draggableNodes]="false"
+            [droppableNodes]="false"
+            data-testid="roles-tree-view"
+            styleClass="flex-1 overflow-auto">
+            <ng-template let-node pTemplate="default">
+                <span class="group flex w-full items-center gap-2">
+                    <span class="material-symbols-outlined text-color-secondary text-lg">
+                        {{ node.icon }}
+                    </span>
+                    <span class="flex-1 truncate">{{ node.label }}</span>
+                    @if (node.data.userCount !== undefined) {
+                        <span class="text-color-secondary inline-flex items-center gap-0.5 text-xs">
+                            <span class="material-symbols-outlined text-sm">person</span>
+                            {{ node.data.userCount }}
+                        </span>
+                    }
+                    <button
+                        pButton
+                        type="button"
+                        class="opacity-0 transition-opacity group-hover:opacity-100"
+                        (click)="onAddRole(node.data.id); $event.stopPropagation()"
+                        [attr.aria-label]="'roles.action.add-child' | dm"
+                        text
+                        size="small">
+                        <span class="material-symbols-outlined">add</span>
+                    </button>
+                </span>
+            </ng-template>
+        </p-tree>
+    } @else {
+        <div class="text-color-secondary text-sm" data-testid="tree-empty">
+            <p>{{ 'roles.tree.empty' | dm }}</p>
+        </div>
+    }
+}

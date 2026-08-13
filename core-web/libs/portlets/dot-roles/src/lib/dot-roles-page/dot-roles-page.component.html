@@ -1,0 +1,49 @@
+@let selected = store.selectedRoleId();
+
+<div class="flex min-h-0 flex-1">
+    <aside class="flex min-h-0 w-80 min-w-64 flex-col border-r border-surface-200">
+        <dot-roles-tree data-testid="roles-tree" />
+    </aside>
+
+    <section class="flex min-h-0 flex-1 flex-col overflow-auto">
+        @if (selected) {
+            <dot-roles-detail-header data-testid="role-detail-header" />
+
+            <p-tabs
+                [value]="store.activeTab()"
+                (valueChange)="onTabChange($event)"
+                data-testid="role-detail-tabs">
+                <p-tablist>
+                    <p-tab value="users" data-testid="tab-users">
+                        {{ 'roles.tab.users' | dm }}
+                    </p-tab>
+                    <p-tab value="permissions" data-testid="tab-permissions">
+                        {{ 'roles.tab.permissions' | dm }}
+                    </p-tab>
+                    <p-tab value="tools" data-testid="tab-tools">
+                        {{ 'roles.tab.tools' | dm }}
+                    </p-tab>
+                </p-tablist>
+
+                <p-tabpanels>
+                    <p-tabpanel value="users">
+                        <dot-role-users-tab data-testid="users-tab" />
+                    </p-tabpanel>
+                    <p-tabpanel value="permissions">
+                        <dot-role-permissions-iframe data-testid="permissions-tab" />
+                    </p-tabpanel>
+                    <p-tabpanel value="tools">
+                        <dot-role-tools-iframe data-testid="tools-tab" />
+                    </p-tabpanel>
+                </p-tabpanels>
+            </p-tabs>
+        } @else {
+            <div
+                class="text-color-secondary flex flex-1 flex-col items-center justify-center gap-2"
+                data-testid="empty-selection">
+                <span class="material-symbols-outlined text-5xl opacity-50">left_panel_open</span>
+                <p>{{ 'roles.detail.empty' | dm }}</p>
+            </div>
+        }
+    </section>
+</div>

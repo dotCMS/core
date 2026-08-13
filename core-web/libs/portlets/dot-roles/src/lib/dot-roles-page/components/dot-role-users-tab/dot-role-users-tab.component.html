@@ -1,0 +1,99 @@
+<div class="flex flex-col gap-4">
+    <div class="flex justify-end gap-2">
+        <button
+            pButton
+            type="button"
+            severity="danger"
+            [outlined]="true"
+            [disabled]="!$canBulkRemove()"
+            (click)="onRemoveSelected()"
+            data-testid="bulk-remove-btn"
+            [pTooltip]="'roles.users.remove.blocked' | dm">
+            {{ 'roles.users.remove' | dm }}
+        </button>
+
+        <button
+            pButton
+            type="button"
+            (click)="grantPanel.toggle($event)"
+            data-testid="grant-user-btn">
+            {{ 'roles.users.grant' | dm }}
+        </button>
+    </div>
+
+    <p-popover #grantPanel styleClass="min-w-80">
+        <ng-template pTemplate="content">
+            <p-autoComplete
+                [suggestions]="$userSuggestions()"
+                (completeMethod)="searchUsers($event)"
+                [placeholder]="'roles.users.search.placeholder' | dm"
+                appendTo="body"
+                field="emailAddress"
+                (onSelect)="onGrantUser($event.value, grantPanel)"
+                data-testid="grant-user-search">
+                <ng-template let-user pTemplate="item">
+                    <div class="flex flex-col gap-0.5">
+                        <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                        <small class="text-color-secondary">{{ user.emailAddress }}</small>
+                    </div>
+                </ng-template>
+            </p-autoComplete>
+            <p class="text-color-secondary mt-2 mb-0 text-xs" data-testid="grant-hint">
+                {{ 'roles.users.grant.blocked' | dm }}
+            </p>
+        </ng-template>
+    </p-popover>
+
+    @if (store.membersStatus() === 'loading') {
+        <p class="text-color-secondary m-0 text-sm" data-testid="members-loading">
+            {{ 'loading' | dm }}
+        </p>
+    } @else if (store.membersStatus() === 'error') {
+        <p class="m-0 text-sm text-red-700" data-testid="members-error">
+            {{ 'error.load-failed' | dm }}
+        </p>
+    } @else if (store.members().length === 0) {
+        <div
+            class="text-color-secondary rounded-lg border border-dashed border-surface-200 p-8 text-center"
+            data-testid="members-empty">
+            <p class="m-0 mb-1 font-semibold">
+                {{ 'roles.users.empty.title' | dm }}
+            </p>
+            <p class="m-0 text-sm">
+                {{ 'roles.users.empty.copy' | dm }}
+            </p>
+        </div>
+    } @else {
+        <p-table
+            [value]="store.members()"
+            dataKey="userId"
+            [selection]="store.selectedMembers()"
+            (selectionChange)="onSelectionChange($event)"
+            data-testid="members-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="w-12">
+                        <p-tableHeaderCheckbox />
+                    </th>
+                    <th>{{ 'roles.users.column.name' | dm }}</th>
+                    <th>{{ 'roles.users.column.email' | dm }}</th>
+                    <th>{{ 'roles.users.column.granted-from' | dm }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-member>
+                <tr [attr.data-testid]="'member-row-' + member.userId">
+                    <td>
+                        <p-tableCheckbox [value]="member" [disabled]="!isDirectGrant(member)" />
+                    </td>
+                    <td>{{ member.firstName }} {{ member.lastName }}</td>
+                    <td>{{ member.emailAddress }}</td>
+                    <td>
+                        <p-tag
+                            [value]="member.grantedFromRoleName"
+                            [severity]="isDirectGrant(member) ? 'info' : 'secondary'" />
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+</div>
