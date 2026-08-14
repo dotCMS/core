@@ -446,12 +446,16 @@ public class AppsAPIImpl implements AppsAPI {
                     // than reading as "0 configurations".
                     throw e;
                 }
-                // Deliberate consequence: against an unreadable store the Apps portlet LIST reports
-                // 0 configurations while opening an app's DETAIL raises, because getSecrets() is not
-                // swallowed. The list is a best-effort count, the detail view authoritative. It
-                // cannot be closed from here for the /api/* reason above; giving the list its own
-                // signal is tracked in issue #37061. The old wipe-then-recreate also reported 0, so
-                // this is not a regression.
+                // Deliberate consequence: against an unreadable store this method counts 0 for every
+                // site, while opening an app's DETAIL raises, because getSecrets() is not swallowed.
+                // The count is best-effort, the detail view authoritative.
+                //
+                // A bare 0 here would read as "your secrets are gone" on the Apps portlet, so the
+                // listing does not rely on it alone: AppsHelper.getAvailableDescriptorViewsWithErrors
+                // reports the condition explicitly through the endpoint's partial-failure channel
+                // (issue #37061, fixed in this PR). Note that guard has to live there rather than
+                // here, because appKeysByHost() raises while being evaluated as this method's own
+                // argument -- before this catch is ever reached.
                 // debug, not error, and deliberately so. This fires once per site per call, and
                 // EMAWebInterceptor.existsConfiguration reaches this method on every /api/* request
                 // -- measured at 32 ERROR lines from 16 requests on a two-site instance. Because the
