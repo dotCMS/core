@@ -1,0 +1,120 @@
+<!-- Score widget SKELETON — shown while scanning, with the SAME footprint as
+     the real widget so the swap to results is a crossfade with no layout shift. -->
+@if (phase() === 'scanning') {
+    <div
+        class="studio-fade-in flex flex-none animate-pulse items-center justify-center gap-8 border-b border-surface-100 px-6 py-5"
+        data-testid="studio-score-skeleton"
+        aria-hidden="true">
+        <!-- Ring placeholder: same 124px square, drawn as a thick gray donut. -->
+        <div class="h-[124px] w-[124px] flex-none rounded-full border-13 border-surface-200"></div>
+        <!-- Legend placeholder: a header bar + three rows (dot + label). -->
+        <div class="flex min-w-0 flex-col gap-2.5">
+            <div class="h-3 w-24 rounded-sm bg-surface-200"></div>
+            @for (i of [1, 2, 3]; track i) {
+                <div class="flex items-center gap-2">
+                    <span class="size-2.5 flex-none rounded-full bg-surface-200"></span>
+                    <span class="h-3 w-28 rounded-sm bg-surface-200"></span>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Score widget — shown once a scan has produced results (scanned/fixing/done).
+     Hidden while ready + scanning (scanning shows the skeleton above). -->
+@if (hasResults()) {
+    <div
+        class="studio-fade-in flex flex-none items-center justify-center gap-8 border-b border-surface-100 px-6 py-5">
+        <!-- Donut: severity-segmented ring with the live open count in the center.
+             The wrapper and the p-chart host MUST be the same size or the canvas
+             overflows and the centered overlay drifts. The app's root font is 14px,
+             so a rem-based `size-*` wouldn't equal a px chart — both are pinned to
+             the same explicit 124px so ring center == overlay center. -->
+        <div class="relative h-[124px] w-[124px] flex-none" data-testid="studio-score-ring">
+            <p-chart
+                type="doughnut"
+                [data]="$donutData()"
+                [options]="donutOptions"
+                width="124px"
+                height="124px" />
+            <div
+                class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center leading-none">
+                <span
+                    class="text-4xl font-extrabold text-color tabular-nums"
+                    data-testid="studio-score-count">
+                    {{ $displayCount() }}
+                </span>
+                <span class="mt-1 font-bold tracking-wider text-muted-color uppercase">
+                    {{ 'accessibility.studio.score.open' | dm }}
+                </span>
+            </div>
+        </div>
+
+        <div class="min-w-0">
+            <!-- Headline: "Issues found" (scanned) / "Fixing issues…" / "Issues remaining".
+                 Uses the same section-label style as the other column headers. -->
+            <div class="mb-2 font-bold tracking-wider text-muted-color uppercase">
+                {{ $headlineKey() | dm }}
+            </div>
+
+            <!-- before → open delta (only once a run has started). -->
+            @if (runStarted()) {
+                <div class="mb-2.5 flex items-center gap-2.5">
+                    <div class="flex flex-col">
+                        <span class="text-2xl leading-none font-extrabold text-muted-color">
+                            {{ beforeCount() }}
+                        </span>
+                        <span class="mt-0.5 text-muted-color">
+                            {{ 'accessibility.studio.score.before' | dm }}
+                        </span>
+                    </div>
+                    <i class="pi pi-arrow-right text-surface-300" aria-hidden="true"></i>
+                    <div class="flex flex-col">
+                        <span class="text-2xl leading-none font-extrabold text-color">
+                            {{ openCount() }}
+                        </span>
+                        <span class="mt-0.5 text-muted-color">
+                            {{
+                                phase() === 'fixing'
+                                    ? ('accessibility.studio.score.open' | dm)
+                                    : ('accessibility.studio.score.now' | dm)
+                            }}
+                        </span>
+                    </div>
+                </div>
+            }
+
+            <!-- Severity legend: N Critical / Serious / Moderate / Minor. -->
+            <div class="flex flex-col gap-1.5" data-testid="studio-severity-legend">
+                @for (row of $severityRows(); track row.severity) {
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="size-2.5 flex-none rounded-full"
+                            [style.background-color]="row.color"
+                            aria-hidden="true"></span>
+                        <span class="font-bold text-color">{{ row.count }}</span>
+                        <span class="text-muted-color">{{ row.label }}</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Needs-review: axe flagged these but couldn't confirm them (e.g.
+                 contrast over an image). The agent doesn't auto-fix them, so they
+                 stay out of the count above — but we surface them so the user
+                 knows they exist and need a human eye. -->
+            @if (warningCount() > 0) {
+                <div
+                    class="mt-2 flex items-center gap-1.5 text-muted-color"
+                    data-testid="studio-needsreview-note">
+                    <i class="pi pi-eye" aria-hidden="true"></i>
+                    <span>
+                        {{
+                            'accessibility.studio.score.needsreview'
+                                | dm: [warningCount().toString()]
+                        }}
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+}

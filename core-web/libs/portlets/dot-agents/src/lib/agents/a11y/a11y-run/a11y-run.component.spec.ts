@@ -458,11 +458,6 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
         });
 
-        it('animates the score count up to the open-count (snaps under reduced motion)', () => {
-            // reduced-motion is mocked on, so displayCount snaps to the target.
-            expect(spectator.component.$state.displayCount()).toBe(5);
-        });
-
         it('crossfades the real issue-type list in (over the skeleton)', () => {
             expect(spectator.query(byTestId('studio-issue-type-list'))).toHaveClass(
                 'studio-fade-in'

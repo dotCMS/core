@@ -1,21 +1,12 @@
 import { patchState, signalState } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    effect,
-    inject,
-    untracked
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
-import { ChartModule } from 'primeng/chart';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -25,18 +16,13 @@ import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
+import { DotA11yScoreComponent } from './a11y-score/a11y-score.component';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11Y_PAGE_LIST_ROUTE } from '../a11y.constants';
 import { A11yAgentPresenter } from '../models/a11y-agent.presenter';
-import {
-    impactToSeverity,
-    SEVERITY_COLOR,
-    SEVERITY_LABEL,
-    SEVERITY_ORDER,
-    type Severity
-} from '../models/a11y-severity';
+import { impactToSeverity, SEVERITY_COLOR } from '../models/a11y-severity';
 import { StudioPageRow } from '../models/accessibility-studio.models';
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
@@ -50,20 +36,11 @@ type StudioPanel = 'scanner' | 'files';
  *
  * The run (phase, scans, findings, report) lives in {@link A11yRunStore}; what
  * stays here is only what the user is *looking at*: which panels are open, which
- * file's diff is on the right, the count-up currently animating in the ring, and
- * the changed-file count the diff list reports back up. One `signalState` rather
- * than four loose `signal()`s so the whole view state is declared in one place
- * and every write goes through `patchState`.
+ * file's diff is on the right, and the changed-file count the diff list reports
+ * back up. One `signalState` rather than loose `signal()`s so the whole view state
+ * is declared in one place and every write goes through `patchState`.
  */
 interface A11yRunViewState {
-    /**
-     * The number shown in the ring center. Eased from its previous value up to
-     * the store's `openCount()` whenever a scan resolves (or the count changes
-     * while fixing), so the score "rolls" in sync with the donut sweep instead of
-     * snapping. Written only by the component's count-up animation.
-     */
-    displayCount: number;
-
     /**
      * The source file whose diff the right pane is showing, or null for the preview.
      * Set from the changed-files accordion in the left panel; the preview stays
@@ -86,19 +63,10 @@ interface A11yRunViewState {
 
 /** The view state every run starts from: scanner open, nothing else yet. */
 const INITIAL_VIEW_STATE: A11yRunViewState = {
-    displayCount: 0,
     diffFile: null,
     openPanels: ['scanner'],
     changedFileCount: 0
 };
-
-/** A severity legend / breakdown row beside the donut. */
-interface SeverityRow {
-    severity: Severity;
-    label: string;
-    color: string;
-    count: number;
-}
 
 /**
  * The Studio run screen: the agent column (score widget + recipe log +
@@ -110,14 +78,14 @@ interface SeverityRow {
         FormsModule,
         AccordionModule,
         ButtonModule,
-        ChartModule,
         ToggleSwitchModule,
         TooltipModule,
         DotMessagePipe,
         DotAgentActivityLogComponent,
         DotA11yDiffComponent,
         DotA11yDiffViewerComponent,
-        DotA11yPreviewComponent
+        DotA11yPreviewComponent,
+        DotA11yScoreComponent
     ],
     templateUrl: './a11y-run.component.html',
     styles: [
@@ -208,7 +176,6 @@ export class DotA11yRunComponent {
 
     readonly #router = inject(Router);
     readonly #location = inject(Location);
-    readonly #destroyRef = inject(DestroyRef);
 
     /**
      * This screen's view state — see {@link A11yRunViewState}. Read through its
@@ -218,9 +185,6 @@ export class DotA11yRunComponent {
 
     /** True when there's something to publish — drives the Publish bar. */
     readonly $hasChangedFiles = computed(() => this.$state.changedFileCount() > 0);
-
-    /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
-    #countRaf: number | null = null;
 
     readonly #dm = inject(DotMessageService);
 
@@ -238,65 +202,6 @@ export class DotA11yRunComponent {
             this.store.openSelectedPage(row);
         } else {
             this.#toPageList();
-        }
-
-        // Roll the ring count up to the live open-count whenever it changes and a
-        // scan has produced results — the score animates in sync with the donut
-        // sweep. Before any results (ready/scanning) it stays parked at 0, so each
-        // scan / rescan rolls up fresh.
-        effect(() => {
-            const target = this.store.openCount();
-            const scanned = this.store.hasResults();
-            untracked(() => this.#animateCountTo(scanned ? target : 0));
-        });
-
-        // Cancel any in-flight count-up when the component is torn down.
-        this.#destroyRef.onDestroy(() => this.#cancelCount());
-    }
-
-    /**
-     * Ease the ring's `displayCount` from its current value to `target` over ~600ms
-     * (easeOutCubic), synced with the donut's sweep. Snaps immediately when the
-     * user prefers reduced motion or the delta is trivial.
-     */
-    #animateCountTo(target: number): void {
-        this.#cancelCount();
-
-        const from = this.$state.displayCount();
-        if (from === target) {
-            return;
-        }
-        const reduceMotion =
-            typeof matchMedia === 'function' &&
-            matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduceMotion) {
-            patchState(this.$state, { displayCount: target });
-
-            return;
-        }
-
-        const duration = 600;
-        let start: number | null = null;
-        const step = (now: number) => {
-            start ??= now;
-            const t = Math.min(1, (now - start) / duration);
-            const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-            patchState(this.$state, {
-                displayCount: Math.round(from + (target - from) * eased)
-            });
-            if (t < 1) {
-                this.#countRaf = requestAnimationFrame(step);
-            } else {
-                this.#countRaf = null;
-            }
-        };
-        this.#countRaf = requestAnimationFrame(step);
-    }
-
-    #cancelCount(): void {
-        if (this.#countRaf !== null) {
-            cancelAnimationFrame(this.#countRaf);
-            this.#countRaf = null;
         }
     }
 
@@ -341,34 +246,6 @@ export class DotA11yRunComponent {
         return null;
     });
 
-    /** Headline above the severity legend, by phase. */
-    readonly $scoreHeadlineKey = computed<string>(() => {
-        if (this.store.phase() === 'fixing') {
-            return 'accessibility.studio.score.fixing';
-        }
-        if (this.store.finished()) {
-            return 'accessibility.studio.score.remaining';
-        }
-        return 'accessibility.studio.score.found';
-    });
-
-    /**
-     * Severity legend rows beside the donut (Critical/Serious/Moderate/Minor with
-     * their element counts). Drives both the legend and the donut segments. While
-     * scanned we hide empty buckets (matches the mockup); once fixing/done we keep
-     * them so the user sees a bucket reach 0.
-     */
-    readonly $severityRows = computed<SeverityRow[]>(() => {
-        const counts = this.store.severityCounts();
-        const keepZeros = this.store.runStarted();
-        return SEVERITY_ORDER.map((severity) => ({
-            severity,
-            label: SEVERITY_LABEL[severity],
-            color: SEVERITY_COLOR[severity],
-            count: counts[severity]
-        })).filter((row) => keepZeros || row.count > 0);
-    });
-
     /**
      * BY ISSUE TYPE rows with their dot color resolved. Projected here rather than
      * calling a method from the template: this component's change detection is driven
@@ -390,44 +267,6 @@ export class DotA11yRunComponent {
                 REVIEW_REASON_KEYS[group.code] ?? 'accessibility.studio.review.reason.default'
         }))
     );
-
-    /** PrimeNG doughnut data — one arc per severity, colored by SEVERITY_COLOR. */
-    readonly $donutData = computed(() => {
-        const counts = this.store.severityCounts();
-        const open = this.store.openCount();
-        const total = SEVERITY_ORDER.reduce((sum, s) => sum + counts[s], 0);
-        // No open issues → render a single full "clear" ring (green) so the donut
-        // still reads as a complete circle rather than collapsing.
-        if (total === 0 || open === 0) {
-            return {
-                labels: ['Clear'],
-                datasets: [{ data: [1], backgroundColor: ['#22c55e'], borderWidth: 0 }]
-            };
-        }
-        return {
-            labels: SEVERITY_ORDER.map((s) => SEVERITY_LABEL[s]),
-            datasets: [
-                {
-                    data: SEVERITY_ORDER.map((s) => counts[s]),
-                    backgroundColor: SEVERITY_ORDER.map((s) => SEVERITY_COLOR[s]),
-                    borderWidth: 0
-                }
-            ]
-        };
-    });
-
-    /**
-     * Doughnut options — thin ring, no legend/tooltip (the center text is overlaid).
-     * p-chart is sized via its `width`/`height` inputs (124px square); PrimeNG then
-     * sets `maintainAspectRatio: false` itself so the ring fills that square. We
-     * don't set responsive/aspect here — letting PrimeNG own the sizing keeps the
-     * ring centered in the box, aligned with the absolutely-centered count.
-     */
-    readonly donutOptions = {
-        cutout: '74%',
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        animation: { duration: 500 }
-    };
 
     /**
      * The SETTLED bubbles for the shared activity log, via the a11y presenter:
