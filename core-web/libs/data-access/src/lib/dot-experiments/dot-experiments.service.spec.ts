@@ -133,6 +133,14 @@ describe('DotExperimentsService', () => {
         );
     });
 
+    it('should change the name of an experimentId', () => {
+        const newName = 'new name';
+        spectator.service.setName(EXPERIMENT_ID, newName).subscribe();
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['name']).toEqual(newName);
+    });
+
     it('should change the description of an experimentId', () => {
         const newDescription = 'new description';
         spectator.service.setDescription(EXPERIMENT_ID, newDescription).subscribe();
