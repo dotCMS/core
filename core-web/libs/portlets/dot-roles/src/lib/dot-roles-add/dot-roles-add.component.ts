@@ -64,7 +64,7 @@ export class DotRolesAddComponent {
 
     protected readonly $parentOptions = computed<ParentOption[]>(() => [
         ROOT_PARENT,
-        ...this.#flattenRoles(this.#store.rootRoles())
+        ...this.#flattenRoles(this.#store.roleTree())
     ]);
 
     constructor() {
@@ -104,8 +104,8 @@ export class DotRolesAddComponent {
                 label: `${' '.repeat(depth * 2)}${node.name}`,
                 value: node.id
             });
-            if (node.children?.length) {
-                acc.push(...this.#flattenRoles(node.children, depth + 1));
+            if (node.roleChildren?.length) {
+                acc.push(...this.#flattenRoles(node.roleChildren, depth + 1));
             }
 
             return acc;
