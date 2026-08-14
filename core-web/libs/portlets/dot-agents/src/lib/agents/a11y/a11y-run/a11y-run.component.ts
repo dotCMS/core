@@ -2,18 +2,17 @@ import { patchState, signalState } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAgentRunService } from '@dotcms/data-access';
 import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotA11yActionsComponent } from './a11y-actions/a11y-actions.component';
 import { DotA11yActivityComponent } from './a11y-activity/a11y-activity.component';
 import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
 import { DotA11yScoreComponent } from './a11y-score/a11y-score.component';
@@ -73,12 +72,11 @@ const INITIAL_VIEW_STATE: A11yRunViewState = {
 @Component({
     selector: 'dot-a11y-run',
     imports: [
-        FormsModule,
         AccordionModule,
         ButtonModule,
-        ToggleSwitchModule,
         TooltipModule,
         DotMessagePipe,
+        DotA11yActionsComponent,
         DotA11yActivityComponent,
         DotA11yDiffComponent,
         DotA11yDiffViewerComponent,
@@ -191,39 +189,6 @@ export class DotA11yRunComponent {
             // one). Nothing to recover — the router owns where we ended up.
         });
     }
-
-    /** Footer title + sub keys derived from the current phase — single switch. */
-    readonly $footerKeys = computed(() => {
-        const p = this.store.phase();
-        const base = `accessibility.studio.footer.${p}`;
-        return { titleKey: `${base}.title`, subKey: `${base}.sub` };
-    });
-
-    /** Interpolation args for the footer title, by phase. */
-    readonly $footerArgs = computed<string[]>(() => {
-        switch (this.store.phase()) {
-            case 'scanned':
-                return [this.store.openCount().toString()];
-            case 'fixing':
-            case 'done':
-            case 'published':
-                return [this.store.fixedCount().toString(), this.store.reportedCount().toString()];
-            default:
-                return [];
-        }
-    });
-
-    /** Small leading icon + bubble color for the footer copy, by phase. */
-    readonly $footerIcon = computed<{ icon: string; cls: string } | null>(() => {
-        switch (this.store.phase()) {
-            case 'scanned':
-                return { icon: 'pi pi-sparkles', cls: 'bg-primary-50 text-primary' };
-            case 'fixing':
-                return { icon: 'pi pi-bolt', cls: 'bg-orange-50 text-orange-600' };
-            default:
-                return null;
-        }
-    });
 
     /**
      * Back button / "All pages" — return to the page list. No store reset needed: the
