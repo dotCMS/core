@@ -364,14 +364,25 @@ public class SecretsKeyStoreHelper {
      */
     private KeyStore saveSecretsStore(final KeyStore keyStore) {
         final File secretStoreFile = new File(secretsKeyStorePath);
+        secretStoreFile.getParentFile().mkdirs();
 
-        // The tmp file must live in the destination's own directory: an atomic move is only
-        // available within a single filesystem.
-        final File secretStoreFileTmp = new File(secretStoreFile.getParent(),
-                SECRETS_STORE_FILE + "_" + System.currentTimeMillis() + ".tmp");
-
-        secretStoreFileTmp.getParentFile().mkdirs();
+        File secretStoreFileTmp = null;
         try {
+            // Unique per writer, and in the destination's own directory because an atomic move is
+            // only available within a single filesystem.
+            //
+            // The name used to be derived from currentTimeMillis() alone, so two saves on this node
+            // landing in the same millisecond resolved to the same path, both opened it, and
+            // interleaved -- and publishAtomically would then rename the interleaved result into
+            // place as the live store. That used to be self-correcting, because a store that failed
+            // to load was wiped and rebuilt; now that the store is preserved (issue #36724), such a
+            // collision would leave it corrupt until an operator intervened.
+            //
+            // createTempFile also creates the file with owner-only permissions on POSIX, so the tmp
+            // never exists world-readable in the window before restrictPermissions runs.
+            secretStoreFileTmp = Files.createTempFile(secretStoreFile.getParentFile().toPath(),
+                    SECRETS_STORE_FILE + "_", ".tmp").toFile();
+
             try (FileOutputStream fos = new FileOutputStream(secretStoreFileTmp)) {
                 keyStore.store(fos, passwordSupplier.get());
                 fos.flush();
@@ -389,7 +400,10 @@ public class SecretsKeyStoreHelper {
         } finally {
             // The old code only deleted the tmp file on the happy path, leaking a copy of every
             // secret on any failure.
-            Try.run(() -> Files.deleteIfExists(secretStoreFileTmp.toPath()));
+            final File tmpToClean = secretStoreFileTmp;
+            if (null != tmpToClean) {
+                Try.run(() -> Files.deleteIfExists(tmpToClean.toPath()));
+            }
         }
         return keyStore;
     }

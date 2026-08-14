@@ -423,8 +423,8 @@ public class AppsAPIImpl implements AppsAPI {
         return siteIdentifiers.stream().filter(id -> {
             try {
                 return hasAnySecrets(key, id, user);
-            } catch (Exception e) {
-                // Deliberately Exception, not just the checked DotDataException/DotSecurityException.
+            } catch (DotDataException | DotSecurityException | DotRuntimeException e) {
+                // DotRuntimeException is the addition, not a blanket catch (Exception).
                 // This method's contract is already "if the secrets cannot be determined for this
                 // site, treat it as having none" -- it logs and returns false. Since issue #36724 the
                 // secrets store raises a DotRuntimeException when it cannot be read rather than
@@ -444,6 +444,10 @@ public class AppsAPIImpl implements AppsAPI {
                 // tracked in issue #37061.
                 // Note the old wipe-then-recreate behaviour also reported 0, so this is not a
                 // regression.
+                //
+                // Deliberately these three types rather than Exception: a genuine programming error
+                // here -- an NPE inside hasAnySecrets, say -- should surface rather than be hidden
+                // as a wrong configuration count on a path this hot.
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error getting secret from `%s` ", key), e);
             }
