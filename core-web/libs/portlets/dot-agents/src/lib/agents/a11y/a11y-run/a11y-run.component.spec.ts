@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Location } from '@angular/common';
 import { Component, input, output } from '@angular/core';
@@ -9,6 +9,7 @@ import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
 import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
 import { DotA11yRunComponent } from './a11y-run.component';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
@@ -23,7 +24,6 @@ import {
 } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { PageDiffFile } from '../models/page-render-sources.models';
-import { A11yMarkerService } from '../services/a11y-marker.service';
 import { A11yRunStore } from '../store/a11y-run.store';
 
 /**
@@ -41,6 +41,20 @@ class DotA11yDiffStubComponent {
 class DotA11yDiffViewerStubComponent {
     readonly file = input<PageDiffFile | null>(null);
     readonly closed = output<void>();
+}
+
+/**
+ * Stub for the preview pane: the real one frames two live page renders and injects
+ * marker layers into them, which this spec has no business booting. What the shell
+ * owes it is the right inputs — asserted below, exercised in its own spec.
+ */
+@Component({ selector: 'dot-a11y-preview', standalone: true, template: '' })
+class DotA11yPreviewStubComponent {
+    readonly page = input<StudioPageRow | null>(null);
+    readonly previewRevision = input(0);
+    readonly previewGroups = input<A11yGroup[]>([]);
+    readonly liveGroups = input<A11yGroup[]>([]);
+    readonly showMarkers = input(false);
 }
 
 const DIFF_FILE: PageDiffFile = {
@@ -211,18 +225,23 @@ describe('DotA11yRunComponent', () => {
                 DotA11yRunComponent,
                 {
                     remove: {
-                        imports: [DotA11yDiffComponent, DotA11yDiffViewerComponent]
+                        imports: [
+                            DotA11yDiffComponent,
+                            DotA11yDiffViewerComponent,
+                            DotA11yPreviewComponent
+                        ]
                     },
                     add: {
-                        imports: [DotA11yDiffStubComponent, DotA11yDiffViewerStubComponent]
+                        imports: [
+                            DotA11yDiffStubComponent,
+                            DotA11yDiffViewerStubComponent,
+                            DotA11yPreviewStubComponent
+                        ]
                     }
                 }
             ]
         ],
-        componentProviders: [
-            { provide: A11yRunStore, useValue: storeMock },
-            mockProvider(A11yMarkerService)
-        ],
+        componentProviders: [{ provide: A11yRunStore, useValue: storeMock }],
         providers: [
             {
                 provide: DotMessageService,
@@ -452,8 +471,8 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.query(byTestId('studio-issue-type-skeleton'))).toBeFalsy();
         });
 
-        it('keeps the preview iframe visible after scanning', () => {
-            expect(spectator.query(byTestId('studio-preview-iframe'))).toBeTruthy();
+        it('keeps the preview pane mounted after scanning', () => {
+            expect(spectator.query(DotA11yPreviewStubComponent)).toBeTruthy();
         });
 
         it('triggers startFix on click', () => {
@@ -493,59 +512,34 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    describe('marker visibility (showMarkers)', () => {
-        // Markers only ever go on the LIVE frame, which always still carries the
-        // original scan's violations. The only gate is: a scan has produced findings.
-        it('is off before a scan', () => {
-            render('ready');
-            expect(spectator.component.$showMarkers()).toBe(false);
-        });
+    describe('preview pane wiring', () => {
+        // What the pane DOES with these (markers, scroll sync, urls) is covered in
+        // a11y-preview.component.spec.ts. What matters here is that each store signal
+        // reaches the right input — a swapped preview/live pair would draw each
+        // frame's markers on the other one.
+        function previewPane() {
+            return spectator.query(DotA11yPreviewStubComponent) as DotA11yPreviewStubComponent;
+        }
 
-        it('is on once scanned (pre-fix)', () => {
+        it('hands each frame its own scan findings, plus the page and revision', () => {
+            previewRevision = 3;
             render('scanned', MOCK_FIX_REPORT);
-            expect(spectator.component.$showMarkers()).toBe(true);
+
+            expect(previewPane().page()).toEqual(MOCK_PAGE);
+            expect(previewPane().previewRevision()).toBe(3);
+            expect(previewPane().previewGroups()).toEqual(MOCK_GROUPS);
+            expect(previewPane().liveGroups()).toEqual(MOCK_LIVE_GROUPS);
         });
 
-        it('stays on after fixes exist (done) — the LIVE frame is still unfixed', () => {
-            render('done', MOCK_FIX_REPORT);
-            expect(spectator.component.$showMarkers()).toBe(true);
-        });
+        it.each([
+            ['ready', false],
+            ['scanned', true],
+            // The LIVE frame is still unfixed after a run, so markers stay on.
+            ['done', true]
+        ])('gates the markers on a scan having results (%s)', (nextPhase, expected) => {
+            render(nextPhase as StudioPhase, MOCK_FIX_REPORT);
 
-        describe('what actually reaches the marker service', () => {
-            // The computed above is only the input. The behaviour is the effect calling
-            // render() with `show ? groups : []` for EACH frame, and the service was mocked
-            // and never asserted — so an inverted ternary, or the preview groups sent to the
-            // live frame, passed silently.
-            function renderCalls() {
-                const marker = spectator.inject(A11yMarkerService, true);
-
-                return (marker.render as jest.Mock).mock.calls;
-            }
-
-            it('draws each frame with its OWN scan findings', () => {
-                render('scanned', MOCK_FIX_REPORT);
-
-                const groupsByFrame = new Map(
-                    renderCalls().map(([frame, groups]) => [frame, groups])
-                );
-                const preview = spectator.query('[data-testid="studio-preview-iframe"]');
-                const live = spectator.query('[data-testid="studio-live-iframe"]');
-
-                expect(groupsByFrame.get(preview)).toEqual(MOCK_GROUPS);
-                expect(groupsByFrame.get(live)).toEqual(MOCK_LIVE_GROUPS);
-            });
-
-            it('clears BOTH frames rather than skipping the call when markers are off', () => {
-                // Passing [] is what erases a previously drawn layer; not calling at all
-                // would leave stale markers on screen.
-                render('ready');
-
-                const calls = renderCalls();
-                expect(calls.length).toBeGreaterThanOrEqual(2);
-                for (const [, groups] of calls) {
-                    expect(groups).toEqual([]);
-                }
-            });
+            expect(previewPane().showMarkers()).toBe(expected);
         });
     });
 
@@ -744,109 +738,6 @@ describe('DotA11yRunComponent', () => {
 
         it('shows the all-pages button', () => {
             expect(spectator.query(byTestId('studio-allpages-btn'))).toBeTruthy();
-        });
-    });
-
-    describe('preview pane (side-by-side diff)', () => {
-        beforeEach(() => render('ready'));
-
-        it('renders the PREVIEW (with-fixes) iframe on a /dot-page PREVIEW_MODE URL', () => {
-            const iframe = spectator.query(byTestId('studio-preview-iframe'));
-            expect(iframe).toBeTruthy();
-            expect(iframe?.getAttribute('src')).toContain('/dot-page/about-us');
-            expect(iframe?.getAttribute('src')).toContain('host_id=host-id-1');
-            expect(iframe?.getAttribute('src')).toContain('mode=PREVIEW_MODE');
-        });
-
-        it('renders the LIVE (published) iframe on a /dot-page LIVE URL', () => {
-            const iframe = spectator.query(byTestId('studio-live-iframe'));
-            expect(iframe).toBeTruthy();
-            expect(iframe?.getAttribute('src')).toContain('/dot-page/about-us');
-            expect(iframe?.getAttribute('src')).toContain('host_id=host-id-1');
-            expect(iframe?.getAttribute('src')).toContain('mode=LIVE');
-            expect(iframe?.getAttribute('src')).not.toContain('PREVIEW_MODE');
-        });
-
-        it('shows both frames at once with their before/after labels', () => {
-            expect(spectator.query(byTestId('studio-live-label'))).toBeTruthy();
-            expect(spectator.query(byTestId('studio-preview-label'))).toBeTruthy();
-            // No dropdown anymore — the two versions are shown simultaneously.
-            expect(spectator.query(byTestId('studio-preview-mode-select'))).toBeFalsy();
-        });
-
-        it('reloads the PREVIEW iframe when previewRevision advances (cache-buster)', () => {
-            // Revision 0 → no cache-buster.
-            expect(
-                spectator.query(byTestId('studio-preview-iframe'))?.getAttribute('src')
-            ).not.toContain('rev=');
-
-            // A fix landing bumps the revision → src carries rev → iframe reloads.
-            previewRevision = 3;
-            render('fixing', null, [{ message: 'working', meta: { phase: 'fix' } }]);
-            expect(
-                spectator.query(byTestId('studio-preview-iframe'))?.getAttribute('src')
-            ).toContain('rev=3');
-            // LIVE never reloads mid-run (published render is fixed).
-            expect(
-                spectator.query(byTestId('studio-live-iframe'))?.getAttribute('src')
-            ).not.toContain('rev=');
-        });
-    });
-
-    describe('scroll sync', () => {
-        // jsdom iframes don't lay out or scroll, so drive the same-origin
-        // contentWindows directly and assert the mirror direction + guard.
-        beforeEach(() => render('ready'));
-
-        function fakeFrame(scrollX: number, scrollY: number) {
-            const listeners: Array<() => void> = [];
-            const win = {
-                scrollX,
-                scrollY,
-                addEventListener: (_evt: string, cb: () => void) => listeners.push(cb),
-                scrollTo: jest.fn((x: number, y: number) => {
-                    win.scrollX = x;
-                    win.scrollY = y;
-                })
-            };
-            return {
-                emitScroll: () => listeners.forEach((cb) => cb()),
-                nativeElement: { contentWindow: win },
-                win
-            };
-        }
-
-        it('mirrors the live frame scroll onto the preview frame', () => {
-            const live = fakeFrame(0, 0);
-            const preview = fakeFrame(0, 0);
-            jest.spyOn(spectator.component as never, '$liveFrame').mockReturnValue(live);
-            jest.spyOn(spectator.component as never, '$previewFrame').mockReturnValue(preview);
-
-            spectator.component.onLiveLoad();
-            live.win.scrollX = 40;
-            live.win.scrollY = 120;
-            live.emitScroll();
-
-            expect(preview.win.scrollTo).toHaveBeenCalledWith(40, 120);
-        });
-
-        it('does not bounce back (re-entrancy guard)', () => {
-            const live = fakeFrame(0, 0);
-            const preview = fakeFrame(0, 0);
-            jest.spyOn(spectator.component as never, '$liveFrame').mockReturnValue(live);
-            jest.spyOn(spectator.component as never, '$previewFrame').mockReturnValue(preview);
-
-            // Wire BOTH directions, then scroll live once.
-            spectator.component.onLiveLoad();
-            spectator.component.onPreviewLoad();
-            live.win.scrollY = 200;
-            live.emitScroll();
-
-            // preview mirrored live once; the echoed preview-scroll must NOT scroll
-            // live back while the guard is set.
-            expect(preview.win.scrollTo).toHaveBeenCalledTimes(1);
-            preview.emitScroll();
-            expect(live.win.scrollTo).not.toHaveBeenCalled();
         });
     });
 

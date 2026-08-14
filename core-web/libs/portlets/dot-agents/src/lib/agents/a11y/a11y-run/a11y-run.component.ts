@@ -7,11 +7,8 @@ import {
     computed,
     DestroyRef,
     effect,
-    ElementRef,
     inject,
-    isDevMode,
-    untracked,
-    viewChild
+    untracked
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -25,7 +22,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { AgentMessage, DotAgentActivityLogComponent } from '@dotcms/ai-ui';
 import { DotAgentRunService, DotMessageService } from '@dotcms/data-access';
 import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
@@ -40,7 +39,6 @@ import {
 } from '../models/a11y-severity';
 import { StudioPageRow } from '../models/accessibility-studio.models';
 import { PageDiffFile } from '../models/page-render-sources.models';
-import { A11yMarkerService } from '../services/a11y-marker.service';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 import { A11yRunStore } from '../store/a11y-run.store';
 
@@ -116,10 +114,10 @@ interface SeverityRow {
         ToggleSwitchModule,
         TooltipModule,
         DotMessagePipe,
-        SafeUrlPipe,
         DotAgentActivityLogComponent,
         DotA11yDiffComponent,
-        DotA11yDiffViewerComponent
+        DotA11yDiffViewerComponent,
+        DotA11yPreviewComponent
     ],
     templateUrl: './a11y-run.component.html',
     styles: [
@@ -197,13 +195,7 @@ interface SeverityRow {
     // The run store + the services it drives are provided HERE (not at the root),
     // so each run route gets a fresh instance — navigating to a different page
     // recreates the store with clean scan/fix state.
-    providers: [
-        A11yRunStore,
-        A11yMarkerService,
-        DotPageScannerService,
-        DotA11yAgentService,
-        DotAgentRunService
-    ],
+    providers: [A11yRunStore, DotPageScannerService, DotA11yAgentService, DotAgentRunService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     // Two rows: an `auto` row for the error banner (collapses to 0 when there is no
     // error, since the banner is the only thing in it) over the main content row, which
@@ -214,7 +206,6 @@ interface SeverityRow {
 export class DotA11yRunComponent {
     readonly store = inject(A11yRunStore);
 
-    readonly #markerService = inject(A11yMarkerService);
     readonly #router = inject(Router);
     readonly #location = inject(Location);
     readonly #destroyRef = inject(DestroyRef);
@@ -236,17 +227,6 @@ export class DotA11yRunComponent {
     /** Maps the agent stream + FixReport into shared activity-log bubbles. */
     readonly #presenter = new A11yAgentPresenter(this.#dm);
 
-    /**
-     * The two side-by-side preview iframes. Markers are injected only into the
-     * LIVE frame's (same-origin) document — it always still carries the original
-     * scan's violations (see {@link showMarkers}).
-     */
-    // NOTE: `private`, not `#`. Angular rejects an ES-private member for a signal query
-    // outright — "Cannot use 'viewChild' on a class member that is declared as ES private"
-    // — because the compiler has to write to the field from generated code.
-    private readonly $liveFrame = viewChild<ElementRef<HTMLIFrameElement>>('liveFrame');
-    private readonly $previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
-
     constructor() {
         // The page list hands the selected row over in the navigation's `state` (the
         // URL carries only its readable path, which can't supply identifier/host/
@@ -259,23 +239,6 @@ export class DotA11yRunComponent {
         } else {
             this.#toPageList();
         }
-
-        // Redraw both frames' marker layers whenever their scans (or the phase)
-        // change. Each frame gets its OWN scan's findings: the preview frame from
-        // the primary/working scan (a11yGroups), the live frame from the
-        // comparison scan (liveA11yGroups). We run separate scans, so a fix that
-        // isn't published yet clears the preview markers while the live markers
-        // (still-published violations) remain.
-        effect(() => {
-            const show = this.$showMarkers();
-            const previewGroups = this.store.a11yGroups();
-            const liveGroups = this.store.liveA11yGroups();
-            this.#markerService.render(
-                this.$previewFrame()?.nativeElement,
-                show ? previewGroups : []
-            );
-            this.#markerService.render(this.$liveFrame()?.nativeElement, show ? liveGroups : []);
-        });
 
         // Roll the ring count up to the live open-count whenever it changes and a
         // scan has produced results — the score animates in sync with the donut
@@ -352,92 +315,6 @@ export class DotA11yRunComponent {
             // one). Nothing to recover — the router owns where we ended up.
         });
     }
-
-    /**
-     * Re-entrancy guard for scroll mirroring: setting frame B's scroll fires B's
-     * own `scroll` event, which would mirror straight back to A — an infinite
-     * bounce. While we're programmatically scrolling the target, ignore its echo.
-     */
-    #syncingScroll = false;
-
-    /**
-     * LIVE iframe finished (re)loading — (re)draw its markers from the LIVE
-     * (comparison) scan + (re)wire scroll sync. A load replaces the document, so
-     * the effect-drawn layer is gone and must be redrawn here.
-     */
-    onLiveLoad(): void {
-        this.#markerService.render(
-            this.$liveFrame()?.nativeElement,
-            this.$showMarkers() ? this.store.liveA11yGroups() : []
-        );
-        this.#wireScrollSync(this.$liveFrame(), this.$previewFrame());
-    }
-
-    /**
-     * PREVIEW iframe finished (re)loading — (re)draw its markers from the primary
-     * (working) scan + (re)wire scroll sync.
-     */
-    onPreviewLoad(): void {
-        this.#markerService.render(
-            this.$previewFrame()?.nativeElement,
-            this.$showMarkers() ? this.store.a11yGroups() : []
-        );
-        this.#wireScrollSync(this.$previewFrame(), this.$liveFrame());
-    }
-
-    /**
-     * Mirror `source`'s scroll onto `target` so the two side-by-side renders stay
-     * aligned — makes the before/after diff scannable without scrolling each pane
-     * separately. Both frames are same-origin (the `/dot-page` proxy / BE origin),
-     * so we can read/write `contentWindow.scroll*` directly; cross-origin access
-     * throws and we no-op.
-     *
-     * Wired on every `load`: a reload/navigation replaces the frame's window, which
-     * drops the old listener for free, so we just attach a fresh one each time.
-     */
-    #wireScrollSync(
-        source: ElementRef<HTMLIFrameElement> | undefined,
-        target: ElementRef<HTMLIFrameElement> | undefined
-    ): void {
-        const srcWin = this.#frameWindow(source);
-        if (!srcWin) {
-            return;
-        }
-        srcWin.addEventListener(
-            'scroll',
-            () => {
-                if (this.#syncingScroll) {
-                    return;
-                }
-                const tgtWin = this.#frameWindow(target);
-                if (!tgtWin) {
-                    return;
-                }
-                this.#syncingScroll = true;
-                tgtWin.scrollTo(srcWin.scrollX, srcWin.scrollY);
-                // Release after the target's echoed scroll event has fired.
-                requestAnimationFrame(() => (this.#syncingScroll = false));
-            },
-            { passive: true }
-        );
-    }
-
-    /** The iframe's window; null when cross-origin or not yet loaded. */
-    #frameWindow(frame: ElementRef<HTMLIFrameElement> | undefined): Window | null {
-        try {
-            return frame?.nativeElement.contentWindow ?? null;
-        } catch {
-            return null;
-        }
-    }
-
-    /**
-     * Whether the violation overlays should be drawn. Each frame draws its OWN
-     * scan's findings (preview ← primary scan, live ← comparison scan), so the
-     * only shared gate is: a scan pass has run. Empty groups (e.g. the live scan
-     * hasn't landed yet, or a frame came back clean) simply draw no markers.
-     */
-    readonly $showMarkers = computed<boolean>(() => this.store.hasResults());
 
     /**
      * The section-header label above the scrollable body, by phase:
@@ -653,65 +530,6 @@ export class DotA11yRunComponent {
                 return null;
         }
     });
-
-    /**
-     * Same-origin prefix for the preview iframe URLs.
-     *
-     * In DEV the Angular dev server can't render dotCMS pages, so the iframes must
-     * hit the backend. The dev proxy maps the `/dot-page` sentinel → the BE page
-     * renderer (see apps/dotcms-ui/proxy-dev.conf.mjs). In PROD the portlet is
-     * served from the dotCMS origin, so the page lives at its own path with NO
-     * prefix — `/dot-page` would 404 there. `isDevMode()` is build-time accurate
-     * (true under `ng serve`, false in a production build) and needs no app-env
-     * import, so the dev-only prefix never leaks to production.
-     *
-     * NOTE: this pairs with the `/dot-page` rule in proxy-dev.conf.mjs — the two
-     * must change together, or the preview frames 404 in local dev.
-     *
-     * Same-origin is a hard requirement, not a convenience: the marker overlay and
-     * the scroll sync both reach into each frame's `contentWindow`
-     * ({@link frameWindow}), which the browser forbids cross-origin. A cross-origin
-     * frame would still render the page but silently draw no violation markers.
-     *
-     * NEEDS A BACKEND FIX: the proper solution is a first-class, same-origin dotCMS
-     * endpoint that renders a page for inspection (a supported resource under
-     * `/api`), so this component — and any future agent that has to inspect a
-     * rendered page — can frame it directly with no origin games and no dev-server
-     * rewrite. No such endpoint exists today; that gap is why the sentinel + proxy
-     * pair exists. Delete both once it lands.
-     */
-    readonly #previewPathPrefix = isDevMode() ? '/dot-page' : '';
-
-    /**
-     * The page rendered in the given mode. `host_id` disambiguates which site's
-     * copy renders. Shared by the two side-by-side frames. An optional
-     * cache-busting `rev` forces the iframe to reload when the working render
-     * changes (see {@link previewUrl}).
-     */
-    #urlFor(mode: 'PREVIEW_MODE' | 'LIVE', rev = 0): string {
-        const page = this.store.selected();
-        if (!page) {
-            return '';
-        }
-        const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
-        const bust = rev > 0 ? `&rev=${rev}` : '';
-        return `${this.#previewPathPrefix}${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=${mode}${bust}`;
-    }
-
-    /**
-     * The two frames shown side by side so the diff reads at a glance:
-     *   LIVE     — the published render (what visitors see today, pre-fix) + markers
-     *   PREVIEW  — the working render (carries the agent's fixes, the "after")
-     *
-     * The PREVIEW url carries the store's `previewRevision` as a cache-buster, so
-     * the iframe reloads whenever the agent applies fixes (each mid-fix re-scan +
-     * the final report) and the page updates visually. LIVE never changes mid-run
-     * (it's the published render), so it takes no revision.
-     */
-    readonly $liveUrl = computed(() => this.#urlFor('LIVE'));
-    readonly $previewUrl = computed(() =>
-        this.#urlFor('PREVIEW_MODE', this.store.previewRevision())
-    );
 
     /**
      * Back button / "All pages" — return to the page list. No store reset needed: the
