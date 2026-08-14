@@ -55,6 +55,7 @@ import {
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -225,6 +226,10 @@ describe('DotContentDriveShellComponent', () => {
                     dialogDrillDown: dialogDrillDownSignal,
                     // Read by the toolbar, which the shell renders for real.
                     actionExecution: signal(undefined),
+                    // Read by the Locale chip inside that toolbar: the store resolves the languages
+                    // once and seeds the environment default into the `languageId` filter.
+                    languages: signal(mockLocales),
+                    defaultLanguageId: jest.fn().mockReturnValue(1),
                     actionExecutionResult: actionExecutionResultSignal,
                     clearActionExecutionResult: jest.fn(),
                     setDialog: jest.fn(),
@@ -2837,6 +2842,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     userSearchableFields: jest.fn().mockReturnValue([]),
                     userSearchableActive: jest.fn().mockReturnValue([]),
                     showInListFields: signal([]),
+                    languages: signal(mockLocales),
+                    defaultLanguageId: jest.fn().mockReturnValue(1),
                     setIsTreeExpanded: jest.fn(),
                     isTreeVisuallyExpanded: jest.fn().mockReturnValue(false),
                     isTreeForceCollapsed: jest.fn().mockReturnValue(false),

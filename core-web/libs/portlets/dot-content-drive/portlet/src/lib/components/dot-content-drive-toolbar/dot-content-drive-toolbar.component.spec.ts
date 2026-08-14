@@ -18,13 +18,12 @@ import {
     DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
-    DotLanguagesService,
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { createFakeTextField, MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -85,7 +84,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
-                actionExecution: actionExecutionSignal
+                actionExecution: actionExecutionSignal,
+                // Read by the Locale chip this toolbar renders: the store resolves the languages
+                // once and seeds the environment default into the `languageId` filter.
+                languages: signal(mockLocales),
+                defaultLanguageId: jest.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -100,9 +103,6 @@ describe('DotContentDriveToolbarComponent', () => {
                     })
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
-            }),
-            mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.

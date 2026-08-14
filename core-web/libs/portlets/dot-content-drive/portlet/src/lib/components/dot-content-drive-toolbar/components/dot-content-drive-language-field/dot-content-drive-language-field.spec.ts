@@ -5,14 +5,13 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/jest';
-import { of } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
 
 import { Listbox } from 'primeng/listbox';
 import { Popover } from 'primeng/popover';
 
-import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { createFakeLanguage, MockDotMessageService } from '@dotcms/utils-testing';
@@ -52,7 +51,6 @@ describe('DotContentDriveLanguageFieldComponent', () => {
     let spectator: Spectator<DotContentDriveLanguageFieldComponent>;
     let component: DotContentDriveLanguageFieldComponent;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
-    let languagesService: SpyObject<DotLanguagesService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveLanguageFieldComponent,
@@ -60,10 +58,11 @@ describe('DotContentDriveLanguageFieldComponent', () => {
             mockProvider(DotContentDriveStore, {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
-                getFilterValue: jest.fn()
-            }),
-            mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(MOCK_LANGUAGES))
+                getFilterValue: jest.fn(),
+                // The store resolves the languages (it needs them to find the default to seed) and
+                // the chip renders from there, so both share one request.
+                languages: jest.fn().mockReturnValue(MOCK_LANGUAGES),
+                defaultLanguageId: jest.fn().mockReturnValue(1)
             }),
             {
                 provide: DotMessageService,
@@ -80,17 +79,21 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         spectator = createComponent();
         component = spectator.component;
         store = spectator.inject(DotContentDriveStore, true);
-        languagesService = spectator.inject(DotLanguagesService);
         store.getFilterValue.mockReturnValue([]);
+        // Re-stated per test: `jest.clearAllMocks()` clears calls but keeps return values, so a test
+        // that stubs "no default language" would otherwise leak into the ones after it.
+        store.languages.mockReturnValue(MOCK_LANGUAGES);
+        store.defaultLanguageId.mockReturnValue(1);
     });
 
     afterEach(() => jest.clearAllMocks());
 
-    it('should fetch languages and populate state', () => {
+    it('should render the languages resolved by the store', () => {
+        store.getFilterValue.mockReturnValue(['2']);
+
         spectator.detectChanges();
 
-        expect(languagesService.get).toHaveBeenCalled();
-        expect(component.$state().languages).toEqual(MOCK_LANGUAGES);
+        expect(component['$selectedLanguageNames']()).toEqual(['Spanish (es-ES)']);
     });
 
     it('should set selectedLanguages when store has languageId filter', () => {
@@ -113,8 +116,24 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         });
     });
 
-    it('should remove filter when selectedLanguages is empty', () => {
-        store.getFilterValue.mockReturnValue(['1']);
+    it('should snap back to the default language when the selection is emptied', () => {
+        // An empty language filter is not neutral: the backend then omits the language term and
+        // returns every language version of a contentlet as its own row.
+        store.getFilterValue.mockReturnValue(['2']);
+        spectator.detectChanges();
+
+        component.$selectedLanguages.set([]);
+        component.onChange();
+
+        expect(store.patchFilters).toHaveBeenCalledWith({ languageId: ['1'] });
+        expect(store.removeFilter).not.toHaveBeenCalled();
+        expect(component.$selectedLanguages()).toEqual([1]);
+    });
+
+    it('should remove the filter when emptied and no default language is known', () => {
+        // The languages request failed, so the pre-seeding behaviour has to stand.
+        store.defaultLanguageId.mockReturnValue(undefined);
+        store.getFilterValue.mockReturnValue(['2']);
         spectator.detectChanges();
 
         component.$selectedLanguages.set([]);
@@ -159,8 +178,8 @@ describe('DotContentDriveLanguageFieldComponent', () => {
             expect(toggleSpy).toHaveBeenCalled();
         });
 
-        it('should clear selection and remove filter when the chip emits removed', () => {
-            store.getFilterValue.mockReturnValue(['1']);
+        it('should reset to the default language when the chip emits removed', () => {
+            store.getFilterValue.mockReturnValue(['2', '3']);
             spectator.detectChanges();
 
             const chipDe = spectator.fixture.debugElement.query(
@@ -168,8 +187,22 @@ describe('DotContentDriveLanguageFieldComponent', () => {
             );
             spectator.triggerEventHandler(chipDe, 'removed', undefined);
 
-            expect(component.$selectedLanguages()).toEqual([]);
-            expect(store.removeFilter).toHaveBeenCalledWith('languageId');
+            expect(component.$selectedLanguages()).toEqual([1]);
+            expect(store.patchFilters).toHaveBeenCalledWith({ languageId: ['1'] });
+        });
+
+        it('should not offer the remove button while only the default language is selected', () => {
+            store.getFilterValue.mockReturnValue(['1']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeFalsy();
+        });
+
+        it('should offer the remove button once a non-default language is selected', () => {
+            store.getFilterValue.mockReturnValue(['1', '2']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeTruthy();
         });
     });
 

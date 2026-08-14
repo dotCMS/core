@@ -81,6 +81,28 @@ describe('DotChipFilterComponent', () => {
         });
     });
 
+    describe('removable', () => {
+        it('should hide the remove button when not removable, keeping the selection visible', () => {
+            // A filter that always holds a value (the Locale chip on its environment default) has
+            // nothing to remove — clearing it would re-select the very same value.
+            spectator.setInput('selections', ['English (en-US)']);
+            spectator.setInput('removable', false);
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeFalsy();
+            expect(spectator.query('.pi-chevron-down')).toBeTruthy();
+            expect(spectator.query(byTestId('chip-values'))?.textContent).toContain(
+                'English (en-US)'
+            );
+        });
+
+        it('should show the remove button once removable', () => {
+            spectator.setInput('selections', ['English (en-US)', 'Spanish (es-ES)']);
+            spectator.setInput('removable', true);
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeTruthy();
+        });
+    });
+
     describe('outputs', () => {
         it('should emit clicked on host click', () => {
             const handler = jest.fn();

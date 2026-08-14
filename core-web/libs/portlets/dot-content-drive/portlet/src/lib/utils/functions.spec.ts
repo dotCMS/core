@@ -44,6 +44,7 @@ import {
     resolveHierarchyAncestor,
     serializeUserSearchableValue,
     toLocalIsoString,
+    withDefaultLanguage,
     workflowEntryToToken
 } from './functions';
 import { createTreeNode } from './tree-folder.utils';
@@ -388,6 +389,45 @@ describe('Utility Functions', () => {
 
             expect(encoded).toBe('workflow:schemeA:stepX,schemeB');
             expect(decoded).toEqual(original);
+        });
+    });
+
+    describe('withDefaultLanguage', () => {
+        const DEFAULT_LANGUAGE_ID = 2;
+
+        it('should seed the default language when the key is absent', () => {
+            expect(withDefaultLanguage({ title: 'Blog' }, DEFAULT_LANGUAGE_ID)).toEqual({
+                title: 'Blog',
+                languageId: ['2']
+            });
+        });
+
+        it('should seed the default language when the key is an empty array', () => {
+            expect(withDefaultLanguage({ languageId: [] }, DEFAULT_LANGUAGE_ID)).toEqual({
+                languageId: ['2']
+            });
+        });
+
+        it('should leave an existing selection untouched', () => {
+            const filters: DotContentDriveFilters = { languageId: ['1', '3'] };
+
+            expect(withDefaultLanguage(filters, DEFAULT_LANGUAGE_ID)).toEqual({
+                languageId: ['1', '3']
+            });
+        });
+
+        it('should leave the filters untouched when the default is unknown', () => {
+            // The languages request has not answered (or failed): the portlet must fall back to
+            // exactly its pre-seeding behaviour rather than inventing a language.
+            expect(withDefaultLanguage({ title: 'Blog' }, undefined)).toEqual({ title: 'Blog' });
+        });
+
+        it('should not mutate the filters it was given', () => {
+            const filters: DotContentDriveFilters = { title: 'Blog' };
+
+            withDefaultLanguage(filters, DEFAULT_LANGUAGE_ID);
+
+            expect(filters).toEqual({ title: 'Blog' });
         });
     });
 

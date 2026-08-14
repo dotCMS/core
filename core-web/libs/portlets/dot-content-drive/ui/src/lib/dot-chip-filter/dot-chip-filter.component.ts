@@ -31,6 +31,15 @@ export class DotChipFilterComponent {
     title = input.required<string>();
     selections = input<string[]>([]);
     tabIndex = input<number>(0);
+    /**
+     * Whether the chip offers its "remove" X while it has a selection. Defaults to `true`, which is
+     * every chip whose filter can legitimately be emptied.
+     *
+     * Set it to `false` for a filter that always holds a value — the Locale chip while only the
+     * environment default is selected — where an X would be a no-op: there is nothing to remove,
+     * because clearing the filter re-selects that same default.
+     */
+    removable = input<boolean>(true);
 
     /**
      * Emits the originating DOM event so consumers can pass it to overlays

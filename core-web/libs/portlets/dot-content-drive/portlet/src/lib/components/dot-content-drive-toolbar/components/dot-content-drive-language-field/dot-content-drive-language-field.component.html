@@ -1,6 +1,7 @@
 <dot-chip-filter
     [title]="'content-drive.language-selector.placeholder' | dm"
     [selections]="$selectedLanguageNames()"
+    [removable]="$removable()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"
     data-testid="language-chip" />
@@ -10,7 +11,7 @@
         #listbox
         [(ngModel)]="$selectedLanguages"
         [ngModelOptions]="{ standalone: true }"
-        [options]="$state.languages()"
+        [options]="$languages()"
         [multiple]="true"
         [checkbox]="true"
         [filter]="true"

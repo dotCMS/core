@@ -14,7 +14,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentDriveService, DotCurrentUserService } from '@dotcms/data-access';
+import {
+    DotContentDriveService,
+    DotCurrentUserService,
+    DotLanguagesService
+} from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveItem,
@@ -50,9 +54,10 @@ import {
 import {
     buildUserSearchablePayload,
     decodeFilters,
-    encodeFilters,
     getUserSearchableActive,
-    parseWorkflowFilter
+    parseWorkflowFilter,
+    sortedEncodedFilters,
+    withDefaultLanguage
 } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
@@ -71,6 +76,9 @@ const initialState: DotContentDriveState = {
     userSearchableActive: [],
     userSearchableFieldsLoaded: false,
     showInListFields: [],
+    languages: [],
+    defaultLanguageId: undefined,
+    defaultLanguageLoaded: false,
     // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
     // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
     currentUserIsAdmin: false
@@ -128,6 +136,11 @@ export const DotContentDriveStore = signalStore(
                                 ? parseWorkflowFilter(filters()?.workflow)
                                 : undefined,
                             userSearchable,
+                            // NOTE: `languageId` is deliberately absent from `showFolders` below.
+                            // Folders have no language, so a locale filter — which selects a
+                            // *version* of content — must not remove the structure being navigated.
+                            // It also could not stay there once a default language is always
+                            // selected: every folder in the drive would disappear.
                             contentCursor: page.contentCursor ?? 0,
                             folderCursor: page.folderCursor ?? 0,
                             maxResults: paginationSignal?.limit,
@@ -137,7 +150,6 @@ export const DotContentDriveStore = signalStore(
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
-                                !filters()?.languageId?.length &&
                                 !filters()?.workflow?.length &&
                                 // A field-based filter narrows to content, so hide folders too —
                                 // consistent with the other filters above.
@@ -158,12 +170,13 @@ export const DotContentDriveStore = signalStore(
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
         const dotCurrentUserService = inject(DotCurrentUserService);
+        const dotLanguagesService = inject(DotLanguagesService);
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
                     currentSite: currentSite ?? SYSTEM_HOST,
                     path,
-                    filters,
+                    filters: withDefaultLanguage(filters, store.defaultLanguageId()),
                     status: DotContentDriveStatus.LOADING,
                     isTreeExpanded,
                     pagination: {
@@ -207,7 +220,9 @@ export const DotContentDriveStore = signalStore(
             },
             clearFilters() {
                 patchState(store, {
-                    filters: {},
+                    // Clearing every filter still leaves the default language selected: an empty
+                    // language filter is not a neutral state (see `withDefaultLanguage`).
+                    filters: withDefaultLanguage({}, store.defaultLanguageId()),
                     pagination: { ...store.pagination(), offset: 0, page: 1 },
                     pages: [DEFAULT_PAGE]
                 });
@@ -227,7 +242,9 @@ export const DotContentDriveStore = signalStore(
                 const { [filter]: removedFilter, ...restFilters } = store.filters();
                 if (removedFilter) {
                     patchState(store, {
-                        filters: restFilters,
+                        // Re-seeded so dropping `languageId` can never leave the language filter
+                        // unset, whichever caller does it.
+                        filters: withDefaultLanguage(restFilters, store.defaultLanguageId()),
                         pagination: { ...store.pagination(), page: 1, offset: 0 },
                         pages: [DEFAULT_PAGE]
                     });
@@ -356,6 +373,43 @@ export const DotContentDriveStore = signalStore(
                     // documented default — false — should hold for both.
                     .subscribe((user) => patchState(store, { currentUserIsAdmin: !!user?.admin }));
             },
+            /**
+             * Resolves the environment's languages, once per portlet load, and seeds the default one
+             * into the `languageId` filter when nothing is selected.
+             *
+             * The default is the language flagged `defaultLanguage` — not id 1, and not the first
+             * entry returned, which are different languages on plenty of environments. `/api/v2/languages`
+             * is the only source that carries the flag: the app-configuration payload behind
+             * `GlobalStore.systemLanguages` omits it.
+             *
+             * The response may land either side of the init effect, so the filters are re-seeded here
+             * as well as in `initContentDrive`. A failure still marks the load settled so the portlet
+             * searches unseeded — exactly its behaviour before the seed existed — instead of waiting
+             * forever in `LOADING`.
+             */
+            loadDefaultLanguage() {
+                dotLanguagesService
+                    .get()
+                    .pipe(
+                        take(1),
+                        catchError(() => {
+                            patchState(store, { defaultLanguageLoaded: true });
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((languages = []) => {
+                        const defaultLanguageId = languages.find(
+                            (language) => language.defaultLanguage
+                        )?.id;
+
+                        patchState(store, {
+                            languages,
+                            defaultLanguageId,
+                            defaultLanguageLoaded: true,
+                            filters: withDefaultLanguage(store.filters(), defaultLanguageId)
+                        });
+                    });
+            },
             loadItems() {
                 const request = store.$request();
                 const currentSite = store.currentSite();
@@ -363,6 +417,14 @@ export const DotContentDriveStore = signalStore(
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier == SYSTEM_HOST.identifier) {
+                    return;
+                }
+
+                // Hold the first search until the default language has been resolved. Read TRACKED
+                // (like `userSearchableFieldsLoaded` below) so the effect re-runs the moment it
+                // settles. Without this the portlet searches once with no language — briefly showing
+                // every language version of every row — and again with the seeded default.
+                if (!store.defaultLanguageLoaded()) {
                     return;
                 }
 
@@ -461,6 +523,11 @@ export const DotContentDriveStore = signalStore(
                 // noise. Nothing waits on it — consumers read the flag's default until it lands.
                 store.loadCurrentUserIsAdmin();
 
+                // Same rationale as above: the environment's languages don't change within a
+                // session, so one request per portlet load is enough. Unlike the admin role, the
+                // first search DOES wait on this — see the gate in `loadItems`.
+                store.loadDefaultLanguage();
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
@@ -495,12 +562,26 @@ export const DotContentDriveStore = signalStore(
                         (params.get('isTreeExpanded') ?? DEFAULT_TREE_EXPANDED.toString()) ===
                         'true';
 
+                    // Seeded the same way `initContentDrive` would, so a restored URL that carries no
+                    // language reads as equal to the state it produced rather than as a change. Without
+                    // this the seed becomes a history trap: the write-back pushes the seeded URL, Back
+                    // returns to the language-less one, the guard sees a difference, re-hydration
+                    // re-seeds, and the same entry is pushed again — the user can never Back out.
+                    const restoredFilters = withDefaultLanguage(
+                        decodeFilters(filtersRaw),
+                        store.defaultLanguageId()
+                    );
+
                     // Only re-hydrate when a browsing param actually changed. A popstate that only
                     // flips `editContent` (e.g. closing the side panel via Back) must NOT reset and
                     // reload the list — that param is owned by the shell's own popstate handler.
+                    // Compared order-insensitively: `encodeFilters` follows insertion order, and the
+                    // seed appends `languageId` last, so an equivalent URL can spell the keys in
+                    // another order.
                     if (
                         path === store.path() &&
-                        filtersRaw === encodeFilters(store.filters()) &&
+                        sortedEncodedFilters(restoredFilters) ===
+                            sortedEncodedFilters(store.filters()) &&
                         isTreeExpanded === store.isTreeExpanded()
                     ) {
                         return;
@@ -509,7 +590,7 @@ export const DotContentDriveStore = signalStore(
                     store.initContentDrive({
                         currentSite: globalStore.siteDetails(),
                         path,
-                        filters: decodeFilters(filtersRaw),
+                        filters: restoredFilters,
                         isTreeExpanded
                     });
                 });

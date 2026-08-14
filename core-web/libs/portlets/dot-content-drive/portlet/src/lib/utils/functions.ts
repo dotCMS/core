@@ -242,6 +242,58 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
 }
 
 /**
+ * Guarantees the language filter always carries a value, seeding the environment's default
+ * language whenever nothing is selected.
+ *
+ * "No language selected" is not the neutral state it looks like: the backend omits the language
+ * term from the query entirely (`LuceneQueryBuilder.getSystemSearchableQueryTerms`), so every
+ * language version of a contentlet comes back as its own row. Selecting the default explicitly is
+ * both what users expect to see and an honest reflection of what is applied — so the seeded value
+ * lands in `filters` (and therefore in the URL) like any other selection.
+ *
+ * Returns the filters untouched when the default is unknown — the languages request has not
+ * answered yet, or failed — so the portlet degrades to exactly its pre-seeding behaviour instead
+ * of inventing a language. Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with `languageId` guaranteed when possible.
+ */
+export function withDefaultLanguage(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    if (!defaultLanguageId || filters?.languageId?.length) {
+        return filters;
+    }
+
+    return { ...filters, languageId: [String(defaultLanguageId)] };
+}
+
+/**
+ * Encodes the filters with their keys in a stable (alphabetical) order, for **comparison only**.
+ *
+ * {@link encodeFilters} follows insertion order, which makes two equivalent filter sets encode
+ * differently — `title:x;languageId:1` vs `languageId:1;title:x`. That is harmless in the URL but
+ * not when the encoded string is used to decide whether state changed. Never use this to write the
+ * URL; it would reorder the params users see.
+ *
+ * @param {DotContentDriveFilters} filters The filters to encode.
+ * @return {*} {string} A key-order-independent encoding of the filters.
+ */
+export function sortedEncodedFilters(filters: DotContentDriveFilters): string {
+    if (!filters) {
+        return '';
+    }
+
+    return encodeFilters(
+        Object.fromEntries(
+            Object.entries(filters).sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        )
+    );
+}
+
+/**
  * Adapts a `FolderSearchView` (returned by `GET /api/v1/folder/search`) into the `DotFolder`
  * shape the tree builder consumes.
  *
