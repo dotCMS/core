@@ -25,10 +25,15 @@ import { DotContentDriveNavigationService } from './dot-content-drive-navigation
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
-/** Builds a mock store exposing only what the nav service reads: the `flags()` slice. */
+/**
+ * Builds a mock store exposing what the nav service reads: the `flags()` slice, plus the active
+ * language filter and the environment default used to resolve an `editContent` deep link.
+ */
 const mockStoreWithFlag = (enabled: boolean) =>
     mockProvider(DotContentDriveStore, {
-        flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled })
+        flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled }),
+        getFilterValue: jest.fn().mockReturnValue(undefined),
+        defaultLanguageId: jest.fn().mockReturnValue(undefined)
     });
 
 describe('DotContentDriveNavigationService', () => {
@@ -40,6 +45,7 @@ describe('DotContentDriveNavigationService', () => {
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let contentSearch: jest.Mocked<DotContentSearchService>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -77,6 +83,7 @@ describe('DotContentDriveNavigationService', () => {
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         contentSearch = spectator.inject(DotContentSearchService);
+        store = spectator.inject(DotContentDriveStore, true);
     });
 
     afterEach(() => {
@@ -486,6 +493,77 @@ describe('DotContentDriveNavigationService', () => {
                 contentletInode: 'working-inode-1',
                 identifier: 'shared-identifier',
                 title: 'Shared Content'
+            });
+        });
+
+        it('should resolve the identifier in the language the drive is showing', () => {
+            // An identifier exists once per language, so a lookup with no language term returns an
+            // arbitrary version — the deep link could open a language the user is not looking at.
+            store.getFilterValue.mockReturnValue(['2']);
+            const resolved = createFakeContentlet({
+                inode: 'es-inode',
+                identifier: 'shared-identifier',
+                title: 'Contenido'
+            });
+            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true +languageId:2',
+                limit: 1
+            });
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                contentletInode: 'es-inode',
+                identifier: 'shared-identifier',
+                title: 'Contenido'
+            });
+        });
+
+        it('should match any of the selected languages when several are active', () => {
+            store.getFilterValue.mockReturnValue(['1', '2']);
+            contentSearch.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
+            );
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true +languageId:(1 2)',
+                limit: 1
+            });
+        });
+
+        it('should fall back to the default language when no language filter is set', () => {
+            // Only reachable before the store has seeded the filter; the default is still a better
+            // guess than whichever version the index happens to return first.
+            store.getFilterValue.mockReturnValue(undefined);
+            store.defaultLanguageId.mockReturnValue(3);
+            contentSearch.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
+            );
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true +languageId:3',
+                limit: 1
+            });
+        });
+
+        it('should omit the language term when no language is known at all', () => {
+            store.getFilterValue.mockReturnValue(undefined);
+            store.defaultLanguageId.mockReturnValue(undefined);
+            contentSearch.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
+            );
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
             });
         });
 

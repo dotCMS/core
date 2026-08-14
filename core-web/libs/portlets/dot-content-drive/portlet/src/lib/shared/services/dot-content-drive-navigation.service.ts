@@ -230,7 +230,7 @@ export class DotContentDriveNavigationService {
     openEditByIdentifier(identifier: string): void {
         this.#contentSearch
             .get<ContentSearchEntity>({
-                query: `+identifier:${identifier} +working:true`,
+                query: `+identifier:${identifier} +working:true${this.#languageQueryTerm()}`,
                 limit: 1
             })
             .pipe(
@@ -262,5 +262,34 @@ export class DotContentDriveNavigationService {
                     title: contentlet.title
                 });
             });
+    }
+
+    /**
+     * The `+languageId:…` term that pins an identifier lookup to the language the drive is showing.
+     *
+     * An identifier exists once per language, each version with its own inode, so a lookup without a
+     * language term returns whichever version the index happens to rank first — the deep link could
+     * open a language the user is not even looking at. Scoped to the active Locale filter, so the
+     * resolved version matches the row the link was shared from.
+     *
+     * Falls back to the environment default (only reachable before the store has seeded the filter),
+     * and to no term at all when no language is known — which is exactly the previous behaviour, so
+     * an unresolved language can never make the link stop working.
+     *
+     * @return {*} {string} A leading-space-prefixed Lucene term, or an empty string.
+     */
+    #languageQueryTerm(): string {
+        const selected = (this.#store.getFilterValue('languageId') as string[]) ?? [];
+        const languageIds = selected.length
+            ? selected
+            : [this.#store.defaultLanguageId()].filter(Boolean).map(String);
+
+        if (!languageIds.length) {
+            return '';
+        }
+
+        return languageIds.length === 1
+            ? ` +languageId:${languageIds[0]}`
+            : ` +languageId:(${languageIds.join(' ')})`;
     }
 }
