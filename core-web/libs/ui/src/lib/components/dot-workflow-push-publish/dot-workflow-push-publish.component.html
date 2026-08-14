@@ -1,0 +1,129 @@
+<!--
+    No header, footer or submit control: the host owns its own step frame and gates on `validChange`.
+
+    Fields appear according to `iWantTo` rather than being disabled in place — an expiry-only push has no
+    publish date to grey out, it has none at all, and a greyed control invites the user to wonder what
+    would enable it.
+
+    Required labels carry `p-label-input-required` directly rather than via `dotFieldRequired`: that
+    directive injects `FormGroupDirective`, so it only works inside a reactive form, and this form is
+    signal-driven. Its unconditional behaviour is exactly this one class.
+-->
+<div class="form" data-testid="workflow-push-publish">
+    <div class="field">
+        <label class="p-label-input-required" for="pushIWantTo">
+            {{ 'contenttypes.content.push_publish.I_want_To' | dm }}
+        </label>
+        <p-selectButton
+            id="pushIWantTo"
+            optionLabel="label"
+            optionValue="value"
+            [options]="pushActions"
+            [allowEmpty]="false"
+            [disabled]="disabled()"
+            [ngModel]="$iWantTo()"
+            data-testid="push-publish-i-want-to"
+            (ngModelChange)="onIWantToChange($event)" />
+    </div>
+
+    @if ($filtersEnabled()) {
+        <div class="field">
+            <label for="pushFilterKey">
+                {{ 'contenttypes.content.push_publish.filters' | dm }}
+            </label>
+            <p-select
+                id="pushFilterKey"
+                appendTo="body"
+                optionLabel="label"
+                optionValue="value"
+                [options]="$filterOptions()"
+                [disabled]="disabled()"
+                [ngModel]="$filterKey()"
+                data-testid="push-publish-filter"
+                (ngModelChange)="$filterKey.set($event)" />
+        </div>
+    }
+
+    <div class="flex flex-col gap-1">
+        <div class="flex gap-2">
+            @if ($needsPublishDate()) {
+                <div class="field flex-1">
+                    <label class="p-label-input-required" for="pushPublishDate">
+                        {{ 'contenttypes.content.push_publish.publish_date' | dm }}
+                    </label>
+                    <p-datePicker
+                        id="pushPublishDate"
+                        appendTo="body"
+                        inputStyleClass="w-full"
+                        dateFormat="yy-mm-dd"
+                        placeholder="yyyy-mm-dd hh:mm"
+                        [showTime]="true"
+                        [minDate]="minDate"
+                        [disabled]="disabled()"
+                        [ngModel]="$publishDate()"
+                        data-testid="push-publish-publish-date"
+                        (ngModelChange)="$publishDate.set($event)" />
+                </div>
+            }
+
+            @if ($needsExpireDate()) {
+                <div class="field flex-1">
+                    <label class="p-label-input-required" for="pushExpireDate">
+                        {{ 'contenttypes.content.push_publish.expire_date' | dm }}
+                    </label>
+                    <p-datePicker
+                        id="pushExpireDate"
+                        appendTo="body"
+                        inputStyleClass="w-full"
+                        dateFormat="yy-mm-dd"
+                        placeholder="yyyy-mm-dd hh:mm"
+                        [showTime]="true"
+                        [minDate]="minDate"
+                        [disabled]="disabled()"
+                        [ngModel]="$expireDate()"
+                        data-testid="push-publish-expire-date"
+                        (ngModelChange)="$expireDate.set($event)" />
+                </div>
+            }
+        </div>
+
+        <!-- Collapsed by default: the browser's timezone is right almost always, so it states the
+             assumption and offers a way out rather than asking up front. -->
+        <p class="text-sm text-surface-500">
+            {{ $localTimezoneLabel() }}
+            <a href="#" data-testid="push-publish-timezone-toggle" (click)="toggleTimezone($event)">
+                {{ ($showTimezone() ? 'hide' : 'change') | dm }}
+            </a>
+        </p>
+    </div>
+
+    @if ($showTimezone()) {
+        <div class="field" data-testid="push-publish-timezone-field">
+            <label for="pushTimezone">{{ 'time-zone' | dm }}</label>
+            <p-select
+                id="pushTimezone"
+                appendTo="body"
+                optionLabel="label"
+                optionValue="value"
+                [options]="$timezoneOptions()"
+                [filter]="true"
+                filterBy="label"
+                [disabled]="disabled()"
+                [ngModel]="$timezoneId()"
+                data-testid="push-publish-timezone"
+                (ngModelChange)="$timezoneId.set($event)" />
+        </div>
+    }
+
+    <div class="field">
+        <label class="p-label-input-required" for="pushEnvironments">
+            {{ 'contenttypes.content.push_publish.push_to' | dm }}
+        </label>
+        <!-- Shared with the legacy form, so the two cannot drift on how environments are chosen. -->
+        <dot-push-publish-env-selector
+            id="pushEnvironments"
+            [ngModel]="$environments()"
+            data-testid="push-publish-environments"
+            (ngModelChange)="onEnvironmentsChange($event)" />
+    </div>
+</div>

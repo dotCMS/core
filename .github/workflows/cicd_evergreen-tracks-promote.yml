@@ -1,6 +1,12 @@
 name: evergreen-tracks-promote
-# Advances the floating `standard` / `trailing` tags. `latest` is NOT touched here —
-# the release pipeline moves it on every GA cut (cicd_6-release.yml, --tracks latest).
+# Advances the floating `standard` / `trailing` tags. `latest` is owned by the release
+# pipeline, which moves it on every GA cut (cicd_6-release.yml, --tracks latest), so the
+# daily cron deliberately leaves it alone.
+#
+# The `tracks` dispatch input can still aim this workflow at `latest` — the break-glass
+# path for when a release cut moved everything EXCEPT latest (e.g. the 2026-08-12 Hub
+# 403, #37025), where the alternative was cutting a throwaway release to repoint a tag.
+# It is dispatch-only and lands behind the same approval gate as any other manual move.
 #
 # Two triggers, one engine:
 #   * SCHEDULE (daily, 06:00 ET) — runs plan → apply unattended. No human in the loop.
@@ -43,6 +49,10 @@ on:
         description: 'Min age (days) for the trailing track'
         required: false
         default: '28'
+      tracks:
+        description: 'Tracks to move (comma-separated: latest,standard,trailing)'
+        required: false
+        default: 'standard,trailing'
 
 permissions:
   contents: read
@@ -81,17 +91,30 @@ jobs:
           REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
           STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
+          TRACKS: ${{ github.event.inputs.tracks || 'standard,trailing' }}
+          # Hub refuses ANONYMOUS pagination past offset 1000, and dotcms/dotcms is
+          # ~79 pages, so even this read-only dry-run needs credentials.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           echo "repo=$REPO (dry-run plan; trigger=${{ github.event_name }})"
-          # --tracks standard,trailing: this workflow never moves `latest` — the
-          # release pipeline owns it and moves it unattended (possibly mid-approval).
-          # Scoping here keeps the drift check below immune to `latest` churn.
-          # 2>/dev/null: keep only the engine's stdout plan, drop uv's stderr chatter.
-          PLAN=$(uv run evergreen-tracks promote \
+          # Default scope is standard,trailing: the release pipeline owns `latest` and
+          # moves it unattended (possibly mid-approval), so leaving it out keeps the
+          # drift check below immune to `latest` churn. Dispatching with tracks=latest
+          # deliberately opts INTO that check — if a GA cut repoints latest while the
+          # approval sits, apply refuses rather than fighting the release pipeline.
+          # stderr goes to a file, not /dev/null: it must stay off stdout (that is
+          # the plan text, diffed in `apply`) but discarding it cost us a whole
+          # morning once — a Hub 403 surfaced as a bare "exit code 1".
+          if ! PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
-            --tracks standard,trailing \
+            --tracks "$TRACKS" \
             --standard-days "$STANDARD_DAYS" \
-            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+            --trailing-days "$TRAILING_DAYS" 2>plan.err); then
+            echo "::error::evergreen-tracks promote (dry-run) failed:"
+            cat plan.err >&2
+            exit 1
+          fi
           echo "$PLAN"
           {
             echo 'plan<<EVERGREEN_PLAN_EOF'
@@ -170,15 +193,24 @@ jobs:
           STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
           APPROVED_PLAN: ${{ needs.plan.outputs.plan }}
+          # Must match the plan job exactly — `apply` diffs the two plans.
+          TRACKS: ${{ github.event.inputs.tracks || 'standard,trailing' }}
+          # Needed for the READ path too, not just the mutation — see the plan job.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           # Re-derive the plan from CURRENT registry state and confirm it still
           # matches the one the plan job produced. If a hold/taint changed in
           # between, fail rather than move tags nobody planned.
-          CURRENT_PLAN=$(uv run evergreen-tracks promote \
+          if ! CURRENT_PLAN=$(uv run evergreen-tracks promote \
             --repo "$REPO" \
-            --tracks standard,trailing \
+            --tracks "$TRACKS" \
             --standard-days "$STANDARD_DAYS" \
-            --trailing-days "$TRAILING_DAYS" 2>/dev/null)
+            --trailing-days "$TRAILING_DAYS" 2>current.err); then
+            echo "::error::evergreen-tracks promote (re-plan) failed:"
+            cat current.err >&2
+            exit 1
+          fi
           # A never-empty plan ("no track moves needed" at minimum) guards against
           # a silent pass if plan capture ever breaks (e.g. logging leaves stdout).
           if [ -z "$APPROVED_PLAN" ] || [ -z "$CURRENT_PLAN" ]; then
@@ -195,7 +227,7 @@ jobs:
           echo "repo=$REPO — plan unchanged; applying"
           uv run evergreen-tracks promote \
             --repo "$REPO" \
-            --tracks standard,trailing \
+            --tracks "$TRACKS" \
             --standard-days "$STANDARD_DAYS" \
             --trailing-days "$TRAILING_DAYS" \
             --apply
@@ -206,7 +238,7 @@ jobs:
           # ("standard (held) -> reconcile to standard_hold"): the engine really
           # does re-point that tag, so it must not be silently omitted here.
           MOVES=$(printf '%s\n' "$CURRENT_PLAN" \
-            | grep -E '^(standard|trailing) (\(held\) )?-> ' \
+            | grep -E '^(latest|standard|trailing) (\(held\) )?-> ' \
             | sed 's/ (sha256:.*//' || true)
           if [ -n "$MOVES" ]; then
             echo "moved=true" >> "$GITHUB_OUTPUT"

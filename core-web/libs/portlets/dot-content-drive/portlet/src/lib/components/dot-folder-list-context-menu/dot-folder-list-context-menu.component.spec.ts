@@ -23,7 +23,8 @@ import {
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    AddToBundleService
 } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
@@ -97,6 +98,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
             }),
             // Required by the store's `withActionExecution`, which routes fire failures through it.
             mockProvider(DotHttpErrorManagerService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn()
             }),

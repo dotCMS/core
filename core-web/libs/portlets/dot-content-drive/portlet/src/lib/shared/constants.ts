@@ -21,6 +21,8 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     offset: 0
 };
 
+/** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
+export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC

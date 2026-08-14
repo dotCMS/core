@@ -35,5 +35,18 @@ export interface DotFolderListViewColumn {
     type?: DotFolderListViewColumnType;
 }
 
+/**
+ * The table's fixed columns, by field. A closed set so `visibleColumns` and the body's per-cell
+ * checks are compiler-checked against `HEADER_COLUMNS`.
+ */
+export type DotFolderListViewColumnField =
+    | 'title'
+    | 'live'
+    | 'languageId'
+    | 'contentType'
+    | 'modUser'
+    | 'modDate'
+    | 'actions';
+
 /** Selection mode for {@link DotFolderListViewComponent}. */
 export type DotFolderListViewSelectionMode = 'single' | 'multiple';

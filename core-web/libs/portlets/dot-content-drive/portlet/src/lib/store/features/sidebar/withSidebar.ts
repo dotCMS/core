@@ -64,6 +64,12 @@ export function withSidebar() {
 
                 const urlFolderPath = store.path() || '';
 
+                // Only the initial state used to set this, so every later cold load (a site
+                // change) left the previous site's tree on screen while its replacement was
+                // fetched, with no indication anything was happening. It also gives consumers the
+                // loaded edge they need to reveal the folder the drive opened on.
+                patchState(store, { sidebarLoading: true });
+
                 getFolderHierarchyByPath(urlFolderPath, currentSite, dotFolderService)
                     .pipe(
                         take(1),
@@ -122,6 +128,7 @@ export function withSidebar() {
                     page
                 );
             },
+
             /**
              * Sets the selected node
              */

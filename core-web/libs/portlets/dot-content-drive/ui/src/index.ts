@@ -7,7 +7,9 @@ export {
 } from '@dotcms/ui';
 export type {
     DotFolderListViewColumn,
+    DotFolderListViewColumnField,
     DotFolderListViewColumnType,
+    DotFolderListViewFixedColumn,
     DotFolderListViewSelectionMode
 } from '@dotcms/ui';
 

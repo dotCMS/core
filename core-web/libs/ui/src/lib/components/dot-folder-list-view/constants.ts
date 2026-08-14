@@ -1,6 +1,10 @@
-import { DotFolderListViewColumn } from './models';
+import { DotFolderListViewColumn, DotFolderListViewColumnField } from './models';
 
-export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
+export type DotFolderListViewFixedColumn = DotFolderListViewColumn & {
+    field: DotFolderListViewColumnField;
+};
+
+const FIXED_COLUMNS: DotFolderListViewFixedColumn[] = [
     { field: 'title', header: 'name', width: '32%', order: 1, sortable: true },
     { field: 'live', header: 'status', width: '10%', order: 2 },
     { field: 'languageId', header: 'locale', width: '10%', order: 3, sortable: true },
@@ -8,7 +12,11 @@ export const HEADER_COLUMNS: DotFolderListViewColumn[] = [
     { field: 'modUser', header: 'Edited-By', width: '15%', order: 5, sortable: true },
     { field: 'modDate', header: 'Last-Edited', sortable: true, width: '13%', order: 6 },
     { field: 'actions', header: '', width: '5%', order: 7 }
-].sort((a, b) => a.order - b.order); // Sort the columns by order, so the columns are in the correct order in the UI
+];
+
+export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [...FIXED_COLUMNS].sort(
+    (a, b) => a.order - b.order
+);
 
 /**
  * MIME type used to mark internal Content Drive / AssetPicker row drags.

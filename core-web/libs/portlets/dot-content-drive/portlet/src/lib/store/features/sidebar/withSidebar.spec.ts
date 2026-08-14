@@ -1,7 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
@@ -139,6 +139,18 @@ describe('withSidebar', () => {
                     });
                     done();
                 }, 0);
+            });
+
+            it('should flag loading while a reload is in flight', () => {
+                // Only the initial state used to set this, so a site change left the previous
+                // site's tree on screen with no indication anything was happening — and gave
+                // consumers no loaded edge to reveal the opened folder on. That it clears again is
+                // covered by the cases above.
+                folderService.searchFolders.mockReturnValue(NEVER);
+
+                store.loadFolders();
+
+                expect(store.sidebarLoading()).toBe(true);
             });
 
             it('should handle empty folder response', (done) => {

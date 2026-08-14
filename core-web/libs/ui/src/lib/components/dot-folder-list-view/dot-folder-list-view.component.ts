@@ -2,19 +2,19 @@ import { patchState, signalState } from '@ngrx/signals';
 
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
     effect,
     inject,
     input,
+    OnDestroy,
     OnInit,
     output,
     Renderer2,
     signal,
-    viewChild,
-    AfterViewInit,
-    OnDestroy
+    viewChild
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
@@ -33,10 +33,11 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 
-import { DOT_DRAG_ITEM, HEADER_COLUMNS } from './constants';
+import { DOT_DRAG_ITEM, DotFolderListViewFixedColumn, HEADER_COLUMNS } from './constants';
 import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
+    DotFolderListViewColumnField,
     DotFolderListViewSelectionMode
 } from './models';
 
@@ -45,6 +46,13 @@ import { DotLocaleTagPipe } from '../../pipes/dot-locale-tag/dot-locale-tag.pipe
 import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotContentThumbnailComponent } from '../dot-content-thumbnail/dot-content-thumbnail.component';
 import { DotContentletStatusBadgeComponent } from '../dot-contentlet-status-badge/dot-contentlet-status-badge.component';
+
+/**
+ * Canonical position of the "type" column. Extra columns follow it, in the header and in the body
+ * alike — read from the constant rather than hardcoded so the two cannot drift.
+ */
+const TYPE_COLUMN_ORDER =
+    HEADER_COLUMNS.find((column) => column.field === 'contentType')?.order ?? Infinity;
 
 @Component({
     selector: 'dot-folder-list-view',
@@ -209,9 +217,109 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     scroll = output<Event>();
 
     /**
-     * PrimeNG selection binding. Array in `multiple` mode; single item or null in `single` mode.
+     * Field that identifies a row. Language variants of one contentlet share an `identifier` and
+     * differ only by `inode`, so a caller listing variants separately must key on `inode`.
+     *
+     * @type {InputSignal<string>}
+     * @alias dataKey
      */
-    selectedItems: DotContentDriveItem | DotContentDriveItem[] | null = [];
+    $dataKey = input<string>('identifier', { alias: 'dataKey' });
+
+    /**
+     * Where the rows come from. `true` (default) pages server-side: the table holds one page and
+     * emits `paginate` for the next. `false` pages a list the caller already holds in full.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias lazy
+     */
+    $lazy = input<boolean>(true, { alias: 'lazy' });
+
+    /**
+     * Which of the fixed columns to render, by field. Empty (the default) renders them all.
+     *
+     * The full set assumes the portlet's width; in a dialog it overflows and squeezes the title to
+     * an ellipsis. Caller-provided `extraColumns` are unaffected — those were asked for explicitly.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias visibleColumns
+     */
+    $visibleColumns = input<DotFolderListViewColumnField[]>([], { alias: 'visibleColumns' });
+
+    /**
+     * Freezes the selection while the caller is acting on it. Distinct from `loading`, which is
+     * about rows arriving: this stops the picked set changing mid-flight and desyncing from what
+     * was submitted.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias disabled
+     */
+    $disabled = input<boolean>(false, { alias: 'disabled' });
+
+    /**
+     * Inodes whose lock is held by somebody other than the current user, marked so a bulk action
+     * that may be refused on them is visible before firing. The caller decides — the judgement needs
+     * the user's admin role, which this table has no business knowing.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias lockedByOthers
+     */
+    $lockedByOthers = input<string[]>([], { alias: 'lockedByOthers' });
+
+    /**
+     * Strips the row affordances that assume a browsing grid — drag, context menu, open-on-click and
+     * the kebab. Checkboxes stay. Used when the table is a confirmation list inside a dialog.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias readOnly
+     */
+    $readOnly = input<boolean>(false, { alias: 'readOnly' });
+
+    /** Flagged inodes as a set — one lookup per row instead of a scan. */
+    protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
+
+    /**
+     * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
+     * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
+     * table, which keeps its own set and clears it whenever `items` changes.
+     *
+     * @type {InputSignal<DotContentDriveItem | DotContentDriveItem[] | null | undefined>}
+     * @alias selection
+     */
+    $selection = input<DotContentDriveItem | DotContentDriveItem[] | null | undefined>(undefined, {
+        alias: 'selection'
+    });
+
+    /** Checked set while uncontrolled. Ignored as long as `selection` is provided. */
+    readonly #internalSelection = signal<DotContentDriveItem[]>([]);
+
+    /**
+     * Bumped on every selection change the table reports. Exists so the sync effect below re-runs
+     * after a click whose outcome the parent declines — where the effective selection is unchanged
+     * and a value-based dependency alone would never fire.
+     */
+    readonly #selectionRevision = signal(0);
+
+    /**
+     * The effective selection — the caller's set when one is provided, otherwise our own.
+     *
+     * PrimeNG binds an array in `multiple` mode and a single row (or `null`) in `single` mode.
+     * The controlled input is normalized to an array internally and projected back into whichever
+     * shape the current mode expects.
+     *
+     * @alias selectedItems
+     */
+    get selectedItems(): DotContentDriveItem | DotContentDriveItem[] | null {
+        const items =
+            this.$selection() !== undefined
+                ? this.#asSelectedArray(this.$selection())
+                : this.#internalSelection();
+
+        return this.$selectionMode() === 'multiple' ? items : (items[0] ?? null);
+    }
+
+    set selectedItems(selection: DotContentDriveItem | DotContentDriveItem[] | null) {
+        this.#internalSelection.set(this.#asSelectedArray(selection));
+    }
 
     readonly MIN_ROWS_PER_PAGE = 20;
     protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
@@ -222,7 +330,9 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * they never drift. De-dupe is by field key, not label.
      */
     protected readonly $safeExtraColumns = computed<DotFolderListViewColumn[]>(() => {
-        const seen = new Set(HEADER_COLUMNS.map((column) => column.field));
+        // Widened to `string` deliberately: the fixed fields are a closed union, but the extras
+        // this de-dupes against are caller-provided and can carry any field name.
+        const seen = new Set<string>(HEADER_COLUMNS.map((column) => column.field));
 
         return this.$extraColumns().filter((column) => {
             if (seen.has(column.field)) {
@@ -273,29 +383,69 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * extra columns spliced in right after the "type" column. The body keeps its hardcoded cells and
      * renders only the extra cells generically in the same position.
      */
+    /**
+     * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
+     * list, so display order stays the table's.
+     */
+    protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
+        const requested = this.$visibleColumns();
+        const fixed = requested.length
+            ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
+            : HEADER_COLUMNS;
+        const withoutActions = this.$showActions()
+            ? fixed
+            : fixed.filter((column) => column.field !== 'actions');
+
+        if (!requested.length && withoutActions.length === HEADER_COLUMNS.length) {
+            return HEADER_COLUMNS;
+        }
+
+        return this.#fillWidth(withoutActions);
+    });
+
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
-        const fixed = this.$showActions()
-            ? HEADER_COLUMNS
-            : HEADER_COLUMNS.filter((column) => column.field !== 'actions');
+        const fixed = this.$fixedColumns();
         const extras = this.$sizedExtraColumns();
 
         if (!extras.length) {
             return fixed;
         }
 
-        const columns = [...fixed];
-        const typeIndex = columns.findIndex((column) => column.field === 'contentType');
-        const insertAt = typeIndex === -1 ? columns.length : typeIndex + 1;
+        const columns: DotFolderListViewColumn[] = [...fixed];
+        const afterType = columns.findIndex((column) => column.order > TYPE_COLUMN_ORDER);
+        const insertAt = afterType === -1 ? columns.length : afterType;
         columns.splice(insertAt, 0, ...extras);
 
         return columns;
     });
 
+    /**
+     * Fields actually being rendered. The body checks against this so its cells can never disagree
+     * with the header — a mismatch shifts every cell out from under its heading.
+     */
+    protected readonly $visibleColumnSet = computed<Set<DotFolderListViewColumnField>>(
+        () => new Set(this.$fixedColumns().map((column) => column.field))
+    );
+
     /** Total column count including the leading checkbox/radio column — drives colspan/skeleton span. */
     protected readonly $columnSpan = computed(() => this.$columns().length + 1);
 
-    protected readonly $showPagination = computed(
-        () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
+    /**
+     * Whether to render the paginator. Always while lazy — the table cannot know whether the server
+     * has more. Non-lazy it holds the whole list, so below a page the paginator is dead weight.
+     *
+     * Replaces a `$showPagination` that was declared but never bound.
+     */
+    protected readonly $paginator = computed(
+        () => this.$lazy() || this.$items().length > this.MIN_ROWS_PER_PAGE
+    );
+
+    /**
+     * Row count the paginator divides into pages. `totalItems` is the server's count and is
+     * meaningless to a caller holding every row, so a non-lazy table counts what it was given.
+     */
+    protected readonly $recordCount = computed(() =>
+        this.$lazy() ? this.$totalItems() : this.$items().length
     );
 
     readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
@@ -332,7 +482,45 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     });
 
     /**
-     * Effect that cleans the selected items when the items change
+     * Pushes the effective selection into the table, which one-way binding alone does not.
+     *
+     * PrimeNG's table is built for `[(selection)]`: toggling a checkbox sets
+     * `preventSelectionSetterPropagation`, on the assumption that the value coming back is the one
+     * it just emitted and so needs no re-keying. With a one-way binding that assumption breaks —
+     * a parent that declines a change sends no new value at all, and one that normalises sends a
+     * different array whose first arrival is swallowed by that flag. Either way the checkbox ends up
+     * showing something other than the set that would be fired.
+     *
+     * Re-asserting here makes the rendered boxes follow this component's model unconditionally,
+     * which is what "controlled" has to mean. Idempotent in the uncontrolled case, where the value
+     * being re-asserted is the one PrimeNG just produced.
+     */
+    protected readonly $syncTableSelection = effect(() => {
+        const selection = this.selectedItems;
+        // Read so a click re-runs this even when the effective selection did not change — the
+        // decline case, where the parent sends nothing back but PrimeNG has already moved.
+        this.#selectionRevision();
+
+        const table = this.dataTable();
+
+        if (!table) {
+            return;
+        }
+
+        table.selection = selection;
+        // Both are needed: the first rebuilds the row-key lookup `isSelected` reads, the second
+        // tells the already-rendered checkboxes to re-read it.
+        table.updateSelectionKeys();
+        table.tableService.onSelectionChange();
+    });
+
+    /**
+     * Effect that cleans the selected items when the items change.
+     *
+     * Only ever touches the uncontrolled set — the `selectedItems` getter prefers the caller's
+     * `selection` input when one is present, so this can no longer discard a selection the parent
+     * owns (in the action preview the rows and the selection are the same data, and clearing here
+     * would empty the payload about to be fired).
      */
     protected readonly $cleanSelectedItems = effect(() => {
         this.$items();
@@ -343,6 +531,39 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
      */
     private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
+    /**
+     * Rescales a subset of the fixed columns so their percentage widths add back up to 100%,
+     * keeping their proportions to one another.
+     *
+     * `HEADER_COLUMNS` is authored to fill the table exactly. Take three of seven and the rest is
+     * leftover — which `table-layout: fixed` shares across *every* column, the 3rem checkbox one
+     * included. The visible result is a gutter between the checkbox and the first heading rather
+     * than a wider title column.
+     *
+     * Left alone when any visible column carries a non-percentage width: there is nothing
+     * meaningful to rescale a `12rem` against a `32%`.
+     */
+    #fillWidth(columns: DotFolderListViewFixedColumn[]): DotFolderListViewFixedColumn[] {
+        const widths = columns.map((column) =>
+            column.width?.endsWith('%') ? Number.parseFloat(column.width) : NaN
+        );
+
+        if (widths.some((width) => !Number.isFinite(width))) {
+            return columns;
+        }
+
+        const total = widths.reduce((sum, width) => sum + width, 0);
+
+        if (!total) {
+            return columns;
+        }
+
+        return columns.map((column, index) => ({
+            ...column,
+            width: `${((widths[index] / total) * 100).toFixed(2)}%`
+        }));
+    }
 
     /**
      * Normalizes PrimeNG selection (array in multiple mode, object/null in single) to an array.
@@ -398,6 +619,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     }
 
     ngOnInit(): void {
+        // Only the locale column reads the map, so a caller that hides it — the action preview,
+        // which is a fresh instance of this grid on every drill-in — should not pay for the request.
+        if (!this.$visibleColumnSet().has('languageId')) {
+            return;
+        }
+
         // We should be getting this from the Global Store
         // But it gets out of scope for the ticket.
         this.dotLanguagesService
@@ -456,9 +683,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param contentlet The content item that was right clicked
      */
     onContextMenu(event: Event, contentlet: DotContentDriveItem) {
-        // Without row actions there is no menu to open, so swallowing the browser's own would just
-        // make right-click feel broken.
-        if (!this.$showActions()) {
+        if (!this.$showActions() || this.$readOnly()) {
             return;
         }
 
@@ -471,18 +696,31 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
+        // Lazy only. `paginate` means "fetch me this page" — nothing a caller holding every row can
+        // act on, and the skeleton rows it primes would never be shown. The table pages itself.
+        if (!this.$lazy()) {
+            return;
+        }
+
         const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
         this.paginate.emit({ ...event, page });
         this.$loadingRows.set([...Array(event.rows)]);
     }
 
     /**
-     * Handles selection changes in the table and emits selected items as an array
-     * (including single mode, which PrimeNG binds as a single object).
+     * Handles selection changes in the table and emits selected items.
+     *
+     * Records the set for the uncontrolled case and always reports it. A controlled table renders
+     * the caller's set until the caller echoes this back, so the parent can decline a change.
+     *
+     * @param selection The table's new selection
      */
     onSelectionChange(selection: DotContentDriveItem | DotContentDriveItem[] | null) {
         this.selectedItems = selection;
         this.selectionChange.emit(this.#asSelectedArray(selection));
+        // Runs after PrimeNG has finished mutating its own state — it drops the row's selection key
+        // *after* emitting, so anything restored from inside this handler would be undone.
+        this.#selectionRevision.update((revision) => revision + 1);
     }
 
     /**
@@ -498,6 +736,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param contentlet The content item that was double clicked
      */
     onDoubleClick(contentlet: DotContentDriveItem) {
+        // Guarded here rather than per template binding: the row's dblclick, the title and the
+        // thumbnail all land on this, and opening an item from a dialog would navigate away from it.
+        if (this.$readOnly()) {
+            return;
+        }
+
         this.doubleClick.emit(contentlet);
     }
 
@@ -679,6 +923,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * https://github.com/primefaces/primeng/issues/11898#issuecomment-1831076132
      */
     protected onFirstChange() {
+        // Lazy only. `$offset` is the parent's cursor into a server-paged list; a non-lazy caller
+        // holds every row, has no cursor and never binds it — so re-pinning `first` to a permanent
+        // `0` snapped the table back to page one on every page change, leaving everything past the
+        // first page unreachable.
+        if (!this.$lazy()) {
+            return;
+        }
+
         const dataTable = this.dataTable();
 
         if (dataTable) {
