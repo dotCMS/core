@@ -458,15 +458,67 @@ describe('DotFormComponent', () => {
                 expect(toggleSidebarSpy).toHaveBeenCalled();
             });
 
-            it('should render both open and close sidebar icons, hiding one per state', () => {
-                const openIcon = spectator.query(byTestId('sidebar-open-icon'));
-                const closeIcon = spectator.query(byTestId('sidebar-close-icon'));
-                expect(openIcon).toBeTruthy();
-                expect(closeIcon).toBeTruthy();
-                // One of the two icons must be hidden at any given time
-                const openHidden = openIcon?.classList.contains('hidden');
-                const closeHidden = closeIcon?.classList.contains('hidden');
-                expect(openHidden).not.toBe(closeHidden);
+            it('should render a single dock_to_left sidebar icon', () => {
+                const icon = spectator.query(byTestId('sidebar-toggle-icon'));
+
+                expect(icon).toBeTruthy();
+                // Material Symbols renders the glyph from the ligature text, so the exact content
+                // matters — a typo would silently render as plain words.
+                expect(icon?.textContent?.trim()).toBe('dock_to_left');
+                expect(icon?.classList.contains('material-symbols-outlined')).toBe(true);
+                // Rendered as-is: the flip the previous SVG pair carried pointed it the wrong way.
+                expect(icon?.classList.contains('-scale-x-100')).toBe(false);
+                // The glyph is decorative; the accessible name lives on the button.
+                expect(icon?.getAttribute('aria-hidden')).toBe('true');
+
+                // The previous two-icon (open/close SVG) markup is gone.
+                expect(spectator.query(byTestId('sidebar-open-icon'))).toBeFalsy();
+                expect(spectator.query(byTestId('sidebar-close-icon'))).toBeFalsy();
+            });
+
+            it('should name the native sidebar-toggle button per open/closed state', () => {
+                // Assert on the DESCENDANT <button>, not the p-button host: the accessible name must
+                // land on the focusable control. `[attr.aria-label]` would sit on the inert host and
+                // leave this button unnamed (its only content is the aria-hidden glyph).
+                const nativeLabel = (): string | null | undefined =>
+                    spectator
+                        .query(byTestId('sidebar-toggle-button'))
+                        ?.querySelector('button')
+                        ?.getAttribute('aria-label');
+
+                // DotMessageService is a bare mockProvider (returns undefined), so echo the key back
+                // to make the label observable.
+                (spectator.inject(DotMessageService).get as jest.Mock).mockImplementation(
+                    (key: string) => key
+                );
+
+                // Opening the sidebar wakes the information feature's effect, which fetches the
+                // reference-page count. This describe never stubs it, so the bare mockProvider hands
+                // back `undefined` and the effect throws on `.pipe` — asynchronously, landing on
+                // whichever test runs next.
+                dotEditContentService.getReferencePages.mockReturnValue(of(0));
+
+                const expectedLabel = () =>
+                    store.isSidebarOpen()
+                        ? 'edit.content.sidebar.close'
+                        : 'edit.content.sidebar.open';
+
+                // `dm` is a PURE pipe, so it only re-runs when its input key changes — hence both
+                // assertions follow a toggle rather than reading the initial render. Derived from
+                // the live state instead of a hardcoded order: the initial value depends on how this
+                // describe initializes the store, not on the store's own default.
+                store.toggleSidebar();
+                spectator.detectChanges();
+                const afterFirstToggle = nativeLabel();
+                expect(afterFirstToggle).toBe(expectedLabel());
+
+                store.toggleSidebar();
+                spectator.detectChanges();
+                expect(nativeLabel()).toBe(expectedLabel());
+
+                // Both states were actually exercised — otherwise the two assertions above could
+                // both pass against a label that never changed.
+                expect(nativeLabel()).not.toBe(afterFirstToggle);
             });
 
             describe('TabView Styling', () => {

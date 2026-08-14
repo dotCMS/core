@@ -466,7 +466,7 @@ NOT included with -pl :dotcms-core:
    - Yes → Add `-Ddocker.skip` to any command above
 
 6. **Are you working on frontend only?**
-   - Yes → `cd core-web && npm install && nx build dotcms-ui`
+   - Yes → `cd core-web && pnpm install && pnpm nx build dotcms-ui`
 
 ### Test Execution Modes
 

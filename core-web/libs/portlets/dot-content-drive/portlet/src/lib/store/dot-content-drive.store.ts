@@ -14,7 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentDriveService } from '@dotcms/data-access';
+import { DotContentDriveService, DotCurrentUserService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveItem,
@@ -70,7 +70,10 @@ const initialState: DotContentDriveState = {
     userSearchableFields: [],
     userSearchableActive: [],
     userSearchableFieldsLoaded: false,
-    showInListFields: []
+    showInListFields: [],
+    // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
+    // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
+    currentUserIsAdmin: false
 };
 
 export const DotContentDriveStore = signalStore(
@@ -154,6 +157,7 @@ export const DotContentDriveStore = signalStore(
     ),
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
+        const dotCurrentUserService = inject(DotCurrentUserService);
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -332,6 +336,26 @@ export const DotContentDriveStore = signalStore(
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });
             },
+            /**
+             * Resolves the logged-in user's CMS Administrator role, once per portlet load.
+             *
+             * A failure leaves the flag at its `false` default rather than surfacing an error: the
+             * role only softens a warning, so a portlet that cannot answer "is this an admin?" should
+             * still work — it just keeps warning, which is what it did before the flag existed.
+             */
+            loadCurrentUserIsAdmin() {
+                dotCurrentUserService
+                    .getCurrentUser()
+                    .pipe(
+                        take(1),
+                        catchError(() => EMPTY)
+                    )
+                    // Read defensively rather than destructured: `catchError` is upstream of the
+                    // subscriber, so it covers a failed request but not a successful one with no
+                    // body (a 204, a proxy that strips it, a gateway answering without JSON). The
+                    // documented default — false — should hold for both.
+                    .subscribe((user) => patchState(store, { currentUserIsAdmin: !!user?.admin }));
+            },
             loadItems() {
                 const request = store.$request();
                 const currentSite = store.currentSite();
@@ -432,6 +456,11 @@ export const DotContentDriveStore = signalStore(
 
         return {
             onInit() {
+                // Fired here, not from an effect: the role is fixed for the session, so one request
+                // per portlet load is enough and re-running it on every state change would be pure
+                // noise. Nothing waits on it — consumers read the flag's default until it lands.
+                store.loadCurrentUserIsAdmin();
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();

@@ -121,6 +121,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
 
+    /**
+     * Synthetic MIME Type that dotCMS assigns to HTML Pages at display time. It is never persisted to the
+     * {@code contentlet_as_json} column, so it can only be resolved through the HTMLPAGE base type. Legacy display
+     * code declares its own copies of this value; they are intentionally left alone.
+     */
+    private static final String DOTPAGE_MIME_TYPE = "application/dotpage";
+
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
@@ -2433,14 +2440,32 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Appends the specified MIME Types to the main SQL query.
+     * Appends the specified MIME Types to the main SQL query. Every requested MIME Type is routed to the only
+     * condition that can actually match it, and the resulting conditions are OR'ed together:
+     * <ul>
+     *     <li>{@link #DOTPAGE_MIME_TYPE} resolves to the {@link BaseContentType#HTMLPAGE} base type. That value is
+     *     synthetic: it is stamped onto a Page's view map at display time and is never written to
+     *     {@code contentlet_as_json}, so the asset metadata check below can never match a Page.</li>
+     *     <li>Any other MIME Type keeps the asset metadata {@code contentType} check. Only File Assets and
+     *     dotAssets carry asset metadata, which is precisely the "MIME type(s) (for file assets)" scoping that
+     *     ADR-0018 assigns to this predicate.</li>
+     * </ul>
+     * The match on the synthetic value is exact on purpose. A MIME Type that merely starts with it -- say,
+     * {@code application/dotpage-foo} -- must still go through the metadata check.
+     * <p>The {@code struc} table is already joined by {@link #buildSelectBaseQuery(BrowserQuery, String)}, so the
+     * base type condition needs no extra join and no bound parameter.
      *
      * @param sqlQuery  The main SQL query.
      * @param mimeTypes The list of MIME Types specified by the client.
      */
     private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
         final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
-                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType))
+                .map(mimeType -> {
+                    if (DOTPAGE_MIME_TYPE.equals(mimeType)) {
+                        return String.format("struc.structuretype = %d", BaseContentType.HTMLPAGE.getType());
+                    }
+                    return String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType);
+                })
                 .collect(Collectors.joining(" OR ")));
         sqlQuery.append(mimeTypesFilter);
     }

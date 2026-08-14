@@ -6,6 +6,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { Table, TableCheckbox, TableHeaderCheckbox } from 'primeng/table';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -320,6 +321,460 @@ describe('DotFolderListViewComponent', () => {
         });
     });
 
+    /**
+     * Row identity. The browsing grid keys on `identifier`, but language variants of one contentlet
+     * share an identifier and differ only by inode — and inodes are what bulk actions fire on. A
+     * caller that acts per variant has to be able to key on `inode` instead.
+     */
+    describe('dataKey', () => {
+        const variantA = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-en' };
+        const variantB = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-es' };
+
+        it('should key rows on identifier by default', () => {
+            expect(spectator.query(Table).dataKey).toBe('identifier');
+        });
+
+        it('should treat rows sharing an identifier as the same row by default', () => {
+            // Not a defect for the grid — it lists one row per identifier — but it is exactly why
+            // the default cannot be reused where variants are listed separately.
+            spectator.setInput('items', [variantA, variantB]);
+            spectator.setInput('selection', [variantA]);
+            spectator.detectChanges();
+
+            const table = spectator.query(Table);
+
+            expect(table.isSelected(variantA)).toBe(true);
+            expect(table.isSelected(variantB)).toBe(true);
+        });
+
+        it('should distinguish rows sharing an identifier when keyed on inode', () => {
+            spectator.setInput('items', [variantA, variantB]);
+            spectator.setInput('dataKey', 'inode');
+            spectator.setInput('selection', [variantA]);
+            spectator.detectChanges();
+
+            const table = spectator.query(Table);
+
+            expect(table.isSelected(variantA)).toBe(true);
+            expect(table.isSelected(variantB)).toBe(false);
+        });
+    });
+
+    /**
+     * Where the rows come from. The grid is lazy: it holds one page and asks the parent for the
+     * next. A caller that already has every row in memory pages locally instead.
+     */
+    describe('lazy', () => {
+        /** More rows than fit on a page, so paging is observable. */
+        const manyItems = Array.from({ length: 25 }, (_, index) => ({
+            ...mockItems[0],
+            identifier: `id-${index}`,
+            inode: `inode-${index}`,
+            // Distinct titles so a test can tell *which* page it is looking at, not just how many
+            // rows it has.
+            title: `Item ${index}`
+        }));
+
+        it('should delegate paging to the parent by default', () => {
+            expect(spectator.query(Table).lazy).toBe(true);
+        });
+
+        it('should honour the offset when paging an in-memory list', () => {
+            // The discriminating behaviour. PrimeNG slices to `rows` either way, but pins the slice
+            // to index 0 while lazy — the parent is expected to have fetched the right page. Only a
+            // non-lazy table moves through a list it already holds.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('offset', 20);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            // Page two of twenty-five: the last five rows, not the first twenty over again.
+            expect(spectator.queryAll(byTestId('item-row')).length).toBe(5);
+        });
+
+        it('should reach page two without the caller binding an offset', () => {
+            // A non-lazy caller has no reason to bind `offset` — it holds every row and does not
+            // fetch pages. `onFirstChange` used to pin `first` back to `$offset()` (still 0) on
+            // every page change, so the paginator advanced and snapped straight back, leaving
+            // everything past row 20 unreachable.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            spectator.click('.p-paginator-next');
+            spectator.detectChanges();
+
+            const titles = spectator
+                .queryAll(byTestId('item-title-text'))
+                .map((cell) => cell.textContent.trim());
+
+            // Page two of twenty-five holds the last five rows.
+            expect(titles.length).toBe(5);
+            expect(titles[0]).toBe(manyItems[20].title);
+        });
+
+        it('should keep an in-memory list in the order it was given', () => {
+            // The grid opens sorted by modDate desc, which is right for browsing a page of results.
+            // A non-lazy caller has already chosen an order — the action preview's rows are the
+            // user's selection, in the order the grid showed it — and PrimeNG sorts non-lazy data
+            // on render, so that default silently reshuffled it.
+            const chosenOrder = [
+                {
+                    ...mockItems[0],
+                    identifier: 'older',
+                    inode: 'older',
+                    title: 'Chosen first',
+                    modDate: '2020-01-01T00:00:00Z'
+                },
+                {
+                    ...mockItems[0],
+                    identifier: 'newer',
+                    inode: 'newer',
+                    title: 'Chosen second',
+                    modDate: '2030-01-01T00:00:00Z'
+                }
+            ];
+
+            spectator.setInput('items', chosenOrder);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(
+                spectator
+                    .queryAll(byTestId('item-title-text'))
+                    .map((cell) => cell.textContent.trim())
+            ).toEqual(['Chosen first', 'Chosen second']);
+        });
+
+        it('should not reorder the array the caller passed in', () => {
+            // PrimeNG's non-lazy path sorts `value` **in place** (`sortSingle`), and the array a
+            // caller hands over is the one it holds itself — for the action preview, the very array
+            // behind `$previewItems()` and the parent's included set. Reordering it from outside
+            // Angular would be a side effect on the caller's own state, not just a display choice.
+            const given = [
+                { ...mockItems[0], inode: 'older', title: 'Chosen first', modDate: '2020-01-01' },
+                { ...mockItems[0], inode: 'newer', title: 'Chosen second', modDate: '2030-01-01' }
+            ];
+            const originalOrder = [...given];
+
+            spectator.setInput('items', given);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(given).toEqual(originalOrder);
+        });
+
+        it('should not ask the parent to fetch a page it already holds', () => {
+            // `paginate` means "fetch me this page from the server" — a request a caller holding
+            // every row cannot satisfy, and it also resets the skeleton rows on each page turn.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.click('.p-paginator-next');
+            spectator.detectChanges();
+
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        it('should still ask the parent to fetch a page while lazy', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalled();
+        });
+
+        it('should not fetch languages when the locale column is hidden', () => {
+            // The preview is a second instance of this grid, built and torn down on every drill-in,
+            // and it hides the locale column — so the map that request builds is never read.
+            const languagesService = spectator.inject(DotLanguagesService, true);
+            languagesService.get.mockClear();
+
+            const scoped = createComponent({
+                props: { items: mockItems, visibleColumns: ['title', 'live', 'contentType'] }
+            });
+            scoped.detectChanges();
+
+            expect(languagesService.get).not.toHaveBeenCalled();
+        });
+
+        it('should fetch languages when the locale column is shown', () => {
+            const languagesService = spectator.inject(DotLanguagesService, true);
+
+            expect(languagesService.get).toHaveBeenCalled();
+        });
+
+        it('should count the in-memory list rather than the totalItems input', () => {
+            // `totalItems` is the server's count and means nothing to a caller holding every row —
+            // left at 0 here, which would collapse the paginator to a single page if it were used.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 0);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query(Table).totalRecords).toBe(manyItems.length);
+        });
+
+        it('should hide the paginator when an in-memory list fits on one page', () => {
+            // Dead weight on a short confirmation list. The lazy grid always shows it, because it
+            // cannot know whether the server has more.
+            spectator.setInput('items', mockItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-paginator')).toBeNull();
+        });
+
+        it('should show the paginator when an in-memory list outgrows a page', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('lazy', false);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-paginator')).toBeTruthy();
+        });
+    });
+
+    /**
+     * Freezes the selection while the caller is mid-flight. `loading` is about rows arriving; this
+     * is about the set the user has already picked being acted on, where letting them change it
+     * would desync what the dialog shows from what was actually submitted.
+     */
+    describe('disabled', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+        });
+
+        it('should leave the checkboxes usable by default', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(TableCheckbox).disabled()).toBeFalsy();
+            expect(spectator.query(TableHeaderCheckbox).disabled()).toBeFalsy();
+        });
+
+        it('should freeze the row and header checkboxes while disabled', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(TableCheckbox).disabled()).toBe(true);
+            expect(spectator.query(TableHeaderCheckbox).disabled()).toBe(true);
+        });
+
+        it('should select a row by clicking it when not disabled', () => {
+            spectator.detectChanges();
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            spectator.click(byTestId('item-row'));
+
+            expect(selectionChangeSpy).toHaveBeenCalled();
+        });
+
+        it('should not select a row by clicking it while disabled', () => {
+            // Rows are selectable by click, not only by checkbox — freezing the boxes alone would
+            // leave a way straight around the freeze.
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            spectator.click(byTestId('item-row'));
+
+            expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * Which of the fixed columns to render. The full set assumes the portlet's full width; inside a
+     * dialog it overflows, squeezing the title to an ellipsis and pushing the rest out of view.
+     */
+    describe('visibleColumns', () => {
+        /** Header cells excluding the leading checkbox column. */
+        const headerCells = (): HTMLElement[] => spectator.queryAll('thead th').slice(1);
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+        });
+
+        it('should render every fixed column by default', () => {
+            spectator.detectChanges();
+
+            expect(headerCells().length).toBe(HEADER_COLUMNS.length);
+        });
+
+        it('should render only the requested columns', () => {
+            spectator.setInput('visibleColumns', ['title', 'live', 'modUser']);
+            spectator.detectChanges();
+
+            expect(headerCells().length).toBe(3);
+        });
+
+        it('should drop the body cells of the columns it hides', () => {
+            // Header and body have to agree, or the cells shift out from under their headings.
+            spectator.setInput('visibleColumns', ['title', 'live', 'modUser']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-title'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-status'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-mod-user-name'))).toBeTruthy();
+
+            expect(spectator.query(byTestId('item-language'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-content-type'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-mod-date'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-actions'))).toBeFalsy();
+        });
+
+        it('should keep the requested columns in their canonical order', () => {
+            // Display order stays the table's, not the order the caller happened to list.
+            spectator.setInput('visibleColumns', ['modUser', 'title']);
+            spectator.detectChanges();
+
+            expect(headerCells().map((cell) => cell.textContent.trim())).toEqual([
+                'name',
+                'Edited-By'
+            ]);
+        });
+
+        it('should keep the leading checkbox column whatever is hidden', () => {
+            spectator.setInput('visibleColumns', ['title']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('header-checkbox'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+        });
+
+        it('should rescale a subset so the columns still fill the table', () => {
+            // `table-layout: fixed` shares leftover width across *every* column, including the 3rem
+            // checkbox one. A subset adding up to 57% therefore opens a gutter between the checkbox
+            // and the first heading instead of widening the title.
+            spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+            spectator.detectChanges();
+
+            const total = headerCells()
+                .map((cell) => Number.parseFloat(cell.style.width))
+                .reduce((sum, width) => sum + width, 0);
+
+            expect(total).toBeCloseTo(100);
+        });
+
+        it('should keep the relative proportions of the columns it keeps', () => {
+            // 32 : 10 : 15 in HEADER_COLUMNS — rescaling must not flatten them to equal thirds.
+            spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+            spectator.detectChanges();
+
+            const [title, status, type] = headerCells().map((cell) =>
+                Number.parseFloat(cell.style.width)
+            );
+
+            expect(title / status).toBeCloseTo(3.2, 1);
+            expect(type / status).toBeCloseTo(1.5, 1);
+        });
+
+        it('should leave the widths of the full column set untouched', () => {
+            spectator.detectChanges();
+
+            expect(headerCells().map((cell) => cell.style.width)).toEqual(
+                HEADER_COLUMNS.map((column) => column.width)
+            );
+        });
+
+        it('should keep extra columns under their own heading when Type is hidden', () => {
+            // The body anchors the extra-column loop at the Type slot whether or not Type renders,
+            // so the header has to do the same. Appending them instead left the cells one place
+            // early — an extra value sitting under the "Edited-By" heading.
+            //
+            // The case above hides everything after the title, which makes both orderings coincide;
+            // it takes a visible column *after* Type to tell them apart.
+            spectator.setInput('visibleColumns', ['title', 'modUser']);
+            spectator.setInput('extraColumns', [
+                { field: 'author', header: 'Author', order: 1, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerCells().map((cell) => cell.textContent.trim())).toEqual([
+                'name',
+                'Author',
+                'Edited-By'
+            ]);
+
+            // Same sequence in the body, which is the assertion that actually catches a mismatch.
+            const cells = [...spectator.query(byTestId('item-row')).querySelectorAll('td')].map(
+                (cell) => cell.getAttribute('data-testid') ?? cell.getAttribute('data-testId')
+            );
+
+            expect(cells).toEqual([
+                'item-checkbox',
+                'item-title',
+                'item-extra-author',
+                'item-mod-user-name'
+            ]);
+        });
+
+        it('should still append caller-provided extra columns', () => {
+            // Extras are explicitly passed in, so they are never what the caller meant to hide.
+            spectator.setInput('visibleColumns', ['title']);
+            spectator.setInput('extraColumns', [
+                { field: 'author', header: 'Author', order: 1, type: 'text' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerCells().length).toBe(2);
+            expect(spectator.query('[data-testid="item-extra-author"]')).toBeTruthy();
+        });
+    });
+
+    /**
+     * Sorting is a browsing affordance: it reorders a page of results the parent then re-fetches.
+     * A confirmation list has nothing to re-fetch, and re-ordering the rows a user is checking off
+     * only loses their place — so `readOnly` takes the sort controls with it.
+     */
+    describe('sorting under readOnly', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+        });
+
+        it('should offer sortable headers by default', () => {
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(byTestId('sort-icon')).length).toBeGreaterThan(0);
+            expect(spectator.queryAll(byTestId('header-column-sortable')).length).toBeGreaterThan(
+                0
+            );
+        });
+
+        it('should render no sort controls while readOnly', () => {
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(byTestId('sort-icon')).length).toBe(0);
+            expect(spectator.queryAll(byTestId('header-column-sortable')).length).toBe(0);
+        });
+
+        it('should not emit sort when a header is clicked while readOnly', () => {
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+
+            spectator.click(spectator.queryAll('thead th')[1]);
+
+            expect(sortSpy).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Loading', () => {
         it('should show the loading row', () => {
             spectator.setInput('items', mockItems);
@@ -460,6 +915,54 @@ describe('DotFolderListViewComponent', () => {
             expect(itemRow).toBeTruthy();
         });
 
+        /**
+         * Long values must clip, never widen the table or grow the row.
+         *
+         * The columns carry fixed percentage widths, which only hold under `table-layout: fixed` —
+         * with the default `auto` layout a long title stretches the table past its container and
+         * pushes the trailing columns behind a horizontal scrollbar.
+         */
+        describe('overflowing cell values', () => {
+            const longTitle = 'Easy Snowboard Tricks You can Start Using Right Away';
+
+            it('should lay the table out with fixed columns so the widths are honoured', () => {
+                expect(spectator.query('table').style.tableLayout).toBe('fixed');
+            });
+
+            it('should truncate a long title rather than widen the table', () => {
+                spectator.setInput('items', [{ ...firstItem, title: longTitle }]);
+                spectator.detectChanges();
+
+                const title = spectator.query(byTestId('item-title-text'));
+
+                expect(title.classList.contains('truncate')).toBe(true);
+            });
+
+            it('should keep the full title reachable on hover once it is clipped', () => {
+                // Truncating without this loses the information outright — the row shows an ellipsis
+                // and there is no way to read the rest.
+                spectator.setInput('items', [{ ...firstItem, title: longTitle }]);
+                spectator.detectChanges();
+
+                const title = spectator.query(byTestId('item-title-text'));
+
+                expect(title.getAttribute('title')).toBe(longTitle);
+            });
+
+            it('should truncate a long content type instead of wrapping the row', () => {
+                // The type column is a fixed 15%; without clipping a long variable name wraps to a
+                // second line and the row grows taller than its neighbours.
+                spectator.setInput('items', [
+                    { ...firstItem, contentType: 'AVeryLongContentTypeVariableName' }
+                ]);
+                spectator.detectChanges();
+
+                const contentType = spectator.query(byTestId('item-content-type'));
+
+                expect(contentType.classList.contains('truncate')).toBe(true);
+            });
+        });
+
         it('should have a checkbox column', () => {
             const checkboxColumn = spectator.query(byTestId('header-checkbox'));
 
@@ -564,6 +1067,136 @@ describe('DotFolderListViewComponent', () => {
 
                 expect(lockIcon).toBeFalsy();
                 expect(lockOpenIcon).toBeTruthy();
+            });
+
+            /**
+             * A lock the current user does not hold reads differently from one they do: only the
+             * holder or a CMS Administrator can release it, so a bulk Unlock may be refused on
+             * these rows and the user needs to see which before firing.
+             *
+             * Which rows those are is the caller's call, not the table's — the decision needs the
+             * user's admin role, which lives in the portlet. An administrator releases every lock,
+             * so their caller passes nothing and no row is marked.
+             */
+            describe('locks held by another user', () => {
+                const lockedItem = { ...mockItems[0], locked: true, inode: 'locked-inode' };
+
+                beforeEach(() => {
+                    spectator.setInput('items', [lockedItem]);
+                    spectator.setInput('loading', false);
+                });
+
+                it('should show the plain lock icon when no rows are marked', () => {
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                });
+
+                it('should mark a locked row whose inode the caller flagged', () => {
+                    spectator.setInput('lockedByOthers', [lockedItem.inode]);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-icon'))).toBeFalsy();
+                });
+
+                it('should explain the marker on hover', () => {
+                    spectator.setInput('lockedByOthers', [lockedItem.inode]);
+                    spectator.detectChanges();
+
+                    expect(
+                        spectator.query(byTestId('lock-foreign-icon')).getAttribute('title')
+                    ).toBe('content-drive.list-view.locked-by-another-user');
+                });
+
+                it('should leave the current user’s own lock unmarked', () => {
+                    // Same selection, different row: only the flagged inodes are marked, so a lock
+                    // the user holds keeps reading as an ordinary lock.
+                    spectator.setInput('lockedByOthers', ['some-other-inode']);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                });
+
+                it('should not mark an unlocked row even when its inode is flagged', () => {
+                    // Defensive: a stale flag must not put a lock icon on a row that has none.
+                    spectator.setInput('items', [{ ...lockedItem, locked: false }]);
+                    spectator.setInput('lockedByOthers', [lockedItem.inode]);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('lock-open-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                });
+            });
+        });
+
+        /**
+         * The grid's row affordances make no sense in a modal confirmation list: there is nowhere to
+         * drag to, the context menu acts on a grid that is not visible, and opening an item would
+         * navigate away from the dialog. `readOnly` strips them; the checkboxes stay.
+         */
+        describe('readOnly', () => {
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.setInput('loading', false);
+                spectator.setInput('readOnly', true);
+                spectator.detectChanges();
+            });
+
+            it('should not make rows draggable', () => {
+                expect(spectator.query(byTestId('item-row')).getAttribute('draggable')).toBe(
+                    'false'
+                );
+            });
+
+            it('should not render the kebab menu button', () => {
+                expect(spectator.query(byTestId('kebab-menu-button'))).toBeFalsy();
+            });
+
+            it('should not emit rightClick on context menu', () => {
+                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+
+                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'contextmenu');
+
+                expect(rightClickSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit doubleClick on a double click', () => {
+                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+
+                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'dblclick');
+
+                expect(doubleClickSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not open the item when its title is clicked', () => {
+                // The title and thumbnail carry their own click-to-open handlers, separate from the
+                // row's dblclick — both have to go or the dialog navigates out from under itself.
+                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+
+                spectator.click(byTestId('item-title-text'));
+
+                expect(doubleClickSpy).not.toHaveBeenCalled();
+            });
+
+            it('should still render the row checkboxes', () => {
+                expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+            });
+
+            it('should not toggle a row when a cell without its own click handler is clicked', () => {
+                // Rows are `pSelectableRow`, and PrimeNG's `metaKeySelection` defaults to false, so a
+                // plain click toggles. The checkbox, title and thumbnail cells all stop propagation;
+                // the status and type cells do not. In a confirmation list that means glancing at a
+                // status badge can silently drop that row from what Execute fires — with nothing
+                // suggesting the row was clickable. The table this replaced toggled on the checkbox
+                // alone.
+                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+                spectator.click(spectator.query(byTestId('item-status')));
+
+                expect(selectionChangeSpy).not.toHaveBeenCalled();
             });
         });
 
@@ -743,7 +1376,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Set some selected items
-            spectator.component.selectedItems = [firstItem, secondItem];
+            spectator.component.onSelectionChange([firstItem, secondItem]);
             expect(spectator.component.selectedItems.length).toBe(2);
 
             // Change items input
@@ -762,7 +1395,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Set some selected items
-            spectator.component.selectedItems = [firstItem];
+            spectator.component.onSelectionChange([firstItem]);
             expect(spectator.component.selectedItems.length).toBe(1);
 
             // Change to empty items
@@ -771,6 +1404,136 @@ describe('DotFolderListViewComponent', () => {
 
             // Selected items should be cleared
             expect(spectator.component.selectedItems).toEqual([]);
+        });
+
+        /**
+         * A caller-provided `selection` makes the table controlled: the parent owns the checked set
+         * and this component only reports changes to it. Without an input the table stays
+         * uncontrolled and keeps the behaviour the two cases above describe.
+         *
+         * The Action Center's action preview needs the controlled mode — it lets the user uncheck
+         * rows before firing, and that set has to live in the dialog, not in the table.
+         */
+        describe('caller-provided selection', () => {
+            const [firstItem, secondItem, thirdItem] = mockItems;
+
+            /**
+             * Checked state per row, read from what the checkbox renders from: `TableCheckbox`
+             * assigns `this.checked = dt.isSelected(value)`. Not the `input` element's `checked`
+             * property — that is a focus proxy PrimeNG never drives, so it reads false even for a
+             * genuinely selected row.
+             */
+            const rowChecked = (): boolean[] => {
+                const table = spectator.query(Table);
+
+                return mockItems.map((item) => table.isSelected(item));
+            };
+
+            beforeEach(() => {
+                spectator.setInput('items', mockItems);
+                spectator.detectChanges();
+            });
+
+            it('should render the caller-provided selection as the checked set', () => {
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
+            });
+
+            it('should pass the caller-provided selection down to the table', () => {
+                // Guards the template binding, not just the component field: an internal signal that
+                // never reaches `p-table` would leave every checkbox unchecked.
+                spectator.setInput('selection', [firstItem]);
+                spectator.detectChanges();
+
+                expect(spectator.query(Table).selection).toEqual([firstItem]);
+            });
+
+            it('should follow the caller-provided selection when it changes', () => {
+                spectator.setInput('selection', [firstItem]);
+                spectator.detectChanges();
+
+                spectator.setInput('selection', [secondItem, thirdItem]);
+                spectator.detectChanges();
+
+                expect(spectator.component.selectedItems).toEqual([secondItem, thirdItem]);
+            });
+
+            it('should NOT discard a caller-provided selection when items change', () => {
+                // The regression this whole mode exists to avoid. The clearing effect above is right
+                // for the browsing grid — a new page of results has nothing to do with the old
+                // selection — but in the preview the rows and the selection are the same data, so
+                // clearing on an items change would empty the payload the user is about to fire.
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                spectator.setInput('items', [...mockItems]);
+                spectator.detectChanges();
+
+                expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
+            });
+
+            it('should emit selectionChange without taking ownership of the set', () => {
+                // Controlled means the parent decides: this reports the user's intent and waits to
+                // be told the new set, rather than applying it locally and drifting from the parent.
+                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+                spectator.setInput('selection', [firstItem]);
+                spectator.detectChanges();
+
+                spectator.component.onSelectionChange([firstItem, secondItem]);
+
+                expect(selectionChangeSpy).toHaveBeenCalledWith([firstItem, secondItem]);
+                expect(spectator.component.selectedItems).toEqual([firstItem]);
+            });
+
+            it('should stay on the parent’s set when the parent declines a change', () => {
+                // The point of controlled mode: the parent can refuse. PrimeNG mutates its own
+                // selection on a checkbox click, and if the parent then hands back an unchanged
+                // input, Angular sees no change and re-runs nothing — leaving the checkbox visually
+                // ahead of the set that will actually be fired.
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                expect(rowChecked()).toEqual([true, true, false, false, false]);
+
+                spectator.click(spectator.queryAll(byTestId('item-row'))[0].querySelector('input'));
+                spectator.detectChanges();
+
+                // Parent said nothing, so the row is still in — and the box has to say so. Asserted
+                // on what the row renders, not on the model: the model was already right, and it was
+                // the box drifting away from it.
+                expect(spectator.component.selectedItems).toEqual([firstItem, secondItem]);
+                expect(rowChecked()).toEqual([true, true, false, false, false]);
+            });
+
+            it('should follow the parent when it narrows the set to something else', () => {
+                // The parent normalising rather than echoing: what it returns is what renders, not
+                // what the click implied.
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                spectator.click(spectator.queryAll(byTestId('item-row'))[0].querySelector('input'));
+                spectator.setInput('selection', [thirdItem]);
+                spectator.detectChanges();
+
+                expect(rowChecked()).toEqual([false, false, true, false, false]);
+            });
+
+            it('should drag the caller-provided selection', () => {
+                // `onDragStart` reads the effective selection; it must see the caller's, not a
+                // stale internal one. (The preview sets `readOnly`, but the input pair is
+                // independent of that and the grid should stay coherent either way.)
+                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+
+                spectator.setInput('selection', [firstItem, secondItem]);
+                spectator.detectChanges();
+
+                spectator.component.onDragStart(createDragStartEvent(), firstItem);
+
+                expect(dragStartSpy).toHaveBeenCalledWith([firstItem, secondItem]);
+            });
         });
     });
 
@@ -796,7 +1559,7 @@ describe('DotFolderListViewComponent', () => {
                 it('should handle drag of a single item not in selection', () => {
                     const dragEvent = createDragStartEvent();
 
-                    spectator.component.selectedItems = [];
+                    spectator.component.onSelectionChange([]);
                     spectator.component.onDragStart(dragEvent, firstItem);
 
                     expect(dragEvent.stopPropagation).toHaveBeenCalled();
@@ -813,7 +1576,7 @@ describe('DotFolderListViewComponent', () => {
                         writable: true
                     });
 
-                    spectator.component.selectedItems = [];
+                    spectator.component.onSelectionChange([]);
                     spectator.component.onDragStart(dragEvent, firstItem);
 
                     expect(dragEvent.stopPropagation).not.toHaveBeenCalled();
@@ -825,7 +1588,7 @@ describe('DotFolderListViewComponent', () => {
                 it('should handle drag of multiple selected items', () => {
                     const dragEvent = createDragStartEvent();
 
-                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onSelectionChange([firstItem, secondItem]);
                     spectator.component.onDragStart(dragEvent, firstItem);
 
                     expect(dragEvent.stopPropagation).toHaveBeenCalled();
@@ -837,7 +1600,7 @@ describe('DotFolderListViewComponent', () => {
                 it('should drag all selected items when dragging one of them', () => {
                     const dragEvent = createDragStartEvent();
 
-                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onSelectionChange([firstItem, secondItem]);
                     // Drag the second item which is in selection
                     spectator.component.onDragStart(dragEvent, secondItem);
 
@@ -850,7 +1613,7 @@ describe('DotFolderListViewComponent', () => {
                     const dragEvent = createDragStartEvent();
                     const thirdItem = mockItems[2];
 
-                    spectator.component.selectedItems = [firstItem, secondItem];
+                    spectator.component.onSelectionChange([firstItem, secondItem]);
                     spectator.component.onDragStart(dragEvent, thirdItem);
 
                     // Should emit only the third item, not the selected items

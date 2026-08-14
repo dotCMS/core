@@ -3,7 +3,7 @@
 
 Auto-generated inventory of dotCMS skills. **Check here before creating a new skill** — if something close exists, extend it or mark yours `related`, don't fork. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-_19 first-party · 6 external (symlinked)._
+_20 first-party · 6 external (symlinked)._
 
 ## First-party skills (`dot-*`)
 
@@ -14,6 +14,7 @@ _19 first-party · 6 external (symlinked)._
 | `dot-release-backport-lts` | active | @dotcms/maintenance | Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying… | — |
 | `dot-release-rollback-check` | active | @dotcms/maintenance | Check whether a dotCMS release can be safely rolled back to a previous version by inspecting all PRs merged between the two versions for rollback-safety labels… | — |
 | `dot-sdk-analytics` | active | @dotcms/falcon | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
+| `dot-ui-angular-standards` | experimental | @dotcms/falcon | dotCMS Angular coding standards for the core-web Nx workspace. Use this skill for ANY frontend work under core-web/ — writing or editing a component, service, … | — |
 | `dot-ui-vtl-migration` | active | @dotcms/falcon | Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. Use this skill whenever… | — |
 | `skill-doctor` | _legacy_ | — | Use when a repo skill fails, produces errors, gives wrong instructions, or references stale information. Also use when a command from a skill returns "not foun… | — |
 | `speckit-adr-context` | _legacy_ | — | Consult dotCMS/platform-adrs for Architecture Decision Records relevant to the current feature/fix, so planning treats existing decisions as binding input. Run… | — |

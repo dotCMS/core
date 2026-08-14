@@ -3,6 +3,7 @@ package com.dotcms.health.providers;
 import com.dotcms.health.api.HealthCheck;
 import com.dotcms.health.api.HealthCheckProvider;
 import com.dotcms.health.checks.cdi.CacheHealthCheck;
+import com.dotcms.health.checks.cdi.CacheTransportHealthCheck;
 import com.dotcms.health.checks.cdi.DatabaseHealthCheck;
 import com.dotcms.health.checks.cdi.ElasticsearchHealthCheck;
 import com.dotcms.health.checks.cdi.VelocityHealthCheck;
@@ -25,6 +26,7 @@ public class CoreHealthCheckProvider implements HealthCheckProvider {
         return Arrays.asList(
             new DatabaseHealthCheck(),
             new CacheHealthCheck(),
+            new CacheTransportHealthCheck(),
             new ElasticsearchHealthCheck(),
             new VelocityHealthCheck()
             // Additional dependency health checks can be added here

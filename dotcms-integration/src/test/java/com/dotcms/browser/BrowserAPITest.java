@@ -22,6 +22,7 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -95,6 +96,14 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     static Link testlink;
 
+    // Fixture for the MIME-type routing tests -- https://github.com/dotCMS/core/issues/36916
+    static final String DOTPAGE_MIME_TYPE = "application/dotpage";
+    static Host mimeHost;
+    static Folder mimeFolder, mimeSubFolder;
+    static HTMLPageAsset mimePage, mimePageAltLanguage, mimeSubFolderPage;
+    static FileAsset mimeJpgFile, mimePdfFile, mimeTxtFile, mimeSubFolderJpgFile;
+    static Link mimeLink;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -138,6 +147,92 @@ public class BrowserAPITest extends IntegrationTestBase {
         testPage = APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.checkin(page, IndexPolicy.FORCE));
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
+
+        seedMimeTypeFixture();
+    }
+
+    /**
+     * Seeds a dedicated Site and folder tree for the MIME-type routing tests of
+     * <a href="https://github.com/dotCMS/core/issues/36916">issue #36916</a>. It is kept apart from the
+     * fixture above so the assertions can be exact about which items a MIME-filtered browse returns.
+     * <pre>
+     * mimeFolder
+     *      |_ mimePage             HTMLPAGE,  default language
+     *      |_ mimePageAltLanguage  HTMLPAGE,  testLanguage
+     *      |_ mimeJpgFile          FILEASSET, image/jpeg
+     *      |_ mimePdfFile          FILEASSET, application/pdf
+     *      |_ mimeTxtFile          FILEASSET, text/plain
+     *      |_ mimeLink             LINK
+     *      |_ mimeSubFolder
+     *          |_ mimeSubFolderPage      HTMLPAGE,  default language
+     *          |_ mimeSubFolderJpgFile   FILEASSET, image/jpeg
+     * </pre>
+     */
+    private static void seedMimeTypeFixture() throws Exception {
+        mimeHost = new SiteDataGen().nextPersisted();
+        mimeFolder = new FolderDataGen().name("mimeFolder").site(mimeHost).nextPersisted();
+        mimeSubFolder = new FolderDataGen().name("mimeSubFolder").parent(mimeFolder).nextPersisted();
+
+        final Template template = new TemplateDataGen().host(mimeHost).nextPersisted();
+
+        mimePage = new HTMLPageDataGen(mimeFolder, template).title("mimePage").pageURL("mime-page")
+                .nextPersisted();
+        mimePageAltLanguage = new HTMLPageDataGen(mimeFolder, template).title("mimePageAltLanguage")
+                .pageURL("mime-page-alt-language").languageId(testLanguage.getId()).nextPersisted();
+        mimeSubFolderPage = new HTMLPageDataGen(mimeSubFolder, template).title("mimeSubFolderPage")
+                .pageURL("mime-sub-folder-page").nextPersisted();
+
+        mimeJpgFile = persistFileAsset(mimeFolder, copyTestResource("/images/test.jpg", "mimeJpgFile", ".jpg"));
+        mimePdfFile = persistFileAsset(mimeFolder, copyTestResource(
+                "/com/dotmarketing/portlets/contentlet/business/test_files/test.pdf", "mimePdfFile", ".pdf"));
+        mimeTxtFile = persistFileAsset(mimeFolder,
+                FileUtil.createTemporaryFile("mimeTxtFile", ".txt", "this is a test!"));
+        mimeSubFolderJpgFile = persistFileAsset(mimeSubFolder,
+                copyTestResource("/images/test.jpg", "mimeSubFolderJpgFile", ".jpg"));
+
+        mimeLink = new LinkDataGen().hostId(mimeHost.getIdentifier()).title("mimeLink").parent(mimeFolder)
+                .target("https://google.com").linkType("EXTERNAL").nextPersisted();
+    }
+
+    /**
+     * Copies a classpath test resource into a temporary file so that a File Asset can be generated from it. The
+     * file extension matters here: the asset metadata -- and therefore the {@code contentType} the SQL MIME
+     * predicate looks at -- is derived from the actual file contents on check-in.
+     */
+    private static File copyTestResource(final String resourcePath, final String prefix, final String suffix)
+            throws IOException {
+        final URL url = BrowserAPITest.class.getResource(resourcePath);
+        assertNotNull("Test resource must exist in the classpath: " + resourcePath, url);
+        final File tempFile = File.createTempFile(prefix, suffix);
+        FileUtils.copyFile(new File(url.getFile()), tempFile);
+        return tempFile;
+    }
+
+    private static FileAsset persistFileAsset(final Folder folder, final File file)
+            throws DotDataException, DotSecurityException {
+        return APILocator.getFileAssetAPI().fromContentlet(new FileAssetDataGen(file).folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted());
+    }
+
+    /**
+     * Runs a browse against the MIME-type fixture folder through {@link BrowserAPI#getFolderContentList(BrowserQuery)}
+     * and returns the Identifiers that came back. This entry point deliberately has <b>no</b> in-memory MIME filter
+     * (see research R2), so what it returns is what the SQL predicate itself selected.
+     */
+    private Set<String> browseIdentifiers(final Folder folder, final List<String> mimeTypes)
+            throws DotSecurityException, DotDataException {
+        return browserAPI.getFolderContentList(BrowserQuery.builder()
+                        .withUser(APILocator.systemUser())
+                        .withHostOrFolderId(folder.getIdentifier())
+                        .showPages(true)
+                        .showFiles(true)
+                        .showDotAssets(true)
+                        .showFolders(false)
+                        .showWorking(true)
+                        .showMimeTypes(mimeTypes)
+                        .build()).stream()
+                .map(Treeable::getIdentifier)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -2124,5 +2219,228 @@ public class BrowserAPITest extends IntegrationTestBase {
             Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
                     BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
         }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder holding Pages, File Assets and a Link is browsed filtering by the
+     *     synthetic {@code application/dotpage} MIME type -- the value the legacy redirect target picker sends.</li>
+     *     <li><b>Expected Result:</b> The Pages under the folder are returned and no File Asset is. The synthetic
+     *     MIME type is never persisted to {@code contentlet_as_json}, so it can only resolve by HTMLPAGE base
+     *     type.</li>
+     * </ul>
+     * Contract case C1 -- AC-001 and AC-006 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_dotPageMimeType_returnsPages() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE));
+
+        assertTrue("Pages must be returned for an '" + DOTPAGE_MIME_TYPE + "' browse, but got: " + identifiers,
+                identifiers.containsAll(
+                        Set.of(mimePage.getIdentifier(), mimePageAltLanguage.getIdentifier())));
+        assertFalse("The JPG File Asset must not be returned for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertFalse("The PDF File Asset must not be returned for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset must not be returned for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The same folder is browsed filtering by a real MIME type, {@code image/jpeg},
+     *     with Pages enabled.</li>
+     *     <li><b>Expected Result:</b> Only the matching File Asset comes back. Pages must be dropped by the SQL
+     *     predicate itself, since two of the three consumers of the query have no in-memory MIME filter.</li>
+     * </ul>
+     * Contract case C2, invariant I2 -- AC-005 and AC-007 of
+     * <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_realMimeType_returnsMatchingFilesAndNoPages() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of("image/jpeg"));
+
+        assertTrue("The JPG File Asset must be returned for an 'image/jpeg' browse, but got: " + identifiers,
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertFalse("The PDF File Asset must not match 'image/jpeg'",
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset must not match 'image/jpeg'",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                identifiers.contains(mimePage.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                identifiers.contains(mimePageAltLanguage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder is browsed filtering by two real MIME types at once.</li>
+     *     <li><b>Expected Result:</b> Both matching File Assets come back and nothing else. This is the pure
+     *     regression guard for the MIME filtering added by PR #34217, and it must behave identically before and
+     *     after the fix.</li>
+     * </ul>
+     * Contract case C4, invariant I1 -- AC-005 of
+     * <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_multipleRealMimeTypes_areUnchanged() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of("image/jpeg", "application/pdf"));
+
+        assertTrue("The JPG File Asset must be returned, but got: " + identifiers,
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertTrue("The PDF File Asset must be returned, but got: " + identifiers,
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset matches neither MIME type",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                identifiers.contains(mimePage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder is browsed with a MIME type that merely starts with the synthetic
+     *     one, {@code application/dotpage-foo}.</li>
+     *     <li><b>Expected Result:</b> No Page comes back. Only the exact string {@code application/dotpage} may be
+     *     routed to the base type branch; anything else goes through the asset metadata check.</li>
+     * </ul>
+     * Invariant I3 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_dotPageMimeTypePrefix_isNotRoutedToBaseType() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE + "-foo"));
+
+        assertFalse("Only the exact '" + DOTPAGE_MIME_TYPE + "' may resolve Pages by base type",
+                identifiers.contains(mimePage.getIdentifier()));
+        assertFalse("Only the exact '" + DOTPAGE_MIME_TYPE + "' may resolve Pages by base type",
+                identifiers.contains(mimePageAltLanguage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder is browsed asking for the synthetic Page MIME type and a real one
+     *     at the same time -- a folder holding a mix of Pages, File Assets and a Link.</li>
+     *     <li><b>Expected Result:</b> Both the Pages and the matching File Asset come back; the File Assets that
+     *     match neither requested MIME type do not.</li>
+     * </ul>
+     * Contract case C3 -- AC-004 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_mixedMimeTypes_returnsPagesAndMatchingFiles() throws Exception {
+        final Set<String> identifiers =
+                browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE, "image/jpeg"));
+
+        assertTrue("Pages must be returned for a mixed browse, but got: " + identifiers,
+                identifiers.containsAll(
+                        Set.of(mimePage.getIdentifier(), mimePageAltLanguage.getIdentifier())));
+        assertTrue("The JPG File Asset must be returned for a mixed browse, but got: " + identifiers,
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertFalse("The PDF File Asset matches neither requested MIME type",
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset matches neither requested MIME type",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The same mixed browse is requested twice with the MIME types in opposite
+     *     order.</li>
+     *     <li><b>Expected Result:</b> Both requests select exactly the same rows -- the requested MIME types are
+     *     an unordered set as far as the generated predicate is concerned.</li>
+     * </ul>
+     * Invariant I5 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_mimeTypeOrder_doesNotChangeResults() throws Exception {
+        final Set<String> pageFirst =
+                browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE, "image/jpeg"));
+        final Set<String> imageFirst =
+                browseIdentifiers(mimeFolder, List.of("image/jpeg", DOTPAGE_MIME_TYPE));
+
+        assertEquals("The order of the requested MIME types must not change the result set", pageFirst,
+                imageFirst);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A sub-folder holding a Page and a JPG File Asset is browsed, first by the
+     *     synthetic Page MIME type and then by a real one.</li>
+     *     <li><b>Expected Result:</b> Each browse returns only its own kind, and neither returns items from the
+     *     parent folder. Folders themselves are listed separately by the Browser API and are out of scope here.</li>
+     * </ul>
+     * AC-004 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_subFolder_filtersEachTypeAsExpected() throws Exception {
+        final Set<String> pages = browseIdentifiers(mimeSubFolder, List.of(DOTPAGE_MIME_TYPE));
+
+        assertTrue("The sub-folder Page must be returned, but got: " + pages,
+                pages.contains(mimeSubFolderPage.getIdentifier()));
+        assertFalse("The sub-folder JPG File Asset must not match '" + DOTPAGE_MIME_TYPE + "'",
+                pages.contains(mimeSubFolderJpgFile.getIdentifier()));
+        assertFalse("A sub-folder browse must not return items from its parent folder",
+                pages.contains(mimePage.getIdentifier()));
+
+        final Set<String> images = browseIdentifiers(mimeSubFolder, List.of("image/jpeg"));
+
+        assertTrue("The sub-folder JPG File Asset must be returned, but got: " + images,
+                images.contains(mimeSubFolderJpgFile.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                images.contains(mimeSubFolderPage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Pages are browsed by the synthetic MIME type under a specific language, with
+     *     and without the default language fallback the legacy dialog turns on.</li>
+     *     <li><b>Expected Result:</b> With the fallback on, both the Page in the requested language and the one in
+     *     the default language come back; with it off, only the Page in the requested language does. Language
+     *     resolution is unchanged by the MIME routing.</li>
+     * </ul>
+     * AC-008 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_dotPageMimeType_honorsLanguageFallback() throws Exception {
+        final Set<String> withFallback = browseIdentifiersByLanguage(testLanguage.getId(), true);
+
+        assertTrue("The Page in the requested language must be returned, but got: " + withFallback,
+                withFallback.contains(mimePageAltLanguage.getIdentifier()));
+        assertTrue("The default language Page must be returned when the fallback is on, but got: " + withFallback,
+                withFallback.contains(mimePage.getIdentifier()));
+
+        final Set<String> withoutFallback = browseIdentifiersByLanguage(testLanguage.getId(), false);
+
+        assertTrue("The Page in the requested language must be returned, but got: " + withoutFallback,
+                withoutFallback.contains(mimePageAltLanguage.getIdentifier()));
+        assertFalse("The default language Page must not be returned when the fallback is off",
+                withoutFallback.contains(mimePage.getIdentifier()));
+    }
+
+    /**
+     * Same browse as {@link #browseIdentifiers(Folder, List)} but scoped to a language, mirroring how the legacy
+     * dialog resolves content -- see {@code BrowserAjax.getFolderContentWithDotAssets}.
+     */
+    private Set<String> browseIdentifiersByLanguage(final long languageId, final boolean showDefaultLangItems)
+            throws DotSecurityException, DotDataException {
+        return browserAPI.getFolderContentList(BrowserQuery.builder()
+                        .withUser(APILocator.systemUser())
+                        .withHostOrFolderId(mimeFolder.getIdentifier())
+                        .showPages(true)
+                        .showFiles(true)
+                        .showFolders(false)
+                        .showWorking(true)
+                        .withLanguageId(languageId)
+                        .showDefaultLangItems(showDefaultLangItems)
+                        .showMimeTypes(List.of(DOTPAGE_MIME_TYPE))
+                        .build()).stream()
+                .map(Treeable::getIdentifier)
+                .collect(Collectors.toSet());
     }
 }
