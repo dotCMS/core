@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 
-import java.util.Set;
+import static org.apache.commons.lang3.BooleanUtils.toBoolean;
 
 /**
  * This Field Strategy implementation specifies the correct syntax for querying a field whose Data
@@ -24,22 +24,16 @@ import java.util.Set;
  */
 public class BooleanFieldStrategy implements FieldStrategy {
 
-    /**
-     * The tokens accepted as {@code true}, mirroring what dotCMS coerces on save (commons-lang
-     * {@code BooleanUtils.toBoolean}).
-     * <p>{@code Boolean.parseBoolean} is deliberately NOT used: it maps everything that is not the
-     * literal {@code "true"} to {@code false}, so a caller filtering a True/False field by the db-style
-     * value its own options are authored with -- {@code 1}, {@code yes}, {@code on} -- would silently
-     * get the OPPOSITE result set. The Content Drive normalizes to {@code "true"}/{@code "false"} before
-     * it gets here, but the generic content-search endpoint routes through this strategy too and its
-     * callers pass raw values.</p>
-     */
-    private static final Set<String> TRUE_TOKENS = Set.of("true", "1", "y", "yes", "t", "on");
-
     @Override
     public String generateQuery(final FieldContext fieldContext) {
-        final boolean value = TRUE_TOKENS.contains(
-                fieldContext.fieldValue().toString().trim().toLowerCase());
+        // Coerced with the very function the SAVE path uses to store these values
+        // (FieldHandlerStrategyFactory.booleanStrategy), so a filter can never disagree with the
+        // contentlet it is meant to match. `Boolean.parseBoolean` would not do: it maps everything that
+        // is not the literal "true" to false, so a caller filtering a True/False field by the db-style
+        // value its own options are authored with -- `1`, `yes`, `on` -- would silently get the
+        // OPPOSITE result set. The Content Drive normalizes before this point, but the generic
+        // content-search endpoint routes through this strategy too, with raw values.
+        final boolean value = toBoolean(fieldContext.fieldValue().toString().trim());
         return "+" + fieldContext.fieldName() + ":" + value;
     }
 
