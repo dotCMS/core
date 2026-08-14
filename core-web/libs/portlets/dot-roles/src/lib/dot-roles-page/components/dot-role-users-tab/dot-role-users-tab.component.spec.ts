@@ -38,8 +38,15 @@ describe('DotRoleUsersTabComponent', () => {
                 members: jest.fn().mockReturnValue([]),
                 membersStatus: jest.fn().mockReturnValue('loaded'),
                 selectedMembers: jest.fn().mockReturnValue([]),
-                selectedRoleId: jest.fn().mockReturnValue('r-eco'),
-                setSelectedMembers: jest.fn()
+                selectedRole: jest.fn().mockReturnValue({
+                    id: 'r-eco',
+                    name: 'Eco Role',
+                    roleKey: 'eco',
+                    editUsers: true
+                }),
+                canGrantUsers: jest.fn().mockReturnValue(true),
+                setSelectedMembers: jest.fn(),
+                loadMembers: jest.fn()
             })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
@@ -63,9 +70,7 @@ describe('DotRoleUsersTabComponent', () => {
                 userId: 'u-1',
                 firstName: 'Alan',
                 lastName: 'Cruz',
-                emailAddress: 'alan.cruz@dotcms.com',
-                grantedFromRoleId: 'r-eco',
-                grantedFromRoleName: 'Eco Role'
+                emailAddress: 'alan.cruz@dotcms.com'
             }
         ]);
         spectator.detectChanges();

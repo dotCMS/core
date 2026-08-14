@@ -41,41 +41,42 @@
     </p>
 } @else {
     @if ($treeNodes().length > 0) {
-        <p-tree
-            [value]="$treeNodes()"
-            [selection]="$selectedNode()"
+        <dot-folder-tree
+            [folders]="$treeNodes()"
+            [selectedNode]="$selectedNode()"
             selectionMode="single"
+            [pt]="treePt"
+            treeTestId="roles-tree-view"
             (onNodeSelect)="onNodeSelect($event)"
-            (onNodeDrop)="onNodeDrop($event)"
-            [draggableNodes]="false"
-            [droppableNodes]="false"
-            data-testid="roles-tree-view"
-            styleClass="flex-1 overflow-auto">
-            <ng-template let-node pTemplate="default">
+            (onNodeExpand)="onNodeExpand($event)">
+            <ng-template #folderTreeNodeLabel let-node>
+                @let data = node.data;
+                @let isLeaf = node.leaf === true;
+                <!--
+                    Row height is dictated by the tallest child via `items-center`.
+                    Both the icon and the inline `+` button are constrained to
+                    `text-base` (16px) so the node matches the 35px height that
+                    Content Drive gets with a plain text label. Do NOT swap the
+                    `+` for `<button pButton>` — the PrimeNG button ships with
+                    ~40px minimum height that pushes the row past 50px.
+                -->
                 <span class="group flex w-full items-center gap-2">
-                    <span class="material-symbols-outlined text-color-secondary text-lg">
-                        {{ node.icon }}
+                    <span
+                        class="material-symbols-outlined text-color-secondary text-base leading-none"
+                        [attr.data-testid]="'node-icon-' + data.id">
+                        {{ isLeaf ? 'shield' : 'folder' }}
                     </span>
                     <span class="flex-1 truncate">{{ node.label }}</span>
-                    @if (node.data.userCount !== undefined) {
-                        <span class="text-color-secondary inline-flex items-center gap-0.5 text-xs">
-                            <span class="material-symbols-outlined text-sm">person</span>
-                            {{ node.data.userCount }}
-                        </span>
-                    }
                     <button
-                        pButton
                         type="button"
-                        class="opacity-0 transition-opacity group-hover:opacity-100"
-                        (click)="onAddRole(node.data.id); $event.stopPropagation()"
-                        [attr.aria-label]="'roles.action.add-child' | dm"
-                        text
-                        size="small">
-                        <span class="material-symbols-outlined">add</span>
+                        class="text-color-secondary inline-flex size-5 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-100 hover:text-color"
+                        (click)="onAddRole(data.id); $event.stopPropagation()"
+                        [attr.aria-label]="'roles.action.add-child' | dm">
+                        <span class="material-symbols-outlined text-base leading-none">add</span>
                     </button>
                 </span>
             </ng-template>
-        </p-tree>
+        </dot-folder-tree>
     } @else {
         <div class="text-color-secondary text-sm" data-testid="tree-empty">
             <p>{{ 'roles.tree.empty' | dm }}</p>

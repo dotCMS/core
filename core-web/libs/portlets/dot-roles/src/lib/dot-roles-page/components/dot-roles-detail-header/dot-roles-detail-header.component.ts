@@ -20,14 +20,9 @@ export class DotRolesDetailHeaderComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #dialogService = inject(DialogService);
 
-    protected readonly $icon = computed(() => {
-        const role = this.store.selectedRole();
-        if (!role) {
-            return 'shield';
-        }
-        // Parents (with children) get a folder icon; leaves get a shield.
-        return (role.children?.length ?? 0) > 0 ? 'folder' : 'shield';
-    });
+    protected readonly $icon = computed(() =>
+        this.store.selectedRoleIsParent() ? 'folder' : 'shield'
+    );
 
     protected onEditRole(): void {
         const role = this.store.selectedRole();

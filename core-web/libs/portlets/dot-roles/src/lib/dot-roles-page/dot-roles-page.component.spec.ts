@@ -36,24 +36,28 @@ const MESSAGES = {
  */
 function baseStoreMock(overrides: Record<string, unknown> = {}) {
     return mockProvider(DotRolesStore, {
-        rootRoles: jest.fn().mockReturnValue([]),
+        roles: jest.fn().mockReturnValue([]),
+        roleTree: jest.fn().mockReturnValue([]),
         filter: jest.fn().mockReturnValue(''),
         filteredRoles: jest.fn().mockReturnValue([]),
         selectedRoleId: jest.fn().mockReturnValue(null),
         selectedRole: jest.fn().mockReturnValue(null),
+        selectedRoleIsParent: jest.fn().mockReturnValue(false),
         activeTab: jest.fn().mockReturnValue('users'),
         status: jest.fn().mockReturnValue('loaded'),
         membersStatus: jest.fn().mockReturnValue('loaded'),
         members: jest.fn().mockReturnValue([]),
         selectedMembers: jest.fn().mockReturnValue([]),
         memberCount: jest.fn().mockReturnValue(0),
-        directMemberCount: jest.fn().mockReturnValue(0),
         isSystemRole: jest.fn().mockReturnValue(false),
+        canGrantUsers: jest.fn().mockReturnValue(true),
         setFilter: jest.fn(),
         selectRole: jest.fn(),
         setActiveTab: jest.fn(),
         setSelectedMembers: jest.fn(),
         loadRootRoles: jest.fn(),
+        loadMembers: jest.fn(),
+        loadRoleChildren: jest.fn(),
         createRole: jest.fn(),
         ...overrides
     });
