@@ -7,19 +7,30 @@ import { map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
-import {
-    DotRoleDetail,
-    DotRoleFormValue,
-    DotRoleMember,
-    DotRoleNode
-} from '../models/dot-roles.models';
+import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
+
+/**
+ * User row shape returned by `/v1/users/filter?roleKey=X`. The endpoint
+ * accepts `roleKey` (not `roleId`) as the filter parameter. Same wire
+ * format used by the dot-users portlet.
+ */
+export interface DotRoleUserFilterResult {
+    readonly userId: string;
+    readonly firstName?: string;
+    readonly lastName?: string;
+    readonly emailAddress?: string;
+}
+
+/** Row shape from `/v1/roles/{roleId}/rolehierarchyanduserroles`. */
+interface RoleHierarchyEntry {
+    readonly id: string;
+    readonly name?: string;
+    readonly roleKey?: string;
+    readonly user?: boolean;
+}
 
 /**
  * Portlet-scoped data access for the Roles and Tools Angular Beta.
- *
- * The shared `DotRolesService` under `@dotcms/data-access` covers the
- * legacy read paths used by other portlets (roles-per-user hierarchy).
- * This service owns the endpoints the Roles portlet specifically consumes.
  *
  * Blocked write flows (Edit / Delete role, Grant / Remove user) are called
  * out in the individual methods; they resolve to the dedicated v1 endpoints
@@ -29,14 +40,22 @@ import {
 export class DotRolesPortletService {
     #http = inject(HttpClient);
 
-    /** GET /v1/roles — root roles (optionally with first-level children). */
+    /**
+     * GET /v1/roles — root roles + their direct children.
+     * The backend only fills 2 levels; deeper levels are lazy-loaded per
+     * expand via `loadRoleById`.
+     */
     loadRootRoles(loadChildren = true): Observable<DotRoleNode[]> {
         return this.#http
             .get<DotCMSResponse<DotRoleNode[]>>(`/api/v1/roles?loadChildrenRoles=${loadChildren}`)
             .pipe(map((response) => response.entity ?? []));
     }
 
-    /** GET /v1/roles/{roleId} — role detail (optionally expand a subtree). */
+    /**
+     * GET /v1/roles/{roleId} — role detail with its direct children.
+     * Used both to populate the role detail area on selection and to
+     * lazy-load grandchildren when the roles tree expands a node.
+     */
     loadRoleById(roleId: string, loadChildren = true): Observable<DotRoleDetail> {
         return this.#http
             .get<
@@ -46,16 +65,55 @@ export class DotRolesPortletService {
     }
 
     /**
-     * GET /v1/roles/{roleId}/rolehierarchyanduserroles — members of the role
-     * annotated with inheritance metadata so the Users tab can render the
-     * `GRANTED FROM` chip.
+     * GET /v1/users/filter?roleKey=X — users granted the given role.
+     *
+     * Fast path (used when the selected role has a `roleKey`). Returns
+     * users with email/name in a single call. The endpoint requires a
+     * `roleKey` — roles created via the UI without one need the id-based
+     * fallback below.
      */
-    loadRoleMembers(roleId: string): Observable<DotRoleMember[]> {
+    loadRoleMembersByKey(roleKey: string): Observable<DotRoleUserFilterResult[]> {
+        const url = `/api/v1/users/filter?roleKey=${encodeURIComponent(roleKey)}`;
+
         return this.#http
-            .get<
-                DotCMSResponse<DotRoleMember[]>
-            >(`/api/v1/roles/${roleId}/rolehierarchyanduserroles`)
+            .get<DotCMSResponse<DotRoleUserFilterResult[]>>(url)
             .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * GET /v1/roles/{roleId}/rolehierarchyanduserroles — fallback used when
+     * the selected role has no `roleKey`. The endpoint returns a mixed list
+     * of Role objects: the role itself (or its ancestors when
+     * `roleHierarchyForAssign=true`), and one entry per user assigned,
+     * where `role.user === true` and `role.roleKey` holds the userId.
+     *
+     * We filter for user-roles and map to `DotRoleUserFilterResult`. The
+     * response does not carry email — the endpoint returns Role objects,
+     * not User objects — so members loaded via this path show empty email.
+     * A follow-up ticket will add id-based user filtering upstream so we
+     * can retire this fallback.
+     */
+    loadRoleMembersById(roleId: string): Observable<DotRoleUserFilterResult[]> {
+        const url = `/api/v1/roles/${encodeURIComponent(
+            roleId
+        )}/rolehierarchyanduserroles?roleHierarchyForAssign=false`;
+
+        return this.#http.get<DotCMSResponse<RoleHierarchyEntry[]>>(url).pipe(
+            map((response) => {
+                const entries = response.entity ?? [];
+                return entries
+                    .filter((entry) => entry.user === true)
+                    .map((entry) => {
+                        const [firstName = '', ...rest] = (entry.name ?? '').split(' ');
+                        return {
+                            userId: entry.roleKey ?? entry.id,
+                            firstName,
+                            lastName: rest.join(' '),
+                            emailAddress: ''
+                        };
+                    });
+            })
+        );
     }
 
     /** POST /v1/roles — create role (Add Role dialog). */

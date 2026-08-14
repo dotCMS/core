@@ -33,6 +33,16 @@ import { DotRolesPortletService } from '../services/dot-roles-portlet.service';
 export class DotRolesPageComponent implements OnInit {
     protected readonly store = inject(DotRolesStore);
 
+    /**
+     * PassThrough to strip PrimeNG's default padding off the tab panel
+     * wrappers — the Users tab renders a `p-table` that must reach the
+     * section edges to align with the panel divider. Tailwind's `!`
+     * suffix wins the specificity war against PrimeNG's `.p-tabpanels`
+     * selector.
+     */
+    protected readonly tabPanelsPt = { root: { class: 'p-0!' } };
+    protected readonly tabPanelPt = { root: { class: 'p-0!' } };
+
     ngOnInit(): void {
         this.store.loadRootRoles();
     }

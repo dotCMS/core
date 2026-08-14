@@ -25,14 +25,14 @@
                     </p-tab>
                 </p-tablist>
 
-                <p-tabpanels>
-                    <p-tabpanel value="users">
+                <p-tabpanels [pt]="tabPanelsPt">
+                    <p-tabpanel value="users" [pt]="tabPanelPt">
                         <dot-role-users-tab data-testid="users-tab" />
                     </p-tabpanel>
-                    <p-tabpanel value="permissions">
+                    <p-tabpanel value="permissions" [pt]="tabPanelPt">
                         <dot-role-permissions-iframe data-testid="permissions-tab" />
                     </p-tabpanel>
-                    <p-tabpanel value="tools">
+                    <p-tabpanel value="tools" [pt]="tabPanelPt">
                         <dot-role-tools-iframe data-testid="tools-tab" />
                     </p-tabpanel>
                 </p-tabpanels>

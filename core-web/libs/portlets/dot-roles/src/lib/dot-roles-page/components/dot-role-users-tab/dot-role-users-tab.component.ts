@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
@@ -40,7 +40,7 @@ interface UserFilterResult {
         DotMessagePipe
     ],
     templateUrl: './dot-role-users-tab.component.html',
-    host: { class: 'block px-6 py-4' }
+    host: { class: 'block py-4' }
 })
 export class DotRoleUsersTabComponent {
     protected readonly store = inject(DotRolesStore);
@@ -49,6 +49,25 @@ export class DotRoleUsersTabComponent {
     protected readonly $userSuggestions = signal<UserFilterResult[]>([]);
 
     protected readonly $canBulkRemove = computed(() => this.store.selectedMembers().length > 0);
+
+    constructor() {
+        // Load members when the selected role changes. Users are shown even
+        // when the role has `editUsers === false` (so admins can review who
+        // is inherited from ancestors); the tab still surfaces the "cannot
+        // grant" banner and disables the Grant / Remove actions upstream.
+        effect(() => {
+            const selectedRole = this.store.selectedRole();
+            if (!selectedRole) {
+                return;
+            }
+            untracked(() =>
+                this.store.loadMembers({
+                    id: selectedRole.id,
+                    roleKey: selectedRole.roleKey ?? null
+                })
+            );
+        });
+    }
 
     protected searchUsers(event: AutoCompleteCompleteEvent): void {
         const query = event.query?.trim();
@@ -82,10 +101,6 @@ export class DotRoleUsersTabComponent {
 
     protected onSelectionChange(members: DotRoleMember[]): void {
         this.store.setSelectedMembers(members);
-    }
-
-    protected isDirectGrant(member: DotRoleMember): boolean {
-        return member.grantedFromRoleId === this.store.selectedRoleId();
     }
 
     #getUserSuggestions(query: string): Observable<UserFilterResult[]> {

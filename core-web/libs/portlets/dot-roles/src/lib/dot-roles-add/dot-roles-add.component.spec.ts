@@ -34,7 +34,7 @@ describe('DotRolesAddComponent', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotRolesStore, {
-                rootRoles: jest.fn().mockReturnValue([]),
+                roleTree: jest.fn().mockReturnValue([]),
                 createRole: jest.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
             }),
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
@@ -84,7 +84,7 @@ describe('DotRolesAddComponent (opened from inline +)', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotRolesStore, {
-                rootRoles: jest.fn().mockReturnValue([]),
+                roleTree: jest.fn().mockReturnValue([]),
                 createRole: jest.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
             }),
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
