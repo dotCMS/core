@@ -335,7 +335,7 @@ public class SecretsKeyStoreHelper {
 
             notifyLoadFailureOnce();
 
-            throw new DotRuntimeException(
+            throw new SecretsStoreUnreadableException(
                     "Unable to load the App secrets store: " + diagnosis, cause);
         }
 

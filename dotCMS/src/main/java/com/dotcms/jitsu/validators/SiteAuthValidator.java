@@ -5,6 +5,9 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
@@ -58,19 +61,18 @@ public class SiteAuthValidator implements AnalyticsValidator {
             } else {
                 Logger.warn(this, "HTTP Request object could not be retrieved");
             }
-            // An AnalyticsValidationException is this pipeline's own signal -- ContentAnalyticsUtil
-            // raises it when the site cannot be resolved from the Origin/Referer headers -- and it
-            // already carries the message the caller is meant to see. Rethrow it untouched; the
-            // broader catch below would otherwise re-wrap it as "Site Auth for Site 'null' could
-            // not be verified: <original>" and change that message.
-        } catch (final AnalyticsValidationException e) {
-            throw e;
-            // Otherwise deliberately Exception, not just the checked DotDataException /
-            // DotSecurityException. Since issue #36724 the secrets store raises a
-            // DotRuntimeException when it cannot be read rather than silently wiping itself; that
-            // must surface as a normal validation failure on this analytics collection path, not
-            // as a raw runtime exception escaping into the request.
-        } catch (final Exception e) {
+            // SecretsStoreUnreadableException is the addition to the original two. Since issue
+            // #36724 the secrets store raises when it cannot be read rather than silently wiping
+            // itself, and that must surface as an ordinary validation failure here rather than as a
+            // raw runtime exception escaping onto the analytics collection path.
+            //
+            // Deliberately that exact type. Catching Exception also swallowed
+            // AnalyticsValidationException -- this pipeline's own signal, raised by
+            // ContentAnalyticsUtil when the site cannot be resolved from the Origin/Referer headers
+            // -- and re-wrapped it as "Site Auth for Site 'null' could not be verified: <original>",
+            // changing the message callers see. Naming the condition means that signal propagates
+            // on its own, with no rethrow clause needed to protect it.
+        } catch (final DotDataException | DotSecurityException | SecretsStoreUnreadableException e) {
             final String errorMsg = String.format("Site Auth for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(SiteAuthValidator.class, errorMsg, e);

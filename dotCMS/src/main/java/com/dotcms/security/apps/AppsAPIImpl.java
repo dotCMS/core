@@ -423,8 +423,9 @@ public class AppsAPIImpl implements AppsAPI {
         return siteIdentifiers.stream().filter(id -> {
             try {
                 return hasAnySecrets(key, id, user);
-            } catch (DotDataException | DotSecurityException | DotRuntimeException e) {
-                // DotRuntimeException is the addition, not a blanket catch (Exception).
+            } catch (DotDataException | DotSecurityException | SecretsStoreUnreadableException e) {
+                // SecretsStoreUnreadableException is the addition, and deliberately that exact type
+                // rather than DotRuntimeException or Exception.
                 // This method's contract is already "if the secrets cannot be determined for this
                 // site, treat it as having none" -- it logs and returns false. Since issue #36724 the
                 // secrets store raises a DotRuntimeException when it cannot be read rather than
@@ -445,9 +446,12 @@ public class AppsAPIImpl implements AppsAPI {
                 // Note the old wipe-then-recreate behaviour also reported 0, so this is not a
                 // regression.
                 //
-                // Deliberately these three types rather than Exception: a genuine programming error
-                // here -- an NPE inside hasAnySecrets, say -- should surface rather than be hidden
-                // as a wrong configuration count on a path this hot.
+                // Deliberately these three types. Not Exception, because a genuine programming
+                // error -- an NPE inside hasAnySecrets, say -- should surface rather than hide as a
+                // wrong configuration count on a path this hot. And not DotRuntimeException either:
+                // that is dotCMS's general-purpose unchecked wrapper, so database blips and cache
+                // failures surface as one, and swallowing those here would report "0
+                // configurations" for what is really a transient infrastructure problem.
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error getting secret from `%s` ", key), e);
             }

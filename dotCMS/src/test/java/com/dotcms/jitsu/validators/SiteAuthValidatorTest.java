@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -26,8 +27,8 @@ import org.mockito.MockedStatic;
 /**
  * Unit tests for {@link SiteAuthValidator}'s exception handling, added for issue #36724.
  *
- * Since that issue the App secrets store raises a {@link DotRuntimeException} when it cannot be
- * read, instead of silently wiping itself and returning an empty store. This validator sits on the
+ * Since that issue the App secrets store raises a {@link SecretsStoreUnreadableException} when it
+ * cannot be read, instead of silently wiping itself and returning an empty store. This validator sits on the
  * analytics collection request path, so that must surface as an ordinary validation failure rather
  * than a raw runtime exception escaping into the response.
  *
@@ -70,16 +71,17 @@ public class SiteAuthValidatorTest {
 
     /**
      * Method to test: {@link SiteAuthValidator#validate(Object)}
-     * Given Scenario: the App secrets store cannot be read, so getSecrets raises the
-     * DotRuntimeException introduced by issue #36724.
+     * Given Scenario: the App secrets store cannot be read, so getSecrets raises
+     * SecretsStoreUnreadableException.
      * Expected Result: an ordinary AnalyticsValidationException carrying INVALID_SITE_AUTH -- never
      * the raw DotRuntimeException, which on this request path would escape into the response.
      */
     @Test
     public void test_unreadableSecretsStore_becomesValidationFailure() throws Exception {
         when(appsAPI.getSecrets(anyString(), anyBoolean(), any(Host.class), any()))
-                .thenThrow(new DotRuntimeException(
-                        "Unable to load the App secrets store: the store could not be decrypted"));
+                .thenThrow(new SecretsStoreUnreadableException(
+                        "Unable to load the App secrets store: the store could not be decrypted",
+                        new java.io.IOException("Integrity check failed")));
 
         try {
             new SiteAuthValidator().validate("any-site-auth");
@@ -115,6 +117,29 @@ public class SiteAuthValidatorTest {
             assertSame("the domain exception must be rethrown, not re-wrapped", raised, e);
             assertEquals("Site could not be retrieved from Origin or Referer HTTP Headers",
                     e.getMessage());
+        }
+    }
+
+    /**
+     * Method to test: {@link SiteAuthValidator#validate(Object)}
+     * Given Scenario: an unrelated runtime failure -- a database blip or cache error, which dotCMS
+     * surfaces as a plain DotRuntimeException.
+     * Expected Result: it propagates. The catch names SecretsStoreUnreadableException specifically
+     * so a transient infrastructure problem is not quietly converted into "invalid site auth",
+     * which is what catching the general wrapper would have done.
+     */
+    @Test
+    public void test_unrelatedRuntimeFailure_isNotMasked() throws Exception {
+        when(appsAPI.getSecrets(anyString(), anyBoolean(), any(Host.class), any()))
+                .thenThrow(new DotRuntimeException("the database went away"));
+
+        try {
+            new SiteAuthValidator().validate("any-site-auth");
+            fail("expected the unrelated failure to propagate");
+        } catch (AnalyticsValidator.AnalyticsValidationException e) {
+            fail("an unrelated infrastructure failure must not be reported as invalid site auth");
+        } catch (DotRuntimeException expected) {
+            assertEquals("the database went away", expected.getMessage());
         }
     }
 
