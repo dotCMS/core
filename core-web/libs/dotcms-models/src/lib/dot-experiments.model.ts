@@ -27,6 +27,26 @@ export interface DotExperiment {
 
 export type DotExperimentsWithActions = DotExperiment & { actionsItemsMenu: MenuItem[] };
 
+/**
+ * Body of `PATCH /api/v1/experiments/{id}`.
+ *
+ * Every key is optional and the endpoint applies all the ones that are present in a single atomic
+ * update, so several field changes can — and should — travel in one call.
+ *
+ * `pageId` and `targetingConditions` are deliberately absent: the page an experiment runs on is
+ * immutable once it exists, and sending targeting conditions would have the backend rebuild the
+ * experiment's Rule from them.
+ */
+export interface DotExperimentPatchBody {
+    name?: string;
+    description?: string;
+    goals?: Goals;
+    /** `null` clears the schedule, which is a change like any other. */
+    scheduling?: RangeOfDateAndTime | null;
+    trafficAllocation?: number;
+    trafficProportion?: TrafficProportion;
+}
+
 export interface DotExperimentResults {
     bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;

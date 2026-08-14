@@ -2,21 +2,22 @@ import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
 import { DotPageLockInfo } from '@dotcms/data-access';
-import { DotExperiment } from '@dotcms/dotcms-models';
+import { DotExperiment, DotExperimentPatchBody } from '@dotcms/dotcms-models';
 
-import { DotExperimentConfigurePage, ExperimentFieldGroup } from '../shared/models';
+import { DotExperimentConfigurePage } from '../shared/models';
 
 /**
  * What the backend answered on the Configure screen: every event here is dispatched from a store
  * event handler once a request settles, never by a component. The matching intents belong to
  * `dotExperimentsConfigurePageEvents`.
  *
- * Autosave has one `Succeeded`/`Failed` pair per field group rather than a shared pair, so a
- * failed Goal PATCH cannot roll back what the Scheduling PATCH just saved — each group settles
- * on its own.
+ * Autosave settles through one `save…` triple rather than a pair per field: the whole accumulated
+ * diff travels in a single PATCH, so it succeeds, fails or turns out to be nothing to send as one
+ * unit.
  *
  * Every `…Succeeded` carries the experiment the server answered with: it is the source of truth
- * after any write, and the shell needs its name for the toast copy.
+ * after any write, and the shell needs its name for the toast copy. `saveSucceeded` carries the
+ * body it wrote beside it, because the diff it settles is not necessarily the whole pending one.
  */
 export const dotExperimentsConfigureApiEvents = eventGroup({
     source: 'Experiments Configure API',
@@ -31,32 +32,28 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
         createSucceeded: type<DotExperiment>(),
         createFailed: type<unknown>(),
 
+        // Autosave. One triple for the whole accumulated diff.
         /**
-         * A debounced edit that reached its handler with nothing worth sending — the value the
-         * server already holds, a goal that was cleared, a blank name. No call goes out, so this
-         * is the only thing that can settle the group: without it the group would stay pending
-         * for the rest of the session and the screen would report itself as autosaving forever.
+         * A real PATCH left with a body. The debounce window before it is deliberately not part
+         * of this: the visible progress indicator keys on the flight alone, while the footer's
+         * "Saving…" copy covers the whole pending window through `$isAutosaving`.
          */
-        autosaveSkipped: type<ExperimentFieldGroup>(),
-
-        // Autosave, one pair per field group
-        nameSucceeded: type<DotExperiment>(),
-        nameFailed: type<unknown>(),
-
-        descriptionSucceeded: type<DotExperiment>(),
-        descriptionFailed: type<unknown>(),
-
-        goalSucceeded: type<DotExperiment>(),
-        goalFailed: type<unknown>(),
-
-        schedulingSucceeded: type<DotExperiment>(),
-        schedulingFailed: type<unknown>(),
-
-        trafficAllocationSucceeded: type<DotExperiment>(),
-        trafficAllocationFailed: type<unknown>(),
-
-        trafficProportionSucceeded: type<DotExperiment>(),
-        trafficProportionFailed: type<unknown>(),
+        saveRequested: type<void>(),
+        /**
+         * `sent` is the body the PATCH carried, which is not always every pending key:
+         * `toOutgoingPatch` holds back what the backend would reject. Only the keys that were
+         * written settle, so the rest stays pending instead of being dropped (#37003).
+         */
+        saveSucceeded: type<{ experiment: DotExperiment; sent: DotExperimentPatchBody }>(),
+        /** The diff stays pending, so the next edit re-sends it merged with whatever changed. */
+        saveFailed: type<unknown>(),
+        /**
+         * The debounce elapsed with nothing worth sending — a diff whose only key was a blank
+         * name, an experiment that does not exist yet, or weights that are still mid-edit. No call
+         * went out, so nothing settles: this changes no state and is here as the record that the
+         * flush happened at all.
+         */
+        saveSkipped: type<void>(),
 
         // Variants
         addVariantSucceeded: type<DotExperiment>(),

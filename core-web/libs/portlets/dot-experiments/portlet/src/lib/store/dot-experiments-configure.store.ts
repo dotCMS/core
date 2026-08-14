@@ -1,7 +1,7 @@
 import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
 import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { merge, Observable, of, SubscriptionLike } from 'rxjs';
+import { merge, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -27,11 +27,10 @@ import {
 import {
     ComponentStatus,
     DotCMSContentlet,
-    DotExperiment,
+    DotExperimentPatchBody,
     DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
-    Goals,
     TrafficProportion,
     TrafficProportionTypes,
     Variant
@@ -53,20 +52,18 @@ import {
     START_ERROR_HEADER_KEY,
     TOTAL_WEIGHT
 } from '../shared/constants';
+import { DotExperimentsConfigureViewState, ExperimentListAction } from '../shared/models';
 import {
-    DotExperimentsConfigureViewState,
-    ExperimentFieldGroup,
-    ExperimentListAction
-} from '../shared/models';
-import {
-    addPendingGroup,
+    applyPatchToExperiment,
     fromBrowserPage,
+    hasPendingChanges,
     normalizePath,
-    removePendingGroup,
     splitWeightsEvenly,
     toConfigurePage,
+    toOutgoingPatch,
     totalWeight,
-    validateConfigure
+    validateConfigure,
+    withoutSentKeys
 } from '../util/dot-experiments-configure.util';
 import { isAllowed } from '../util/dot-experiments-list.util';
 
@@ -85,7 +82,8 @@ const initialState: DotExperimentsConfigureViewState = {
     pagePrefillError: null,
     pageLockInfo: null,
     validationErrors: [],
-    pendingFieldGroups: []
+    pendingPatch: null,
+    lastSaveFailed: false
 };
 
 /** Shape of the `/api/content/_search` entity the page lookup reads contentlets from. */
@@ -93,20 +91,17 @@ interface PageLookupEntity {
     jsonObjectView?: { contentlets?: DotCMSContentlet[] };
 }
 
-/** What an autosave handler reports when it settles a field group without calling the API. */
-type AutosaveSkipped = ReturnType<typeof apiEvents.autosaveSkipped>;
-
 /**
  * Store for the Configure screen, on both `/experiments/new` and
  * `/experiments/:experimentId/configuration`.
  *
  * There is no "save" button: the first Name + Page combination POSTs the draft (once — the URL is
  * then swapped for the created one) and every later change is persisted by a debounced PATCH.
- * `PATCH /api/v1/experiments/{id}` takes a single-key body, so each field group has its own
- * handler and its own timer: rapid edits to one group collapse into one call (`switchMap`), while
- * an edit to another group in the same window still fires its own (AC6). `targetingConditions` is
- * never part of any body — the Targeting card is out of scope, and sending it would have the
- * backend rebuild the rule (AC7).
+ * `PATCH /api/v1/experiments/{id}` applies every key of its body in one atomic update, so the
+ * screen keeps one accumulated diff and one timer: a Name edit and a Goal edit in the same window
+ * leave as a single multi-key call (AC6). `pageId` and `targetingConditions` are never part of a
+ * body — the page is immutable once the draft exists, and sending targeting conditions would have
+ * the backend rebuild the experiment's Rule (AC7).
  *
  * The page is chosen once: the PATCH endpoint does not accept `pageId`, so after creation the
  * selected page is only ever *resolved* from the experiment, never sent back.
@@ -152,6 +147,21 @@ export const DotExperimentsConfigureStore = signalStore(
         );
 
         const $totalWeight = computed<number>(() => totalWeight($variants()));
+
+        /**
+         * The part of the pending diff that would actually leave now — what the flush computes,
+         * computed the same way (`toOutgoingPatch`).
+         *
+         * Before the draft exists nothing can leave at all: no PATCH without an experiment, and
+         * the POST cannot fire until a page is picked. Those keys travel with the creation call
+         * (whose own feedback is `creating`/`$isSaving`), so reporting them as "autosaving" here
+         * would pin the footer on "Saving…" from the first keystroke on `/new` (#37003).
+         */
+        const $outgoingPatch = computed<DotExperimentPatchBody | null>(() => {
+            const experiment = store.experiment();
+
+            return experiment ? toOutgoingPatch(store.pendingPatch(), experiment) : null;
+        });
 
         return {
             $status,
@@ -210,8 +220,20 @@ export const DotExperimentsConfigureStore = signalStore(
             $isSaving: computed<boolean>(
                 () => store.status() === ComponentStatus.SAVING || store.creating()
             ),
-            /** True while any field group has a PATCH debounced or in flight. */
-            $isAutosaving: computed<boolean>(() => store.pendingFieldGroups().length > 0)
+            /**
+             * True while a PATCH is debounced or in flight: the diff stays pending until the server
+             * accepts it, so one signal covers both.
+             *
+             * Read off the *sendable* part of the diff, not the whole of it: a pending
+             * `trafficProportion` whose weights are still being fixed is going nowhere, and a
+             * footer saying "Saving…" while it waits would never stop (#37003).
+             *
+             * A failed save is excluded for the same reason even though its diff is sendable —
+             * nothing is on its way any more until the next edit re-sends it.
+             */
+            $isAutosaving: computed<boolean>(
+                () => !store.lastSaveFailed() && hasPendingChanges($outgoingPatch())
+            )
         };
     }),
     withReducer<DotExperimentsConfigureViewState>(
@@ -258,111 +280,70 @@ export const DotExperimentsConfigureStore = signalStore(
         })),
         on(apiEvents.pageLockResolved, ({ payload }) => ({ pageLockInfo: payload })),
 
-        // Field groups. Each change is applied locally at once — the PATCH is debounced, and the
-        // card must not lag half a second behind the keystroke that caused it.
-        on(pageEvents.nameChanged, ({ payload }, state) => ({
-            draftName: payload,
-            pendingFieldGroups:
-                state.experiment && payload.trim()
-                    ? addPendingGroup(state.pendingFieldGroups, 'name')
-                    : state.pendingFieldGroups
+        /**
+         * A field changed. The keys are merged into the diff waiting to be flushed — later value
+         * per key wins — and applied locally at once: the PATCH is debounced, and no card may lag
+         * half a second behind the keystroke that caused it.
+         *
+         * The drafts follow `name`/`description` so the header title tracks what is being typed,
+         * while `experiment` keeps the persisted pair (see `applyPatchToExperiment`).
+         */
+        on(pageEvents.formEdited, ({ payload }, state) => ({
+            pendingPatch: { ...state.pendingPatch, ...payload },
+            lastSaveFailed: false,
+            draftName: payload.name ?? state.draftName,
+            draftDescription: payload.description ?? state.draftDescription,
+            experiment: applyPatchToExperiment(state.experiment, payload)
         })),
-        on(pageEvents.descriptionChanged, ({ payload }, state) => ({
-            draftDescription: payload,
-            pendingFieldGroups: state.experiment
-                ? addPendingGroup(state.pendingFieldGroups, 'description')
-                : state.pendingFieldGroups
-        })),
-        on(pageEvents.goalChanged, ({ payload }, state) =>
-            state.experiment
-                ? {
-                      experiment: { ...state.experiment, goals: payload },
-                      pendingFieldGroups: addPendingGroup(state.pendingFieldGroups, 'goal')
-                  }
-                : {}
-        ),
-        on(pageEvents.schedulingChanged, ({ payload }, state) =>
-            state.experiment
-                ? {
-                      experiment: { ...state.experiment, scheduling: payload },
-                      pendingFieldGroups: addPendingGroup(state.pendingFieldGroups, 'scheduling')
-                  }
-                : {}
-        ),
-        on(pageEvents.trafficAllocationChanged, ({ payload }, state) =>
-            state.experiment
-                ? {
-                      experiment: { ...state.experiment, trafficAllocation: payload },
-                      pendingFieldGroups: addPendingGroup(
-                          state.pendingFieldGroups,
-                          'trafficAllocation'
-                      )
-                  }
-                : {}
-        ),
-        on(pageEvents.trafficProportionChanged, ({ payload }, state) =>
-            state.experiment
-                ? {
-                      experiment: { ...state.experiment, trafficProportion: payload },
-                      pendingFieldGroups: addPendingGroup(
-                          state.pendingFieldGroups,
-                          'trafficProportion'
-                      )
-                  }
-                : {}
-        ),
 
-        // Autosave outcomes. The response is the source of truth after any write, so the whole
-        // experiment is replaced rather than the one key that was sent.
-        //
-        // A group whose handler decided there was nothing to send settles the same way as one that
-        // was written: it is not pending any more, and only its handler knows a call was never
-        // made — which is why the handler says so rather than the reducer guessing (#37003).
-        on(apiEvents.autosaveSkipped, ({ payload }, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, payload)
+        /**
+         * Only what was written settles: the keys the body carried leave the diff, and what
+         * `toOutgoingPatch` held back stays pending — see `withoutSentKeys` for why the remainder
+         * can be read as "held back".
+         *
+         * The response is the source of truth for what was written, so the experiment is replaced
+         * by it — but with the held-back keys re-applied on top, or the weights the user is still
+         * fixing would snap back to the older ones the server answered with (#37003).
+         */
+        /**
+         * A PATCH is on the wire. `SAVING` drives the flight-only progress indicator; the
+         * debounce window before it deliberately does not reach this state, or the bar would run
+         * from the first keystroke for as long as the user keeps typing.
+         */
+        on(apiEvents.saveRequested, () => ({ status: ComponentStatus.SAVING })),
+        on(apiEvents.saveSucceeded, ({ payload }, state) => {
+            const heldBack = withoutSentKeys(state.pendingPatch, payload.sent);
+
+            return {
+                experiment: heldBack
+                    ? applyPatchToExperiment(payload.experiment, heldBack)
+                    : payload.experiment,
+                pendingPatch: heldBack,
+                lastSaveFailed: false,
+                status: ComponentStatus.LOADED
+            };
+        }),
+        /**
+         * A rejected write keeps its diff: the next edit re-sends it merged with whatever changed,
+         * which is the only retry the screen has. The failure itself was already reported by
+         * `DotHttpErrorManagerService`, and the screen stays usable.
+         */
+        on(apiEvents.saveFailed, () => ({
+            lastSaveFailed: true,
+            status: ComponentStatus.LOADED
         })),
-        on(apiEvents.nameSucceeded, ({ payload }, state) => ({
-            experiment: payload,
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'name')
-        })),
-        on(apiEvents.nameFailed, (_event, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'name')
-        })),
-        on(apiEvents.descriptionSucceeded, ({ payload }, state) => ({
-            experiment: payload,
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'description')
-        })),
-        on(apiEvents.descriptionFailed, (_event, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'description')
-        })),
-        on(apiEvents.goalSucceeded, ({ payload }, state) => ({
-            experiment: payload,
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'goal')
-        })),
-        on(apiEvents.goalFailed, (_event, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'goal')
-        })),
-        on(apiEvents.schedulingSucceeded, ({ payload }, state) => ({
-            experiment: payload,
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'scheduling')
-        })),
-        on(apiEvents.schedulingFailed, (_event, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'scheduling')
-        })),
-        on(apiEvents.trafficAllocationSucceeded, ({ payload }, state) => ({
-            experiment: payload,
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'trafficAllocation')
-        })),
-        on(apiEvents.trafficAllocationFailed, (_event, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'trafficAllocation')
-        })),
-        on(apiEvents.trafficProportionSucceeded, ({ payload }, state) => ({
-            experiment: payload,
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'trafficProportion')
-        })),
-        on(apiEvents.trafficProportionFailed, (_event, state) => ({
-            pendingFieldGroups: removePendingGroup(state.pendingFieldGroups, 'trafficProportion')
-        })),
+        /**
+         * A skipped flush never touches the diff: nothing was written, so nothing can settle, and
+         * dropping it would take the held-back keys with it — the next successful PATCH of another
+         * key would then replace the experiment with a response that knows nothing about the
+         * weights being fixed (#37003). `$isAutosaving` stays honest regardless, since it reads
+         * only the sendable part of the diff.
+         *
+         * The status reset IS needed though: an edit can cancel an in-flight PATCH (`switchMap`)
+         * after `saveRequested` set `SAVING`, and if the re-debounced flush then finds nothing to
+         * send, this is the only event left to bring the status home.
+         */
+        on(apiEvents.saveSkipped, () => ({ status: ComponentStatus.LOADED })),
 
         // Variants have their own endpoints, each answering with the recomputed proportion.
         on(
@@ -443,43 +424,6 @@ export const DotExperimentsConfigureStore = signalStore(
                     return failed(error);
                 };
 
-            /**
-             * One debounced PATCH for one field group.
-             *
-             * `switchMap`, not `mergeMap`: a second edit to the *same* group replaces the call
-             * that is already going out rather than queuing behind it — that is what "collapses
-             * into a single call" means. Each group calls this separately, so their timers are
-             * independent of one another.
-             *
-             * Every emission that gets through the debounce settles the group, whether or not it
-             * results in a call: the reducer marked the group pending on the edit, and the only
-             * thing that can unmark it is an event from here.
-             */
-            const autosave = <T, S, F>(
-                group: ExperimentFieldGroup,
-                source: Observable<{ payload: T }>,
-                call: (experimentId: string, payload: T) => Observable<DotExperiment>,
-                succeeded: (experiment: DotExperiment) => S,
-                failed: (error: HttpErrorResponse) => F,
-                canSend: (payload: T, experiment: DotExperiment) => boolean = () => true
-            ): Observable<S | F | AutosaveSkipped> =>
-                source.pipe(
-                    debounceTime(AUTOSAVE_DEBOUNCE_MS),
-                    switchMap(({ payload }) => {
-                        const experiment = store.experiment();
-
-                        // Nothing to patch before the draft exists: those values reach the
-                        // server through the creation POST instead.
-                        if (!experiment || !canSend(payload, experiment)) {
-                            return of(apiEvents.autosaveSkipped(group));
-                        }
-
-                        return call(experiment.id, payload).pipe(
-                            mapResponse({ next: succeeded, error: toFailure(failed) })
-                        );
-                    })
-                );
-
             /** Resolves `?pageId=` / `?url=` to the page the Page card shows. */
             const resolvePrefill = ({ pageId, url }: ConfigurePagePrefill) => {
                 if (pageId) {
@@ -554,7 +498,7 @@ export const DotExperimentsConfigureStore = signalStore(
                  * `switchMap` — which would otherwise cancel the POST already creating the draft.
                  */
                 create$: merge(
-                    events.on(pageEvents.nameChanged),
+                    events.on(pageEvents.formEdited),
                     events.on(pageEvents.pageSelected)
                 ).pipe(
                     filter(() => store.isNew() && !store.creating()),
@@ -617,71 +561,65 @@ export const DotExperimentsConfigureStore = signalStore(
                     )
                 ),
 
-                // One handler per field group: two groups edited in the same tick must reach the
-                // server as two calls, since no endpoint accepts them together.
-                autosaveName$: autosave(
-                    'name',
-                    events.on(pageEvents.nameChanged),
-                    (experimentId, name: string) => experimentsService.setName(experimentId, name),
-                    apiEvents.nameSucceeded,
-                    apiEvents.nameFailed,
-                    // A blank name is rejected by the backend, and the name the creation POST
-                    // just sent does not need sending again.
-                    (name, experiment) => !!name.trim() && name !== experiment.name
-                ),
+                /**
+                 * The one autosave: every edit feeds a single timer, and what goes out is the diff
+                 * accumulated by the time it elapses (AC6). Two cards edited in the same window
+                 * therefore reach the server as one multi-key call, not as two.
+                 *
+                 * `switchMap`, not `mergeMap`: an edit arriving while a PATCH is on the wire
+                 * replaces it rather than queuing behind it — that is what "collapses into a single
+                 * call" means, and it is also what makes clearing the whole diff safe when a
+                 * response *is* processed.
+                 *
+                 * `createSucceeded` is merged in to flush what was typed while the creation POST
+                 * was travelling: those keys were accumulated against an experiment that did not
+                 * exist yet, and this is the first moment they can be written. The keys the POST
+                 * itself carried are dropped by `toOutgoingPatch`, so the flush stays a no-op when
+                 * nothing was typed in the meantime.
+                 *
+                 * The body is reported back with the response: it is not always every pending key,
+                 * and only the ones it carried may settle (#37003).
+                 */
+                autosave$: merge(
+                    events.on(pageEvents.formEdited),
+                    events.on(apiEvents.createSucceeded)
+                ).pipe(
+                    debounceTime(AUTOSAVE_DEBOUNCE_MS),
+                    switchMap(() => {
+                        const experiment = store.experiment();
+                        // Nothing to patch before the draft exists: those values reach the server
+                        // through the creation POST, and whatever is left over is flushed here as
+                        // soon as it answers.
+                        const body = experiment
+                            ? toOutgoingPatch(store.pendingPatch(), experiment)
+                            : null;
 
-                autosaveDescription$: autosave(
-                    'description',
-                    events.on(pageEvents.descriptionChanged),
-                    (experimentId, description: string) =>
-                        experimentsService.setDescription(experimentId, description),
-                    apiEvents.descriptionSucceeded,
-                    apiEvents.descriptionFailed,
-                    (description, experiment) => description !== experiment.description
-                ),
+                        if (!experiment || !body) {
+                            return of(apiEvents.saveSkipped());
+                        }
 
-                autosaveGoal$: autosave(
-                    'goal',
-                    events.on(pageEvents.goalChanged),
-                    (experimentId, goals: Goals | null) =>
-                        // `setGoal` sends `{ goals }` and nothing else: `targetingConditions` is
-                        // never part of an outgoing body (AC7).
-                        experimentsService.setGoal(experimentId, goals as Goals),
-                    apiEvents.goalSucceeded,
-                    apiEvents.goalFailed,
-                    (goals) => !!goals
-                ),
-
-                autosaveScheduling$: autosave(
-                    'scheduling',
-                    events.on(pageEvents.schedulingChanged),
-                    (experimentId, scheduling) =>
-                        experimentsService.setScheduling(experimentId, scheduling),
-                    apiEvents.schedulingSucceeded,
-                    apiEvents.schedulingFailed
-                ),
-
-                autosaveTrafficAllocation$: autosave(
-                    'trafficAllocation',
-                    events.on(pageEvents.trafficAllocationChanged),
-                    (experimentId, trafficAllocation: number) =>
-                        experimentsService.setTrafficAllocation(experimentId, trafficAllocation),
-                    apiEvents.trafficAllocationSucceeded,
-                    apiEvents.trafficAllocationFailed
-                ),
-
-                autosaveTrafficProportion$: autosave(
-                    'trafficProportion',
-                    events.on(pageEvents.trafficProportionChanged),
-                    (experimentId, trafficProportion: TrafficProportion) =>
-                        experimentsService.setTrafficProportion(experimentId, trafficProportion),
-                    apiEvents.trafficProportionSucceeded,
-                    apiEvents.trafficProportionFailed
+                        // `saveRequested` marks the moment a real request leaves — the visible
+                        // progress indicator keys on it, so it runs for the flight only, not for
+                        // the whole debounce window while the user is still typing.
+                        return merge(
+                            of(apiEvents.saveRequested()),
+                            experimentsService.patch(experiment.id, body).pipe(
+                                mapResponse({
+                                    next: (updated) =>
+                                        apiEvents.saveSucceeded({
+                                            experiment: updated,
+                                            sent: body
+                                        }),
+                                    error: toFailure(apiEvents.saveFailed)
+                                })
+                            )
+                        );
+                    })
                 ),
 
                 /**
-                 * Split Evenly is a weight change like any other: it folds back into the same
-                 * debounced `trafficProportion` PATCH instead of having a path of its own.
+                 * Split Evenly is a weight change like any other: it is reported as an edit, so it
+                 * folds into the same accumulated PATCH instead of having a path of its own.
                  */
                 splitEvenly$: events.on(pageEvents.splitEvenly).pipe(
                     map(() => store.experiment()?.trafficProportion),
@@ -690,9 +628,11 @@ export const DotExperimentsConfigureStore = signalStore(
                             !!trafficProportion?.variants?.length
                     ),
                     map((trafficProportion) =>
-                        pageEvents.trafficProportionChanged({
-                            type: TrafficProportionTypes.SPLIT_EVENLY,
-                            variants: splitWeightsEvenly(trafficProportion.variants)
+                        pageEvents.formEdited({
+                            trafficProportion: {
+                                type: TrafficProportionTypes.SPLIT_EVENLY,
+                                variants: splitWeightsEvenly(trafficProportion.variants)
+                            }
                         })
                     )
                 ),
