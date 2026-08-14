@@ -1,0 +1,94 @@
+<div class="flex min-w-0 items-center gap-4">
+    <p-button
+        [rounded]="true"
+        [outlined]="true"
+        severity="secondary"
+        size="small"
+        (onClick)="onBackToList()"
+        [attr.aria-label]="'experiments.configure.action.back-to-list' | dm"
+        [pTooltip]="'experiments.configure.action.back-to-list' | dm"
+        tooltipPosition="bottom"
+        data-testid="experiments-configure-back-btn">
+        <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+            arrow_back
+        </span>
+    </p-button>
+
+    <div class="flex min-w-0 flex-col gap-0.5">
+        <div class="flex items-center gap-2.5">
+            <h1
+                class="m-0 truncate text-xl font-semibold text-surface-900"
+                [title]="$title()"
+                data-testid="experiments-configure-title">
+                {{ $title() }}
+            </h1>
+            <p-tag
+                [severity]="$statusSeverity()"
+                [value]="$statusLabelKey() | dm"
+                data-testid="experiments-configure-status-tag" />
+        </div>
+        <span
+            class="truncate text-sm text-surface-500"
+            [title]="$subline()"
+            data-testid="experiments-configure-subline">
+            {{ $subline() }}
+        </span>
+    </div>
+</div>
+
+<div class="flex flex-none items-center gap-2">
+    @if ($showResults()) {
+        <!-- TODO: navigate to the results screen once it exists. The legacy reports screen only
+             renders inside the UVE shell (it needs the page context its guard resolves), so it
+             cannot be linked from the portlet. -->
+        <p-button
+            [rounded]="true"
+            [outlined]="true"
+            severity="secondary"
+            [label]="'experiments.action.view.results' | dm"
+            [disabled]="true"
+            [pTooltip]="'experiments.list.action.coming-soon' | dm"
+            tooltipPosition="bottom"
+            data-testid="experiments-configure-results-btn">
+            <span class="material-symbols-rounded text-lg! leading-none" aria-hidden="true">
+                monitoring
+            </span>
+        </p-button>
+    }
+
+    @if ($showStop()) {
+        <p-button
+            [rounded]="true"
+            [outlined]="true"
+            severity="danger"
+            [label]="'experiments.action.stop-experiment' | dm"
+            (onClick)="confirmStop()"
+            data-testid="experiments-configure-stop-btn">
+            <span class="material-symbols-rounded text-lg! leading-none" aria-hidden="true">
+                stop_circle
+            </span>
+        </p-button>
+    }
+
+    @if ($hasMenuItems()) {
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            (onClick)="actionsMenu.toggle($event)"
+            [attr.aria-label]="'experiments.list.actions.menu' | dm"
+            data-testid="experiments-configure-actions-btn">
+            <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                more_vert
+            </span>
+        </p-button>
+    }
+
+    <p-menu #actionsMenu [model]="$menuItems()" [popup]="true" appendTo="body" />
+
+    @if ($addToBundleAssetId(); as assetIdentifier) {
+        <dot-add-to-bundle
+            [assetIdentifier]="assetIdentifier"
+            (cancel)="$addToBundleAssetId.set(null)" />
+    }
+</div>
