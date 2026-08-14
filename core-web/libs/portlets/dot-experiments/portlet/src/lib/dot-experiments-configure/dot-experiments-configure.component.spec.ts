@@ -2,8 +2,9 @@ import { Dispatcher, EventCreator } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { provideLocationMocks } from '@angular/common/testing';
-import { ApplicationRef, Component, signal } from '@angular/core';
-import { provideRouter, Router } from '@angular/router';
+import { ApplicationRef, Component, input, signal, WritableSignal } from '@angular/core';
+import { FieldTree } from '@angular/forms/signals';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -11,8 +12,13 @@ import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access
 import {
     ComponentStatus,
     DotExperiment,
+    DotExperimentPatchBody,
     DotExperimentStatus,
-    DotMessageSeverity
+    DotMessageSeverity,
+    ExperimentsConfigProperties,
+    GOAL_OPERATORS,
+    GOAL_TYPES,
+    PROP_NOT_FOUND
 } from '@dotcms/dotcms-models';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -26,9 +32,11 @@ import { DotExperimentsConfigureVariantsComponent } from './components/dot-exper
 import { DotExperimentsConfigureComponent } from './dot-experiments-configure.component';
 
 import { LOCKED_BANNER_KEY_READ_ONLY, LOCKED_BANNER_KEY_RUNNING } from '../shared/constants';
-import { ConfigureValidationRule } from '../shared/models';
+import { ConfigureFormModel, ConfigureValidationRule } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
+import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
+import { EMPTY_GOAL_SLICE } from '../util/dot-experiments-configure-form.util';
 
 const ERROR_COPY = {
     title: 'Could not load the experiment',
@@ -54,9 +62,34 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.notification.abort': 'Experiment {0} aborted'
 });
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** The backend reports its limits in days. Both are well inside the 7/90-day defaults. */
+const CONFIGURED_MIN_DURATION_DAYS = 3;
+const CONFIGURED_MAX_DURATION_DAYS = 30;
+
+const CONFIGURED_DURATIONS = {
+    [ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION]: String(CONFIGURED_MIN_DURATION_DAYS),
+    [ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION]: String(CONFIGURED_MAX_DURATION_DAYS)
+};
+
+const daysFromNow = (days: number): Date => new Date(Date.now() + days * MILLISECONDS_PER_DAY);
+
+const EXPERIMENT: DotExperiment = {
+    ...getExperimentMock(0),
+    id: 'exp-1',
+    name: 'Summer landing test',
+    description: 'Compares two hero images',
+    goals: null,
+    scheduling: null,
+    trafficAllocation: 100
+};
+
 /**
- * The cards are shallow-rendered: this screen owns the layout, the banner, the toasts and the
- * scroll to the first failing field — everything else belongs to the card that renders it.
+ * The cards are shallow-rendered: this screen owns the layout, the banner, the toasts, the scroll to
+ * the first failing field — and the form the cards render slices of. What each card does with the
+ * slice it is handed belongs to that card's spec, so the stubs only declare the inputs the shell
+ * binds.
  *
  * Two of them carry a `[data-error]` marker, standing in for a card revealing a failed rule, so
  * the scroll has something to find and the *first* one can be told apart from the second.
@@ -68,88 +101,152 @@ class HeaderStubComponent {}
     selector: 'dot-experiments-configure-details',
     template: '<span data-error data-testid="details-error-marker"></span>'
 })
-class DetailsStubComponent {}
+class DetailsStubComponent {
+    readonly nameField = input<FieldTree<string>>();
+    readonly descriptionField = input<FieldTree<string>>();
+}
 
 @Component({
     selector: 'dot-experiments-configure-goal',
     template: '<span data-error data-testid="goal-error-marker"></span>'
 })
-class GoalStubComponent {}
+class GoalStubComponent {
+    readonly field = input<unknown>();
+}
 
 @Component({ selector: 'dot-experiments-configure-page', template: '' })
-class PageStubComponent {}
+class PageStubComponent {
+    readonly trafficAllocationField = input<FieldTree<number>>();
+}
 
 @Component({ selector: 'dot-experiments-configure-variants', template: '' })
 class VariantsStubComponent {}
 
 @Component({ selector: 'dot-experiments-configure-scheduling', template: '' })
-class SchedulingStubComponent {}
+class SchedulingStubComponent {
+    readonly field = input<unknown>();
+    readonly bounds = input<unknown>();
+}
 
 @Component({ selector: 'dot-experiments-configure-footer', template: '' })
 class FooterStubComponent {}
 
 /**
  * The store is provided by the component itself, so it is replaced through `componentProviders`.
- * Real signals rather than `jest.fn()`s: the shell derives `$isLoading` in a `computed` and
- * watches `validationErrors` in an `effect`, neither of which would ever re-run over a plain
+ * Real signals rather than `jest.fn()`s: the shell derives `$isLoading` in a `computed`, fills the
+ * form in an `effect` and watches it in another, none of which would ever re-run over a plain
  * function.
  */
 const createStoreMock = () => ({
     status: signal<ComponentStatus>(ComponentStatus.LOADED),
     validationErrors: signal<ConfigureValidationRule[]>([]),
-    $lockedBannerKey: signal<string | null>(null)
+    $lockedBannerKey: signal<string | null>(null),
+    $isLocked: signal(false),
+    $isAutosaving: signal(false),
+    $isSaving: signal(false),
+    experiment: signal<DotExperiment | null>(null),
+    draftName: signal(''),
+    draftDescription: signal('')
 });
 
 describe('DotExperimentsConfigureComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
     let scrollIntoView: jest.Mock;
+    let dispatch: jest.SpyInstance;
 
-    const createComponent = createComponentFactory({
-        component: DotExperimentsConfigureComponent,
-        // `componentProviders` replaces the component's own `providers`, so the real
-        // `ConfirmationService` has to be re-declared here (`p-confirmDialog` needs it).
-        componentProviders: [
-            { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
-            ConfirmationService
-        ],
-        providers: [
-            provideRouter([{ path: 'experiments', children: [] }]),
-            provideLocationMocks(),
-            { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotMessageDisplayService)
-        ],
-        overrideComponents: [
-            [
-                DotExperimentsConfigureComponent,
+    /**
+     * A screen mounted on one of the two URLs it answers on, with whatever the config resolver
+     * published. Both are read once, on init, exactly as the store reads the route.
+     */
+    const createComponentOn = ({
+        experimentId,
+        configProps
+    }: {
+        experimentId?: string;
+        configProps?: Record<string, string>;
+    }) =>
+        createComponentFactory({
+            component: DotExperimentsConfigureComponent,
+            // `componentProviders` replaces the component's own `providers`, so the real
+            // `ConfirmationService` has to be re-declared here (`p-confirmDialog` needs it).
+            componentProviders: [
+                { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
+                ConfirmationService
+            ],
+            providers: [
+                provideRouter([{ path: 'experiments', children: [] }]),
+                provideLocationMocks(),
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotMessageDisplayService),
                 {
-                    remove: {
-                        imports: [
-                            DotExperimentsConfigureHeaderComponent,
-                            DotExperimentsConfigureDetailsComponent,
-                            DotExperimentsConfigureGoalComponent,
-                            DotExperimentsConfigurePageComponent,
-                            DotExperimentsConfigureVariantsComponent,
-                            DotExperimentsConfigureSchedulingComponent,
-                            DotExperimentsConfigureFooterComponent
-                        ]
-                    },
-                    add: {
-                        imports: [
-                            HeaderStubComponent,
-                            DetailsStubComponent,
-                            GoalStubComponent,
-                            PageStubComponent,
-                            VariantsStubComponent,
-                            SchedulingStubComponent,
-                            FooterStubComponent
-                        ]
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            paramMap: convertToParamMap(experimentId ? { experimentId } : {}),
+                            data: configProps ? { config: configProps } : {}
+                        }
                     }
                 }
-            ]
-        ],
-        detectChanges: false
-    });
+            ],
+            overrideComponents: [
+                [
+                    DotExperimentsConfigureComponent,
+                    {
+                        remove: {
+                            imports: [
+                                DotExperimentsConfigureHeaderComponent,
+                                DotExperimentsConfigureDetailsComponent,
+                                DotExperimentsConfigureGoalComponent,
+                                DotExperimentsConfigurePageComponent,
+                                DotExperimentsConfigureVariantsComponent,
+                                DotExperimentsConfigureSchedulingComponent,
+                                DotExperimentsConfigureFooterComponent
+                            ]
+                        },
+                        add: {
+                            imports: [
+                                HeaderStubComponent,
+                                DetailsStubComponent,
+                                GoalStubComponent,
+                                PageStubComponent,
+                                VariantsStubComponent,
+                                SchedulingStubComponent,
+                                FooterStubComponent
+                            ]
+                        }
+                    }
+                ]
+            ],
+            detectChanges: false
+        });
+
+    /** The form model is `protected`, so the spec reads it the way the card specs read a tree. */
+    const modelOf = (): WritableSignal<ConfigureFormModel> =>
+        Reflect.get(spectator.component, '$model') as WritableSignal<ConfigureFormModel>;
+
+    /** Edits the form as a card would, and lets the autosave binding see it. */
+    const editForm = (change: Partial<ConfigureFormModel>) => {
+        modelOf().update((model) => ({ ...model, ...change }));
+        spectator.detectChanges();
+    };
+
+    /** Publishes a loaded experiment, which is what fills the form. */
+    const loadExperiment = (experiment: DotExperiment = EXPERIMENT) => {
+        storeMock.experiment.set(experiment);
+        storeMock.draftName.set(experiment.name);
+        storeMock.draftDescription.set(experiment.description ?? '');
+        spectator.detectChanges();
+    };
+
+    /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
+    const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
+
+    /** The bodies of every edit the screen reported. */
+    const reportedPatches = (): DotExperimentPatchBody[] =>
+        dispatchedEvents()
+            .filter(({ type }) => type === dotExperimentsConfigurePageEvents.formEdited.type)
+            .map(({ payload }) => payload as DotExperimentPatchBody);
 
     /** Dispatches an outcome the store would have raised once a call settled. */
     const emitSucceeded = (
@@ -171,244 +268,720 @@ describe('DotExperimentsConfigureComponent', () => {
         // jsdom does not implement scrollIntoView, so there is nothing to spy on.
         scrollIntoView = jest.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
-        spectator = createComponent();
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    describe('loaded screen', () => {
-        it.each([
-            'dot-experiments-configure-header',
-            'dot-experiments-configure-details',
-            'dot-experiments-configure-goal',
-            'dot-experiments-configure-page',
-            'dot-experiments-configure-variants',
-            'dot-experiments-configure-scheduling',
-            'dot-experiments-configure-footer'
-        ])('should render %s', (selector) => {
-            spectator.detectChanges();
-
-            expect(spectator.query(selector)).not.toBeNull();
+    describe('on an existing experiment', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
         });
 
-        it('should render the cards inside the scrolling body', () => {
-            spectator.detectChanges();
-
-            const body = spectator.query(byTestId('experiments-configure-body'));
-
-            expect(body?.querySelector('dot-experiments-configure-details')).not.toBeNull();
-            expect(body?.querySelector('dot-experiments-configure-scheduling')).not.toBeNull();
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
         });
 
-        it('should keep the header and the footer out of the scrolling body', () => {
-            // They are pinned: the body is the only region that scrolls.
-            spectator.detectChanges();
-
-            const body = spectator.query(byTestId('experiments-configure-body'));
-
-            expect(body?.querySelector('dot-experiments-configure-header')).toBeNull();
-            expect(body?.querySelector('dot-experiments-configure-footer')).toBeNull();
-        });
-
-        it('should not render the loading or the error state', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('experiments-configure-loading'))).toBeNull();
-            expect(spectator.query(byTestId('experiments-configure-error'))).toBeNull();
-        });
-    });
-
-    describe('loading', () => {
-        it.each([ComponentStatus.INIT, ComponentStatus.LOADING])(
-            'should render the skeleton on %s',
-            (status) => {
-                // INIT counts: the route is read in the store's `onInit`, so an existing
-                // experiment spends a tick there before its load starts.
-                storeMock.status.set(status);
+        describe('loaded screen', () => {
+            it.each([
+                'dot-experiments-configure-header',
+                'dot-experiments-configure-details',
+                'dot-experiments-configure-goal',
+                'dot-experiments-configure-page',
+                'dot-experiments-configure-variants',
+                'dot-experiments-configure-scheduling',
+                'dot-experiments-configure-footer'
+            ])('should render %s', (selector) => {
                 spectator.detectChanges();
 
-                expect(spectator.query(byTestId('experiments-configure-loading'))).not.toBeNull();
+                expect(spectator.query(selector)).not.toBeNull();
+            });
+
+            it('should render the cards inside the scrolling body', () => {
+                spectator.detectChanges();
+
+                const body = spectator.query(byTestId('experiments-configure-body'));
+
+                expect(body?.querySelector('dot-experiments-configure-details')).not.toBeNull();
+                expect(body?.querySelector('dot-experiments-configure-scheduling')).not.toBeNull();
+            });
+
+            it('should keep the header and the footer out of the scrolling body', () => {
+                // They are pinned: the body is the only region that scrolls.
+                spectator.detectChanges();
+
+                const body = spectator.query(byTestId('experiments-configure-body'));
+
+                expect(body?.querySelector('dot-experiments-configure-header')).toBeNull();
+                expect(body?.querySelector('dot-experiments-configure-footer')).toBeNull();
+            });
+
+            it('should not render the loading or the error state', () => {
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-configure-loading'))).toBeNull();
+                expect(spectator.query(byTestId('experiments-configure-error'))).toBeNull();
+            });
+        });
+
+        describe('loading', () => {
+            it.each([ComponentStatus.INIT, ComponentStatus.LOADING])(
+                'should render the skeleton on %s',
+                (status) => {
+                    // INIT counts: the route is read in the store's `onInit`, so an existing
+                    // experiment spends a tick there before its load starts.
+                    storeMock.status.set(status);
+                    spectator.detectChanges();
+
+                    expect(
+                        spectator.query(byTestId('experiments-configure-loading'))
+                    ).not.toBeNull();
+                    expect(spectator.query(byTestId('experiments-configure-body'))).toBeNull();
+                }
+            );
+
+            it('should not render any card while loading', () => {
+                storeMock.status.set(ComponentStatus.LOADING);
+                spectator.detectChanges();
+
+                expect(spectator.query('dot-experiments-configure-header')).toBeNull();
+                expect(spectator.query('dot-experiments-configure-footer')).toBeNull();
+            });
+        });
+
+        describe('load error', () => {
+            const renderError = () => {
+                storeMock.status.set(ComponentStatus.ERROR);
+                spectator.detectChanges();
+            };
+
+            it('should replace the screen with the error state', () => {
+                renderError();
+
+                const error = spectator.query(byTestId('experiments-configure-error'));
+
+                expect(error?.textContent).toContain(ERROR_COPY.title);
+                expect(error?.textContent).toContain(ERROR_COPY.subtitle);
                 expect(spectator.query(byTestId('experiments-configure-body'))).toBeNull();
-            }
-        );
+                expect(spectator.query(byTestId('experiments-configure-loading'))).toBeNull();
+            });
 
-        it('should not render any card while loading', () => {
-            storeMock.status.set(ComponentStatus.LOADING);
-            spectator.detectChanges();
+            it('should offer a way back to the list', () => {
+                renderError();
+                const router = spectator.inject(Router);
+                const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
 
-            expect(spectator.query('dot-experiments-configure-header')).toBeNull();
-            expect(spectator.query('dot-experiments-configure-footer')).toBeNull();
-        });
-    });
+                spectator.click(
+                    spectator
+                        .query(byTestId('experiments-configure-error'))
+                        ?.querySelector('[data-testid="message-button"]') as HTMLElement
+                );
 
-    describe('load error', () => {
-        const renderError = () => {
-            storeMock.status.set(ComponentStatus.ERROR);
-            spectator.detectChanges();
-        };
-
-        it('should replace the screen with the error state', () => {
-            renderError();
-
-            const error = spectator.query(byTestId('experiments-configure-error'));
-
-            expect(error?.textContent).toContain(ERROR_COPY.title);
-            expect(error?.textContent).toContain(ERROR_COPY.subtitle);
-            expect(spectator.query(byTestId('experiments-configure-body'))).toBeNull();
-            expect(spectator.query(byTestId('experiments-configure-loading'))).toBeNull();
+                expect(navigate).toHaveBeenCalledWith(['/experiments']);
+            });
         });
 
-        it('should offer a way back to the list', () => {
-            renderError();
-            const router = spectator.inject(Router);
-            const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+        describe('read-only banner', () => {
+            it('should not render a banner while the experiment is editable', () => {
+                spectator.detectChanges();
 
-            spectator.click(
+                expect(spectator.query(byTestId('experiments-configure-locked-banner'))).toBeNull();
+            });
+
+            it('should say the experiment is running when it is', () => {
+                storeMock.$lockedBannerKey.set(LOCKED_BANNER_KEY_RUNNING);
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query(byTestId('experiments-configure-locked-banner'))?.textContent
+                ).toContain(LOCKED_COPY.running);
+            });
+
+            it('should fall back to the generic copy for every other locked status', () => {
+                storeMock.$lockedBannerKey.set(LOCKED_BANNER_KEY_READ_ONLY);
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query(byTestId('experiments-configure-locked-banner'))?.textContent
+                ).toContain(LOCKED_COPY.readOnly);
+            });
+
+            it('should keep the cards on screen: the fields are frozen, not hidden', () => {
+                storeMock.$lockedBannerKey.set(LOCKED_BANNER_KEY_RUNNING);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-configure-body'))).not.toBeNull();
+                expect(spectator.query('dot-experiments-configure-footer')).not.toBeNull();
+            });
+        });
+
+        describe('saving progress bar', () => {
+            it('should stay hidden while nothing is being persisted', () => {
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-configure-progress-bar'))).toBeNull();
+            });
+
+            it('should not run for the debounce window: typing alone is the footer copy, not a bar', () => {
+                storeMock.$isAutosaving.set(true);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-configure-progress-bar'))).toBeNull();
+            });
+
+            it('should run under the header while a request is on the wire', () => {
+                storeMock.$isSaving.set(true);
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query(byTestId('experiments-configure-progress-bar'))
+                ).not.toBeNull();
+            });
+
+            it('should leave once the save settles', () => {
+                storeMock.$isSaving.set(true);
+                spectator.detectChanges();
+                storeMock.$isSaving.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-configure-progress-bar'))).toBeNull();
+            });
+        });
+
+        describe('filling the form', () => {
+            it('should fill every slice from the loaded experiment', () => {
+                loadExperiment({
+                    ...EXPERIMENT,
+                    trafficAllocation: 40,
+                    scheduling: { startDate: 1893456000000, endDate: 1893542400000 },
+                    goals: {
+                        primary: {
+                            name: 'Reach pricing',
+                            type: GOAL_TYPES.REACH_PAGE,
+                            conditions: [
+                                {
+                                    parameter: 'url',
+                                    operator: GOAL_OPERATORS.CONTAINS,
+                                    value: '/pricing'
+                                }
+                            ]
+                        }
+                    }
+                });
+
+                expect(modelOf()()).toEqual({
+                    name: EXPERIMENT.name,
+                    description: EXPERIMENT.description,
+                    goal: {
+                        type: GOAL_TYPES.REACH_PAGE,
+                        name: 'Reach pricing',
+                        parameter: 'url',
+                        operator: GOAL_OPERATORS.CONTAINS,
+                        parameterName: '',
+                        value: '/pricing'
+                    },
+                    trafficAllocation: 40,
+                    scheduling: {
+                        startDate: new Date(1893456000000),
+                        endDate: new Date(1893542400000)
+                    }
+                });
+            });
+
+            it('should start empty while the experiment is still loading', () => {
+                spectator.detectChanges();
+
+                expect(modelOf()()).toEqual({
+                    name: '',
+                    description: '',
+                    goal: EMPTY_GOAL_SLICE,
+                    trafficAllocation: 100,
+                    scheduling: { startDate: null, endDate: null }
+                });
+            });
+
+            it('should not report an edit just for being filled in', () => {
+                loadExperiment();
+
+                expect(reportedPatches()).toEqual([]);
+            });
+
+            it('should keep what is on screen when an autosave response replaces the experiment', () => {
+                // Every PATCH answers with a whole new experiment object; re-reading it would drop
+                // what was typed while the call was travelling.
+                loadExperiment();
+                editForm({ trafficAllocation: 40 });
+
+                storeMock.experiment.set({ ...EXPERIMENT, trafficAllocation: 100 });
+                spectator.detectChanges();
+
+                expect(modelOf()().trafficAllocation).toBe(40);
+            });
+        });
+
+        describe('reporting what changed', () => {
+            beforeEach(() => loadExperiment());
+
+            it('should report a typed name on its own', () => {
+                editForm({ name: 'Winter landing test' });
+
+                expect(reportedPatches()).toContainEqual({ name: 'Winter landing test' });
+            });
+
+            it('should report an emptied description, which is a change like any other', () => {
+                editForm({ description: '' });
+
+                expect(reportedPatches()).toContainEqual({ description: '' });
+            });
+
+            it('should never report a blank name, which the backend rejects', () => {
+                editForm({ name: '   ' });
+
+                expect(reportedPatches()).toEqual([]);
+            });
+
+            it('should report a complete goal in the shape the endpoint persists', () => {
+                editForm({
+                    goal: {
+                        type: GOAL_TYPES.REACH_PAGE,
+                        name: 'Reach pricing',
+                        parameter: 'url',
+                        operator: GOAL_OPERATORS.CONTAINS,
+                        parameterName: '',
+                        value: '/pricing'
+                    }
+                });
+
+                expect(reportedPatches()).toContainEqual({
+                    goals: {
+                        primary: {
+                            name: 'Reach pricing',
+                            type: GOAL_TYPES.REACH_PAGE,
+                            conditions: [
+                                {
+                                    parameter: 'url',
+                                    operator: GOAL_OPERATORS.CONTAINS,
+                                    value: '/pricing'
+                                }
+                            ]
+                        }
+                    }
+                });
+            });
+
+            it('should not report a goal whose condition is still half typed', () => {
+                editForm({
+                    goal: {
+                        type: GOAL_TYPES.REACH_PAGE,
+                        name: 'Reach pricing',
+                        parameter: 'url',
+                        operator: GOAL_OPERATORS.CONTAINS,
+                        parameterName: '',
+                        value: ''
+                    }
+                });
+
+                expect(reportedPatches()).toEqual([]);
+            });
+
+            it('should report a new allocation', () => {
+                editForm({ trafficAllocation: 40 });
+
+                expect(reportedPatches()).toContainEqual({ trafficAllocation: 40 });
+            });
+
+            it('should not report an allocation outside 1-100', () => {
+                editForm({ trafficAllocation: 120 });
+
+                expect(reportedPatches()).toEqual([]);
+            });
+
+            it('should report a schedule as instants', () => {
+                const startDate = daysFromNow(1);
+                const endDate = daysFromNow(CONFIGURED_MIN_DURATION_DAYS + 2);
+
+                editForm({ scheduling: { startDate, endDate } });
+
+                expect(reportedPatches()).toContainEqual({
+                    scheduling: { startDate: startDate.getTime(), endDate: endDate.getTime() }
+                });
+            });
+
+            it('should report an emptied schedule as no schedule at all', () => {
+                // `null` is what the PATCH endpoint reads as "starts when Start is pressed".
+                loadExperiment({
+                    ...EXPERIMENT,
+                    scheduling: { startDate: daysFromNow(1).getTime(), endDate: null }
+                });
+
+                editForm({ scheduling: { startDate: null, endDate: null } });
+
+                expect(reportedPatches()).toContainEqual({ scheduling: null });
+            });
+
+            it('should carry both keys in one body when two cards changed together', () => {
+                // `PATCH /api/v1/experiments/{id}` applies every key of its body at once (AC6).
+                editForm({ name: 'Winter landing test', trafficAllocation: 40 });
+
+                expect(reportedPatches()).toContainEqual({
+                    name: 'Winter landing test',
+                    trafficAllocation: 40
+                });
+            });
+        });
+
+        describe('the rules over the form', () => {
+            beforeEach(() => loadExperiment());
+
+            it('should not require anything, so nothing is invalid before Start is pressed', () => {
+                // AC28: `required` reaches the DOM as the native attribute, which would paint an
+                // untouched Name red. The store checks it when Start/Schedule is pressed.
+                editForm({ name: '', goal: EMPTY_GOAL_SLICE });
+
+                expect(spectator.query('[required]')).toBeNull();
+            });
+
+            it('should reject an end date before the configured minimum duration', () => {
+                editForm({
+                    scheduling: {
+                        startDate: null,
+                        endDate: daysFromNow(CONFIGURED_MIN_DURATION_DAYS - 1)
+                    }
+                });
+
+                expect(reportedPatches()).toEqual([]);
+            });
+
+            it('should accept an end date inside the configured window', () => {
+                editForm({
+                    scheduling: {
+                        startDate: null,
+                        endDate: daysFromNow(CONFIGURED_MIN_DURATION_DAYS + 1)
+                    }
+                });
+
+                expect(reportedPatches().length).toBe(1);
+            });
+
+            it('should reject an end date beyond the configured maximum duration', () => {
+                editForm({
+                    scheduling: {
+                        startDate: null,
+                        endDate: daysFromNow(CONFIGURED_MAX_DURATION_DAYS + 10)
+                    }
+                });
+
+                expect(reportedPatches()).toEqual([]);
+            });
+        });
+
+        describe('success toasts', () => {
+            const experiment = getExperimentMock(0);
+
+            const pushedMessage = (): string =>
+                (spectator.inject(DotMessageDisplayService, true).push as jest.Mock).mock.calls.at(
+                    -1
+                )?.[0].message;
+
+            beforeEach(() => spectator.detectChanges());
+
+            it.each([
+                ['created', dotExperimentsConfigureApiEvents.createSucceeded],
+                ['ended', dotExperimentsConfigureApiEvents.stopSucceeded],
+                ['unscheduled', dotExperimentsConfigureApiEvents.cancelScheduleSucceeded],
+                ['aborted', dotExperimentsConfigureApiEvents.abortSucceeded]
+            ])('should push a success toast once the experiment is %s', (expectedVerb, event) => {
+                emitSucceeded(event as EventCreator<string, DotExperiment>, experiment);
+
+                expect(spectator.inject(DotMessageDisplayService, true).push).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: DotMessageSeverity.SUCCESS,
+                        message: `Experiment ${experiment.name} ${expectedVerb}`
+                    })
+                );
+            });
+
+            it('should say the experiment started when the server reports it running', () => {
+                emitSucceeded(dotExperimentsConfigureApiEvents.startSucceeded, {
+                    ...experiment,
+                    status: DotExperimentStatus.RUNNING
+                });
+
+                expect(pushedMessage()).toBe(`Experiment ${experiment.name} started`);
+            });
+
+            it('should say the experiment was scheduled when the server reports it scheduled', () => {
+                // A start dated in the future schedules the experiment instead of running it, and
+                // the server's answer is what says which of the two happened.
+                emitSucceeded(dotExperimentsConfigureApiEvents.startSucceeded, {
+                    ...experiment,
+                    status: DotExperimentStatus.SCHEDULED
+                });
+
+                expect(pushedMessage()).toBe(`Experiment ${experiment.name} scheduled`);
+            });
+
+            it('should stay silent on an autosave, which is deliberately unannounced', () => {
+                // `saveSucceeded` carries the body it wrote beside the experiment (#37003), so it
+                // is dispatched here rather than through the shared helper.
+                spectator.inject(Dispatcher).dispatch(
+                    dotExperimentsConfigureApiEvents.saveSucceeded({
+                        experiment,
+                        sent: { name: experiment.name }
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(
+                    spectator.inject(DotMessageDisplayService, true).push
+                ).not.toHaveBeenCalled();
+            });
+
+            it('should stay silent on a failed transition, which the error manager already reported', () => {
                 spectator
-                    .query(byTestId('experiments-configure-error'))
-                    ?.querySelector('[data-testid="message-button"]') as HTMLElement
-            );
+                    .inject(Dispatcher)
+                    .dispatch(dotExperimentsConfigureApiEvents.startFailed(new Error('boom')));
+                spectator.detectChanges();
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments']);
-        });
-    });
-
-    describe('read-only banner', () => {
-        it('should not render a banner while the experiment is editable', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('experiments-configure-locked-banner'))).toBeNull();
+                expect(
+                    spectator.inject(DotMessageDisplayService, true).push
+                ).not.toHaveBeenCalled();
+            });
         });
 
-        it('should say the experiment is running when it is', () => {
-            storeMock.$lockedBannerKey.set(LOCKED_BANNER_KEY_RUNNING);
-            spectator.detectChanges();
+        describe('scroll to the first failing field', () => {
+            it('should not scroll while nothing has failed validation', () => {
+                flush();
 
-            expect(
-                spectator.query(byTestId('experiments-configure-locked-banner'))?.textContent
-            ).toContain(LOCKED_COPY.running);
-        });
-
-        it('should fall back to the generic copy for every other locked status', () => {
-            storeMock.$lockedBannerKey.set(LOCKED_BANNER_KEY_READ_ONLY);
-            spectator.detectChanges();
-
-            expect(
-                spectator.query(byTestId('experiments-configure-locked-banner'))?.textContent
-            ).toContain(LOCKED_COPY.readOnly);
-        });
-
-        it('should keep the cards on screen: the fields are frozen, not hidden', () => {
-            storeMock.$lockedBannerKey.set(LOCKED_BANNER_KEY_RUNNING);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('experiments-configure-body'))).not.toBeNull();
-            expect(spectator.query('dot-experiments-configure-footer')).not.toBeNull();
-        });
-    });
-
-    describe('success toasts', () => {
-        const experiment = getExperimentMock(0);
-
-        const pushedMessage = (): string =>
-            (spectator.inject(DotMessageDisplayService, true).push as jest.Mock).mock.calls.at(
-                -1
-            )?.[0].message;
-
-        beforeEach(() => spectator.detectChanges());
-
-        it.each([
-            ['created', dotExperimentsConfigureApiEvents.createSucceeded],
-            ['ended', dotExperimentsConfigureApiEvents.stopSucceeded],
-            ['unscheduled', dotExperimentsConfigureApiEvents.cancelScheduleSucceeded],
-            ['aborted', dotExperimentsConfigureApiEvents.abortSucceeded]
-        ])('should push a success toast once the experiment is %s', (expectedVerb, event) => {
-            emitSucceeded(event as EventCreator<string, DotExperiment>, experiment);
-
-            expect(spectator.inject(DotMessageDisplayService, true).push).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: DotMessageSeverity.SUCCESS,
-                    message: `Experiment ${experiment.name} ${expectedVerb}`
-                })
-            );
-        });
-
-        it('should say the experiment started when the server reports it running', () => {
-            emitSucceeded(dotExperimentsConfigureApiEvents.startSucceeded, {
-                ...experiment,
-                status: DotExperimentStatus.RUNNING
+                expect(scrollIntoView).not.toHaveBeenCalled();
             });
 
-            expect(pushedMessage()).toBe(`Experiment ${experiment.name} started`);
-        });
+            it('should bring the first failing field into view once Start reveals the errors', () => {
+                flush();
 
-        it('should say the experiment was scheduled when the server reports it scheduled', () => {
-            // A start dated in the future schedules the experiment instead of running it, and
-            // the server's answer is what says which of the two happened.
-            emitSucceeded(dotExperimentsConfigureApiEvents.startSucceeded, {
-                ...experiment,
-                status: DotExperimentStatus.SCHEDULED
+                storeMock.validationErrors.set(['name', 'goalType']);
+                flush();
+
+                expect(scrollIntoView).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
             });
 
-            expect(pushedMessage()).toBe(`Experiment ${experiment.name} scheduled`);
-        });
+            it('should scroll to the first marker on the screen, not to any later one', () => {
+                flush();
 
-        it('should stay silent on an autosave, which is deliberately unannounced', () => {
-            emitSucceeded(dotExperimentsConfigureApiEvents.nameSucceeded, experiment);
-            emitSucceeded(dotExperimentsConfigureApiEvents.goalSucceeded, experiment);
+                storeMock.validationErrors.set(['goalType']);
+                flush();
 
-            expect(spectator.inject(DotMessageDisplayService, true).push).not.toHaveBeenCalled();
-        });
+                expect(scrollIntoView.mock.instances[0]).toBe(
+                    spectator.query(byTestId('details-error-marker'))
+                );
+            });
 
-        it('should stay silent on a failed transition, which the error manager already reported', () => {
-            spectator
-                .inject(Dispatcher)
-                .dispatch(dotExperimentsConfigureApiEvents.startFailed(new Error('boom')));
-            spectator.detectChanges();
+            it('should scroll again when the footer re-runs it on a second press', () => {
+                // The errors do not change on a re-press, so the effect alone would never fire
+                // twice.
+                flush();
+                storeMock.validationErrors.set(['name']);
+                flush();
+                scrollIntoView.mockClear();
 
-            expect(spectator.inject(DotMessageDisplayService, true).push).not.toHaveBeenCalled();
+                spectator.component.scrollToFirstValidationError();
+
+                expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            });
         });
     });
 
-    describe('scroll to the first failing field', () => {
-        it('should not scroll while nothing has failed validation', () => {
-            flush();
+    describe('on the creation screen', () => {
+        const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
 
-            expect(scrollIntoView).not.toHaveBeenCalled();
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            spectator.detectChanges();
         });
 
-        it('should bring the first failing field into view once Start reveals the errors', () => {
-            flush();
+        it('should not read the created experiment back into the form', () => {
+            // The form is what created the draft, so re-reading it would drop a goal or a schedule
+            // entered before the name that created it — and those are still on their way out.
+            editForm({ trafficAllocation: 40, name: 'Summer landing test' });
 
-            storeMock.validationErrors.set(['name', 'goalType']);
-            flush();
+            loadExperiment({ ...EXPERIMENT, trafficAllocation: 100 });
 
-            expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+            expect(modelOf()().trafficAllocation).toBe(40);
         });
 
-        it('should scroll to the first marker on the screen, not to any later one', () => {
-            flush();
+        it('should not report an allocation while there is no experiment to patch', () => {
+            // The creation POST does not carry it, and there is nothing to PATCH yet.
+            editForm({ trafficAllocation: 40 });
 
-            storeMock.validationErrors.set(['goalType']);
-            flush();
+            expect(reportedPatches()).toEqual([]);
+        });
 
-            expect(scrollIntoView.mock.instances[0]).toBe(
-                spectator.query(byTestId('details-error-marker'))
+        it('should still report the name that creates the draft', () => {
+            editForm({ name: 'Summer landing test' });
+
+            expect(reportedPatches()).toContainEqual({ name: 'Summer landing test' });
+        });
+    });
+
+    describe('without the durations resolved', () => {
+        const createComponent = createComponentOn({ experimentId: EXPERIMENT.id });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            loadExperiment();
+        });
+
+        it('should fall back to a seven day minimum', () => {
+            editForm({ scheduling: { startDate: null, endDate: daysFromNow(5) } });
+
+            expect(reportedPatches()).toEqual([]);
+        });
+
+        it('should fall back to a ninety day maximum', () => {
+            editForm({ scheduling: { startDate: null, endDate: daysFromNow(40) } });
+
+            expect(reportedPatches().length).toBe(1);
+        });
+    });
+
+    describe('with a duration the backend does not have', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: {
+                [ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION]: PROP_NOT_FOUND,
+                [ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION]: PROP_NOT_FOUND
+            }
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            loadExperiment();
+        });
+
+        it('should treat an unset property as no property at all', () => {
+            editForm({ scheduling: { startDate: null, endDate: daysFromNow(5) } });
+
+            expect(reportedPatches()).toEqual([]);
+        });
+    });
+
+    describe('a card bound to a real slice of the form', () => {
+        /** Everything stubbed but the Goal card, which is handed `formTree.goal`. */
+        const createComponent = createComponentFactory({
+            component: DotExperimentsConfigureComponent,
+            componentProviders: [
+                { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
+                ConfirmationService
+            ],
+            providers: [
+                provideRouter([{ path: 'experiments', children: [] }]),
+                provideLocationMocks(),
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotMessageDisplayService),
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            paramMap: convertToParamMap({ experimentId: EXPERIMENT.id }),
+                            data: { config: CONFIGURED_DURATIONS }
+                        }
+                    }
+                }
+            ],
+            overrideComponents: [
+                [
+                    DotExperimentsConfigureComponent,
+                    {
+                        remove: {
+                            imports: [
+                                DotExperimentsConfigureHeaderComponent,
+                                DotExperimentsConfigureDetailsComponent,
+                                DotExperimentsConfigurePageComponent,
+                                DotExperimentsConfigureVariantsComponent,
+                                DotExperimentsConfigureSchedulingComponent,
+                                DotExperimentsConfigureFooterComponent
+                            ]
+                        },
+                        add: {
+                            imports: [
+                                HeaderStubComponent,
+                                DetailsStubComponent,
+                                PageStubComponent,
+                                VariantsStubComponent,
+                                SchedulingStubComponent,
+                                FooterStubComponent
+                            ]
+                        }
+                    }
+                ]
+            ],
+            detectChanges: false
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            loadExperiment();
+        });
+
+        it('should write what is typed in the card into that slice of the model', () => {
+            spectator.typeInElement(
+                'Newsletter signups',
+                spectator.query(byTestId('goal-name-input')) as HTMLInputElement
             );
+            spectator.detectChanges();
+
+            expect(modelOf()().goal.name).toBe('Newsletter signups');
         });
 
-        it('should scroll again when the footer re-runs it on a second press', () => {
-            // The errors do not change on a re-press, so the effect alone would never fire twice.
-            flush();
-            storeMock.validationErrors.set(['name']);
-            flush();
-            scrollIntoView.mockClear();
+        it('should report the goal the card completed as one edit of the whole form', () => {
+            spectator.click(byTestId(`goal-type-${GOAL_TYPES.BOUNCE_RATE}`));
+            spectator.detectChanges();
 
-            spectator.component.scrollToFirstValidationError();
+            expect(reportedPatches()).toContainEqual({
+                goals: {
+                    primary: {
+                        name: 'experiments.goal.conditions.minimize.bounce.rate',
+                        type: GOAL_TYPES.BOUNCE_RATE,
+                        conditions: []
+                    }
+                }
+            });
+        });
+    });
 
-            expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    describe('a locked experiment', () => {
+        const createComponent = createComponentOn({ experimentId: EXPERIMENT.id });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            storeMock.$isLocked.set(true);
+            loadExperiment();
+        });
+
+        it('should disable every field of the form', () => {
+            // AC34: one rule per leaf and per slice, so no card can forget it.
+            const formTree = Reflect.get(
+                spectator.component,
+                'formTree'
+            ) as FieldTree<ConfigureFormModel>;
+
+            expect(formTree.name().disabled()).toBe(true);
+            expect(formTree.description().disabled()).toBe(true);
+            expect(formTree.trafficAllocation().disabled()).toBe(true);
+            expect(formTree.goal.name().disabled()).toBe(true);
+            expect(formTree.scheduling.startDate().disabled()).toBe(true);
+            expect(formTree.scheduling.endDate().disabled()).toBe(true);
         });
     });
 });

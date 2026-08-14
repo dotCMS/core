@@ -1,18 +1,17 @@
-import { Dispatcher } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { signal } from '@angular/core';
-import { FieldTree } from '@angular/forms/signals';
-import { ActivatedRoute } from '@angular/router';
+import { computed, Injector, signal, WritableSignal } from '@angular/core';
+import { FieldTree, form } from '@angular/forms/signals';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperiment, ExperimentsConfigProperties, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
-import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotExperimentsConfigureSchedulingComponent } from './dot-experiments-configure-scheduling.component';
+import {
+    DotExperimentsConfigureSchedulingComponent,
+    schedulingFormSchema
+} from './dot-experiments-configure-scheduling.component';
 
-import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
-import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { SchedulingDateBounds, SchedulingFormSlice } from '../../../shared/models';
 
 const CLEAR_COPY = 'Clear Schedule';
 const OUT_OF_BOUNDS_COPY = 'The end date must fall between {0} and {1}';
@@ -24,38 +23,19 @@ const messageServiceMock = new MockDotMessageService({
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
-/** The backend reports its limits in days. Both are well inside the 7/90-day defaults. */
-const CONFIGURED_MIN_DURATION_DAYS = 3;
-const CONFIGURED_MAX_DURATION_DAYS = 30;
-
-const EXPERIMENT: DotExperiment = { ...getExperimentMock(1), scheduling: null };
+/** The window the shell hands over. Both ends are well inside any configured duration. */
+const MIN_END_DAYS = 3;
+const MAX_END_DAYS = 30;
 
 const daysFromNow = (days: number): Date => new Date(Date.now() + days * MILLISECONDS_PER_DAY);
 
-/** The shell provides the store; real signals keep the card's effects reactive. */
-const createStoreMock = () => ({
-    experiment: signal<DotExperiment | null>(EXPERIMENT),
-    $isLocked: signal(false)
-});
-
-interface SchedulingFormModel {
-    startDate: Date | null;
-    endDate: Date | null;
-}
-
-/**
- * The form tree is `protected`, and both dates live behind a PrimeNG overlay calendar. Reading the
- * tree is the supported escape hatch for driving them, the same one the signal-forms specs use.
- */
-const formTreeOf = (
-    component: DotExperimentsConfigureSchedulingComponent
-): FieldTree<SchedulingFormModel> =>
-    Reflect.get(component, 'formTree') as FieldTree<SchedulingFormModel>;
+const EMPTY_SCHEDULE: SchedulingFormSlice = { startDate: null, endDate: null };
 
 describe('DotExperimentsConfigureSchedulingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureSchedulingComponent>;
-    let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
+    let $isLocked: WritableSignal<boolean>;
+    let scheduling: WritableSignal<SchedulingFormSlice>;
+    let field: FieldTree<SchedulingFormSlice>;
 
     // The date picker's overlay queries `matchMedia`, which jsdom does not implement.
     beforeAll(() => {
@@ -74,40 +54,65 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
         });
     });
 
-    /** A card mounted on a route whose resolver published `configProps`, or nothing at all. */
-    const createComponentWith = (configProps?: Record<string, string>) =>
-        createComponentFactory({
-            component: DotExperimentsConfigureSchedulingComponent,
-            providers: [
-                { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
-                { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { data: configProps ? { config: configProps } : {} } }
-                }
-            ],
-            detectChanges: false
+    const createComponent = createComponentFactory({
+        component: DotExperimentsConfigureSchedulingComponent,
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        detectChanges: false
+    });
+
+    /**
+     * Mounts the card on a real slice carrying the card's own schema — the same rules the shell
+     * applies to `path.scheduling` — with the window measured from the start date being edited,
+     * as the shell measures it.
+     */
+    const mountWith = (initialScheduling: SchedulingFormSlice = EMPTY_SCHEDULE) => {
+        scheduling = signal(initialScheduling);
+
+        const $bounds = computed<SchedulingDateBounds>(() => {
+            const from = scheduling().startDate?.getTime() ?? Date.now();
+
+            return {
+                initialStartDate: new Date(),
+                minEndDate: new Date(from + MIN_END_DAYS * MILLISECONDS_PER_DAY),
+                maxEndDate: new Date(from + MAX_END_DAYS * MILLISECONDS_PER_DAY)
+            };
         });
 
-    /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
-    const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
+        field = form(
+            scheduling,
+            schedulingFormSchema({
+                isLocked: () => $isLocked(),
+                earliestStartDate: new Date(),
+                bounds: $bounds
+            }),
+            { injector: spectator.inject(Injector) }
+        );
 
-    const schedulingPayloads = () =>
-        dispatchedEvents()
-            .filter(({ type }) => type === dotExperimentsConfigurePageEvents.schedulingChanged.type)
-            .map(({ payload }) => payload);
+        spectator.setInput({ field, bounds: $bounds() });
+        spectator.detectChanges();
+    };
 
-    const setDates = (dates: Partial<SchedulingFormModel>) => {
-        const formTree = formTreeOf(spectator.component);
-
+    const setDates = (dates: Partial<SchedulingFormSlice>) => {
         if ('startDate' in dates) {
-            formTree.startDate().value.set(dates.startDate ?? null);
+            field.startDate().value.set(dates.startDate ?? null);
         }
 
         if ('endDate' in dates) {
-            formTree.endDate().value.set(dates.endDate ?? null);
+            field.endDate().value.set(dates.endDate ?? null);
         }
 
+        // The shell recomputes the window from the new start date and passes it back down.
+        spectator.setInput('bounds', {
+            initialStartDate: new Date(),
+            minEndDate: new Date(
+                (scheduling().startDate?.getTime() ?? Date.now()) +
+                    MIN_END_DAYS * MILLISECONDS_PER_DAY
+            ),
+            maxEndDate: new Date(
+                (scheduling().startDate?.getTime() ?? Date.now()) +
+                    MAX_END_DAYS * MILLISECONDS_PER_DAY
+            )
+        });
         spectator.detectChanges();
     };
 
@@ -117,178 +122,141 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
     const clearButton = () =>
         spectator.query(byTestId('experiments-configure-scheduling-clear-btn'));
 
-    describe('with the durations the backend configured', () => {
-        const createComponent = createComponentWith({
-            [ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION]: String(
-                CONFIGURED_MIN_DURATION_DAYS
-            ),
-            [ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION]: String(
-                CONFIGURED_MAX_DURATION_DAYS
-            )
-        });
+    beforeEach(() => {
+        $isLocked = signal(false);
+        spectator = createComponent();
+        mountWith();
+    });
 
-        beforeEach(() => {
-            storeMock = createStoreMock();
-            spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+    afterEach(() => jest.restoreAllMocks());
+
+    describe('the pickers', () => {
+        const openPicker = (testId: string) => {
+            spectator.click(
+                spectator.query(byTestId(testId))?.querySelector('input') as HTMLElement
+            );
             spectator.detectChanges();
-        });
 
-        afterEach(() => jest.restoreAllMocks());
+            return spectator.query(byTestId(testId));
+        };
 
-        describe('the pickers', () => {
-            const openPicker = (testId: string) => {
-                spectator.click(
-                    spectator.query(byTestId(testId))?.querySelector('input') as HTMLElement
-                );
-                spectator.detectChanges();
-
-                return spectator.query(byTestId(testId));
-            };
-
-            it.each([
-                'experiments-configure-scheduling-start',
-                'experiments-configure-scheduling-end'
-            ])('should let %s pick a time as well as a day', (testId) => {
+        it.each(['experiments-configure-scheduling-start', 'experiments-configure-scheduling-end'])(
+            'should let %s pick a time as well as a day',
+            (testId) => {
                 expect(
                     openPicker(testId)?.querySelector('.p-datepicker-time-picker')
                 ).not.toBeNull();
-            });
-        });
+            }
+        );
 
-        describe('bounds', () => {
-            it('should accept an end date inside the configured window', () => {
-                setDates({ endDate: daysFromNow(CONFIGURED_MIN_DURATION_DAYS + 1) });
+        it('should render the schedule it was handed', () => {
+            const startDate = daysFromNow(1);
 
-                expect(endDateError()).toBeNull();
-            });
+            mountWith({ startDate, endDate: null });
 
-            it('should reject an end date before the minimum duration', () => {
-                setDates({ endDate: daysFromNow(CONFIGURED_MIN_DURATION_DAYS - 1) });
-
-                expect(endDateError()).not.toBeNull();
-            });
-
-            it('should reject an end date beyond the maximum duration', () => {
-                setDates({ endDate: daysFromNow(CONFIGURED_MAX_DURATION_DAYS + 10) });
-
-                expect(endDateError()).not.toBeNull();
-            });
-
-            it('should measure the window from the start date, not from now', () => {
-                const startDate = daysFromNow(10);
-
-                setDates({
-                    startDate,
-                    endDate: new Date(
-                        startDate.getTime() + CONFIGURED_MIN_DURATION_DAYS * MILLISECONDS_PER_DAY
-                    )
-                });
-
-                expect(endDateError()).toBeNull();
-            });
-        });
-
-        describe('reporting the schedule', () => {
-            it('should report a valid range', () => {
-                const startDate = daysFromNow(1);
-                const endDate = daysFromNow(CONFIGURED_MIN_DURATION_DAYS + 2);
-
-                setDates({ startDate, endDate });
-
-                expect(schedulingPayloads()).toContainEqual({
-                    startDate: startDate.getTime(),
-                    endDate: endDate.getTime()
-                });
-            });
-
-            it('should not report an out-of-bounds range', () => {
-                setDates({
-                    startDate: daysFromNow(1),
-                    endDate: daysFromNow(CONFIGURED_MAX_DURATION_DAYS + 10)
-                });
-
-                expect(schedulingPayloads()).toEqual([]);
-            });
-        });
-
-        describe('clearing the schedule', () => {
-            it('should not offer a way to clear a schedule that was never set', () => {
-                expect(clearButton()).toBeNull();
-            });
-
-            it('should offer it once a start date is chosen', () => {
-                setDates({ startDate: daysFromNow(1) });
-
-                expect(clearButton()?.textContent).toContain(CLEAR_COPY);
-            });
-
-            it('should drop the whole schedule when pressed', () => {
-                // `null` is what the PATCH endpoint reads as "starts when Start is pressed".
-                setDates({ startDate: daysFromNow(1) });
-
-                spectator.click(clearButton()?.querySelector('button') as HTMLElement);
-                spectator.detectChanges();
-
-                expect(schedulingPayloads()).toContainEqual(null);
-                expect(clearButton()).toBeNull();
-            });
-
-            it('should not offer it while the experiment is locked', () => {
-                // AC34: a locked experiment is read-only, schedule included.
-                setDates({ startDate: daysFromNow(1) });
-                storeMock.$isLocked.set(true);
-                spectator.detectChanges();
-
-                expect(clearButton()).toBeNull();
-            });
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-start'))
+                    ?.querySelector('input')?.value
+            ).not.toBe('');
         });
     });
 
-    describe('without the durations resolved', () => {
-        const createComponent = createComponentWith();
+    describe('the window handed down by the shell', () => {
+        it('should accept an end date inside it', () => {
+            setDates({ endDate: daysFromNow(MIN_END_DAYS + 1) });
 
-        beforeEach(() => {
-            storeMock = createStoreMock();
-            spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
-            spectator.detectChanges();
+            expect(endDateError()).toBeNull();
         });
 
-        afterEach(() => jest.restoreAllMocks());
+        it('should reject an end date before it opens', () => {
+            setDates({ endDate: daysFromNow(MIN_END_DAYS - 1) });
 
-        it('should fall back to a seven day minimum', () => {
-            setDates({ endDate: daysFromNow(5) });
+            expect(endDateError()?.textContent).toContain('The end date must fall between');
+        });
+
+        it('should reject an end date beyond it', () => {
+            setDates({ endDate: daysFromNow(MAX_END_DAYS + 10) });
 
             expect(endDateError()).not.toBeNull();
         });
 
-        it('should fall back to a ninety day maximum', () => {
-            setDates({ endDate: daysFromNow(40) });
+        it('should measure it from the start date, not from now', () => {
+            const startDate = daysFromNow(10);
+
+            setDates({
+                startDate,
+                endDate: new Date(startDate.getTime() + MIN_END_DAYS * MILLISECONDS_PER_DAY)
+            });
 
             expect(endDateError()).toBeNull();
         });
     });
 
-    describe('with a duration the backend does not have', () => {
-        const createComponent = createComponentWith({
-            [ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION]: PROP_NOT_FOUND,
-            [ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION]: PROP_NOT_FOUND
+    describe('editing the schedule', () => {
+        it('should write both dates into the slice', () => {
+            const startDate = daysFromNow(1);
+            const endDate = daysFromNow(MIN_END_DAYS + 2);
+
+            setDates({ startDate, endDate });
+
+            expect(scheduling()).toEqual({ startDate, endDate });
         });
 
-        beforeEach(() => {
-            storeMock = createStoreMock();
-            spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        it('should say the experiment starts immediately while no start date is set', () => {
+            expect(
+                spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
+            ).toContain('experiments.configure.scheduling.note.immediate');
+        });
+    });
+
+    describe('clearing the schedule', () => {
+        it('should not offer a way to clear a schedule that was never set', () => {
+            expect(clearButton()).toBeNull();
+        });
+
+        it('should offer it once a start date is chosen', () => {
+            setDates({ startDate: daysFromNow(1) });
+
+            expect(clearButton()?.textContent).toContain(CLEAR_COPY);
+        });
+
+        it('should empty both dates when pressed', () => {
+            // Emptying the slice is what the shell turns into `scheduling: null`.
+            setDates({ startDate: daysFromNow(1), endDate: daysFromNow(MIN_END_DAYS + 2) });
+
+            spectator.click(clearButton()?.querySelector('button') as HTMLElement);
             spectator.detectChanges();
+
+            expect(scheduling()).toEqual(EMPTY_SCHEDULE);
+            expect(clearButton()).toBeNull();
         });
 
-        afterEach(() => jest.restoreAllMocks());
+        it('should not offer it while the experiment is locked', () => {
+            // AC34: a locked experiment is read-only, schedule included.
+            setDates({ startDate: daysFromNow(1) });
+            $isLocked.set(true);
+            spectator.detectChanges();
 
-        it('should treat an unset property as no property at all', () => {
-            setDates({ endDate: daysFromNow(5) });
+            expect(clearButton()).toBeNull();
+        });
+    });
 
-            expect(endDateError()).not.toBeNull();
+    describe('locked experiment', () => {
+        it('should disable both pickers', () => {
+            $isLocked.set(true);
+            spectator.detectChanges();
+
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-start'))
+                    ?.querySelector('input')?.disabled
+            ).toBe(true);
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-end'))
+                    ?.querySelector('input')?.disabled
+            ).toBe(true);
         });
     });
 });

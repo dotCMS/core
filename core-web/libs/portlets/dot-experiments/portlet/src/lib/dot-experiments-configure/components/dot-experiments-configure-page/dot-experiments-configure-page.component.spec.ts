@@ -2,7 +2,8 @@ import { Dispatcher } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { Subject } from 'rxjs';
 
-import { signal } from '@angular/core';
+import { Injector, signal, WritableSignal } from '@angular/core';
+import { disabled, form, max, min } from '@angular/forms/signals';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -12,7 +13,12 @@ import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing'
 
 import { DotExperimentsConfigurePageComponent } from './dot-experiments-configure-page.component';
 
-import { PAGE_PREFILL_ERROR_KEY, SELECT_PAGE_DIALOG_SIZE } from '../../../shared/constants';
+import {
+    MAX_TRAFFIC_ALLOCATION,
+    MIN_TRAFFIC_ALLOCATION,
+    PAGE_PREFILL_ERROR_KEY,
+    SELECT_PAGE_DIALOG_SIZE
+} from '../../../shared/constants';
 import { ConfigureValidationRule, DotExperimentConfigurePage } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
@@ -49,7 +55,7 @@ const DIALOG_ROW = {
 
 const EXPERIMENT: DotExperiment = { ...getExperimentMock(1), trafficAllocation: 100 };
 
-/** The shell provides the store; real signals keep the card's effects reactive. */
+/** Only what the card still reads: the allocation now arrives through its field input. */
 const createStoreMock = () => ({
     experiment: signal<DotExperiment | null>(null),
     selectedPage: signal<DotExperimentConfigurePage | null>(null),
@@ -65,6 +71,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
     let dispatch: jest.SpyInstance;
     let dialogClosed: Subject<SelectPageDialogViewRow | undefined>;
     let dialogService: { open: jest.Mock };
+    let trafficAllocation: WritableSignal<number>;
 
     // The tooltip's overlay queries `matchMedia`, which jsdom does not implement.
     beforeAll(() => {
@@ -93,6 +100,27 @@ describe('DotExperimentsConfigurePageComponent', () => {
         componentProviders: [{ provide: DialogService, useFactory: () => dialogService }],
         detectChanges: false
     });
+
+    /**
+     * Mounts the card on a real allocation leaf carrying the rules the shell declares over it —
+     * a stub field would let the card claim a range error the form never raises.
+     */
+    const mountWith = (allocation = 100) => {
+        trafficAllocation = signal(allocation);
+
+        const formTree = form(
+            trafficAllocation,
+            (path) => {
+                min(path, MIN_TRAFFIC_ALLOCATION);
+                max(path, MAX_TRAFFIC_ALLOCATION);
+                disabled(path, { when: () => storeMock.$isLocked() });
+            },
+            { injector: spectator.inject(Injector) }
+        );
+
+        spectator.setInput('trafficAllocationField', formTree);
+        spectator.detectChanges();
+    };
 
     /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
     const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
@@ -133,7 +161,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
         dialogService = { open: jest.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
-        spectator.detectChanges();
+        mountWith();
     });
 
     afterEach(() => {
@@ -179,6 +207,8 @@ describe('DotExperimentsConfigurePageComponent', () => {
         });
 
         it('should report the picked row as the selected page', () => {
+            // The page is not a form value: it is immutable once the draft exists, so it is
+            // reported to the store on its own.
             spectator.click(selectButton());
 
             dialogClosed.next(DIALOG_ROW);
@@ -264,40 +294,30 @@ describe('DotExperimentsConfigurePageComponent', () => {
     });
 
     describe('traffic allocation', () => {
-        beforeEach(() => {
-            storeMock.experiment.set(EXPERIMENT);
-            spectator.detectChanges();
-        });
+        it('should start from the value the form holds', () => {
+            mountWith(EXPERIMENT.trafficAllocation);
 
-        it('should start from the value the experiment was saved with', () => {
             expect(trafficInput().value).toBe(String(EXPERIMENT.trafficAllocation));
             expect(sliderValue()).toBe(String(EXPERIMENT.trafficAllocation));
         });
 
         it('should keep the slider and the number input in step', () => {
+            // Both controls bind to the same field, which is what keeps them together.
             typeTrafficAllocation('40');
 
             expect(sliderValue()).toBe('40');
         });
 
-        it('should report the new allocation', () => {
+        it('should write the typed allocation into the model', () => {
             typeTrafficAllocation('40');
 
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsConfigurePageEvents.trafficAllocationChanged(40)
-            );
+            expect(trafficAllocation()).toBe(40);
         });
 
-        it('should not report an allocation outside 1-100', () => {
+        it('should show an allocation outside 1-100 as an error rather than accept it silently', () => {
             typeTrafficAllocation('120');
 
             expect(spectator.query(byTestId('experiments-configure-traffic-error'))).not.toBeNull();
-            expect(
-                dispatchedEvents().some(
-                    ({ type }) =>
-                        type === dotExperimentsConfigurePageEvents.trafficAllocationChanged.type
-                )
-            ).toBe(false);
         });
 
         it('should disable the allocation while the experiment is locked', () => {

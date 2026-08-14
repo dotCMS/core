@@ -9,9 +9,12 @@ import { Tooltip } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DEFAULT_VARIANT_NAME,
     DotExperiment,
+    DotExperimentPatchBody,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     MAX_VARIANTS_ALLOWED,
+    TrafficProportion,
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
@@ -45,6 +48,7 @@ const ADD_DIALOG_HEADER = 'Add Variant';
 const CAP_REACHED_COPY = 'Maximum number of variants reached';
 const EDIT_CONTENT_UNAVAILABLE_COPY = 'Available soon';
 const CANT_EDIT_COPY = 'Only a draft experiment can be edited';
+const HINT_COPY = 'Up to {0} variants';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.add-dialog.header': ADD_DIALOG_HEADER,
@@ -57,6 +61,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.action.edit-content': 'Edit Content',
     'experiments.configure.variants.error.min': 'Add at least one variant',
     'experiments.configure.variants.weights.warning': 'The weights add up to {0}%',
+    'experiments.configure.variants.hint': HINT_COPY,
+    'experiments.configure.variants.hint.locked': 'Locked',
     [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY
 });
 
@@ -65,6 +71,7 @@ const messageServiceMock = new MockDotMessageService({
  * value each test decides before the component is created.
  */
 const createStoreMock = () => ({
+    experiment: jest.fn().mockReturnValue(EXPERIMENT),
     $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
     $disabledTooltipKey: jest.fn().mockReturnValue(null),
     $totalWeight: jest.fn().mockReturnValue(100),
@@ -213,6 +220,107 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         });
     });
 
+    /**
+     * On `/experiments/new` there is no experiment to derive rows from, but the creation POST will
+     * have the backend create the Original variant at 100% — so the card states that instead of
+     * rendering headers over nothing (#37003).
+     */
+    describe('creation screen, before the experiment exists', () => {
+        /** The store as the creation screen leaves it: no experiment, so no variants either. */
+        const renderBeforeCreation = () => {
+            storeMock.experiment.mockReturnValue(null);
+            storeMock.$variants.mockReturnValue([]);
+            storeMock.$totalWeight.mockReturnValue(0);
+            spectator.detectChanges();
+        };
+
+        it('should render the Original row the POST will create, and nothing else', () => {
+            renderBeforeCreation();
+
+            expect(rows().length).toBe(1);
+            expect(queryIn(0, 'variant-control-name')?.textContent).toContain(DEFAULT_VARIANT_NAME);
+            expect(queryIn(0, 'variant-control-chip')?.textContent).toContain('CONTROL');
+            expect(queryIn(0, 'variant-meta')?.textContent).toContain('Original page content');
+        });
+
+        it('should count the row against the cap', () => {
+            renderBeforeCreation();
+
+            expect(spectator.query(byTestId('variants-count'))?.textContent).toContain(
+                `1/${MAX_VARIANTS_ALLOWED}`
+            );
+        });
+
+        it('should state the weight as the whole of the traffic, and freeze it', () => {
+            renderBeforeCreation();
+
+            const input = spectator.query<HTMLInputElement>(byTestId('variant-weight-input'));
+
+            expect(input?.value).toBe('100');
+            expect(input?.disabled).toBe(true);
+            // Frozen because there is nothing to persist to yet, which is not a lock to explain.
+            expect(tooltipOf('variant-weight-tooltip').disabled).toBe(true);
+        });
+
+        it('should total the whole of the traffic without warning about it', () => {
+            renderBeforeCreation();
+
+            expect(spectator.query(byTestId('variants-total-weight'))?.textContent).toContain(
+                '100%'
+            );
+            expect(spectator.query(byTestId('variants-weight-warning'))).toBeNull();
+        });
+
+        it('should offer no action that would need a server entity behind the row', () => {
+            renderBeforeCreation();
+
+            expect(queryIn(0, 'variant-name-inplace')).toBeNull();
+            expect(queryIn(0, 'variant-delete-btn')).toBeNull();
+            expect(queryIn(0, 'variant-copy-url')).toBeNull();
+        });
+
+        it('should render the row action as a disabled Preview, as the real control row does', () => {
+            renderBeforeCreation();
+
+            expect(queryIn(0, 'variant-edit-content-btn')?.textContent).toContain('Preview');
+            expect(isRowButtonDisabled(0, 'variant-edit-content-btn')).toBe(true);
+        });
+
+        it('should disable Split Evenly: there is nothing to split yet', () => {
+            renderBeforeCreation();
+
+            expect(isButtonDisabled('variants-split-evenly-btn')).toBe(true);
+        });
+
+        it('should disable Add, leaving the n/max hint to give the context', () => {
+            renderBeforeCreation();
+
+            expect(isButtonDisabled('variants-add-btn')).toBe(true);
+            // No cap has been reached, so the cap tooltip stays out of the way.
+            expect(tooltipOf('variants-add-btn').disabled).toBe(true);
+            expect(spectator.query(byTestId('variants-hint'))?.textContent).toContain(
+                `Up to ${MAX_VARIANTS_ALLOWED} variants`
+            );
+        });
+
+        it('should never draw the row alongside the real ones once the experiment exists', () => {
+            // Default mocks: the created experiment. Its control is `Original` too, so the row is
+            // told apart by the persisted weight it carries and by being editable.
+            spectator.detectChanges();
+
+            expect(rows().length).toBe(2);
+
+            const controlWeight = spectator.query<HTMLInputElement>(
+                byTestId('variant-weight-input')
+            );
+
+            expect(controlWeight?.value).toBe(String(CONTROL_VARIANT.weight));
+            expect(controlWeight?.disabled).toBe(false);
+            expect(isButtonDisabled('variants-add-btn')).toBe(false);
+            expect(isButtonDisabled('variants-split-evenly-btn')).toBe(false);
+        });
+    });
+
     describe('deleting', () => {
         it('should not offer a delete control on the control variant', () => {
             spectator.detectChanges();
@@ -257,13 +365,14 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             spectator.detectChanges();
         };
 
-        /** The last `trafficProportionChanged` payload, which is what reaches the PATCH. */
-        const lastProportion = () => {
-            const events = dispatchedEvents().filter(({ type }) =>
-                type.includes('trafficProportionChanged')
+        /** The proportion of the last edit reported, which is what reaches the PATCH. */
+        const lastProportion = (): TrafficProportion => {
+            const edits = dispatchedEvents().filter(
+                ({ type }) => type === dotExperimentsConfigurePageEvents.formEdited.type
             );
+            const lastEdit = edits[edits.length - 1]?.payload as DotExperimentPatchBody;
 
-            return events[events.length - 1]?.payload;
+            return lastEdit?.trafficProportion as TrafficProportion;
         };
 
         it('should send the whole proportion, not just the row that changed', () => {

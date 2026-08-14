@@ -19,9 +19,9 @@
                 inputId="experiments-start-date"
                 inputStyleClass="w-full"
                 styleClass="w-full"
-                [formField]="formTree.startDate"
-                [defaultDate]="initialStartDate"
-                [minDate]="initialStartDate"
+                [formField]="$field().startDate"
+                [defaultDate]="$bounds().initialStartDate"
+                [minDate]="$bounds().initialStartDate"
                 [showTime]="true"
                 [showIcon]="true"
                 [showClear]="true"
@@ -29,7 +29,7 @@
                 [stepMinute]="DATE_PICKER_STEP_MINUTE"
                 data-testid="experiments-configure-scheduling-start" />
 
-            @if (formTree.startDate().invalid()) {
+            @if ($hasStartDateError()) {
                 <small class="p-error" data-testid="experiments-configure-scheduling-start-error">
                     {{ 'experiments.configure.scheduling.start.error.past' | dm }}
                 </small>
@@ -44,10 +44,10 @@
                 inputId="experiments-end-date"
                 inputStyleClass="w-full"
                 styleClass="w-full"
-                [formField]="formTree.endDate"
-                [defaultDate]="$minEndDate()"
-                [minDate]="$minEndDate()"
-                [maxDate]="$maxEndDate()"
+                [formField]="$field().endDate"
+                [defaultDate]="$bounds().minEndDate"
+                [minDate]="$bounds().minEndDate"
+                [maxDate]="$bounds().maxEndDate"
                 [showTime]="true"
                 [showIcon]="true"
                 [showClear]="true"
@@ -55,14 +55,14 @@
                 [stepMinute]="DATE_PICKER_STEP_MINUTE"
                 data-testid="experiments-configure-scheduling-end" />
 
-            @if (formTree.endDate().invalid()) {
+            @if ($hasEndDateError()) {
                 <small class="p-error" data-testid="experiments-configure-scheduling-end-error">
                     {{
                         'experiments.configure.scheduling.end.error.out-of-bounds'
                             | dm
                                 : [
-                                      ($minEndDate() | date: 'medium') ?? '',
-                                      ($maxEndDate() | date: 'medium') ?? ''
+                                      ($bounds().minEndDate | date: 'medium') ?? '',
+                                      ($bounds().maxEndDate | date: 'medium') ?? ''
                                   ]
                     }}
                 </small>

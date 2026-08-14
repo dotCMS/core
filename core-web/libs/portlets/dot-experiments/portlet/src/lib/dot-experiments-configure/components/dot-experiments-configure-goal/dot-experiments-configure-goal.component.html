@@ -31,7 +31,7 @@
             id="goal-name"
             type="text"
             class="w-full"
-            [formField]="formTree.name"
+            [formField]="$field().name"
             [placeholder]="'experiments.goal.reach_page.form.name.placeholder' | dm"
             data-testid="goal-name-input" />
         @if ($showGoalNameError()) {
@@ -109,7 +109,7 @@
                             id="goal-parameter-name"
                             type="text"
                             class="w-full font-mono"
-                            [formField]="formTree.parameterName"
+                            [formField]="$field().parameterName"
                             [placeholder]="
                                 'experiments.goal.url_parameter.form.conditions.parameter.placeholder'
                                     | dm
@@ -129,7 +129,7 @@
                             optionValue="value"
                             appendTo="body"
                             [options]="reachPageParameterOptions"
-                            [formField]="formTree.parameter"
+                            [formField]="$field().parameter"
                             [placeholder]="
                                 'experiments.goal.reach_page.form.conditions.parameter.placeholder'
                                     | dm
@@ -150,7 +150,7 @@
                         optionValue="value"
                         appendTo="body"
                         [options]="$operatorOptions()"
-                        [formField]="formTree.operator"
+                        [formField]="$field().operator"
                         [placeholder]="
                             'experiments.goal.reach_page.form.conditions.operator.placeholder' | dm
                         "
@@ -168,7 +168,7 @@
                             id="goal-condition-value"
                             type="text"
                             class="w-full font-mono"
-                            [formField]="formTree.value"
+                            [formField]="$field().value"
                             [placeholder]="
                                 'experiments.goal.reach_page.form.conditions.value.placeholder' | dm
                             "

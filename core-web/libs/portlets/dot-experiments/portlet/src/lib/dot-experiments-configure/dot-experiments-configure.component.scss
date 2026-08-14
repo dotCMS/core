@@ -1,0 +1,44 @@
+/**
+ * The list and the Configure screen replace each other in a single frame, which reads as a jolt.
+ * A short opacity-only fade makes the swap register as navigation rather than a flicker — same
+ * duration family as the list's row-enter animation, felt more than seen. Deliberately no
+ * translate: any movement on the host drags the fixed header and footer along with it.
+ */
+// No display here: the host's flex-column layout comes from its host classes, and a component
+// style would win over those utilities and break the body's bounded-height scroll.
+:host {
+    animation: dot-experiments-screen-enter 180ms ease-out;
+}
+
+@keyframes dot-experiments-screen-enter {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+// Motion is decoration here, so it is the first thing to drop for anyone who asked for less.
+@media (prefers-reduced-motion: reduce) {
+    :host {
+        animation: none;
+    }
+}
+
+// Same zero-height wrapper UVE hangs its autosave bar in: the bar overlays the seam under the
+// header instead of pushing the body down every time a save starts.
+.progress-bar-wrapper {
+    position: relative;
+    z-index: 10;
+    height: 0;
+
+    > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: block;
+    }
+}

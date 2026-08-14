@@ -14,7 +14,7 @@
             <span class="text-red-600" aria-hidden="true">*</span>
         </label>
 
-        <div class="flex items-stretch gap-2">
+        <div class="flex items-stretch gap-3">
             <div
                 id="experiments-configure-page"
                 class="flex min-w-0 flex-1 items-center gap-3 rounded-md border bg-surface-50 px-3 py-2"
@@ -76,29 +76,33 @@
             {{ 'experiments.configure.traffic.allocation' | dm }}
         </label>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-6">
             <p-slider
                 class="min-w-0 flex-1"
-                [formField]="formTree.trafficAllocation"
+                [formField]="$trafficAllocationField()"
                 [min]="MIN_TRAFFIC_ALLOCATION"
                 [max]="MAX_TRAFFIC_ALLOCATION"
                 [step]="1"
                 data-testid="experiments-configure-traffic-slider" />
 
-            <p-inputgroup class="w-24 flex-none">
-                <input
-                    pInputText
-                    id="experiments-traffic-allocation"
-                    type="number"
-                    class="text-right"
-                    [formField]="formTree.trafficAllocation"
-                    [attr.aria-label]="'experiments.configure.traffic.allocation' | dm"
-                    data-testid="experiments-configure-traffic-input" />
-                <p-inputgroup-addon>%</p-inputgroup-addon>
-            </p-inputgroup>
+            <!-- PrimeNG sets `width: 100%` on the group itself after Tailwind, so the width
+                 lives on a wrapper the group fills instead of fighting specificity. -->
+            <div class="w-32 flex-none">
+                <p-inputgroup>
+                    <input
+                        pInputText
+                        id="experiments-traffic-allocation"
+                        type="number"
+                        class="text-right"
+                        [formField]="$trafficAllocationField()"
+                        [attr.aria-label]="'experiments.configure.traffic.allocation' | dm"
+                        data-testid="experiments-configure-traffic-input" />
+                    <p-inputgroup-addon>%</p-inputgroup-addon>
+                </p-inputgroup>
+            </div>
         </div>
 
-        @if (formTree.trafficAllocation().invalid()) {
+        @if ($hasTrafficAllocationError()) {
             <small class="p-error" data-testid="experiments-configure-traffic-error">
                 {{
                     'experiments.configure.page.traffic.range.error'

@@ -1,23 +1,20 @@
-import { Dispatcher } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { signal } from '@angular/core';
-import { FieldTree } from '@angular/forms/signals';
+import { Injector, signal, WritableSignal } from '@angular/core';
+import { FieldTree, form } from '@angular/forms/signals';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { GOAL_OPERATORS, GOAL_TYPES, MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import {
-    DotExperiment,
-    GOAL_OPERATORS,
-    GOAL_TYPES,
-    MAX_INPUT_DESCRIPTIVE_LENGTH
-} from '@dotcms/dotcms-models';
-import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+    DotExperimentsConfigureGoalComponent,
+    goalFormSchema
+} from './dot-experiments-configure-goal.component';
 
-import { DotExperimentsConfigureGoalComponent } from './dot-experiments-configure-goal.component';
-
-import { ConfigureValidationRule, GoalConditionFormModel } from '../../../shared/models';
-import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
+import { ConfigureValidationRule, GoalFormSlice } from '../../../shared/models';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { EMPTY_GOAL_SLICE } from '../../../util/dot-experiments-configure-form.util';
 
 const DEFAULT_GOAL_NAMES = {
     [GOAL_TYPES.BOUNCE_RATE]: 'Minimize bounce rate',
@@ -54,31 +51,17 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goal.parameter-name.required': PARAMETER_NAME_REQUIRED_COPY
 });
 
-const EXPERIMENT: DotExperiment = { ...getExperimentMock(0), goals: null };
-
-/** The shell provides the store; real signals keep the card's effects reactive. */
+/** Only what the card still reads: the goal itself now arrives through its `field` input. */
 const createStoreMock = () => ({
-    experiment: signal<DotExperiment | null>(EXPERIMENT),
-    validationErrors: signal<ConfigureValidationRule[]>([]),
-    $isLocked: signal(false)
+    validationErrors: signal<ConfigureValidationRule[]>([])
 });
-
-interface GoalFormModel extends GoalConditionFormModel {
-    type: GOAL_TYPES | '';
-    name: string;
-}
-
-/**
- * The form tree is `protected`, and the two condition selects are PrimeNG overlays. Reading the
- * tree is the supported escape hatch for driving them, the same one the signal-forms specs use.
- */
-const formTreeOf = (component: DotExperimentsConfigureGoalComponent): FieldTree<GoalFormModel> =>
-    Reflect.get(component, 'formTree') as FieldTree<GoalFormModel>;
 
 describe('DotExperimentsConfigureGoalComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureGoalComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
+    let $isLocked: WritableSignal<boolean>;
+    let goal: WritableSignal<GoalFormSlice>;
+    let field: FieldTree<GoalFormSlice>;
 
     // The select's overlay queries `matchMedia`, which jsdom does not implement.
     beforeAll(() => {
@@ -106,13 +89,23 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         detectChanges: false
     });
 
-    /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
-    const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
+    /**
+     * Mounts the card on a real slice carrying the card's own schema — the same rules the shell
+     * applies to `path.goal`, so the read-only state and the length rule are the real ones.
+     */
+    const mountWith = (initialGoal: GoalFormSlice = EMPTY_GOAL_SLICE) => {
+        goal = signal(initialGoal);
+        field = form(
+            goal,
+            goalFormSchema(() => $isLocked()),
+            {
+                injector: spectator.inject(Injector)
+            }
+        );
 
-    const goalChangedPayloads = () =>
-        dispatchedEvents()
-            .filter(({ type }) => type === dotExperimentsConfigurePageEvents.goalChanged.type)
-            .map(({ payload }) => payload);
+        spectator.setInput('field', field);
+        spectator.detectChanges();
+    };
 
     const nameInput = () => spectator.query(byTestId('goal-name-input')) as HTMLInputElement;
 
@@ -122,7 +115,15 @@ describe('DotExperimentsConfigureGoalComponent', () => {
     };
 
     const setOperator = (operator: GOAL_OPERATORS) => {
-        formTreeOf(spectator.component).operator().value.set(operator);
+        field.operator().value.set(operator);
+        spectator.detectChanges();
+    };
+
+    const typeConditionValue = (value: string) => {
+        spectator.typeInElement(
+            value,
+            spectator.query(byTestId('goal-condition-value-input')) as HTMLInputElement
+        );
         spectator.detectChanges();
     };
 
@@ -139,9 +140,9 @@ describe('DotExperimentsConfigureGoalComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        $isLocked = signal(false);
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
-        spectator.detectChanges();
+        mountWith();
     });
 
     afterEach(() => {
@@ -176,6 +177,29 @@ describe('DotExperimentsConfigureGoalComponent', () => {
                     ?.getAttribute('aria-checked')
             ).toBe('true');
         });
+
+        it('should write the picked type into the slice', () => {
+            selectGoalType(GOAL_TYPES.EXIT_RATE);
+
+            expect(goal().type).toBe(GOAL_TYPES.EXIT_RATE);
+        });
+
+        it('should start the condition of the picked type from scratch', () => {
+            // The condition of the type being left behind means nothing to the one being picked.
+            selectGoalType(GOAL_TYPES.REACH_PAGE);
+            typeConditionValue('/pricing');
+
+            selectGoalType(GOAL_TYPES.URL_PARAMETER);
+
+            expect(goal()).toEqual({
+                type: GOAL_TYPES.URL_PARAMETER,
+                name: DEFAULT_GOAL_NAMES[GOAL_TYPES.URL_PARAMETER],
+                parameter: 'queryParameter',
+                operator: GOAL_OPERATORS.EQUALS,
+                parameterName: '',
+                value: ''
+            });
+        });
     });
 
     describe('goal name', () => {
@@ -205,11 +229,11 @@ describe('DotExperimentsConfigureGoalComponent', () => {
 
     /**
      * The card renders no message for it — unlike the Details card — so the length rule is
-     * asserted where it lives: on the field the form tree validates.
+     * asserted where it lives: on the field its own schema validates.
      */
     describe('goal name length', () => {
         const nameErrorKinds = (): string[] =>
-            formTreeOf(spectator.component)
+            field
                 .name()
                 .errors()
                 .map(({ kind }) => kind);
@@ -235,25 +259,13 @@ describe('DotExperimentsConfigureGoalComponent', () => {
 
     describe('goals without conditions', () => {
         it.each([GOAL_TYPES.BOUNCE_RATE, GOAL_TYPES.EXIT_RATE])(
-            'should dispatch %s as soon as it is picked',
+            'should render no condition panel for %s',
             (type) => {
                 selectGoalType(type);
 
-                expect(goalChangedPayloads()).toContainEqual({
-                    primary: {
-                        name: DEFAULT_GOAL_NAMES[type as keyof typeof DEFAULT_GOAL_NAMES],
-                        type,
-                        conditions: []
-                    }
-                });
+                expect(spectator.query(byTestId('goal-conditions-panel'))).toBeNull();
             }
         );
-
-        it('should render no condition panel for them', () => {
-            selectGoalType(GOAL_TYPES.BOUNCE_RATE);
-
-            expect(spectator.query(byTestId('goal-conditions-panel'))).toBeNull();
-        });
     });
 
     describe('reach page goal', () => {
@@ -274,43 +286,20 @@ describe('DotExperimentsConfigureGoalComponent', () => {
             ]);
         });
 
-        it('should not dispatch a goal while the condition has no value', () => {
-            expect(goalChangedPayloads()).toEqual([]);
+        it('should open on the URL parameter and the contains operator', () => {
+            expect(goal().parameter).toBe('url');
+            expect(goal().operator).toBe(GOAL_OPERATORS.CONTAINS);
         });
 
-        it('should dispatch the goal once the condition is complete', () => {
-            spectator.typeInElement(
-                '/pricing',
-                spectator.query(byTestId('goal-condition-value-input')) as HTMLInputElement
-            );
-            spectator.detectChanges();
+        it('should write the typed condition value into the slice', () => {
+            typeConditionValue('/pricing');
 
-            expect(goalChangedPayloads()).toContainEqual({
-                primary: {
-                    name: DEFAULT_GOAL_NAMES[GOAL_TYPES.REACH_PAGE],
-                    type: GOAL_TYPES.REACH_PAGE,
-                    conditions: [
-                        {
-                            parameter: 'url',
-                            operator: GOAL_OPERATORS.CONTAINS,
-                            value: '/pricing'
-                        }
-                    ]
-                }
-            });
+            expect(goal().value).toBe('/pricing');
         });
     });
 
     describe('url parameter goal', () => {
         beforeEach(() => selectGoalType(GOAL_TYPES.URL_PARAMETER));
-
-        const typeParameterName = (name: string) => {
-            spectator.typeInElement(
-                name,
-                spectator.query(byTestId('goal-parameter-name-input')) as HTMLInputElement
-            );
-            spectator.detectChanges();
-        };
 
         it('should ask for a parameter name instead of a parameter', () => {
             expect(spectator.query(byTestId('goal-parameter-name-input'))).not.toBeNull();
@@ -334,55 +323,44 @@ describe('DotExperimentsConfigureGoalComponent', () => {
             expect(spectator.query(byTestId('goal-condition-value-input'))).toBeNull();
         });
 
-        it('should not dispatch a goal while the parameter name is missing', () => {
-            setOperator(GOAL_OPERATORS.EXISTS);
-
-            expect(goalChangedPayloads()).toEqual([]);
-        });
-
-        it('should dispatch the goal without a value once exists is picked', () => {
-            typeParameterName('utm_source');
-            setOperator(GOAL_OPERATORS.EXISTS);
-
-            expect(goalChangedPayloads()).toContainEqual({
-                primary: {
-                    name: DEFAULT_GOAL_NAMES[GOAL_TYPES.URL_PARAMETER],
-                    type: GOAL_TYPES.URL_PARAMETER,
-                    conditions: [
-                        {
-                            parameter: 'queryParameter',
-                            operator: GOAL_OPERATORS.EXISTS,
-                            value: { name: 'utm_source', value: '' }
-                        }
-                    ]
-                }
-            });
-        });
-
-        it('should require a value for every other operator', () => {
-            typeParameterName('utm_source');
-
-            expect(goalChangedPayloads()).toEqual([]);
-
+        it('should write the typed parameter name into the slice', () => {
             spectator.typeInElement(
-                'newsletter',
-                spectator.query(byTestId('goal-condition-value-input')) as HTMLInputElement
+                'utm_source',
+                spectator.query(byTestId('goal-parameter-name-input')) as HTMLInputElement
             );
             spectator.detectChanges();
 
-            expect(goalChangedPayloads()).toContainEqual({
-                primary: {
-                    name: DEFAULT_GOAL_NAMES[GOAL_TYPES.URL_PARAMETER],
-                    type: GOAL_TYPES.URL_PARAMETER,
-                    conditions: [
-                        {
-                            parameter: 'queryParameter',
-                            operator: GOAL_OPERATORS.EQUALS,
-                            value: { name: 'utm_source', value: 'newsletter' }
-                        }
-                    ]
-                }
-            });
+            expect(goal().parameterName).toBe('utm_source');
+        });
+    });
+
+    describe('the state chip', () => {
+        it('should read as required while no type is picked', () => {
+            expect(spectator.query(byTestId('goal-state-chip'))?.textContent).toContain(
+                'experiments.configure.goal.chip.required'
+            );
+        });
+
+        it('should read as set once a type is picked', () => {
+            selectGoalType(GOAL_TYPES.BOUNCE_RATE);
+
+            expect(spectator.query(byTestId('goal-state-chip'))?.textContent).toContain(
+                'experiments.configure.goal.chip.set'
+            );
+        });
+    });
+
+    describe('a goal nobody has picked yet', () => {
+        it('should not mark the empty goal name as invalid', () => {
+            // AC28: `required` in the schema reaches the DOM as the native attribute, which makes
+            // an empty field `:invalid` — and painted red — before the user has done anything.
+            expect(nameInput().hasAttribute('required')).toBe(false);
+            expect(nameInput().matches(':invalid')).toBe(false);
+            expect(nameInput().getAttribute('aria-invalid')).toBeNull();
+        });
+
+        it('should hold no errors on the slice at all', () => {
+            expect(field().errorSummary()).toEqual([]);
         });
     });
 
@@ -450,7 +428,8 @@ describe('DotExperimentsConfigureGoalComponent', () => {
 
     describe('locked experiment', () => {
         beforeEach(() => {
-            storeMock.$isLocked.set(true);
+            // AC34: the shell's schema disables the slice, and the card reads that off the field.
+            $isLocked.set(true);
             spectator.detectChanges();
         });
 
@@ -466,11 +445,10 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should not change the goal when a type is clicked', () => {
-            // AC34: a locked experiment is read-only, whatever the DOM allows.
             spectator.click(byTestId(`goal-type-${GOAL_TYPES.BOUNCE_RATE}`));
             spectator.detectChanges();
 
-            expect(goalChangedPayloads()).toEqual([]);
+            expect(goal()).toEqual(EMPTY_GOAL_SLICE);
             expect(nameInput().value).toBe('');
         });
     });

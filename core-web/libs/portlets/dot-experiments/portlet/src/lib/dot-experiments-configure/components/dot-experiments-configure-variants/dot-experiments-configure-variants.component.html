@@ -84,7 +84,7 @@
 
                 <div
                     [pTooltip]="row.disabledTooltipKey ? (row.disabledTooltipKey | dm) : ''"
-                    [tooltipDisabled]="!row.disabled"
+                    [tooltipDisabled]="!row.disabledTooltipKey"
                     tooltipPosition="bottom"
                     data-testid="variant-weight-tooltip">
                     <div
@@ -155,12 +155,12 @@
                 [class.text-red-700]="$hasWeightWarning()"
                 [class.text-surface-900]="!$hasWeightWarning()"
                 data-testid="variants-total-weight">
-                {{ store.$totalWeight() }}%
+                {{ $totalWeight() }}%
             </span>
             <p-button
                 [outlined]="true"
                 size="small"
-                [disabled]="$isDisabled()"
+                [disabled]="$isSplitEvenlyDisabled()"
                 (onClick)="onSplitEvenly()"
                 [label]="'experiments.configure.variants.split-evenly' | dm"
                 data-testid="variants-split-evenly-btn" />
@@ -173,7 +173,7 @@
             <p-button
                 [outlined]="true"
                 size="small"
-                [disabled]="$isAtVariantCap()"
+                [disabled]="$isAddDisabled()"
                 (onClick)="onAddVariant()"
                 [pTooltip]="'experiments.configure.variants.cap-reached' | dm"
                 [tooltipDisabled]="!$isAtVariantCap()"
@@ -223,7 +223,7 @@
             <span>
                 {{
                     'experiments.configure.variants.weights.warning'
-                        | dm: [store.$totalWeight().toString()]
+                        | dm: [$totalWeight().toString()]
                 }}
             </span>
         </div>
