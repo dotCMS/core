@@ -1,9 +1,6 @@
 import { handleContentletClick } from './dot-analytics.click.utils';
 
-import {
-    ANALYTICS_CONTENTLET_CLASS,
-    CLICK_EVENT_TYPE
-} from '../../shared/constants/dot-analytics.constants';
+import { CONTENTLET_CLASS, CLICK_EVENT_TYPE } from '../../shared/constants/dot-analytics.constants';
 import { DotCMSContentClickPayload } from '../../shared/models';
 import * as sharedUtils from '../../shared/utils/dot-analytics.utils';
 import * as impressionUtils from '../impression/dot-analytics.impression.utils';
@@ -59,7 +56,7 @@ describe('Click Utils', () => {
         describe('Early returns - invalid clicks', () => {
             it('should return early if click target is not <a> or <button>', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const div = document.createElement('div');
                 div.textContent = 'Not clickable';
@@ -77,7 +74,7 @@ describe('Click Utils', () => {
 
             it('should return early if clickable is outside the contentlet boundary', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
                 document.body.appendChild(contentlet);
 
                 // Button outside contentlet
@@ -124,7 +121,7 @@ describe('Click Utils', () => {
                 document.body.appendChild(contentlet);
 
                 // Set DOM index as would be done by attachClickListener
-                contentlet.dataset.dotAnalyticsDomIndex = '0';
+                contentlet.dataset['dotAnalyticsDomIndex'] = '0';
 
                 const button = contentlet.querySelector('button') as HTMLElement;
                 const event = new MouseEvent('click', { bubbles: true });
@@ -158,7 +155,7 @@ describe('Click Utils', () => {
 
             it('should call trackCallback with correct payload for link click', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const link = document.createElement('a');
                 link.href = '/test-page';
@@ -192,7 +189,7 @@ describe('Click Utils', () => {
 
             it('should work when clicking child element inside button', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const button = document.createElement('button');
                 const span = document.createElement('span');
@@ -214,7 +211,7 @@ describe('Click Utils', () => {
 
             it('should include useful attributes (data-*, aria-*) and capture href as top-level', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const link = document.createElement('a');
                 link.textContent = 'Click me';
@@ -274,7 +271,7 @@ describe('Click Utils', () => {
             it('should truncate element text to 100 characters', () => {
                 const longText = 'A'.repeat(200); // 200 characters
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const button = document.createElement('button');
                 button.textContent = longText;
@@ -306,9 +303,9 @@ describe('Click Utils', () => {
                 document.body.appendChild(contentlet3);
 
                 // Set DOM index as would be done by attachClickListener
-                contentlet1.dataset.dotAnalyticsDomIndex = '0';
-                contentlet2.dataset.dotAnalyticsDomIndex = '1';
-                contentlet3.dataset.dotAnalyticsDomIndex = '2';
+                contentlet1.dataset['dotAnalyticsDomIndex'] = '0';
+                contentlet2.dataset['dotAnalyticsDomIndex'] = '1';
+                contentlet3.dataset['dotAnalyticsDomIndex'] = '2';
 
                 // Click on button in second contentlet
                 const button = contentlet2.querySelector('button') as HTMLElement;
@@ -350,7 +347,7 @@ describe('Click Utils', () => {
 
             it('should handle button with no text gracefully', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const button = document.createElement('button');
                 // No text content
@@ -371,7 +368,7 @@ describe('Click Utils', () => {
 
             it('should use empty string when element has no id attribute', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const button = document.createElement('button');
                 button.textContent = 'Click me';
@@ -425,7 +422,7 @@ describe('Click Utils', () => {
 
             it('should log reason for early return (no clickable)', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
 
                 const div = document.createElement('div');
                 div.textContent = 'Not clickable';
@@ -446,7 +443,7 @@ describe('Click Utils', () => {
 
             it('should log reason for early return (outside contentlet)', () => {
                 const contentlet = document.createElement('div');
-                contentlet.className = ANALYTICS_CONTENTLET_CLASS;
+                contentlet.className = CONTENTLET_CLASS;
                 document.body.appendChild(contentlet);
 
                 // Button outside contentlet
@@ -472,8 +469,8 @@ describe('Click Utils', () => {
     // Helper function
     function createContentletWithButton(identifier: string): HTMLElement {
         const contentlet = document.createElement('div');
-        contentlet.className = ANALYTICS_CONTENTLET_CLASS;
-        contentlet.dataset.dotAnalyticsIdentifier = identifier;
+        contentlet.className = CONTENTLET_CLASS;
+        contentlet.dataset['dotAnalyticsIdentifier'] = identifier;
 
         const button = document.createElement('button');
         button.textContent = 'Click me';

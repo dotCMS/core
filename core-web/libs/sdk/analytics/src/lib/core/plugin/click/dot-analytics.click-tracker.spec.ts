@@ -3,7 +3,7 @@
 import { DotCMSClickTracker } from './dot-analytics.click-tracker';
 import * as clickUtils from './dot-analytics.click.utils';
 
-import { ANALYTICS_CONTENTLET_CLASS } from '../../shared/constants';
+import { CONTENTLET_CLASS } from '../../shared/constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 import * as sharedUtils from '../../shared/utils/dot-analytics.utils';
 
@@ -42,12 +42,12 @@ describe('DotCMSClickTracker', () => {
 
     const createMockContentletElement = (identifier: string): HTMLElement => {
         const element = document.createElement('div');
-        element.className = ANALYTICS_CONTENTLET_CLASS;
-        element.dataset.dotAnalyticsIdentifier = identifier;
-        element.dataset.dotAnalyticsInode = 'inode-123';
-        element.dataset.dotAnalyticsContenttype = 'Blog';
-        element.dataset.dotAnalyticsTitle = 'Test Content';
-        element.dataset.dotAnalyticsBasetype = 'CONTENT';
+        element.className = CONTENTLET_CLASS;
+        element.dataset['dotAnalyticsIdentifier'] = identifier;
+        element.dataset['dotAnalyticsInode'] = 'inode-123';
+        element.dataset['dotAnalyticsContenttype'] = 'Blog';
+        element.dataset['dotAnalyticsTitle'] = 'Test Content';
+        element.dataset['dotAnalyticsBasetype'] = 'CONTENT';
 
         // Mock addEventListener to track calls
         element.addEventListener = jest.fn(element.addEventListener.bind(element));

@@ -136,7 +136,7 @@ pnpm exec nx affected -t build,lint --base=origin/main   # check you didn't brea
 
 Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the spec config extends, so specs go strict too and their errors are yours to fix.
 
-> **Watch out for masked results.** If a tsconfig declares a `types` entry that is not installed, `tsc` reports `TS2688: Cannot find type definition file for '<name>'` and **stops before semantic checking** — you get one error and no type checking at all. A stable error count across a change proves nothing in that case. `libs/utils-testing` is affected today (`"types": ["jasmine"]`); check it with `--types node` to see real diagnostics.
+> **Watch out for masked results.** If a tsconfig declares a `types` entry that is not installed, `tsc` reports `TS2688: Cannot find type definition file for '<name>'` and **stops before semantic checking** — you get one error and no type checking at all. A stable error count across a change proves nothing in that case. `libs/dotcms-js/tsconfig.spec.json` is affected today (`"types": ["jasmine"]`, and `@types/jasmine` is not installed in the workspace); check it with `--types node` to see real diagnostics.
 
 ## Portlet Development
 
