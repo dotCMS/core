@@ -359,22 +359,44 @@ export class DotContentDriveFieldFilterComponent {
     );
 
     /**
-     * A binary checkbox is a tri-state boolean filter: True / False / not-filtering. A single
-     * checkbox can only express two states, so it renders as a True/False radio group instead —
-     * selecting one filters for that value, and clearing (the chip X) returns to not-filtering.
+     * The text a binary checkbox's options are phrased around: the field's own option label, or its
+     * value when the option carries no label.
+     *
+     * A checkbox's option is authored by the user — `yes`, `accept`, or a whole phrase like "Include
+     * in Site Map" — so the words "true"/"false" describe it no better than they describe any other
+     * value. The classic boolean checkbox is authored as `|true` (no label), which is why the value
+     * is the fallback; `getSingleSelectableFieldOptions` drops options without a value, so there is
+     * always one of the two. The field itself is named by the chip title, not repeated here.
      */
-    protected readonly $binaryOptions = computed<FieldFilterOption[]>(() => [
-        { label: this.#dotMessageService.get('true'), value: 'true' },
-        { label: this.#dotMessageService.get('false'), value: 'false' }
-    ]);
+    protected readonly $binaryOptionText = computed(() => {
+        const [option] = this.$options();
+
+        return option?.label || String(option?.value ?? '');
+    });
 
     /**
-     * Label shown for a binary checkbox: the option's own label (e.g. "Include in Site Map") is
-     * more readable than the field name/variable; falls back to the field name when unset.
+     * A binary checkbox is a tri-state boolean filter: is-set / is-not-set / not-filtering. A single
+     * checkbox can only express two states, so it renders as a two-option group instead — selecting
+     * one filters for it, and clearing (the chip X) returns to not-filtering.
+     *
+     * Both labels are derived from the field (see {@link $binaryOptionText}) so nothing about a
+     * user-authored option is hardcoded. The values stay `true`/`false`: they mean "has this value" /
+     * "does not", which is what the backend resolves against the field's real option value.
      */
-    protected readonly $binaryLabel = computed(
-        () => this.$options()[0]?.label || this.$field().name
-    );
+    protected readonly $binaryOptions = computed<FieldFilterOption[]>(() => {
+        const optionText = this.$binaryOptionText();
+
+        return [
+            { label: optionText, value: 'true' },
+            {
+                label: this.#dotMessageService.get(
+                    'content-drive.field-filter.binary.exclude',
+                    optionText
+                ),
+                value: 'false'
+            }
+        ];
+    });
 
     protected readonly $dateValue = linkedSignal<Date[] | null>(() => {
         const raw = this.$rawValue();
@@ -484,10 +506,16 @@ export class DotContentDriveFieldFilterComponent {
 
     protected readonly $title = computed(() => this.$field().name);
 
-    /** Chip title: the readable option label for a binary checkbox, otherwise the field name. */
-    protected readonly $chipTitle = computed(() =>
-        this.$isBinary() ? this.$binaryLabel() : this.$field().name
-    );
+    /**
+     * Chip title: always the field's name.
+     *
+     * A binary checkbox used to borrow its single option's label instead, which reads well only when
+     * that label happens to be a phrase ("Include in Site Map"). For a field `active` whose one option
+     * is `yes`, the chip was titled "yes" — the option's value, telling the user nothing about which
+     * field is being filtered. The option text now appears on the options themselves
+     * ({@link $binaryOptions}), where it belongs.
+     */
+    protected readonly $chipTitle = this.$title;
 
     constructor() {
         this.#patch$
