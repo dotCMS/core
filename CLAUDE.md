@@ -45,7 +45,7 @@ just test-integration-stop    # Stop services when done
 
 # Run
 just dev-run                         # Start dotCMS in Docker with Glowroot
-cd core-web && yarn nx serve dotcms-ui   # Frontend dev server only (use yarn nx, not nx)
+cd core-web && pnpm nx serve dotcms-ui   # Frontend dev server only (Nx is not global — always via pnpm)
 ```
 
 > All test modules need explicit `skip=false` flags or tests are silently skipped.
@@ -99,7 +99,7 @@ customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZ
 ## Tech Stack
 
 - **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
-- **Frontend**: Angular 21+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Frontend**: Angular 22+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ## Documentation (Load On-Demand)
@@ -122,10 +122,15 @@ customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZ
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
 
 ### Frontend Development (Angular/TypeScript)
-- [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) — Modern syntax, signals, components
-- [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) — Spectator patterns, Jest config
-- [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) — Structure, organization
-- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — SCSS, BEM, Tailwind
+- **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
+- [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) — **single source of truth**: syntax, signals, change detection, forms, icons
+- [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
+- [State Management](docs/frontend/STATE_MANAGEMENT.md) — NgRx Signal Store, rxMethod, patchState
+- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS
+- [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) — Strict types, as const, `#` private
+- [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) — Writing tests: Spectator, Jest, byTestId
+- [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) — Reviewing tests: violation checklist
+- [Breadcrumbs](docs/frontend/BREADCRUMBS.md) — GlobalStore breadcrumb trail
 
 ### Testing
 - [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns

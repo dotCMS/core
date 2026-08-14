@@ -85,7 +85,6 @@ import { BookSearchStore } from './book-search.store';
   selector: 'dot-book-search',
   imports: [CommonModule],
   templateUrl: './book-search.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [BookSearchStore],
 })
 export class BookSearchComponent {
@@ -235,7 +234,7 @@ export const PersistentBookSearchStore = signalStore(
 Use Spectator or TestBed; provide the store and any dependencies (e.g. `BooksService`). Assert state after calling store methods and advancing async work.
 
 ```typescript
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { BookSearchStore } from './book-search.store';
 import { BookSearchComponent } from './book-search.component';
 
@@ -277,7 +276,7 @@ it('shows loading then books when query is entered', () => {
 - **Use `patchState`** for all store updates; keep updates immutable.
 - **Use `rxMethod` + `tapResponse`** for async/HTTP so loading and error state stay consistent.
 - **Keep components thin**: inject the store, call methods, bind to store signals in the template.
-- **Apply ANGULAR_STANDARDS**: `$` prefix for signals declared in the component; OnPush; `inject()`; separate template/style files when not trivial.
+- **Apply ANGULAR_STANDARDS**: `$` prefix for signals declared in the component; `inject()`; always three separate files (`.ts` + `.html` + `.scss`); no explicit `changeDetection` — `OnPush` is the Angular framework default as of v22.
 - **Apply TYPESCRIPT_STANDARDS**: strict types, no `any`, `#` for private fields, `as const` instead of enums.
 
 ## Resources
