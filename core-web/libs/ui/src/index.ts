@@ -9,6 +9,7 @@ export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-asset-picker/dot-asset-picker.component';
 export * from './lib/components/dot-asset-picker/asset-picker-config';
+export * from './lib/components/dot-asset-picker/asset-picker-dialog';
 export * from './lib/components/dot-asset-picker/last-asset-path';
 export * from './lib/components/dot-asset-picker/store/models';
 // Moved out of `apps/dotcms-ui` so libs can embed it without reaching back into the app

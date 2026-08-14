@@ -92,6 +92,38 @@ describe('buildAssetPickerConfig', () => {
         });
     });
 
+    describe('Story Block media nodes', () => {
+        // The Story Block opens the same picker as the fields, one mode per media node. Each is
+        // narrowed to its own mimetype: a `dotVideo` node pointing at an mp3 is as broken as an
+        // Image field returning a PDF.
+        it.each([
+            ['video', ['video/*']],
+            ['audio', ['audio/*']]
+        ] as const)('should restrict %s to its own mimetype', (mode, mimeTypes) => {
+            expect(buildAssetPickerConfig({ mode, site: SITE }).mimeTypes).toEqual(mimeTypes);
+        });
+
+        it.each(['video', 'audio'] as const)(
+            'should treat %s like the other media modes',
+            (mode) => {
+                const config = buildAssetPickerConfig({ mode, site: SITE, languageId: '1' });
+
+                expect(config.baseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+                expect(config.allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+                expect(config.languageId).toBe('1');
+            }
+        );
+
+        it('should hand back a fresh mimetype array each call', () => {
+            const first = buildAssetPickerConfig({ mode: 'video', site: SITE });
+            first.mimeTypes?.push('image/*');
+
+            expect(buildAssetPickerConfig({ mode: 'video', site: SITE }).mimeTypes).toEqual([
+                'video/*'
+            ]);
+        });
+    });
+
     describe('starting location', () => {
         it('should be undefined when nothing is remembered and none is given', () => {
             const config = buildAssetPickerConfig({ mode: 'file', site: SITE });

@@ -7,9 +7,13 @@
 
 <p-popover #popover [pt]="popoverPt" (onShow)="$popoverOpen.set(true)" (onHide)="onPanelHide()">
     @if ($popoverOpen()) {
+        <!-- `grid-rows-[1fr]`, not `min-content`: the panel height is fixed, and a min-content row
+             stops at the end of its content, so both columns — and the divider between them — ended
+             short of the bottom whenever the focused base type had few types. A 1fr row stretches to
+             the panel, leaving the leftover space inside the columns. -->
         <div
-            class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[min-content] overflow-hidden"
-            [style.height]="POPOVER_MAX_HEIGHT"
+            class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[1fr] overflow-hidden"
+            [style.height]="$panelHeight()"
             data-testid="content-type-filter-panel">
             <div class="flex flex-1 flex-col border-r border-slate-200 bg-white">
                 <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
@@ -23,7 +27,7 @@
                     [ngModelOptions]="{ standalone: true }"
                     optionLabel="label"
                     optionValue="name"
-                    [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                    [scrollHeight]="$leftScrollHeight()"
                     [pt]="listboxPt"
                     data-testid="base-type-listbox">
                     <ng-template let-item pTemplate="item">

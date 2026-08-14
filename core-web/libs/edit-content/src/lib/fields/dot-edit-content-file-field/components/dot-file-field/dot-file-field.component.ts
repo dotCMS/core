@@ -41,6 +41,7 @@ import { isImageFile } from '@dotcms/image-editor';
 import {
     ASSET_PICKER_TITLE_KEYS,
     buildAssetPickerConfig,
+    buildAssetPickerDialogConfig,
     DotAIImagePromptComponent,
     DotAssetPickerComponent,
     DotDropZoneComponent,
@@ -863,49 +864,19 @@ export class DotFileFieldComponent
 
         const mode = isImage ? 'image' : 'file';
 
-        this.#dialogRef = this.#dialogService.open(DotAssetPickerComponent, {
-            // The picker renders its own header (title + full screen + ✕), so PrimeNG's chrome
-            // header is hidden to avoid a duplicate and the title travels in `data`.
-            showHeader: false,
-            appendTo: 'body',
-            closeOnEscape: true,
-            closable: true,
-            dismissableMask: true,
-            draggable: false,
-            keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-dynamic',
-            resizable: false,
-            modal: true,
-            // The picker's own header drives full screen through PrimeNG's maximized state. No
-            // maximize button is rendered — PrimeNG's lives in the header we just hid.
-            maximizable: true,
-            // Autofocus would land on the picker's search input and paint the theme's focus halo
-            // the moment the dialog opens, which reads as an error state.
-            focusOnShow: false,
-            // Windowed size as a single `width`, not `90%` capped by a `max-width`: an inline
-            // max-width would still clamp the dialog once it goes full screen.
-            //
-            // The viewport-relative halves are what normally apply — the picker fills most of a
-            // laptop screen, so the folder tree and the asset table both breathe without reaching
-            // for full screen. The caps only bite on large external monitors, where a dialog that
-            // wide would just be hard to read. They are in `rem` so they track the content, which
-            // Tailwind sizes in `rem` throughout; mind that `html { font-size: 14px }` here, so
-            // 114rem/68rem are ~1596x952px, not the 16px-root figures you would expect.
-            //
-            // `.p-dialog` is capped at `max-height: 90%` by the theme, so asking for more than
-            // 90vh would have no effect.
-            width: 'min(90vw, 114rem)',
-            height: 'min(90vh, 68rem)',
-            // The picker fills the dialog so it can grow with the full-screen toggle.
-            contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
-            // No explicit path: the picker reopens on the globally remembered folder.
-            data: buildAssetPickerConfig({
-                mode,
-                site,
-                title: this.#dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
-                languageId: this.$pickerLanguageId()
-            })
-        });
+        this.#dialogRef = this.#dialogService.open(
+            DotAssetPickerComponent,
+            // Dialog flags live with the picker — they are its contract, not this field's taste.
+            buildAssetPickerDialogConfig(
+                // No explicit path: the picker reopens on the globally remembered folder.
+                buildAssetPickerConfig({
+                    mode,
+                    site,
+                    title: this.#dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
+                    languageId: this.$pickerLanguageId()
+                })
+            )
+        );
 
         // Unchanged from the browser-selector era: both dialogs close with the same hydrated
         // contentlet, so everything downstream of here keeps working as-is.

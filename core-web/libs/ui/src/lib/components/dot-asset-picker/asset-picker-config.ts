@@ -3,23 +3,41 @@ import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
 import { readLastAssetLocation } from './last-asset-path';
 import { DotAssetPickerConfig } from './store/models';
 
-/** Which Edit Content field opened the picker. */
-export type DotAssetPickerMode = 'file' | 'image';
+/**
+ * What the host opened the picker for.
+ *
+ * `file` is an Edit Content File field — any asset goes. The rest are media modes, each narrowed to
+ * its own mimetype: `image` is the Image field *and* the Story Block's image node, `video` and
+ * `audio` are the Story Block's media nodes.
+ */
+export type DotAssetPickerMode = 'file' | 'image' | 'video' | 'audio';
+
+/** Every mode that carries a mimetype restriction — i.e. everything but `file`. */
+export type DotAssetPickerMediaMode = Exclude<DotAssetPickerMode, 'file'>;
 
 /**
  * The only two base types that carry an asset.
  *
- * Both entry points are restricted to these — neither a File nor an Image field can hold a Widget
- * or a piece of Content. What differs is the *pre-selection*: Image starts with both selected,
- * File starts with none.
+ * Every entry point is restricted to these — none of them can hold a Widget or a piece of Content.
+ * What differs is the *pre-selection*: the media modes start with both selected, `file` starts with
+ * none.
  */
 export const ASSET_PICKER_ASSET_BASE_TYPES: DotCMSBaseTypesContentTypes[] = [
     DotCMSBaseTypesContentTypes.DOTASSET,
     DotCMSBaseTypesContentTypes.FILEASSET
 ];
 
-/** Applied silently — an Image field that could return a PDF is broken. */
-export const ASSET_PICKER_IMAGE_MIME_TYPES = ['image/*'];
+/**
+ * Mimetype narrowing per media mode, applied silently — an Image field that could return a PDF is
+ * broken, and so is a `dotVideo` node pointing at an mp3.
+ *
+ * `file` is absent on purpose, which is what makes it the one mode with no restriction.
+ */
+export const ASSET_PICKER_MIME_TYPES: Record<DotAssetPickerMediaMode, string[]> = {
+    image: ['image/*'],
+    video: ['video/*'],
+    audio: ['audio/*']
+};
 
 /**
  * Dialog title key per entry point. The picker renders its own header, so the title travels in the
@@ -27,7 +45,9 @@ export const ASSET_PICKER_IMAGE_MIME_TYPES = ['image/*'];
  */
 export const ASSET_PICKER_TITLE_KEYS: Record<DotAssetPickerMode, string> = {
     file: 'dot.asset.picker.header.file',
-    image: 'dot.asset.picker.header.image'
+    image: 'dot.asset.picker.header.image',
+    video: 'dot.asset.picker.header.video',
+    audio: 'dot.asset.picker.header.audio'
 };
 
 export interface DotAssetPickerEntryOptions {
@@ -53,10 +73,11 @@ export interface DotAssetPickerEntryOptions {
 }
 
 /**
- * Builds the picker configuration for an Edit Content entry point.
+ * Builds the picker configuration for a host entry point.
  *
  * Kept out of the store on purpose: `DotAssetPickerStore` is a generic browse store and should not
- * know what an "Image field" is. This is the one place that translates a field type into filters.
+ * know what an "Image field" or a "Story Block video node" is. This is the one place that translates
+ * an entry point into filters.
  *
  * Not pure — it reads the remembered location from storage when no explicit path is given, which is
  * what makes "reopen where I left off" work without every caller remembering to do it.
@@ -68,7 +89,9 @@ export function buildAssetPickerConfig({
     languageId,
     initialAssetPath
 }: DotAssetPickerEntryOptions): DotAssetPickerConfig {
-    const isImage = mode === 'image';
+    // Presence in the mimetype map is what makes a mode a media mode — no `mode === 'x'` chain to
+    // extend the next time a media node shows up.
+    const mimeTypes = ASSET_PICKER_MIME_TYPES[mode as DotAssetPickerMediaMode];
 
     // An explicit path is always about the entry site; a remembered one carries its own.
     const remembered = initialAssetPath ? undefined : readLastAssetLocation();
@@ -82,14 +105,14 @@ export function buildAssetPickerConfig({
             : {}),
         ...(title ? { title } : {}),
         path: initialAssetPath ?? remembered?.path,
-        // What the selector may offer — the same in both modes.
+        // What the selector may offer — the same in every mode.
         allowedBaseTypes: [...ASSET_PICKER_ASSET_BASE_TYPES],
         ...(languageId ? { languageId } : {}),
-        // What starts selected, plus the silent mimetype narrowing — Image only.
-        ...(isImage
+        // What starts selected, plus the silent mimetype narrowing — media modes only.
+        ...(mimeTypes
             ? {
                   baseTypes: [...ASSET_PICKER_ASSET_BASE_TYPES],
-                  mimeTypes: [...ASSET_PICKER_IMAGE_MIME_TYPES]
+                  mimeTypes: [...mimeTypes]
               }
             : {})
     };

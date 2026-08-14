@@ -52,16 +52,27 @@ const ITEMS_PER_PAGE = 10;
  * re-measured or the scroller will misalign.
  */
 const LISTBOX_ITEM_HEIGHT = 40.6;
-/** Left listbox viewport height — fits all 9 base-type rows (incl. ALL_CONTENT). */
-const LISTBOX_SCROLL_HEIGHT = `${9 * LISTBOX_ITEM_HEIGHT + 14}px`;
 /** Approximate column header height (px-4 py-3 with text-xs uppercase). */
 const POPOVER_HEADER_HEIGHT = '3rem';
 /**
- * Popover height is derived from the LEFT listbox so the popover always
- * matches the natural height of the base-type list — no leftover space at
- * the bottom and no clipping when the catalog grows.
+ * Rows the popover grows to before its listboxes start scrolling. Matches the full base-type
+ * catalog (8 types + ALL_CONTENT), so an unrestricted host shows the whole left column at once.
  */
-const POPOVER_MAX_HEIGHT = `calc(${LISTBOX_SCROLL_HEIGHT} + ${POPOVER_HEADER_HEIGHT})`;
+const MAX_VISIBLE_ROWS = 9;
+/**
+ * Floor for the same count, so the popover keeps ONE height for as long as it is open.
+ *
+ * The right column reloads on every base-type focus change and the catalogs differ wildly — in the
+ * AssetPicker, File has a single content type and DotAsset has four. Sizing purely to the focused
+ * column made the panel jump on every click, which reads worse than a little unused space. Seven
+ * rows covers the restricted hosts without pushing an unrestricted one around (it stays at the max).
+ */
+const MIN_VISIBLE_ROWS = 7;
+/** Row slots the right column spends on chrome rather than options: its search field. */
+const RIGHT_COLUMN_CHROME_ROWS = 1;
+
+/** Listbox viewport height for a row count, plus the list container's own vertical padding. */
+const rowsToPx = (rows: number) => `${rows * LISTBOX_ITEM_HEIGHT + 14}px`;
 
 interface BaseTypeOption {
     name: string;
@@ -185,7 +196,6 @@ export class DotContentTypeFilterComponent implements OnInit {
     protected readonly ALL_CONTENT = ALL_CONTENT;
     protected readonly ITEMS_PER_PAGE = ITEMS_PER_PAGE;
     protected readonly LISTBOX_ITEM_HEIGHT = LISTBOX_ITEM_HEIGHT;
-    protected readonly POPOVER_MAX_HEIGHT = POPOVER_MAX_HEIGHT;
 
     readonly $state = signalState<State>({
         baseTypes: [],
@@ -243,9 +253,41 @@ export class DotContentTypeFilterComponent implements OnInit {
         ...this.$state.baseTypes()
     ]);
 
-    protected readonly LISTBOX_SCROLL_HEIGHT = LISTBOX_SCROLL_HEIGHT;
     /** Banner height matches a single listbox item slot for visual consistency. */
     protected readonly LISTBOX_BANNER_HEIGHT_PX = `${LISTBOX_ITEM_HEIGHT}px`;
+
+    /**
+     * How many option rows the popover is sized for.
+     *
+     * Used to be the constant 9 — the size of Content Drive's base-type catalog — which left any
+     * host that restricts the offering with dead space under both columns: the AssetPicker offers
+     * only dotAsset + File Asset, so its left column has three rows and six went unused. Sized to
+     * whichever column needs more, clamped between {@link MIN_VISIBLE_ROWS} (so focusing a
+     * one-type base type does not shrink the panel out from under the cursor) and
+     * {@link MAX_VISIBLE_ROWS} (so a growing catalog scrolls instead of running off the screen).
+     */
+    protected readonly $visibleRows = computed(() => {
+        const left = this.$leftOptions().length;
+        const right =
+            this.$state.contentTypes().length +
+            RIGHT_COLUMN_CHROME_ROWS +
+            (this.$showAllBanner() ? 1 : 0);
+
+        return Math.min(
+            Math.max(left, right, MIN_VISIBLE_ROWS),
+            Math.max(MAX_VISIBLE_ROWS, MIN_VISIBLE_ROWS)
+        );
+    });
+
+    /**
+     * Both a floor and a ceiling: the panel holds this height whatever the focused base type brings,
+     * so switching focus never resizes it. The inner listboxes scroll instead.
+     */
+    protected readonly $panelHeight = computed(
+        () => `calc(${rowsToPx(this.$visibleRows())} + ${POPOVER_HEADER_HEIGHT})`
+    );
+
+    protected readonly $leftScrollHeight = computed(() => rowsToPx(this.$visibleRows()));
 
     /** Lookup: base type name → human label, used for chip rendering. */
     readonly #baseTypeLabelByName = computed(() => {
@@ -288,14 +330,18 @@ export class DotContentTypeFilterComponent implements OnInit {
     });
 
     /**
-     * Right listbox shrinks by one item slot when the "all content types"
-     * banner is visible, so the popover height stays constant — the banner
-     * takes over the bottom row's space instead of growing the popover.
+     * Right listbox gives up a slot to its search field, and one more to the "all content types"
+     * banner while that shows, so the popover height stays put instead of growing — the banner takes
+     * over the bottom row's space.
      */
-    protected readonly $rightScrollHeight = computed(() => {
-        const items = this.$showAllBanner() ? 7 : 8;
-        return `${items * LISTBOX_ITEM_HEIGHT + 14}px`;
-    });
+    protected readonly $rightScrollHeight = computed(() =>
+        rowsToPx(
+            Math.max(
+                this.$visibleRows() - RIGHT_COLUMN_CHROME_ROWS - (this.$showAllBanner() ? 1 : 0),
+                1
+            )
+        )
+    );
 
     ngOnInit() {
         this.#loadBaseTypes();
