@@ -9,9 +9,11 @@ import {
     viewChild
 } from '@angular/core';
 
+import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
+
 import { DotA11yPreviewFrameComponent } from './a11y-preview-frame/a11y-preview-frame.component';
 
-import { A11yGroup, StudioPageRow } from '../../models/accessibility-studio.models';
+import { StudioPageRow } from '../../models/accessibility-studio.models';
 import { A11yMarkerService } from '../../services/a11y-marker.service';
 
 /**
