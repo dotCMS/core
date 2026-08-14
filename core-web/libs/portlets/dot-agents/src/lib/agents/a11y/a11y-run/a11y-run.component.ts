@@ -10,19 +10,17 @@ import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { AgentMessage, DotAgentActivityLogComponent } from '@dotcms/ai-ui';
-import { DotAgentRunService, DotMessageService } from '@dotcms/data-access';
+import { DotAgentRunService } from '@dotcms/data-access';
 import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotA11yActivityComponent } from './a11y-activity/a11y-activity.component';
 import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
 import { DotA11yScoreComponent } from './a11y-score/a11y-score.component';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
 import { A11Y_PAGE_LIST_ROUTE } from '../a11y.constants';
-import { A11yAgentPresenter } from '../models/a11y-agent.presenter';
-import { impactToSeverity, SEVERITY_COLOR } from '../models/a11y-severity';
 import { StudioPageRow } from '../models/accessibility-studio.models';
 import { PageDiffFile } from '../models/page-render-sources.models';
 import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
@@ -81,7 +79,7 @@ const INITIAL_VIEW_STATE: A11yRunViewState = {
         ToggleSwitchModule,
         TooltipModule,
         DotMessagePipe,
-        DotAgentActivityLogComponent,
+        DotA11yActivityComponent,
         DotA11yDiffComponent,
         DotA11yDiffViewerComponent,
         DotA11yPreviewComponent,
@@ -90,28 +88,6 @@ const INITIAL_VIEW_STATE: A11yRunViewState = {
     templateUrl: './a11y-run.component.html',
     styles: [
         `
-            /* Scanning shows a skeleton with the SAME footprint as the results, so
-               swapping to the real data is a pure crossfade — no layout shift. Both
-               the skeleton and the results just fade in. */
-            @keyframes studio-fade-in {
-                from {
-                    opacity: 0;
-                }
-                to {
-                    opacity: 1;
-                }
-            }
-
-            .studio-fade-in {
-                animation: studio-fade-in 0.25s ease-out both;
-            }
-
-            @media (prefers-reduced-motion: reduce) {
-                .studio-fade-in {
-                    animation: none;
-                }
-            }
-
             /* Make the OPEN scanner panel's content scroll in place (headers stay put)
                instead of the whole accordion scrolling. PrimeNG's collapse animation
                wraps the content in a grid + <p-motion> + wrapper that its [pt] API
@@ -186,11 +162,6 @@ export class DotA11yRunComponent {
     /** True when there's something to publish — drives the Publish bar. */
     readonly $hasChangedFiles = computed(() => this.$state.changedFileCount() > 0);
 
-    readonly #dm = inject(DotMessageService);
-
-    /** Maps the agent stream + FixReport into shared activity-log bubbles. */
-    readonly #presenter = new A11yAgentPresenter(this.#dm);
-
     constructor() {
         // The page list hands the selected row over in the navigation's `state` (the
         // URL carries only its readable path, which can't supply identifier/host/
@@ -219,122 +190,6 @@ export class DotA11yRunComponent {
             // Navigation cancelled (guard or a newer navigation superseded this
             // one). Nothing to recover — the router owns where we ended up.
         });
-    }
-
-    /**
-     * The section-header label above the scrollable body, by phase:
-     *   scanning → "SCAN", scanned → "BY ISSUE TYPE", fixing/done → "AGENT ACTIVITY".
-     */
-    readonly $logHeaderKey = computed<string>(() => {
-        if (this.store.phase() === 'scanning') {
-            return 'accessibility.studio.loghdr.scan';
-        }
-        if (this.store.phase() === 'scanned') {
-            return 'accessibility.studio.loghdr.issues';
-        }
-        return 'accessibility.studio.loghdr.activity';
-    });
-
-    /** The working badge label beside the header ("SCANNING" / "WORKING"), or null. */
-    readonly $logBadgeKey = computed<string | null>(() => {
-        if (this.store.phase() === 'scanning') {
-            return 'accessibility.studio.badge.scanning';
-        }
-        if (this.store.phase() === 'fixing') {
-            return 'accessibility.studio.badge.working';
-        }
-        return null;
-    });
-
-    /**
-     * BY ISSUE TYPE rows with their dot color resolved. Projected here rather than
-     * calling a method from the template: this component's change detection is driven
-     * by a live SSE stream plus a rAF count-up, so a template method would re-run for
-     * every row many times a second.
-     */
-    readonly $issueTypeRows = computed(() =>
-        this.store.issueTypeRows().map((group) => ({
-            ...group,
-            color: SEVERITY_COLOR[impactToSeverity(group.impact)]
-        }))
-    );
-
-    /** Needs-review rows with their "why a human is needed" i18n key resolved. */
-    readonly $reviewRows = computed(() =>
-        this.store.reviewGroups().map((group) => ({
-            ...group,
-            reasonKey:
-                REVIEW_REASON_KEYS[group.code] ?? 'accessibility.studio.review.reason.default'
-        }))
-    );
-
-    /**
-     * The SETTLED bubbles for the shared activity log, via the a11y presenter:
-     *   - while fixing → one bubble per streamed SSE `phase` step (the completed
-     *     actions); the live "now working" item is {@link workingMessage}, appended
-     *     by the log itself
-     *   - after done   → the final report expanded into bubbles (scan/fixed/reported/rescan)
-     */
-    readonly $activityMessages = computed<AgentMessage[]>(() => {
-        if (this.store.phase() === 'fixing') {
-            return this.store.steps().map((step, i) => this.#presenter.liveStep(step, i));
-        }
-        if (this.store.finished()) {
-            const report = this.store.report();
-            return report ? this.#presenter.resultMessages(report) : [];
-        }
-        return [];
-    });
-
-    /**
-     * The live "thinking" copy shown while fixing. It is ALWAYS generic
-     * loading/working/thinking text — never the last step's message — so the
-     * indicator reads clearly as "the agent is busy" and doesn't get mistaken for a
-     * finished step. The phrases cycle (and loop) as the run progresses so the line
-     * keeps visibly changing; elapsed seconds on the current action ride along as
-     * the sub-line.
-     */
-    readonly $workingMessage = computed<AgentMessage | null>(() => {
-        if (this.store.phase() !== 'fixing') {
-            return null;
-        }
-        const sinceLastEventMs = this.store.heartbeat()?.sinceLastEventMs ?? 0;
-
-        // Elapsed on the current action, once it's been running a beat.
-        const sinceSec = Math.floor(sinceLastEventMs / 1000);
-        const sub =
-            sinceSec >= 3
-                ? this.#dm.get('accessibility.studio.working.elapsed', String(sinceSec))
-                : undefined;
-
-        return {
-            id: 'agent-working',
-            // Unused: dot-agent-thinking renders its own spinner and reads only
-            // text/sub. Kept non-empty only to satisfy AgentMessage.
-            icon: '',
-            text: this.#dm.get(this.#workingReassuranceKey(sinceLastEventMs)),
-            sub,
-            tone: 'info'
-        };
-    });
-
-    /**
-     * Pick a generic reassurance line. Cycles through the phrases as the current
-     * action runs so the copy keeps visibly changing — and LOOPS, since a step can
-     * run for minutes and no phrase should imply it's nearly done or freeze on one
-     * message.
-     */
-    #workingReassuranceKey(sinceLastEventMs: number): string {
-        const KEYS = [
-            'accessibility.studio.working.thinking',
-            'accessibility.studio.working.analyzing',
-            'accessibility.studio.working.reasoning',
-            'accessibility.studio.working.stillworking'
-        ];
-        // Advance one phrase roughly every 5s, wrapping around forever.
-        const index = Math.floor(sinceLastEventMs / 5000) % KEYS.length;
-
-        return KEYS[index];
     }
 
     /** Footer title + sub keys derived from the current phase — single switch. */
@@ -467,16 +322,6 @@ export class DotA11yRunComponent {
         this.store.setSkipCss(value);
     }
 }
-
-/** Per-rule "why it needs review" i18n keys for the common axe incomplete rules. */
-const REVIEW_REASON_KEYS: Record<string, string> = {
-    'color-contrast': 'accessibility.studio.review.reason.colorcontrast',
-    'color-contrast-enhanced': 'accessibility.studio.review.reason.colorcontrast',
-    'link-in-text-block': 'accessibility.studio.review.reason.linkintext',
-    'scrollable-region-focusable': 'accessibility.studio.review.reason.scrollable',
-    'aria-allowed-attr': 'accessibility.studio.review.reason.aria',
-    'nested-interactive': 'accessibility.studio.review.reason.nested'
-};
 
 /**
  * The page row the list hands over in the navigation's `state`, or null.

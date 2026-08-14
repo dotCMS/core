@@ -588,40 +588,12 @@ describe('DotA11yRunComponent', () => {
             expect(stopAgent).toHaveBeenCalled();
         });
 
-        it('renders one settled bubble per streamed step, plus a separate thinking item', () => {
-            // 3 streamed steps as settled message bubbles…
+        it('streams the live steps into the activity log', () => {
+            // The copy the log shows (and its cycling thinking line) is covered in
+            // a11y-activity.component.spec.ts; here it just has to be wired to the
+            // stream and rendering while the agent works.
             expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
-            // …and the live state is its own thinking component, not a 4th message.
             expect(spectator.query(byTestId('agent-thinking'))).not.toBeNull();
-        });
-
-        it('shows generic thinking copy — never the last step text', () => {
-            const thinking = spectator.query(byTestId('agent-thinking'));
-            expect(thinking).not.toBeNull();
-            // Always generic loading copy; must NOT echo the latest step.
-            expect(thinking).not.toHaveText('reading activity.vtl');
-            // No heartbeat yet → first cycling phrase.
-            expect(thinking).toHaveText('Thinking…');
-        });
-
-        it('shows the elapsed seconds sub-line from the heartbeat', () => {
-            heartbeat = { elapsedMs: 20000, sinceLastEventMs: 12000 };
-            render('fixing', null, LIVE_STEPS);
-            const thinking = spectator.query(byTestId('agent-thinking'));
-            // Still generic copy, never the step text.
-            expect(thinking).not.toHaveText('reading activity.vtl');
-            // Elapsed seconds on the current action ride along as the sub-line.
-            expect(thinking).toHaveText('12s');
-        });
-
-        it('keeps cycling reassurance copy on a very long step (loops, never freezes)', () => {
-            // 5-minute step: index wraps (300000/5000 % 4 = 0 → "Thinking…"), so the
-            // copy keeps moving rather than sticking on a "nearly done" phrase.
-            heartbeat = { elapsedMs: 305000, sinceLastEventMs: 300000 };
-            render('fixing', null, LIVE_STEPS);
-            const thinking = spectator.query(byTestId('agent-thinking'));
-            expect(thinking).toHaveText('Thinking…');
-            expect(thinking).toHaveText('300s');
         });
     });
 
