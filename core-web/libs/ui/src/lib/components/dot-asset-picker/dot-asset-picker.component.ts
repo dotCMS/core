@@ -22,7 +22,13 @@ import { Popover, PopoverModule } from 'primeng/popover';
 import { SplitterModule } from 'primeng/splitter';
 import { ToastModule } from 'primeng/toast';
 
-import { DotContentletService, DotMessageService, DotUploadFileService } from '@dotcms/data-access';
+import {
+    DotContentletService,
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotUploadFileService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
@@ -79,7 +85,17 @@ import {
     selector: 'dot-asset-picker',
     templateUrl: './dot-asset-picker.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DotAssetPickerStore, MessageService],
+    // `DotHttpErrorManagerService` (store features) and `DotContentTypeService` (the toolbar's
+    // content-type filter) are `@Injectable()` with no `providedIn: 'root'`, and only the main app
+    // shell provides them. Without them here the picker throws `NullInjectorError` and renders blank
+    // in any other host — notably the legacy Dojo binary-field builder, which the File/Image field
+    // still runs inside. Providing them here is what makes the picker self-sufficient anywhere.
+    providers: [
+        DotAssetPickerStore,
+        MessageService,
+        DotHttpErrorManagerService,
+        DotContentTypeService
+    ],
     imports: [
         ButtonModule,
         DialogModule,
