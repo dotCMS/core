@@ -298,7 +298,11 @@ describe('DotContentDriveShellComponent', () => {
                 // The Action Center child looks up bulk actions on init, which happens as soon as a
                 // selection is present in these tests.
                 mockProvider(DotWorkflowsActionsService, {
-                    getBulkActions: jest.fn().mockReturnValue(of({ schemes: [] }))
+                    getBulkActions: jest.fn().mockReturnValue(of({ schemes: [] })),
+                    // The Action Center resolves the workflow mapping gate off these; an empty
+                    // answer is the "nothing mapped" case, which is all the shell's tests need.
+                    getSystemActionsByContentType: jest.fn().mockReturnValue(of([])),
+                    getSystemActionsByScheme: jest.fn().mockReturnValue(of([]))
                 }),
                 mockProvider(DotWorkflowActionsFireService, {
                     bulkFire: jest

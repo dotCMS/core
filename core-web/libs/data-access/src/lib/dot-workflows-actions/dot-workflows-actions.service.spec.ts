@@ -157,4 +157,47 @@ describe('DotWorkflowsActionsService', () => {
             spectator.expectOne(BULK_ACTIONS_URL, HttpMethod.POST).flush({ entity: null });
         });
     });
+
+    describe('system action mappings', () => {
+        const MAPPING = {
+            identifier: 'mapping-1',
+            systemAction: 'PUBLISH',
+            workflowAction: { id: 'action-publish', schemeId: 'scheme-1' }
+        };
+
+        it('should get the mappings a content type owns', (done) => {
+            spectator.service.getSystemActionsByContentType('Blog').subscribe((res) => {
+                expect(res).toEqual([MAPPING]);
+                done();
+            });
+
+            spectator
+                .expectOne('/api/v1/workflow/contenttypes/Blog/system/actions', HttpMethod.GET)
+                .flush({ entity: [MAPPING] });
+        });
+
+        it('should get the mappings a scheme owns', (done) => {
+            spectator.service.getSystemActionsByScheme('scheme-1').subscribe((res) => {
+                expect(res).toEqual([MAPPING]);
+                done();
+            });
+
+            spectator
+                .expectOne('/api/v1/workflow/schemes/scheme-1/system/actions', HttpMethod.GET)
+                .flush({ entity: [MAPPING] });
+        });
+
+        it('should fall back to an empty list when the entity is missing', (done) => {
+            // An unmapped content type is the normal case, not an error — callers iterate the
+            // result without null-checking.
+            spectator.service.getSystemActionsByContentType('Blog').subscribe((res) => {
+                expect(res).toEqual([]);
+                done();
+            });
+
+            spectator
+                .expectOne('/api/v1/workflow/contenttypes/Blog/system/actions', HttpMethod.GET)
+                .flush({ entity: null });
+        });
+    });
 });

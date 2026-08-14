@@ -45,76 +45,73 @@
                     </p-message>
                 }
 
-                <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
+                <!--
+                    Quick Actions: two groups, deliberately labelled apart.
+
+                    The gated group fires `SystemAction`s and only appears where the content type's
+                    workflow maps them — that is the promise the section heading makes. Lock, Unlock
+                    and Add to Bundle cannot be mapped at all (the first two are per-user version-info
+                    state with no actionlet; the last is not a SystemAction and posts to the bundle
+                    servlet), so they sit under their own heading. Left in one list they would make
+                    the heading's claim false for three of its rows on day one.
+                -->
                 <section data-testid="quick-actions-section">
                     <h3
-                        class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                        class="mb-3 flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
                         {{ 'content-drive.action-center.quick-actions' | dm }}
+                        <!-- Explains the gate where it applies, rather than in a tooltip on each
+                         disabled row. -->
+                        <a
+                            class="flex items-center text-surface-400 transition-colors hover:text-primary"
+                            [href]="quickActionsDocsUrl"
+                            [pTooltip]="'content-drive.action-center.gate-explainer' | dm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-testid="quick-actions-info"
+                            [attr.aria-label]="'content-drive.action-center.gate-explainer' | dm">
+                            <i class="pi pi-info-circle text-xs" aria-hidden="true"></i>
+                        </a>
                     </h3>
 
                     @if ($quickActions().length) {
-                        <div
-                            class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
-                            @for (quickAction of $quickActions(); track quickAction.id) {
-                                <!-- Rows with a zero count do not apply to this selection. They stay
-                                 visible but non-selectable, so the action list is stable as the
-                                 selection changes. Clicking opens the preview; nothing fires from
-                                 here. -->
-                                <button
-                                    type="button"
-                                    class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
-                                    [disabled]="$executing() || quickAction.count === 0"
-                                    [pTooltip]="quickActionHint(quickAction) | dm"
-                                    [attr.data-testid]="'quick-action-' + quickAction.id"
-                                    (click)="onSelectQuickAction(quickAction)">
-                                    <span
-                                        class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
-                                        [class]="
-                                            quickAction.danger
-                                                ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
-                                                : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
-                                        ">
-                                        <i
-                                            class="material-symbols-outlined text-[20px]!"
-                                            aria-hidden="true">
-                                            {{ quickAction.icon }}
-                                        </i>
-                                    </span>
-
-                                    <span
-                                        class="flex-1 text-sm font-semibold"
-                                        [class]="
-                                            quickAction.danger ? 'text-red-600' : 'text-surface-700'
-                                        ">
-                                        {{ quickAction.name | dm }}
-                                    </span>
-
-                                    <!-- Items the action will still be fired over, but which are
-                                     expected to fail — a lock held by another user. Flagged rather
-                                     than subtracted from the count, since only the server can
-                                     decide. -->
-                                    @if (quickAction.warningCount > 0) {
-                                        <i
-                                            class="pi pi-exclamation-triangle text-xs text-orange-500"
-                                            [pTooltip]="
-                                                quickAction.warningHint
-                                                    | dm: [quickAction.warningCount.toString()]
-                                            "
-                                            [attr.data-testid]="
-                                                'quick-action-warning-' + quickAction.id
-                                            "
-                                            aria-hidden="true"></i>
+                        <div class="flex flex-col gap-4">
+                            @if ($gatedQuickActions().length) {
+                                <div
+                                    class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50"
+                                    data-testid="quick-actions-gated">
+                                    @for (
+                                        quickAction of $gatedQuickActions();
+                                        track quickAction.id
+                                    ) {
+                                        <ng-container
+                                            [ngTemplateOutlet]="quickActionRow"
+                                            [ngTemplateOutletContext]="{
+                                                $implicit: quickAction
+                                            }" />
                                     }
+                                </div>
+                            }
 
-                                    <span class="text-xs font-medium text-surface-400">
-                                        ({{ quickAction.count }})
-                                    </span>
-                                    <i
-                                        class="material-symbols-outlined text-[20px]! text-surface-300"
-                                        aria-hidden="true">
-                                        chevron_right
-                                    </i>
-                                </button>
+                            @if ($exemptQuickActions().length) {
+                                <div data-testid="quick-actions-exempt">
+                                    <h4
+                                        class="mb-2 text-[10px] font-semibold tracking-widest text-surface-400 uppercase">
+                                        {{ 'content-drive.action-center.always-available' | dm }}
+                                    </h4>
+                                    <div
+                                        class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
+                                        @for (
+                                            quickAction of $exemptQuickActions();
+                                            track quickAction.id
+                                        ) {
+                                            <ng-container
+                                                [ngTemplateOutlet]="quickActionRow"
+                                                [ngTemplateOutletContext]="{
+                                                    $implicit: quickAction
+                                                }" />
+                                        }
+                                    </div>
+                                </div>
                             }
                         </div>
                     } @else {
@@ -475,3 +472,71 @@
     <!-- Guards the destructive quick actions. Appended to body so it layers above the dialog. -->
     <p-confirmDialog appendTo="body" [draggable]="false" [style]="{ width: '500px' }" />
 </div>
+
+<!--
+    One row, rendered by both quick action groups.
+
+    Extracted rather than duplicated so the gated and exempt lists cannot drift apart visually — they
+    differ in what gates them, not in how a row looks.
+
+    Rows with a zero count do not apply to this selection, or are not mapped to a workflow action for
+    it. They stay visible but non-selectable, so the list is stable as the selection changes, and the
+    tooltip says which of the two it is. Clicking opens the preview; nothing fires from here.
+-->
+<ng-template #quickActionRow let-quickAction>
+    <button
+        type="button"
+        class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="$executing() || quickAction.count === 0"
+        [pTooltip]="quickActionHint(quickAction) | dm: [quickAction.unmappedCount.toString()]"
+        [attr.data-testid]="'quick-action-' + quickAction.id"
+        (click)="onSelectQuickAction(quickAction)">
+        <span
+            class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
+            [class]="
+                quickAction.danger
+                    ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
+                    : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
+            ">
+            <i class="material-symbols-outlined text-[20px]!" aria-hidden="true">
+                {{ quickAction.icon }}
+            </i>
+        </span>
+
+        <span
+            class="flex-1 text-sm font-semibold"
+            [class]="quickAction.danger ? 'text-red-600' : 'text-surface-700'">
+            {{ quickAction.name | dm }}
+        </span>
+
+        <!-- Items the action will still be fired over, but which are expected to fail — a lock held
+         by another user. Flagged rather than subtracted from the count, since only the server can
+         decide. -->
+        @if (quickAction.warningCount > 0) {
+            <i
+                class="pi pi-exclamation-triangle text-xs text-orange-500"
+                [pTooltip]="quickAction.warningHint | dm: [quickAction.warningCount.toString()]"
+                [attr.data-testid]="'quick-action-warning-' + quickAction.id"
+                aria-hidden="true"></i>
+        }
+
+        <!-- Items dropped by the workflow gate, not by row state. Marked separately from the
+         warning icon above: that one flags rows that will still be fired, this one accounts for
+         rows that will not be. -->
+        @if (quickAction.unmappedCount > 0) {
+            <i
+                class="pi pi-lock text-xs text-surface-400"
+                [pTooltip]="
+                    'content-drive.action-center.unmapped-items'
+                        | dm: [quickAction.unmappedCount.toString()]
+                "
+                [attr.data-testid]="'quick-action-unmapped-' + quickAction.id"
+                aria-hidden="true"></i>
+        }
+
+        <span class="text-xs font-medium text-surface-400">({{ quickAction.count }})</span>
+        <i class="material-symbols-outlined text-[20px]! text-surface-300" aria-hidden="true">
+            chevron_right
+        </i>
+    </button>
+</ng-template>

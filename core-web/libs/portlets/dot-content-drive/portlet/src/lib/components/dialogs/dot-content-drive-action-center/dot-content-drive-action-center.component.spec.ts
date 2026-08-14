@@ -19,7 +19,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotBulkActionView, DotCMSSystemAction, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
@@ -128,6 +128,23 @@ const BULK_ACTIONS_RESPONSE = {
         }
     ]
 } as DotBulkActionView;
+
+/**
+ * Scheme-level system action mappings for `editorial`, pointing at actions the bulk response above
+ * reports with a non-zero count — so both gates pass and the gated quick actions are live.
+ *
+ * `LOCK`/`UNLOCK` are deliberately absent: they have no actionlet and can never be mapped, which is
+ * why those rows are exempt rather than gated.
+ */
+const SCHEME_SYSTEM_ACTIONS = ['PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'UNARCHIVE', 'DELETE'].map(
+    (systemAction) => ({
+        identifier: `mapping-${systemAction}`,
+        systemAction,
+        workflowAction: { id: 'action-review', name: 'Send for Review', schemeId: 'editorial' },
+        ownerContentType: false,
+        ownerScheme: true
+    })
+) as unknown as DotCMSSystemAction[];
 
 /**
  * What the fire carries when the action declared no inputs.
@@ -260,6 +277,14 @@ describe('DotContentDriveActionCenterComponent', () => {
 
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
+        );
+        // No content-type-level override; the scheme's mappings are what resolve — the shape of a
+        // stock install, where only the scheme carries Default Actions.
+        jest.spyOn(workflowsActionsService, 'getSystemActionsByContentType').mockReturnValue(
+            of([])
+        );
+        jest.spyOn(workflowsActionsService, 'getSystemActionsByScheme').mockReturnValue(
+            of(SCHEME_SYSTEM_ACTIONS)
         );
         jest.spyOn(store, 'closeDialog');
         jest.spyOn(store, 'loadItems');
@@ -793,6 +818,135 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
     });
 
+    describe('the workflow mapping gate', () => {
+        it('should keep gated actions live when the scheme maps them', () => {
+            spectator.detectChanges();
+
+            const publish = spectator.query(
+                '[data-testid="quick-action-PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(publish.disabled).toBe(false);
+        });
+
+        it('should shut a gated action when nothing maps it', () => {
+            jest.spyOn(workflowsActionsService, 'getSystemActionsByScheme').mockReturnValue(of([]));
+
+            spectator.detectChanges();
+
+            const publish = spectator.query(
+                '[data-testid="quick-action-PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(publish.disabled).toBe(true);
+        });
+
+        it('should leave the exempt actions untouched when nothing maps anything', () => {
+            // The rule the split exists to make visible: these have no mapping to gate on.
+            jest.spyOn(workflowsActionsService, 'getSystemActionsByScheme').mockReturnValue(of([]));
+            mockSelectedItems.set([contentlet({ inode: 'inode-1', locked: true })]);
+
+            spectator.detectChanges();
+
+            for (const id of ['UNLOCK', 'ADD_TO_BUNDLE']) {
+                expect(
+                    (spectator.query(`[data-testid="quick-action-${id}"]`) as HTMLButtonElement)
+                        .disabled
+                ).toBe(false);
+            }
+        });
+
+        it('should ask for the mappings of every content type and scheme in play', () => {
+            spectator.detectChanges();
+
+            expect(workflowsActionsService.getSystemActionsByContentType).toHaveBeenCalledWith(
+                'Blog'
+            );
+            expect(workflowsActionsService.getSystemActionsByScheme).toHaveBeenCalledWith(
+                'editorial'
+            );
+        });
+
+        it('should shut the gated actions when the mapping lookup fails', () => {
+            // Fails closed. The workflow actions are unaffected, so the dialog stays usable.
+            jest.spyOn(workflowsActionsService, 'getSystemActionsByScheme').mockReturnValue(
+                throwError(() => new Error('boom'))
+            );
+
+            spectator.detectChanges();
+
+            expect(
+                (spectator.query('[data-testid="quick-action-PUBLISH"]') as HTMLButtonElement)
+                    .disabled
+            ).toBe(true);
+            expect(spectator.query('[data-testid="workflow-schemes"]')).toBeTruthy();
+        });
+
+        it('should fire a gated action on the mapped content type only', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'blog-1', contentType: 'Blog' }),
+                contentlet({ inode: 'banner-1', contentType: 'Banner' })
+            ]);
+            // Banner's lookup comes back with nothing available, so PUBLISH resolves for Blog alone.
+            jest.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
+                of(
+                    (request.contentletIds ?? []).includes('blog-1')
+                        ? BULK_ACTIONS_RESPONSE
+                        : { schemes: [] }
+                )
+            );
+
+            executeQuickAction('PUBLISH');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('PUBLISH', expect.any(String), [
+                'blog-1'
+            ]);
+        });
+
+        it('should mark the excluded rows on the row itself', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'blog-1', contentType: 'Blog' }),
+                contentlet({ inode: 'banner-1', contentType: 'Banner' })
+            ]);
+            jest.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
+                of(
+                    (request.contentletIds ?? []).includes('blog-1')
+                        ? BULK_ACTIONS_RESPONSE
+                        : { schemes: [] }
+                )
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-unmapped-PUBLISH"]')).toBeTruthy();
+        });
+
+        it('should render the gated and exempt rows in separate groups', () => {
+            spectator.detectChanges();
+
+            const gated = spectator.query('[data-testid="quick-actions-gated"]');
+            const exempt = spectator.query('[data-testid="quick-actions-exempt"]');
+
+            expect(gated?.querySelector('[data-testid="quick-action-PUBLISH"]')).toBeTruthy();
+            expect(gated?.querySelector('[data-testid="quick-action-LOCK"]')).toBeNull();
+            expect(exempt?.querySelector('[data-testid="quick-action-LOCK"]')).toBeTruthy();
+            expect(
+                exempt?.querySelector('[data-testid="quick-action-ADD_TO_BUNDLE"]')
+            ).toBeTruthy();
+        });
+
+        it('should explain the gate with an info link', () => {
+            spectator.detectChanges();
+
+            const info = spectator.query('[data-testid="quick-actions-info"]');
+
+            expect(info).toBeTruthy();
+            expect(info?.getAttribute('href')).toBeTruthy();
+            expect(info?.getAttribute('target')).toBe('_blank');
+            expect(info?.getAttribute('rel')).toContain('noopener');
+        });
+    });
+
     describe('quick action preview', () => {
         it('should open the preview instead of firing when a quick action is clicked', () => {
             openQuickActionPreview('PUBLISH');
@@ -965,7 +1119,13 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should offer no requires-input hint on any row', () => {
             spectator.detectChanges();
 
-            expect(spectator.queryAll('.pi-info-circle[aria-hidden]').length).toBe(
+            // Scoped to the workflow section: the Quick Actions heading carries its own
+            // `pi-info-circle` explaining the workflow gate, which is not a row hint.
+            expect(
+                spectator.queryAll(
+                    '[data-testid="workflow-actions-section"] .pi-info-circle[aria-hidden]'
+                ).length
+            ).toBe(
                 // Only the approximate-count icons remain; none of the fixture's actions carry a
                 // condition, so there should be none at all.
                 0

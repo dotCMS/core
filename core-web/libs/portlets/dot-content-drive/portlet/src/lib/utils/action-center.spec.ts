@@ -4,11 +4,13 @@ import {
     DotActionCenterWorkflowAction,
     DotBulkActionView,
     DotCMSContentlet,
+    DotCMSSystemAction,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
 
 import {
     ADD_TO_BUNDLE_ACTION_ID,
+    availableWorkflowActionIds,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
@@ -16,6 +18,8 @@ import {
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
     requiredInputKinds,
+    resolvedSystemActions,
+    SYSTEM_WORKFLOW_ID,
     toActionCenterSchemes,
     toContentletInodes,
     toHostFolderValue,
@@ -28,6 +32,8 @@ const contentlet = (
 ): DotContentDriveItem =>
     ({
         baseType: 'CONTENT',
+        // The mapping gate is keyed on the content type variable, so rows need one.
+        contentType: 'Blog',
         live: false,
         working: true,
         archived: false,
@@ -98,6 +104,17 @@ const bulkActionView = (
             }
         ]
     }) as DotBulkActionView;
+
+/**
+ * Context in which every gated system action is mapped for the fixture's content type, so tests
+ * about row-state eligibility are not silently also testing the workflow gate.
+ */
+const ALL_MAPPED = {
+    isAdmin: false,
+    mappedSystemActions: new Map([
+        ['Blog', new Set(['PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'UNARCHIVE', 'DELETE'])]
+    ])
+};
 
 describe('action-center utils', () => {
     describe('excludeFolders', () => {
@@ -175,7 +192,7 @@ describe('action-center utils', () => {
                 contentlet({ inode: 'c', live: false })
             ];
 
-            const publish = getQuickActions(items).find(
+            const publish = getQuickActions(items, ALL_MAPPED).find(
                 (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
             );
 
@@ -188,7 +205,7 @@ describe('action-center utils', () => {
                 contentlet({ inode: 'b', live: false })
             ];
 
-            const unpublish = getQuickActions(items).find(
+            const unpublish = getQuickActions(items, ALL_MAPPED).find(
                 (action) => action.id === WORKFLOW_ACTION_ID.UNPUBLISH
             );
 
@@ -201,7 +218,9 @@ describe('action-center utils', () => {
                 contentlet({ inode: 'b', archived: false })
             ];
 
-            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
+            const byId = new Map(
+                getQuickActions(items, ALL_MAPPED).map((action) => [action.id, action.count])
+            );
 
             expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(1);
             expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
@@ -406,7 +425,7 @@ describe('action-center utils', () => {
                 folder('f1')
             ];
 
-            const publish = getQuickActions(items).find(
+            const publish = getQuickActions(items, ALL_MAPPED).find(
                 (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
             );
 
@@ -434,6 +453,190 @@ describe('action-center utils', () => {
             );
 
             expect(remove?.danger).toBe(true);
+        });
+    });
+
+    describe('the workflow mapping gate', () => {
+        const mapping = (systemAction: string, workflowActionId: string, schemeId = 'editorial') =>
+            ({
+                identifier: `m-${systemAction}`,
+                systemAction,
+                workflowAction: { id: workflowActionId, schemeId }
+            }) as unknown as DotCMSSystemAction;
+
+        describe('resolvedSystemActions', () => {
+            it('should resolve a scheme mapping when the content type has none of its own', () => {
+                // The stock shape: the System Workflow ships mapped at scheme level and almost no
+                // content type carries an override, so a content-type-only lookup would report
+                // nothing mapped for practically every install.
+                const resolved = resolvedSystemActions(
+                    [],
+                    [mapping('PUBLISH', 'action-publish')],
+                    new Set(['action-publish'])
+                );
+
+                expect([...resolved]).toEqual(['PUBLISH']);
+            });
+
+            it('should let a content type mapping override the scheme', () => {
+                const resolved = resolvedSystemActions(
+                    [mapping('PUBLISH', 'action-ct')],
+                    [mapping('PUBLISH', 'action-scheme')],
+                    new Set(['action-ct'])
+                );
+
+                expect([...resolved]).toEqual(['PUBLISH']);
+            });
+
+            it('should drop a content type mapping whose action is unavailable, not fall back', () => {
+                // The backend does not retry at scheme level once a content type mapping is found —
+                // it warns and falls through to the raw API call. Falling back here would offer a
+                // row the server will not honour.
+                const resolved = resolvedSystemActions(
+                    [mapping('PUBLISH', 'action-ct')],
+                    [mapping('PUBLISH', 'action-scheme')],
+                    new Set(['action-scheme'])
+                );
+
+                expect(resolved.size).toBe(0);
+            });
+
+            it('should give the System Workflow precedence over another scheme', () => {
+                const resolved = resolvedSystemActions(
+                    [],
+                    [
+                        mapping('PUBLISH', 'action-custom', 'custom-scheme'),
+                        mapping('PUBLISH', 'action-system', SYSTEM_WORKFLOW_ID)
+                    ],
+                    new Set(['action-system'])
+                );
+
+                expect([...resolved]).toEqual(['PUBLISH']);
+            });
+
+            it('should reject a mapping whose action the selection cannot currently run', () => {
+                // Gate 2. Mapped, but not reachable from the contentlets' current step — the exact
+                // case where the backend silently performs the raw API operation instead.
+                const resolved = resolvedSystemActions(
+                    [],
+                    [mapping('PUBLISH', 'action-publish')],
+                    new Set(['action-something-else'])
+                );
+
+                expect(resolved.size).toBe(0);
+            });
+
+            it('should ignore malformed mappings rather than throw', () => {
+                const resolved = resolvedSystemActions(
+                    [{ systemAction: 'PUBLISH' } as unknown as DotCMSSystemAction],
+                    [],
+                    new Set(['action-publish'])
+                );
+
+                expect(resolved.size).toBe(0);
+            });
+        });
+
+        describe('availableWorkflowActionIds', () => {
+            it('should collect the ids the bulk lookup reported', () => {
+                const view = bulkActionView('Editorial', [
+                    [2, [{ id: 'a1', name: 'Review', count: 2 }]]
+                ]);
+
+                expect([...availableWorkflowActionIds(view)]).toEqual(['a1']);
+            });
+
+            it('should drop zero-count actions', () => {
+                // On the scheme but not reachable from any selected row's step.
+                const view = bulkActionView('Editorial', [
+                    [1, [{ id: 'a1', name: 'Review', count: 0 }]]
+                ]);
+
+                expect(availableWorkflowActionIds(view).size).toBe(0);
+            });
+        });
+
+        describe('getQuickActions', () => {
+            const blog = contentlet({ inode: 'blog-1', contentType: 'Blog' });
+            const banner = contentlet({ inode: 'banner-1', contentType: 'Banner' });
+
+            it('should drop a gated action entirely when nothing is mapped', () => {
+                const publish = getQuickActions([blog]).find(
+                    (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+                );
+
+                expect(publish?.count).toBe(0);
+                expect(publish?.unmappedCount).toBe(1);
+                expect(publish?.workflowGated).toBe(true);
+            });
+
+            it('should keep a gated action shut while the lookup is still pending', () => {
+                // `mappedSystemActions` absent means "not known yet". Treating it as permissive
+                // would flash a live Publish for the moment before the answer lands, which is the
+                // bypass this gate exists to close.
+                const publish = getQuickActions([blog], { isAdmin: false }).find(
+                    (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+                );
+
+                expect(publish?.count).toBe(0);
+            });
+
+            it('should fire a gated action on the mapped content types only', () => {
+                // The point of per-contentlet narrowing: refusing the whole selection would block a
+                // perfectly legitimate publish of the Blogs.
+                const publish = getQuickActions([blog, banner], {
+                    isAdmin: false,
+                    mappedSystemActions: new Map([['Blog', new Set(['PUBLISH'])]])
+                }).find((action) => action.id === WORKFLOW_ACTION_ID.PUBLISH);
+
+                expect(publish?.eligibleInodes).toEqual(['blog-1']);
+                expect(publish?.count).toBe(1);
+                expect(publish?.unmappedCount).toBe(1);
+            });
+
+            it('should exempt Lock, Unlock and Add to Bundle from the gate', () => {
+                // None of the three can be mapped: Lock/Unlock are per-user version-info state with
+                // no actionlet, and Add to Bundle is not a SystemAction at all.
+                const byId = new Map(
+                    getQuickActions([contentlet({ inode: 'a', locked: true })]).map((action) => [
+                        action.id,
+                        action
+                    ])
+                );
+
+                for (const id of [WORKFLOW_ACTION_ID.UNLOCK, ADD_TO_BUNDLE_ACTION_ID] as string[]) {
+                    expect(byId.get(id)?.workflowGated).toBe(false);
+                    expect(byId.get(id)?.unmappedCount).toBe(0);
+                }
+
+                // Still counted on row state alone, with nothing mapped anywhere.
+                expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)?.count).toBe(1);
+                expect(byId.get(ADD_TO_BUNDLE_ACTION_ID)?.count).toBe(1);
+            });
+
+            it('should not count rows the state filter already excluded as unmapped', () => {
+                // A live item is not publishable regardless of the mapping. Counting it as unmapped
+                // would blame the workflow for a row-state exclusion.
+                const publish = getQuickActions(
+                    [contentlet({ inode: 'live-1', contentType: 'Blog', live: true })],
+                    {
+                        isAdmin: false,
+                        mappedSystemActions: new Map([['Blog', new Set(['PUBLISH'])]])
+                    }
+                ).find((action) => action.id === WORKFLOW_ACTION_ID.PUBLISH);
+
+                expect(publish?.count).toBe(0);
+                expect(publish?.unmappedCount).toBe(0);
+            });
+
+            it('should keep count and eligibleInodes in step once the gate has run', () => {
+                for (const action of getQuickActions([blog, banner], {
+                    isAdmin: false,
+                    mappedSystemActions: new Map([['Blog', new Set(['PUBLISH', 'ARCHIVE'])]])
+                })) {
+                    expect(action.count).toBe(action.eligibleInodes.length);
+                }
+            });
         });
     });
 

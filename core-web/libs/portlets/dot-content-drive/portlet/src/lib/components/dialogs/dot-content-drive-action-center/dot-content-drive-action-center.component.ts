@@ -1,5 +1,6 @@
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,8 +27,10 @@ import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-acce
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
+    DotBulkActionView,
     DotBundle,
-    DotCMSContentlet
+    DotCMSContentlet,
+    DotCMSSystemAction
 } from '@dotcms/dotcms-models';
 import {
     DotMessagePipe,
@@ -47,6 +50,7 @@ import { DotContentDriveActionPreviewComponent } from './components/dot-content-
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
+    availableWorkflowActionIds,
     DotActionCenterQuickAction,
     DotActionInputKind,
     eligibleContentlets,
@@ -56,6 +60,7 @@ import {
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
     requiredInputKinds,
+    resolvedSystemActions,
     toDistinctIdentifiers
 } from '../../../utils/action-center';
 
@@ -138,6 +143,7 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
         DotWorkflowPushPublishComponent,
         FormsModule,
         MessageModule,
+        NgTemplateOutlet,
         RadioButtonModule,
         SkeletonModule,
         TooltipModule
@@ -169,6 +175,16 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #confirmationService = inject(ConfirmationService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
+
+    /**
+     * Where the info icon beside the Quick Actions heading points.
+     *
+     * TODO: placeholder until the Default Actions doc page lands. Points at the current workflow docs
+     * so the link is never dead, but the anchor it needs — why a quick action requires a mapping —
+     * does not exist yet.
+     */
+    protected readonly quickActionsDocsUrl =
+        'https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions';
 
     /**
      * Required for a collapsed accordion panel to actually take up no space.
@@ -239,6 +255,23 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $loadingSchemes = signal<boolean>(true);
     /** True when the lookup failed — the workflow section renders an inline error. */
     protected readonly $schemesError = signal<boolean>(false);
+    /**
+     * Per content type variable, the system actions that resolve to a runnable workflow action.
+     *
+     * `undefined` until the lookup lands, which keeps every gated row disabled in the meantime — see
+     * {@link DotActionCenterContext.mappedSystemActions}.
+     */
+    protected readonly $mappedSystemActions = signal<Map<string, Set<string>> | undefined>(
+        undefined
+    );
+    /**
+     * True when the mapping lookup failed.
+     *
+     * Kept apart from {@link $schemesError} because it degrades differently: the workflow actions are
+     * unaffected and still usable, only the gated quick actions stay shut. The row hint says so
+     * rather than blaming the selection.
+     */
+    protected readonly $mappingsError = signal<boolean>(false);
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -460,7 +493,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // fetched when this dialog opens: reopening the Action Center is cheap and common, and a
         // per-open request would leave the first render of every open warning as a non-admin until
         // it answered. Read as a signal so a late resolution still recomputes the rows.
-        getQuickActions(this.$contentlets(), { isAdmin: this.#store.currentUserIsAdmin() })
+        getQuickActions(this.$contentlets(), {
+            isAdmin: this.#store.currentUserIsAdmin(),
+            mappedSystemActions: this.$mappedSystemActions()
+        })
+    );
+
+    /**
+     * Quick actions that fire a `SystemAction` and are therefore gated on the workflow mapping.
+     *
+     * Split from the exempt rows so the two can be labelled apart. Grouping them under one heading
+     * would make "quick actions only run when mapped to a workflow action" false on its face for the
+     * three rows sitting right underneath it.
+     */
+    protected readonly $gatedQuickActions = computed(() =>
+        this.$quickActions().filter((quickAction) => quickAction.workflowGated)
+    );
+
+    /** Quick actions with no mapping to gate on — Lock, Unlock, Add to Bundle. */
+    protected readonly $exemptQuickActions = computed(() =>
+        this.$quickActions().filter((quickAction) => !quickAction.workflowGated)
     );
 
     /** Number of contentlets still checked in the preview. */
@@ -560,8 +612,30 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         return !!selectedId && scheme.actions.some((action) => action.id === selectedId);
     }
 
-    /** Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears. */
+    /**
+     * Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears.
+     *
+     * Ordered most-specific first. The distinction that matters is between "this doesn't apply to
+     * your selection" (change the selection) and "your workflow doesn't map this action" (change the
+     * scheme, or ask someone who can) — same greyed row, entirely different fix.
+     */
     protected quickActionHint(quickAction: DotActionCenterQuickAction): string {
+        if (quickAction.workflowGated && this.$mappingsError()) {
+            return 'content-drive.action-center.mapping-lookup-failed';
+        }
+
+        if (quickAction.workflowGated && this.$loadingSchemes()) {
+            return '';
+        }
+
+        if (quickAction.unmappedCount > 0) {
+            // Partly mapped rows are still usable, so this reads as a footnote on a live row rather
+            // than an explanation for a dead one.
+            return quickAction.count === 0
+                ? 'content-drive.action-center.not-mapped'
+                : 'content-drive.action-center.partly-mapped';
+        }
+
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -953,16 +1027,87 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                     .pipe(map((view) => ({ contentType: group.contentType, view })))
             )
         )
+            .pipe(take(1))
+            .subscribe({
+                next: (results) => {
+                    this.$schemes.set(mergeActionCenterSchemes(results));
+                    this.loadSystemActionMappings(results);
+                },
+                error: () => {
+                    this.$schemes.set([]);
+                    this.$schemesError.set(true);
+                    this.$loadingSchemes.set(false);
+                }
+            });
+    }
+
+    /**
+     * Resolves, per content type, which system actions actually run a workflow action.
+     *
+     * Runs after the bulk lookup rather than beside it, because it needs that lookup's answer: gate 2
+     * checks the mapped action against the ids the server just said these rows can run. Chaining the
+     * two also keeps the quick actions from flickering — the rows stay disabled until both halves are
+     * in, rather than briefly enabling on a mapping whose availability is still unknown.
+     *
+     * Costs one request per content type plus one per distinct scheme. That is a fan-out, and it is
+     * the price of resolving client-side what the backend resolves in a single query
+     * (`findActionMappedBySystemActionContentlet`). A `GET` returning the *effective* mapping per
+     * content type — precedence and availability already applied — would collapse all of this to one
+     * call and remove the risk of the two implementations drifting. That endpoint does not exist yet;
+     * this is the shape to replace when it does.
+     *
+     * A failure here is not fatal to the dialog: the workflow actions still render, and the gated
+     * quick actions stay disabled. Failing closed is the whole point of the gate.
+     */
+    private loadSystemActionMappings(
+        results: { contentType: string; view: DotBulkActionView }[]
+    ): void {
+        const schemeIds = [...new Set(this.$schemes().map((scheme) => scheme.id))];
+
+        forkJoin({
+            contentTypes: forkJoin(
+                results.map((result) =>
+                    this.#workflowsActionsService
+                        .getSystemActionsByContentType(result.contentType)
+                        .pipe(map((mappings) => ({ contentType: result.contentType, mappings })))
+                )
+            ),
+            schemes: schemeIds.length
+                ? forkJoin(
+                      schemeIds.map((schemeId) =>
+                          this.#workflowsActionsService.getSystemActionsByScheme(schemeId)
+                      )
+                  )
+                : of([] as DotCMSSystemAction[][])
+        })
             .pipe(
                 take(1),
                 finalize(() => this.$loadingSchemes.set(false))
             )
             .subscribe({
-                next: (results) => this.$schemes.set(mergeActionCenterSchemes(results)),
-                error: () => {
-                    this.$schemes.set([]);
-                    this.$schemesError.set(true);
-                }
+                next: ({ contentTypes, schemes }) => {
+                    // Scheme mappings are pooled rather than kept per scheme: `resolvedSystemActions`
+                    // already applies the System Workflow tiebreak, and a scheme only reaches this
+                    // list because a selected contentlet's type uses it.
+                    const schemeMappings = schemes.flat();
+
+                    this.$mappedSystemActions.set(
+                        new Map(
+                            contentTypes.map(({ contentType, mappings }) => [
+                                contentType,
+                                resolvedSystemActions(
+                                    mappings,
+                                    schemeMappings,
+                                    availableWorkflowActionIds(
+                                        results.find((result) => result.contentType === contentType)
+                                            ?.view ?? { schemes: [] }
+                                    )
+                                )
+                            ])
+                        )
+                    );
+                },
+                error: () => this.$mappingsError.set(true)
             });
     }
 }

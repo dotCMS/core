@@ -3,6 +3,7 @@ import {
     DotActionCenterWorkflowAction,
     DotBulkActionView,
     DotCMSContentlet,
+    DotCMSSystemAction,
     DotContentDriveItem,
     DotCountWorkflowAction
 } from '@dotcms/dotcms-models';
@@ -24,6 +25,12 @@ import { WORKFLOW_ACTION_ID } from './workflow-actions';
 export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
 
 export type DotActionCenterQuickActionId = WORKFLOW_ACTION_ID | typeof ADD_TO_BUNDLE_ACTION_ID;
+
+/**
+ * The shipped System Workflow. Breaks ties when several schemes on one content type map the same
+ * system action — mirroring `WorkflowAPIImpl#compareScheme`.
+ */
+export const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
 
 /** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {
@@ -50,6 +57,21 @@ export interface DotActionCenterQuickAction {
     warningCount: number;
     /** i18n key for {@link warningCount}. Absent when count is `0`. */
     warningHint?: string;
+    /**
+     * This row fires a `SystemAction` and is therefore gated on the workflow mapping.
+     *
+     * `false` for the exempt rows — Lock, Unlock and Add to Bundle — which have no mapping to gate
+     * on. See {@link QUICK_ACTIONS}.
+     */
+    workflowGated: boolean;
+    /**
+     * Eligible on row state, but dropped by the workflow gate.
+     *
+     * The difference between "this action does not apply to your selection" and "your workflow does
+     * not allow this action here" — two different fixes, so the row has to be able to say which.
+     * Always `0` for an exempt row.
+     */
+    unmappedCount: number;
 }
 
 /** Caller state predicates need beyond row data. */
@@ -59,6 +81,16 @@ export interface DotActionCenterContext {
      * (see {@link isLockedByAnotherUser}).
      */
     isAdmin: boolean;
+    /**
+     * Per content type variable, the system actions that resolve to a workflow action the selected
+     * contentlets can actually run — see {@link resolvedSystemActions}.
+     *
+     * `undefined` means "not looked up yet", which is treated the same as "nothing is mapped": a
+     * gated row stays disabled until the answer arrives. Erring the other way would show Publish as
+     * selectable for the moment before the lookup lands, which is precisely the bypass this gate
+     * exists to close.
+     */
+    mappedSystemActions?: Map<string, Set<string>>;
 }
 
 /**
@@ -82,7 +114,96 @@ interface DotActionCenterQuickActionDef {
     warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
     warningHint?: string;
+    /**
+     * Exempt from the workflow mapping gate.
+     *
+     * Only for rows that are not `SystemAction`s at all, or that can never be mapped. Anything
+     * firing `.../actions/default/fire/{systemAction}` must stay gated, or it can reach the
+     * backend's raw-API fallback and bypass the scheme.
+     */
+    exemptFromWorkflowGate?: boolean;
 }
+
+/**
+ * The system actions that will genuinely run a workflow action for one content type.
+ *
+ * Mirrors `WorkflowAPIImpl#findActionMappedBySystemActionContentlet`, which is a **two-gate** rule.
+ * Both gates have to pass or the backend silently performs the raw API operation instead — content
+ * changes state, the workflow never moves, no actionlet fires. That fallback is the bypass this whole
+ * gate exists to stop the UI from offering.
+ *
+ * **Gate 1 — is it mapped?** Content-type mappings win outright; otherwise the scheme mappings apply,
+ * with the System Workflow breaking ties between schemes ({@link SYSTEM_WORKFLOW_ID}).
+ *
+ * **Gate 2 — is the mapped action reachable?** The backend also requires the action to be available
+ * from the contentlet's *current step* and permitted for the user (`isActionAvailable`), which no
+ * client can compute. `availableActionIds` stands in for it: the ids the bulk-actions lookup already
+ * reported for this selection, which is the server's own answer to "what can these rows run right
+ * now". A mapping pointing at an action absent from that set would fall through to the raw API call,
+ * so it does not count as mapped here.
+ *
+ * @param contentTypeMappings Rows from the content type's own Default Actions screen
+ * @param schemeMappings Rows from the Default Actions dialog of every scheme on that content type
+ * @param availableActionIds Workflow action ids the bulk lookup reported for this selection
+ * @returns The system action names (`PUBLISH`, `ARCHIVE`, …) that pass both gates
+ */
+export const resolvedSystemActions = (
+    contentTypeMappings: DotCMSSystemAction[],
+    schemeMappings: DotCMSSystemAction[],
+    availableActionIds: Set<string>
+): Set<string> => {
+    const bySystemAction = new Map<string, string>();
+
+    // Scheme mappings first so a content-type mapping can overwrite them — the backend's precedence,
+    // expressed as write order rather than as a branch.
+    const ordered = [...sortSystemWorkflowFirst(schemeMappings), ...contentTypeMappings];
+
+    for (const mapping of ordered) {
+        const workflowActionId = mapping?.workflowAction?.id;
+
+        if (mapping?.systemAction && workflowActionId) {
+            bySystemAction.set(mapping.systemAction, workflowActionId);
+        }
+    }
+
+    return new Set(
+        [...bySystemAction]
+            .filter(([, workflowActionId]) => availableActionIds.has(workflowActionId))
+            .map(([systemAction]) => systemAction)
+    );
+};
+
+/**
+ * Puts System Workflow mappings last so they win the `Map.set` race above.
+ *
+ * The backend gives the System Workflow precedence over other schemes when several map the same
+ * system action; writing it last is the equivalent of sorting it first and taking `[0]`.
+ */
+const sortSystemWorkflowFirst = (mappings: DotCMSSystemAction[]): DotCMSSystemAction[] =>
+    [...mappings].sort((a, b) => {
+        const aIsSystem = isSystemWorkflowMapping(a);
+        const bIsSystem = isSystemWorkflowMapping(b);
+
+        return aIsSystem === bIsSystem ? 0 : aIsSystem ? 1 : -1;
+    });
+
+/** A scheme-owned mapping belonging to the shipped System Workflow. */
+const isSystemWorkflowMapping = (mapping: DotCMSSystemAction): boolean =>
+    mapping?.workflowAction?.schemeId === SYSTEM_WORKFLOW_ID;
+
+/**
+ * Workflow action ids the bulk lookup says the current selection can actually run.
+ *
+ * Actions with a zero count are dropped: the action exists on the scheme but no selected contentlet
+ * sits on a step that exposes it, which is exactly the case gate 2 is there to catch.
+ */
+export const availableWorkflowActionIds = (view: DotBulkActionView): Set<string> =>
+    new Set(
+        toActionCenterSchemes(view)
+            .flatMap((scheme) => scheme.actions)
+            .filter((action) => action.count > 0)
+            .map((action) => action.id)
+    );
 
 /**
  * True when the row is locked by someone else *and* that matters for the current user.
@@ -112,6 +233,7 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // Least destructive; sit away from Archive/Delete.
         id: WORKFLOW_ACTION_ID.LOCK,
         nameKey: 'content-drive.context-menu.lock',
+        exemptFromWorkflowGate: true,
         icon: 'lock',
         danger: false,
         // UX filter only: locking archived content has no upside and can block delete
@@ -121,6 +243,7 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
         id: WORKFLOW_ACTION_ID.UNLOCK,
         nameKey: 'content-drive.context-menu.unlock',
+        exemptFromWorkflowGate: true,
         icon: 'lock_open',
         danger: false,
         eligibleWhen: (item) => !!item.locked && !item.archived,
@@ -169,6 +292,7 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
         id: ADD_TO_BUNDLE_ACTION_ID,
         nameKey: 'content-drive.action-center.add-to-bundle',
+        exemptFromWorkflowGate: true,
         icon: 'inventory_2',
         danger: false,
         // Every contentlet can go in a bundle: there is no state that disqualifies one, unlike
@@ -204,7 +328,13 @@ export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
  * Every action is returned — `count: 0` means not applicable but still shown, so the
  * list stays stable as the selection changes. Empty array only when there are no contentlets.
  *
- * @param context Defaults to non-admin (safe over-warning).
+ * A gated action is narrowed **per contentlet**, not all-or-nothing: on a mixed selection where
+ * `PUBLISH` is mapped for Blog but not for Banner, Publish fires on the Blogs and reports the Banners
+ * as unmapped. Refusing the whole selection would be the safer-looking choice and the less useful
+ * one — the Blogs can be published perfectly legitimately, and the user has no way to act on a row
+ * that just says "no".
+ *
+ * @param context Defaults to non-admin with nothing mapped — the conservative reading on both counts.
  */
 export const getQuickActions = (
     items: DotContentDriveItem[],
@@ -217,8 +347,13 @@ export const getQuickActions = (
     }
 
     return QUICK_ACTIONS.map((quickAction) => {
-        // One pass → count and fired inodes stay aligned.
-        const eligible = contentlets.filter(quickAction.eligibleWhen);
+        const workflowGated = !quickAction.exemptFromWorkflowGate;
+        // Row state first, then the workflow gate — the split is what lets the row tell the two
+        // reasons apart instead of collapsing both into one silent zero.
+        const stateEligible = contentlets.filter(quickAction.eligibleWhen);
+        const eligible = workflowGated
+            ? stateEligible.filter((item) => isSystemActionMapped(quickAction.id, item, context))
+            : stateEligible;
         const eligibleInodes = eligible.map((item) => item.inode);
         const { warnWhen } = quickAction;
         const warningCount = warnWhen
@@ -234,10 +369,24 @@ export const getQuickActions = (
             count: eligibleInodes.length,
             confirmMessage: quickAction.confirmMessage,
             warningCount,
-            warningHint: warningCount > 0 ? quickAction.warningHint : undefined
+            warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
+            workflowGated,
+            unmappedCount: stateEligible.length - eligible.length
         };
     });
 };
+
+/**
+ * Whether this contentlet's content type maps the system action to a runnable workflow action.
+ *
+ * Keyed on `contentType` — the variable — which is what both the mapping endpoint and the
+ * bulk-actions grouping use, so the three agree without a translation step.
+ */
+const isSystemActionMapped = (
+    systemAction: string,
+    item: DotCMSContentlet,
+    { mappedSystemActions }: DotActionCenterContext
+): boolean => !!mappedSystemActions?.get(item.contentType)?.has(systemAction);
 
 /**
  * Flattens `scheme → steps → actions` into one action list per scheme.

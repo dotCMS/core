@@ -10,6 +10,7 @@ import {
     DotBulkActionView,
     DotCMSContentletWorkflowActions,
     DotCMSResponse,
+    DotCMSSystemAction,
     DotCMSWorkflow,
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
@@ -103,6 +104,51 @@ export class DotWorkflowsActionsService {
                 DotCMSResponse<DotBulkActionView>
             >(`${this.BASE_URL}/contentlet/actions/bulk`, request)
             .pipe(map((response) => response?.entity ?? { schemes: [] }));
+    }
+
+    /**
+     * Returns the system action mappings owned by a **content type** — the rows of its own Default
+     * Actions screen.
+     *
+     * Backing endpoint: `GET /api/v1/workflow/contenttypes/{contentTypeVarOrId}/system/actions`.
+     *
+     * These are only half the picture. The backend resolves a system action by checking the content
+     * type's own mappings **first** and falling back to the mappings of every scheme on that content
+     * type ({@link getSystemActionsByScheme}). Most installs have no content-type-level mapping at
+     * all — the shipped System Workflow is mapped at scheme level — so this endpoint answering with
+     * an empty list is the normal case, not a sign that nothing is mapped.
+     *
+     * @param {string} contentTypeVarOrId Content type variable or id
+     * @returns {Observable<DotCMSSystemAction[]>}
+     * @memberof DotWorkflowsActionsService
+     */
+    getSystemActionsByContentType(contentTypeVarOrId: string): Observable<DotCMSSystemAction[]> {
+        return this.httpClient
+            .get<
+                DotCMSResponse<DotCMSSystemAction[]>
+            >(`${this.BASE_URL}/contenttypes/${contentTypeVarOrId}/system/actions`)
+            .pipe(map((response) => response?.entity ?? []));
+    }
+
+    /**
+     * Returns the system action mappings owned by a **workflow scheme** — the rows of its Default
+     * Actions dialog.
+     *
+     * Backing endpoint: `GET /api/v1/workflow/schemes/{schemeId}/system/actions`.
+     *
+     * The other half of the resolution chain; see {@link getSystemActionsByContentType} for how the
+     * two combine.
+     *
+     * @param {string} schemeId
+     * @returns {Observable<DotCMSSystemAction[]>}
+     * @memberof DotWorkflowsActionsService
+     */
+    getSystemActionsByScheme(schemeId: string): Observable<DotCMSSystemAction[]> {
+        return this.httpClient
+            .get<
+                DotCMSResponse<DotCMSSystemAction[]>
+            >(`${this.BASE_URL}/schemes/${schemeId}/system/actions`)
+            .pipe(map((response) => response?.entity ?? []));
     }
 
     private getWorkFlowId(workflow: DotCMSWorkflow): string {
