@@ -106,17 +106,24 @@ describe('Utils Functions', () => {
                 expect(castSingleSelectableValue('  true  ', type)).toBe(true);
             });
 
-            it('should return false for non-boolean strings', () => {
-                expect(castSingleSelectableValue('hello', type)).toBe(false);
-            });
+            // dotCMS lets a True/False field be authored with the database's own representation of
+            // the booleans — the Radio field's own help text gives `True|1 False|0` as the example,
+            // and `SelectableValuesField.check()` accepts `1`/`0`, `y`/`n`, `on`/`off` and friends.
+            // The backend coerces all of those (commons-lang `BooleanUtils.toBoolean`), so casting
+            // them to `false` here made both options of such a field collapse to the same value.
+            it.each([1, '1', 'y', 'Y', 'yes', 't', 'on', 'TRUE', ' true '])(
+                'should treat %p as true',
+                (input) => {
+                    expect(castSingleSelectableValue(input, type)).toBe(true);
+                }
+            );
 
-            it('should handle number 1 as false', () => {
-                expect(castSingleSelectableValue(1, type)).toBe(false);
-            });
-
-            it('should handle number 0 as false', () => {
-                expect(castSingleSelectableValue(0, type)).toBe(false);
-            });
+            it.each([0, '0', 'n', 'no', 'f', 'off', 'FALSE', 'hello'])(
+                'should treat %p as false',
+                (input) => {
+                    expect(castSingleSelectableValue(input, type)).toBe(false);
+                }
+            );
         });
 
         describe('Numeric', () => {
@@ -198,6 +205,18 @@ describe('Utils Functions', () => {
     });
 
     describe('getSingleSelectableFieldOptions', () => {
+        describe('True/False options', () => {
+            const type = DotEditContentFieldSingleSelectableDataType.BOOL;
+
+            it('should give the two options of a True|1 / False|0 field distinct values', () => {
+                expect(getSingleSelectableFieldOptions('True|1\r\nFalse|0', type)).toEqual([
+                    { label: 'True', value: true },
+                    { label: 'False', value: false }
+                ]);
+            });
+
+        });
+
         describe('Empty and null values', () => {
             it('should return an empty array if options is empty', () => {
                 expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);

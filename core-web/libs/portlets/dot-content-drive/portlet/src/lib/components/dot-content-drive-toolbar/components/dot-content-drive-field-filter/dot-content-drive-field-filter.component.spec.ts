@@ -632,6 +632,48 @@ describe('DotContentDriveFieldFilterComponent', () => {
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'b' });
         });
 
+        it('should offer two distinct options for a True/False Radio authored as True|1 / False|0', () => {
+            // Both options used to cast to `false`, so the listbox and both radio dots matched the
+            // model at once: picking either showed both as selected and only ever sent `false`.
+            spectator.setInput(
+                'field',
+                field({
+                    variable: 'boolRadio',
+                    fieldType: 'Radio',
+                    dataType: 'BOOL',
+                    values: 'True|1\r\nFalse|0'
+                })
+            );
+            spectator.detectChanges();
+            openPopover();
+
+            expect(spectator.query(byTestId('field-filter-radio-true'), { root: true })).toBeTruthy();
+            expect(
+                spectator.query(byTestId('field-filter-radio-false'), { root: true })
+            ).toBeTruthy();
+        });
+
+        it('should send true when the True option of a True|1 Radio is picked', () => {
+            spectator.setInput(
+                'field',
+                field({
+                    variable: 'boolRadio',
+                    fieldType: 'Radio',
+                    dataType: 'BOOL',
+                    values: 'True|1\r\nFalse|0'
+                })
+            );
+            spectator.detectChanges();
+            openPopover();
+
+            emitOnControl('field-filter-radio', 'ngModelChange', 'true');
+            jest.advanceTimersByTime(DEBOUNCE_TIME);
+
+            // `true`, not `1`: the backend coerces a BOOL field's value on save, so the indexed value
+            // is a real boolean (verified against a running instance).
+            expect(store.patchFilters).toHaveBeenCalledWith({ 'us.boolRadio': 'true' });
+        });
+
         it('should patch the serialized comma list for a Multi-Select field', () => {
             spectator.setInput(
                 'field',
