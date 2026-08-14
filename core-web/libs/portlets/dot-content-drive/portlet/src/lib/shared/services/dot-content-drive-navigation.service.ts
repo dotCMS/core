@@ -209,6 +209,7 @@ export class DotContentDriveNavigationService {
                         mode: 'edit',
                         contentletInode: contentlet.inode,
                         identifier: contentlet.identifier,
+                        languageId: contentlet.languageId,
                         title: contentlet.title
                     });
 
@@ -234,7 +235,7 @@ export class DotContentDriveNavigationService {
      * store init, before this search); in the rare case it hasn't, this falls back to the
      * full-screen editor — safe and functional, just not the panel.
      */
-    openEditByIdentifier(identifier: string): void {
+    openEditByIdentifier(identifier: string, languageId?: number): void {
         this.#contentSearch
             .get<ContentSearchEntity>({
                 query: `+identifier:${identifier} +working:true`,
@@ -250,7 +251,8 @@ export class DotContentDriveNavigationService {
             )
             .subscribe((entity) => {
                 const contentlet = this.#pickLanguageVersion(
-                    entity?.jsonObjectView?.contentlets ?? []
+                    entity?.jsonObjectView?.contentlets ?? [],
+                    languageId
                 );
                 if (!contentlet?.inode) {
                     return;
@@ -268,6 +270,7 @@ export class DotContentDriveNavigationService {
                     mode: 'edit',
                     contentletInode: contentlet.inode,
                     identifier,
+                    languageId: contentlet.languageId,
                     title: contentlet.title
                 });
             });
@@ -277,10 +280,15 @@ export class DotContentDriveNavigationService {
      * Picks which language version of a contentlet the deep link should open.
      *
      * One identifier has one inode PER LANGUAGE, so a lookup by identifier returns as many versions as
-     * the content has been translated into, and simply taking the first hands the user whichever the
-     * index happened to rank first — possibly a language they are not even looking at. The version
-     * matching the drive's active Locale filter is preferred, then the environment default, and
-     * otherwise the first available.
+     * the content has been translated into, and taking the first hands the user whichever the index
+     * ranked first. `languageId` -- carried by the URL that opened the panel -- names the exact version
+     * and is therefore preferred above everything else.
+     *
+     * It is only absent on a link written before the language was recorded, and the remaining order is
+     * a best guess for that case: the drive's active Locale filter, then the environment default, then
+     * whatever exists. Note both are usually still unresolved here: this runs from the shell's
+     * constructor while the store's languages request is in flight, which is exactly why the URL
+     * carrying the language matters.
      *
      * The preference is applied HERE rather than as a `+languageId:` term on the query on purpose: a
      * query constrained to a language the content has no version in returns nothing at all, and this
@@ -289,19 +297,23 @@ export class DotContentDriveNavigationService {
      * side keeps the link working in every case, and costs no extra request.
      *
      * @param contentlets The language versions returned for the identifier.
+     * @param languageId  The language the URL asked for, when it carried one.
      *
      * @return {*} {DotCMSContentlet | undefined} The version to open, or `undefined` when there is none.
      */
-    #pickLanguageVersion(contentlets: DotCMSContentlet[]): DotCMSContentlet | undefined {
+    #pickLanguageVersion(
+        contentlets: DotCMSContentlet[],
+        languageId?: number
+    ): DotCMSContentlet | undefined {
         if (contentlets.length <= 1) {
             return contentlets[0];
         }
 
         const selected = (this.#store.getFilterValue('languageId') as string[]) ?? [];
         const defaultLanguageId = this.#store.defaultLanguageId();
-        const preferred = selected.length
-            ? selected
-            : [defaultLanguageId].filter(Boolean).map(String);
+        const preferred = [languageId, ...(selected.length ? selected : [defaultLanguageId])]
+            .filter(Boolean)
+            .map(String);
 
         return (
             preferred

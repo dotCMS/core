@@ -145,6 +145,8 @@ describe('DotContentDriveNavigationService', () => {
                 mode: 'edit',
                 contentletInode: 'test-inode-123',
                 identifier: 'test-identifier-123',
+                // Recorded so the shareable URL can name the exact version, not just the content.
+                languageId: 1,
                 title: 'My Blog Post'
             });
             expect(router.navigate).not.toHaveBeenCalled();
@@ -491,6 +493,7 @@ describe('DotContentDriveNavigationService', () => {
                 mode: 'edit',
                 contentletInode: 'working-inode-1',
                 identifier: 'shared-identifier',
+                languageId: 1,
                 title: 'Shared Content'
             });
         });
@@ -550,6 +553,29 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(service.$editPanelRequest()).toEqual(
                 expect.objectContaining({ contentletInode: 'en-inode' })
+            );
+        });
+
+        it('should open the exact version the URL asked for, over the active filter', () => {
+            // The language from the URL wins: it names the version that was open when the link was
+            // shared. It also arrives before the store's languages request has resolved, which is why
+            // the filter cannot be relied on here.
+            store.getFilterValue.mockReturnValue(['1']);
+            contentSearch.get.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            createFakeContentlet({ inode: 'en-inode', languageId: 1 }),
+                            createFakeContentlet({ inode: 'es-inode', languageId: 2 })
+                        ]
+                    }
+                })
+            );
+
+            service.openEditByIdentifier('shared-identifier', 2);
+
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'es-inode', languageId: 2 })
             );
         });
 

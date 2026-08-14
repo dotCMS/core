@@ -339,7 +339,14 @@ export class DotContentDriveShellComponent {
         // are resolved.
         const editContent = this.#route.snapshot.queryParams['editContent'];
         if (editContent && editContent !== NEW_CONTENT_MARKER) {
-            this.#navigationService.openEditByIdentifier(editContent);
+            // `editContentLang` names the exact version to reopen: an identifier has one version per
+            // language, so without it the resolver can only guess. Absent on a link written before it
+            // was recorded, which the resolver still handles.
+            const languageId = Number(this.#route.snapshot.queryParams['editContentLang']);
+            this.#navigationService.openEditByIdentifier(
+                editContent,
+                Number.isFinite(languageId) && languageId > 0 ? languageId : undefined
+            );
         }
 
         // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
@@ -561,6 +568,12 @@ export class DotContentDriveShellComponent {
                 : NEW_CONTENT_MARKER
             : null;
         queryParams['editContent'] = editContent;
+        // Written alongside so the link reopens the very version that is open, not just the content.
+        // `null` removes it, so it never lingers once the panel is closed or a `new` panel is open.
+        queryParams['editContentLang'] =
+            editRequest?.mode === 'edit' && editRequest.languageId
+                ? String(editRequest.languageId)
+                : null;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,

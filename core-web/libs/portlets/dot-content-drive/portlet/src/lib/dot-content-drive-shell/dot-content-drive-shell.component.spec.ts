@@ -465,7 +465,8 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
-                    editContent: null
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -487,7 +488,8 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
-                    editContent: null
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -503,7 +505,8 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: null, // With merge, null removes the param
-                    editContent: null
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -2695,7 +2698,12 @@ describe('DotContentDriveShellComponent', () => {
             // rendering shipped untested for these two.
             showInListFieldsSignal.set([
                 { variable: 'boolRadio', name: 'Bool Radio', dataType: 'BOOL', fieldType: 'Radio' },
-                { variable: 'boolSelect', name: 'Bool Select', dataType: 'BOOL', fieldType: 'Select' }
+                {
+                    variable: 'boolSelect',
+                    name: 'Bool Select',
+                    dataType: 'BOOL',
+                    fieldType: 'Select'
+                }
             ] as DotCMSContentTypeField[]);
             spectator.detectChanges();
 
@@ -2846,6 +2854,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
     beforeEach(() => {
         openEditByIdentifier.mockClear();
+        // The params object is shared by the factory, so a language set by one test would otherwise
+        // leak into the next.
+        delete deepLinkQueryParams['editContentLang'];
     });
 
     /** Mounts with the deps the constructor needs; does not run change detection. */
@@ -2951,7 +2962,25 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         deepLinkQueryParams.editContent = 'id-1';
         mountShell();
 
-        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1');
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
+    });
+
+    it('forwards the language from the link so the exact version reopens', () => {
+        // An identifier has one version per language, so without this the resolver can only guess —
+        // and it runs before the store's languages request has resolved.
+        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContentLang = '2';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', 2);
+    });
+
+    it('ignores a non-numeric language on the link', () => {
+        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContentLang = 'nope';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
     });
 
     it('ignores the non-shareable `new` marker on construction', () => {

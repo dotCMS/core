@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 
+import java.util.Set;
+
 /**
  * This Field Strategy implementation specifies the correct syntax for querying a field whose Data
  * Type is True/False -- e.g., a Radio or Select field defined as {@code BOOL} -- via a Lucene query
@@ -22,9 +24,22 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
  */
 public class BooleanFieldStrategy implements FieldStrategy {
 
+    /**
+     * The tokens accepted as {@code true}, mirroring what dotCMS coerces on save (commons-lang
+     * {@code BooleanUtils.toBoolean}).
+     * <p>{@code Boolean.parseBoolean} is deliberately NOT used: it maps everything that is not the
+     * literal {@code "true"} to {@code false}, so a caller filtering a True/False field by the db-style
+     * value its own options are authored with -- {@code 1}, {@code yes}, {@code on} -- would silently
+     * get the OPPOSITE result set. The Content Drive normalizes to {@code "true"}/{@code "false"} before
+     * it gets here, but the generic content-search endpoint routes through this strategy too and its
+     * callers pass raw values.</p>
+     */
+    private static final Set<String> TRUE_TOKENS = Set.of("true", "1", "y", "yes", "t", "on");
+
     @Override
     public String generateQuery(final FieldContext fieldContext) {
-        final boolean value = Boolean.parseBoolean(fieldContext.fieldValue().toString().trim());
+        final boolean value = TRUE_TOKENS.contains(
+                fieldContext.fieldValue().toString().trim().toLowerCase());
         return "+" + fieldContext.fieldName() + ":" + value;
     }
 
