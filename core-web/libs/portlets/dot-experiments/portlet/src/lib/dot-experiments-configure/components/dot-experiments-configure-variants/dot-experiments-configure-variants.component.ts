@@ -24,7 +24,11 @@ import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsVariantNameInplaceComponent } from './dot-experiments-variant-name-inplace.component';
 
-import { ADD_VARIANT_DIALOG_WIDTH, MAX_VARIANTS_ALLOWED } from '../../../shared/constants';
+import {
+    ADD_VARIANT_DIALOG_WIDTH,
+    MAX_VARIANTS_ALLOWED,
+    TOTAL_WEIGHT
+} from '../../../shared/constants';
 import { VariantRowViewModel } from '../../../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
@@ -46,9 +50,6 @@ export const VARIANT_COLORS: readonly string[] = [
     '#22c55e',
     '#f43f5e'
 ];
-
-/** The weights must add up to this, and no single one may exceed it. */
-const TOTAL_WEIGHT = 100;
 
 /** Query string every variant preview URL carries, before `&variantName=`. */
 const PREVIEW_URL_PARAMS = 'disabledNavigateMode=true&mode=LIVE';

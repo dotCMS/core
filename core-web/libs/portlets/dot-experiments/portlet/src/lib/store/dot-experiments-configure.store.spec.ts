@@ -37,14 +37,14 @@ import { GlobalStore } from '@dotcms/store';
 
 import { dotExperimentsConfigureApiEvents } from './dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from './dot-experiments-configure-page.events';
+import { DotExperimentsConfigureStore } from './dot-experiments-configure.store';
+
 import {
-    DotExperimentsConfigureStore,
+    AUTOSAVE_DEBOUNCE_MS,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
     PAGE_PREFILL_ERROR_KEY
-} from './dot-experiments-configure.store';
-
-import { AUTOSAVE_DEBOUNCE_MS } from '../shared/constants';
+} from '../shared/constants';
 import {
     ConfigureValidationRule,
     DotExperimentConfigurePage,

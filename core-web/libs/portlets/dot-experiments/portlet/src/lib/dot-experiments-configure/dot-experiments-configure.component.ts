@@ -43,12 +43,9 @@ import { DotExperimentsConfigurePageComponent } from './components/dot-experimen
 import { DotExperimentsConfigureSchedulingComponent } from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
-import { SUCCESS_MESSAGE_LIFE } from '../shared/constants';
+import { EXPERIMENTS_URL, SUCCESS_MESSAGE_LIFE } from '../shared/constants';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
-
-/** Where Back leaves to. Absolute: the portlet is always mounted on this segment. */
-const EXPERIMENTS_LIST_URL = '/experiments';
 
 /** Number of card placeholders drawn while an existing experiment loads. */
 const SKELETON_CARDS = [0, 1, 2];
@@ -81,9 +78,7 @@ const SKELETON_CARDS = [0, 1, 2];
         DotExperimentsConfigureFooterComponent
     ],
     templateUrl: './dot-experiments-configure.component.html',
-    // `DotExperimentsService` and `DotPagesBrowserService` are `@Injectable()` with no
-    // `providedIn`, so the store cannot inject them unless this component provides them —
-    // same as the list screen does.
+    styleUrl: './dot-experiments-configure.component.scss',
     providers: [
         DotExperimentsConfigureStore,
         ConfirmationService,
@@ -172,7 +167,7 @@ export class DotExperimentsConfigureComponent {
 
     /** Leaves the Configure screen for the list. */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_LIST_URL]);
+        this.#router.navigate([EXPERIMENTS_URL]);
     }
 
     /**

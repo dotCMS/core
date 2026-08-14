@@ -12,13 +12,10 @@ import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing'
 
 import { DotExperimentsConfigurePageComponent } from './dot-experiments-configure-page.component';
 
-import { SELECT_PAGE_DIALOG_SIZE } from '../../../shared/constants';
+import { PAGE_PREFILL_ERROR_KEY, SELECT_PAGE_DIALOG_SIZE } from '../../../shared/constants';
 import { ConfigureValidationRule, DotExperimentConfigurePage } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
-import {
-    DotExperimentsConfigureStore,
-    PAGE_PREFILL_ERROR_KEY
-} from '../../../store/dot-experiments-configure.store';
+import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 import { DotExperimentsSelectPageDialogComponent } from '../dot-experiments-select-page-dialog/dot-experiments-select-page-dialog.component';
 import { SelectPageDialogViewRow } from '../dot-experiments-select-page-dialog/dot-experiments-select-page-dialog.models';
 

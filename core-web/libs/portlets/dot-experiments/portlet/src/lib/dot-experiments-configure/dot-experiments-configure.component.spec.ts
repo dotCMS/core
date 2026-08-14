@@ -25,13 +25,10 @@ import { DotExperimentsConfigureSchedulingComponent } from './components/dot-exp
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 import { DotExperimentsConfigureComponent } from './dot-experiments-configure.component';
 
+import { LOCKED_BANNER_KEY_READ_ONLY, LOCKED_BANNER_KEY_RUNNING } from '../shared/constants';
 import { ConfigureValidationRule } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
-import {
-    DotExperimentsConfigureStore,
-    LOCKED_BANNER_KEY_READ_ONLY,
-    LOCKED_BANNER_KEY_RUNNING
-} from '../store/dot-experiments-configure.store';
+import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
 
 const ERROR_COPY = {
     title: 'Could not load the experiment',

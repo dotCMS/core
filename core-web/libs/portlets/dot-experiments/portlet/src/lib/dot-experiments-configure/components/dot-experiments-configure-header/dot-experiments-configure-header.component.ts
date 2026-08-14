@@ -14,13 +14,10 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../shared/constants';
+import { EXPERIMENTS_URL, STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../shared/constants';
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-
-/** Where Back leaves to. Absolute: the portlet is always mounted on this segment. */
-const EXPERIMENTS_LIST_URL = '/experiments';
 
 /** Title shown while the draft has no name yet. */
 const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
@@ -177,7 +174,7 @@ export class DotExperimentsConfigureHeaderComponent {
 
     /** Leaves the Configure screen for the list. */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_LIST_URL]);
+        this.#router.navigate([EXPERIMENTS_URL]);
     }
 
     /**
