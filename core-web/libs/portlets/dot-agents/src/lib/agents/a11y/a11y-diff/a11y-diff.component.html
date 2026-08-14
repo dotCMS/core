@@ -21,7 +21,9 @@
             class="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3 text-red-700"
             role="alert"
             data-testid="diff-error">
-            <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
+            <span class="material-symbols-outlined mt-0.5 text-base!" aria-hidden="true">
+                warning
+            </span>
             <div class="min-w-0">
                 <div class="font-semibold">
                     {{ 'accessibility.studio.diff.error.title' | dm }}
@@ -36,7 +38,11 @@
         @if ($empty()) {
             <!-- No working-vs-live delta for this page. -->
             <div class="flex items-center gap-2.5 p-2" data-testid="diff-empty">
-                <i class="pi pi-check-circle flex-none text-green-500" aria-hidden="true"></i>
+                <span
+                    class="material-symbols-outlined flex-none text-base! text-green-500"
+                    aria-hidden="true">
+                    check_circle
+                </span>
                 <div class="min-w-0">
                     <div class="font-bold text-color">
                         {{ 'accessibility.studio.diff.empty.title' | dm }}
@@ -58,11 +64,13 @@
                             (click)="selectFile(file.identifier)"
                             [attr.aria-current]="file.identifier === $selectedId()"
                             data-testid="diff-file-row">
-                            <i
-                                class="pi pi-file flex-none"
+                            <span
+                                class="material-symbols-outlined flex-none text-base!"
                                 [class.text-primary]="file.identifier === $selectedId()"
                                 [class.text-muted-color]="file.identifier !== $selectedId()"
-                                aria-hidden="true"></i>
+                                aria-hidden="true">
+                                description
+                            </span>
                             <div class="min-w-0 flex-1">
                                 <div class="truncate font-semibold text-color">
                                     {{ file.name }}
@@ -91,7 +99,9 @@
                     class="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-200 bg-white p-2 font-semibold text-muted-color transition-colors hover:bg-surface-50"
                     (click)="clearSelection()"
                     data-testid="diff-back-to-preview-btn">
-                    <i class="pi pi-arrow-left" aria-hidden="true"></i>
+                    <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                        arrow_back
+                    </span>
                     {{ 'accessibility.studio.diff.backtopreview' | dm }}
                 </button>
             }

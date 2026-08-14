@@ -5,13 +5,12 @@
             <span
                 class="flex size-9 flex-none items-center justify-center rounded-lg"
                 [class]="fi.cls">
-                <!-- text-base!: the icon font sets its own size
-                     on the class in `fi.icon`, so a plain
-                     utility loses to it. -->
-                <i
-                    [class]="fi.icon"
-                    class="text-base!"
-                    aria-hidden="true"></i>
+                <!-- text-base!: material-symbols-outlined sets its own
+                     font-size on the class, which a plain size utility
+                     loses to at equal specificity. -->
+                <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                    {{ fi.icon }}
+                </span>
             </span>
         }
         <div class="min-w-0">
@@ -19,10 +18,7 @@
                 {{ $footerKeys().titleKey | dm: $footerArgs() }}
             </div>
             <div class="mt-px leading-snug text-muted-color">
-                {{
-                    $footerKeys().subKey
-                        | dm: [pagePath()]
-                }}
+                {{ $footerKeys().subKey | dm: [pagePath()] }}
             </div>
         </div>
     </div>

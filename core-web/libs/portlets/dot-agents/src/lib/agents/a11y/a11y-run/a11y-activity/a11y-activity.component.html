@@ -8,8 +8,7 @@
             <span
                 class="inline-flex h-5 items-center gap-1.5 rounded-full bg-primary-50 px-2 font-bold text-primary"
                 data-testid="studio-working-badge">
-                <span
-                    class="size-1.5 animate-pulse rounded-full bg-primary"></span>
+                <span class="size-1.5 animate-pulse rounded-full bg-primary"></span>
                 {{ badge | dm }}
             </span>
         }
@@ -35,7 +34,9 @@
                 <div class="flex items-center gap-3">
                     <span
                         class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
-                        <i class="pi pi-search" aria-hidden="true"></i>
+                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                            search
+                        </span>
                     </span>
                     <span class="text-muted-color">
                         {{ 'accessibility.studio.ready.step1' | dm }}
@@ -44,7 +45,9 @@
                 <div class="flex items-center gap-3">
                     <span
                         class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
-                        <i class="pi pi-sitemap" aria-hidden="true"></i>
+                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                            account_tree
+                        </span>
                     </span>
                     <span class="text-muted-color">
                         {{ 'accessibility.studio.ready.step2' | dm }}
@@ -53,7 +56,9 @@
                 <div class="flex items-center gap-3">
                     <span
                         class="flex size-7 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary">
-                        <i class="pi pi-pencil" aria-hidden="true"></i>
+                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                            edit
+                        </span>
                     </span>
                     <span class="text-muted-color">
                         {{ 'accessibility.studio.ready.step3' | dm }}
@@ -71,17 +76,13 @@
             data-testid="studio-issue-type-skeleton"
             aria-hidden="true">
             @for (i of [1, 2, 3, 4]; track i) {
-                <div
-                    class="flex items-start gap-3 rounded-xl border border-surface-200 px-4 py-3">
-                    <span
-                        class="mt-1.5 size-2.5 flex-none rounded-full bg-surface-200"></span>
+                <div class="flex items-start gap-3 rounded-xl border border-surface-200 px-4 py-3">
+                    <span class="mt-1.5 size-2.5 flex-none rounded-full bg-surface-200"></span>
                     <div class="min-w-0 flex-1">
                         <div class="h-3.5 w-28 rounded-sm bg-surface-200"></div>
-                        <div
-                            class="mt-1.5 h-3 w-full max-w-64 rounded-sm bg-surface-100"></div>
+                        <div class="mt-1.5 h-3 w-full max-w-64 rounded-sm bg-surface-100"></div>
                     </div>
-                    <span
-                        class="size-7 flex-none rounded-lg bg-surface-100"></span>
+                    <span class="size-7 flex-none rounded-lg bg-surface-100"></span>
                 </div>
             }
         </div>
@@ -90,9 +91,7 @@
     <!-- BY ISSUE TYPE list: one row per axe rule (scanned state). Crossfades in
              over the skeleton — same footprint, so no jump. -->
     @if (phase() === 'scanned') {
-        <div
-            class="studio-fade-in flex flex-col gap-2"
-            data-testid="studio-issue-type-list">
+        <div class="studio-fade-in flex flex-col gap-2" data-testid="studio-issue-type-list">
             @for (group of $issueTypeRows(); track group.code) {
                 <div
                     class="flex items-start gap-3 rounded-xl border border-surface-200 px-4 py-3"
@@ -131,15 +130,15 @@
     <!-- Needs your review: axe `incomplete` items. axe flagged these but
              couldn't be sure, so the agent doesn't touch them — a human decides.
              Shown after a scan (scanned) and in the final report (done/published). -->
-    @if (
-        (phase() === 'scanned' || finished()) &&
-        reviewGroups().length > 0
-    ) {
+    @if ((phase() === 'scanned' || finished()) && reviewGroups().length > 0) {
         <div class="mt-4" data-testid="studio-review-section">
             <div class="mb-1 flex items-center gap-1.5">
-                <i class="pi pi-eye text-muted-color" aria-hidden="true"></i>
                 <span
-                    class="font-bold tracking-wider text-muted-color uppercase">
+                    class="material-symbols-outlined text-base! text-muted-color"
+                    aria-hidden="true">
+                    visibility
+                </span>
+                <span class="font-bold tracking-wider text-muted-color uppercase">
                     {{ 'accessibility.studio.review.title' | dm }}
                 </span>
             </div>
@@ -153,12 +152,10 @@
                         data-testid="studio-review-row">
                         <div class="flex items-center gap-3">
                             <div class="min-w-0 flex-1">
-                                <div
-                                    class="font-bold wrap-break-word text-color">
+                                <div class="font-bold wrap-break-word text-color">
                                     {{ group.message }}
                                 </div>
-                                <div
-                                    class="font-mono wrap-break-word text-muted-color">
+                                <div class="font-mono wrap-break-word text-muted-color">
                                     {{ group.code }}
                                 </div>
                             </div>

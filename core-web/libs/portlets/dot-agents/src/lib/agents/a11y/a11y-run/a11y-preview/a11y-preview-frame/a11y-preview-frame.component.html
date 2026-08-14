@@ -3,14 +3,18 @@
          on the right inside the same pill. -->
     <div
         class="mx-auto flex h-6.5 w-full max-w-[460px] items-center gap-1.5 overflow-hidden rounded-full border border-surface-200 bg-white pl-3">
-        <!-- text-[11px]!: PrimeIcons sets font-size on `.pi`, which a plain
-             utility can't override at equal specificity. -->
-        <i class="pi pi-lock text-[11px]! text-muted-color" aria-hidden="true"></i>
+        <!-- text-[11px]!: material-symbols-outlined sets its own font-size on the
+             class, which a plain utility can't override at equal specificity. -->
+        <span class="material-symbols-outlined text-[11px]! text-muted-color" aria-hidden="true">
+            lock
+        </span>
         <span class="min-w-0 flex-1 truncate text-xs text-muted-color">{{ address() }}</span>
         <span
             class="inline-flex flex-none items-center gap-1 self-stretch border-l border-surface-200 bg-surface-200 px-2.5 text-[11px] font-semibold text-muted-color"
             [attr.data-testid]="$labelTestId()">
-            <i [class]="icon()" class="text-[11px]!" aria-hidden="true"></i>
+            <span class="material-symbols-outlined text-[11px]!" aria-hidden="true">
+                {{ icon() }}
+            </span>
             {{ labelKey() | dm }}
         </span>
     </div>

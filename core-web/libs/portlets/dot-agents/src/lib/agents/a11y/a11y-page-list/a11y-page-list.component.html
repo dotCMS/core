@@ -3,7 +3,9 @@
     <header class="mb-6 flex items-center gap-3">
         <span
             class="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-contrast">
-            <i class="pi pi-eye text-2xl!" aria-hidden="true"></i>
+            <!-- text-2xl!: material-symbols-outlined sets its own font-size on the class,
+                 which a plain size utility loses to at equal specificity. -->
+            <span class="material-symbols-outlined text-2xl!" aria-hidden="true">visibility</span>
         </span>
         <div>
             <h1 class="m-0 text-xl font-extrabold tracking-tight text-color">
@@ -17,7 +19,11 @@
 
     <!-- Search -->
     <p-iconField iconPosition="left" class="block">
-        <p-inputIcon styleClass="pi pi-search" />
+        <p-inputIcon>
+            <span class="material-symbols-outlined text-xl! leading-none!" aria-hidden="true">
+                search
+            </span>
+        </p-inputIcon>
         <input
             pInputText
             type="text"
@@ -38,7 +44,7 @@
             }}
         </span>
         <span class="ml-auto inline-flex items-center gap-1.5 text-xs text-muted-color">
-            <i class="pi pi-sort-amount-down text-sm!" aria-hidden="true"></i>
+            <span class="material-symbols-outlined text-sm!" aria-hidden="true">sort</span>
             {{ 'accessibility.studio.pagelist.sorted' | dm }}
         </span>
     </div>
@@ -117,9 +123,11 @@
                         <div
                             class="mx-auto flex max-w-100 flex-col items-center gap-3"
                             data-testid="studio-empty-state">
-                            <i
-                                class="pi pi-search text-5xl! text-surface-400"
-                                aria-hidden="true"></i>
+                            <span
+                                class="material-symbols-outlined text-5xl! text-surface-400"
+                                aria-hidden="true">
+                                search
+                            </span>
                             <h3 class="m-0 text-lg font-medium text-color">
                                 {{ 'accessibility.studio.pagelist.empty.title' | dm }}
                             </h3>

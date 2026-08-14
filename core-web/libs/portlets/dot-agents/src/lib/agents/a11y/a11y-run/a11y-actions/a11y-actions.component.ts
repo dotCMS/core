@@ -73,13 +73,16 @@ export class DotA11yActionsComponent {
         }
     });
 
-    /** Small leading icon + bubble color for the footer copy, by phase. */
+    /**
+     * Small leading icon + bubble color for the footer copy, by phase. `icon` is a
+     * Material Symbols ligature name, rendered by the template's icon span.
+     */
     protected readonly $footerIcon = computed<{ icon: string; cls: string } | null>(() => {
         switch (this.phase()) {
             case 'scanned':
-                return { icon: 'pi pi-sparkles', cls: 'bg-primary-50 text-primary' };
+                return { icon: 'auto_awesome', cls: 'bg-primary-50 text-primary' };
             case 'fixing':
-                return { icon: 'pi pi-bolt', cls: 'bg-orange-50 text-orange-600' };
+                return { icon: 'bolt', cls: 'bg-orange-50 text-orange-600' };
             default:
                 return null;
         }

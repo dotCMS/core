@@ -34,7 +34,7 @@ export class DotA11yPreviewFrameComponent {
     /** i18n key for the mode badge and the iframe's accessible title. */
     readonly labelKey = input.required<string>();
 
-    /** PrimeIcon class for the mode badge ("pi pi-sparkles" / "pi pi-globe"). */
+    /** Material Symbols ligature for the mode badge ("auto_awesome" / "public"). */
     readonly icon = input.required<string>();
 
     /** What the address bar shows — host + path. Decorative: the pill isn't editable. */

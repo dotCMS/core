@@ -11,7 +11,9 @@
         class="col-span-2 row-start-1 flex items-start gap-2.5 border-b border-red-100 bg-red-50 px-4 py-2.5 text-red-700"
         data-testid="studio-run-error"
         role="alert">
-        <i class="pi pi-exclamation-triangle mt-0.5 flex-none" aria-hidden="true"></i>
+        <span class="material-symbols-outlined mt-0.5 flex-none text-base!" aria-hidden="true">
+            warning
+        </span>
         <div class="min-w-0">
             <span class="font-semibold">{{ 'accessibility.studio.error.title' | dm }}</span>
             <span class="ml-1.5 wrap-break-word text-red-600">{{ error }}</span>
@@ -24,15 +26,20 @@
     <!-- Page context bar -->
     <div class="flex h-13 flex-none items-center gap-2.5 border-b border-surface-100 pr-4 pl-3">
         <p-button
-            icon="pi pi-arrow-left"
             [text]="true"
             severity="secondary"
             [rounded]="true"
             (onClick)="backToPageList()"
             [attr.aria-label]="'accessibility.studio.back' | dm"
             [pTooltip]="'accessibility.studio.back' | dm"
-            data-testid="studio-back-btn" />
-        <i class="pi pi-file text-primary" aria-hidden="true"></i>
+            data-testid="studio-back-btn">
+            <!-- text-base!: material-symbols-outlined sets its own font-size on the
+                 class, which a plain size utility loses to at equal specificity. -->
+            <span class="material-symbols-outlined text-base!" aria-hidden="true">arrow_back</span>
+        </p-button>
+        <span class="material-symbols-outlined text-base! text-primary" aria-hidden="true">
+            description
+        </span>
         <div class="min-w-0">
             <div class="truncate font-bold text-color">
                 {{ store.selected()?.title }}
