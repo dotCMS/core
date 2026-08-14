@@ -112,3 +112,49 @@ export const SEARCH_DEBOUNCE_MS = 300;
  * count rather than tuned; the shortfall check in the store is what catches it being wrong.
  */
 export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;
+
+/**
+ * Idle time before a field change is flushed as a PATCH, in ms.
+ *
+ * One timer per field group: rapid edits to the same group collapse into a single call, while an
+ * edit to another group in the same window still fires its own.
+ */
+export const AUTOSAVE_DEBOUNCE_MS = 500;
+
+/**
+ * The variant cap and the condition option lists come from `@dotcms/dotcms-models` unchanged, and
+ * are re-exported here so the Configure screen has one place to look. Redeclaring them would let
+ * the new screen offer operators the backend does not validate — the lists are exactly what the old
+ * screen offers: CONTAINS/EQUALS for REACH_PAGE, plus EXISTS for URL_PARAMETER.
+ */
+export {
+    GoalsConditionsOperatorsListByType,
+    GoalsConditionsParametersListByType,
+    MAX_VARIANTS_ALLOWED
+} from '@dotcms/dotcms-models';
+
+/**
+ * Goal types the selector offers, in the order the old screen renders them. `CLICK_ON_ELEMENT`
+ * exists in `GOAL_TYPES` but has never been offered.
+ */
+export const CONFIGURE_GOAL_TYPES: readonly GOAL_TYPES[] = [
+    GOAL_TYPES.BOUNCE_RATE,
+    GOAL_TYPES.EXIT_RATE,
+    GOAL_TYPES.REACH_PAGE,
+    GOAL_TYPES.URL_PARAMETER
+];
+
+/**
+ * Goal types with a working condition sub-panel. The rest are offered but have no server-side
+ * conditions, so they render a "coming soon" placeholder instead — same as the old screen.
+ */
+export const GOAL_TYPES_WITH_CONDITIONS: readonly GOAL_TYPES[] = [
+    GOAL_TYPES.REACH_PAGE,
+    GOAL_TYPES.URL_PARAMETER
+];
+
+/** Wide enough for the folder tree beside a four-column page table. */
+export const SELECT_PAGE_DIALOG_SIZE = { width: '900px', height: '560px' } as const;
+
+/** Narrower than the 700px form default: the dialog holds a single optional name field. */
+export const ADD_VARIANT_DIALOG_WIDTH = '440px';
