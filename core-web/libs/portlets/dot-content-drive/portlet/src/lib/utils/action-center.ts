@@ -60,10 +60,6 @@ export interface DotActionCenterQuickAction {
     eligibleInodes: string[];
     /** Eligible contentlets. `0` = shown but not selectable. */
     count: number;
-    /** Renders with danger severity. */
-    danger: boolean;
-    /** i18n key for a confirm prompt before fire. */
-    confirmMessage?: string;
     /**
      * Eligible items likely to fail — heads-up only; they are still fired.
      * See Unlock in {@link QUICK_ACTIONS}.
@@ -102,11 +98,8 @@ interface DotActionCenterQuickActionDef {
      */
     nameKey: string;
     icon: string;
-    danger: boolean;
     /** Row-state heuristic — not a permission check. Counted items can still fail at fire. */
     eligibleWhen: (item: DotCMSContentlet) => boolean;
-    /** i18n key for confirm before fire (destructive actions). */
-    confirmMessage?: string;
     /** Among eligible items; feeds `warningCount`. */
     warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
@@ -155,7 +148,6 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: WORKFLOW_ACTION_ID.LOCK,
         nameKey: 'content-drive.context-menu.lock',
         icon: 'lock',
-        danger: false,
         // UX filter only: locking archived content has no upside and can block delete
         // (`canLock` is a delete precondition). Server still allows it.
         eligibleWhen: (item) => !item.locked && !item.archived
@@ -164,7 +156,6 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: WORKFLOW_ACTION_ID.UNLOCK,
         nameKey: 'content-drive.context-menu.unlock',
         icon: 'lock_open',
-        danger: false,
         eligibleWhen: (item) => !!item.locked && !item.archived,
         // Warn, don't filter — only the server knows if unlock will succeed.
         warnWhen: isLockedByAnotherUser,
@@ -174,7 +165,6 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: ADD_TO_BUNDLE_ACTION_ID,
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
-        danger: false,
         // Every contentlet can go in a bundle: there is no state that disqualifies one, unlike
         // Publish or Unarchive. Coverage is the whole selection, minus the identifier collapse the
         // configuration step explains.
@@ -184,7 +174,6 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: PUSH_PUBLISH_ACTION_ID,
         nameKey: 'Remote-Publish',
         icon: 'cloud_upload',
-        danger: false,
         // Counted over the whole selection rather than left at zero: the row is disabled by
         // `comingSoon`, and a `0` would read as "does not apply to these items", which is a
         // different and untrue statement.
@@ -195,7 +184,6 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: REFRESH_ACTION_ID,
         nameKey: 'Refresh',
         icon: 'refresh',
-        danger: false,
         eligibleWhen: () => true,
         comingSoon: true
     }
@@ -252,10 +240,8 @@ export const getQuickActions = (
             id: quickAction.id,
             name: quickAction.nameKey,
             icon: quickAction.icon,
-            danger: quickAction.danger,
             eligibleInodes,
             count: eligibleInodes.length,
-            confirmMessage: quickAction.confirmMessage,
             warningCount,
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
             comingSoon: !!quickAction.comingSoon

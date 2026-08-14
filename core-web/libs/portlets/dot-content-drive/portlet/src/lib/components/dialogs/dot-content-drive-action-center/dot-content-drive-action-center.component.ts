@@ -11,10 +11,8 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
-import { ConfirmationService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -75,7 +73,9 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  *
  * Two sections:
  *
- * 1. **Quick Actions** — system actions fired over the whole eligible selection in one request via
+ * 1. **Quick Actions** — the bulk operations the old search toolbar offered outside its workflow
+ *    dropdown: Lock, Unlock, Add to Bundle, and placeholders for Push Publish and Refresh. Lock and
+ *    Unlock fire over the whole eligible selection in one request via
  *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Counts are derived client-side
  *    from row state (see `getQuickActions`).
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
@@ -95,9 +95,9 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  * This used to be workflow-only, on the reasoning that a quick action's count is derived from the
  * rows themselves and so "which items is this about to touch?" had an obvious answer. That confused
  * *knowing* the answer with *being able to change it*. The set is knowable, but the user still had no
- * way to narrow it — clicking Publish (12) published twelve items with no chance to drop one. The
- * preview is worth most on Unlock, where the row warns that some locks belong to other users and the
- * only way to act on that warning is to uncheck those rows.
+ * way to narrow it — clicking Unlock (12) unlocked twelve items with no chance to drop one. Unlock is
+ * where the preview earns its place: the row warns that some locks belong to other users, and the only
+ * way to act on that warning is to uncheck those rows.
  *
  * What still differs is what the count means. A quick action's count and its preview rows are the
  * same client-side filter, so they always agree. A workflow action's count comes from the backend and
@@ -129,7 +129,6 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
         AccordionModule,
         BadgeModule,
         ButtonModule,
-        ConfirmDialogModule,
         DotContentDriveActionBundleTargetComponent,
         DotContentDriveActionMoveTargetComponent,
         DotContentDriveActionPreviewComponent,
@@ -142,7 +141,7 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
         SkeletonModule,
         TooltipModule
     ],
-    providers: [DotWorkflowsActionsService, ConfirmationService],
+    providers: [DotWorkflowsActionsService],
     templateUrl: './dot-content-drive-action-center.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -166,7 +165,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
-    readonly #confirmationService = inject(ConfirmationService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -532,8 +530,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * `warningCount` — so the number the row advertises and the rows marked here cannot disagree,
      * and an administrator sees neither.
      *
-     * Applied to every action's preview, not just Unlock: a lock held by somebody else can fail a
-     * Publish or an Archive just as readily, and the row is worth flagging wherever it is listed.
+     * Applied to every action's preview, not just Unlock: a lock held by somebody else can fail any
+     * action fired over that row, and it is worth flagging wherever the row is listed.
      */
     protected readonly $lockedByOthers = computed(() => {
         const context = { isAdmin: this.#store.currentUserIsAdmin() };
@@ -627,10 +625,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /**
-     * Fires a quick action over the rows left checked, prompting first when it warrants one.
+     * Fires a quick action over the rows left checked.
      *
-     * The prompt sits here rather than on the row click because this is the commit point: opening a
-     * preview changes nothing, so confirming there would ask about a decision not yet made.
+     * No confirmation prompt: none of the remaining quick actions is destructive. Lock, Unlock and
+     * Add to Bundle are all reversible, and the preview is already a commit point the user passes
+     * through. Publish, Archive and Delete — the rows that warranted one — now live in the Workflow
+     * Actions section.
      */
     private executeQuickAction(quickAction: DotActionCenterQuickAction): void {
         const inodes = this.$includedItems().map((item) => item.inode);
@@ -639,35 +639,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
-        // Add to Bundle leaves the workflow path entirely — different endpoint, different id kind, and
-        // a target that has to be present. Handled before the confirm branch because it carries no
-        // `confirmMessage`: nothing is published or destroyed by queueing content into a bundle.
+        // Add to Bundle leaves the workflow path entirely — different endpoint, different id kind,
+        // and a target that has to be present.
         if (quickAction.id === ADD_TO_BUNDLE_ACTION_ID) {
             this.fireAddToBundle(quickAction);
 
             return;
         }
 
-        if (quickAction.confirmMessage) {
-            this.#confirmationService.confirm({
-                message: this.#dotMessageService.get(quickAction.confirmMessage),
-                header: this.#dotMessageService.get('content-drive.action-center.confirm.header'),
-                acceptLabel: this.#dotMessageService.get('dot.common.yes'),
-                rejectLabel: this.#dotMessageService.get('dot.common.no'),
-                accept: () => this.fireQuickAction(quickAction, inodes)
-            });
-
-            return;
-        }
-
-        this.fireQuickAction(quickAction, inodes);
-    }
-
-    /**
-     * Fires a quick action over the given inodes. Split out of {@link onExecuteQuickAction} so the
-     * confirmation branch and the direct branch share one execution path.
-     */
-    private fireQuickAction(quickAction: DotActionCenterQuickAction, inodes: string[]): void {
         this.#store.executeQuickAction(
             quickAction.id,
             this.#dotMessageService.get(quickAction.name),

@@ -5,7 +5,6 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
 
 import {
     AddToBundleService,
@@ -157,7 +156,6 @@ describe('DotContentDriveActionCenterComponent', () => {
     let spectator: Spectator<DotContentDriveActionCenterComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
-    let confirmationService: SpyObject<ConfirmationService>;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
@@ -256,15 +254,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
         store = spectator.inject(DotContentDriveStore, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
-        confirmationService = spectator.inject(ConfirmationService, true);
 
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
         );
         jest.spyOn(store, 'closeDialog');
         jest.spyOn(store, 'loadItems');
-        // Records the call without accepting, so tests opt in to the accept path explicitly.
-        jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
     });
 
     afterEach(() => {
@@ -582,15 +577,6 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
-        it('should fire the remaining quick actions without confirming', () => {
-            // No quick action carries a `confirmMessage` any more — the destructive ones moved to
-            // the Workflow Actions section. The confirm branch stays for whatever comes back.
-            executeQuickAction('LOCK');
-
-            expect(confirmationService.confirm).not.toHaveBeenCalled();
-            expect(store.executeQuickAction).toHaveBeenCalled();
-        });
-
         it('should not fire an action that applies to nothing', () => {
             // Nothing in the default selection is locked, so Unlock has no eligible rows.
             spectator.detectChanges();
@@ -802,14 +788,6 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
                 'locked-1'
             ]);
-        });
-
-        it('should not confirm before locking or unlocking', () => {
-            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
-
-            executeQuickAction('UNLOCK');
-
-            expect(confirmationService.confirm).not.toHaveBeenCalled();
         });
     });
 

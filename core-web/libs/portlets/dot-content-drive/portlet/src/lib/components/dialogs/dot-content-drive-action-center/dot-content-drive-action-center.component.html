@@ -72,12 +72,7 @@
                                     [attr.data-testid]="'quick-action-' + quickAction.id"
                                     (click)="onSelectQuickAction(quickAction)">
                                     <span
-                                        class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
-                                        [class]="
-                                            quickAction.danger
-                                                ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
-                                                : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
-                                        ">
+                                        class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-0 text-surface-400 shadow-sm transition-colors group-hover:text-primary">
                                         <i
                                             class="material-symbols-outlined text-[20px]!"
                                             aria-hidden="true">
@@ -85,11 +80,7 @@
                                         </i>
                                     </span>
 
-                                    <span
-                                        class="flex-1 text-sm font-semibold"
-                                        [class]="
-                                            quickAction.danger ? 'text-red-600' : 'text-surface-700'
-                                        ">
+                                    <span class="flex-1 text-sm font-semibold text-surface-700">
                                         {{ quickAction.name | dm }}
                                     </span>
 
@@ -488,7 +479,4 @@
             }
         }
     }
-
-    <!-- Guards the destructive quick actions. Appended to body so it layers above the dialog. -->
-    <p-confirmDialog appendTo="body" [draggable]="false" [style]="{ width: '500px' }" />
 </div>

@@ -391,12 +391,6 @@ describe('action-center utils', () => {
             }
         });
 
-        it('should leave nothing marked as danger, now the destructive actions are gone', () => {
-            const items = [contentlet({ inode: 'a', archived: true })];
-
-            expect(getQuickActions(items).every((action) => !action.danger)).toBe(true);
-        });
-
         it('should flag Push Publish and Refresh as coming soon', () => {
             const byId = new Map(
                 getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
