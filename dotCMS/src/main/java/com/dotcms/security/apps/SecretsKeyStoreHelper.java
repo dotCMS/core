@@ -207,6 +207,7 @@ public class SecretsKeyStoreHelper {
                 .getLongProperty(SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS, 100);
 
         IOException lastFailure = null;
+        boolean interrupted = false;
 
         for (int tryCount = 1; tryCount <= maxLoadTries; tryCount++) {
             try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
@@ -245,6 +246,7 @@ public class SecretsKeyStoreHelper {
                     // thread that has been asked to stop; the loop falls through to the terminal
                     // handler, which preserves the store and raises.
                     Thread.currentThread().interrupt();
+                    interrupted = true;
                     break;
                 }
 
@@ -255,7 +257,7 @@ public class SecretsKeyStoreHelper {
             }
         }
 
-        return handleUnrecoverableLoad(lastFailure, allowRecreate);
+        return handleUnrecoverableLoad(lastFailure, allowRecreate, interrupted);
     }
 
     /**
@@ -316,15 +318,31 @@ public class SecretsKeyStoreHelper {
      * store before mutating it, throwing here also prevents a caller from writing a
      * nearly-empty store over a file that is intact but merely unreadable by this node.
      */
-    private KeyStore handleUnrecoverableLoad(final IOException cause, final boolean allowRecreate) {
+    private KeyStore handleUnrecoverableLoad(final IOException cause, final boolean allowRecreate,
+            final boolean interrupted) {
 
-        final String diagnosis = isIntegrityFailure(cause)
-                ? "the store could not be decrypted. The password is derived from the cluster salt,"
-                        + " so this usually means the salt changed or SECRETS_KEYSTORE_PASSWORD_KEY"
-                        + " differs between nodes"
-                : "the store could not be read";
+        // The interrupted case is reported for what it is. Falling through to "could not be read"
+        // would blame the store for a shutdown or a request timeout, sending an operator looking for
+        // a corrupt file or a salt mismatch that does not exist.
+        final String diagnosis;
+        if (interrupted) {
+            diagnosis = "the thread was interrupted while waiting to re-read it, so the read was"
+                    + " abandoned. The store itself may well be fine; this usually means a shutdown"
+                    + " or a request timeout, not a problem with the file";
+        } else if (isIntegrityFailure(cause)) {
+            diagnosis = "the store could not be decrypted. The password is derived from the cluster"
+                    + " salt, so this usually means the salt changed or SECRETS_KEYSTORE_PASSWORD_KEY"
+                    + " differs between nodes";
+        } else {
+            diagnosis = "the store could not be read";
+        }
 
-        if (!allowRecreate || !Config.getBooleanProperty(SECRETS_STORE_AUTO_RECREATE, false)) {
+        // An interrupt never justifies the destructive path, even with SECRETS_STORE_AUTO_RECREATE
+        // enabled. Nothing has been learned about the store: the read was abandoned before it could
+        // fail on its own merits. Backing it up and replacing it with an empty one here would let a
+        // shutdown or a request timeout discard every App credential.
+        if (interrupted || !allowRecreate
+                || !Config.getBooleanProperty(SECRETS_STORE_AUTO_RECREATE, false)) {
 
             // The store is preserved, so this state persists until an operator fixes it -- and every
             // read lands here again. Report it periodically instead of once per read; see
