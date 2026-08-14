@@ -55,12 +55,36 @@ export const VARIANT_COLORS: readonly string[] = [
 const PREVIEW_URL_PARAMS = 'disabledNavigateMode=true&mode=LIVE';
 
 /**
+ * The single row drawn while no experiment exists yet (#37003).
+ *
+ * The creation POST has the backend auto-create the `DEFAULT` variant at 100%, so the card states
+ * that up front rather than drawing headers over nothing. It carries no server entity, which is why
+ * it renders as the control does *and* frozen: no rename, no weight, no delete, no preview URL. It
+ * is replaced by the real rows the moment `createSucceeded` puts the experiment in the store.
+ */
+const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
+    id: DEFAULT_VARIANT_ID,
+    name: DEFAULT_VARIANT_NAME,
+    weight: TOTAL_WEIGHT,
+    isControl: true,
+    color: VARIANT_COLORS[0],
+    copyUrl: null,
+    disabled: true,
+    // Nothing to explain: the row is frozen because it does not exist yet, not because of a lock.
+    disabledTooltipKey: null
+};
+
+/**
  * Variants card of the Configure screen.
  *
  * Owns everything about the variant list: renaming inplace, per-row weights, Split Evenly, adding
  * through the 440px dialog and deleting behind the shell's confirm dialog. Every change leaves as
  * a dispatched event — the card holds no state of its own beyond the rows it derives from the
  * store, so what it draws is always what was last persisted.
+ *
+ * On the creation screen there is no experiment to derive rows from, so the card draws
+ * `CONTROL_ROW_BEFORE_CREATION` — the Original row the POST is about to create — and freezes every
+ * action that would need a server entity behind it.
  *
  * Two things are deliberately *not* live here. The `[data-error]` markers only appear once
  * Start/Schedule has been pressed (AC28), which is what `validationErrors` records; and the
@@ -88,8 +112,15 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly MAX_INPUT_TITLE_LENGTH = MAX_INPUT_TITLE_LENGTH;
     readonly TOTAL_WEIGHT = TOTAL_WEIGHT;
 
+    /** True on the creation screen: the experiment has not been POSTed, so nothing persists yet. */
+    readonly $isBeforeCreation = computed<boolean>(() => !this.store.experiment());
+
     /** Rows as drawn, with everything the template would otherwise have to derive per row. */
     readonly $rows = computed<VariantRowViewModel[]>(() => {
+        if (this.$isBeforeCreation()) {
+            return [CONTROL_ROW_BEFORE_CREATION];
+        }
+
         const disabledTooltipKey = this.store.$disabledTooltipKey();
         const previewUrl = this.#previewUrl();
 
@@ -109,8 +140,21 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly $isDisabled = computed<boolean>(() => !!this.store.$disabledTooltipKey());
 
     /** The cap is a backend setting, so the counter reads `n/max` rather than a fixed sentence. */
-    readonly $isAtVariantCap = computed<boolean>(
-        () => this.store.$variants().length >= MAX_VARIANTS_ALLOWED
+    readonly $isAtVariantCap = computed<boolean>(() => this.$rows().length >= MAX_VARIANTS_ALLOWED);
+
+    /** Adding needs an experiment id to add the variant to, so it waits for the creation POST. */
+    readonly $isAddDisabled = computed<boolean>(
+        () => this.$isAtVariantCap() || this.$isBeforeCreation()
+    );
+
+    /** There is nothing to split while the only row is the control the POST will create. */
+    readonly $isSplitEvenlyDisabled = computed<boolean>(
+        () => this.$isDisabled() || this.$isBeforeCreation()
+    );
+
+    /** Reads 100% before creation: that is the proportion the POST will have written. */
+    readonly $totalWeight = computed<number>(() =>
+        this.$isBeforeCreation() ? TOTAL_WEIGHT : this.store.$totalWeight()
     );
 
     /**
@@ -163,6 +207,9 @@ export class DotExperimentsConfigureVariantsComponent {
     /**
      * Sends the whole proportion, not the single weight that changed: the PATCH body replaces it
      * wholesale, so the other rows have to travel with it.
+     *
+     * Reported as an edit like any other, so it merges into the accumulated PATCH the store is
+     * holding rather than racing it.
      */
     onWeightChanged(variantId: string, value: string | number): void {
         const weight = clampWeight(Number(value));
@@ -170,9 +217,11 @@ export class DotExperimentsConfigureVariantsComponent {
             .$variants()
             .map((variant) => (variant.id === variantId ? { ...variant, weight } : variant));
 
-        this.#dispatch.trafficProportionChanged({
-            type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-            variants
+        this.#dispatch.formEdited({
+            trafficProportion: {
+                type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                variants
+            }
         });
     }
 

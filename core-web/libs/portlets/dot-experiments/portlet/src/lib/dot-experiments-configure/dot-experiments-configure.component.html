@@ -32,6 +32,15 @@
 } @else {
     <dot-experiments-configure-header />
 
+    @if ($showProgressBar()) {
+        <div class="progress-bar-wrapper">
+            <p-progressBar
+                [style]="{ height: '3px' }"
+                mode="indeterminate"
+                data-testid="experiments-configure-progress-bar" />
+        </div>
+    }
+
     @if (store.$lockedBannerKey(); as lockedBannerKey) {
         <div
             class="flex flex-none items-center gap-2 border-b border-green-200 bg-green-50 px-8 py-3 text-sm text-green-800"
@@ -48,11 +57,15 @@
         class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-8 pt-6 pb-8"
         data-testid="experiments-configure-body">
         <div class="flex w-full max-w-[1040px] flex-col gap-5">
-            <dot-experiments-configure-details />
-            <dot-experiments-configure-goal />
-            <dot-experiments-configure-page />
+            <dot-experiments-configure-details
+                [nameField]="formTree.name"
+                [descriptionField]="formTree.description" />
+            <dot-experiments-configure-goal [field]="formTree.goal" />
+            <dot-experiments-configure-page [trafficAllocationField]="formTree.trafficAllocation" />
             <dot-experiments-configure-variants />
-            <dot-experiments-configure-scheduling />
+            <dot-experiments-configure-scheduling
+                [field]="formTree.scheduling"
+                [bounds]="$schedulingBounds()" />
         </div>
     </div>
 

@@ -21,7 +21,7 @@
                 id="experiment-name"
                 type="text"
                 class="w-full"
-                [formField]="formTree.name"
+                [formField]="$nameField()"
                 [placeholder]="'experiments.create.form.name.placeholder' | dm"
                 data-testid="details-name-input" />
             @if ($showNameRequiredError()) {
@@ -43,10 +43,11 @@
                 {{ 'experiments.create.form.description.label' | dm }}
             </label>
             <textarea
+                pInputText
                 id="experiment-description"
                 rows="2"
-                class="p-textarea p-component w-full resize-y"
-                [formField]="formTree.description"
+                class="w-full resize-y"
+                [formField]="$descriptionField()"
                 [placeholder]="'experiments.create.form.description.placeholder' | dm"
                 data-testid="details-description-textarea"></textarea>
             <small class="text-surface-500" data-testid="details-description-hint">

@@ -1,16 +1,15 @@
-import { Dispatcher } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { signal } from '@angular/core';
+import { Injector, signal, WritableSignal } from '@angular/core';
+import { disabled, form, maxLength } from '@angular/forms/signals';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
-import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MAX_INPUT_DESCRIPTIVE_LENGTH, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigureDetailsComponent } from './dot-experiments-configure-details.component';
 
 import { ConfigureValidationRule } from '../../../shared/models';
-import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 
 const NAME_REQUIRED_COPY = 'Give the experiment a name';
@@ -21,20 +20,19 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.details.name.max-length': NAME_MAX_LENGTH_COPY
 });
 
-const EXPERIMENT: DotExperiment = {
-    ...getExperimentMock(0),
+/** The two leaves of the root form the card is handed. */
+interface DetailsModel {
+    name: string;
+    description: string;
+}
+
+const EXPERIMENT_DETAILS: DetailsModel = {
     name: 'Summer landing test',
     description: 'Compares two hero images'
 };
 
-/**
- * The shell provides the store, so the card only injects it. Real signals rather than
- * `jest.fn()`s: the card is effect-driven, and a plain function would never re-run them.
- */
+/** Only what the card still reads: the rest of its state now arrives through its two inputs. */
 const createStoreMock = () => ({
-    experiment: signal<DotExperiment | null>(null),
-    draftName: signal(''),
-    draftDescription: signal(''),
     validationErrors: signal<ConfigureValidationRule[]>([]),
     $isLocked: signal(false)
 });
@@ -42,7 +40,7 @@ const createStoreMock = () => ({
 describe('DotExperimentsConfigureDetailsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureDetailsComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
+    let model: WritableSignal<DetailsModel>;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureDetailsComponent,
@@ -56,120 +54,113 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         detectChanges: false
     });
 
-    /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
-    const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
+    /**
+     * Mounts the card on a real form tree carrying the rules the shell declares over these two
+     * leaves — a stub tree would let the card claim a length error the form never raises.
+     */
+    const mountWith = (details: DetailsModel = { name: '', description: '' }) => {
+        model = signal(details);
+
+        const formTree = form(
+            model,
+            (path) => {
+                maxLength(path.name, MAX_INPUT_TITLE_LENGTH);
+                disabled(path.name, { when: () => storeMock.$isLocked() });
+                maxLength(path.description, MAX_INPUT_DESCRIPTIVE_LENGTH);
+                disabled(path.description, { when: () => storeMock.$isLocked() });
+            },
+            { injector: spectator.inject(Injector) }
+        );
+
+        // Both at once: the template reads them in the same pass, so setting one and rendering
+        // would trip over the other still being unset.
+        spectator.setInput({
+            nameField: formTree.name,
+            descriptionField: formTree.description
+        });
+        spectator.detectChanges();
+    };
 
     const nameInput = () => spectator.query(byTestId('details-name-input')) as HTMLInputElement;
 
     const descriptionTextarea = () =>
         spectator.query(byTestId('details-description-textarea')) as HTMLTextAreaElement;
 
-    /** Puts a loaded experiment on the card, which is what hydrates the form. */
-    const loadExperiment = (experiment: DotExperiment = EXPERIMENT) => {
-        storeMock.experiment.set(experiment);
-        storeMock.draftName.set(experiment.name);
-        storeMock.draftDescription.set(experiment.description ?? '');
-        spectator.detectChanges();
-    };
-
     beforeEach(() => {
         storeMock = createStoreMock();
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
     });
 
     afterEach(() => {
         jest.restoreAllMocks();
     });
 
-    describe('hydration', () => {
-        it('should render the name and description of the loaded experiment', () => {
-            loadExperiment();
+    describe('rendering the fields it is handed', () => {
+        it('should render the name and description the form holds', () => {
+            mountWith(EXPERIMENT_DETAILS);
 
-            expect(nameInput().value).toBe(EXPERIMENT.name);
-            expect(descriptionTextarea().value).toBe(EXPERIMENT.description);
+            expect(nameInput().value).toBe(EXPERIMENT_DETAILS.name);
+            expect(descriptionTextarea().value).toBe(EXPERIMENT_DETAILS.description);
         });
 
-        it('should start empty while no experiment exists yet', () => {
-            spectator.detectChanges();
+        it('should render an empty form as empty fields', () => {
+            mountWith();
 
             expect(nameInput().value).toBe('');
             expect(descriptionTextarea().value).toBe('');
         });
-
-        it('should not dispatch anything just for hydrating', () => {
-            loadExperiment();
-
-            expect(dispatchedEvents()).toEqual([]);
-        });
-
-        it('should keep what is being typed when the autosave response replaces the experiment', () => {
-            // Every PATCH answers with a whole new experiment object; re-reading it would drop
-            // the characters typed while the call was travelling.
-            loadExperiment();
-
-            spectator.typeInElement('Winter landing test', nameInput());
-            storeMock.experiment.set({ ...EXPERIMENT, name: 'Summer landing test' });
-            spectator.detectChanges();
-
-            expect(nameInput().value).toBe('Winter landing test');
-        });
     });
 
-    describe('reporting changes', () => {
-        it('should dispatch nameChanged with what was typed', () => {
-            loadExperiment();
+    describe('editing', () => {
+        it('should write the typed name into the model', () => {
+            mountWith(EXPERIMENT_DETAILS);
 
             spectator.typeInElement('Winter landing test', nameInput());
             spectator.detectChanges();
 
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsConfigurePageEvents.nameChanged('Winter landing test')
-            );
+            expect(model().name).toBe('Winter landing test');
         });
 
-        it('should dispatch descriptionChanged with what was typed', () => {
-            loadExperiment();
+        it('should write the typed description into the model', () => {
+            mountWith(EXPERIMENT_DETAILS);
 
             spectator.typeInElement('Now with a video hero', descriptionTextarea());
             spectator.detectChanges();
 
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsConfigurePageEvents.descriptionChanged('Now with a video hero')
-            );
+            expect(model().description).toBe('Now with a video hero');
+        });
+    });
+
+    describe('a form nobody has touched yet', () => {
+        it('should not mark the empty name as invalid', () => {
+            // AC28: `required` in the schema reaches the DOM as the native attribute, which makes
+            // an empty field `:invalid` — and painted red — before the user has done anything.
+            mountWith();
+
+            expect(nameInput().hasAttribute('required')).toBe(false);
+            expect(nameInput().matches(':invalid')).toBe(false);
+            expect(nameInput().getAttribute('aria-invalid')).toBeNull();
         });
 
-        it('should never dispatch a blank name', () => {
-            // The backend rejects it, so letting it through would only queue a doomed PATCH.
-            loadExperiment();
+        it('should not mark the empty description as invalid either', () => {
+            mountWith();
 
-            spectator.typeInElement('', nameInput());
-            spectator.detectChanges();
-
-            expect(dispatchedEvents()).toEqual([]);
-        });
-
-        it('should still dispatch an emptied description', () => {
-            loadExperiment();
-
-            spectator.typeInElement('', descriptionTextarea());
-            spectator.detectChanges();
-
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsConfigurePageEvents.descriptionChanged('')
-            );
+            expect(descriptionTextarea().hasAttribute('required')).toBe(false);
+            expect(descriptionTextarea().matches(':invalid')).toBe(false);
         });
     });
 
     describe('name error', () => {
         it('should stay hidden while the name is blank and Start has not been pressed', () => {
             // AC28: nothing is validated until Start/Schedule.
-            spectator.detectChanges();
+            mountWith();
 
             expect(spectator.query(byTestId('details-name-required-error'))).toBeNull();
         });
 
         it('should appear once the store reports the name rule as failing', () => {
+            mountWith();
+
             storeMock.validationErrors.set(['name']);
             spectator.detectChanges();
 
@@ -179,6 +170,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         });
 
         it('should disappear as soon as a name is typed', () => {
+            mountWith();
             storeMock.validationErrors.set(['name']);
             spectator.detectChanges();
 
@@ -189,6 +181,8 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         });
 
         it('should not appear for a rule that belongs to another card', () => {
+            mountWith();
+
             storeMock.validationErrors.set(['goalType']);
             spectator.detectChanges();
 
@@ -200,7 +194,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         const overlongName = 'a'.repeat(MAX_INPUT_TITLE_LENGTH + 1);
 
         it('should stay hidden while the name fits', () => {
-            loadExperiment();
+            mountWith(EXPERIMENT_DETAILS);
 
             spectator.typeInElement('a'.repeat(MAX_INPUT_TITLE_LENGTH), nameInput());
             spectator.detectChanges();
@@ -208,8 +202,8 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
             expect(spectator.query(byTestId('details-name-max-length-error'))).toBeNull();
         });
 
-        it('should say how long the name may be once it is too long', () => {
-            loadExperiment();
+        it('should say how long the name may be once the form reports it too long', () => {
+            mountWith(EXPERIMENT_DETAILS);
 
             spectator.typeInElement(overlongName, nameInput());
             spectator.detectChanges();
@@ -221,8 +215,8 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
 
         it('should replace the required error rather than stack with it', () => {
             // The two messages share one slot: a name that is too long is not a missing name.
+            mountWith(EXPERIMENT_DETAILS);
             storeMock.validationErrors.set(['name']);
-            loadExperiment();
 
             spectator.typeInElement(overlongName, nameInput());
             spectator.detectChanges();
@@ -234,16 +228,17 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
 
     describe('locked experiment', () => {
         it('should disable both fields', () => {
-            // AC34: every field is read-only once the experiment is no longer a draft.
+            // AC34: every field is read-only once the experiment is no longer a draft. The rule
+            // lives in the shell's schema, and reaches the card through the fields it is handed.
             storeMock.$isLocked.set(true);
-            loadExperiment();
+            mountWith(EXPERIMENT_DETAILS);
 
             expect(nameInput().disabled).toBe(true);
             expect(descriptionTextarea().disabled).toBe(true);
         });
 
         it('should leave both fields editable while the experiment is a draft', () => {
-            loadExperiment();
+            mountWith(EXPERIMENT_DETAILS);
 
             expect(nameInput().disabled).toBe(false);
             expect(descriptionTextarea().disabled).toBe(false);
