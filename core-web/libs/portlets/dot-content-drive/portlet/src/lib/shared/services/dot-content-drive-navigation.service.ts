@@ -23,6 +23,13 @@ import { mapQueryParamsToCDParams } from '@dotcms/utils';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
+/**
+ * How many language versions of one identifier the deep-link lookup asks for. An identifier has one
+ * version per language, and this only needs enough of them to pick the preferred one — see
+ * `#pickLanguageVersion`.
+ */
+const MAX_LANGUAGE_VERSIONS = 20;
+
 /** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
 interface ContentSearchEntity {
     jsonObjectView: { contentlets: DotCMSContentlet[] };
@@ -230,8 +237,8 @@ export class DotContentDriveNavigationService {
     openEditByIdentifier(identifier: string): void {
         this.#contentSearch
             .get<ContentSearchEntity>({
-                query: `+identifier:${identifier} +working:true${this.#languageQueryTerm()}`,
-                limit: 1
+                query: `+identifier:${identifier} +working:true`,
+                limit: MAX_LANGUAGE_VERSIONS
             })
             .pipe(
                 take(1),
@@ -242,7 +249,9 @@ export class DotContentDriveNavigationService {
                 })
             )
             .subscribe((entity) => {
-                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+                const contentlet = this.#pickLanguageVersion(
+                    entity?.jsonObjectView?.contentlets ?? []
+                );
                 if (!contentlet?.inode) {
                     return;
                 }
@@ -265,34 +274,43 @@ export class DotContentDriveNavigationService {
     }
 
     /**
-     * The `+languageId:…` term that pins an identifier lookup to the language the drive is showing.
+     * Picks which language version of a contentlet the deep link should open.
      *
-     * An identifier exists once per language, each version with its own inode, so a lookup without a
-     * language term returns whichever version the index happens to rank first — the deep link could
-     * open a language the user is not even looking at. Scoped to the active Locale filter, so the
-     * resolved version matches the row the link was shared from.
+     * One identifier has one inode PER LANGUAGE, so a lookup by identifier returns as many versions as
+     * the content has been translated into, and simply taking the first hands the user whichever the
+     * index happened to rank first — possibly a language they are not even looking at. The version
+     * matching the drive's active Locale filter is preferred, then the environment default, and
+     * otherwise the first available.
      *
-     * Falls back to the environment default (only reachable before the store has seeded the filter),
-     * and to no term at all when no language is known — which is exactly the previous behaviour, so
-     * an unresolved language can never make the link stop working.
+     * The preference is applied HERE rather than as a `+languageId:` term on the query on purpose: a
+     * query constrained to a language the content has no version in returns nothing at all, and this
+     * method's caller treats "nothing" as "do not open" — so a shared link to, say, English-only
+     * content would silently do nothing on an environment whose default is Spanish. Filtering client
+     * side keeps the link working in every case, and costs no extra request.
      *
-     * @return {*} {string} A leading-space-prefixed Lucene term, or an empty string.
+     * @param contentlets The language versions returned for the identifier.
+     *
+     * @return {*} {DotCMSContentlet | undefined} The version to open, or `undefined` when there is none.
      */
-    #languageQueryTerm(): string {
-        const selected = (this.#store.getFilterValue('languageId') as string[]) ?? [];
-        const languageIds = selected.length
-            ? selected
-            : [this.#store.defaultLanguageId()].filter(Boolean).map(String);
-
-        if (!languageIds.length) {
-            return '';
+    #pickLanguageVersion(contentlets: DotCMSContentlet[]): DotCMSContentlet | undefined {
+        if (contentlets.length <= 1) {
+            return contentlets[0];
         }
 
-        // `OR` is explicit on purpose: a whitespace-separated group (`languageId:(1 2)`) is not an
-        // implicit OR here — it makes the whole query fail, and a failed query surfaces as an empty
-        // result set with no error, so the link would silently resolve to nothing.
-        return languageIds.length === 1
-            ? ` +languageId:${languageIds[0]}`
-            : ` +languageId:(${languageIds.join(' OR ')})`;
+        const selected = (this.#store.getFilterValue('languageId') as string[]) ?? [];
+        const defaultLanguageId = this.#store.defaultLanguageId();
+        const preferred = selected.length
+            ? selected
+            : [defaultLanguageId].filter(Boolean).map(String);
+
+        return (
+            preferred
+                .map((languageId) =>
+                    contentlets.find(
+                        (contentlet) => String(contentlet.languageId) === String(languageId)
+                    )
+                )
+                .find(Boolean) ?? contentlets[0]
+        );
     }
 }

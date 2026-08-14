@@ -484,10 +484,9 @@ describe('DotContentDriveNavigationService', () => {
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
-            });
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({ query: '+identifier:shared-identifier +working:true' })
+            );
             expect(service.$editPanelRequest()).toEqual({
                 mode: 'edit',
                 contentletInode: 'working-inode-1',
@@ -496,77 +495,83 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should resolve the identifier in the language the drive is showing', () => {
-            // An identifier exists once per language, so a lookup with no language term returns an
-            // arbitrary version — the deep link could open a language the user is not looking at.
+        it('should open the version in the language the drive is showing', () => {
+            // One identifier has one inode PER LANGUAGE, so taking the first hit hands the user
+            // whichever version the index ranked first — possibly a language they are not looking at.
             store.getFilterValue.mockReturnValue(['2']);
-            const resolved = createFakeContentlet({
-                inode: 'es-inode',
-                identifier: 'shared-identifier',
-                title: 'Contenido'
-            });
-            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
+            contentSearch.get.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            createFakeContentlet({ inode: 'en-inode', languageId: 1, title: 'EN' }),
+                            createFakeContentlet({ inode: 'es-inode', languageId: 2, title: 'ES' })
+                        ]
+                    }
+                })
+            );
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true +languageId:2',
-                limit: 1
-            });
-            expect(service.$editPanelRequest()).toEqual({
-                mode: 'edit',
-                contentletInode: 'es-inode',
-                identifier: 'shared-identifier',
-                title: 'Contenido'
-            });
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'es-inode' })
+            );
         });
 
-        // A whitespace group (`languageId:(1 2)`) is NOT an implicit OR here — it fails the whole
-        // query, which surfaces as an empty result set with no error.
-        it('should OR the selected languages when several are active', () => {
-            store.getFilterValue.mockReturnValue(['1', '2']);
+        it('should NOT constrain the query by language', () => {
+            // A query pinned to a language the content has no version in returns nothing, and this
+            // method treats "nothing" as "do not open" — so a link to English-only content would
+            // silently do nothing on an environment whose default is Spanish. The preference is
+            // applied to the results instead, which keeps the link working and costs no extra request.
+            store.getFilterValue.mockReturnValue(['2']);
             contentSearch.get.mockReturnValue(
                 of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
             );
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true +languageId:(1 OR 2)',
-                limit: 1
-            });
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({ query: '+identifier:shared-identifier +working:true' })
+            );
         });
 
-        it('should fall back to the default language when no language filter is set', () => {
-            // Only reachable before the store has seeded the filter; the default is still a better
-            // guess than whichever version the index happens to return first.
+        it('should still open a version in another language when the selected one has none', () => {
+            store.getFilterValue.mockReturnValue(['2']);
+            contentSearch.get.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            createFakeContentlet({ inode: 'en-inode', languageId: 1, title: 'EN' })
+                        ]
+                    }
+                })
+            );
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'en-inode' })
+            );
+        });
+
+        it('should prefer the default language when no language filter is set', () => {
             store.getFilterValue.mockReturnValue(undefined);
-            store.defaultLanguageId.mockReturnValue(3);
+            store.defaultLanguageId.mockReturnValue(2);
             contentSearch.get.mockReturnValue(
-                of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            createFakeContentlet({ inode: 'en-inode', languageId: 1 }),
+                            createFakeContentlet({ inode: 'es-inode', languageId: 2 })
+                        ]
+                    }
+                })
             );
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true +languageId:3',
-                limit: 1
-            });
-        });
-
-        it('should omit the language term when no language is known at all', () => {
-            store.getFilterValue.mockReturnValue(undefined);
-            store.defaultLanguageId.mockReturnValue(undefined);
-            contentSearch.get.mockReturnValue(
-                of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'es-inode' })
             );
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
-            });
         });
 
         it('should not open the panel when the identifier resolves to nothing', () => {
