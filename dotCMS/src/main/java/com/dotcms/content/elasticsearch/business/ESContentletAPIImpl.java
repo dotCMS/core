@@ -9587,6 +9587,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // would abort the whole copy even though the bytes were copied fine.
                             // REPLACE_EXISTING must be passed explicitly: this overload defaults
                             // to no CopyOption, and Files.copy fails if the destination exists.
+                            Logger.warn(this, "### DOTCMS-37068-MARKER ### copying binary '"
+                                    + srcFile.getAbsolutePath() + "' -> '"
+                                    + destFile.getAbsolutePath()
+                                    + "' with preserveFileDate=false");
                             FileUtils.copyFile(srcFile, destFile, false,
                                     StandardCopyOption.REPLACE_EXISTING);
                             newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
