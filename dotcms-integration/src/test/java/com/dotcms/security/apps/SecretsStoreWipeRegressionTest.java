@@ -309,6 +309,52 @@ public class SecretsStoreWipeRegressionTest {
     }
 
     /**
+     * Method to test: the retry cap after a terminal failure, in {@code loadSecretsStore}.
+     * Given Scenario: a persistently truncated store — an IOException with no
+     * UnrecoverableKeyException cause, so it is classified transient and retried with backoff. The
+     * store is now preserved rather than wiped, so that state persists and every read re-enters the
+     * loop.
+     * Expected Result: the first read pays the backoff, subsequent reads within the report interval
+     * do not. Without the cap every page render, login and content save would burn the full backoff
+     * (300ms at defaults) before degrading, indefinitely.
+     */
+    @Test
+    public void test_persistentNonIntegrityFailure_stopsPayingTheBackoff() throws Exception {
+        final SecretsKeyStoreHelper helper = helperWithPassword(PASSWORD_A);
+        helper.saveValue(CANARY_KEY, CANARY_VALUE.toCharArray());
+
+        // Truncation, not a bad password: this is the branch that retries.
+        final byte[] intact = Files.readAllBytes(storePath);
+        Files.write(storePath, Arrays.copyOf(intact, intact.length / 2));
+        Config.setProperty(SECRETS_STORE_LOAD_TRIES, "3");
+        Config.setProperty("SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS", "200");
+
+        final long firstReadMillis = timeFailedRead(helper);
+        final long secondReadMillis = timeFailedRead(helper);
+
+        // First read: 200ms + 400ms of backoff across three attempts. Second: none.
+        assertTrue("the first read should retry with backoff, took " + firstReadMillis + "ms",
+                firstReadMillis >= 200);
+        assertTrue("a read after a known-persistent failure must not sleep again, took "
+                        + secondReadMillis + "ms", secondReadMillis < 200);
+
+        assertTrue("the store must still be intact", Files.exists(storePath));
+        assertEquals("and nothing may be backed up", 0, countBackups());
+    }
+
+    /** Times a read that is expected to fail, returning elapsed milliseconds. */
+    private long timeFailedRead(final SecretsKeyStoreHelper helper) {
+        final long start = System.currentTimeMillis();
+        try {
+            helper.getValue(CANARY_KEY);
+            fail("the truncated store must not read successfully");
+        } catch (DotRuntimeException expected) {
+            // expected
+        }
+        return System.currentTimeMillis() - start;
+    }
+
+    /**
      * Method to test: the retry-count floor in {@code loadSecretsStore}.
      * Given Scenario: SECRETS_STORE_LOAD_TRIES misconfigured to 0, with a perfectly readable store.
      * Expected Result: the secret still reads. Without a floor the loop never runs, no failure is

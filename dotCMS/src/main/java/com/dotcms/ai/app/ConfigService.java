@@ -86,8 +86,16 @@ public class ConfigService {
     }
 
     private Optional<AppSecrets> getAiSecrets(final Host host, final User systemUser) {
+        // getOrElse, not get(): Try.get() unwraps by RETHROWING the failure, so the Try was doing
+        // nothing here. That went unnoticed while an unreadable App secrets store silently wiped
+        // itself and returned no secrets; since issue #36724 it raises instead, and this method
+        // would have propagated that into dotAI's config resolution rather than reporting the app
+        // as unconfigured -- unlike every other consumer, which degrades.
         return Try
                 .of(() -> appsAPI.getSecrets(AppKeys.APP_KEY, false, host, systemUser))
-                .get();
+                .onFailure(e -> Logger.warnAndDebug(ConfigService.class,
+                        "Unable to read dotAI secrets; treating the app as unconfigured: "
+                                + e.getMessage(), e))
+                .getOrElse(Optional.empty());
     }
 }

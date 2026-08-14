@@ -111,6 +111,20 @@ public class SecretsKeyStoreHelper {
     private final AtomicLong lastLoadFailureReportAt = new AtomicLong(0);
 
     /**
+     * When this instance last exhausted its attempts and gave up, or 0 if the last read succeeded.
+     *
+     * Used to stop paying the retry backoff over and over for a failure already known to be
+     * persistent. The wrong-password case never retries -- an integrity failure is deterministic and
+     * breaks immediately -- but a truncated or zero-byte store raises an IOException with no
+     * UnrecoverableKeyException cause, which is indistinguishable from a torn read mid-write and so
+     * is retried. Verified against the JDK: a half-truncated store gives EOFException and a
+     * zero-byte one a bare IOException, neither with that cause. Now that a store is preserved
+     * rather than wiped and rebuilt, that state persists, and every read -- page render, login,
+     * content save -- would burn the full backoff (300ms at defaults) before degrading.
+     */
+    private final AtomicLong lastTerminalFailureAt = new AtomicLong(0);
+
+    /**
      * Whether the admin notification for an unreadable store has already been raised in this JVM.
      *
      * Separate from {@link #lastLoadFailureReportAt}, and deliberately a one-shot latch rather than
@@ -207,8 +221,13 @@ public class SecretsKeyStoreHelper {
         // intact store permanently unreadable on this node -- with a diagnosis pointing at a
         // password or corruption problem that does not exist. One attempt is the minimum that can
         // answer the question the method was asked.
-        final int maxLoadTries = Math.max(1,
+        final int configuredTries = Math.max(1,
                 Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 3));
+        // Retrying only helps a genuinely transient failure. If this instance already exhausted its
+        // attempts recently, the condition is persistent, so try once and degrade instead of
+        // sleeping through the backoff on every read. The window is the report interval: once it
+        // lapses the full retry budget returns, so a store that has since been fixed is picked up.
+        final int maxLoadTries = recentlyFailedTerminally() ? 1 : configuredTries;
         // Floored at zero: a negative backoff would make Thread.sleep throw
         // IllegalArgumentException, which is not an IOException and would escape the retry loop.
         final long backoffMillis = Math.max(0L,
@@ -222,6 +241,8 @@ public class SecretsKeyStoreHelper {
 
                 final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
                 keyStore.load(inputStream, passwordSupplier.get());
+
+                lastTerminalFailureAt.set(0);
 
                 if (tryCount > 1) {
                     Logger.info(SecretsKeyStoreHelper.class, String.format(
@@ -265,6 +286,12 @@ public class SecretsKeyStoreHelper {
             }
         }
 
+        // An interrupt says nothing about the store, so it must not suppress the retry budget for
+        // the next caller.
+        if (!interrupted) {
+            lastTerminalFailureAt.set(System.currentTimeMillis());
+        }
+
         return handleUnrecoverableLoad(lastFailure, allowRecreate, interrupted);
     }
 
@@ -279,6 +306,20 @@ public class SecretsKeyStoreHelper {
      */
     private static boolean isIntegrityFailure(final IOException e) {
         return null != e && e.getCause() instanceof UnrecoverableKeyException;
+    }
+
+    /**
+     * Whether this instance gave up on a read within the report interval, meaning the failure is
+     * already known to be persistent and retrying would only add latency.
+     */
+    private boolean recentlyFailedTerminally() {
+        final long last = lastTerminalFailureAt.get();
+        if (0 == last) {
+            return false;
+        }
+        final long interval = Config
+                .getLongProperty(SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS, 60000);
+        return System.currentTimeMillis() - last < interval;
     }
 
     /**
@@ -382,7 +423,14 @@ public class SecretsKeyStoreHelper {
                         () -> "App secrets store is still unreadable: " + diagnosis);
             }
 
-            notifyLoadFailureOnce();
+            // Not on the interrupted path. The notification latch is one-shot for the life of the
+            // JVM, so spending it here -- on a read that was abandoned, where the diagnosis above
+            // says the store may well be fine -- would silently suppress the notification for a
+            // genuinely unreadable store failing later in the same JVM. The throttled ERROR still
+            // fires either way, so the signal is not lost, only the one-time "go and look".
+            if (!interrupted) {
+                notifyLoadFailureOnce();
+            }
 
             throw new SecretsStoreUnreadableException(
                     "Unable to load the App secrets store: " + diagnosis, cause);
