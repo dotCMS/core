@@ -26,11 +26,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -327,8 +329,18 @@ public class SecretsKeyStoreHelper {
      * See {@link #LOAD_FAILURE_NOTIFIED}.
      */
     private void notifyLoadFailureOnce() {
-        if (LOAD_FAILURE_NOTIFIED.compareAndSet(false, true)) {
-            Try.run(this::sendFailureNotification);
+        // Claim the latch first so only one thread sends, then release it again if the send failed.
+        // Latching unconditionally would lose the notification for the life of the JVM whenever
+        // sendFailureNotification() throws -- and it is most likely to throw during exactly the
+        // outage that made the store unreadable, since it needs a role lookup and a database write.
+        // Releasing lets the next read try again; the throttled ERROR keeps reporting meanwhile.
+        if (LOAD_FAILURE_NOTIFIED.compareAndSet(false, true)
+                && Try.run(this::sendFailureNotification)
+                        .onFailure(e -> Logger.warnAndDebug(SecretsKeyStoreHelper.class,
+                                "Could not notify administrators that the App secrets store is"
+                                        + " unreadable; will retry on a later read: " + e.getMessage(), e))
+                        .isFailure()) {
+            LOAD_FAILURE_NOTIFIED.set(false);
         }
     }
 
@@ -526,6 +538,37 @@ public class SecretsKeyStoreHelper {
                             + " non-atomic replace. Concurrent readers on other nodes may observe a"
                             + " partial store on this filesystem.", destination), e);
             Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        syncDirectory(destination.toPath().getParent());
+    }
+
+    /**
+     * Flushes the directory entry created by the rename, so the new name survives a crash.
+     *
+     * The tmp file's own contents are fsynced before the move, but that only guarantees the bytes.
+     * Without this, a crash in the window right after the rename can leave the directory entry
+     * unpersisted and the store reverts to its previous version. That is a much smaller exposure
+     * than the bug this class was changed to fix -- the previous version is a complete, readable
+     * store, so what is lost is the most recent save rather than every credential -- and it is
+     * strictly better than the truncate-and-stream it replaced, which could leave a partial file.
+     * Given the goal is not to lose the store, it is worth closing.
+     *
+     * Never fatal. Opening a directory as a channel works on Linux and macOS (verified on both, JDK
+     * 25) but is not guaranteed across every filesystem, and a save that reached this point has
+     * already been published successfully.
+     */
+    private static void syncDirectory(final Path directory) {
+        if (null == directory) {
+            return;
+        }
+        try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
+            channel.force(true);
+        } catch (Exception e) {
+            Logger.debug(SecretsKeyStoreHelper.class, () -> String.format(
+                    "Could not flush the directory entry for '%s' (%s). The store is published; only"
+                            + " crash durability of the rename is affected.",
+                    directory, e.getMessage()));
         }
     }
 
