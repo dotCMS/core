@@ -122,6 +122,35 @@ public class SiteAuthValidatorTest {
 
     /**
      * Method to test: {@link SiteAuthValidator#validate(Object)}
+     * Given Scenario: the store failure as it actually arrives in production -- wrapped. The
+     * exception is raised deep in the store and several {@code catch (Exception e) { throw new
+     * DotRuntimeException(e); }} layers sit between there and this validator
+     * ({@code SecretsKeyStoreHelper.loadValueFromStore} being the one on this path), so what
+     * reaches the catch is a bare DotRuntimeException with the real cause underneath.
+     * Expected Result: still an ordinary validation failure. Matching only the thrown type never
+     * fires in production -- that mistake silently reinstated the raw-exception-on-the-request-path
+     * bug, and the earlier version of this test missed it by mocking the throw at the boundary
+     * instead of through the re-wrap.
+     */
+    @Test
+    public void test_unreadableStoreWrappedByIntermediateLayers_stillDegrades() throws Exception {
+        when(appsAPI.getSecrets(anyString(), anyBoolean(), any(Host.class), any()))
+                .thenThrow(new DotRuntimeException(new SecretsStoreUnreadableException(
+                        "Unable to load the App secrets store: the store could not be decrypted",
+                        new java.io.IOException("Integrity check failed"))));
+
+        try {
+            new SiteAuthValidator().validate("any-site-auth");
+            fail("a wrapped unreadable-store failure must fail validation");
+        } catch (AnalyticsValidator.AnalyticsValidationException e) {
+            assertEquals(ValidationErrorCode.INVALID_SITE_AUTH, e.getCode());
+        } catch (DotRuntimeException e) {
+            fail("the wrapped store failure must not escape onto the request path: " + e);
+        }
+    }
+
+    /**
+     * Method to test: {@link SiteAuthValidator#validate(Object)}
      * Given Scenario: an unrelated runtime failure -- a database blip or cache error, which dotCMS
      * surfaces as a plain DotRuntimeException.
      * Expected Result: it propagates. The catch names SecretsStoreUnreadableException specifically

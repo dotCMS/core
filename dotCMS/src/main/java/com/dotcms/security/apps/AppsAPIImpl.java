@@ -12,6 +12,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static java.util.Collections.emptyMap;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -423,37 +424,36 @@ public class AppsAPIImpl implements AppsAPI {
         return siteIdentifiers.stream().filter(id -> {
             try {
                 return hasAnySecrets(key, id, user);
-            } catch (DotDataException | DotSecurityException | SecretsStoreUnreadableException e) {
-                // SecretsStoreUnreadableException is the addition, and deliberately that exact type
-                // rather than DotRuntimeException or Exception.
-                // This method's contract is already "if the secrets cannot be determined for this
-                // site, treat it as having none" -- it logs and returns false. Since issue #36724 the
-                // secrets store raises a DotRuntimeException when it cannot be read rather than
-                // silently wiping itself, and that slipped past the narrower catch: it escaped
-                // EMAWebInterceptor.intercept(), which the interceptor chain does not guard, turning
-                // an unreadable store into a 500 on every /api/* request. Every caller here
-                // (EMA, InitRunner, the Apps portlet counts, telemetry, SAML) expects a set, not a
-                // throw.
-                //
-                // One consequence is deliberate and worth knowing: against an unreadable store the
-                // Apps portlet LIST shows every app as 0 configurations, while opening an app's
-                // DETAIL still raises, because getSecrets() is not swallowed. The list is a
-                // best-effort count and the detail view is authoritative. The split cannot be
-                // closed from this side -- this same method is called by EMAWebInterceptor on every
-                // /api/* request, so raising here returns a 500 for the whole API. Surfacing the
-                // condition in the list needs its own signal path alongside AppDescriptorLoadError;
-                // tracked in issue #37061.
-                // Note the old wipe-then-recreate behaviour also reported 0, so this is not a
-                // regression.
-                //
-                // Deliberately these three types. Not Exception, because a genuine programming
-                // error -- an NPE inside hasAnySecrets, say -- should surface rather than hide as a
-                // wrong configuration count on a path this hot. And not DotRuntimeException either:
-                // that is dotCMS's general-purpose unchecked wrapper, so database blips and cache
-                // failures surface as one, and swallowing those here would report "0
-                // configurations" for what is really a transient infrastructure problem.
+            } catch (DotDataException | DotSecurityException e) {
+                // Pre-existing behaviour: this method's contract is "if the secrets for this site
+                // cannot be determined, treat it as having none".
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error getting secret from `%s` ", key), e);
+            } catch (DotRuntimeException e) {
+                // Since issue #36724 an unreadable store raises instead of silently wiping itself.
+                // That must degrade here: EMAWebInterceptor reaches this method on every /api/*
+                // request and the interceptor chain does not guard it, so raising returns a 500 for
+                // the whole API.
+                //
+                // Matched on the CAUSE CHAIN rather than the thrown type. SecretsStoreUnreadableException
+                // does not survive the journey: there are nine `catch (Exception e) { throw new
+                // DotRuntimeException(e); }` re-wraps between where it is raised and here --
+                // SecretCachedKeyStoreImpl.containsKey is the one on this path -- so catching the
+                // specific type alone never matches in production. Matching the chain is robust to
+                // however many layers re-wrap it, and to a tenth being added later.
+                if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                    // A database blip, a cache failure, a programming error. Those stay loud rather
+                    // than reading as "0 configurations".
+                    throw e;
+                }
+                // Deliberate consequence: against an unreadable store the Apps portlet LIST reports
+                // 0 configurations while opening an app's DETAIL raises, because getSecrets() is not
+                // swallowed. The list is a best-effort count, the detail view authoritative. It
+                // cannot be closed from here for the /api/* reason above; giving the list its own
+                // signal is tracked in issue #37061. The old wipe-then-recreate also reported 0, so
+                // this is not a regression.
+                Logger.error(AppsAPIImpl.class,
+                        String.format("App secrets store is unreadable; reporting no secrets for `%s` ", key), e);
             }
             return false;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
