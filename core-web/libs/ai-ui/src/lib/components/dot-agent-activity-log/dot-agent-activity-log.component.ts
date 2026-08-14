@@ -107,24 +107,47 @@ export class DotAgentActivityLogComponent {
                 return;
             }
             const scroller = this.#scrollParent(this.#host.nativeElement);
-            // Measured BEFORE the write, or the comparison is against the value we are
-            // about to set and every check trivially passes.
-            if (scroller && this.#isPinnedToBottom(scroller)) {
+            if (!scroller) {
+                return;
+            }
+            if (this.#wasPinnedToBottom(scroller)) {
                 scroller.scrollTop = scroller.scrollHeight;
             }
+            this.#lastScroller = scroller;
+            this.#lastScrollHeight = scroller.scrollHeight;
         });
     }
 
     /**
-     * Whether the scroller is at (or within a hair of) the bottom.
+     * The scroller and the height it had at the end of the last run — together, the
+     * yardstick for "was the user at the bottom before this render appended anything".
+     */
+    #lastScroller: HTMLElement | null = null;
+    #lastScrollHeight = 0;
+
+    /**
+     * Whether the scroller was at (or within a hair of) the bottom BEFORE this render.
      *
-     * The tolerance absorbs fractional layout heights and the partially-rendered row that
-     * is normally in flight while content streams in — without it, sub-pixel rounding
+     * Measured against the height recorded at the end of the previous run, NOT the
+     * current one. This effect runs after the new bubble is laid out, so by the time we
+     * look, `scrollHeight` already includes it and the live distance-from-bottom is just
+     * the new row's own height — which for any settled step row (a 30px icon chip plus
+     * padding) clears the tolerance. Judging that as "the user scrolled away" silently
+     * ended auto-follow for the rest of the run the first time the log overflowed.
+     *
+     * `scrollTop` and `clientHeight` don't move when content is appended below them, so
+     * the previous height is all it takes to reconstruct the pre-render distance.
+     *
+     * The tolerance absorbs fractional layout heights — without it, sub-pixel rounding
      * alone would read as "the user scrolled away" and auto-scroll would stop for good.
      */
-    #isPinnedToBottom(scroller: HTMLElement): boolean {
-        const distanceFromBottom =
-            scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    #wasPinnedToBottom(scroller: HTMLElement): boolean {
+        // First sight of this scroller: nothing has been appended yet, so judge it as it
+        // stands. A log already overflowing on mount stays put — scrolling it down would
+        // yank a finished run's pane past the score widget it opens on.
+        const previousHeight =
+            scroller === this.#lastScroller ? this.#lastScrollHeight : scroller.scrollHeight;
+        const distanceFromBottom = previousHeight - scroller.scrollTop - scroller.clientHeight;
 
         return distanceFromBottom <= PINNED_TO_BOTTOM_TOLERANCE_PX;
     }

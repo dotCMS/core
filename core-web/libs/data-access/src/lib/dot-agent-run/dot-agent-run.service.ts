@@ -103,6 +103,15 @@ export class DotAgentRunService {
                             buffer += decoder.decode(chunk.value, { stream: true });
                         }
 
+                        // SSE allows CR LF line endings, and a `\r\n\r\n` delimiter would
+                        // never match the search below — the whole body would buffer to
+                        // the end and reach #parseFrame as one blob that fails to parse,
+                        // leaving a finished run looking hung. Normalising the WHOLE
+                        // buffer (not just this chunk) also catches a CR LF pair split
+                        // across two reads. Raw newlines are invalid inside JSON strings,
+                        // so this can never touch payload content.
+                        buffer = buffer.replace(/\r\n/g, '\n');
+
                         let delimiter = buffer.indexOf('\n\n');
                         while (delimiter !== -1) {
                             const frame = buffer.slice(0, delimiter);

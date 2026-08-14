@@ -55,11 +55,35 @@ describe('DotAgentActivityLogComponent', () => {
                         ? { overflowY: 'auto' }
                         : { overflowY: 'visible' }) as CSSStyleDeclaration
             );
-            Object.defineProperty(host, 'scrollHeight', { value: 1000, configurable: true });
-            Object.defineProperty(host, 'clientHeight', { value: 400, configurable: true });
+            // Writable, because a new bubble makes the real scroller taller — the case
+            // that matters here (see `growBy`).
+            let scrollHeight = 1000;
+            const clientHeight = 400;
+            Object.defineProperty(host, 'scrollHeight', {
+                get: () => scrollHeight,
+                configurable: true
+            });
+            Object.defineProperty(host, 'clientHeight', { value: clientHeight, configurable: true });
+
+            // Browsers clamp scrollTop to the largest scrollable offset; jsdom stores
+            // whatever it is handed. That difference matters: the component pins by
+            // assigning the full `scrollHeight`, so without clamping every later
+            // measurement sits impossibly far past the bottom and reads as pinned no
+            // matter what — hiding exactly the staleness this suite needs to catch.
+            let scrollTopValue = 0;
+            Object.defineProperty(host, 'scrollTop', {
+                get: () => scrollTopValue,
+                set: (value: number) => {
+                    scrollTopValue = Math.max(0, Math.min(value, scrollHeight - clientHeight));
+                },
+                configurable: true
+            });
             host.scrollTop = scrollTop;
 
-            return host;
+            return Object.assign(host, {
+                /** Stand in for a newly appended bubble growing the scroller. */
+                growBy: (px: number) => (scrollHeight += px)
+            });
         }
 
         afterEach(() => {
@@ -71,7 +95,9 @@ describe('DotAgentActivityLogComponent', () => {
             spectator.setInput('messages', MESSAGES);
             flushRender();
 
-            expect(host.scrollTop).toBe(1000);
+            // Pinned by assigning scrollHeight; the browser clamps that to the largest
+            // scrollable offset (1000 - 400).
+            expect(host.scrollTop).toBe(600);
         });
 
         it('leaves the scroll alone once the user has scrolled up', () => {
@@ -90,7 +116,41 @@ describe('DotAgentActivityLogComponent', () => {
             spectator.setInput('messages', MESSAGES);
             flushRender();
 
-            expect(host.scrollTop).toBe(1000);
+            expect(host.scrollTop).toBe(600);
+        });
+
+        it('keeps following when the new bubble is taller than the tolerance', () => {
+            // The row that just landed is what pushed the bottom away, so by the time
+            // this effect runs the live distance IS the row's height — and a settled
+            // step row (30px icon chip + padding) clears the 32px tolerance every time.
+            // Measuring it live ended auto-follow for the rest of the run the first time
+            // the log overflowed; the pre-render height is the thing to judge.
+            const host = makeScrollable({ scrollTop: 600 }); // at the bottom of 1000
+            spectator.setInput('messages', MESSAGES);
+            flushRender();
+            expect(host.scrollTop).toBe(600);
+
+            // A 60px bubble arrives: the user hasn't moved, so following must continue.
+            host.growBy(60);
+            spectator.setInput('messages', [...MESSAGES, { id: 99, icon: '', text: 'next' }]);
+            flushRender();
+
+            expect(host.scrollTop).toBe(660);
+        });
+
+        it('still lets go when the user scrolls up between bubbles', () => {
+            // The mirror of the above: growth must not be mistaken for the user having
+            // scrolled away, and scrolling away must still be honoured.
+            const host = makeScrollable({ scrollTop: 600 });
+            spectator.setInput('messages', MESSAGES);
+            flushRender();
+
+            host.scrollTop = 200; // reads something further up
+            host.growBy(60);
+            spectator.setInput('messages', [...MESSAGES, { id: 99, icon: '', text: 'next' }]);
+            flushRender();
+
+            expect(host.scrollTop).toBe(200);
         });
 
         it('does not re-pin for a working-text change alone', () => {

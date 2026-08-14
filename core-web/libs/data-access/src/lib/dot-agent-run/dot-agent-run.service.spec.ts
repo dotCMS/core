@@ -119,6 +119,27 @@ describe('DotAgentRunService', () => {
             ]);
         });
 
+        it('parses CR LF frames, including a pair split across two reads', async () => {
+            // SSE permits CR LF. A delimiter search for "\n\n" alone never matches one,
+            // so the whole body buffers to the end and arrives as a single unparseable
+            // blob — a finished run that looks hung, with only a console warning.
+            fetchMock.mockResolvedValue(
+                mockSseResponse([
+                    'event: step\r\ndata: {"message":"Scanning page"}\r\n\r',
+                    '\nevent: done\r\ndata: {"total":1}\r\n\r\n'
+                ])
+            );
+
+            const events = await firstValueFrom(
+                service.run<DemoResult>('/api/v1/agent/demo/stream', { id: 'x' }).pipe(toArray())
+            );
+
+            expect(events).toEqual<AgentStreamEvent<DemoResult>[]>([
+                { type: 'step', step: { message: 'Scanning page' } },
+                { type: 'done', result: { total: 1 } }
+            ]);
+        });
+
         it('maps a phase event to a phase-typed step (message split from meta)', async () => {
             fetchMock.mockResolvedValue(
                 mockSseResponse([
