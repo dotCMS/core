@@ -293,6 +293,20 @@ public class SecretsKeyStoreHelper {
     }
 
     /**
+     * Clears the notification latch. Tests only.
+     *
+     * The latch is static and never resets in production, deliberately -- see
+     * {@link #LOAD_FAILURE_NOTIFIED}. Within one Surefire fork that means it stays set once any test
+     * trips it, so without this a test could only ever assert {@code true}, and asserting the
+     * false-to-true transition or "not notified yet" would silently depend on which siblings ran
+     * first. Call it in setup rather than teardown, so a test is unaffected by whatever ran before.
+     */
+    @VisibleForTesting
+    static void resetNotifiedLoadFailureLatch() {
+        LOAD_FAILURE_NOTIFIED.set(false);
+    }
+
+    /**
      * Whether the ERROR for an unreadable store should be logged now, rate-limited to one per
      * {@link #SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS}. The first failure always logs.
      *

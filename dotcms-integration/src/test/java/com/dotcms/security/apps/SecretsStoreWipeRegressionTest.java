@@ -69,6 +69,11 @@ public class SecretsStoreWipeRegressionTest {
         Config.setProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, storePath.toString());
         // Keep the retry budget small so a deliberately unreadable store fails fast.
         Config.setProperty(SECRETS_STORE_LOAD_TRIES, "2");
+
+        // The notification latch is static and never resets in production, so within one Surefire
+        // fork it stays set once any test trips it. Clearing it here makes the transition assertion
+        // below independent of whichever sibling test ran first.
+        SecretsKeyStoreHelper.resetNotifiedLoadFailureLatch();
     }
 
     @After
@@ -255,6 +260,9 @@ public class SecretsStoreWipeRegressionTest {
      */
     @Test
     public void test_repeatedLoadFailures_areReportedOnceButAlwaysRaise() throws Exception {
+        assertFalse("setUp cleared the latch, so this test can assert the transition",
+                SecretsKeyStoreHelper.hasNotifiedLoadFailure());
+
         final SecretsKeyStoreHelper nodeA = helperWithPassword(PASSWORD_A);
         nodeA.saveValue(CANARY_KEY, CANARY_VALUE.toCharArray());
 
