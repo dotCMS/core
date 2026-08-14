@@ -23,7 +23,28 @@ import { WORKFLOW_ACTION_ID } from './workflow-actions';
 /** Not a `SystemAction`; not fired through workflow endpoints. */
 export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
 
-export type DotActionCenterQuickActionId = WORKFLOW_ACTION_ID | typeof ADD_TO_BUNDLE_ACTION_ID;
+/**
+ * Push Publish over the selection — the old search toolbar's own bulk action, not a `SystemAction`.
+ *
+ * Placeholder: rendered but not wired. Push publishing needs an environment, a filter and a schedule
+ * collected before it can fire, which is a configuration step this dialog does not have for a *quick*
+ * action yet (the workflow-action path already has one, via `DotWorkflowPushPublishComponent`).
+ */
+export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
+
+/**
+ * Reindex the selection — the old search toolbar's "Refresh", backed by `_bulkrefresh`.
+ *
+ * Placeholder: rendered but not wired. The endpoint streams progress over SSE and is not job-backed,
+ * so it cannot reuse the synchronous `bulkFire` path the other quick actions run on.
+ */
+export const REFRESH_ACTION_ID = 'REFRESH';
+
+export type DotActionCenterQuickActionId =
+    | WORKFLOW_ACTION_ID
+    | typeof ADD_TO_BUNDLE_ACTION_ID
+    | typeof PUSH_PUBLISH_ACTION_ID
+    | typeof REFRESH_ACTION_ID;
 
 /** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {
@@ -50,6 +71,14 @@ export interface DotActionCenterQuickAction {
     warningCount: number;
     /** i18n key for {@link warningCount}. Absent when count is `0`. */
     warningHint?: string;
+    /**
+     * Shown, disabled, and not yet wired to anything.
+     *
+     * Deliberately rendered rather than hidden: these are actions the old search toolbar offers, and
+     * leaving them out of the list makes Content Drive look like it dropped them instead of not having
+     * reached them yet. Disabled with a tooltip is the honest state.
+     */
+    comingSoon: boolean;
 }
 
 /** Caller state predicates need beyond row data. */
@@ -82,6 +111,8 @@ interface DotActionCenterQuickActionDef {
     warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
     warningHint?: string;
+    /** Rendered but disabled — see {@link DotActionCenterQuickAction.comingSoon}. */
+    comingSoon?: boolean;
 }
 
 /**
@@ -102,14 +133,25 @@ export const isLockedByAnotherUser = (
 /**
  * Quick actions in display order (fixed — rows never reshuffle).
  *
- * Order: Lock, Unlock, Publish, Unpublish, Archive, Delete, Unarchive, Add to Bundle.
+ * Order: Lock, Unlock, Add to Bundle, Push Publish, Refresh.
  *
- * All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`; Add to
- * Bundle posts to the legacy bundle servlet and collects a target first.
+ * **Scope: the old search toolbar's bulk operations, and only those.** Publish, Unpublish, Archive,
+ * Unarchive and Delete used to sit here as well, fired through
+ * `POST .../workflow/actions/default/fire/{systemAction}`. They were removed because the Workflow
+ * Actions section below already offers them — as the *scheme's own* actions, which is the accurate
+ * answer for a contentlet whose scheme maps `PUBLISH` to something other than a plain publish. Two
+ * rows labelled "Publish" that resolve differently is worse than one that resolves correctly.
+ *
+ * What is left is what the old search offered outside the workflow dropdown: Lock and Unlock (per-user
+ * state, no workflow transition, so they have no scheme action to defer to), Add to Bundle, Push
+ * Publish and Refresh.
+ *
+ * Lock/Unlock fire through the system-action endpoint; Add to Bundle posts to the legacy bundle
+ * servlet and collects a target first. Push Publish and Refresh are placeholders — see
+ * {@link DotActionCenterQuickAction.comingSoon}.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
-        // Least destructive; sit away from Archive/Delete.
         id: WORKFLOW_ACTION_ID.LOCK,
         nameKey: 'content-drive.context-menu.lock',
         icon: 'lock',
@@ -129,44 +171,6 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
     },
     {
-        id: WORKFLOW_ACTION_ID.PUBLISH,
-        nameKey: 'Default-Action-Publish',
-        icon: 'publish',
-        danger: false,
-        eligibleWhen: (item) => !item.live && !item.archived
-    },
-    {
-        id: WORKFLOW_ACTION_ID.UNPUBLISH,
-        nameKey: 'Default-Action-Unpublish',
-        icon: 'visibility_off',
-        danger: false,
-        eligibleWhen: (item) => !!item.live && !item.archived
-    },
-    {
-        id: WORKFLOW_ACTION_ID.ARCHIVE,
-        nameKey: 'Default-Action-Archive',
-        icon: 'archive',
-        danger: true,
-        eligibleWhen: (item) => !item.archived
-    },
-    {
-        id: WORKFLOW_ACTION_ID.DELETE,
-        nameKey: 'Default-Action-Delete',
-        icon: 'delete',
-        danger: true,
-        eligibleWhen: (item) => !!item.archived,
-        // Kept from the old toolbar Delete confirm.
-        confirmMessage: 'content.drive.worflow.action.delete.confirm'
-    },
-    {
-        // After Delete so archived-only actions stay together.
-        id: WORKFLOW_ACTION_ID.UNARCHIVE,
-        nameKey: 'Default-Action-Unarchive',
-        icon: 'unarchive',
-        danger: false,
-        eligibleWhen: (item) => !!item.archived
-    },
-    {
         id: ADD_TO_BUNDLE_ACTION_ID,
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
@@ -175,6 +179,25 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // Publish or Unarchive. Coverage is the whole selection, minus the identifier collapse the
         // configuration step explains.
         eligibleWhen: () => true
+    },
+    {
+        id: PUSH_PUBLISH_ACTION_ID,
+        nameKey: 'Remote-Publish',
+        icon: 'cloud_upload',
+        danger: false,
+        // Counted over the whole selection rather than left at zero: the row is disabled by
+        // `comingSoon`, and a `0` would read as "does not apply to these items", which is a
+        // different and untrue statement.
+        eligibleWhen: () => true,
+        comingSoon: true
+    },
+    {
+        id: REFRESH_ACTION_ID,
+        nameKey: 'Refresh',
+        icon: 'refresh',
+        danger: false,
+        eligibleWhen: () => true,
+        comingSoon: true
     }
 ];
 
@@ -234,7 +257,8 @@ export const getQuickActions = (
             count: eligibleInodes.length,
             confirmMessage: quickAction.confirmMessage,
             warningCount,
-            warningHint: warningCount > 0 ? quickAction.warningHint : undefined
+            warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
+            comingSoon: !!quickAction.comingSoon
         };
     });
 };

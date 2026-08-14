@@ -560,8 +560,17 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         return !!selectedId && scheme.actions.some((action) => action.id === selectedId);
     }
 
-    /** Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears. */
+    /**
+     * Hint shown on a quick action row. Empty for a row that can be used, so no tooltip appears.
+     *
+     * `comingSoon` is checked first: those rows are disabled whatever their count says, so "not
+     * applicable" would explain the wrong thing about them.
+     */
     protected quickActionHint(quickAction: DotActionCenterQuickAction): string {
+        if (quickAction.comingSoon) {
+            return 'content-drive.action-center.coming-soon';
+        }
+
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -575,7 +584,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        if (!quickAction.count) {
+        // Guarded here as well as by the disabled row: a placeholder has no preview to open and no
+        // execution path behind it, so a stray call must not reach the preview screen.
+        if (!quickAction.count || quickAction.comingSoon) {
             return;
         }
 
