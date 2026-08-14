@@ -452,8 +452,20 @@ public class AppsAPIImpl implements AppsAPI {
                 // cannot be closed from here for the /api/* reason above; giving the list its own
                 // signal is tracked in issue #37061. The old wipe-then-recreate also reported 0, so
                 // this is not a regression.
-                Logger.error(AppsAPIImpl.class,
-                        String.format("App secrets store is unreadable; reporting no secrets for `%s` ", key), e);
+                // debug, not error, and deliberately so. This fires once per site per call, and
+                // EMAWebInterceptor.existsConfiguration reaches this method on every /api/* request
+                // -- measured at 32 ERROR lines from 16 requests on a two-site instance. Because the
+                // condition persists until an operator fixes it, logging at ERROR here reproduces
+                // exactly the flood this PR throttles inside the helper: an actionable message
+                // repeated thousands of times stops being actionable.
+                //
+                // Nothing is lost. SecretsKeyStoreHelper.handleUnrecoverableLoad already logs the
+                // one ERROR that carries the diagnosis and the remediation, rate-limited to one per
+                // SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS. This line only restated that a
+                // particular app is being reported as unconfigured, which adds no new information.
+                Logger.debug(AppsAPIImpl.class, () -> String.format(
+                        "App secrets store is unreadable; reporting no secrets for `%s`: %s",
+                        key, e.getMessage()));
             }
             return false;
         }).collect(Collectors.toCollection(LinkedHashSet::new));

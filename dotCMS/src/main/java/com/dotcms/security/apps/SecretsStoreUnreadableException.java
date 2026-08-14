@@ -18,8 +18,14 @@ import com.dotmarketing.exception.DotRuntimeException;
  *
  * Extends {@link DotRuntimeException} so existing handlers, and the write paths that must never
  * overwrite a store they could not read, keep working unchanged. See issue #36724.
+ *
+ * {@code final} on purpose. Both callers recognise this condition with
+ * {@code ExceptionUtil.causedBy}, which matches on {@code getClass().equals(...)} rather than
+ * {@code isInstance}, so a subclass would silently stop matching -- and silently restore the 500 on
+ * every {@code /api/*} request. Sealing the type makes the exact-class comparison correct by
+ * construction instead of by convention.
  */
-public class SecretsStoreUnreadableException extends DotRuntimeException {
+public final class SecretsStoreUnreadableException extends DotRuntimeException {
 
     public SecretsStoreUnreadableException(final String message, final Throwable cause) {
         super(message, cause);
