@@ -99,6 +99,15 @@ export const LISTBOX_SCROLL_HEIGHT = '320px';
 /** Idle time before a search term is applied, in ms. */
 export const SEARCH_DEBOUNCE_MS = 300;
 
+/** Mount point of the portlet. Absolute, since the list is always at the root of it. */
+export const EXPERIMENTS_URL = '/experiments';
+
+/** Segment the Configure screen is reached at while the experiment does not exist yet. */
+export const NEW_EXPERIMENT_SEGMENT = 'new';
+
+/** Trailing segment of the Configure URL of an experiment that already exists. */
+export const CONFIGURATION_SEGMENT = 'configuration';
+
 /**
  * Multiplier applied to the page-lookup limit.
  *

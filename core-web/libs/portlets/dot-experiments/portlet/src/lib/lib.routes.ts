@@ -4,11 +4,7 @@ import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
-/** Segment the Configure screen is reached at while the experiment does not exist yet. */
-const NEW_EXPERIMENT_SEGMENT = 'new';
-
-/** Trailing segment of the Configure URL of an experiment that already exists. */
-const CONFIGURATION_SEGMENT = 'configuration';
+import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from './shared/constants';
 
 /**
  * Matches the two URLs the Configure screen answers on: `new` and `:experimentId/configuration`.
