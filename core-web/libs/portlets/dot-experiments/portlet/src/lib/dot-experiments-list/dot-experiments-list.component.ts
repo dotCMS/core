@@ -55,7 +55,10 @@ import {
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
 import {
+    CONFIGURATION_SEGMENT,
+    EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
+    NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
@@ -82,17 +85,14 @@ import {
     variantsCount
 } from '../util/dot-experiments-list.util';
 
-/** Mount point of the portlet. Absolute, since the list is always at the root of it. */
-const EXPERIMENTS_URL = '/experiments';
-
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
-const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, 'new'];
+const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
 
 /** Configure URL of an experiment that already exists. */
 const configureCommandsOf = (experimentId: string): string[] => [
     EXPERIMENTS_URL,
     experimentId,
-    'configuration'
+    CONFIGURATION_SEGMENT
 ];
 
 @Component({

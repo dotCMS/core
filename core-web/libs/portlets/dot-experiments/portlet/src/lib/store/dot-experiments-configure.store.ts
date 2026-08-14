@@ -49,7 +49,7 @@ import {
     dotExperimentsConfigurePageEvents
 } from './dot-experiments-configure-page.events';
 
-import { AUTOSAVE_DEBOUNCE_MS } from '../shared/constants';
+import { AUTOSAVE_DEBOUNCE_MS, CONFIGURATION_SEGMENT } from '../shared/constants';
 import {
     ConfigureValidationRule,
     DotExperimentConfigurePage,
@@ -1007,7 +1007,7 @@ export const DotExperimentsConfigureStore = signalStore(
                 createdSubscription = events
                     .on(dotExperimentsConfigureApiEvents.createSucceeded)
                     .subscribe(({ payload }) => {
-                        router.navigate(['..', payload.id, 'configuration'], {
+                        router.navigate(['..', payload.id, CONFIGURATION_SEGMENT], {
                             relativeTo: route,
                             replaceUrl: true
                         });
