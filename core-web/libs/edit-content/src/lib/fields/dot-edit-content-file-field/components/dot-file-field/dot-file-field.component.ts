@@ -170,6 +170,15 @@ export class DotFileFieldComponent
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * True from the moment "Select Existing File" is clicked until the picker closes.
+     *
+     * `#dialogRef` cannot serve as this guard: it is shared with the other three dialogs this
+     * component opens and is never reset on close, so checking it would block the picker forever
+     * after any of them ran. See `showSelectExistingFileDialog`.
+     */
+    #assetPickerPending = false;
     /**
      * DotCMS Content Type Field
      *
@@ -837,9 +846,14 @@ export class DotFileFieldComponent
      * @memberof DotEditContentFileFieldComponent
      */
     showSelectExistingFileDialog() {
-        if (this.$isDisabled()) {
+        if (this.$isDisabled() || this.#assetPickerPending) {
             return;
         }
+
+        // The site lookup is what makes opening asynchronous, so `#dialogRef` alone is not a
+        // sufficient guard — it is still null while the request is in flight, and a second click
+        // would sail past it and stack a second dialog whose `onClose` stays live but unreachable.
+        this.#assetPickerPending = true;
 
         this.#siteService
             .getCurrentSite()
@@ -848,12 +862,17 @@ export class DotFileFieldComponent
                 next: (site) => {
                     // Opening a picker that can't browse anything is worse than not opening it.
                     if (site) {
+                        // Stays set until the dialog closes, so the open picker blocks a re-entry too.
                         this.#openAssetPicker(site);
+
+                        return;
                     }
+
+                    this.#assetPickerPending = false;
                 },
                 // Nothing to browse and nothing to say beyond that — the picker simply doesn't open.
                 error: () => {
-                    /* noop */
+                    this.#assetPickerPending = false;
                 }
             });
     }
@@ -878,16 +897,17 @@ export class DotFileFieldComponent
             )
         );
 
-        // Unchanged from the browser-selector era: both dialogs close with the same hydrated
-        // contentlet, so everything downstream of here keeps working as-is.
-        this.#dialogRef.onClose
-            .pipe(
-                filter((file) => !!file),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((file) => {
+        // Not filtered on a truthy file: the guard has to be released on *every* close, cancel
+        // included, or the button is dead for the rest of the session.
+        this.#dialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((file) => {
+            this.#assetPickerPending = false;
+
+            // Unchanged from the browser-selector era: both dialogs close with the same hydrated
+            // contentlet, so everything downstream of here keeps working as-is.
+            if (file) {
                 this.store.setPreviewFile({ source: 'contentlet', file });
-            });
+            }
+        });
     }
 
     /**

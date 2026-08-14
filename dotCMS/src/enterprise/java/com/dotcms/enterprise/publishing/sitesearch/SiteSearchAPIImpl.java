@@ -260,6 +260,8 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     public Optional<String> defaultIndexName() throws DotDataException {
         try {
             return router.readChecked(SiteSearchAPI::defaultIndexName);
+        } catch (DotDataException e) {
+            throw e;
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }

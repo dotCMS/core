@@ -1,5 +1,5 @@
 import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -778,6 +778,67 @@ describe('DotFileFieldComponent', () => {
                 spectator.component.showSelectExistingFileDialog();
 
                 expect(spyOpen).not.toHaveBeenCalled();
+            });
+
+            it('should not stack a second picker while the site lookup is still in flight', () => {
+                // The site lookup is what makes opening asynchronous. `#dialogRef` is still null
+                // while it runs, so without a pending flag a double click opens two dialogs — and
+                // only the second is reachable, leaving the first live and able to write a value.
+                const site$ = new Subject<DotSite>();
+                setup(FILE_FIELD_MOCK);
+                (spectator.inject(DotSiteService).getCurrentSite as jest.Mock).mockReturnValue(
+                    site$.asObservable()
+                );
+                spectator.detectChanges();
+
+                const spyOpen = jest
+                    .spyOn(spectator.inject(DialogService, true), 'open')
+                    .mockReturnValue({
+                        onClose: of(undefined),
+                        close: jest.fn()
+                    } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showSelectExistingFileDialog();
+                site$.next(SITE_MOCK);
+
+                expect(spyOpen).toHaveBeenCalledTimes(1);
+            });
+
+            it('should open again after the picker closed', () => {
+                setup(FILE_FIELD_MOCK);
+                setSite(SITE_MOCK);
+                spectator.detectChanges();
+
+                // Released on cancel too, or the button is dead for the rest of the session.
+                const spyOpen = jest
+                    .spyOn(spectator.inject(DialogService, true), 'open')
+                    .mockReturnValue({
+                        onClose: of(undefined),
+                        close: jest.fn()
+                    } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spyOpen).toHaveBeenCalledTimes(2);
+            });
+
+            it('should allow a retry after the site lookup failed', () => {
+                setup(FILE_FIELD_MOCK);
+                const siteService = spectator.inject(DotSiteService);
+                const getCurrentSite = siteService.getCurrentSite as jest.Mock;
+                getCurrentSite.mockReturnValue(throwError(() => new Error('no site')));
+                spectator.detectChanges();
+
+                // The mock is shared across this file's tests, so only calls from here on count.
+                getCurrentSite.mockClear();
+
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showSelectExistingFileDialog();
+
+                // The guard has to be released on error too, or the button dies for the session.
+                expect(getCurrentSite).toHaveBeenCalledTimes(2);
             });
         });
 
