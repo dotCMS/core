@@ -1,17 +1,26 @@
 import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
+
+import { signal } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotAssetSearchDialogComponent } from '@dotcms/ui';
+import {
+    DotMessageService,
+    DotPropertiesService,
+    DotSiteService,
+    DotUploadFileService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
+import { DotAssetPickerComponent } from '@dotcms/ui';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin.service';
 import { formatDotImageNode } from './utils/editor.utils';
+
+import { DotEditContentStore } from '../../../store/edit-content.store';
 
 /**
  * This Mock is used to check we are sending the correct configuration to the editor
@@ -56,6 +65,21 @@ class MockEditor {
 
 const MOCK_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
 
+const SITE: DotSite = {
+    identifier: 'site-1',
+    hostname: 'dotcms.com',
+    aliases: null,
+    archived: false
+};
+
+const LOCALE_ID = 2;
+
+/**
+ * Swapped per test so the site lookup can be resolved, deferred or failed. Read lazily by the mock
+ * because `currentSite$` defers the call until the first picker opens.
+ */
+let siteSource: Observable<DotSite>;
+
 describe('DotWysiwygPluginService', () => {
     let spectator: SpectatorService<DotWysiwygPluginService>;
     let dialogService: DialogService;
@@ -71,7 +95,7 @@ describe('DotWysiwygPluginService', () => {
 
     const createService = createServiceFactory({
         service: DotWysiwygPluginService,
-        declarations: [MockComponent(DotAssetSearchDialogComponent)],
+        declarations: [MockComponent(DotAssetPickerComponent)],
         providers: [
             DialogService,
             {
@@ -85,17 +109,40 @@ describe('DotWysiwygPluginService', () => {
                 useValue: {
                     publishContent: jest.fn()
                 }
+            },
+            {
+                provide: DotSiteService,
+                useValue: { getCurrentSite: jest.fn(() => siteSource) }
+            },
+            {
+                provide: DotMessageService,
+                useValue: { get: jest.fn((key: string) => key) }
+            },
+            {
+                provide: DotEditContentStore,
+                useValue: { currentLocale: signal({ id: LOCALE_ID }) }
             }
         ]
     });
 
     beforeEach(() => {
+        // The `useValue` mocks are one object shared by every `createService()` in this file, so call
+        // counts accumulate across tests unless they are cleared first. Before the service is built,
+        // since its constructor is itself a call worth counting.
+        jest.clearAllMocks();
+        siteSource = of(SITE);
         spectator = createService();
         dialogService = spectator.inject(DialogService);
         dotUploadFileService = spectator.inject(DotUploadFileService);
         dotPropertiesService = spectator.inject(DotPropertiesService);
         editor = new MockEditor();
     });
+
+    /** Clicks the toolbar button the plugin registers. */
+    const clickAddImage = () => {
+        spectator.service.initializePlugins(editor);
+        editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
+    };
 
     it('should request the image URL pattern', () => {
         expect(dotPropertiesService.getKey).toHaveBeenCalledWith('WYSIWYG_IMAGE_URL_PATTERN');
@@ -115,33 +162,29 @@ describe('DotWysiwygPluginService', () => {
             });
         });
 
-        it('should open the dialog when the button is clicked', () => {
+        it('should open the shared asset picker when the button is clicked', () => {
             const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(EMPTY_CONTENTLET)
             } as DynamicDialogRef);
 
             const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
 
-            spectator.service.initializePlugins(editor);
+            clickAddImage();
 
-            const button = editor.ui.registry.getAll().buttons['dotAddImage'];
-            const dialogConfig = {
-                header: 'Insert Image',
-                width: '800px',
-                height: '500px',
-                contentStyle: { padding: 0 },
-                closable: true,
-                closeOnEscape: true,
-                dismissableMask: true,
-                data: {
-                    assetType: 'image'
-                }
-            };
-
-            // Simulate the button click
-            button.onAction();
-
-            expect(spyDialog).toHaveBeenCalledWith(DotAssetSearchDialogComponent, dialogConfig);
+            expect(spyDialog).toHaveBeenCalledWith(
+                DotAssetPickerComponent,
+                // The dialog flags are the picker's own contract, asserted in its spec. What matters
+                // here is the payload this field is responsible for.
+                expect.objectContaining({
+                    showHeader: false,
+                    data: expect.objectContaining({
+                        site: SITE,
+                        mimeTypes: ['image/*'],
+                        languageId: String(LOCALE_ID),
+                        title: 'dot.asset.picker.header.image'
+                    })
+                })
+            );
             expect(spyEditorInserContent).toHaveBeenCalledWith(
                 formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
@@ -156,18 +199,75 @@ describe('DotWysiwygPluginService', () => {
 
             const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
 
-            spectator.service.initializePlugins(editor);
-
-            const button = editor.ui.registry.getAll().buttons['dotAddImage'];
-
-            // Simulate the button click that opens the dialog
-            button.onAction();
+            clickAddImage();
 
             expect(spyDialog).toHaveBeenCalled();
             expect(spyEditorInserContent).not.toHaveBeenCalled();
             // AC5: focus still returns to the editor when the dialog is dismissed
             // without selecting an image (X, Esc or overlay mask)
             expect(editor.focus).toHaveBeenCalled();
+        });
+
+        it('should not stack a second picker while the site lookup is still in flight', () => {
+            // The site lookup is what makes opening asynchronous, so "is a dialog open" is not a
+            // sufficient guard on its own — the ref does not exist yet while it runs.
+            const site$ = new Subject<DotSite>();
+            siteSource = site$.asObservable();
+            spectator = createService();
+            const spyDialog = jest
+                .spyOn(spectator.inject(DialogService), 'open')
+                .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
+
+            spectator.service.initializePlugins(editor);
+            const button = editor.ui.registry.getAll().buttons['dotAddImage'];
+            button.onAction();
+            button.onAction();
+            site$.next(SITE);
+
+            expect(spyDialog).toHaveBeenCalledTimes(1);
+        });
+
+        it('should open again after the picker closed', () => {
+            const spyDialog = jest
+                .spyOn(dialogService, 'open')
+                .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
+
+            clickAddImage();
+            editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
+
+            expect(spyDialog).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not open a picker that has nothing to browse', () => {
+            siteSource = throwError(() => new Error('no site'));
+            spectator = createService();
+            const spyDialog = jest.spyOn(spectator.inject(DialogService), 'open');
+
+            spectator.service.initializePlugins(editor);
+            editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
+
+            expect(spyDialog).not.toHaveBeenCalled();
+        });
+
+        it('should retry the site lookup after it failed', () => {
+            siteSource = throwError(() => new Error('no site'));
+            spectator = createService();
+            const siteService = spectator.inject(DotSiteService);
+
+            spectator.service.initializePlugins(editor);
+            const button = editor.ui.registry.getAll().buttons['dotAddImage'];
+            button.onAction();
+            button.onAction();
+
+            // The busy flag has to be released on error, or the button is dead for the session.
+            expect(siteService.getCurrentSite).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not request a site until an image is actually inserted', () => {
+            // Most editing sessions never insert one; the lookup is deferred until the first click.
+            spectator.service.initializePlugins(editor);
+
+            expect(spectator.inject(DotSiteService).getCurrentSite).not.toHaveBeenCalled();
         });
 
         it('should upload the image when dropped', () => {

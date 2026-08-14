@@ -10,9 +10,10 @@ import {
 } from '@utils/dot-content-types.mock';
 import { uniqueSuffix } from '@utils/utils';
 
+import { AssetPickerDialog } from '@components/asset-picker-dialog.component';
+
 import { FileField } from './helpers/file-field';
 
-import { AssetPickerDialog } from '../helpers/asset-picker-dialog';
 import { E2E_IMPORT_URL, createTestPngFile, createTestTextFile } from '../helpers/file-test-data';
 
 const FILE_FIELD_VARIABLE = 'fileField';

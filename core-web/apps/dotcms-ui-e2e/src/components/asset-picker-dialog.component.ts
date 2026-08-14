@@ -1,8 +1,14 @@
 import { type Locator, type Page, expect } from '@playwright/test';
 
 /**
- * Locator helper for the AssetPicker dialog — the "Select Existing File/Image" modal opened from a
- * File or Image field.
+ * Locator helper for the AssetPicker dialog — the one "browse for an existing asset" modal in the
+ * product. Four entry points open it, which is why this lives in `components/` rather than under any
+ * one field's `helpers/`:
+ *
+ * - the File field's "Select Existing File"
+ * - the Image field's "Select Existing Image"
+ * - the Story Block's insert image / video / audio toolbar buttons and slash commands
+ * - the WYSIWYG (TinyMCE) field's insert-image button
  *
  * The picker renders its own header (the dialog is opened with `showHeader: false`), so everything
  * here is scoped to the picker root rather than to PrimeNG's chrome.

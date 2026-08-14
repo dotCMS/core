@@ -10,9 +10,10 @@ import {
 } from '@utils/dot-content-types.mock';
 import { uniqueSuffix } from '@utils/utils';
 
+import { AssetPickerDialog } from '@components/asset-picker-dialog.component';
+
 import { ImageField } from './helpers/image-field';
 
-import { AssetPickerDialog } from '../helpers/asset-picker-dialog';
 import { createTestPngFile, createTestTextFile } from '../helpers/file-test-data';
 
 const IMAGE_FIELD_VARIABLE = 'imageField';
