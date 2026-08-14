@@ -6,12 +6,14 @@ import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
@@ -98,6 +100,10 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     private static final String DATE_VAR = "postingDate";
     private static final String MULTI_VAR = "sections";
     private static final String BOOL_VAR = "featured";
+    /** Radio with Data Type True/False whose options carry the db representation of the booleans. */
+    private static final String BOOL_RADIO_VAR = "runReport";
+    /** Checkbox with a single, NON-boolean option value — ticked stores "yes", unticked stores nothing. */
+    private static final String SINGLE_CHECK_VAR = "active";
     private static final String JSON_VAR = "meta";
     private static final String CUSTOM_VAR = "custom";
     private static final String KV_VAR = "props";
@@ -151,6 +157,18 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         new FieldDataGen().type(CheckboxField.class).name(BOOL_VAR).velocityVarName(BOOL_VAR)
                 .values("true|true\r\nfalse|false").defaultValue("")
                 .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        // True/False Radio authored with the database's own representation of the booleans, which is
+        // what dotCMS's own Radio help text recommends (`True|1 False|0`) and how the product ships
+        // `Host.runDashboard`. Mapped in ES as a boolean, so it cannot be queried with a wildcard.
+        new FieldDataGen().type(RadioField.class).name(BOOL_RADIO_VAR).velocityVarName(BOOL_RADIO_VAR)
+                .dataType(DataTypes.BOOL)
+                .values("Yes|1\r\nNo|0").defaultValue("")
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
+        // Single-option Checkbox whose option value is not a boolean literal: ticking it stores "yes",
+        // and leaving it unticked stores nothing at all.
+        new FieldDataGen().type(CheckboxField.class).name(SINGLE_CHECK_VAR).velocityVarName(SINGLE_CHECK_VAR)
+                .values("yes").defaultValue("")
+                .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
         // Text-backed fallback types (LONG_TEXT) — filtered as a single contains term via the index.
         new FieldDataGen().type(JSONField.class).name(JSON_VAR).velocityVarName(JSON_VAR)
                 .contentTypeId(typeWithFields.id()).searchable(true).indexed(true).nextPersisted();
@@ -180,6 +198,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(DATE_VAR, date(2024))
                 .setProperty(MULTI_VAR, "news")
                 .setProperty(BOOL_VAR, "true")
+                .setProperty(BOOL_RADIO_VAR, "1")
+                .setProperty(SINGLE_CHECK_VAR, "yes")
                 .setProperty(JSON_VAR, "{\"env\":\"prod\"}")
                 .setProperty(CUSTOM_VAR, "alpha")
                 // Mixed-case key/value — the index lowercases it to `color_red`.
@@ -196,6 +216,8 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(DATE_VAR, date(2020))
                 .setProperty(MULTI_VAR, "press")
                 .setProperty(BOOL_VAR, "false")
+                .setProperty(BOOL_RADIO_VAR, "0")
+                // SINGLE_CHECK_VAR deliberately left unset: an unticked checkbox stores nothing.
                 .setProperty(JSON_VAR, "{\"env\":\"dev\"}")
                 .setProperty(CUSTOM_VAR, "beta")
                 .setProperty(KV_VAR, "{\"color\":\"blue\"}")
@@ -412,6 +434,58 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
         assertTrue("featured=true item must match", inodes.contains(angularWithTags.getInode()));
         assertFalse("featured=false item must not match", inodes.contains(reactWithVue.getInode()));
         assertFalse("featured=false item must not match", inodes.contains(angularNoTags.getInode()));
+    }
+
+    /**
+     * A Radio field whose Data Type is True/False and whose options carry the database representation
+     * of the booleans (`Yes|1` / `No|0`) must be filterable.
+     * <p>Such a field is mapped in Elasticsearch as a boolean, so the contains-style wildcard used for
+     * text fields is rejected for it — and because these queries are not lenient, the rejection fails
+     * the whole query and surfaces as "no matches". It has to be queried with an exact term.</p>
+     */
+    @Test
+    public void testBooleanRadioWithDbStyleOptionValuesFilter()
+            throws DotDataException, DotSecurityException {
+        final Set<String> matchesTrue = driveInodes(baseRequest()
+                .userSearchable(Map.of(BOOL_RADIO_VAR, true))
+                .build());
+        assertTrue("the item saved with option value 1 must match true",
+                matchesTrue.contains(angularWithTags.getInode()));
+        assertFalse("the item saved with option value 0 must not match true",
+                matchesTrue.contains(reactWithVue.getInode()));
+
+        final Set<String> matchesFalse = driveInodes(baseRequest()
+                .userSearchable(Map.of(BOOL_RADIO_VAR, false))
+                .build());
+        assertTrue("the item saved with option value 0 must match false",
+                matchesFalse.contains(reactWithVue.getInode()));
+        assertFalse("the item saved with option value 1 must not match false",
+                matchesFalse.contains(angularWithTags.getInode()));
+    }
+
+    /**
+     * A single-option Checkbox stores its OPTION VALUE when ticked -- here the text {@code "yes"} --
+     * and nothing at all when unticked.
+     * <p>So neither half can be matched literally: the word "true" appears nowhere, and "false" cannot
+     * either, because an unticked box leaves no token behind. Ticked resolves to the field's own option
+     * value; unticked resolves to the negation of that same clause.</p>
+     */
+    @Test
+    public void testSingleOptionCheckboxFilterMatchesTheOptionValueAndNegatesIt()
+            throws DotDataException, DotSecurityException {
+        final Set<String> ticked = driveInodes(baseRequest()
+                .userSearchable(Map.of(SINGLE_CHECK_VAR, true))
+                .build());
+        assertTrue("the ticked item must match", ticked.contains(angularWithTags.getInode()));
+        assertFalse("an unticked item must not match", ticked.contains(reactWithVue.getInode()));
+
+        final Set<String> unticked = driveInodes(baseRequest()
+                .userSearchable(Map.of(SINGLE_CHECK_VAR, false))
+                .build());
+        assertTrue("the unticked item must match", unticked.contains(reactWithVue.getInode()));
+        assertTrue("an item that never set the field must count as unticked",
+                unticked.contains(angularNoTags.getInode()));
+        assertFalse("the ticked item must not match", unticked.contains(angularWithTags.getInode()));
     }
 
     /**
