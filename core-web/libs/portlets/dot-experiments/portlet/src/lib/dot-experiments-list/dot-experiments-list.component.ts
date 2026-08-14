@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -26,7 +27,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
-import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotExperimentsService,
@@ -82,6 +82,19 @@ import {
     variantsCount
 } from '../util/dot-experiments-list.util';
 
+/** Mount point of the portlet. Absolute, since the list is always at the root of it. */
+const EXPERIMENTS_URL = '/experiments';
+
+/** Where the New Experiment button goes: the Configure screen with nothing created yet. */
+const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, 'new'];
+
+/** Configure URL of an experiment that already exists. */
+const configureCommandsOf = (experimentId: string): string[] => [
+    EXPERIMENTS_URL,
+    experimentId,
+    'configuration'
+];
+
 @Component({
     selector: 'dot-experiments-list',
     imports: [
@@ -97,7 +110,6 @@ import {
         TableModule,
         TagModule,
         ToolbarModule,
-        TooltipModule,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
@@ -201,6 +213,7 @@ export class DotExperimentsListComponent {
     // are listened to (never dispatched) here — see `#listenForActionSuccess`.
     readonly #dispatch = injectDispatch(dotExperimentsListPageEvents);
     readonly #events = inject(Events);
+    readonly #router = inject(Router);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
@@ -393,6 +406,16 @@ export class DotExperimentsListComponent {
         this.$rowMenuItems.set(this.#buildRowMenuItems(experiment));
     }
 
+    /** Opens the Configure screen with nothing created yet: the draft is POSTed from there. */
+    onNewExperiment(): void {
+        this.#router.navigate(NEW_EXPERIMENT_COMMANDS);
+    }
+
+    /** Opens the Configure screen of an existing experiment. */
+    onConfigure(experiment: DotExperiment): void {
+        this.#router.navigate(configureCommandsOf(experiment.id));
+    }
+
     confirmArchive(experiment: DotExperiment): void {
         this.#confirm({
             headerKey: 'experiments.action.archive',
@@ -406,6 +429,14 @@ export class DotExperimentsListComponent {
         const { status } = experiment;
 
         return [
+            {
+                // The primary action of the row: it leads the menu, and is the only entry every
+                // status allows.
+                id: 'experiments-configure',
+                label: this.#dotMessageService.get('experiments.list.action.configure'),
+                visible: isAllowed('configuration', status),
+                command: () => this.onConfigure(experiment)
+            },
             {
                 id: 'experiments-archive',
                 label: this.#dotMessageService.get('experiments.action.archive'),

@@ -2,13 +2,14 @@ import { Dispatcher, EventCreator } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { provideLocationMocks } from '@angular/common/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
+    AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
     DotExperimentStatus,
@@ -63,6 +64,7 @@ const experimentWith = (status: DotExperimentStatus): DotExperiment => ({
 
 /** Kebab item ids, as declared by the component. */
 const MENU_ITEM = {
+    configure: 'experiments-configure',
     archive: 'experiments-archive',
     restore: 'experiments-restore',
     cancelSchedule: 'experiments-cancel-schedule',
@@ -138,6 +140,7 @@ describe('DotExperimentsListComponent', () => {
     let storeMock: ReturnType<typeof createStoreMock>;
     let dispatch: jest.SpyInstance;
     let confirm: jest.SpyInstance;
+    let navigate: jest.SpyInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
@@ -220,6 +223,9 @@ describe('DotExperimentsListComponent', () => {
         confirm = jest
             .spyOn(confirmationService, 'confirm')
             .mockReturnValue(confirmationService) as jest.SpyInstance;
+        // The Configure screen is a real route of the portlet, so navigation is intercepted
+        // rather than let through to a component this spec does not render.
+        navigate = jest.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
     });
 
     afterEach(() => {
@@ -299,15 +305,27 @@ describe('DotExperimentsListComponent', () => {
         it.each([
             [
                 DotExperimentStatus.DRAFT,
-                [MENU_ITEM.delete, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+                [
+                    MENU_ITEM.configure,
+                    MENU_ITEM.delete,
+                    MENU_ITEM.pushPublish,
+                    MENU_ITEM.addToBundle
+                ]
             ],
             [
                 DotExperimentStatus.RUNNING,
-                [MENU_ITEM.end, MENU_ITEM.abort, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+                [
+                    MENU_ITEM.configure,
+                    MENU_ITEM.end,
+                    MENU_ITEM.abort,
+                    MENU_ITEM.pushPublish,
+                    MENU_ITEM.addToBundle
+                ]
             ],
             [
                 DotExperimentStatus.SCHEDULED,
                 [
+                    MENU_ITEM.configure,
                     MENU_ITEM.cancelSchedule,
                     MENU_ITEM.delete,
                     MENU_ITEM.pushPublish,
@@ -316,11 +334,21 @@ describe('DotExperimentsListComponent', () => {
             ],
             [
                 DotExperimentStatus.ENDED,
-                [MENU_ITEM.archive, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+                [
+                    MENU_ITEM.configure,
+                    MENU_ITEM.archive,
+                    MENU_ITEM.pushPublish,
+                    MENU_ITEM.addToBundle
+                ]
             ],
             [
                 DotExperimentStatus.ARCHIVED,
-                [MENU_ITEM.restore, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+                [
+                    MENU_ITEM.configure,
+                    MENU_ITEM.restore,
+                    MENU_ITEM.pushPublish,
+                    MENU_ITEM.addToBundle
+                ]
             ]
         ])('should only offer the actions allowed for %s', (status, expectedItemIds) => {
             renderRowWith(status);
@@ -372,10 +400,10 @@ describe('DotExperimentsListComponent', () => {
             expect(restore.command).toBeUndefined();
         });
 
-        it('should not render a configure or view-results control', () => {
-            // AC10: the Configure and Results screens land with #36990+. Until then the cell
-            // exposes only actions the row can actually perform — a disabled button that
-            // cannot navigate is noise.
+        it('should keep Configure in the kebab rather than as its own row control', () => {
+            // The design leads the cell with "View Results" / "Configure", but View Results
+            // lands with the reports screen — a lone button would read as the row's only
+            // action, so Configure stays the first kebab entry until then.
             Object.values(DotExperimentStatus).forEach((status) => {
                 renderRowWith(status);
 
@@ -394,14 +422,44 @@ describe('DotExperimentsListComponent', () => {
                 ).toBeNull();
             });
         });
+    });
 
-        it('should offer a disabled new-experiment button', () => {
+    describe('configure', () => {
+        // Sourced from the shared table so the row menu and the gate cannot drift apart.
+        const CONFIGURABLE_STATUSES = AllowedActionsByExperimentStatus['configuration'];
+
+        it.each(CONFIGURABLE_STATUSES)('should lead the kebab with Configure for %s', (status) => {
+            renderRowWith(status);
+
+            expect(visibleMenuItemIds()[0]).toBe(MENU_ITEM.configure);
+        });
+
+        it('should open the Configure screen of the row', () => {
+            const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+
+            runMenuItem(MENU_ITEM.configure);
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+        });
+    });
+
+    describe('new experiment', () => {
+        it('should offer an enabled new-experiment button', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
             const button = spectator.query(byTestId('experiments-new'))?.querySelector('button');
 
             expect(button).not.toBeNull();
-            expect((button as HTMLButtonElement).disabled).toBe(true);
+            expect((button as HTMLButtonElement).disabled).toBe(false);
+        });
+
+        it('should open the Configure screen with nothing created yet', () => {
+            // The draft is POSTed from the Configure screen, so the button carries no id.
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            clickButton('experiments-new');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new']);
         });
     });
 
