@@ -22,7 +22,10 @@ export class BlockEditorField {
     ) {
         this.root = page.getByTestId(`field-${fieldVariable}`);
         this.editor = this.root.locator('dot-block-editor');
-        this.content = this.root.getByRole('textbox');
+        // `.first()` because there are two nested textboxes: the labelled wrapper the editor renders
+        // and the `contenteditable` ProseMirror puts inside it. The wrapper is the outer of the two,
+        // so descendant queries from here still reach the document's content.
+        this.content = this.root.getByRole('textbox').first();
         // `exact` matters: "Edit image properties" and "Insert asset by URL" also live in this
         // toolbar, and a substring match would make these ambiguous the moment a label changes.
         this.insertImageButton = this.root.getByRole('button', {

@@ -158,6 +158,9 @@ describe('DotWysiwygPluginService', () => {
             expect(spyOn).toHaveBeenCalledWith('drop', expect.any(Function));
             expect(spyButton).toHaveBeenCalledWith('dotAddImage', {
                 icon: 'image',
+                // TinyMCE turns `tooltip` into the button's `aria-label` and `title`. It is the only
+                // accessible name an icon-only button gets, so it is part of the contract.
+                tooltip: 'insert-image',
                 onAction: expect.any(Function)
             });
         });

@@ -121,6 +121,11 @@ export async function relateContent(
 /**
  * Deletes contentlets by their identifiers.
  *
+ * Fires DESTROY through the WORKFLOW resource. `/api/v1/content/actions/...` — which this used to
+ * call — does not exist and answered 404 for every contentlet, so nothing was ever deleted and the
+ * 404 was swallowed as "already gone". Every suite using this leaked its seeded content into the
+ * environment on each run.
+ *
  * @param request - Playwright APIRequestContext
  * @param identifiers - Array of contentlet identifiers to delete
  */
@@ -129,7 +134,7 @@ export async function deleteContentlets(
     identifiers: string[]
 ): Promise<void> {
     for (const identifier of identifiers) {
-        const endpoint = `/api/v1/content/actions/default/fire/DESTROY?identifier=${identifier}`;
+        const endpoint = `/api/v1/workflow/actions/default/fire/DESTROY?identifier=${identifier}`;
         const response = await request.put(endpoint, {
             headers: {
                 Authorization: generateBase64Credentials(admin1.username, admin1.password)

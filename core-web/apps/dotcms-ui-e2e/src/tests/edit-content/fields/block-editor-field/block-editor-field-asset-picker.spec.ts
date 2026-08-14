@@ -41,8 +41,8 @@ test.beforeEach(async ({ request }) => {
     contentTypeVariable = contentType.variable;
 
     // Two assets on purpose: the image is what the picker must offer, the text file is what its
-    // mimetype restriction must hide. Unique names so the search reaches exactly these regardless of
-    // what else lives in the environment.
+    // mimetype restriction must hide. Seeded immediately before the test and named uniquely, so they
+    // are the newest rows in the picker's default `modDate:desc` listing.
     const site = await getDefaultSite(request);
     const suffix = uniqueSuffix();
 
@@ -93,7 +93,6 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
         await picker.waitForVisible();
         await picker.expectConfirmDisabled();
 
-        await picker.searchFor(image.title);
         await picker.expectRowVisible(image.title);
 
         await picker.selectRowByTitle(image.title);
@@ -144,10 +143,8 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
         await field.openImagePicker();
         await picker.waitForVisible();
 
-        // Both assets share the suffix, so one search surfaces whichever the picker is willing
-        // to offer.
-        await picker.searchFor(image.title.replace(/\.png$/, ''));
-
+        // Both assets are the newest in the environment, so the picker's own listing is where
+        // this shows: one of them is offered and the other never appears.
         await picker.expectRowVisible(image.title);
         await expect(picker.row(textFile.title)).toHaveCount(0);
     });
@@ -166,7 +163,7 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
 
         // Select first: cancelling after a selection is the case that would leak a node if the
         // dialog reported a result on dismiss.
-        await picker.searchFor(image.title);
+        await picker.expectRowVisible(image.title);
         await picker.selectRowByTitle(image.title);
         await picker.cancel();
 
@@ -185,7 +182,7 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
         const picker = new AssetPickerDialog(page);
         await field.openImagePicker();
         await picker.waitForVisible();
-        await picker.searchFor(image.title);
+        await picker.expectRowVisible(image.title);
         await picker.selectRowByTitle(image.title);
         await picker.confirm();
         await picker.expectClosed();
