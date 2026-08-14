@@ -8,7 +8,7 @@
         "allowSyntheticDefaultImports": true,
         "allowUnreachableCode": false,
         "declaration": false,
-        // Strict mode (#35943) is not enabled yet — 274 type errors remain across 42 files, and
+        // Strict mode (#35943) is not enabled yet — 278 type errors remain across 42 files, and
         // Stencil type-checks during `build`, so turning it on before they are fixed breaks CI.
         // The decorator members in src/ are already prepared for it.
         //

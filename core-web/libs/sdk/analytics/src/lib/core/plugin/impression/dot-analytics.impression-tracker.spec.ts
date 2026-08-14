@@ -44,11 +44,11 @@ describe('DotCMSImpressionTracker', () => {
     ): HTMLElement => {
         const element = document.createElement('div');
         element.className = CONTENTLET_CLASS;
-        element.dataset.dotIdentifier = identifier;
-        element.dataset.dotInode = options.inode || 'inode-123';
-        element.dataset.dotType = options.contentType || 'Blog';
-        element.dataset.dotTitle = options.title || 'Test Content';
-        element.dataset.dotBasetype = options.baseType || 'CONTENT';
+        element.dataset['dotIdentifier'] = identifier;
+        element.dataset['dotInode'] = options.inode || 'inode-123';
+        element.dataset['dotType'] = options.contentType || 'Blog';
+        element.dataset['dotTitle'] = options.title || 'Test Content';
+        element.dataset['dotBasetype'] = options.baseType || 'CONTENT';
 
         // Mock getBoundingClientRect
         element.getBoundingClientRect = jest.fn(() => ({
