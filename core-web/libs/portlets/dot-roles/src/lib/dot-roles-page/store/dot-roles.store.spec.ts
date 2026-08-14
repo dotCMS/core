@@ -218,14 +218,61 @@ describe('DotRolesStore', () => {
             expect(store.members()).toHaveLength(2);
         });
 
-        it('should set membersStatus to error and delegate on failure', () => {
+        it('should walk the ancestor chain, tag each user with grantedFrom, and prefer the closest ancestor on duplicates', () => {
+            store.loadRootRoles();
+            // r-eco lives under r-categories in MOCK_NESTED_ROLES, so the
+            // chain expected here is [r-eco, r-categories].
+            service.loadRoleMembersByKey.mockImplementation((roleKey: string) => {
+                if (roleKey === 'eco') {
+                    return of([
+                        { userId: 'u-1', firstName: 'Alan', lastName: 'Cruz', emailAddress: 'a@x' }
+                    ]);
+                }
+                if (roleKey === 'Categories') {
+                    return of([
+                        {
+                            userId: 'u-2',
+                            firstName: 'Chris',
+                            lastName: 'Publisher',
+                            emailAddress: 'c@x'
+                        },
+                        // u-1 is granted at BOTH r-eco and r-categories — the
+                        // direct grant on r-eco must win over the inherited one.
+                        { userId: 'u-1', firstName: 'Alan', lastName: 'Cruz', emailAddress: 'a@x' }
+                    ]);
+                }
+
+                return of([]);
+            });
+
+            store.selectRole('r-eco');
+            store.loadMembers({ id: 'r-eco', roleKey: 'eco' });
+
+            expect(service.loadRoleMembersByKey).toHaveBeenCalledWith('eco');
+            expect(service.loadRoleMembersByKey).toHaveBeenCalledWith('Categories');
+
+            const members = store.members();
+            expect(members).toHaveLength(2);
+
+            const alan = members.find((m) => m.userId === 'u-1');
+            const chris = members.find((m) => m.userId === 'u-2');
+            expect(alan?.grantedFromRoleId).toBe('r-eco');
+            expect(alan?.grantedFromRoleName).toBe('Eco Role');
+            expect(chris?.grantedFromRoleId).toBe('r-categories');
+            expect(chris?.grantedFromRoleName).toBe('Categories');
+        });
+
+        it('should delegate to httpErrorManager and continue when one ancestor call fails', () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
             service.loadRoleMembersByKey.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             store.loadMembers(ROLE_BY_KEY);
 
-            expect(store.membersStatus()).toBe('error');
+            // Partial failure of one ancestor call must not nuke the whole
+            // tab: the store surfaces the error via the http manager but
+            // still resolves to `loaded` with whatever succeeded.
             expect(errorManager.handle).toHaveBeenCalled();
+            expect(store.membersStatus()).toBe('loaded');
         });
     });
 

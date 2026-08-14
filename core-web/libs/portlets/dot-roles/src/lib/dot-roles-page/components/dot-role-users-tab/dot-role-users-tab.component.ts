@@ -99,8 +99,21 @@ export class DotRoleUsersTabComponent {
         );
     }
 
+    /**
+     * A member row is directly granted to the currently-selected role
+     * (as opposed to inherited from an ancestor) when its
+     * `grantedFromRoleId` matches the selected role. Only direct rows
+     * are removable from this tab.
+     */
+    protected isDirectGrant(member: DotRoleMember): boolean {
+        return member.grantedFromRoleId === this.store.selectedRoleId();
+    }
+
     protected onSelectionChange(members: DotRoleMember[]): void {
-        this.store.setSelectedMembers(members);
+        // Filter out inherited rows in case a user managed to check one
+        // (e.g., via header checkbox). Only direct grants can be removed.
+        const direct = members.filter((m) => this.isDirectGrant(m));
+        this.store.setSelectedMembers(direct);
     }
 
     #getUserSuggestions(query: string): Observable<UserFilterResult[]> {

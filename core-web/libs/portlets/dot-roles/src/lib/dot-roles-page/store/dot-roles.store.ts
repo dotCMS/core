@@ -1,10 +1,10 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe } from 'rxjs';
+import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
@@ -155,31 +155,80 @@ export const DotRolesStore = signalStore(
             },
 
             /**
-             * Load members for the currently selected role. Called by the
-             * Users tab component whenever the selected role changes.
+             * Load members for the currently selected role — including
+             * users granted to any ancestor of the role (dotCMS inherits
+             * grants downward, so a Reviewer's user list includes users
+             * granted Publisher / Legal even though those users were never
+             * granted Reviewer directly).
              *
-             * Path selection:
-             *   - If the role has a `roleKey`, use `/v1/users/filter?roleKey=X`
-             *     — fast, returns email and full name in one call.
-             *   - Otherwise, fall back to `/rolehierarchyanduserroles` and
-             *     parse user-roles from the response. That path is missing
-             *     email today because the endpoint returns Role objects, not
-             *     User objects (see `DotRolesPortletService.loadRoleMembersById`).
+             * Implementation: walks the ancestor chain in `state.roles` via
+             * `parent` id, fires one `/v1/users/filter?roleKey=X` per role
+             * in parallel (falling back to the id-based endpoint when a
+             * role has no `roleKey`), and merges results. Each user is
+             * tagged with the closest ancestor where they were directly
+             * granted (selected role first, then parent, grandparent, ...),
+             * so the Users tab can render the "Granted From" chip and
+             * disable removal on inherited rows.
+             *
+             * TODO: collapse this whole flow into a single call to
+             * `GET /v1/roles/{roleId}/users` once #37070 ships. That
+             * endpoint will do the ancestor walk + user enrichment
+             * (including email) server-side.
              */
             loadMembers(role: { id: string; roleKey?: string | null }): void {
+                const chain = collectAncestorChain(store.roles(), role);
+                if (chain.length === 0) {
+                    patchState(store, { members: [], membersStatus: 'loaded' });
+
+                    return;
+                }
+
                 patchState(store, { membersStatus: 'loading' });
-                const request$ = role.roleKey
-                    ? service.loadRoleMembersByKey(role.roleKey)
-                    : service.loadRoleMembersById(role.id);
-                request$.subscribe({
-                    next: (users) => {
-                        const members: DotRoleMember[] = users.map((u) => ({
-                            userId: u.userId,
-                            firstName: u.firstName ?? '',
-                            lastName: u.lastName ?? '',
-                            emailAddress: u.emailAddress ?? ''
-                        }));
-                        patchState(store, { members, membersStatus: 'loaded' });
+
+                const requests = chain.map((node) => {
+                    const source$ = node.roleKey
+                        ? service.loadRoleMembersByKey(node.roleKey)
+                        : service.loadRoleMembersById(node.id);
+
+                    return source$.pipe(
+                        map((users) =>
+                            users.map<DotRoleMember>((u) => ({
+                                userId: u.userId,
+                                firstName: u.firstName ?? '',
+                                lastName: u.lastName ?? '',
+                                emailAddress: u.emailAddress ?? '',
+                                grantedFromRoleId: node.id,
+                                grantedFromRoleName: node.name
+                            }))
+                        ),
+                        catchError((error) => {
+                            // Fail one ancestor gracefully — don't abort the
+                            // whole load if a single call errors out.
+                            httpErrorManager.handle(error);
+
+                            return of<DotRoleMember[]>([]);
+                        })
+                    );
+                });
+
+                forkJoin(requests).subscribe({
+                    next: (batches) => {
+                        // Dedup: first insertion wins. Chain is ordered
+                        // selected → parent → ..., so the closest ancestor
+                        // is the one that survives when a user is granted
+                        // at more than one level.
+                        const byUserId = new Map<string, DotRoleMember>();
+                        for (const batch of batches) {
+                            for (const member of batch) {
+                                if (!byUserId.has(member.userId)) {
+                                    byUserId.set(member.userId, member);
+                                }
+                            }
+                        }
+                        patchState(store, {
+                            members: Array.from(byUserId.values()),
+                            membersStatus: 'loaded'
+                        });
                     },
                     error: (error) => {
                         httpErrorManager.handle(error);
@@ -350,6 +399,41 @@ function appendChildToParent(
         }
         return node;
     });
+}
+
+/**
+ * Build the ancestor chain for a role, ordered `[role, parent, grandparent,
+ * ..., root]`. Matches the Java `RoleAPI.findRoleHierarchy` semantics (a
+ * self-referential `parent === id` marks the root). The chain drives the
+ * parallel `/v1/users/filter?roleKey=X` fan-out in `loadMembers`.
+ */
+function collectAncestorChain(
+    tree: DotRoleNode[],
+    role: { id: string; roleKey?: string | null }
+): DotRoleNode[] {
+    const start = findRoleInTree(tree, role.id) ?? {
+        id: role.id,
+        name: role.id,
+        roleKey: role.roleKey ?? undefined
+    };
+    const chain: DotRoleNode[] = [start];
+    let cursor: DotRoleNode | null = start;
+    // Guard against pathological data — hierarchies deeper than 20 aren't
+    // realistic in practice, and this stops any accidental cycles cold.
+    for (let i = 0; i < 20; i++) {
+        const parentId = cursor.parent;
+        if (!parentId || parentId === cursor.id) {
+            break;
+        }
+        const parentNode = findRoleInTree(tree, parentId);
+        if (!parentNode) {
+            break;
+        }
+        chain.push(parentNode);
+        cursor = parentNode;
+    }
+
+    return chain;
 }
 
 /** Walk the tree looking for a node id. Returns the node or `null`. */
