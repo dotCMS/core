@@ -257,12 +257,25 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected onFocusChange(value: string | null): void {
         const focused = value ?? ALL_CONTENT;
         if (focused === this.$focusedBaseType()) return;
-        // Cancel any in-flight focus/lazy fetch from the previous focus so a
-        // late response can't overwrite the new state.
-        this.#cancelFetch$.next();
         this.$focusedBaseType.set(focused);
-        // Eagerly clear the right column so stale items from the previous focus
-        // don't linger while the new fetch is in flight.
+        this.#resetContentTypeSearch(focused);
+    }
+
+    /**
+     * Drops the right column's search state — the term, the narrowed options, and the pagination
+     * bookkeeping — and immediately reloads the unfiltered page 1 for `focused`.
+     *
+     * The reload is not optional. This chip searches server-side, so blanking `contentTypes` without
+     * refetching leaves the panel permanently empty: PrimeNG does not render its virtual scroller for
+     * an empty list, so no `onLazyLoad` would ever fire to repopulate it. `canLoadMore` has to be
+     * restored for the same reason — a search that fits in one page sets it false, and the reopen
+     * lazy load is then dropped by the guard in {@link onLazyLoad}.
+     *
+     * In-flight fetches are cancelled first so a late response cannot overwrite the state this sets.
+     */
+    #resetContentTypeSearch(focused: string): void {
+        this.#cancelFetch$.next();
+        // Cleared eagerly so stale items don't linger while the new fetch is in flight.
         patchState(this.$state, {
             contentTypes: [],
             contentTypeFilter: '',
@@ -270,7 +283,7 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             canLoadMore: true,
             loading: true
         });
-        // Focus changes refetch immediately — no debounce, no race with typing.
+        // Refetches immediately — no debounce, no race with typing.
         this.#loadContentTypes({
             page: 1,
             filter: '',
@@ -373,11 +386,18 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
 
     protected onPanelHide(): void {
         this.$popoverOpen.set(false);
-        patchState(this.$state, { contentTypeFilter: '' });
+
+        // Only when a term was actually active: opening and closing the panel without searching
+        // must not cost a request. Reset on hide rather than on the next open so reopening shows the
+        // full list immediately.
+        if (!this.$state.contentTypeFilter()) {
+            return;
+        }
+
         // $focusedBaseType is intentionally NOT reset — the user's last focus
         // persists across popover sessions so reopening lands them where they
-        // left off. The @if ($popoverOpen()) recreate trick re-triggers the
-        // listbox's lazy load on next open, so the data is still fresh.
+        // left off.
+        this.#resetContentTypeSearch(this.$focusedBaseType());
     }
 
     protected onLazyLoad(event: ScrollerLazyLoadEvent): void {
@@ -423,6 +443,13 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         this.$selectedBaseTypes.set([]);
         this.$selectedContentTypes.set([]);
         this.#syncStore();
+
+        // The X reads as "clear this filter entirely", so the query state goes too — not just the
+        // selection. Without this the search term and its narrowed list survive, and reopening the
+        // panel still shows only what was last searched for. Focus returns to "all content" for the
+        // same reason: nothing about the filter should be left applied.
+        this.$focusedBaseType.set(ALL_CONTENT);
+        this.#resetContentTypeSearch(ALL_CONTENT);
     }
 
     #syncStore(): void {

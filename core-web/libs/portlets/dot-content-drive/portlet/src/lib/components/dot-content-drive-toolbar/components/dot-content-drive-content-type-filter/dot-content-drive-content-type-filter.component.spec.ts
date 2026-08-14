@@ -89,6 +89,14 @@ const CONTENT_TYPES: DotCMSContentType[] = [
     } as DotCMSContentType
 ];
 
+/**
+ * What the chip actually renders from {@link CONTENT_TYPES}: system and FORM types are filtered out
+ * of the visible options, so a state assertion has to compare against this, not the raw fixture.
+ */
+const VISIBLE_CONTENT_TYPES = CONTENT_TYPES.filter(
+    (contentType) => !contentType.system && contentType.baseType !== 'FORM'
+);
+
 describe('DotContentDriveContentTypeFilterComponent', () => {
     let spectator: Spectator<DotContentDriveContentTypeFilterComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
@@ -192,6 +200,19 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
 
     const triggerLazyLoad = (event: { first: number; last: number }) => {
         spectator.triggerEventHandler(rightListbox(), 'onLazyLoad', event);
+        spectator.detectChanges();
+    };
+
+    /**
+     * Reopen the panel after {@link triggerPanelHide}. `openPopover()` cannot be reused there: it
+     * goes through `popover.toggle()`, and because the hide above is faked (PrimeNG emits `onHide`
+     * from its animation callback, which never runs in jsdom) the overlay still believes it is
+     * visible, so toggling would close it instead. Driving `onShow` directly mirrors how the hide is
+     * faked and matches what the component actually listens to.
+     */
+    const triggerPanelShow = () => {
+        const popover = spectator.fixture.debugElement.query(By.directive(Popover));
+        spectator.triggerEventHandler(popover, 'onShow', undefined);
         spectator.detectChanges();
     };
 
@@ -606,6 +627,76 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             patchState(spectator.component.$state, { contentTypeFilter: 'blog' });
             triggerPanelHide();
             expect(spectator.component.$state.contentTypeFilter()).toBe('');
+        });
+
+        it('reloads the unfiltered first page when the popover hides after a search', () => {
+            // Clearing only the visible text left the narrowed page in `contentTypes`, so reopening
+            // the panel still showed just the searched content type. The list has to be refetched,
+            // not merely blanked: PrimeNG does not render the scroller for an empty list, so no
+            // lazy load would ever fire to repopulate it.
+            triggerSearchInput('blog');
+            jest.advanceTimersByTime(600);
+            jest.clearAllMocks();
+
+            triggerPanelHide();
+
+            expect(spectator.component.$state.contentTypeFilter()).toBe('');
+            expect(spectator.component.$state.currentPage()).toBe(1);
+            expect(spectator.component.$state.contentTypes()).toEqual(VISIBLE_CONTENT_TYPES);
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                expect.objectContaining({ page: 1, filter: '' })
+            );
+        });
+
+        it('does NOT refetch when the popover hides with no search active', () => {
+            jest.clearAllMocks();
+
+            triggerPanelHide();
+
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        });
+
+        it('recomputes canLoadMore from the unfiltered page when the popover hides', () => {
+            // A search that fits in one page sets canLoadMore false. Left stale, it then blocks the
+            // reopen lazy load from ever fetching page 2 of the full list.
+            contentTypeService.getContentTypesWithPagination.mockImplementation(
+                ({ filter }: { filter?: string }) =>
+                    of({
+                        contentTypes: CONTENT_TYPES,
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 10,
+                            totalEntries: filter ? 1 : 30,
+                            totalPages: filter ? 1 : 3
+                        }
+                    })
+            );
+
+            triggerSearchInput('blog');
+            jest.advanceTimersByTime(600);
+            expect(spectator.component.$state.canLoadMore()).toBe(false);
+
+            triggerPanelHide();
+
+            expect(spectator.component.$state.canLoadMore()).toBe(true);
+        });
+
+        it('finds results again when the same term is searched after a clear', () => {
+            triggerSearchInput('blog');
+            jest.advanceTimersByTime(600);
+            triggerPanelHide();
+            jest.clearAllMocks();
+
+            // The panel's content is destroyed on hide, so the search box only exists again once
+            // the user reopens it.
+            triggerPanelShow();
+            triggerSearchInput('blog');
+            jest.advanceTimersByTime(600);
+
+            expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
+                expect.objectContaining({ page: 1, filter: 'blog' })
+            );
+            expect(spectator.component.$state.contentTypes()).toEqual(VISIBLE_CONTENT_TYPES);
         });
 
         it('handles fetch errors gracefully', () => {
