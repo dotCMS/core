@@ -521,7 +521,9 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should match any of the selected languages when several are active', () => {
+        // A whitespace group (`languageId:(1 2)`) is NOT an implicit OR here — it fails the whole
+        // query, which surfaces as an empty result set with no error.
+        it('should OR the selected languages when several are active', () => {
             store.getFilterValue.mockReturnValue(['1', '2']);
             contentSearch.get.mockReturnValue(
                 of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
@@ -530,7 +532,7 @@ describe('DotContentDriveNavigationService', () => {
             service.openEditByIdentifier('shared-identifier');
 
             expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true +languageId:(1 2)',
+                query: '+identifier:shared-identifier +working:true +languageId:(1 OR 2)',
                 limit: 1
             });
         });

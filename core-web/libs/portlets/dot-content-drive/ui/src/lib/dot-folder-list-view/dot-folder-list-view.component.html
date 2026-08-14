@@ -182,11 +182,14 @@
                                     <!-- Only render for an actual boolean value; a missing value
                                          (null/undefined/empty) stays blank so it doesn't read as false. -->
                                     @if (value !== null && value !== undefined && value !== '') {
+                                        <!-- `align-middle`: the icon is a 20px inline-block inside a
+                                             14px text line, so without it the glyph sits off the
+                                             baseline that every other extra column renders on. -->
                                         <i
-                                            class="material-symbols-outlined text-[1.25rem]! leading-none"
+                                            class="material-symbols-outlined align-middle text-[1.25rem]! leading-none"
                                             [class.text-green-600]="value"
                                             [class.text-gray-500]="!value"
-                                            data-testId="item-extra-bool">
+                                            [attr.data-testid]="'item-extra-bool-' + column.field">
                                             {{ value ? 'check_circle' : 'cancel' }}
                                         </i>
                                     }

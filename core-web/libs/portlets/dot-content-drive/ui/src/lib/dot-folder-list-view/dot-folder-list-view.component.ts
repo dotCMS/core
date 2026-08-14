@@ -315,6 +315,12 @@ export class DotFolderListViewComponent implements OnInit {
         });
     });
 
+    /**
+     * Rough `ch` per `rem` (16px font, ~8px advance), used ONLY to compare a fixed per-type width
+     * against a header-derived one and pick the wider. Never used to compute a rendered size, so the
+     * approximation cannot drift a column's actual width.
+     */
+    private readonly REM_TO_CH = 2;
     /** Character-count clamps for content-based (text/number) column widths, in `ch`. */
     private readonly EXTRA_COL_MIN_CH = 8;
     private readonly EXTRA_COL_MAX_CH = 32;
@@ -546,11 +552,6 @@ export class DotFolderListViewComponent implements OnInit {
             return column.width;
         }
 
-        const fixed = column.type && this.EXTRA_COL_TYPE_WIDTH[column.type];
-        if (fixed) {
-            return fixed;
-        }
-
         const lengths = items
             .map((item) => (item as Record<string, unknown>)?.[column.field])
             .filter((value) => value !== null && value !== undefined && value !== '')
@@ -560,15 +561,34 @@ export class DotFolderListViewComponent implements OnInit {
             ? Math.round(lengths.reduce((sum, length) => sum + length, 0) / lengths.length)
             : 0;
 
+        const fixed = column.type && this.EXTRA_COL_TYPE_WIDTH[column.type];
+
+        // A fixed-type column renders formatted text (a date, an icon, a thumbnail) whose width does
+        // not depend on the raw value, so it must not be measured from content — only from its
+        // header, which is the one part that can outgrow the fixed width.
+        const contentLength = fixed ? 0 : averageLength;
+
         const chars = Math.min(
             Math.max(
-                Math.max(column.header?.length ?? 0, averageLength) + this.EXTRA_COL_PAD_CH,
+                Math.max(column.header?.length ?? 0, contentLength) + this.EXTRA_COL_PAD_CH,
                 this.EXTRA_COL_MIN_CH
             ),
             this.EXTRA_COL_MAX_CH
         );
 
-        return `${chars}ch`;
+        if (!fixed) {
+            return `${chars}ch`;
+        }
+
+        // The per-type width is a floor, not an override. As an override it clipped its own header:
+        // a Show-In-List field is effectively always sortable, so the header renders
+        // `whitespace-nowrap` with a sort icon under `table-layout: fixed` and no overflow clipping,
+        // so a label longer than the fixed width spilled into the neighbouring header.
+        //
+        // Resolved to whichever of the two is wider rather than emitted as a CSS `max()`, because
+        // these widths are also summed into the table's `min-width: calc(100% + …)` — keeping each one
+        // a single length keeps that expression readable and parseable.
+        return chars > parseFloat(fixed) * this.REM_TO_CH ? `${chars}ch` : fixed;
     }
 
     ngOnInit(): void {

@@ -2323,12 +2323,52 @@ describe('DotFolderListViewComponent', () => {
 
             const cells = spectator.queryAll(byTestId('item-extra-myBool'));
             expect(
-                cells[0].querySelector('[data-testId="item-extra-bool"]')?.textContent?.trim()
+                cells[0]
+                    .querySelector('[data-testid="item-extra-bool-myBool"]')
+                    ?.textContent?.trim()
             ).toBe('check_circle');
             expect(
-                cells[1].querySelector('[data-testId="item-extra-bool"]')?.textContent?.trim()
+                cells[1]
+                    .querySelector('[data-testid="item-extra-bool-myBool"]')
+                    ?.textContent?.trim()
             ).toBe('cancel');
-            expect(cells[2].querySelector('[data-testId="item-extra-bool"]')).toBeFalsy();
+            expect(cells[2].querySelector('[data-testid="item-extra-bool-myBool"]')).toBeFalsy();
+        });
+
+        it('should give each boolean column its own test id', () => {
+            // The id used to be static, so two boolean columns emitted duplicates and a test could
+            // not address one of them.
+            spectator.setInput('items', [
+                { identifier: '1', type: 'content', title: 'A', boolA: true, boolB: false }
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'boolA', header: 'A', order: 0, type: 'boolean' },
+                { field: 'boolB', header: 'B', order: 1, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-bool-boolA'))?.textContent?.trim()).toBe(
+                'check_circle'
+            );
+            expect(spectator.query(byTestId('item-extra-bool-boolB'))?.textContent?.trim()).toBe(
+                'cancel'
+            );
+        });
+
+        it('should vertically center the boolean icon against the row text', () => {
+            // The icon is a 20px inline-block inside a 14px text line, so without align-middle it
+            // sits off the baseline every other extra column shares.
+            spectator.setInput('items', [
+                { identifier: '1', type: 'content', title: 'A', myBool: true }
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool', order: 0, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-bool-myBool'))?.className).toContain(
+                'align-middle'
+            );
         });
 
         it('should include the time for datetime but not for date', () => {
@@ -2393,6 +2433,37 @@ describe('DotFolderListViewComponent', () => {
 
             expect(headerByLabel('T')?.style.width).toMatch(/ch$/);
             expect(headerByLabel('D')?.style.width).toBe('12rem');
+        });
+
+        it('should keep a fixed-width column from clipping a long header', () => {
+            // The per-type width used to be an override, so a boolean column stayed pinned at 7rem
+            // however long its header was. Under `table-layout: fixed` with a `whitespace-nowrap`
+            // sortable header and no overflow clipping, the label then spilled into the next header.
+            // The type width is a floor now: wide enough for the label, never narrower than 7rem.
+            spectator.setInput('extraColumns', [
+                {
+                    field: 'myBool',
+                    header: 'Bool Radio With A Very Long Header Name',
+                    order: 0,
+                    type: 'boolean'
+                }
+            ]);
+            spectator.detectChanges();
+
+            const width = headerByLabel('Bool Radio With A Very Long Header Name')?.style.width;
+
+            expect(width).toMatch(/ch$/);
+            expect(width).not.toBe('7rem');
+        });
+
+        it('should keep the compact fixed width for a short boolean header', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'On', order: 0, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            // The label fits well inside 7rem, so the compact per-type width still wins.
+            expect(headerByLabel('On')?.style.width).toBe('7rem');
         });
 
         it('should clamp a text column width to the max for very long values', () => {

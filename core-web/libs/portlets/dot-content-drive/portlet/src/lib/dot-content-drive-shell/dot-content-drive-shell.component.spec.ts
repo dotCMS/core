@@ -2688,6 +2688,36 @@ describe('DotContentDriveShellComponent', () => {
             ]);
         });
 
+        it('should type a True/False Radio or Select field as a boolean column', () => {
+            // The reported case: dotCMS's own Radio help text tells users to author a True/False
+            // field as `True|1` / `False|0`, and the product ships `Host.runDashboard` in exactly
+            // that shape. Only Checkbox was covered before, which is why the boolean column's
+            // rendering shipped untested for these two.
+            showInListFieldsSignal.set([
+                { variable: 'boolRadio', name: 'Bool Radio', dataType: 'BOOL', fieldType: 'Radio' },
+                { variable: 'boolSelect', name: 'Bool Select', dataType: 'BOOL', fieldType: 'Select' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'boolRadio', type: 'boolean' }),
+                expect.objectContaining({ field: 'boolSelect', type: 'boolean' })
+            ]);
+        });
+
+        it('should keep a non-boolean Radio or Select field a text column', () => {
+            showInListFieldsSignal.set([
+                { variable: 'size', name: 'Size', dataType: 'TEXT', fieldType: 'Radio' },
+                { variable: 'colour', name: 'Colour', dataType: 'TEXT', fieldType: 'Select' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'size', type: 'text' }),
+                expect.objectContaining({ field: 'colour', type: 'text' })
+            ]);
+        });
+
         it('should expose no extra columns when there are no Show In List fields', () => {
             showInListFieldsSignal.set([]);
             spectator.detectChanges();

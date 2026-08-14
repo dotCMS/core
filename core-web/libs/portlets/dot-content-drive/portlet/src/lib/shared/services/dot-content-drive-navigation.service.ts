@@ -288,8 +288,11 @@ export class DotContentDriveNavigationService {
             return '';
         }
 
+        // `OR` is explicit on purpose: a whitespace-separated group (`languageId:(1 2)`) is not an
+        // implicit OR here — it makes the whole query fail, and a failed query surfaces as an empty
+        // result set with no error, so the link would silently resolve to nothing.
         return languageIds.length === 1
             ? ` +languageId:${languageIds[0]}`
-            : ` +languageId:(${languageIds.join(' ')})`;
+            : ` +languageId:(${languageIds.join(' OR ')})`;
     }
 }
