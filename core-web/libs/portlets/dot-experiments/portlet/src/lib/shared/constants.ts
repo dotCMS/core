@@ -123,10 +123,10 @@ export const CONFIGURATION_SEGMENT = 'configuration';
 export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;
 
 /**
- * Idle time before a field change is flushed as a PATCH, in ms.
+ * Idle time before the accumulated field changes are flushed as a PATCH, in ms.
  *
- * One timer per field group: rapid edits to the same group collapse into a single call, while an
- * edit to another group in the same window still fires its own.
+ * One timer for the whole screen: every edit inside the window is merged into one multi-key body,
+ * whichever card it came from, and reaches the server as a single call.
  */
 export const AUTOSAVE_DEBOUNCE_MS = 500;
 
@@ -142,6 +142,19 @@ export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-fo
 /** Fallback header the old screen supplies when the backend rejects a start with no header of its own. */
 export const START_ERROR_HEADER_KEY =
     'dot.common.http.error.400.experiment.run-scheduling-error.header';
+
+/**
+ * Share of the page's traffic the experiment takes when nothing has been chosen yet.
+ *
+ * Also what an experiment with no allocation of its own is diffed against, so a form that was never
+ * touched reports no change.
+ */
+export const DEFAULT_TRAFFIC_ALLOCATION = 100;
+
+/** A page cannot be excluded from its own experiment entirely, so the slider starts at 1%. */
+export const MIN_TRAFFIC_ALLOCATION = 1;
+
+export const MAX_TRAFFIC_ALLOCATION = 100;
 
 /** Total the variant weights must add up to, and the cap on any single one. */
 export const TOTAL_WEIGHT = 100;

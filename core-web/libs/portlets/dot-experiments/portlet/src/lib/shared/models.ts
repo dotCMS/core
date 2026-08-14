@@ -3,6 +3,7 @@ import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
+    DotExperimentPatchBody,
     DotExperimentStatus,
     GOAL_OPERATORS,
     GOAL_TYPES
@@ -73,22 +74,6 @@ export interface ExperimentFilterOption {
 }
 
 /**
- * A group of fields the Configure screen autosaves on its own debounce timer.
- *
- * One group is one PATCH body key, because there is no combined update endpoint: the experiment is
- * updated by calling `PATCH /api/v1/experiments/{id}` repeatedly with a single-key body. Keeping the
- * groups this granular is what lets an edit to Name and an edit to Goal in the same tick fire two
- * independent calls instead of collapsing into one.
- */
-export type ExperimentFieldGroup =
-    | 'name'
-    | 'description'
-    | 'goal'
-    | 'scheduling'
-    | 'trafficAllocation'
-    | 'trafficProportion';
-
-/**
  * The rules checked when Start/Schedule is pressed. Nothing is validated before that press, so this
  * doubles as the set of fields allowed to reveal an error.
  */
@@ -142,8 +127,21 @@ export interface DotExperimentsConfigureViewState {
     pageLockInfo: DotPageLockInfo | null;
     /** Empty until Start/Schedule is pressed, so no field can show an error before then. */
     validationErrors: ConfigureValidationRule[];
-    /** Field groups with an autosave PATCH debounced or in flight. */
-    pendingFieldGroups: ExperimentFieldGroup[];
+    /**
+     * The keys edited since the last successful save, merged into one PATCH body.
+     *
+     * `null` while everything on screen is persisted. It survives a failed save on purpose, so the
+     * next edit re-sends what could not be written together with what just changed.
+     */
+    pendingPatch: DotExperimentPatchBody | null;
+    /**
+     * True when the last autosave came back as an error.
+     *
+     * Kept apart from {@link pendingPatch} because the two answer different questions: the diff is
+     * still unsaved, but nothing is on its way any more — and the footer must not go on saying
+     * "Saving…" for the rest of the session, which is the stuck flag #37003 set out to fix.
+     */
+    lastSaveFailed: boolean;
 }
 
 /** Publish state of a page, shown in the Select A Page table's State column. */
@@ -185,6 +183,59 @@ export interface GoalConditionFormModel {
      * `operator` is EXISTS.
      */
     value: string;
+}
+
+/**
+ * The goal being edited, flattened.
+ *
+ * Both goal types that carry conditions carry exactly one, so the whole card fits in a single
+ * signal-forms slice: no nested list, and no shape that differs per goal type. The two persisted
+ * shapes are rebuilt on the way out — see `toGoals`.
+ */
+export interface GoalFormSlice extends GoalConditionFormModel {
+    /** Empty until a goal type is picked, which is what the SET/REQUIRED chip reads. */
+    type: GOAL_TYPES | '';
+    name: string;
+}
+
+/** The schedule being edited. `null` in either field means "not scheduled from/until". */
+export interface SchedulingFormSlice {
+    startDate: Date | null;
+    endDate: Date | null;
+}
+
+/**
+ * Everything the Configure screen edits, as one model.
+ *
+ * The screen is a single signal form: the shell owns this model and the rules over it, and each
+ * card renders the slice it is handed. That is what lets one binding turn any edit into one PATCH
+ * body — a per-card form would have to negotiate that between five of them.
+ *
+ * Variants are deliberately absent: they have their own endpoints, not a `trafficProportion` PATCH,
+ * so nothing about them belongs in a form.
+ */
+export interface ConfigureFormModel {
+    name: string;
+    description: string;
+    goal: GoalFormSlice;
+    /** Percentage of the page's traffic that enters the experiment, 1–100. */
+    trafficAllocation: number;
+    scheduling: SchedulingFormSlice;
+}
+
+/**
+ * Where the Scheduling card's two pickers may go.
+ *
+ * Derived by the shell from the backend's duration limits and the start date being edited, since
+ * the schema needs the same bounds the pickers do and there must be one answer for both.
+ */
+export interface SchedulingDateBounds {
+    /** Where an empty start picker opens, and the earliest day it offers. */
+    initialStartDate: Date;
+    /** An experiment has to run for at least the configured minimum, counted from its start. */
+    minEndDate: Date;
+    /** And for no longer than the configured maximum, counted from the same point. */
+    maxEndDate: Date;
 }
 
 /** A variant row, plus everything the Variants card would otherwise have to derive per row. */

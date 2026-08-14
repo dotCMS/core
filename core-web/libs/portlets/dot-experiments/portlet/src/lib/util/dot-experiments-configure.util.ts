@@ -1,6 +1,8 @@
 import { DotPageBrowserPage } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotExperiment,
+    DotExperimentPatchBody,
     GOAL_OPERATORS,
     GOAL_TYPES,
     ReachPageGoalCondition,
@@ -12,15 +14,14 @@ import { TOTAL_WEIGHT, WEIGHT_PRECISION } from '../shared/constants';
 import {
     ConfigureValidationRule,
     DotExperimentConfigurePage,
-    DotExperimentsConfigureViewState,
-    ExperimentFieldGroup
+    DotExperimentsConfigureViewState
 } from '../shared/models';
 
 /**
  * Pure helpers behind the Configure store: variant weights, the Start/Schedule rules, the pending
- * autosave bookkeeping and the page shapes the two lookups answer with. Kept out of the store so
- * each can be read — and tested — on its own, without standing up the store, its injected services
- * or its lifecycle hooks.
+ * autosave diff and the page shapes the two lookups answer with. Kept out of the store so each can
+ * be read — and tested — on its own, without standing up the store, its injected services or its
+ * lifecycle hooks.
  */
 
 /**
@@ -54,6 +55,12 @@ export function totalWeight(variants: Variant[]): number {
  *
  * Nothing here runs before Start is pressed (AC28), so this is a plain function over the state
  * rather than a computed: materialising it early is exactly what the screen must not do.
+ *
+ * These are the UX net, not the authority: the server already enforces most of them per aspect and
+ * earlier — the name and page on every save, the goal through `MetricsUtil.validateGoals`, the
+ * weights on `TrafficProportion` construction — so what Start adds is naming the fields *before*
+ * the request rather than after a rejection. `goalName` is one of them: it maps to `Metric.name()`,
+ * which is non-optional server-side (`AbstractMetric.java`).
  */
 export function validateConfigure(
     state: Pick<DotExperimentsConfigureViewState, 'draftName' | 'selectedPage' | 'experiment'>
@@ -127,20 +134,117 @@ function validateGoalCondition(
     return errors;
 }
 
-/** Marks a field group as having an autosave pending, tolerating a group already marked. */
-export function addPendingGroup(
-    groups: ExperimentFieldGroup[],
-    group: ExperimentFieldGroup
-): ExperimentFieldGroup[] {
-    return groups.includes(group) ? groups : [...groups, group];
+/** True while at least one key is waiting to be written. */
+export function hasPendingChanges(patch: DotExperimentPatchBody | null): boolean {
+    return !!patch && Object.keys(patch).length > 0;
 }
 
-/** Settles a field group, whether its autosave resulted in a call or not. */
-export function removePendingGroup(
-    groups: ExperimentFieldGroup[],
-    group: ExperimentFieldGroup
-): ExperimentFieldGroup[] {
-    return groups.filter((pending) => pending !== group);
+/**
+ * The experiment as the cards should already see it, with the keys an edit changed applied.
+ *
+ * The PATCH is debounced, so a card cannot wait for the server to redraw: the weight that was just
+ * typed has to be in the row, and a goal that was just completed has to count as configured when
+ * Start is pressed half a second later.
+ *
+ * `name` and `description` are deliberately left out. They live on `draftName`/`draftDescription`
+ * until the server answers, which is what lets the store tell a typed value from a persisted one —
+ * and therefore what stops it from re-sending a name it already holds.
+ */
+export function applyPatchToExperiment(
+    experiment: DotExperiment | null,
+    patch: DotExperimentPatchBody
+): DotExperiment | null {
+    if (!experiment) {
+        return experiment;
+    }
+
+    return {
+        ...experiment,
+        ...(patch.goals !== undefined && { goals: patch.goals }),
+        ...(patch.scheduling !== undefined && { scheduling: patch.scheduling }),
+        ...(patch.trafficAllocation !== undefined && {
+            trafficAllocation: patch.trafficAllocation
+        }),
+        ...(patch.trafficProportion !== undefined && {
+            trafficProportion: patch.trafficProportion
+        })
+    };
+}
+
+/**
+ * The body a pending diff actually goes out as, or `null` when there is nothing left to send.
+ *
+ * Three keys can be held back. A blank `name`, which the backend rejects — the typed value stays on
+ * screen and the experiment keeps the name it was saved with until a real one replaces it. A `name`
+ * or `description` the experiment already holds, which is what makes the flush that follows creation
+ * a no-op: the POST carried both, so re-sending them would be a second write for nothing. And a
+ * `trafficProportion` whose weights do not add up to 100, which is a guaranteed 400: the immutable's
+ * `@Value.Check` rejects it on *construction*, so the PATCH fails before it is even applied
+ * (`AbstractTrafficProportion.java:44-58`). Typing a weight passes through intermediate totals, and
+ * none of them is worth a failed request or an error toast.
+ *
+ * Everything else is sent as it stands, `scheduling: null` included: clearing the schedule is a
+ * change like any other, and the cards are what decide a value is worth dispatching in the first
+ * place.
+ */
+export function toOutgoingPatch(
+    patch: DotExperimentPatchBody | null,
+    experiment: DotExperiment
+): DotExperimentPatchBody | null {
+    if (!patch) {
+        return null;
+    }
+
+    const outgoing = { ...patch };
+
+    if (outgoing.name === undefined || !outgoing.name.trim() || outgoing.name === experiment.name) {
+        delete outgoing.name;
+    }
+
+    if (outgoing.description === experiment.description) {
+        delete outgoing.description;
+    }
+
+    if (hasUnsendableWeights(outgoing.trafficProportion?.variants)) {
+        delete outgoing.trafficProportion;
+    }
+
+    return hasPendingChanges(outgoing) ? outgoing : null;
+}
+
+/**
+ * Mirrors the backend check, empty list included: it only asserts the total when the proportion
+ * carries variants, so a proportion without any says nothing about weights.
+ */
+function hasUnsendableWeights(variants: Variant[] | undefined): boolean {
+    return !!variants?.length && totalWeight(variants) !== TOTAL_WEIGHT;
+}
+
+/**
+ * What is left of a pending diff once the keys a PATCH carried are taken out of it — `null` when
+ * the body carried them all.
+ *
+ * What remains is what `toOutgoingPatch` held back, and it is still unsaved: a `trafficProportion`
+ * whose weights are mid-edit has to survive the response of the call that went out beside it, or
+ * the rows would snap back to the older weights the server answered with (#37003).
+ *
+ * Reading the remainder as "held back" is sound *because* the flush is `switchMap`ped over the
+ * edits (see the store): a response that gets processed proves nothing was edited since its body
+ * was snapshotted, so nothing new can be in there.
+ */
+export function withoutSentKeys(
+    patch: DotExperimentPatchBody | null,
+    sent: DotExperimentPatchBody
+): DotExperimentPatchBody | null {
+    if (!patch) {
+        return null;
+    }
+
+    const remaining = { ...patch };
+
+    (Object.keys(sent) as (keyof DotExperimentPatchBody)[]).forEach((key) => delete remaining[key]);
+
+    return hasPendingChanges(remaining) ? remaining : null;
 }
 
 /** The page a content-search contentlet stands for, as the Page card shows it. */

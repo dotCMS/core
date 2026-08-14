@@ -21,6 +21,7 @@ import {
     DotCMSContentlet,
     DotCurrentUser,
     DotExperiment,
+    DotExperimentPatchBody,
     DotExperimentStatus,
     DotSite,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
@@ -130,12 +131,7 @@ describe('DotExperimentsConfigureStore', () => {
 
     const getById = jest.fn();
     const add = jest.fn();
-    const setName = jest.fn();
-    const setDescription = jest.fn();
-    const setGoal = jest.fn();
-    const setScheduling = jest.fn();
-    const setTrafficAllocation = jest.fn();
-    const setTrafficProportion = jest.fn();
+    const patchExperiment = jest.fn();
     const addVariant = jest.fn();
     const editVariant = jest.fn();
     const removeVariant = jest.fn();
@@ -189,12 +185,7 @@ describe('DotExperimentsConfigureStore', () => {
             mockProvider(DotExperimentsService, {
                 getById,
                 add,
-                setName,
-                setDescription,
-                setGoal,
-                setScheduling,
-                setTrafficAllocation,
-                setTrafficProportion,
+                patch: patchExperiment,
                 addVariant,
                 editVariant,
                 removeVariant,
@@ -243,9 +234,13 @@ describe('DotExperimentsConfigureStore', () => {
 
     /** The Name + Page combination that creates the draft. */
     const createDraft = (name = VALID_DRAFT.name) => {
-        dispatcher.dispatch(pageEvents.nameChanged(name));
+        dispatcher.dispatch(pageEvents.formEdited({ name }));
         dispatcher.dispatch(pageEvents.pageSelected(PAGE));
     };
+
+    /** An edit as the cards report it: only the PATCH keys that changed. */
+    const edit = (patch: DotExperimentPatchBody) =>
+        dispatcher.dispatch(pageEvents.formEdited(patch));
 
     const flushAutosave = () => jest.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
 
@@ -272,12 +267,7 @@ describe('DotExperimentsConfigureStore', () => {
 
         getById.mockReturnValue(of(VALID_DRAFT));
         add.mockReturnValue(of(VALID_DRAFT));
-        setName.mockReturnValue(of(VALID_DRAFT));
-        setDescription.mockReturnValue(of(VALID_DRAFT));
-        setGoal.mockReturnValue(of(VALID_DRAFT));
-        setScheduling.mockReturnValue(of(VALID_DRAFT));
-        setTrafficAllocation.mockReturnValue(of(VALID_DRAFT));
-        setTrafficProportion.mockReturnValue(of(VALID_DRAFT));
+        patchExperiment.mockReturnValue(of(VALID_DRAFT));
         addVariant.mockReturnValue(of(VALID_DRAFT));
         editVariant.mockReturnValue(of(VALID_DRAFT));
         removeVariant.mockReturnValue(of(VALID_DRAFT));
@@ -339,7 +329,7 @@ describe('DotExperimentsConfigureStore', () => {
         it('should not create anything until both a name and a page are there', () => {
             initNew();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign'));
+            edit({ name: 'Alpha campaign' });
 
             expect(add).not.toHaveBeenCalled();
 
@@ -356,10 +346,21 @@ describe('DotExperimentsConfigureStore', () => {
         it('should never create a draft from a blank name', () => {
             initNew();
 
-            dispatcher.dispatch(pageEvents.nameChanged('   '));
+            edit({ name: '   ' });
             dispatcher.dispatch(pageEvents.pageSelected(PAGE));
 
             expect(add).not.toHaveBeenCalled();
+        });
+
+        it('should not report autosaving while the draft cannot be created yet', () => {
+            initNew();
+
+            // A name alone cannot go anywhere — no experiment to PATCH, no page for the POST —
+            // so the footer must keep the plain hint instead of a "Saving…" that never settles.
+            edit({ name: 'Alpha campaign' });
+            jest.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
+
+            expect(store.$isAutosaving()).toBe(false);
         });
 
         it('should not fire a second POST while the first one is in flight', () => {
@@ -368,7 +369,7 @@ describe('DotExperimentsConfigureStore', () => {
             initNew();
 
             createDraft();
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign renamed'));
+            edit({ name: 'Alpha campaign renamed' });
 
             expect(add).toHaveBeenCalledTimes(1);
 
@@ -381,7 +382,7 @@ describe('DotExperimentsConfigureStore', () => {
             initNew();
 
             createDraft();
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign renamed'));
+            edit({ name: 'Alpha campaign renamed' });
             dispatcher.dispatch(pageEvents.pageSelected({ ...PAGE, pageId: 'page-2' }));
 
             expect(add).toHaveBeenCalledTimes(1);
@@ -407,8 +408,8 @@ describe('DotExperimentsConfigureStore', () => {
             add.mockReturnValue(throwError(() => error));
             initNew();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign'));
-            dispatcher.dispatch(pageEvents.descriptionChanged('Checkout funnel rework'));
+            edit({ name: 'Alpha campaign' });
+            edit({ description: 'Checkout funnel rework' });
             dispatcher.dispatch(pageEvents.pageSelected(PAGE));
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
@@ -433,66 +434,133 @@ describe('DotExperimentsConfigureStore', () => {
     });
 
     describe('autosave debounce (AC6)', () => {
-        it('should collapse rapid edits of one field group into a single call', () => {
+        it('should collapse rapid edits of one field into a single call, sending the last value', () => {
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha'));
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha c'));
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
+            edit({ name: 'Alpha' });
+            edit({ name: 'Alpha c' });
+            edit({ name: 'Alpha campaign v2' });
             flushAutosave();
 
-            expect(setName).toHaveBeenCalledTimes(1);
-            expect(setName).toHaveBeenCalledWith(EXPERIMENT_ID, 'Alpha campaign v2');
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                name: 'Alpha campaign v2'
+            });
         });
 
         it('should not call anything before the debounce window elapses', () => {
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
+            edit({ name: 'Alpha campaign v2' });
             jest.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS - 1);
 
-            expect(setName).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
 
             jest.advanceTimersByTime(1);
 
-            expect(setName).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
         });
 
-        it('should fire one call per field group edited in the same window', () => {
+        it('should report SAVING for the flight only, never for the debounce window', () => {
+            const inFlight = new Subject<DotExperiment>();
+            patchExperiment.mockReturnValueOnce(inFlight);
+            initExisting();
+
+            // Typing: the diff is pending but nothing is on the wire yet — a prominent
+            // progress indicator here would run for as long as the user keeps typing.
+            edit({ name: 'Alpha campaign v2' });
+            expect(store.$isSaving()).toBe(false);
+
+            // The flush puts the PATCH on the wire.
+            flushAutosave();
+            expect(store.$isSaving()).toBe(true);
+
+            inFlight.next({ ...VALID_DRAFT, name: 'Alpha campaign v2' });
+            inFlight.complete();
+            expect(store.$isSaving()).toBe(false);
+        });
+
+        it('should bring SAVING home when a cancelled flight re-debounces into a skip', () => {
+            const inFlight = new Subject<DotExperiment>();
+            patchExperiment.mockReturnValueOnce(inFlight);
+            initExisting();
+
+            edit({ name: 'Alpha campaign v2' });
+            flushAutosave();
+            expect(store.$isSaving()).toBe(true);
+
+            // An edit mid-flight cancels the PATCH (switchMap); undoing it back to the saved
+            // value leaves nothing to send, so the re-debounced flush skips — and the skip is
+            // what must reset the status, or the bar would run forever.
+            edit({ name: VALID_DRAFT.name });
+            flushAutosave();
+
+            expect(store.$isSaving()).toBe(false);
+        });
+
+        /**
+         * The point of the accumulated diff: the endpoint applies every key of its body in one
+         * atomic update, so two cards edited in the same window are one call, not two.
+         */
+        it('should merge the fields of every card edited in the same window into one call', () => {
             const goals = buildGoals({ type: GOAL_TYPES.EXIT_RATE, name: 'Exit rate' });
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
-            dispatcher.dispatch(pageEvents.goalChanged(goals));
+            edit({ name: 'Alpha campaign v2' });
+            edit({ goals });
+            edit({ trafficAllocation: 60 });
             flushAutosave();
 
-            expect(setName).toHaveBeenCalledTimes(1);
-            expect(setGoal).toHaveBeenCalledTimes(1);
-            expect(setGoal).toHaveBeenCalledWith(EXPERIMENT_ID, goals);
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                name: 'Alpha campaign v2',
+                goals,
+                trafficAllocation: 60
+            });
+        });
+
+        it('should keep the last value of a key edited twice in the same window', () => {
+            initExisting();
+
+            edit({ trafficAllocation: 40 });
+            edit({ trafficAllocation: 60 });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, { trafficAllocation: 60 });
         });
 
         it('should never PATCH a blank name', () => {
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('   '));
+            edit({ name: '   ' });
             flushAutosave();
 
-            expect(setName).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$isAutosaving()).toBe(false);
         });
 
+        it('should strip a blank name from a diff that has other keys to send', () => {
+            initExisting();
+
+            edit({ name: '   ', trafficAllocation: 60 });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, { trafficAllocation: 60 });
+        });
+
         /**
-         * An edit with nothing to send still has to settle its group. Before #37003 the reducer
-         * marked the group pending and no call ever came back to unmark it, so the screen reported
-         * itself as autosaving for the rest of the session.
+         * An edit with nothing to send still has to settle the diff. Before #37003 the reducer
+         * marked it pending and no call ever came back to unmark it, so the screen reported itself
+         * as autosaving for the rest of the session.
          */
         it('should not resend the name the server already holds', () => {
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged(VALID_DRAFT.name));
+            edit({ name: VALID_DRAFT.name });
             flushAutosave();
 
-            expect(setName).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$isAutosaving()).toBe(false);
         });
 
@@ -500,87 +568,127 @@ describe('DotExperimentsConfigureStore', () => {
             // Typing a value and undoing it back is a no-op, not a PATCH.
             initExisting();
 
-            dispatcher.dispatch(pageEvents.descriptionChanged(VALID_DRAFT.description as string));
+            edit({ description: VALID_DRAFT.description });
             flushAutosave();
 
-            expect(setDescription).not.toHaveBeenCalled();
-            expect(store.$isAutosaving()).toBe(false);
-        });
-
-        it('should never PATCH a goal that is not there', () => {
-            // `setGoal` sends `{ goals }`, and the endpoint has nothing to do with a null one.
-            initExisting();
-
-            dispatcher.dispatch(pageEvents.goalChanged(null));
-            flushAutosave();
-
-            expect(setGoal).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$isAutosaving()).toBe(false);
         });
 
         it('should stop autosaving when an edit is undone inside the debounce window', () => {
-            // The first keystroke is worth sending and the last one is not, so the group is
-            // marked pending by an edit that never becomes a call (#37003).
+            // The first keystroke is worth sending and the last one is not, so the diff is left
+            // pending by an edit that never becomes a call (#37003).
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
-            dispatcher.dispatch(pageEvents.nameChanged(VALID_DRAFT.name));
+            edit({ name: 'Alpha campaign v2' });
+            edit({ name: VALID_DRAFT.name });
             flushAutosave();
 
-            expect(setName).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$isAutosaving()).toBe(false);
         });
 
         it('should send a cleared schedule, which is a change like any other', () => {
             initExisting(buildExperiment({ scheduling: { startDate: 1000, endDate: 2000 } }));
 
-            dispatcher.dispatch(pageEvents.schedulingChanged(null));
+            edit({ scheduling: null });
             flushAutosave();
 
-            expect(setScheduling).toHaveBeenCalledWith(EXPERIMENT_ID, null);
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, { scheduling: null });
         });
 
         it('should apply the edit locally before the call goes out', () => {
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
+            edit({ name: 'Alpha campaign v2', trafficAllocation: 60 });
 
-            // The card must not lag a debounce window behind the keystroke.
+            // No card may lag a debounce window behind the keystroke that caused it.
             expect(store.draftName()).toBe('Alpha campaign v2');
+            expect(store.experiment()?.trafficAllocation).toBe(60);
             expect(store.$isAutosaving()).toBe(true);
         });
 
-        it('should replace the experiment with what the server answered', () => {
+        it('should replace the experiment with what the server answered and settle the keys it wrote', () => {
             const renamed = buildExperiment({ name: 'Alpha campaign v2' });
-            setName.mockReturnValue(of(renamed));
+            patchExperiment.mockReturnValue(of(renamed));
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
+            edit({ name: 'Alpha campaign v2' });
             flushAutosave();
 
             expect(store.experiment()).toEqual(renamed);
+            // The body carried the whole diff, so nothing is left of it.
+            expect(store.pendingPatch()).toBeNull();
             expect(store.$isAutosaving()).toBe(false);
         });
 
-        it('should report a failed autosave and stop autosaving', () => {
+        it('should report a failed save and stop reporting itself as autosaving', () => {
             const error = httpError(400);
-            setName.mockReturnValue(throwError(() => error));
+            patchExperiment.mockReturnValueOnce(throwError(() => error));
             initExisting();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2'));
+            edit({ name: 'Alpha campaign v2' });
             flushAutosave();
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            // Nothing is on its way any more, even though the diff is still unsaved.
             expect(store.$isAutosaving()).toBe(false);
+        });
+
+        it('should re-send what a failed save could not write, merged with the next edit', () => {
+            patchExperiment.mockReturnValueOnce(throwError(() => httpError(400)));
+            initExisting();
+
+            edit({ name: 'Alpha campaign v2' });
+            flushAutosave();
+
+            expect(store.pendingPatch()).toEqual({ name: 'Alpha campaign v2' });
+
+            edit({ trafficAllocation: 60 });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenLastCalledWith(EXPERIMENT_ID, {
+                name: 'Alpha campaign v2',
+                trafficAllocation: 60
+            });
+            expect(store.pendingPatch()).toBeNull();
         });
 
         it('should not autosave anything before the draft exists', () => {
             initNew();
 
-            dispatcher.dispatch(pageEvents.descriptionChanged('Typed before the page was picked'));
+            edit({ description: 'Typed before the page was picked' });
             flushAutosave();
 
-            expect(setDescription).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
+        });
+
+        it('should flush what was typed while the creation POST was in flight', () => {
+            const created = pendingCall(add);
+            initNew();
+
+            createDraft();
+            edit({ description: 'Typed while the POST was travelling' });
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+
+            created.next(VALID_DRAFT);
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledWith(VALID_DRAFT.id, {
+                description: 'Typed while the POST was travelling'
+            });
+        });
+
+        it('should not follow the creation POST with a PATCH of what it already saved', () => {
+            initNew();
+
+            createDraft();
+            flushAutosave();
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(store.$isAutosaving()).toBe(false);
         });
     });
 
@@ -626,59 +734,23 @@ describe('DotExperimentsConfigureStore', () => {
         afterEach(() => httpMock.verify());
 
         interface PatchCase {
-            group: string;
-            change: () => void;
-            body: Record<string, unknown>;
+            field: string;
+            body: DotExperimentPatchBody;
         }
 
+        /** Each card's edit, and the body it has to reach the endpoint as. */
         const PATCH_CASES: PatchCase[] = [
+            { field: 'name', body: { name: 'Alpha campaign v2' } },
+            { field: 'description', body: { description: 'Reworked' } },
             {
-                group: 'name',
-                change: () => dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign v2')),
-                body: { name: 'Alpha campaign v2' }
-            },
-            {
-                group: 'description',
-                change: () => dispatcher.dispatch(pageEvents.descriptionChanged('Reworked')),
-                body: { description: 'Reworked' }
-            },
-            {
-                group: 'goal',
-                change: () =>
-                    dispatcher.dispatch(
-                        pageEvents.goalChanged(
-                            buildGoals({ type: GOAL_TYPES.EXIT_RATE, name: 'Exit rate' })
-                        )
-                    ),
+                field: 'goal',
                 body: { goals: buildGoals({ type: GOAL_TYPES.EXIT_RATE, name: 'Exit rate' }) }
             },
+            { field: 'scheduling', body: { scheduling: { startDate: 1000, endDate: 2000 } } },
+            { field: 'a cleared scheduling', body: { scheduling: null } },
+            { field: 'trafficAllocation', body: { trafficAllocation: 60 } },
             {
-                group: 'scheduling',
-                change: () =>
-                    dispatcher.dispatch(
-                        pageEvents.schedulingChanged({ startDate: 1000, endDate: 2000 })
-                    ),
-                body: { scheduling: { startDate: 1000, endDate: 2000 } }
-            },
-            {
-                group: 'a cleared scheduling',
-                change: () => dispatcher.dispatch(pageEvents.schedulingChanged(null)),
-                body: { scheduling: null }
-            },
-            {
-                group: 'trafficAllocation',
-                change: () => dispatcher.dispatch(pageEvents.trafficAllocationChanged(60)),
-                body: { trafficAllocation: 60 }
-            },
-            {
-                group: 'trafficProportion',
-                change: () =>
-                    dispatcher.dispatch(
-                        pageEvents.trafficProportionChanged({
-                            type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-                            variants: [buildVariant('DEFAULT', 70), buildVariant('variant-b', 30)]
-                        })
-                    ),
+                field: 'trafficProportion',
                 body: {
                     trafficProportion: {
                         type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
@@ -689,11 +761,11 @@ describe('DotExperimentsConfigureStore', () => {
         ];
 
         it.each(PATCH_CASES)(
-            'should PATCH $group alone, without targetingConditions',
-            ({ change, body }) => {
+            'should PATCH $field with that key only, and never targetingConditions or pageId',
+            ({ body }) => {
                 initWithRealApi();
 
-                change();
+                dispatcher.dispatch(pageEvents.formEdited(body));
                 flushAutosave();
 
                 const request = httpMock.expectOne(`/api/v1/experiments/${EXPERIMENT_ID}`);
@@ -701,10 +773,34 @@ describe('DotExperimentsConfigureStore', () => {
                 expect(request.request.method).toBe('PATCH');
                 expect(request.request.body).toEqual(body);
                 expect(request.request.body).not.toHaveProperty('targetingConditions');
+                expect(request.request.body).not.toHaveProperty('pageId');
 
                 request.flush({ entity: VALID_DRAFT });
             }
         );
+
+        it('should PATCH everything edited in one window as a single multi-key body', () => {
+            const goals = buildGoals({ type: GOAL_TYPES.EXIT_RATE, name: 'Exit rate' });
+            initWithRealApi();
+
+            dispatcher.dispatch(pageEvents.formEdited({ name: 'Alpha campaign v2' }));
+            dispatcher.dispatch(pageEvents.formEdited({ goals }));
+            dispatcher.dispatch(pageEvents.formEdited({ scheduling: null }));
+            flushAutosave();
+
+            const request = httpMock.expectOne(`/api/v1/experiments/${EXPERIMENT_ID}`);
+
+            expect(request.request.method).toBe('PATCH');
+            expect(request.request.body).toEqual({
+                name: 'Alpha campaign v2',
+                goals,
+                scheduling: null
+            });
+            expect(request.request.body).not.toHaveProperty('targetingConditions');
+            expect(request.request.body).not.toHaveProperty('pageId');
+
+            request.flush({ entity: VALID_DRAFT });
+        });
 
         it('should POST the creation with the page, the name and the description only', () => {
             initWithRealApi({});
@@ -1403,20 +1499,41 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$hasInvalidWeights()).toBe(false);
         });
 
-        it('should persist the split through the debounced trafficProportion PATCH', () => {
+        it('should persist the split through the same accumulated PATCH as any other edit', () => {
             initExisting(THREE_VARIANTS);
 
             dispatcher.dispatch(pageEvents.splitEvenly());
             flushAutosave();
 
-            expect(setTrafficProportion).toHaveBeenCalledWith(EXPERIMENT_ID, {
-                type: TrafficProportionTypes.SPLIT_EVENLY,
-                variants: [
-                    buildVariant('DEFAULT', 34),
-                    buildVariant('variant-b', 33),
-                    buildVariant('variant-c', 33)
-                ]
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [
+                        buildVariant('DEFAULT', 34),
+                        buildVariant('variant-b', 33),
+                        buildVariant('variant-c', 33)
+                    ]
+                }
             });
+        });
+
+        it('should merge the split with a field edited in the same window', () => {
+            initExisting(THREE_VARIANTS);
+
+            edit({ name: 'Alpha campaign v2' });
+            dispatcher.dispatch(pageEvents.splitEvenly());
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledWith(
+                EXPERIMENT_ID,
+                expect.objectContaining({
+                    name: 'Alpha campaign v2',
+                    trafficProportion: expect.objectContaining({
+                        type: TrafficProportionTypes.SPLIT_EVENLY
+                    })
+                })
+            );
         });
 
         it('should do nothing while there are no variants', () => {
@@ -1432,7 +1549,7 @@ describe('DotExperimentsConfigureStore', () => {
             dispatcher.dispatch(pageEvents.splitEvenly());
             flushAutosave();
 
-            expect(setTrafficProportion).not.toHaveBeenCalled();
+            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$hasInvalidWeights()).toBe(false);
         });
 
@@ -1451,6 +1568,130 @@ describe('DotExperimentsConfigureStore', () => {
     });
 
     /**
+     * Typing a weight goes through totals that are not 100, and `TrafficProportion` rejects those on
+     * construction — so a PATCH carrying one is a guaranteed 400 and an error toast in the middle of
+     * an edit. The key is held back until the total is valid again.
+     */
+    describe('mid-edit weights (#37003)', () => {
+        /** A weight edit as the card reports it: the whole proportion, not the row that changed. */
+        const weights = (control: number, variantB: number): DotExperimentPatchBody => ({
+            trafficProportion: {
+                type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                variants: [buildVariant('DEFAULT', control), buildVariant('variant-b', variantB)]
+            }
+        });
+
+        it('should not PATCH a proportion whose weights do not add up to 100', () => {
+            initExisting();
+
+            edit(weights(70, 50));
+            flushAutosave();
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            // What was typed is still on the rows, with the warning bar saying why (AC25).
+            expect(store.$variants().map(({ weight }) => weight)).toEqual([70, 50]);
+            expect(store.$hasInvalidWeights()).toBe(true);
+            expect(store.$isAutosaving()).toBe(false);
+        });
+
+        it('should PATCH the whole proportion once the total is back to 100', () => {
+            initExisting();
+
+            edit(weights(70, 50));
+            flushAutosave();
+
+            edit(weights(70, 30));
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, weights(70, 30));
+        });
+
+        it('should send the rest of the diff without the proportion it held back', () => {
+            initExisting();
+
+            edit({ ...weights(70, 50), trafficAllocation: 60 });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, { trafficAllocation: 60 });
+        });
+
+        it('should not report a held-back proportion as autosaving while it waits', () => {
+            initExisting();
+
+            edit(weights(70, 50));
+
+            // Nothing is on its way: the key goes nowhere until the total is valid again, so the
+            // footer must not claim to be saving it.
+            expect(store.$isAutosaving()).toBe(false);
+        });
+
+        /**
+         * The defect: the name went out alone, and the response — which knows nothing about the
+         * weights being typed — replaced the experiment and took the held-back proportion with it,
+         * so the rows snapped back to 50/50 mid-edit.
+         */
+        it('should keep the weights being fixed on screen when a field saves beside them', () => {
+            patchExperiment.mockReturnValue(of(buildExperiment({ name: 'Alpha campaign v2' })));
+            initExisting();
+
+            edit(weights(70, 50));
+            edit({ name: 'Alpha campaign v2' });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                name: 'Alpha campaign v2'
+            });
+            expect(store.experiment()?.name).toBe('Alpha campaign v2');
+            expect(store.$variants().map(({ weight }) => weight)).toEqual([70, 50]);
+            expect(store.$hasInvalidWeights()).toBe(true);
+            expect(store.pendingPatch()).toEqual(weights(70, 50));
+            expect(store.$isAutosaving()).toBe(false);
+        });
+
+        it('should PATCH the proportion it held back once the total is fixed after that save', () => {
+            patchExperiment.mockReturnValue(of(buildExperiment({ name: 'Alpha campaign v2' })));
+            initExisting();
+
+            edit(weights(70, 50));
+            edit({ name: 'Alpha campaign v2' });
+            flushAutosave();
+
+            edit(weights(70, 30));
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(2);
+            expect(patchExperiment).toHaveBeenLastCalledWith(EXPERIMENT_ID, weights(70, 30));
+            expect(store.pendingPatch()).toBeNull();
+        });
+
+        /**
+         * Same defect one window later: the flush that found nothing to send must not drop the
+         * proportion either, or the next save of another field would snap the rows back.
+         */
+        it('should keep the weights being fixed through a flush that sent nothing', () => {
+            patchExperiment.mockReturnValue(of(buildExperiment({ name: 'Alpha campaign v2' })));
+            initExisting();
+
+            edit(weights(70, 50));
+            flushAutosave();
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+
+            edit({ name: 'Alpha campaign v2' });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                name: 'Alpha campaign v2'
+            });
+            expect(store.$variants().map(({ weight }) => weight)).toEqual([70, 50]);
+            expect(store.$isAutosaving()).toBe(false);
+        });
+    });
+
+    /**
      * `withReducer` is installed before `withEventHandlers`, and the reducer listens on
      * `ReducerEvents` while the handlers listen on `Events` — so a handler always reads the state
      * its own event has already produced. Both flows below depend on it.
@@ -1459,7 +1700,7 @@ describe('DotExperimentsConfigureStore', () => {
         it('should create from the page the same dispatch selected', () => {
             initNew();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign'));
+            edit({ name: 'Alpha campaign' });
 
             expect(add).not.toHaveBeenCalled();
 
@@ -1478,7 +1719,7 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.validationErrors()).toEqual(['name']);
             expect(start).not.toHaveBeenCalled();
 
-            dispatcher.dispatch(pageEvents.nameChanged('Alpha campaign'));
+            edit({ name: 'Alpha campaign' });
             dispatcher.dispatch(pageEvents.startRequested());
 
             expect(start).toHaveBeenCalledTimes(1);

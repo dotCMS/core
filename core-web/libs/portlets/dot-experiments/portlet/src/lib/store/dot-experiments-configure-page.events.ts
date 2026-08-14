@@ -1,7 +1,7 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { Goals, RangeOfDateAndTime, TrafficProportion } from '@dotcms/dotcms-models';
+import { DotExperimentPatchBody } from '@dotcms/dotcms-models';
 
 import { DotExperimentConfigurePage } from '../shared/models';
 
@@ -24,9 +24,9 @@ export interface ConfigureVariantRename {
  * the dialog, a Start press, the shell coming up. What comes *back* lives in
  * `dotExperimentsConfigureApiEvents`, so the two halves of an async flow are never confused.
  *
- * The field-change events are deliberately one per PATCH body key: there is no combined update
- * endpoint, so a Name edit and a Goal edit in the same tick have to reach the server as two
- * independent calls. Each one is debounced on its own timer in the store.
+ * Field changes are one single event carrying the keys that changed, not one event per field:
+ * `PATCH /api/v1/experiments/{id}` applies every key of its body in one atomic update, so the
+ * store accumulates the edits and flushes them as a single call.
  *
  * Confirmations and toasts are the shell's job — the store never opens UI.
  */
@@ -42,19 +42,21 @@ export const dotExperimentsConfigurePageEvents = eventGroup({
         pageSelected: type<DotExperimentConfigurePage>(),
         pagePrefillRequested: type<ConfigurePagePrefill>(),
 
-        // Field groups, one per PATCH body key
-        nameChanged: type<string>(),
-        descriptionChanged: type<string>(),
-        goalChanged: type<Goals | null>(),
-        schedulingChanged: type<RangeOfDateAndTime | null>(),
-        trafficAllocationChanged: type<number>(),
-        trafficProportionChanged: type<TrafficProportion>(),
+        /**
+         * A field was edited, carrying only the PATCH keys it changed.
+         *
+         * The store merges the payload into the diff it is holding and flushes the whole thing
+         * once the typing stops, so two cards edited in the same window reach the server as one
+         * multi-key call. A key is only ever present when its value actually changed — the cards
+         * compare against what is stored before dispatching.
+         */
+        formEdited: type<DotExperimentPatchBody>(),
 
         // Variants: dedicated endpoints, not a `trafficProportion` PATCH
         variantAdded: type<string>(),
         variantRenamed: type<ConfigureVariantRename>(),
         variantDeleted: type<string>(),
-        /** Re-splits the weights; persisted through the same debounced `trafficProportion` PATCH. */
+        /** Re-splits the weights; persisted through the same accumulated PATCH as any other edit. */
         splitEvenly: type<void>(),
 
         // Transitions. Each is already confirmed in the shell where a confirmation applies.
