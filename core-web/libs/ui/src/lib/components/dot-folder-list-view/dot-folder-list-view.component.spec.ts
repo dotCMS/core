@@ -1158,6 +1158,15 @@ describe('DotFolderListViewComponent', () => {
                 );
             });
 
+            it('should not emit dragStart when a drag is started anyway', () => {
+                // The attribute only stops the user; the handler has to stop everything else.
+                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+
+                spectator.component.onDragStart(createDragStartEvent(), mockItems[0]);
+
+                expect(dragStartSpy).not.toHaveBeenCalled();
+            });
+
             it('should not render the kebab menu button', () => {
                 expect(spectator.query(byTestId('kebab-menu-button'))).toBeFalsy();
             });

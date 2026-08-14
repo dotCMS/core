@@ -733,6 +733,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param contentlet The content item that was dragged
      */
     onDragStart(event: DragEvent, contentlet: DotContentDriveItem) {
+        // The `draggable` attribute already keeps the row still, but it only covers user-initiated
+        // drags: a programmatic `dragstart` would still reach this and emit a move nothing can drop.
+        if (this.$readOnly()) {
+            return;
+        }
+
         if (!event.dataTransfer) return;
 
         event.stopPropagation();

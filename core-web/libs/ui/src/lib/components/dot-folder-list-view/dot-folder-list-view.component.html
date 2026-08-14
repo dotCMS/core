@@ -73,7 +73,7 @@
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
-                [draggable]="!$readOnly()"
+                [attr.draggable]="!$readOnly()"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()"
                 (dragover)="onDragOver($event, item)"
