@@ -2,16 +2,20 @@
 @if (phase() !== 'ready' && phase() !== 'scanning') {
     <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
         @if ($footerIcon(); as fi) {
-            <span
-                class="flex size-9 flex-none items-center justify-center rounded-lg"
-                [class]="fi.cls">
+            <!-- dot-color-icon's own sizes (48/56px) are too big for a footer line,
+                 so the box and radius are overridden — it's kept for the
+                 color-driven bg/fg derivation, which is the part worth sharing. -->
+            <dot-color-icon
+                class="size-9! rounded-lg!"
+                size="sm"
+                [color]="fi.color"
+                aria-hidden="true"
+                data-testid="studio-footer-icon">
                 <!-- text-base!: material-symbols-outlined sets its own
                      font-size on the class, which a plain size utility
                      loses to at equal specificity. -->
-                <span class="material-symbols-outlined text-base!" aria-hidden="true">
-                    {{ fi.icon }}
-                </span>
-            </span>
+                <span class="material-symbols-outlined text-base!">{{ fi.icon }}</span>
+            </dot-color-icon>
         }
         <div class="min-w-0">
             <div class="leading-snug font-bold text-color">

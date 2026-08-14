@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { StudioPhase } from '../../models/accessibility-studio.models';
 
@@ -17,7 +17,13 @@ import { StudioPhase } from '../../models/accessibility-studio.models';
  */
 @Component({
     selector: 'dot-a11y-actions',
-    imports: [FormsModule, ButtonModule, ToggleSwitchModule, DotMessagePipe],
+    imports: [
+        FormsModule,
+        ButtonModule,
+        ToggleSwitchModule,
+        DotColorIconComponent,
+        DotMessagePipe
+    ],
     templateUrl: './a11y-actions.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     // Scanner actions sit at the bottom of the panel's flex column and never grow.
@@ -74,15 +80,16 @@ export class DotA11yActionsComponent {
     });
 
     /**
-     * Small leading icon + bubble color for the footer copy, by phase. `icon` is a
-     * Material Symbols ligature name, rendered by the template's icon span.
+     * Small leading icon for the footer copy, by phase. `icon` is a Material Symbols
+     * ligature name; `color` is a palette token `dot-color-icon` turns into the
+     * chip's tinted background and matching foreground.
      */
-    protected readonly $footerIcon = computed<{ icon: string; cls: string } | null>(() => {
+    protected readonly $footerIcon = computed<{ icon: string; color: string } | null>(() => {
         switch (this.phase()) {
             case 'scanned':
-                return { icon: 'auto_awesome', cls: 'bg-primary-50 text-primary' };
+                return { icon: 'auto_awesome', color: 'primary' };
             case 'fixing':
-                return { icon: 'bolt', cls: 'bg-orange-50 text-orange-600' };
+                return { icon: 'bolt', color: 'orange' };
             default:
                 return null;
         }

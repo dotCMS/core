@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotColorIconComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotA11yActionsComponent } from './a11y-actions.component';
@@ -125,6 +126,34 @@ describe('DotA11yActionsComponent', () => {
             render({ phase: phase as StudioPhase });
 
             expect(spectator.element).not.toHaveText('accessibility.studio.footer');
+        });
+
+        describe('the leading chip', () => {
+            function chip() {
+                return spectator.query(DotColorIconComponent) as DotColorIconComponent;
+            }
+
+            it.each([
+                ['scanned', 'auto_awesome', 'primary'],
+                ['fixing', 'bolt', 'orange']
+            ])('%s gets the %s glyph on a %s chip', (phase, glyph, color) => {
+                render({ phase: phase as StudioPhase });
+
+                // dot-color-icon derives the tinted background and the matching
+                // foreground from this one token — passing a raw bg class instead
+                // would drift from every other chip in the app.
+                expect(chip().color()).toBe(color);
+                expect(spectator.query(byTestId('studio-footer-icon'))).toHaveText(glyph);
+            });
+
+            it.each([['ready'], ['scanning'], ['done'], ['published']])(
+                'has no chip while %s',
+                (phase) => {
+                    render({ phase: phase as StudioPhase });
+
+                    expect(spectator.query(byTestId('studio-footer-icon'))).toBeFalsy();
+                }
+            );
         });
     });
 });
