@@ -309,6 +309,27 @@ public class SecretsStoreWipeRegressionTest {
     }
 
     /**
+     * Method to test: the retry-count floor in {@code loadSecretsStore}.
+     * Given Scenario: SECRETS_STORE_LOAD_TRIES misconfigured to 0, with a perfectly readable store.
+     * Expected Result: the secret still reads. Without a floor the loop never runs, no failure is
+     * recorded, and the terminal handler declares an intact store permanently unreadable on this
+     * node -- blaming a password or corruption problem that does not exist.
+     */
+    @Test
+    public void test_zeroConfiguredTries_stillReadsAReadableStore() throws Exception {
+        final SecretsKeyStoreHelper helper = helperWithPassword(PASSWORD_A);
+        helper.saveValue(CANARY_KEY, CANARY_VALUE.toCharArray());
+
+        Config.setProperty(SECRETS_STORE_LOAD_TRIES, "0");
+
+        assertEquals("a misconfigured retry count must not make a good store unreadable",
+                CANARY_VALUE, readSecret(helper, CANARY_KEY));
+
+        Config.setProperty(SECRETS_STORE_LOAD_TRIES, "-5");
+        assertEquals("negative is floored too", CANARY_VALUE, readSecret(helper, CANARY_KEY));
+    }
+
+    /**
      * Method to test: the retry backoff in {@code loadSecretsStore}.
      * Given Scenario: a torn store, so the read retries with backoff, on a thread that is already
      * interrupted.

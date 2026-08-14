@@ -202,9 +202,17 @@ public class SecretsKeyStoreHelper {
         // recreated it empty, loaded it cleanly and reported success (issue #36724).
         final File secretStoreFile = createStoreIfNeeded();
 
-        final int maxLoadTries = Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 3);
-        final long backoffMillis = Config
-                .getLongProperty(SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS, 100);
+        // Floored at one attempt. A configured 0 or a negative value would skip the loop entirely,
+        // leaving no failure to report, and the terminal handler would then declare a perfectly
+        // intact store permanently unreadable on this node -- with a diagnosis pointing at a
+        // password or corruption problem that does not exist. One attempt is the minimum that can
+        // answer the question the method was asked.
+        final int maxLoadTries = Math.max(1,
+                Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 3));
+        // Floored at zero: a negative backoff would make Thread.sleep throw
+        // IllegalArgumentException, which is not an IOException and would escape the retry loop.
+        final long backoffMillis = Math.max(0L,
+                Config.getLongProperty(SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS, 100));
 
         IOException lastFailure = null;
         boolean interrupted = false;
