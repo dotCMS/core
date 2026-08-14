@@ -22,7 +22,6 @@ import {
     DotExperimentsService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotPageBrowserPage,
     DotPagesBrowserService
 } from '@dotcms/data-access';
 import {
@@ -32,13 +31,9 @@ import {
     DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
-    GOAL_OPERATORS,
-    GOAL_TYPES,
     Goals,
-    ReachPageGoalCondition,
     TrafficProportion,
     TrafficProportionTypes,
-    UrlParameterGoalCondition,
     Variant
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -49,36 +44,34 @@ import {
     dotExperimentsConfigurePageEvents
 } from './dot-experiments-configure-page.events';
 
-import { AUTOSAVE_DEBOUNCE_MS, CONFIGURATION_SEGMENT } from '../shared/constants';
 import {
-    ConfigureValidationRule,
-    DotExperimentConfigurePage,
+    AUTOSAVE_DEBOUNCE_MS,
+    CONFIGURATION_SEGMENT,
+    LOCKED_BANNER_KEY_READ_ONLY,
+    LOCKED_BANNER_KEY_RUNNING,
+    PAGE_PREFILL_ERROR_KEY,
+    START_ERROR_HEADER_KEY,
+    TOTAL_WEIGHT
+} from '../shared/constants';
+import {
     DotExperimentsConfigureViewState,
     ExperimentFieldGroup,
     ExperimentListAction
 } from '../shared/models';
+import {
+    addPendingGroup,
+    fromBrowserPage,
+    normalizePath,
+    removePendingGroup,
+    splitWeightsEvenly,
+    toConfigurePage,
+    totalWeight,
+    validateConfigure
+} from '../util/dot-experiments-configure.util';
 import { isAllowed } from '../util/dot-experiments-list.util';
 
 const pageEvents = dotExperimentsConfigurePageEvents;
 const apiEvents = dotExperimentsConfigureApiEvents;
-
-/** Read-only banner copy while an experiment is running, which is not the generic one (AC35). */
-export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
-
-/** Read-only banner copy for every other non-DRAFT status. */
-export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
-
-/** Page card's inline error when `?pageId=`/`?url=` named a page that could not be resolved. */
-export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
-
-/** Fallback header the old screen supplies when the backend rejects a start with no header of its own. */
-const START_ERROR_HEADER_KEY = 'dot.common.http.error.400.experiment.run-scheduling-error.header';
-
-/** Total the variant weights must add up to. */
-const TOTAL_WEIGHT = 100;
-
-/** Weights are stored as percentages with two decimals, so compare at that resolution. */
-const WEIGHT_PRECISION = 100;
 
 const initialState: DotExperimentsConfigureViewState = {
     experiment: null,
@@ -102,147 +95,6 @@ interface PageLookupEntity {
 
 /** What an autosave handler reports when it settles a field group without calling the API. */
 type AutosaveSkipped = ReturnType<typeof apiEvents.autosaveSkipped>;
-
-/**
- * Splits 100% across the variants: `floor(100/n)` each, with the remainder absorbed by the first
- * one so the total is exactly 100 for any variant count (AC23).
- */
-export function splitWeightsEvenly(variants: Variant[]): Variant[] {
-    if (!variants.length) {
-        return variants;
-    }
-
-    const share = Math.floor(TOTAL_WEIGHT / variants.length);
-    const remainder = TOTAL_WEIGHT - share * variants.length;
-
-    return variants.map((variant, index) => ({
-        ...variant,
-        weight: index === 0 ? share + remainder : share
-    }));
-}
-
-/** Sum of the variant weights, rounded to the precision they are stored at. */
-export function totalWeight(variants: Variant[]): number {
-    const total = variants.reduce((sum, { weight }) => sum + (weight ?? 0), 0);
-
-    return Math.round(total * WEIGHT_PRECISION) / WEIGHT_PRECISION;
-}
-
-/**
- * The eight rules Start/Schedule checks, in the order the screen reads top to bottom — which is
- * also the order the shell scrolls through to find the first failing field.
- *
- * Nothing here runs before Start is pressed (AC28), so this is a plain function over the state
- * rather than a computed: materialising it early is exactly what the screen must not do.
- */
-export function validateConfigure(
-    state: Pick<DotExperimentsConfigureViewState, 'draftName' | 'selectedPage' | 'experiment'>
-): ConfigureValidationRule[] {
-    const errors: ConfigureValidationRule[] = [];
-    const experiment = state.experiment;
-    const goal = experiment?.goals?.primary ?? null;
-
-    if (!state.draftName.trim()) {
-        errors.push('name');
-    }
-
-    if (!state.selectedPage && !experiment?.pageId) {
-        errors.push('page');
-    }
-
-    if (!goal?.type) {
-        errors.push('goalType');
-    }
-
-    if (!goal?.name?.trim()) {
-        errors.push('goalName');
-    }
-
-    errors.push(...validateGoalCondition(goal?.type, goal?.conditions?.[0]));
-
-    const variants = experiment?.trafficProportion?.variants ?? [];
-
-    if (variants.length < 2) {
-        errors.push('minVariants');
-    }
-
-    if (variants.length && totalWeight(variants) !== TOTAL_WEIGHT) {
-        errors.push('weightsTotal');
-    }
-
-    return errors;
-}
-
-/**
- * Condition rules for the two goal types that have conditions. BOUNCE_RATE and EXIT_RATE have no
- * server-side conditions, so they are complete without one.
- */
-function validateGoalCondition(
-    goalType: GOAL_TYPES | undefined,
-    condition: ReachPageGoalCondition | UrlParameterGoalCondition | undefined
-): ConfigureValidationRule[] {
-    if (goalType === GOAL_TYPES.REACH_PAGE) {
-        const value = condition?.value as string | undefined;
-
-        return value?.trim() ? [] : ['goalConditionValue'];
-    }
-
-    if (goalType !== GOAL_TYPES.URL_PARAMETER) {
-        return [];
-    }
-
-    const value = condition?.value as { name?: string; value?: string } | undefined;
-    const errors: ConfigureValidationRule[] = [];
-
-    // EXISTS only asks whether the parameter is there, so it needs no value — the name it looks
-    // for is still required.
-    if (condition?.operator !== GOAL_OPERATORS.EXISTS && !value?.value?.trim()) {
-        errors.push('goalConditionValue');
-    }
-
-    if (!value?.name?.trim()) {
-        errors.push('goalParameterName');
-    }
-
-    return errors;
-}
-
-function addPendingGroup(
-    groups: ExperimentFieldGroup[],
-    group: ExperimentFieldGroup
-): ExperimentFieldGroup[] {
-    return groups.includes(group) ? groups : [...groups, group];
-}
-
-function removePendingGroup(
-    groups: ExperimentFieldGroup[],
-    group: ExperimentFieldGroup
-): ExperimentFieldGroup[] {
-    return groups.filter((pending) => pending !== group);
-}
-
-function toConfigurePage(contentlet: DotCMSContentlet): DotExperimentConfigurePage {
-    const path = contentlet.url ?? '';
-
-    return {
-        pageId: contentlet.identifier,
-        title: contentlet.title || path,
-        path
-    };
-}
-
-function fromBrowserPage(page: DotPageBrowserPage): DotExperimentConfigurePage {
-    return {
-        pageId: page.identifier,
-        title: page.title,
-        path: page.path || page.url
-    };
-}
-
-/** Trailing slashes and casing are not part of the identity of a page path. */
-function normalizePath(path: string): string {
-    return path.trim().toLowerCase().replace(/\/+$/, '');
-}
 
 /**
  * Store for the Configure screen, on both `/experiments/new` and

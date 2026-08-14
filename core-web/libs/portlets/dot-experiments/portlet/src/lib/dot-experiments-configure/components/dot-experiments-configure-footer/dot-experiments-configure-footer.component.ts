@@ -8,11 +8,9 @@ import { ButtonModule } from 'primeng/button';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { EXPERIMENTS_URL } from '../../../shared/constants';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-
-/** Where Back To Experiments leaves to. Absolute: the portlet is always mounted on this segment. */
-const EXPERIMENTS_LIST_URL = '/experiments';
 
 /** Persistent hint that explains why the screen has no Save button (AC8). */
 const AUTOSAVE_HINT_KEY = 'experiments.configure.footer.autosave-hint';
@@ -108,7 +106,7 @@ export class DotExperimentsConfigureFooterComponent {
 
     /** Leaves the Configure screen for the list. */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_LIST_URL]);
+        this.#router.navigate([EXPERIMENTS_URL]);
     }
 
     /**

@@ -130,6 +130,25 @@ export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;
  */
 export const AUTOSAVE_DEBOUNCE_MS = 500;
 
+/** Read-only banner copy while an experiment is running, which is not the generic one (AC35). */
+export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
+
+/** Read-only banner copy for every other non-DRAFT status. */
+export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
+
+/** Page card's inline error when `?pageId=`/`?url=` named a page that could not be resolved. */
+export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
+
+/** Fallback header the old screen supplies when the backend rejects a start with no header of its own. */
+export const START_ERROR_HEADER_KEY =
+    'dot.common.http.error.400.experiment.run-scheduling-error.header';
+
+/** Total the variant weights must add up to, and the cap on any single one. */
+export const TOTAL_WEIGHT = 100;
+
+/** Weights are stored as percentages with two decimals, so compare at that resolution. */
+export const WEIGHT_PRECISION = 100;
+
 /**
  * The variant cap and the condition option lists come from `@dotcms/dotcms-models` unchanged, and
  * are re-exported here so the Configure screen has one place to look. Redeclaring them would let
