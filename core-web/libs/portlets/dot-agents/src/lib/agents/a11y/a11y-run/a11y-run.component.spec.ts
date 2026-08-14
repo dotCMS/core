@@ -9,8 +9,11 @@ import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
 import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DotA11yActionsComponent } from './a11y-actions/a11y-actions.component';
+import { DotA11yActivityComponent } from './a11y-activity/a11y-activity.component';
 import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
 import { DotA11yRunComponent } from './a11y-run.component';
+import { DotA11yScoreComponent } from './a11y-score/a11y-score.component';
 
 import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
 import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
@@ -409,101 +412,95 @@ describe('DotA11yRunComponent', () => {
         );
     });
 
-    describe('ready phase', () => {
-        beforeEach(() => render('ready'));
+    describe('what the panel children are handed', () => {
+        // Each child renders its own slice (covered in its own spec); the shell's job
+        // is handing every one of them the right store signal.
+        it('gives the score widget the counts and the phase', () => {
+            render('scanned', MOCK_FIX_REPORT);
+            const score = spectator.query(DotA11yScoreComponent) as DotA11yScoreComponent;
 
-        it('shows the scan button', () => {
-            expect(spectator.query(byTestId('studio-scan-btn'))).toBeTruthy();
+            expect(score.phase()).toBe('scanned');
+            expect(score.hasResults()).toBe(true);
+            expect(score.openCount()).toBe(5);
+            expect(score.warningCount()).toBe(2);
+            expect(score.severityCounts()).toEqual({
+                critical: 3,
+                serious: 2,
+                moderate: 0,
+                minor: 0
+            });
         });
 
-        it('does not show the skip-css toggle yet (it is a fix option)', () => {
-            expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeFalsy();
+        it('gives the activity log the stream, the report and both group lists', () => {
+            const steps: AgentRunStep[] = [{ message: 'working', meta: { phase: 'fix' } }];
+            render('fixing', MOCK_FIX_REPORT, steps);
+            const activity = spectator.query(DotA11yActivityComponent) as DotA11yActivityComponent;
+
+            expect(activity.phase()).toBe('fixing');
+            expect(activity.steps()).toEqual(steps);
+            expect(activity.report()).toEqual(MOCK_FIX_REPORT);
+            // Errors go to the issue-type list, warnings to needs-review — swapping
+            // them would put unconfirmed findings in the fix list.
+            expect(activity.issueTypeGroups().map((g) => g.code)).toEqual([
+                'image-alt',
+                'button-name'
+            ]);
+            expect(activity.reviewGroups().map((g) => g.code)).toEqual(['color-contrast']);
         });
 
-        it('hides the score widget in the ready state (before scanning)', () => {
-            expect(spectator.query(byTestId('studio-score-ring'))).toBeFalsy();
-            expect(spectator.query(byTestId('studio-score-count'))).toBeFalsy();
-        });
+        it('gives the action footer the phase and the counts its copy interpolates', () => {
+            render('done', MOCK_FIX_REPORT);
+            const actions = spectator.query(DotA11yActionsComponent) as DotA11yActionsComponent;
 
-        it('triggers runScan on click', () => {
-            const btn = spectator.query(byTestId('studio-scan-btn'))?.querySelector('button');
-            spectator.click(btn as HTMLElement);
-            expect(runScan).toHaveBeenCalled();
+            expect(actions.phase()).toBe('done');
+            expect(actions.pagePath()).toBe('/about-us');
+            expect(actions.fixedCount()).toBe(
+                MOCK_FIX_REPORT.scan.before.violations - MOCK_FIX_REPORT.scan.after.violations
+            );
+            expect(actions.reportedCount()).toBe(MOCK_FIX_REPORT.scan.after.violations);
         });
 
         it('shows the changed-files list before a run completes', () => {
             // The list resolves the working-vs-live delta itself, so it's present
             // (and loading) from the moment the page opens — no scan required.
+            render('ready');
+
             expect(spectator.query(DotA11yDiffStubComponent)).toBeTruthy();
         });
 
         it('shows the preview, not a diff, until a file is picked', () => {
+            render('ready');
+
             expect(spectator.component.$state.diffFile()).toBeNull();
+            expect(spectator.query(DotA11yPreviewStubComponent)).toBeTruthy();
             expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
         });
     });
 
-    describe('scanned phase', () => {
-        beforeEach(() => render('scanned', MOCK_FIX_REPORT));
+    describe('the footer actions drive the run', () => {
+        // The footer only emits; these assert the shell turns each emission into the
+        // right store call. Which button each phase offers is the footer's own spec.
+        it.each([
+            ['ready', 'studio-scan-btn', () => runScan],
+            ['scanning', 'studio-stopscan-btn', () => stopScan],
+            ['scanned', 'studio-rescan-btn', () => runScan],
+            ['scanned', 'studio-fix-btn', () => startFix],
+            ['fixing', 'studio-stopagent-btn', () => stopAgent]
+        ])('%s: %s calls the store', (studioPhase, testId, pickSpy) => {
+            render(studioPhase as StudioPhase, MOCK_FIX_REPORT);
 
-        it('shows the fix button', () => {
-            expect(spectator.query(byTestId('studio-fix-btn'))).toBeTruthy();
-        });
-
-        it('shows the skip-css toggle (a fix option, offered before Fix)', () => {
-            expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeTruthy();
-        });
-
-        it('shows the real open-count in the ring', () => {
-            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
-        });
-
-        it('crossfades the real issue-type list in (over the skeleton)', () => {
-            expect(spectator.query(byTestId('studio-issue-type-list'))).toHaveClass(
-                'studio-fade-in'
-            );
-            // The skeleton is only shown while scanning, not in the scanned state.
-            expect(spectator.query(byTestId('studio-issue-type-skeleton'))).toBeFalsy();
-        });
-
-        it('keeps the preview pane mounted after scanning', () => {
-            expect(spectator.query(DotA11yPreviewStubComponent)).toBeTruthy();
-        });
-
-        it('triggers startFix on click', () => {
-            const btn = spectator.query(byTestId('studio-fix-btn'))?.querySelector('button');
+            const btn = spectator.query(byTestId(testId))?.querySelector('button');
             spectator.click(btn as HTMLElement);
-            expect(startFix).toHaveBeenCalled();
+
+            expect(pickSpy()).toHaveBeenCalled();
         });
 
-        it('renders the BY ISSUE TYPE list — one row per error rule', () => {
-            // MOCK_GROUPS has 2 error groups (image-alt, button-name) + 1 warning.
-            expect(spectator.queryAll(byTestId('studio-issue-type-row')).length).toBe(2);
-        });
+        it('passes the skip-css choice to the store', () => {
+            render('scanned', MOCK_FIX_REPORT);
 
-        it('renders the severity legend (non-empty buckets)', () => {
-            const legend = spectator.query(byTestId('studio-severity-legend'));
-            expect(legend).toBeTruthy();
-            // critical + serious have counts; moderate/minor are 0 → hidden when scanned.
-            expect(legend).toHaveText('Critical');
-            expect(legend).toHaveText('Serious');
-        });
+            spectator.triggerEventHandler('p-toggleswitch', 'ngModelChange', true);
 
-        it('shows the re-scan icon button', () => {
-            expect(spectator.query(byTestId('studio-rescan-btn'))).toBeTruthy();
-        });
-
-        it('surfaces needs-review items separately (not in the fix count)', () => {
-            // mock warningCount = 2 → the note renders (the mock message service returns
-            // the key verbatim); the donut count stays 5 (confirmed errors only).
-            expect(spectator.query(byTestId('studio-needsreview-note'))).toBeTruthy();
-            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
-        });
-
-        it('renders the needs-review section with a row per incomplete rule', () => {
-            // MOCK_GROUPS has 1 warning group (color-contrast).
-            expect(spectator.query(byTestId('studio-review-section'))).toBeTruthy();
-            expect(spectator.queryAll(byTestId('studio-review-row')).length).toBe(1);
+            expect(setSkipCss).toHaveBeenCalledWith(true);
         });
     });
 
@@ -538,63 +535,28 @@ describe('DotA11yRunComponent', () => {
         });
     });
 
-    describe('scanning phase', () => {
-        beforeEach(() => render('scanning'));
+    it('crossfades a whole-screen skeleton while scanning — score and issue list together', () => {
+        // Both skeletons carry the results' footprint, so the swap to real data is a
+        // crossfade with no layout shift; one arriving without the other would jump.
+        render('scanning');
 
-        it('renders the results skeleton (score + issue list) with the results footprint', () => {
-            expect(spectator.query(byTestId('studio-score-skeleton'))).toBeTruthy();
-            expect(spectator.query(byTestId('studio-issue-type-skeleton'))).toBeTruthy();
-        });
-
-        it('shows the Stop scan button and triggers stopScan', () => {
-            const btn = spectator.query(byTestId('studio-stopscan-btn'))?.querySelector('button');
-            expect(btn).toBeTruthy();
-            spectator.click(btn as HTMLElement);
-            expect(stopScan).toHaveBeenCalled();
-        });
-
-        it('shows the skeleton, not the real widget or issue list, while scanning', () => {
-            expect(spectator.query(byTestId('studio-issue-type-list'))).toBeFalsy();
-            expect(spectator.query(byTestId('studio-score-ring'))).toBeFalsy();
-        });
-
-        // Guards the `phase() !== 'ready'` negations: written as `!phase() === 'ready'`
-        // they'd parse as `(!phase()) === 'ready'` — always false — silently hiding the
-        // section header and showing the ready-state explainer mid-scan.
-        it('shows the section header and hides the ready explainer once scanning', () => {
-            expect(spectator.query(byTestId('studio-working-badge'))).toBeTruthy();
-            expect(spectator.query(byTestId('studio-ready-card'))).toBeFalsy();
-        });
+        expect(spectator.query(byTestId('studio-score-skeleton'))).toBeTruthy();
+        expect(spectator.query(byTestId('studio-issue-type-skeleton'))).toBeTruthy();
+        expect(spectator.query(byTestId('studio-score-ring'))).toBeFalsy();
+        expect(spectator.query(byTestId('studio-issue-type-list'))).toBeFalsy();
     });
 
-    describe('fixing phase (live stream)', () => {
-        const LIVE_STEPS: AgentRunStep[] = [
+    it('streams the live steps into the activity log while fixing', () => {
+        // The copy the log shows (and its cycling thinking line) is covered in
+        // a11y-activity.component.spec.ts; here it just has to be wired to the stream
+        // and rendering while the agent works.
+        render('fixing', null, [
             { message: 'Scanning live + working baseline', meta: { phase: 'scan' } },
-            { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } },
-            // Leading "Agent:" role label the model sometimes prepends — the
-            // presenter strips it so the log/banner show just the action.
-            { message: 'Agent: reading activity.vtl', meta: { phase: 'read' } }
-        ];
+            { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } }
+        ]);
 
-        beforeEach(() => render('fixing', null, LIVE_STEPS));
-
-        it('shows the Stop agent button', () => {
-            expect(spectator.query(byTestId('studio-stopagent-btn'))).toBeTruthy();
-        });
-
-        it('triggers stopAgent on click', () => {
-            const btn = spectator.query(byTestId('studio-stopagent-btn'))?.querySelector('button');
-            spectator.click(btn as HTMLElement);
-            expect(stopAgent).toHaveBeenCalled();
-        });
-
-        it('streams the live steps into the activity log', () => {
-            // The copy the log shows (and its cycling thinking line) is covered in
-            // a11y-activity.component.spec.ts; here it just has to be wired to the
-            // stream and rendering while the agent works.
-            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(3);
-            expect(spectator.query(byTestId('agent-thinking'))).not.toBeNull();
-        });
+        expect(spectator.queryAll(byTestId('agent-message')).length).toBe(2);
+        expect(spectator.query(byTestId('agent-thinking'))).not.toBeNull();
     });
 
     describe('run error state', () => {
@@ -642,21 +604,6 @@ describe('DotA11yRunComponent', () => {
 
             // A second press must not close the panel it just opened.
             expect(spectator.component.isPanelOpen('files')).toBe(true);
-        });
-
-        it('renders an activity step per result plus scan/locate/rescan framing', () => {
-            // 7 fixed + 2 skipped + 3 framing steps (scan, locate, rescan). The mock's 3
-            // `reported` rows are deferrals to the agentic pass, not unresolved work, so
-            // they get no bubble.
-            expect(spectator.queryAll(byTestId('agent-message')).length).toBe(12);
-        });
-
-        it('shows the after-count in the ring', () => {
-            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
-        });
-
-        it('still shows the needs-review section in the report', () => {
-            expect(spectator.query(byTestId('studio-review-section'))).toBeTruthy();
         });
 
         it('picking a file in the list opens its diff in the right pane', () => {

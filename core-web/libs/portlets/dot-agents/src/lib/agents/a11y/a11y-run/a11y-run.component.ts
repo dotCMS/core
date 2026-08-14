@@ -68,6 +68,12 @@ const INITIAL_VIEW_STATE: A11yRunViewState = {
 /**
  * The Studio run screen: the agent column (score widget + recipe log +
  * state-driven action footer) beside a live preview pane.
+ *
+ * A shell. It provides the run store, adopts the page the list handed over, owns
+ * the accordion/diff view state, and feeds each child its slice of the run —
+ * {@link DotA11yScoreComponent}, {@link DotA11yActivityComponent},
+ * {@link DotA11yActionsComponent}, {@link DotA11yPreviewComponent} and the diff
+ * pieces. The behaviour behind each of those lives with the child, not here.
  */
 @Component({
     selector: 'dot-a11y-run',
