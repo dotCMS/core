@@ -28,7 +28,7 @@ import org.junit.Test;
  * Deterministic regression tests for issue #36724 — a multi-node race that silently wiped the App
  * secrets store.
  *
- * These deliberately contain no threads, sleeps or timing assumptions. The failure the issue
+ * These deliberately contain no concurrency and no timing assumptions. The failure the issue
  * describes is a race, but the *damage* was done by a single-threaded code path: any load failure
  * caused {@code getSecretsStore()} to back up and delete the store, and its retry loop then
  * recreated an empty one, loaded it cleanly and logged "KeyStore loaded successfully". Each test
@@ -298,6 +298,41 @@ public class SecretsStoreWipeRegressionTest {
         }
         assertTrue("latch stays set; no second notification",
                 SecretsKeyStoreHelper.hasNotifiedLoadFailure());
+    }
+
+    /**
+     * Method to test: the retry backoff in {@code loadSecretsStore}.
+     * Given Scenario: a torn store, so the read retries with backoff, on a thread that is already
+     * interrupted.
+     * Expected Result: the failure still raises, and the thread's interrupt flag survives.
+     * Thread.sleep clears the flag when it throws, so swallowing InterruptedException would lose a
+     * shutdown or timeout signal and leave the loop sleeping on a thread asked to stop.
+     */
+    @Test
+    public void test_interruptDuringRetryBackoff_isNotSwallowed() throws Exception {
+        final SecretsKeyStoreHelper helper = helperWithPassword(PASSWORD_A);
+        helper.saveValue(CANARY_KEY, CANARY_VALUE.toCharArray());
+
+        // Force the retrying (non-integrity) path: a truncated store, not a bad password.
+        final byte[] intact = Files.readAllBytes(storePath);
+        Files.write(storePath, Arrays.copyOf(intact, intact.length / 2));
+        Config.setProperty(SECRETS_STORE_LOAD_TRIES, "3");
+
+        Thread.currentThread().interrupt();
+        try {
+            helper.getValue(CANARY_KEY);
+            fail("a torn store must still raise");
+        } catch (DotRuntimeException expected) {
+            // correct
+        } finally {
+            // Read and clear, so the assertion below is about what the helper left behind and this
+            // test cannot leak an interrupt into whatever runs next in the suite.
+            final boolean stillInterrupted = Thread.interrupted();
+            assertTrue("the interrupt flag must survive the retry backoff", stillInterrupted);
+        }
+
+        assertTrue("and the store must still be intact", Files.exists(storePath));
+        assertEquals("with nothing backed up or replaced", 0, countBackups());
     }
 
     /**

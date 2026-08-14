@@ -236,8 +236,17 @@ public class SecretsKeyStoreHelper {
                                 + " Another node may be writing it.",
                         tryCount, maxLoadTries, e.getMessage()));
 
-                final long sleepMillis = backoffMillis * tryCount;
-                Try.run(() -> Thread.sleep(sleepMillis));
+                try {
+                    Thread.sleep(backoffMillis * tryCount);
+                } catch (final InterruptedException ie) {
+                    // Thread.sleep clears the interrupt flag when it throws, so restore it: the
+                    // caller -- a shutdown hook, a request timeout -- is entitled to see that this
+                    // thread was interrupted. Stop retrying too, rather than sleeping again on a
+                    // thread that has been asked to stop; the loop falls through to the terminal
+                    // handler, which preserves the store and raises.
+                    Thread.currentThread().interrupt();
+                    break;
+                }
 
             } catch (GeneralSecurityException e) {
                 Logger.error(this.getClass(),
