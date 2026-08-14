@@ -49,9 +49,13 @@
     <!-- The accordion is a flex column that fills the aside; the panel HEADERS stay
          put and each open panel's CONTENT scrolls on its own (see below), rather
          than the whole accordion scrolling as one block. -->
+    <!-- The open panels live in the component's `signalState`, whose slices are
+         readonly signals — so the two-way `[(value)]` is split into a read binding
+         plus an explicit write-back (see onOpenPanelsChange). -->
     <p-accordion
         [multiple]="true"
-        [(value)]="$openPanels"
+        [value]="$state.openPanels()"
+        (valueChange)="onOpenPanelsChange($event)"
         styleClass="flex min-h-0 flex-1 flex-col"
         data-testid="studio-panels">
         <!-- ---------- PANEL 1: SCANNER ---------- -->
@@ -127,7 +131,7 @@
                                     <span
                                         class="text-4xl font-extrabold text-color tabular-nums"
                                         data-testid="studio-score-count">
-                                        {{ $displayCount() }}
+                                        {{ $state.displayCount() }}
                                     </span>
                                     <span
                                         class="mt-1 font-bold tracking-wider text-muted-color uppercase">
@@ -527,7 +531,7 @@
             <p-accordion-content [pt]="{ content: { class: 'p-0! max-h-[400px]' } }">
                 <div class="px-4 pb-4" data-testid="studio-panel-files-body">
                     <dot-a11y-diff
-                        [activeFileId]="$diffFile()?.identifier ?? null"
+                        [activeFileId]="$state.diffFile()?.identifier ?? null"
                         (fileSelected)="onDiffFileSelected($event)"
                         (changedCount)="onChangedFilesCount($event)"
                         data-testid="studio-diff-list" />
@@ -573,7 +577,7 @@
          so the class toggle wouldn't reliably win. -->
     <main
         class="grid min-h-0 flex-1 grid-cols-2 gap-4 p-5"
-        [style.display]="$diffFile() ? 'none' : null">
+        [style.display]="$state.diffFile() ? 'none' : null">
         <!-- AFTER — the working render carrying the agent's fixes -->
         <section
             class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-surface-300 bg-white shadow-lg">
@@ -651,7 +655,7 @@
 
     <!-- File diff — replaces the preview while a file is selected. Mounted only
          then, so Monaco isn't built until the user asks for a diff. -->
-    @if ($diffFile(); as file) {
+    @if ($state.diffFile(); as file) {
         <dot-a11y-diff-viewer
             class="min-h-0 flex-1"
             [file]="file"

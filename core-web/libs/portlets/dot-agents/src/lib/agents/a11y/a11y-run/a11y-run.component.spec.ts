@@ -302,7 +302,7 @@ describe('DotA11yRunComponent', () => {
             expect(spectator.component.isPanelOpen('files')).toBe(true);
             // Opening files must NOT collapse the scanner.
             expect(spectator.component.isPanelOpen('scanner')).toBe(true);
-            expect(spectator.component.$openPanels()).toEqual(['scanner', 'files']);
+            expect(spectator.component.$state.openPanels()).toEqual(['scanner', 'files']);
         });
 
         it('each panel collapses independently', () => {
@@ -318,18 +318,18 @@ describe('DotA11yRunComponent', () => {
 
             expect(spectator.component.isPanelOpen('scanner')).toBe(false);
             expect(spectator.component.isPanelOpen('files')).toBe(false);
-            expect(spectator.component.$openPanels()).toEqual([]);
+            expect(spectator.component.$state.openPanels()).toEqual([]);
         });
 
         it('tracks the changed-file count reported by the diff list', () => {
-            expect(spectator.component.$changedFileCount()).toBe(0);
+            expect(spectator.component.$state.changedFileCount()).toBe(0);
             expect(spectator.component.$hasChangedFiles()).toBe(false);
 
             const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
             list.changedCount.emit(2);
             spectator.detectChanges();
 
-            expect(spectator.component.$changedFileCount()).toBe(2);
+            expect(spectator.component.$state.changedFileCount()).toBe(2);
             expect(spectator.component.$hasChangedFiles()).toBe(true);
         });
     });
@@ -419,7 +419,7 @@ describe('DotA11yRunComponent', () => {
         });
 
         it('shows the preview, not a diff, until a file is picked', () => {
-            expect(spectator.component.$diffFile()).toBeNull();
+            expect(spectator.component.$state.diffFile()).toBeNull();
             expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
         });
     });
@@ -441,7 +441,7 @@ describe('DotA11yRunComponent', () => {
 
         it('animates the score count up to the open-count (snaps under reduced motion)', () => {
             // reduced-motion is mocked on, so displayCount snaps to the target.
-            expect(spectator.component.$displayCount()).toBe(5);
+            expect(spectator.component.$state.displayCount()).toBe(5);
         });
 
         it('crossfades the real issue-type list in (over the skeleton)', () => {
@@ -703,7 +703,7 @@ describe('DotA11yRunComponent', () => {
             list.fileSelected.emit(DIFF_FILE);
             spectator.detectChanges();
 
-            expect(spectator.component.$diffFile()).toEqual(DIFF_FILE);
+            expect(spectator.component.$state.diffFile()).toEqual(DIFF_FILE);
             expect(spectator.query(DotA11yDiffViewerStubComponent)?.file()).toEqual(DIFF_FILE);
             // Opening a diff is a view swap, not a navigation — run state is kept.
             expect(navigate).not.toHaveBeenCalled();
@@ -722,7 +722,7 @@ describe('DotA11yRunComponent', () => {
             viewer.closed.emit();
             spectator.detectChanges();
 
-            expect(spectator.component.$diffFile()).toBeNull();
+            expect(spectator.component.$state.diffFile()).toBeNull();
             expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
             expect(list.activeFileId()).toBeNull();
         });
@@ -731,11 +731,11 @@ describe('DotA11yRunComponent', () => {
             const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
             list.fileSelected.emit(DIFF_FILE);
             spectator.detectChanges();
-            expect(spectator.component.$diffFile()).toEqual(DIFF_FILE);
+            expect(spectator.component.$state.diffFile()).toEqual(DIFF_FILE);
 
             list.fileSelected.emit(null);
             spectator.detectChanges();
-            expect(spectator.component.$diffFile()).toBeNull();
+            expect(spectator.component.$state.diffFile()).toBeNull();
         });
     });
 

@@ -1,3 +1,5 @@
+import { patchState, signalState } from '@ngrx/signals';
+
 import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -8,7 +10,6 @@ import {
     ElementRef,
     inject,
     isDevMode,
-    signal,
     untracked,
     viewChild
 } from '@angular/core';
@@ -45,6 +46,53 @@ import { A11yRunStore } from '../store/a11y-run.store';
 
 /** The side panel's two accordion panels. */
 type StudioPanel = 'scanner' | 'files';
+
+/**
+ * This screen's own VIEW state — everything the run itself doesn't own.
+ *
+ * The run (phase, scans, findings, report) lives in {@link A11yRunStore}; what
+ * stays here is only what the user is *looking at*: which panels are open, which
+ * file's diff is on the right, the count-up currently animating in the ring, and
+ * the changed-file count the diff list reports back up. One `signalState` rather
+ * than four loose `signal()`s so the whole view state is declared in one place
+ * and every write goes through `patchState`.
+ */
+interface A11yRunViewState {
+    /**
+     * The number shown in the ring center. Eased from its previous value up to
+     * the store's `openCount()` whenever a scan resolves (or the count changes
+     * while fixing), so the score "rolls" in sync with the donut sweep instead of
+     * snapping. Written only by the component's count-up animation.
+     */
+    displayCount: number;
+
+    /**
+     * The source file whose diff the right pane is showing, or null for the preview.
+     * Set from the changed-files accordion in the left panel; the preview stays
+     * mounted underneath so returning to it doesn't reload the iframes.
+     */
+    diffFile: PageDiffFile | null;
+
+    /**
+     * Which of the side panel's accordion panels are open — the `scanner` (score,
+     * issues, activity log + scan/fix actions) and `files` (changed files + publish).
+     * `p-accordion` is in `multiple` mode, so this is the array it binds: the panels
+     * open and close independently and the user can watch a run while reviewing the
+     * files it touched. The scanner starts open, files collapsed.
+     */
+    openPanels: StudioPanel[];
+
+    /** How many source files differ between working and live, for the count badge. */
+    changedFileCount: number;
+}
+
+/** The view state every run starts from: scanner open, nothing else yet. */
+const INITIAL_VIEW_STATE: A11yRunViewState = {
+    displayCount: 0,
+    diffFile: null,
+    openPanels: ['scanner'],
+    changedFileCount: 0
+};
 
 /** A severity legend / breakdown row beside the donut. */
 interface SeverityRow {
@@ -172,34 +220,13 @@ export class DotA11yRunComponent {
     readonly #destroyRef = inject(DestroyRef);
 
     /**
-     * The number shown in the ring center. Eased from its previous value up to
-     * the store's `openCount()` whenever a scan resolves (or the count changes
-     * while fixing), so the score "rolls" in sync with the donut sweep instead of
-     * snapping. See {@link animateCountTo}.
+     * This screen's view state — see {@link A11yRunViewState}. Read through its
+     * deep signals (`$state.openPanels()`), written only via `patchState`.
      */
-    readonly $displayCount = signal(0);
-
-    /**
-     * The source file whose diff the right pane is showing, or null for the preview.
-     * Set from the changed-files accordion in the left panel; the preview stays
-     * mounted underneath so returning to it doesn't reload the iframes.
-     */
-    readonly $diffFile = signal<PageDiffFile | null>(null);
-
-    /**
-     * Which of the side panel's accordion panels are open — the `scanner` (score,
-     * issues, activity log + scan/fix actions) and `files` (changed files + publish).
-     * `p-accordion` is in `multiple` mode, so this is the array it two-way binds:
-     * the panels open and close independently and the user can watch a run while
-     * reviewing the files it touched. The scanner starts open, files collapsed.
-     */
-    readonly $openPanels = signal<StudioPanel[]>(['scanner']);
-
-    /** How many source files differ between working and live, for the count badge. */
-    readonly $changedFileCount = signal(0);
+    readonly $state = signalState<A11yRunViewState>(INITIAL_VIEW_STATE);
 
     /** True when there's something to publish — drives the Publish bar. */
-    readonly $hasChangedFiles = computed(() => this.$changedFileCount() > 0);
+    readonly $hasChangedFiles = computed(() => this.$state.changedFileCount() > 0);
 
     /** rAF handle for the in-flight count-up, so a new scan can cancel it. */
     #countRaf: number | null = null;
@@ -265,14 +292,14 @@ export class DotA11yRunComponent {
     }
 
     /**
-     * Ease {@link displayCount} from its current value to `target` over ~600ms
+     * Ease the ring's `displayCount` from its current value to `target` over ~600ms
      * (easeOutCubic), synced with the donut's sweep. Snaps immediately when the
      * user prefers reduced motion or the delta is trivial.
      */
     #animateCountTo(target: number): void {
         this.#cancelCount();
 
-        const from = this.$displayCount();
+        const from = this.$state.displayCount();
         if (from === target) {
             return;
         }
@@ -280,7 +307,7 @@ export class DotA11yRunComponent {
             typeof matchMedia === 'function' &&
             matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) {
-            this.$displayCount.set(target);
+            patchState(this.$state, { displayCount: target });
 
             return;
         }
@@ -291,7 +318,9 @@ export class DotA11yRunComponent {
             start ??= now;
             const t = Math.min(1, (now - start) / duration);
             const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-            this.$displayCount.set(Math.round(from + (target - from) * eased));
+            patchState(this.$state, {
+                displayCount: Math.round(from + (target - from) * eased)
+            });
             if (t < 1) {
                 this.#countRaf = requestAnimationFrame(step);
             } else {
@@ -695,11 +724,26 @@ export class DotA11yRunComponent {
 
     /**
      * Whether a given side panel is expanded. `p-accordion` renders the panel bodies
-     * itself off the same two-way-bound `openPanels`, so nothing in the template needs
+     * itself off the same `openPanels` it binds, so nothing in the template needs
      * this — it's the readable way to assert open state from tests.
      */
     isPanelOpen(panel: StudioPanel): boolean {
-        return this.$openPanels().includes(panel);
+        return this.$state.openPanels().includes(panel);
+    }
+
+    /**
+     * The user opened/closed panels from the accordion itself.
+     *
+     * `p-accordion` binds `value` as a model, but a `signalState` slice is a readonly
+     * deep signal — it can't be the target of a `[(value)]` banana box — so the
+     * template splits the two-way binding and writes back through here. In `multiple`
+     * mode the accordion emits the open panels as an array; anything else (its
+     * single-value / cleared shapes) means "nothing open".
+     */
+    onOpenPanelsChange(value: string | number | string[] | number[] | null | undefined): void {
+        patchState(this.$state, {
+            openPanels: Array.isArray(value) ? (value as StudioPanel[]) : []
+        });
     }
 
     /**
@@ -707,19 +751,20 @@ export class DotA11yRunComponent {
      * pressing "Review files" twice must not close the panel it just opened.
      */
     openPanel(panel: StudioPanel): void {
-        this.$openPanels.update((current) =>
-            current.includes(panel) ? current : [...current, panel]
-        );
+        const current = this.$state.openPanels();
+        if (!current.includes(panel)) {
+            patchState(this.$state, { openPanels: [...current, panel] });
+        }
     }
 
     /** A file was picked in (or cleared from) the changed-files list. */
     onDiffFileSelected(file: PageDiffFile | null): void {
-        this.$diffFile.set(file);
+        patchState(this.$state, { diffFile: file });
     }
 
     /** The changed-files list reports how many files differ, for the Publish gate. */
     onChangedFilesCount(count: number): void {
-        this.$changedFileCount.set(count);
+        patchState(this.$state, { changedFileCount: count });
     }
 
     /**
@@ -727,7 +772,7 @@ export class DotA11yRunComponent {
      * highlighted row follows via its `activeFileId` input, so the two stay in sync.
      */
     closeDiff(): void {
-        this.$diffFile.set(null);
+        patchState(this.$state, { diffFile: null });
     }
 
     /**
