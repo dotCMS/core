@@ -90,8 +90,11 @@ export class DotRolesPortletService {
      * We filter for user-roles and map to `DotRoleUserFilterResult`. The
      * response does not carry email — the endpoint returns Role objects,
      * not User objects — so members loaded via this path show empty email.
-     * A follow-up ticket will add id-based user filtering upstream so we
-     * can retire this fallback.
+     *
+     * TODO: retire this fallback and the ancestor-walk fan-out in the store
+     * once `GET /v1/roles/{roleId}/users` ships (issue #37070). That
+     * endpoint will return `List<RoleMemberView>` with email + granted-from
+     * metadata in a single call, replacing this whole flow.
      */
     loadRoleMembersById(roleId: string): Observable<DotRoleUserFilterResult[]> {
         const url = `/api/v1/roles/${encodeURIComponent(

@@ -44,6 +44,7 @@ describe('DotRoleUsersTabComponent', () => {
                     roleKey: 'eco',
                     editUsers: true
                 }),
+                selectedRoleId: jest.fn().mockReturnValue('r-eco'),
                 canGrantUsers: jest.fn().mockReturnValue(true),
                 setSelectedMembers: jest.fn(),
                 loadMembers: jest.fn()
@@ -70,7 +71,9 @@ describe('DotRoleUsersTabComponent', () => {
                 userId: 'u-1',
                 firstName: 'Alan',
                 lastName: 'Cruz',
-                emailAddress: 'alan.cruz@dotcms.com'
+                emailAddress: 'alan.cruz@dotcms.com',
+                grantedFromRoleId: 'r-eco',
+                grantedFromRoleName: 'Eco Role'
             }
         ]);
         spectator.detectChanges();
