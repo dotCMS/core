@@ -94,15 +94,29 @@
                     </th>
                     <th>{{ 'roles.users.column.name' | dm }}</th>
                     <th>{{ 'roles.users.column.email' | dm }}</th>
+                    <th>{{ 'roles.users.column.granted-from' | dm }}</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-member>
+                @let direct = isDirectGrant(member);
                 <tr [attr.data-testid]="'member-row-' + member.userId">
                     <td>
-                        <p-tableCheckbox [value]="member" />
+                        <!--
+                            Inherited rows are read-only from this tab —
+                            to remove such a user, the admin must edit the
+                            ancestor role that granted them. Disabling the
+                            per-row checkbox is the cheapest way to
+                            communicate that.
+                        -->
+                        <p-tableCheckbox [value]="member" [disabled]="!direct" />
                     </td>
                     <td>{{ member.firstName }} {{ member.lastName }}</td>
                     <td>{{ member.emailAddress || '—' }}</td>
+                    <td>
+                        <p-tag
+                            [value]="member.grantedFromRoleName"
+                            [severity]="direct ? 'info' : 'secondary'" />
+                    </td>
                 </tr>
             </ng-template>
         </p-table>

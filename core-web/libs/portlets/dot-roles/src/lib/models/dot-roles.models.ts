@@ -47,16 +47,22 @@ export interface DotRoleFormValue {
 }
 
 /**
- * User row rendered in the Users tab table. Sourced from
- * `/v1/users/filter?roleKey=X` — that endpoint returns users granted the
- * given role (direct grants only; inherited grants are not covered today —
- * see the follow-up backend hardening item).
+ * User row rendered in the Users tab table.
+ *
+ * `grantedFromRoleId` / `grantedFromRoleName` identify the ancestor role
+ * where the user was directly granted. When it matches the currently-
+ * selected role, the row is a direct grant and can be removed from this
+ * tab; when it matches an ancestor, the row is inherited and can only
+ * be removed by editing the ancestor role. The store walks the ancestor
+ * chain via `RoleAPI.findRoleHierarchy` semantics to populate this.
  */
 export interface DotRoleMember {
     readonly userId: string;
     readonly firstName: string;
     readonly lastName: string;
     readonly emailAddress: string;
+    readonly grantedFromRoleId: string;
+    readonly grantedFromRoleName: string;
 }
 
 export type DotRoleTab = 'users' | 'permissions' | 'tools';
