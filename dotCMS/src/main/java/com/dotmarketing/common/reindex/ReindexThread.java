@@ -213,7 +213,7 @@ public class ReindexThread {
         while (state.get() != ThreadState.STOPPED) {
             try {
                 if (ShutdownCoordinator.isRequestDraining()) {
-                    Logger.info(this, "Shutdown detected, stopping reindex operations");
+                    Logger.infoEvery(this.getClass(), "Shutdown detected, stopping reindex operations", 10*60*10000);
                     break;
                 }
 
