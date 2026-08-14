@@ -1,57 +1,91 @@
-<!-- `h-full`, not a fixed height: the dialog owns the sizing so full-screen can grow it. -->
-<div class="flex h-full flex-col" data-testid="asset-picker">
-    <dot-asset-picker-header
-        class="flex-none border-b border-gray-200 px-4 py-3"
+<!-- `h-full` on the shell, not a fixed height: the dialog owns the sizing so full-screen can grow it. -->
+<!-- Thin scrollbars for everything the dialog scrolls — the folder tree and the asset table both
+     scroll themselves, and two default-width bars this close together eat real estate and read as
+     chrome. Declared once here rather than on each scroller: `dot-folder-list-view` is shared, so
+     narrowing its bar through a `pt` would reach consumers that never asked for it.
+     `scrollbar-width` covers Firefox and Chrome 121+; the `::-webkit-scrollbar` rules pin the exact
+     size everywhere else and win over `scrollbar-width` where both apply. -->
+<dot-dialog
+    data-testid="asset-picker"
+    class="**:[scrollbar-color:var(--color-gray-300)_transparent] **:[scrollbar-width:thin] [&_*::-webkit-scrollbar]:size-1.5 [&_*::-webkit-scrollbar-thumb]:rounded-full [&_*::-webkit-scrollbar-thumb]:bg-gray-300 [&_*::-webkit-scrollbar-track]:bg-transparent">
+    <dot-dialog-header
         [title]="$title()"
-        (close)="cancel()" />
+        [closeLabel]="'dot.asset.picker.close.aria' | dm"
+        (close)="cancel()">
+        <dot-asset-picker-fullscreen-toggle dialogHeaderActions />
+    </dot-dialog-header>
 
-    <!-- Two columns from directly under the header down, so the sidebar's "Search sites & folders"
-         sits on the same line as the asset search instead of below the whole toolbar. -->
-    <div class="flex min-h-0 flex-1 flex-row">
-        <div class="h-full w-1/4 min-w-64 shrink-0 border-r border-gray-200">
-            <dot-asset-picker-sidebar data-testid="asset-picker-sidebar" />
+    <dot-dialog-content>
+        <!-- The content slot is a plain block, so the splitter keeps the flex-column parent it was
+             sized against: `flex-1 min-h-0` is what bounds its height. -->
+        <div class="flex h-full min-h-0 flex-col">
+            <!-- Two columns from directly under the header down, so the sidebar's "Search sites &
+                 folders" sits on the same line as the asset search instead of below the whole
+                 toolbar.
+
+                 A splitter rather than fixed widths: long folder paths and wide asset tables pull in
+                 opposite directions, so the balance is the user's to set. The gutter replaces what
+                 used to be a `border-r` on the sidebar column. -->
+            <p-splitter
+                class="min-h-0 flex-1"
+                data-testid="asset-picker-splitter"
+                [panelSizes]="ASSET_PICKER_SPLITTER_SIZES"
+                [minSizes]="ASSET_PICKER_SPLITTER_MIN_SIZES"
+                [pt]="splitterPt">
+                <!-- The sidebar host is already `grid h-full w-full min-h-0`, so it stretches on its own. -->
+                <ng-template #panel>
+                    <dot-asset-picker-sidebar data-testid="asset-picker-sidebar" />
+                </ng-template>
+
+                <ng-template #panel>
+                    <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+                        <dot-asset-picker-toolbar (upload)="onUpload($event)" />
+
+                        <!-- No `overflow-auto` here: the table inside scrolls itself (`scrollHeight="flex"`
+                             hands the scroll to PrimeNG's `.p-datatable-table-container`). A second scroll
+                             box around it just stacks two scrollbars over the same rows and swallows the
+                             list's own `(scroll)` output. `min-h-0 flex-1` is all the table needs from this
+                             element — a bounded height to resolve `flex` against. -->
+                        <dot-upload-dropzone
+                            class="min-h-0 flex-1 rounded-md border border-gray-200"
+                            data-testid="asset-picker-dropzone"
+                            [targetFolder]="$targetFolder()"
+                            (uploadFiles)="onRequestUpload($event)">
+                            <dot-folder-list-view
+                                selectionMode="single"
+                                data-testid="asset-picker-list"
+                                [showActions]="false"
+                                [titleOpensItem]="false"
+                                [items]="store.items()"
+                                [loading]="$loading()"
+                                [totalItems]="store.$totalRecords()"
+                                [offset]="$offset()"
+                                (selectionChange)="onSelect($event)"
+                                (doubleClick)="onSelect([$event])"
+                                (paginate)="onPaginate($event)"
+                                (sort)="onSort($event)" />
+                        </dot-upload-dropzone>
+                    </div>
+                </ng-template>
+            </p-splitter>
         </div>
+    </dot-dialog-content>
 
-        <div class="flex min-h-0 flex-1 flex-col gap-4 p-4">
-            <dot-asset-picker-toolbar (upload)="onUpload($event)" />
-
-            <dot-upload-dropzone
-                class="min-h-0 flex-1 overflow-auto rounded-md border border-gray-200"
-                data-testid="asset-picker-dropzone"
-                [targetFolder]="$targetFolder()"
-                (uploadFiles)="onRequestUpload($event)">
-                <dot-folder-list-view
-                    selectionMode="single"
-                    data-testid="asset-picker-list"
-                    [showActions]="false"
-                    [titleOpensItem]="false"
-                    [items]="store.items()"
-                    [loading]="$loading()"
-                    [totalItems]="store.totalItems()"
-                    [offset]="$offset()"
-                    (selectionChange)="onSelect($event)"
-                    (doubleClick)="onSelect([$event])"
-                    (paginate)="onPaginate($event)"
-                    (sort)="onSort($event)" />
-            </dot-upload-dropzone>
-
-            <div class="flex flex-none flex-wrap justify-end gap-4">
-                <p-button
-                    data-testid="asset-picker-cancel"
-                    [label]="'dot.common.dialog.reject' | dm"
-                    [text]="true"
-                    severity="primary"
-                    (click)="cancel()" />
-                <p-button
-                    data-testid="asset-picker-confirm"
-                    [label]="'dot.common.dialog.accept' | dm"
-                    severity="primary"
-                    [disabled]="!store.selectedAsset()"
-                    (click)="confirm()" />
-            </div>
-        </div>
-    </div>
-</div>
+    <dot-dialog-footer data-testid="asset-picker-footer">
+        <p-button
+            data-testid="asset-picker-cancel"
+            [label]="'dot.common.dialog.reject' | dm"
+            [text]="true"
+            severity="primary"
+            (click)="cancel()" />
+        <p-button
+            data-testid="asset-picker-confirm"
+            [label]="'dot.common.dialog.accept' | dm"
+            severity="primary"
+            [disabled]="!store.selectedAsset()"
+            (click)="confirm()" />
+    </dot-dialog-footer>
+</dot-dialog>
 
 <!-- One selector instance, rendered into whichever presentation is active: a popover for the
      Upload button, a modal for drag-and-drop. -->

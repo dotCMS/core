@@ -655,39 +655,47 @@ describe('DotFolderListViewComponent', () => {
             expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
         });
 
-        it('should rescale a subset so the columns still fill the table', () => {
-            // `table-layout: fixed` shares leftover width across *every* column, including the 3rem
-            // checkbox one. A subset adding up to 57% therefore opens a gutter between the checkbox
-            // and the first heading instead of widening the title.
+        it('should leave the title column unsized so it absorbs the leftover width', () => {
+            // The one column without a width is what makes every other case below work: whatever
+            // the sized columns and the 3rem checkbox one do not claim lands here.
             spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
             spectator.detectChanges();
 
-            const total = headerCells()
-                .map((cell) => Number.parseFloat(cell.style.width))
-                .reduce((sum, width) => sum + width, 0);
+            const [title, status, type] = headerCells();
 
-            expect(total).toBeCloseTo(100);
+            expect(title.style.width).toBe('');
+            expect(status.style.width).toBe('10%');
+            expect(type.style.width).toBe('15%');
         });
 
-        it('should keep the relative proportions of the columns it keeps', () => {
-            // 32 : 10 : 15 in HEADER_COLUMNS — rescaling must not flatten them to equal thirds.
-            spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
-            spectator.detectChanges();
-
-            const [title, status, type] = headerCells().map((cell) =>
-                Number.parseFloat(cell.style.width)
-            );
-
-            expect(title / status).toBeCloseTo(3.2, 1);
-            expect(type / status).toBeCloseTo(1.5, 1);
-        });
-
-        it('should leave the widths of the full column set untouched', () => {
+        it('should keep the sized columns at their authored widths whatever is hidden', () => {
+            // No rescaling: dropping a column hands its share to the title, not to everyone.
             spectator.detectChanges();
 
             expect(headerCells().map((cell) => cell.style.width)).toEqual(
-                HEADER_COLUMNS.map((column) => column.width)
+                HEADER_COLUMNS.map((column) => column.width ?? '')
             );
+        });
+
+        it('should leave room for the checkbox column instead of overflowing the table', () => {
+            // Regression guard: percentages adding up to a full 100% put the `table-layout: fixed`
+            // table 3rem past its container, which reads as a horizontal scrollbar that scrolls
+            // nothing. Every subset has to stay under 100% so the checkbox column fits inside it.
+            for (const columns of [
+                [],
+                ['title', 'live', 'contentType'],
+                ['title', 'modUser', 'modDate']
+            ]) {
+                spectator.setInput('visibleColumns', columns);
+                spectator.setInput('showActions', columns.length === 0);
+                spectator.detectChanges();
+
+                const total = headerCells()
+                    .map((cell) => Number.parseFloat(cell.style.width) || 0)
+                    .reduce((sum, width) => sum + width, 0);
+
+                expect(total).toBeLessThan(100);
+            }
         });
 
         it('should keep extra columns under their own heading when Type is hidden', () => {

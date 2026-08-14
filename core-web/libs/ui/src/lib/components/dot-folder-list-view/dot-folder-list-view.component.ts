@@ -386,21 +386,17 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
      * list, so display order stays the table's.
+     *
+     * No width bookkeeping is needed when a column drops out: `title` is unsized (see
+     * `HEADER_COLUMNS`) and soaks up whatever the remaining sized columns leave over.
      */
     protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
         const requested = this.$visibleColumns();
         const fixed = requested.length
             ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
             : HEADER_COLUMNS;
-        const withoutActions = this.$showActions()
-            ? fixed
-            : fixed.filter((column) => column.field !== 'actions');
 
-        if (!requested.length && withoutActions.length === HEADER_COLUMNS.length) {
-            return HEADER_COLUMNS;
-        }
-
-        return this.#fillWidth(withoutActions);
+        return this.$showActions() ? fixed : fixed.filter((column) => column.field !== 'actions');
     });
 
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
@@ -531,39 +527,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
      */
     private readonly boundScrollHandler = this.scrollHandler.bind(this);
-
-    /**
-     * Rescales a subset of the fixed columns so their percentage widths add back up to 100%,
-     * keeping their proportions to one another.
-     *
-     * `HEADER_COLUMNS` is authored to fill the table exactly. Take three of seven and the rest is
-     * leftover — which `table-layout: fixed` shares across *every* column, the 3rem checkbox one
-     * included. The visible result is a gutter between the checkbox and the first heading rather
-     * than a wider title column.
-     *
-     * Left alone when any visible column carries a non-percentage width: there is nothing
-     * meaningful to rescale a `12rem` against a `32%`.
-     */
-    #fillWidth(columns: DotFolderListViewFixedColumn[]): DotFolderListViewFixedColumn[] {
-        const widths = columns.map((column) =>
-            column.width?.endsWith('%') ? Number.parseFloat(column.width) : NaN
-        );
-
-        if (widths.some((width) => !Number.isFinite(width))) {
-            return columns;
-        }
-
-        const total = widths.reduce((sum, width) => sum + width, 0);
-
-        if (!total) {
-            return columns;
-        }
-
-        return columns.map((column, index) => ({
-            ...column,
-            width: `${((widths[index] / total) * 100).toFixed(2)}%`
-        }));
-    }
 
     /**
      * Normalizes PrimeNG selection (array in multiple mode, object/null in single) to an array.

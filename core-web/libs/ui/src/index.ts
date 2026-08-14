@@ -26,6 +26,7 @@ export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';
 export * from './lib/components/dot-copy-button/dot-copy-button.component';
+export * from './lib/components/dot-dialog';
 export * from './lib/components/dot-drop-zone/dot-drop-zone.component';
 export * from './lib/components/dot-empty-container/dot-empty-container.component';
 export * from './lib/components/dot-field-validation-message/dot-field-validation-message.component';

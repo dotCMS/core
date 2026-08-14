@@ -1,10 +1,10 @@
-import { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
+import {
+    DOT_FOLDER_TREE_PAGE_SIZE,
+    DotCMSBaseTypesContentTypes,
+    DotSite
+} from '@dotcms/dotcms-models';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
-
-/** Re-export shared folder-tree page sizes for portlet consumers. */
-export { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE };
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: DotSite = {
@@ -21,8 +21,32 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     offset: 0
 };
 
+/**
+ * Page size for interactive folder-tree expand and load-more.
+ * Re-exports the shared limit used by Host Folder Field so both stay in sync.
+ */
+export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
+
+/**
+ * Page size for the deep-link / initial hierarchy fetch only. One request per ancestor level
+ * (parallel). Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
+ *
+ * Pinned to the backend's cap for `includePermissions=true`
+ * (`content.drive.folder.search.permissions.max.per.page`, default 200): anything larger is
+ * rejected with a 400, and the hierarchy load must carry permissions so every node the tree
+ * renders on first paint can gate its context menu without a second round-trip.
+ *
+ * An ancestor sorting past this page is fetched individually instead of by widening the page,
+ * see `getFolderHierarchyByPath`.
+ *
+ * Deliberately a whole multiple of {@link FOLDER_TREE_PAGE_SIZE}: load-more resumes in
+ * 40-sized pages, so the hierarchy's page count has to convert to a clean page boundary.
+ */
+export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
+
 /** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC

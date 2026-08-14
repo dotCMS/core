@@ -1,8 +1,8 @@
+import type { TreeNode } from 'primeng/api';
+
 import type {
     PermissionType,
     TreeNodeContentData,
-    TreeNodeData,
-    TreeNodeItem,
     TreeNodeLoadMoreData
 } from '@dotcms/dotcms-models';
 import type { DotUploadFiles } from '@dotcms/ui';
@@ -60,14 +60,14 @@ export type DotFolderTreeNodeContentData = TreeNodeContentData & {
  * @interface DotFolderTreeNodeData
  * @description Discriminated tree node data (content vs load-more).
  */
-export type DotFolderTreeNodeData = TreeNodeData;
+export type DotFolderTreeNodeData = DotFolderTreeNodeContentData | TreeNodeLoadMoreData;
 
 /**
  * @export
  * @type DotFolderTreeNodeItem
- * @description Tree node item (alias of shared {@link TreeNodeItem}).
+ * @description Tree node item carrying Content Drive's extended folder data.
  */
-export type DotFolderTreeNodeItem = TreeNodeItem;
+export type DotFolderTreeNodeItem = TreeNode<DotFolderTreeNodeData>;
 
 /** Re-export for consumers that import load-more data via content-drive/ui. */
 export type { TreeNodeLoadMoreData };

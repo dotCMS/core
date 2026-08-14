@@ -22,8 +22,9 @@ export class AssetPickerDialog {
 
     constructor(private page: Page) {
         this.root = page.getByTestId('asset-picker');
-        this.title = this.root.getByTestId('asset-picker-title');
-        this.closeButton = this.root.getByTestId('asset-picker-close-btn');
+        // Title and close come from the shared dialog shell, so their ids are not picker-specific.
+        this.title = this.root.getByTestId('dialog-title');
+        this.closeButton = this.root.getByTestId('dialog-close-btn');
         this.fullscreenButton = this.root.getByTestId('asset-picker-fullscreen-btn');
         // Two search boxes are on screen at once, so each carries its own id — a shared one made
         // every selector here ambiguous and was what broke this suite in CI.

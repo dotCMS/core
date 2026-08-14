@@ -1,6 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -11,29 +11,34 @@ import { imageEditorViewEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 
 /**
- * Header bar of the image editor dialog. Renders the editor title on the left and,
- * on the right, the full-screen toggle next to a close icon button (grouped as the
- * dialog's window controls). Close emits {@link DotImageEditorHeaderComponent.$close};
- * the full-screen toggle dispatches {@link imageEditorViewEvents} and the root
- * component performs the actual dialog resize, reacting to `store.isFullscreen()`.
+ * Full-screen toggle for the image editor dialog, projected into the shared header's
+ * `[dialogHeaderActions]` slot — the shell owns the title and the close button, and this is the one
+ * control that is specific to the editor.
+ *
+ * It only dispatches {@link imageEditorViewEvents}; the root component performs the actual dialog
+ * resize, reacting to `store.isFullscreen()`.
  */
 @Component({
-    selector: 'dot-image-editor-header',
+    selector: 'dot-image-editor-fullscreen-toggle',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule, TooltipModule, DotMessagePipe],
-    templateUrl: './dot-image-editor-header.component.html'
+    templateUrl: './dot-image-editor-fullscreen-toggle.component.html'
 })
-export class DotImageEditorHeaderComponent {
+export class DotImageEditorFullscreenToggleComponent {
     /** Image editor state store, provided by the owning dialog component. */
     protected readonly store = inject(ImageEditorStore);
     readonly #viewDispatch = injectDispatch(imageEditorViewEvents);
 
-    /** Emitted when the user clicks the close (✕) button. */
-    $close = output<void>({ alias: 'close' });
-
     /** Material Symbol ligature for the full-screen toggle, by current state. */
     protected readonly $fullscreenIcon = computed(() =>
         this.store.isFullscreen() ? 'close_fullscreen' : 'open_in_full'
+    );
+
+    /** i18n key for the toggle's label, by current state. */
+    protected readonly $fullscreenLabelKey = computed(() =>
+        this.store.isFullscreen()
+            ? 'edit.content.image-editor.fullscreen.exit.aria'
+            : 'edit.content.image-editor.fullscreen.enter.aria'
     );
 
     /** Toggles the editor dialog between its windowed size and full-screen. */

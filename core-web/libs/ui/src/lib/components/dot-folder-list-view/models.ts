@@ -24,9 +24,9 @@ export interface DotFolderListViewColumn {
     field: string;
     header: string;
     /**
-     * Explicit width (any CSS length). Optional for caller-provided extra columns: when omitted the
-     * table sizes the column itself — by content for text/number, by a sensible default per type
-     * otherwise. Fixed columns set it explicitly.
+     * Explicit width (any CSS length). Optional: when omitted the column takes whatever the sized
+     * ones leave over. Caller-provided extra columns are sized per type when they omit it; among the
+     * fixed columns, `title` omits it on purpose so it can absorb the remainder.
      */
     width?: string;
     sortable?: boolean;

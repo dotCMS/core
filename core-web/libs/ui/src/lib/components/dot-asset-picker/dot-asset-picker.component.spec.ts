@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { PopoverModule } from 'primeng/popover';
+import { Splitter, SplitterModule } from 'primeng/splitter';
 import { ToastModule } from 'primeng/toast';
 
 import { DotContentletService, DotMessageService, DotUploadFileService } from '@dotcms/data-access';
@@ -21,6 +22,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { ASSET_PICKER_SPLITTER_MIN_SIZES, ASSET_PICKER_SPLITTER_SIZES } from './constants';
 import { DotAssetPickerComponent } from './dot-asset-picker.component';
 import { readLastAssetLocation, writeLastAssetLocation } from './last-asset-path';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
@@ -28,6 +30,38 @@ import { DotAssetPickerConfig } from './store/models';
 
 import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import {
+    DotDialogComponent,
+    DotDialogContentComponent,
+    DotDialogFooterComponent,
+    DotDialogHeaderComponent
+} from '../dot-dialog';
+
+/**
+ * What every `overrideComponent({ set: { imports } })` below has to keep real.
+ *
+ * `set:` replaces the component's `imports` wholesale, and CUSTOM_ELEMENTS_SCHEMA silently accepts
+ * whatever is missing — so a shell component left out of this list would render as an inert element
+ * whose children still show up, and the assertions would keep passing while testing nothing. One
+ * shared list, so that can't drift per describe.
+ *
+ * The PrimeNG pieces these specs drive (buttons, the selector popover) have to be real too. The
+ * splitter especially: it projects the `#panel` templates, so stubbing it renders nothing between
+ * the header and the footer.
+ */
+const PICKER_REAL_IMPORTS = [
+    DotMessagePipe,
+    NgTemplateOutlet,
+    ButtonModule,
+    DialogModule,
+    PopoverModule,
+    SplitterModule,
+    ToastModule,
+    DotDialogComponent,
+    DotDialogHeaderComponent,
+    DotDialogContentComponent,
+    DotDialogFooterComponent
+];
 
 const SITE: DotSite = {
     identifier: 'site-1',
@@ -80,6 +114,8 @@ const createMockStore = () => {
         status: signal(ComponentStatus.LOADED),
         pagination: signal({ limit: 20, page: 1 }),
         totalItems: signal(0),
+        /** What the paginator actually reads — see `withAssetBrowse`'s cursor-based row count. */
+        $totalRecords: signal(0),
         folders: signal([]),
         foldersStatus: signal(ComponentStatus.LOADED),
         selectedNode: signal<{ data: unknown } | undefined>(undefined),
@@ -148,16 +184,7 @@ describe('DotAssetPickerComponent', () => {
         // component-level provider — has to be re-declared here or injection fails.
         TestBed.overrideComponent(DotAssetPickerComponent, {
             set: {
-                // CUSTOM_ELEMENTS_SCHEMA stubs the dot-* children, but the PrimeNG pieces this
-                // spec drives (buttons, the selector popover) have to be real.
-                imports: [
-                    DotMessagePipe,
-                    NgTemplateOutlet,
-                    ButtonModule,
-                    DialogModule,
-                    PopoverModule,
-                    ToastModule
-                ],
+                imports: [...PICKER_REAL_IMPORTS],
                 schemas: [CUSTOM_ELEMENTS_SCHEMA],
                 providers: [{ provide: DotAssetPickerStore, useValue: store }, MessageService]
             }
@@ -186,6 +213,42 @@ describe('DotAssetPickerComponent', () => {
     describe('open', () => {
         it('should configure the store from the dialog data', () => {
             expect(store.initPicker).toHaveBeenCalledWith(CONFIG);
+        });
+
+        // Not decoration: if a shell component ever drops out of PICKER_REAL_IMPORTS,
+        // CUSTOM_ELEMENTS_SCHEMA renders it as an inert element and every other assertion here
+        // keeps passing. This is what fails instead.
+        it('should lay itself out with the shared dialog shell', () => {
+            const shell = spectator.query(DotDialogComponent);
+
+            expect(shell).toBeTruthy();
+            expect(spectator.query(DotDialogHeaderComponent)).toBeTruthy();
+            expect(spectator.query(DotDialogContentComponent)).toBeTruthy();
+            expect(spectator.query(DotDialogFooterComponent)).toBeTruthy();
+        });
+    });
+
+    describe('splitter', () => {
+        it('should render both panels inside the splitter', () => {
+            const splitter = spectator.query(byTestId('asset-picker-splitter'));
+
+            expect(splitter?.querySelector('[data-testid="asset-picker-sidebar"]')).toBeTruthy();
+            expect(splitter?.querySelector('[data-testid="asset-picker-dropzone"]')).toBeTruthy();
+        });
+
+        it('should start at the sidebar ratio the fixed layout used to have', () => {
+            expect(spectator.query(Splitter)?.panelSizes).toEqual(ASSET_PICKER_SPLITTER_SIZES);
+        });
+
+        it('should bound how far either panel can be dragged', () => {
+            // No `maxSize` in this PrimeNG version — the content floor is what caps the sidebar.
+            expect(spectator.query(Splitter)?.minSizes).toEqual(ASSET_PICKER_SPLITTER_MIN_SIZES);
+        });
+
+        it('should reset to the default ratio on every open', () => {
+            // No `stateKey`: the width is deliberately not remembered, so each dialog opens the
+            // same way regardless of what the last session dragged it to.
+            expect(spectator.query(Splitter)?.stateKey).toBeFalsy();
         });
     });
 
@@ -452,14 +515,7 @@ describe('DotAssetPickerComponent — opened without dialog data', () => {
         store = createMockStore();
         TestBed.overrideComponent(DotAssetPickerComponent, {
             set: {
-                imports: [
-                    DotMessagePipe,
-                    NgTemplateOutlet,
-                    ButtonModule,
-                    DialogModule,
-                    PopoverModule,
-                    ToastModule
-                ],
+                imports: [...PICKER_REAL_IMPORTS],
                 schemas: [CUSTOM_ELEMENTS_SCHEMA],
                 providers: [{ provide: DotAssetPickerStore, useValue: store }, MessageService]
             }
@@ -516,14 +572,7 @@ describe('DotAssetPickerComponent — full screen', () => {
 
         TestBed.overrideComponent(DotAssetPickerComponent, {
             set: {
-                imports: [
-                    DotMessagePipe,
-                    NgTemplateOutlet,
-                    ButtonModule,
-                    DialogModule,
-                    PopoverModule,
-                    ToastModule
-                ],
+                imports: [...PICKER_REAL_IMPORTS],
                 schemas: [CUSTOM_ELEMENTS_SCHEMA],
                 providers: [
                     { provide: DotAssetPickerStore, useValue: store },

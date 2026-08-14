@@ -56,7 +56,30 @@ export function withAssetBrowse() {
         // scroll out of existence — see `loadItems`.
         { state: type<DotAssetPickerState & DotAssetPickerSelectionState>() },
         withState<DotAssetPickerBrowseState>(initialState),
-        withComputed(({ config, browsingSite, path, filters, pagination, sort, pages }) => ({
+        withComputed(({ config, browsingSite, path, filters, pagination, sort, pages, items }) => ({
+            /**
+             * Row count the paginator divides into pages.
+             *
+             * NOT `totalItems`: the Drive API is cursor-based and never returns a grand total —
+             * `contentCount` is the size of the page it just returned (`BrowserAPIImpl#getContents`).
+             * Handing that to PrimeNG makes every full page look like the last one, so it computes a
+             * single page and renders "next" disabled — the paging chain below never even runs.
+             *
+             * So while the bookmark for the page on screen reports more content, claim one page
+             * beyond to keep the arrow live; once it doesn't, the page is the last one and the exact
+             * total is knowable. Mirrors Content Drive's `$totalItems`.
+             */
+            $totalRecords: computed(() => {
+                const { page, limit } = pagination();
+                // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMoreContent`
+                // answers "is there anything past what is on screen".
+                const bookmark = pages()[page];
+
+                return bookmark?.hasMoreContent
+                    ? limit * (page + 1)
+                    : limit * (page - 1) + items().length;
+            }),
+
             /**
              * `false` until the host configures a real site. Guards the search so the store can be
              * constructed by a dialog host before that host knows what to browse — Content Drive

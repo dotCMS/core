@@ -19,6 +19,7 @@ import { ButtonModule } from 'primeng/button';
 import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { SplitterModule } from 'primeng/splitter';
 import { ToastModule } from 'primeng/toast';
 
 import { DotContentletService, DotMessageService, DotUploadFileService } from '@dotcms/data-access';
@@ -31,16 +32,29 @@ import {
     TreeNodeData
 } from '@dotcms/dotcms-models';
 
-import { DotAssetPickerHeaderComponent } from './components/dot-asset-picker-header/dot-asset-picker-header.component';
+import { DotAssetPickerFullscreenToggleComponent } from './components/dot-asset-picker-fullscreen-toggle/dot-asset-picker-fullscreen-toggle.component';
 import { DotAssetPickerSidebarComponent } from './components/dot-asset-picker-sidebar/dot-asset-picker-sidebar.component';
 import { DotAssetPickerToolbarComponent } from './components/dot-asset-picker-toolbar/dot-asset-picker-toolbar.component';
-import { ERROR_MESSAGE_LIFE, SUCCESS_MESSAGE_LIFE, WARNING_MESSAGE_LIFE } from './constants';
+import {
+    ASSET_PICKER_SPLITTER_MIN_SIZES,
+    ASSET_PICKER_SPLITTER_SIZES,
+    ERROR_MESSAGE_LIFE,
+    SUCCESS_MESSAGE_LIFE,
+    WARNING_MESSAGE_LIFE
+} from './constants';
 import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
 
 import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+// Relative, not `@dotcms/ui`: the shell lives in this same lib, and the barrel would be a cycle.
+import {
+    DotDialogComponent,
+    DotDialogContentComponent,
+    DotDialogFooterComponent,
+    DotDialogHeaderComponent
+} from '../dot-dialog';
 import { DotFolderListViewComponent } from '../dot-folder-list-view/dot-folder-list-view.component';
 import { DotUploadDropzoneComponent } from '../dot-upload-dropzone/dot-upload-dropzone.component';
 import { DotUploadTypeSelectorComponent } from '../dot-upload-type-selector/dot-upload-type-selector.component';
@@ -71,8 +85,13 @@ import {
         DialogModule,
         NgTemplateOutlet,
         PopoverModule,
+        SplitterModule,
         ToastModule,
-        DotAssetPickerHeaderComponent,
+        DotDialogComponent,
+        DotDialogHeaderComponent,
+        DotDialogContentComponent,
+        DotDialogFooterComponent,
+        DotAssetPickerFullscreenToggleComponent,
         DotAssetPickerSidebarComponent,
         DotAssetPickerToolbarComponent,
         DotFolderListViewComponent,
@@ -105,6 +124,22 @@ export class DotAssetPickerComponent implements OnInit {
 
     /** Dialog title, handed over by whoever opened the picker. */
     protected readonly $title = computed(() => this.store.config()?.title ?? '');
+
+    // --- splitter --------------------------------------------------------------------------
+
+    protected readonly ASSET_PICKER_SPLITTER_SIZES = ASSET_PICKER_SPLITTER_SIZES;
+    protected readonly ASSET_PICKER_SPLITTER_MIN_SIZES = ASSET_PICKER_SPLITTER_MIN_SIZES;
+
+    /**
+     * The legacy theme gives `.p-splitter` a gray border and a radius, which read as a stray box
+     * inside a dialog that already has its own chrome. The gutter keeps its own styling.
+     */
+    protected readonly splitterPt = {
+        root: { class: 'border-0! rounded-none!' },
+        gutterHandle: {
+            'aria-label': this.#dotMessageService.get('dot.asset.picker.splitter.aria')
+        }
+    };
 
     constructor() {
         // The picker owns its dialog, so it owns full-screen too: resize the host `.p-dialog`

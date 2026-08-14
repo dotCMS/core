@@ -400,12 +400,60 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().contentCursor).toBe(0);
         });
 
-        it('should send the total count to the paginator', () => {
+        it('should keep the count the endpoint actually returned', () => {
             contentDriveService.search.mockReturnValue(of({ ...EMPTY_RESPONSE, contentCount: 42 }));
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
             expect(store.totalItems()).toBe(42);
+        });
+    });
+
+    describe('paginator row count', () => {
+        const page = (list: unknown[], hasMoreContent: boolean) => ({
+            ...EMPTY_RESPONSE,
+            list,
+            contentCount: list.length,
+            hasMoreContent,
+            nextContentCursor: list.length
+        });
+
+        it('should claim a page beyond the current one while there is more content', () => {
+            // `contentCount` is the size of THIS page, so a full page looks like the last one and
+            // PrimeNG disables "next". Claiming one page beyond is what keeps the arrow clickable.
+            contentDriveService.search.mockReturnValue(of(page(Array(20).fill({}), true)));
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.totalItems()).toBe(20);
+            expect(store.$totalRecords()).toBe(40);
+        });
+
+        it('should report the exact total once the last page is on screen', () => {
+            contentDriveService.search.mockReturnValue(of(page(Array(7).fill({}), false)));
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(7);
+        });
+
+        it('should count the pages already behind it on a later page', () => {
+            contentDriveService.search.mockReturnValue(of(page(Array(20).fill({}), true)));
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            // Page 2 comes back short and with nothing after it: 20 behind + 5 on screen.
+            contentDriveService.search.mockReturnValue(of(page(Array(5).fill({}), false)));
+            store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(25);
+        });
+
+        it('should report nothing before the first response lands', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.$totalRecords()).toBe(0);
         });
     });
 

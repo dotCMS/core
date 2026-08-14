@@ -1,18 +1,28 @@
-import { BuildTreeFolderNodesParams as SharedBuildTreeFolderNodesParams } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
     DotContentDriveItem,
+    DotFolder,
     DotSite
 } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
 import { DIALOG_TYPE } from './constants';
 
-/** @deprecated Import {@link BuildTreeFolderNodesParams} from `@dotcms/data-access` instead. */
-export type BuildTreeFolderNodesParams = SharedBuildTreeFolderNodesParams;
+/**
+ * The parameters for the buildTreeFolderNodes function.
+ *
+ * @export
+ * @interface BuildTreeFolderNodesParams
+ */
+export interface BuildTreeFolderNodesParams {
+    folderHierarchyLevels: DotFolder[][];
+    targetPath: string;
+    rootNode: DotFolderTreeNodeItem;
+}
 
 /**
  * Upload-flow types now live in `@dotcms/ui`, shared with the AssetPicker. Aliased here so the

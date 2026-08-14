@@ -4,8 +4,17 @@ export type DotFolderListViewFixedColumn = DotFolderListViewColumn & {
     field: DotFolderListViewColumnField;
 };
 
+/**
+ * Column widths, in the order the header renders them.
+ *
+ * `title` deliberately has NO width: the table also renders a fixed `3rem` selection column that is
+ * outside this budget, so a set of percentages adding up to 100% makes the `table-layout: fixed`
+ * table `3rem` wider than its container — a horizontal scrollbar that scrolls nothing. Leaving
+ * `title` unsized lets it absorb whatever is left after the selection column and the sized ones,
+ * whichever subset of these is actually rendered.
+ */
 const FIXED_COLUMNS: DotFolderListViewFixedColumn[] = [
-    { field: 'title', header: 'name', width: '32%', order: 1, sortable: true },
+    { field: 'title', header: 'name', order: 1, sortable: true },
     { field: 'live', header: 'status', width: '10%', order: 2 },
     { field: 'languageId', header: 'locale', width: '10%', order: 3, sortable: true },
     { field: 'contentType', header: 'type', sortable: true, width: '15%', order: 4 },
