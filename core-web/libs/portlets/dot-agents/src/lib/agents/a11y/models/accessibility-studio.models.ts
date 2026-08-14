@@ -1,6 +1,6 @@
 import { AgentChangedFile, AgentStreamEvent } from '@dotcms/dotcms-models';
 
-// ── Agent wire contract (plan §5/§6) ────────────────────────────────────────
+// ── Agent wire contract ─────────────────────────────────────────────────────
 
 export type FixStatus = 'fixed-to-working' | 'reported' | 'skipped' | 'regressed' | 'failed';
 
@@ -58,7 +58,7 @@ export interface FixReport {
 }
 
 /**
- * The Studio → proxy request body (POST /api/v1/agents/a11y/fix[/stream], plan §8.1).
+ * The Studio → proxy request body (POST /api/v1/agents/a11y/fix[/stream]).
  * Simpler than the full FixRequest — the Java proxy resolves the page and builds
  * the complete agent payload (FixRequest) before forwarding.
  */
@@ -67,7 +67,7 @@ export interface AgentFixRequest {
     identifier: string;
     /** Language id (default: 1). */
     languageId: number;
-    /** When true the agent fixes only VTL and reports CSS contrast (plan §3). */
+    /** When true the agent fixes only VTL and reports CSS contrast. */
     skipCss: boolean;
 }
 

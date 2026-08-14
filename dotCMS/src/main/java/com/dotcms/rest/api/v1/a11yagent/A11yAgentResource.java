@@ -55,21 +55,21 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * REST resource that acts as the a11y-fix agent proxy (plan §8).
+ * REST resource that acts as the a11y-fix agent proxy.
  *
  * <p>Auth half: reuses {@code PageScannerResource}'s pattern — authenticates the backend
  * user, mints a short-lived JWT, resolves the page identifier to a fully-qualified payload.
  *
  * <p>Forward half:
  * <ul>
- *   <li>{@code POST /fix}         — plain JSON relay (agent returns §6 report)</li>
+ *   <li>{@code POST /fix}         — plain JSON relay (agent returns the run report)</li>
  *   <li>{@code POST /fix/stream}  — streaming SSE relay ({@link EventOutput}); relays
- *       agent SSE frames as they arrive via {@code BodyHandlers.ofInputStream()} (plan §8.6)</li>
+ *       agent SSE frames as they arrive via {@code BodyHandlers.ofInputStream()}</li>
  *   <li>{@code POST /stop}        — forwards to agent /stop, passes the minted JWT</li>
  *   <li>{@code GET  /active-run}  — forwards to agent /active-run, passes the minted JWT</li>
  * </ul>
  *
- * <p>GZIPFilter is not registered in {@code web.xml} so no buffering risk for the SSE path (§8.5).
+ * <p>GZIPFilter is not registered in {@code web.xml} so no buffering risk for the SSE path.
  */
 @Path("/v1/agents/a11y")
 @Tag(name = "Accessibility Agent", description = "Streaming a11y-fix agent proxy")
@@ -98,7 +98,7 @@ public class A11yAgentResource {
     // -------------------------------------------------------------------------
 
     /**
-     * Proxies a fix request to the agent service and returns the §6 JSON report.
+     * Proxies a fix request to the agent service and returns the JSON run report.
      */
     @POST
     @Path("/fix")
@@ -150,7 +150,7 @@ public class A11yAgentResource {
     // -------------------------------------------------------------------------
 
     /**
-     * Proxies a fix request to the agent service and relays SSE frames as they arrive (plan §8.6).
+     * Proxies a fix request to the agent service and relays SSE frames as they arrive.
      *
      * <p>Uses {@code BodyHandlers.ofInputStream()} so the body is never buffered; frames are
      * written to {@link EventOutput} line-by-line as they arrive from the upstream agent.
@@ -461,7 +461,7 @@ public class A11yAgentResource {
 
     /**
      * Opens an SSE connection to the upstream agent and relays each frame to {@code output}
-     * without buffering (plan §8.6). Runs on a virtual thread.
+     * without buffering. Runs on a virtual thread.
      *
      * <p>SSE frames from the Hono agent follow the standard format:
      * <pre>
@@ -776,7 +776,7 @@ public class A11yAgentResource {
             final PageInfo p,
             final boolean skipCss) {
 
-        // The minted token goes in Authorization: Bearer (plan 8.2), not the body.
+        // The minted token goes in Authorization: Bearer, not the body.
         // The body carries only the resolved page fields (FixRequestSchema contract).
         // hostId is required at the top level by the agent; it is also kept inside the
         // page object since the agent still reads it there.

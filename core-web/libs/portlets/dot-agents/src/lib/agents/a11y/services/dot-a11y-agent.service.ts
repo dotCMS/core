@@ -20,17 +20,17 @@ import {
  * runs the fix loop and streams its progress over Server-Sent Events (parsed by
  * the generic run service):
  *   event: step  → { phase, message }   (live, many)
- *   event: done  → { ...FixReport }      (terminal, the §6 report)
+ *   event: done  → { ...FixReport }      (terminal, the run report)
  *   event: aborted → { ...FixReport }    (terminal, partial report after stop)
  *   event: error → { message }           (terminal)
  *
- * Calls go same-origin to the dotCMS proxy resource at `/api/v1/agents/a11y/*`
- * (plan §8.1); the Java proxy authenticates the session, mints a short-lived JWT,
- * resolves the page, and streams the agent response back. The browser never holds
- * a token — the proxy is the auth boundary (plan §8.2).
+ * Calls go same-origin to the dotCMS proxy resource at `/api/v1/agents/a11y/*`;
+ * the Java proxy authenticates the session, mints a short-lived JWT, resolves the
+ * page, and streams the agent response back. The browser never holds a token —
+ * the proxy is the auth boundary.
  */
 
-/** dotCMS proxy resource (plan §8.1) — the browser's same-origin entry point. */
+/** dotCMS proxy resource — the browser's same-origin entry point. */
 const AGENT_BASE = '/api/v1/agents/a11y';
 
 @Injectable()

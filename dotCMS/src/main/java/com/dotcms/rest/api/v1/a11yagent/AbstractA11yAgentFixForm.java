@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
  * Request body for {@code POST /api/v1/agents/a11y/fix} and {@code POST /api/v1/agents/a11y/fix/stream}.
  *
  * <p>The proxy resolves the identifier to a live URL, URI, and hostId before forwarding to the
- * agent service — the agent receives a fully-resolved payload (plan §8.2) and never performs
+ * agent service — the agent receives a fully-resolved payload and never performs
  * its own page resolution.
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*",
@@ -55,7 +55,7 @@ public interface AbstractA11yAgentFixForm {
 
     /**
      * When true the agent fixes only VTL and reports CSS contrast issues without changing
-     * stylesheets (plan §3).
+     * stylesheets.
      *
      * @return true to skip CSS fixes, defaults to false
      */

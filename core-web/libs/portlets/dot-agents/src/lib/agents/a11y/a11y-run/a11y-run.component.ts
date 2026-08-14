@@ -55,12 +55,8 @@ interface SeverityRow {
 }
 
 /**
- * The Studio run screen (§7): the agent column (score widget + recipe log +
+ * The Studio run screen: the agent column (score widget + recipe log +
  * state-driven action footer) beside a live preview pane.
- *
- * S3 is request/response with mock data — no SSE, no overlays, no before/after
- * split, no score animation. Those land in S4/S5. The score widget and recipe
- * log render the mock §6 report statically.
  */
 @Component({
     selector: 'dot-a11y-run',
@@ -659,7 +655,7 @@ export class DotA11yRunComponent {
 
     /**
      * The page rendered in the given mode. `host_id` disambiguates which site's
-     * copy renders. Shared by the two side-by-side frames (§8.2). An optional
+     * copy renders. Shared by the two side-by-side frames. An optional
      * cache-busting `rev` forces the iframe to reload when the working render
      * changes (see {@link previewUrl}).
      */

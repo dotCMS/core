@@ -49,11 +49,11 @@ const DEV_SERVER_PORT = '4200';
 const DEV_BACKEND_PORT = '8080';
 
 interface A11yRunState {
-    /** Studio state machine (§7). Starts at `ready` (a page is being opened). */
+    /** Studio state machine. Starts at `ready` (a page is being opened). */
     phase: StudioPhase;
     /** The page this run is against. */
     selected: StudioPageRow | null;
-    /** Per-run opt-out: when true, the agent reports CSS contrast instead of fixing it (§3). */
+    /** Per-run opt-out: when true, the agent reports CSS contrast instead of fixing it. */
     skipCss: boolean;
     /**
      * The real axe scan result of the PREVIEW (working) render — populated by
@@ -98,7 +98,7 @@ interface A11yRunState {
      */
     runError: string | null;
     /**
-     * The §6 run report — populated when the fix pass completes (SSE `done`).
+     * The run report — populated when the fix pass completes (SSE `done`).
      *
      * Non-null implies `scan.before` and `scan.after` are present: `DotA11yAgentService`
      * validates the terminal payload and yields null for a status-only frame rather than
@@ -566,7 +566,7 @@ export const A11yRunStore = signalStore(
             /**
              * Run the real fix pass: POST the page to the agent and stream its
              * progress over SSE. Each `phase` event appends to the live activity
-             * log; `progress` updates the live violation count; `done` sets the §6
+             * log; `progress` updates the live violation count; `done` sets the
              * report and moves to "done"; `error` returns to "scanned" so the user
              * can retry. The browser holds no token — the dev/prod proxy injects the
              * bearer (see DotA11yAgentService).
@@ -587,7 +587,7 @@ export const A11yRunStore = signalStore(
                     previewRevision: 0
                 });
 
-                // The Java proxy (plan §8.1) resolves page details and builds the full
+                // The Java proxy resolves page details and builds the full
                 // FixRequest; the Studio sends only the identifier, languageId, and skipCss.
                 const request: AgentFixRequest = {
                     identifier: page.identifier,

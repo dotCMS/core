@@ -78,7 +78,7 @@ export interface Sandbox {
 }
 
 /**
- * Create a sandbox over a set of adapters — the generic entry point shown in §6.2.
+ * Create a sandbox over a set of adapters — the generic entry point.
  *
  * `defineAdapter` results are bound to the injected host `request` (and a per-run abort
  * signal) via `withContext`; plain hand-built adapters are passed through untouched. Each

@@ -221,7 +221,7 @@ dist/
 *.egg
 .venv/
 
-# S0 spike throwaway
+# Local scratch space
 /core-web/scratch/
 
 # Spec-Kit working artifacts — process-only, kept local (see .specify/CUSTOMIZATIONS.md).

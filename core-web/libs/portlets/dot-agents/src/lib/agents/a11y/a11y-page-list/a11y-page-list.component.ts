@@ -20,7 +20,7 @@ import { StudioPageRow } from '../models/accessibility-studio.models';
 import { A11yPageListStore } from '../store/a11y-page-list.store';
 
 /**
- * The Studio entry screen (§7): lists/searches the site's pages and selects one
+ * The Studio entry screen: lists/searches the site's pages and selects one
  * to scan. Pages come from a real `_search`; selecting a row opens the studio.
  */
 @Component({
