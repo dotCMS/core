@@ -6,6 +6,7 @@ import static com.dotcms.security.apps.AppsUtil.digest;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -622,8 +623,27 @@ public class SecretsKeyStoreHelper {
                 return null;
             }
 
-        } catch (Exception e) {
-            Logger.error(SecretsKeyStoreHelper.class,e);
+        } catch (final Exception e) {
+            // An unreadable store has already been diagnosed and reported by handleUnrecoverableLoad,
+            // at ERROR and throttled to once per SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS.
+            // Logging a second, un-throttled stack trace here would undo that: since issue #36724 the
+            // store is preserved rather than wiped, so the condition persists until an operator fixes
+            // it, and nothing caches a failed read -- SecretCachedKeyStoreImpl.getValue only caches
+            // what the supplier returns, so every getSecrets() on every request re-enters this method
+            // and would re-log. That is exactly the per-read flood this PR removes elsewhere, and the
+            // sibling containsKey() path already avoids it by logging at debug
+            // (SecretCachedKeyStoreImpl:59).
+            //
+            // Anything else reaching this catch is genuinely unexpected and still logs loudly.
+            if (ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                Logger.debug(SecretsKeyStoreHelper.class, () -> String.format(
+                        "Secrets store is unreadable; failing the read for key '%s'. Already reported.",
+                        variableKey));
+            } else {
+                Logger.error(SecretsKeyStoreHelper.class, e);
+            }
+            // Wrapped exactly as before: callers match this condition on the cause chain, so the
+            // shape they see must not change.
             throw new DotRuntimeException(e);
         }
     }
