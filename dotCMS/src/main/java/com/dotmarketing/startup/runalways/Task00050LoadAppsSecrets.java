@@ -27,6 +27,7 @@ import com.dotmarketing.startup.runonce.Task04355SystemEventAddServerIdColumn;
 import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumn;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -85,7 +86,16 @@ public class Task00050LoadAppsSecrets implements StartupTask {
     @Override
     public boolean forceRun() {
         addDotSaltClusterColumnIfNeeded();
-        return keyStoreHelper.size() == 0 && isSet(Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, BLANK)) ;
+        // An App secrets store that cannot be read now raises instead of being silently backed up
+        // and replaced with an empty one. That must not take startup down with it: skip the import,
+        // leave the store untouched, and let the ERROR the helper already logged drive the fix.
+        final boolean storeIsEmpty = Try.of(() -> keyStoreHelper.size() == 0)
+                .onFailure(e -> Logger.error(this,
+                        "Unable to read the App secrets store, so the secrets import task will be"
+                                + " skipped. Apps will not work until this is resolved.", e))
+                .getOrElse(false);
+
+        return storeIsEmpty && isSet(Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, BLANK));
     }
 
     @Override
