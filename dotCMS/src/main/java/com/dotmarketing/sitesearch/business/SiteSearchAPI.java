@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.quartz.SchedulerException;
 
@@ -138,6 +139,63 @@ public interface SiteSearchAPI {
 	 * @return map of logical alias name to logical index name; empty when nothing resolves
 	 */
 	Map<String, String> getAliasToIndexMap();
+
+	/**
+	 * Alias resolution for <strong>management and display</strong> — the same map as
+	 * {@link #getAliasToIndexMap()} but covering <em>every</em> index the current phase lists, not only
+	 * those on the read provider.
+	 *
+	 * <h4>Why a second method instead of changing the first</h4>
+	 * {@link #listIndices()} is a <em>union</em> of both engines in the dual-write phases, while
+	 * {@link #getAliasToIndexMap()} resolves against a <em>single</em> engine (the read provider). Any
+	 * index that lives only on the other engine therefore appears in the list with a blank alias:
+	 *
+	 * <ul>
+	 *   <li>Phase&nbsp;2 + an index created in Phase&nbsp;0 (Elasticsearch only) — reads come from
+	 *       OpenSearch, so its alias is invisible.</li>
+	 *   <li>Phase&nbsp;1 + an index created in Phase&nbsp;3 (OpenSearch only, e.g. after a downgrade) —
+	 *       reads come from Elasticsearch, so its alias is invisible.</li>
+	 * </ul>
+	 *
+	 * The two are mirror images of one defect (issue #36983). This method closes it by resolving over
+	 * the same provider set {@code listIndices()} uses, so every listed index can show its alias.
+	 *
+	 * <p>The distinction is deliberate and must be kept: <strong>searching</strong> resolves an alias
+	 * against the engine that will actually serve the query — that is {@link #getAliasToIndexMap()} and
+	 * it stays single-engine. <strong>Managing</strong> (listing indices, choosing one to crawl,
+	 * labelling a row in the portlet) needs to identify everything on screen, which is this method.</p>
+	 *
+	 * <p>When both engines resolve the same alias to different logical indices — a mirror desync — the
+	 * read provider's answer wins, so the map never disagrees with what a search would do.</p>
+	 *
+	 * @return map of logical alias name to logical index name across the phase's provider set; empty
+	 *         when nothing resolves
+	 */
+	default Map<String, String> getAliasToIndexMapAllEngines() {
+		// A single-engine implementation (either leaf) has nothing to merge — only the router overrides.
+		return getAliasToIndexMap();
+	}
+
+	/**
+	 * The site-search index currently marked as the default, resolved <strong>phase-aware</strong>.
+	 *
+	 * <p>Which store holds that pointer changes with the phase: Elasticsearch owns it in Phases 0/1
+	 * (the legacy {@code indicies} row), OpenSearch in Phases 2/3 ({@code VersionedIndices}, falling
+	 * back to the legacy row when its slot was never populated). Reading the legacy row directly —
+	 * {@code IndiciesInfo#getSiteSearch()} — is therefore correct only up to Phase 1: from Phase 2 on,
+	 * {@code activateIndex} fans out to OpenSearch alone in Phase 3, so the legacy pointer freezes at
+	 * whatever was default in the Elasticsearch era and every screen reading it shows a stale default
+	 * (issue #36983).</p>
+	 *
+	 * <p>Callers that only need to test one name should use {@link #isDefaultIndex(String)}, which is
+	 * defined in terms of this. Callers that need the name itself — preselecting it in a dropdown,
+	 * listing the non-default indices — use this one, and get an empty {@link Optional} instead of a
+	 * {@code null} to dereference when no default has ever been set.</p>
+	 *
+	 * @return the logical name of the default index, or empty when there is none
+	 * @throws DotDataException if the pointer store cannot be read
+	 */
+	Optional<String> defaultIndexName() throws DotDataException;
 
 	/**
 	 * This basically tells you if the index passed as parameter is the default site search index or not

@@ -520,8 +520,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     // =========================================================================
 
     @Override
+    public Optional<String> defaultIndexName() {
+        return defaultSiteSearchIndex();
+    }
+
+    @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-        return indexName != null && indexName.equals(defaultSiteSearchIndex().orElse(null));
+        // Defined in terms of defaultIndexName so "which index is the default" has one definition
+        // per engine (issue #36983).
+        return indexName != null && defaultIndexName().filter(indexName::equals).isPresent();
     }
 
     @Override

@@ -29,8 +29,12 @@ describe('DotSidePanelNavController', () => {
     const setViewportWidth = (width: number) =>
         Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
 
-    /** Simulate a wide viewport (>= threshold → no collapse). */
-    const setWideViewport = () => setViewportWidth(1920);
+    /**
+     * Simulate a wide viewport (>= threshold → no collapse). Pinned to the threshold itself
+     * (COLLAPSE_MAX_WIDTH) because the comparison is exclusive (`<`): the boundary width must be
+     * treated as wide. Bumping the threshold in the service must fail here on purpose.
+     */
+    const setWideViewport = () => setViewportWidth(2560);
 
     beforeEach(() => {
         // mockProvider's jest.fn()s are shared across tests, so call counts (and any

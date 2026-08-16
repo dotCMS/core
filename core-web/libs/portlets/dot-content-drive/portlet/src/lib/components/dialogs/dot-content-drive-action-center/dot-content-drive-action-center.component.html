@@ -7,7 +7,7 @@
     template fills the column with two rows: a `flex-1 overflow-y-auto` body — the dialog's only
     scroll container — and a footer pinned as its sibling.
 
-    The footer is a flex sibling rather than PrimeNG's `#footer` slot so that the Done button can stay
+    The footer is a flex sibling rather than PrimeNG's `#footer` slot so that its button can stay
     disabled while an action is in flight; that state lives here, not in the shell.
 
     Styled against the design prototype (remix_-content-drive/components/ActionCenterDialog.tsx).
@@ -15,344 +15,461 @@
     `tailwindcss-primeui` exposes (`surface-*`, `primary-*`), so it follows the active PrimeNG theme
     instead of pinning one palette.
 
-    Two screens live here, switched by `$view()`. Drilling into an action's preview retitles the
-    shell's one header to the action name via the store's drill-down state — this body never renders a
-    title or an item count of its own, or the dialog would appear to have two headers. Only the back
+    Three screens live here, switched by `$view()`: the action list, an optional configuration step for
+    an action that needs input (today only a move destination), and the preview. Drilling in retitles
+    the shell's one header to the action name via the store's drill-down state — this body never renders
+    a title or an item count of its own, or the dialog would appear to have two headers. Only the back
     control lives here, where it can be disabled while an action is in flight.
 -->
 <div class="flex min-h-0 flex-1 flex-col" data-testid="action-center-dialog">
-    @if ($view() === 'actions') {
-        <!--
+    @switch ($view()) {
+        @case ('actions') {
+            <!--
             The only scrollable region. `min-h-0` matters: without it this flex item refuses to
             shrink below its content height, so it never scrolls and the footer below gets pushed
             out of view.
         -->
-        <div
-            class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
-            data-testid="action-center">
-            @if ($ignoredFolderCount() > 0) {
-                <!-- `no-enter-motion` renders this notice statically; see the component's `styles`. -->
-                <p-message
-                    severity="info"
-                    styleClass="no-enter-motion"
-                    data-testid="folders-ignored-message">
-                    {{
-                        'content-drive.action-center.folders-ignored'
-                            | dm: [$ignoredFolderCount().toString()]
-                    }}
-                </p-message>
-            }
+            <div
+                class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
+                data-testid="action-center">
+                @if ($ignoredFolderCount() > 0) {
+                    <!-- `no-enter-motion` renders this notice statically; see the component's `styles`. -->
+                    <p-message
+                        severity="info"
+                        styleClass="no-enter-motion"
+                        data-testid="folders-ignored-message">
+                        {{
+                            'content-drive.action-center.folders-ignored'
+                                | dm: [$ignoredFolderCount().toString()]
+                        }}
+                    </p-message>
+                }
 
-            <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
-            <section data-testid="quick-actions-section">
-                <h3 class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
-                    {{ 'content-drive.action-center.quick-actions' | dm }}
-                </h3>
+                <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
+                <section data-testid="quick-actions-section">
+                    <h3
+                        class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                        {{ 'content-drive.action-center.quick-actions' | dm }}
+                    </h3>
 
-                @if ($quickActions().length) {
-                    <div
-                        class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
-                        @for (quickAction of $quickActions(); track quickAction.id) {
-                            <!-- Rows with a zero count do not apply to this selection. They stay
+                    @if ($quickActions().length) {
+                        <div
+                            class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
+                            @for (quickAction of $quickActions(); track quickAction.id) {
+                                <!-- Rows with a zero count do not apply to this selection. They stay
                                  visible but non-selectable, so the action list is stable as the
                                  selection changes. Clicking opens the preview; nothing fires from
                                  here. -->
-                            <button
-                                type="button"
-                                class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
-                                [disabled]="
-                                    $executing() ||
-                                    quickAction.count === 0 ||
-                                    !!quickAction.pendingHint
-                                "
-                                [pTooltip]="quickActionHint(quickAction) | dm"
-                                [attr.data-testid]="'quick-action-' + quickAction.id"
-                                (click)="onSelectQuickAction(quickAction)">
-                                <span
-                                    class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
-                                    [class]="
-                                        quickAction.danger
-                                            ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
-                                            : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
-                                    ">
-                                    <i
-                                        class="material-symbols-outlined text-[20px]!"
-                                        aria-hidden="true">
-                                        {{ quickAction.icon }}
-                                    </i>
-                                </span>
+                                <button
+                                    type="button"
+                                    class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
+                                    [disabled]="$executing() || quickAction.count === 0"
+                                    [pTooltip]="quickActionHint(quickAction) | dm"
+                                    [attr.data-testid]="'quick-action-' + quickAction.id"
+                                    (click)="onSelectQuickAction(quickAction)">
+                                    <span
+                                        class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
+                                        [class]="
+                                            quickAction.danger
+                                                ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
+                                                : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
+                                        ">
+                                        <i
+                                            class="material-symbols-outlined text-[20px]!"
+                                            aria-hidden="true">
+                                            {{ quickAction.icon }}
+                                        </i>
+                                    </span>
 
-                                <span
-                                    class="flex-1 text-sm font-semibold"
-                                    [class]="
-                                        quickAction.danger ? 'text-red-600' : 'text-surface-700'
-                                    ">
-                                    {{ quickAction.name | dm }}
-                                </span>
+                                    <span
+                                        class="flex-1 text-sm font-semibold"
+                                        [class]="
+                                            quickAction.danger ? 'text-red-600' : 'text-surface-700'
+                                        ">
+                                        {{ quickAction.name | dm }}
+                                    </span>
 
-                                <!-- Items the action will still be fired over, but which are
+                                    <!-- Items the action will still be fired over, but which are
                                      expected to fail — a lock held by another user. Flagged rather
                                      than subtracted from the count, since only the server can
                                      decide. -->
-                                @if (quickAction.warningCount > 0) {
-                                    <i
-                                        class="pi pi-exclamation-triangle text-xs text-orange-500"
-                                        [pTooltip]="
-                                            quickAction.warningHint
-                                                | dm: [quickAction.warningCount.toString()]
-                                        "
-                                        [attr.data-testid]="
-                                            'quick-action-warning-' + quickAction.id
-                                        "
-                                        aria-hidden="true"></i>
-                                }
-
-                                <span class="text-xs font-medium text-surface-400">
-                                    ({{ quickAction.count }})
-                                </span>
-                                <i
-                                    class="material-symbols-outlined text-[20px]! text-surface-300"
-                                    aria-hidden="true">
-                                    chevron_right
-                                </i>
-                            </button>
-                        }
-                    </div>
-                } @else {
-                    <p-message severity="info" data-testid="no-quick-actions">
-                        {{ 'content-drive.action-center.no-quick-actions' | dm }}
-                    </p-message>
-                }
-            </section>
-
-            <!-- Workflow Actions: one panel per scheme, counts from the backend aggregation. -->
-            <section data-testid="workflow-actions-section">
-                <h3 class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
-                    {{ 'content-drive.action-center.workflow-actions' | dm }}
-                </h3>
-
-                @if ($loadingSchemes()) {
-                    <div class="flex flex-col gap-3" data-testid="workflow-actions-loading">
-                        @for (placeholder of [1, 2, 3]; track placeholder) {
-                            <p-skeleton height="3rem" borderRadius="0.75rem" />
-                        }
-                    </div>
-                } @else if ($schemesError()) {
-                    <p-message severity="error" data-testid="workflow-actions-error">
-                        {{ 'content-drive.action-center.workflow-actions.error' | dm }}
-                    </p-message>
-                } @else if (!$schemes().length) {
-                    <p-message severity="info" data-testid="no-workflow-actions">
-                        {{ 'content-drive.action-center.no-workflow-actions' | dm }}
-                    </p-message>
-                } @else {
-                    <!-- Single-expand, matching the prototype: opening one scheme collapses the others. -->
-                    <p-accordion
-                        styleClass="flex flex-col gap-3"
-                        data-testid="workflow-schemes"
-                        [multiple]="false"
-                        [pt]="accordionPt"
-                        [dt]="accordionDt"
-                        [value]="$openSchemeId()"
-                        (valueChange)="onOpenSchemeChange($event)">
-                        @for (scheme of $schemes(); track scheme.id) {
-                            <p-accordion-panel [value]="scheme.id" [pt]="accordionPanelPt">
-                                <p-accordion-header>
-                                    <span class="flex w-full items-center gap-3">
-                                        <span
-                                            class="text-sm font-bold"
-                                            [class]="
-                                                $openSchemeId() === scheme.id
-                                                    ? 'text-primary'
-                                                    : 'text-surface-800'
-                                            ">
-                                            {{ scheme.name }}
-                                        </span>
-                                        <span class="text-xs font-medium text-surface-400">
-                                            ({{ scheme.count }})
-                                        </span>
-                                        @if (schemeOwnsSelection(scheme)) {
-                                            <span
-                                                class="ml-auto rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                                {{
-                                                    'content-drive.action-center.one-selected' | dm
-                                                }}
-                                            </span>
-                                        }
-                                    </span>
-                                </p-accordion-header>
-
-                                <p-accordion-content>
-                                    <div class="divide-y divide-surface-100">
-                                        @for (action of scheme.actions; track action.id) {
-                                            <label
-                                                class="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-surface-50"
-                                                [class.opacity-60]="action.requiresInput"
-                                                [attr.for]="action.id">
-                                                <p-radiobutton
-                                                    name="actionCenterAction"
-                                                    [inputId]="action.id"
-                                                    [value]="action.id"
-                                                    [disabled]="
-                                                        action.requiresInput || $executing()
-                                                    "
-                                                    [ngModel]="$selectedActionId()"
-                                                    [attr.data-testid]="
-                                                        'workflow-action-' + action.id
-                                                    "
-                                                    (ngModelChange)="
-                                                        $selectedActionId.set($event)
-                                                    " />
-
-                                                <span
-                                                    class="text-sm font-semibold text-surface-700">
-                                                    {{ action.name }}
-                                                </span>
-
-                                                @if (action.requiresInput) {
-                                                    <i
-                                                        class="pi pi-info-circle text-xs text-surface-400"
-                                                        [pTooltip]="
-                                                            'content-drive.action-center.requires-input'
-                                                                | dm
-                                                        "
-                                                        aria-hidden="true"></i>
-                                                }
-
-                                                <span
-                                                    class="ml-auto flex items-center gap-1 text-xs font-medium text-surface-400">
-                                                    @if (action.approximateCount) {
-                                                        <i
-                                                            class="pi pi-info-circle"
-                                                            [pTooltip]="
-                                                                'content-drive.action-center.approximate-count'
-                                                                    | dm
-                                                            "
-                                                            aria-hidden="true"></i>
-                                                        <span>&le; {{ action.count }}</span>
-                                                    } @else {
-                                                        <span>({{ action.count }})</span>
-                                                    }
-                                                </span>
-                                            </label>
-                                        }
-                                    </div>
-
-                                    <!-- Opens the preview rather than firing: labelled Continue so it
-                                         does not read as a second Execute alongside the preview's. -->
-                                    <div
-                                        class="flex justify-end border-t border-surface-100 bg-surface-50 p-4">
-                                        <p-button
-                                            size="small"
-                                            icon="pi pi-arrow-right"
-                                            iconPos="right"
-                                            styleClass="uppercase tracking-wider font-bold"
-                                            [label]="'content-drive.action-center.continue' | dm"
-                                            [disabled]="
-                                                !schemeOwnsSelection(scheme) || $executing()
+                                    @if (quickAction.warningCount > 0) {
+                                        <i
+                                            class="pi pi-exclamation-triangle text-xs text-orange-500"
+                                            [pTooltip]="
+                                                quickAction.warningHint
+                                                    | dm: [quickAction.warningCount.toString()]
                                             "
-                                            [attr.data-testid]="'continue-workflow-' + scheme.id"
-                                            (click)="onContinueToPreview()" />
-                                    </div>
-                                </p-accordion-content>
-                            </p-accordion-panel>
-                        }
-                    </p-accordion>
-                }
-            </section>
-        </div>
+                                            [attr.data-testid]="
+                                                'quick-action-warning-' + quickAction.id
+                                            "
+                                            aria-hidden="true"></i>
+                                    }
 
-        <!-- Pinned footer: a sibling of the scroll container, so it stays put as the body scrolls. -->
-        <div
-            class="flex shrink-0 items-center justify-between border-t border-surface-100 px-6 py-4"
-            data-testid="action-center-footer">
-            <span class="text-xs font-medium text-surface-400 italic">
-                {{ 'content-drive.action-center.one-at-a-time' | dm }}
-            </span>
-            <p-button
-                [label]="'content-drive.action-center.done' | dm"
-                [disabled]="$executing()"
-                data-testid="action-center-done"
-                (click)="onDone()" />
-        </div>
-    } @else {
-        <!--
-            Preview: what the armed action is about to run on, with a checkbox per row.
+                                    <span class="text-xs font-medium text-surface-400">
+                                        ({{ quickAction.count }})
+                                    </span>
+                                    <i
+                                        class="material-symbols-outlined text-[20px]! text-surface-300"
+                                        aria-hidden="true">
+                                        chevron_right
+                                    </i>
+                                </button>
+                            }
+                        </div>
+                    } @else {
+                        <p-message severity="info" data-testid="no-quick-actions">
+                            {{ 'content-drive.action-center.no-quick-actions' | dm }}
+                        </p-message>
+                    }
+                </section>
 
-            No title or count here — the shell's dialog header carries both (via the store's
-            drill-down state), so repeating them would render the header twice. Only the back control
-            lives in the body, where it can be disabled while an action is in flight.
+                <!-- Workflow Actions: one panel per scheme, counts from the backend aggregation. -->
+                <section data-testid="workflow-actions-section">
+                    <h3
+                        class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                        {{ 'content-drive.action-center.workflow-actions' | dm }}
+                    </h3>
+
+                    @if ($loadingSchemes()) {
+                        <div class="flex flex-col gap-3" data-testid="workflow-actions-loading">
+                            @for (placeholder of [1, 2, 3]; track placeholder) {
+                                <p-skeleton height="3rem" borderRadius="0.75rem" />
+                            }
+                        </div>
+                    } @else if ($schemesError()) {
+                        <p-message severity="error" data-testid="workflow-actions-error">
+                            {{ 'content-drive.action-center.workflow-actions.error' | dm }}
+                        </p-message>
+                    } @else if (!$schemes().length) {
+                        <p-message severity="info" data-testid="no-workflow-actions">
+                            {{ 'content-drive.action-center.no-workflow-actions' | dm }}
+                        </p-message>
+                    } @else {
+                        <!-- Single-expand, matching the prototype: opening one scheme collapses the others. -->
+                        <p-accordion
+                            styleClass="flex flex-col gap-3"
+                            data-testid="workflow-schemes"
+                            [multiple]="false"
+                            [pt]="accordionPt"
+                            [dt]="accordionDt"
+                            [value]="$openSchemeId()"
+                            (valueChange)="onOpenSchemeChange($event)">
+                            @for (scheme of $schemes(); track scheme.id) {
+                                <p-accordion-panel [value]="scheme.id" [pt]="accordionPanelPt">
+                                    <p-accordion-header>
+                                        <span class="flex w-full items-center gap-3">
+                                            <span
+                                                class="text-sm font-bold"
+                                                [class]="
+                                                    $openSchemeId() === scheme.id
+                                                        ? 'text-primary'
+                                                        : 'text-surface-800'
+                                                ">
+                                                {{ scheme.name }}
+                                            </span>
+                                            <span class="text-xs font-medium text-surface-400">
+                                                ({{ scheme.count }})
+                                            </span>
+                                            @if (schemeOwnsSelection(scheme)) {
+                                                <span
+                                                    class="ml-auto rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                                    {{
+                                                        'content-drive.action-center.one-selected'
+                                                            | dm
+                                                    }}
+                                                </span>
+                                            }
+                                        </span>
+                                    </p-accordion-header>
+
+                                    <p-accordion-content>
+                                        <div class="divide-y divide-surface-100">
+                                            @for (action of scheme.actions; track action.id) {
+                                                <label
+                                                    class="flex cursor-pointer items-center gap-4 px-4 py-3.5 transition-colors hover:bg-surface-50"
+                                                    [attr.for]="action.id">
+                                                    <!-- No input gate any more: whatever the action
+                                                         declares gets a section on the configuration
+                                                         screen, so every row is armable. -->
+                                                    <p-radiobutton
+                                                        name="actionCenterAction"
+                                                        [inputId]="action.id"
+                                                        [value]="action.id"
+                                                        [disabled]="$executing()"
+                                                        [ngModel]="$selectedActionId()"
+                                                        [attr.data-testid]="
+                                                            'workflow-action-' + action.id
+                                                        "
+                                                        (ngModelChange)="
+                                                            $selectedActionId.set($event)
+                                                        " />
+
+                                                    <span
+                                                        class="text-sm font-semibold text-surface-700">
+                                                        {{ action.name }}
+                                                    </span>
+
+                                                    <span
+                                                        class="ml-auto flex items-center gap-1 text-xs font-medium text-surface-400">
+                                                        @if (action.approximateCount) {
+                                                            <i
+                                                                class="pi pi-info-circle"
+                                                                [pTooltip]="
+                                                                    'content-drive.action-center.approximate-count'
+                                                                        | dm
+                                                                "
+                                                                aria-hidden="true"></i>
+                                                            <span>&le; {{ action.count }}</span>
+                                                        } @else {
+                                                            <span>({{ action.count }})</span>
+                                                        }
+                                                    </span>
+                                                </label>
+                                            }
+                                        </div>
+                                    </p-accordion-content>
+                                </p-accordion-panel>
+                            }
+                        </p-accordion>
+                    }
+                </section>
+            </div>
+
+            <!--
+                Pinned footer: a sibling of the scroll container, so it stays put as the body scrolls.
+
+                One Continue for the whole screen, rather than one per scheme panel. Only one action can
+                be armed at a time across every scheme, so a per-panel button repeated a single global
+                decision N times and put it below a scrolling list — the arming click and the button
+                acting on it could not be seen together. Quick actions do not route through here: they
+                commit on click and open their own preview.
+            -->
+            <div
+                class="flex shrink-0 items-center justify-between border-t border-surface-100 px-6 py-4"
+                data-testid="action-center-footer">
+                <span class="text-xs font-medium text-surface-400 italic">
+                    {{ 'content-drive.action-center.one-at-a-time' | dm }}
+                </span>
+                <p-button
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    styleClass="font-bold"
+                    [label]="'content-drive.action-center.continue' | dm"
+                    [disabled]="!$selectedActionId() || $executing()"
+                    data-testid="action-center-continue"
+                    (click)="onContinueToPreview()" />
+            </div>
+        }
+        @default {
+            <!--
+            Configuration: whatever the armed action needs before it can run.
+
+            One frame for every kind — a back bar, a body, a pinned footer — matching the preview's, so
+            moving between steps does not reshape the dialog and each kind only supplies the body and its
+            own validation hint. The header is again the shell's, retitled to the action name with the
+            item count, which is how the count stays visible without repeating the rows.
         -->
-        <div
-            class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
-            data-testid="action-preview-bar">
-            <p-button
-                icon="pi pi-arrow-left"
-                severity="secondary"
-                size="small"
-                [text]="true"
-                [label]="'content-drive.action-center.back' | dm"
-                [disabled]="$executing()"
-                data-testid="action-preview-back"
-                (click)="onBackToActions()" />
-        </div>
+            @if ($view() === 'configure') {
+                <div
+                    class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
+                    data-testid="action-configure-bar">
+                    <p-button
+                        icon="pi pi-arrow-left"
+                        severity="secondary"
+                        size="small"
+                        [text]="true"
+                        [label]="'content-drive.action-center.back' | dm"
+                        [disabled]="$executing()"
+                        data-testid="action-configure-back"
+                        (click)="onBackToActions()" />
+                </div>
+            } @else {
+                <div
+                    class="flex shrink-0 items-center border-b border-surface-100 px-6 py-2"
+                    data-testid="action-preview-bar">
+                    <!-- Steps back to the configuration screen when the action has one, so a chosen
+                         destination is not thrown away on the way to the action list. -->
+                    <p-button
+                        icon="pi pi-arrow-left"
+                        severity="secondary"
+                        size="small"
+                        [text]="true"
+                        [label]="$backLabel() | dm"
+                        [disabled]="$executing()"
+                        data-testid="action-preview-back"
+                        (click)="onBack()" />
+                </div>
+            }
 
-        <!--
+            <!--
+                One scroll container for every section, rather than each section owning its own. The
+                sections are siblings inside it, so `min-h-0` lives here and nowhere below — a section
+                with its own `flex-1 overflow-y-auto` would fight this one for the height and neither
+                would scroll.
+
+                Padding is here too rather than inside the step components: two of them live in
+                `libs/ui` and should not assume this dialog's insets.
+            -->
+            <!--
+                Hidden rather than removed while the preview is up. Destroying these sections would
+                destroy the user's input with them: each step component re-emits its own fresh state on
+                mount, so a re-created form does not merely forget what was typed, it overwrites the
+                copy the dialog was holding. Keeping them mounted is what makes Back non-destructive.
+            -->
+            <div
+                class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
+                [class.hidden]="$view() !== 'configure'"
+                data-testid="action-configure-body">
+                @for (kind of $configureKinds(); track kind; let first = $first) {
+                    <!--
+                        A divider and a heading only once there is more than one section, otherwise a
+                        lone form would be labelled twice — the dialog header already names the action.
+                    -->
+                    <section
+                        [class.border-t]="!first"
+                        [class.border-surface-100]="!first"
+                        [class.pt-5]="!first"
+                        [attr.data-testid]="'action-configure-section-' + kind">
+                        @if ($hasMultipleSections()) {
+                            <h3
+                                class="mb-3 text-[10px] font-bold tracking-widest text-surface-400 uppercase">
+                                {{ 'content-drive.action-center.section.' + kind | dm }}
+                            </h3>
+                        }
+
+                        @switch (kind) {
+                            @case ('bundle') {
+                                <dot-content-drive-action-bundle-target
+                                    [assetCount]="$bundleAssetCount()"
+                                    [collapsedCount]="$bundleCollapsedCount()"
+                                    [disabled]="$executing()"
+                                    data-testid="action-configure-bundle-target"
+                                    (bundleChange)="onBundleChange($event)" />
+                            }
+                            @case ('assignComment') {
+                                <dot-workflow-assign-comment
+                                    [assignable]="!!$selectedAction()?.inputs.assignable"
+                                    [commentable]="!!$selectedAction()?.inputs.commentable"
+                                    [roleId]="$selectedAction()?.nextAssign ?? ''"
+                                    [roleHierarchy]="!!$selectedAction()?.roleHierarchyForAssign"
+                                    [disabled]="$executing()"
+                                    data-testid="action-configure-assign-comment"
+                                    (valueChange)="onAssignCommentChange($event)"
+                                    (validChange)="$assignCommentValid.set($event)" />
+                            }
+                            @case ('pushPublish') {
+                                <dot-workflow-push-publish
+                                    [disabled]="$executing()"
+                                    data-testid="action-configure-push-publish"
+                                    (valueChange)="onPushPublishChange($event)"
+                                    (validChange)="$pushPublishValid.set($event)" />
+                            }
+                            @case ('move') {
+                                <dot-content-drive-action-move-target
+                                    [itemCount]="$includedCount()"
+                                    [disabled]="$executing()"
+                                    [startingPath]="$pathToMove() || $currentPath()"
+                                    data-testid="action-configure-move-target"
+                                    (pathToMoveChange)="onPathToMoveChange($event)" />
+                            }
+                        }
+                    </section>
+                }
+            </div>
+
+            @if ($view() === 'configure') {
+                <div
+                    class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
+                    data-testid="action-configure-footer">
+                    <!--
+                    Names the first section still missing something. With sections stacked, the field
+                    holding Continue back can be scrolled out of view, so the footer has to say which
+                    one it is.
+                -->
+                    <span class="text-xs font-medium text-surface-400 italic">
+                        @if ($configureHint(); as hint) {
+                            {{ hint | dm }}
+                        } @else if ($configureWarning(); as warning) {
+                            <!-- A valid choice that is probably not what was meant, so it reads as a
+                                 caution beside a usable Continue rather than a blocked one. -->
+                            <span class="text-orange-600" data-testid="action-configure-warning">
+                                {{ warning | dm }}
+                            </span>
+                        }
+                    </span>
+                    <!-- Continue, not Execute: the preview still follows, and nothing has been sent yet. -->
+                    <p-button
+                        icon="pi pi-arrow-right"
+                        iconPos="right"
+                        styleClass="font-bold"
+                        [label]="'content-drive.action-center.continue' | dm"
+                        [disabled]="!$canLeaveConfigure() || $executing()"
+                        data-testid="action-configure-continue"
+                        (click)="onContinueFromConfigure()" />
+                </div>
+            }
+
+            @if ($view() === 'preview') {
+                <!--
             No padding and no scroll of its own: the table goes edge to edge and owns the scrolling
             (`scrollable` + `scrollHeight="flex"`), so its column headers stay pinned and its
             paginator sits below the scroll region rather than at the bottom of a scrolled page.
         -->
-        <div class="flex min-h-0 flex-1 flex-col" data-testid="action-preview-body">
-            <!-- Workflow actions only. A quick action's count and its rows come from the same
+                <div class="flex min-h-0 flex-1 flex-col" data-testid="action-preview-body">
+                    <!-- Workflow actions only. A quick action's count and its rows come from the same
                  client-side filter, so it can never apply to fewer items than it lists. -->
-            @if (!$pendingQuickAction() && $selectedAction(); as action) {
-                <!-- The rows are already narrowed to content types this action's scheme covers, but
+                    @if (!$pendingQuickAction() && $selectedAction(); as action) {
+                        <!-- The rows are already narrowed to content types this action's scheme covers, but
                      eligibility is also per workflow step: two contentlets of one type can sit on
                      different steps and only one may expose the action. `count` is the backend's true
                      total, so when it falls short of the rows shown, the rest get skipped — and the
                      endpoint never says which, so this warning is all the dialog can honestly show. -->
-                @if ($previewCount() > action.count) {
-                    <!-- `shrink-0` keeps the warning pinned above the table instead of being
+                        @if ($previewCount() > action.count) {
+                            <!-- `shrink-0` keeps the warning pinned above the table instead of being
                          squeezed away once the rows fill the column. -->
-                    <p-message
-                        class="m-4 shrink-0"
-                        severity="warn"
-                        data-testid="action-preview-partial-match">
-                        {{
-                            'content-drive.action-center.preview.partial-match'
-                                | dm: [action.count.toString(), $previewCount().toString()]
-                        }}
-                    </p-message>
-                }
-            }
+                            <p-message
+                                class="m-4 shrink-0"
+                                severity="warn"
+                                data-testid="action-preview-partial-match">
+                                {{
+                                    'content-drive.action-center.preview.partial-match'
+                                        | dm: [action.count.toString(), $previewCount().toString()]
+                                }}
+                            </p-message>
+                        }
+                    }
 
-            <dot-content-drive-action-preview
-                [items]="$previewItems()"
-                [selection]="$includedItems()"
-                [disabled]="$executing()"
-                data-testid="action-preview"
-                (selectionChange)="onIncludedItemsChange($event)" />
-        </div>
+                    <dot-content-drive-action-preview
+                        [items]="$previewItems()"
+                        [selection]="$includedItems()"
+                        [disabled]="$executing()"
+                        [lockedByOthers]="$lockedByOthers()"
+                        data-testid="action-preview"
+                        (selectionChange)="onIncludedItemsChange($event)" />
+                </div>
 
-        <div
-            class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
-            data-testid="action-preview-footer">
-            <span class="text-xs font-medium text-surface-400 italic">
-                @if (!$includedCount()) {
-                    {{ 'content-drive.action-center.preview.none-included' | dm }}
-                }
-            </span>
-            <!-- Just "Execute": the dialog header already names the action, so repeating it here
+                <div
+                    class="flex shrink-0 items-center justify-between gap-4 border-t border-surface-100 px-6 py-4"
+                    data-testid="action-preview-footer">
+                    <span class="text-xs font-medium text-surface-400 italic">
+                        @if (!$includedCount()) {
+                            {{ 'content-drive.action-center.preview.none-included' | dm }}
+                        }
+                    </span>
+                    <!-- Just "Execute": the dialog header already names the action, so repeating it here
                  said the same thing twice (and made the button grow with the action name). -->
-            <p-button
-                styleClass="font-bold"
-                [label]="'Execute' | dm"
-                [badge]="$includedCount().toString()"
-                [disabled]="!$includedCount() || $executing()"
-                [loading]="$executing()"
-                data-testid="action-preview-execute"
-                (click)="onExecutePreview()" />
-        </div>
+                    <p-button
+                        styleClass="font-bold"
+                        [label]="'Execute' | dm"
+                        [badge]="$includedCount().toString()"
+                        [disabled]="!$includedCount() || $executing()"
+                        [loading]="$executing()"
+                        data-testid="action-preview-execute"
+                        (click)="onExecutePreview()" />
+                </div>
+            }
+        }
     }
 
     <!-- Guards the destructive quick actions. Appended to body so it layers above the dialog. -->

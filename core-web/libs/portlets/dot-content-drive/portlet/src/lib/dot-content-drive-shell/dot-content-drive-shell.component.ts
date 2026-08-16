@@ -26,6 +26,8 @@ import { ToastModule } from 'primeng/toast';
 import { catchError } from 'rxjs/operators';
 
 import {
+    AddToBundleService,
+    DotCurrentUserService,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -38,7 +40,7 @@ import {
     DotCMSContentTypeField,
     DotCMSDataTypes,
     DotCMSFieldTypes,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
@@ -119,7 +121,12 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotContentDriveNavigationService,
         DotWorkflowsActionsService,
         MessageService,
-        DotFolderService
+        DotFolderService,
+        // Injected by the store's `withActionExecution` to fire Add to Bundle. Neither is
+        // `providedIn: 'root'`, and the bundle service resolves the current user to reach their
+        // bundles. `DotAddToBundleComponent` (single item, from the context menu) provides its own pair.
+        AddToBundleService,
+        DotCurrentUserService
     ],
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -209,7 +216,7 @@ export class DotContentDriveShellComponent {
         const dialog = this.$activeDialog();
 
         return dialog?.type === DIALOG_TYPE.FOLDER
-            ? (dialog.payload as DotContentDriveFolder)
+            ? (dialog.payload as DotContentDriveActionableFolder)
             : undefined;
     });
 
@@ -477,32 +484,38 @@ export class DotContentDriveShellComponent {
 
         const { actionName, successCount, skippedCount, failCount } = result;
 
-        const detail =
-            failCount > 0
-                ? this.#dotMessageService.get(
-                      'content-drive.action-center.toast.executed-with-fails',
-                      actionName,
-                      String(successCount),
-                      String(failCount)
-                  )
-                : skippedCount > 0
-                  ? this.#dotMessageService.get(
-                        'content-drive.action-center.toast.executed-with-skips',
-                        actionName,
-                        String(successCount),
-                        String(skippedCount)
-                    )
-                  : this.#dotMessageService.get(
-                        'content-drive.action-center.toast.executed-detail',
-                        actionName,
-                        String(successCount)
-                    );
+        // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
+        // can skip items whose scheme does not own the action *and* be refused on items that are
+        // locked. The ladder this replaces reported whichever it checked first, so a mixed result
+        // showed the failure copy alone and blamed permissions or locks for the entire shortfall —
+        // sending the user off to unlock content that was never the problem.
+        //
+        // So anything short of a clean run reports all three numbers, each next to its own cause.
+        // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
+        // cause and its number is what keeps the message honest.
+        const isPartial = failCount > 0 || skippedCount > 0;
+
+        const detail = isPartial
+            ? this.#dotMessageService.get(
+                  'content-drive.action-center.toast.executed-partial',
+                  actionName,
+                  String(successCount),
+                  String(failCount),
+                  String(skippedCount)
+              )
+            : this.#dotMessageService.get(
+                  'content-drive.action-center.toast.executed-detail',
+                  actionName,
+                  String(successCount)
+              );
 
         this.#messageService.add({
-            severity: failCount > 0 ? 'warn' : 'success',
+            // A skip is a shortfall too — those items did not get the action — so it warns rather
+            // than reporting green, which is what it used to do.
+            severity: isPartial ? 'warn' : 'success',
             summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
             detail,
-            life: failCount > 0 ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+            life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
         });
 
         untracked(() => {
