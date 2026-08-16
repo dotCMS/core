@@ -23,9 +23,9 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
  * Helper to encapsulate Roles logic
  * @author jsanca
  */
-@ApplicationScoped
 public class RoleHelper {
 
     private final RoleAPI roleAPI;
@@ -46,7 +45,6 @@ public class RoleHelper {
         this(APILocator.getRoleAPI());
     }
 
-    @Inject
     @VisibleForTesting
     public RoleHelper(final RoleAPI roleAPI) {
         this.roleAPI = roleAPI;
@@ -88,40 +86,45 @@ public class RoleHelper {
                             role.getName(), role.getId()));
         }
 
-        role.setName(roleForm.getRoleName());
-        role.setRoleKey(roleForm.getRoleKey());
-        role.setEditUsers(roleForm.isCanEditUsers());
-        role.setEditPermissions(roleForm.isCanEditPermissions());
-        role.setEditLayouts(roleForm.isCanEditLayouts());
-        role.setDescription(roleForm.getDescription());
-
+        // validate the parent BEFORE mutating anything — see the copy note below
         final String parentRoleId = roleForm.getParentRoleId();
+        Role parentRole = null;
         if (Objects.nonNull(parentRoleId)) {
 
             if (parentRoleId.equals(roleId)) {
                 throw new BadRequestException("A role cannot be its own parent: " + roleId);
             }
 
-            final Role parentRole = this.roleAPI.loadRoleById(parentRoleId);
+            parentRole = this.roleAPI.loadRoleById(parentRoleId);
             if (null == parentRole || !UtilMethods.isSet(parentRole.getId())) {
                 throw new DoesNotExistException("Parent role not found: " + parentRoleId);
             }
 
-            // findRoleHierarchy walks getParent() up to the root, so it returns the proposed
-            // parent and all its ancestors — if the edited role is among them, the reparent
-            // would create a cycle
-            for (final Role ancestor : this.roleAPI.findRoleHierarchy(parentRole)) {
-                if (roleId.equals(ancestor.getId())) {
-                    throw new BadRequestException(String.format(
-                            "Cannot move role '%s' under '%s': the target parent is one of its descendants",
-                            roleId, parentRoleId));
-                }
+            // reject the cycle: the edited role must not be an ancestor of the proposed parent
+            if (this.roleAPI.isParentRole(role, parentRole)) {
+                throw new BadRequestException(String.format(
+                        "Cannot move role '%s' under '%s': the target parent is one of its descendants",
+                        roleId, parentRoleId));
             }
-
-            role.setParent(parentRole.getId());
-        } else {
-            role.setParent(role.getId());
         }
+
+        // loadRoleById returns the cache-resident instance — apply the update to a detached
+        // copy so a save rejected by RoleAPIImpl (duplicate key/name, invalid name) cannot
+        // leave phantom values in the role cache
+        final Role roleToSave = new Role();
+        try {
+            BeanUtils.copyProperties(roleToSave, role);
+        } catch (final IllegalAccessException | InvocationTargetException e) {
+            throw new DotDataException("Error copying role for update: " + roleId, e);
+        }
+
+        roleToSave.setName(roleForm.getRoleName());
+        roleToSave.setRoleKey(roleForm.getRoleKey());
+        roleToSave.setEditUsers(roleForm.isCanEditUsers());
+        roleToSave.setEditPermissions(roleForm.isCanEditPermissions());
+        roleToSave.setEditLayouts(roleForm.isCanEditLayouts());
+        roleToSave.setDescription(roleForm.getDescription());
+        roleToSave.setParent(null != parentRole ? parentRole.getId() : role.getId());
 
         final String date = DateUtil.getCurrentDate();
         ActivityLogger.logInfo(getClass(), "Modifying Role",
@@ -131,7 +134,7 @@ public class RoleHelper {
 
         final Role updatedRole;
         try {
-            updatedRole = this.roleAPI.save(role);
+            updatedRole = this.roleAPI.save(roleToSave);
         } catch (final DuplicateRoleKeyException e) {
             throw new ConflictException(
                     "A role with key '" + roleForm.getRoleKey() + "' already exists", e);

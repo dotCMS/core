@@ -202,9 +202,21 @@ public class RoleResourceIntegrationTest {
     public void testUpdateRole_reparent_cycle_badRequest() throws Exception {
         final Role parent = new RoleDataGen().nextPersisted();
         final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
-        final String originalParentOfParent = parent.getParent();
+        // pre-warm the role cache OUTSIDE the update's transaction — models production, where
+        // the edited role is already cached; entries created inside the failing transaction
+        // are rollback-evicted (CommitListenerCacheWrapper.put) and would mask the poisoning
+        roleAPI.loadRoleById(parent.getId());
 
-        final RoleForm form = formFrom(parent).parentRoleId(child.getId()).build();
+        final String originalParentOfParent = parent.getParent();
+        final String originalName = parent.getName();
+        final String originalKey = parent.getRoleKey();
+        final String originalDescription = parent.getDescription();
+
+        // the form also renames, so the post-rejection assertions can detect any partial mutation
+        final RoleForm form = formFrom(parent)
+                .roleName("cycle-rename-" + uniq())
+                .parentRoleId(child.getId())
+                .build();
 
         try {
             resource.updateRole(adminRequest(), new MockHttpResponse().response(), parent.getId(), form);
@@ -213,7 +225,11 @@ public class RoleResourceIntegrationTest {
             // expected
         }
 
-        assertEquals(originalParentOfParent, roleAPI.loadRoleById(parent.getId()).getParent());
+        final Role reloaded = roleAPI.loadRoleById(parent.getId());
+        assertEquals(originalName, reloaded.getName());
+        assertEquals(originalKey, reloaded.getRoleKey());
+        assertEquals(originalDescription, reloaded.getDescription());
+        assertEquals(originalParentOfParent, reloaded.getParent());
         assertEquals(parent.getId(), roleAPI.loadRoleById(child.getId()).getParent());
     }
 
@@ -267,32 +283,74 @@ public class RoleResourceIntegrationTest {
      * Given Scenario: A role is updated to use another role's roleKey.
      * Expected Result: 409 ConflictException (DuplicateRoleKeyException from RoleAPIImpl.save).
      */
-    @Test(expected = ConflictException.class)
+    @Test
     public void testUpdateRole_duplicateKey_conflict() throws Exception {
         final Role roleA = new RoleDataGen().key("key-a-" + uniq()).nextPersisted();
         final Role roleB = new RoleDataGen().key("key-b-" + uniq()).nextPersisted();
 
-        final RoleForm form = formFrom(roleB).roleKey(roleA.getRoleKey()).build();
+        // pre-warm the role cache OUTSIDE the update's transaction — models production, where
+        // the edited role is already cached; entries created inside the failing transaction
+        // are rollback-evicted (CommitListenerCacheWrapper.put) and would mask the poisoning
+        roleAPI.loadRoleById(roleB.getId());
 
-        resource.updateRole(adminRequest(), new MockHttpResponse().response(), roleB.getId(), form);
+        final String originalName = roleB.getName();
+        final String originalKey = roleB.getRoleKey();
+        final String originalDescription = roleB.getDescription();
+
+        final RoleForm form = formFrom(roleB)
+                .roleName("dup-key-rename-" + uniq())
+                .roleKey(roleA.getRoleKey())
+                .build();
+
+        try {
+            resource.updateRole(adminRequest(), new MockHttpResponse().response(), roleB.getId(), form);
+            fail("Should have thrown ConflictException for a duplicate role key");
+        } catch (final ConflictException e) {
+            // expected
+        }
+
+        // a rejected update must leave no trace — not in the DB and not in the role cache
+        final Role reloaded = roleAPI.loadRoleById(roleB.getId());
+        assertEquals(originalName, reloaded.getName());
+        assertEquals(originalKey, reloaded.getRoleKey());
+        assertEquals(originalDescription, reloaded.getDescription());
     }
 
     /**
      * Given Scenario: Two sibling roles under the same parent; one is renamed to the other's name.
      * Expected Result: 409 ConflictException (DuplicateRoleException from RoleAPIImpl.save).
      */
-    @Test(expected = ConflictException.class)
+    @Test
     public void testUpdateRole_duplicateNameUnderSameParent_conflict() throws Exception {
         final Role parent = new RoleDataGen().nextPersisted();
         final Role roleA = new RoleDataGen().parent(parent.getId()).nextPersisted();
         final Role roleB = new RoleDataGen().parent(parent.getId()).nextPersisted();
+
+        // pre-warm the role cache OUTSIDE the update's transaction — models production, where
+        // the edited role is already cached; entries created inside the failing transaction
+        // are rollback-evicted (CommitListenerCacheWrapper.put) and would mask the poisoning
+        roleAPI.loadRoleById(roleB.getId());
+
+        final String originalName = roleB.getName();
+        final String originalKey = roleB.getRoleKey();
+        final String originalDescription = roleB.getDescription();
 
         final RoleForm form = formFrom(roleB)
                 .roleName(roleA.getName())
                 .parentRoleId(parent.getId())
                 .build();
 
-        resource.updateRole(adminRequest(), new MockHttpResponse().response(), roleB.getId(), form);
+        try {
+            resource.updateRole(adminRequest(), new MockHttpResponse().response(), roleB.getId(), form);
+            fail("Should have thrown ConflictException for a duplicate role name");
+        } catch (final ConflictException e) {
+            // expected
+        }
+
+        final Role reloaded = roleAPI.loadRoleById(roleB.getId());
+        assertEquals(originalName, reloaded.getName());
+        assertEquals(originalKey, reloaded.getRoleKey());
+        assertEquals(originalDescription, reloaded.getDescription());
     }
 
     /**
@@ -300,7 +358,7 @@ public class RoleResourceIntegrationTest {
      * RoleAPIImpl.save's RoleNameException).
      * Expected Result: 400 BadRequestException — a validation error, not a conflict.
      */
-    @Test(expected = BadRequestException.class)
+    @Test
     public void testUpdateRole_invalidName_badRequest() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
 
@@ -308,9 +366,28 @@ public class RoleResourceIntegrationTest {
         for (int i = 0; i <= 100; i++) {
             longName.append('a');
         }
+        // pre-warm the role cache OUTSIDE the update's transaction — models production, where
+        // the edited role is already cached; entries created inside the failing transaction
+        // are rollback-evicted (CommitListenerCacheWrapper.put) and would mask the poisoning
+        roleAPI.loadRoleById(role.getId());
+
+        final String originalName = role.getName();
+        final String originalKey = role.getRoleKey();
+        final String originalDescription = role.getDescription();
+
         final RoleForm form = formFrom(role).roleName(longName.toString()).build();
 
-        resource.updateRole(adminRequest(), new MockHttpResponse().response(), role.getId(), form);
+        try {
+            resource.updateRole(adminRequest(), new MockHttpResponse().response(), role.getId(), form);
+            fail("Should have thrown BadRequestException for an invalid role name");
+        } catch (final BadRequestException e) {
+            // expected
+        }
+
+        final Role reloaded = roleAPI.loadRoleById(role.getId());
+        assertEquals(originalName, reloaded.getName());
+        assertEquals(originalKey, reloaded.getRoleKey());
+        assertEquals(originalDescription, reloaded.getDescription());
     }
 
     /**
@@ -329,13 +406,37 @@ public class RoleResourceIntegrationTest {
      * Given Scenario: The parentRoleId in the form does not match any role.
      * Expected Result: 404 DoesNotExistException; the role is not modified.
      */
-    @Test(expected = DoesNotExistException.class)
+    @Test
     public void testUpdateRole_missingParent_notFound() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
 
-        final RoleForm form = formFrom(role).parentRoleId(UUID.randomUUID().toString()).build();
+        // pre-warm the role cache OUTSIDE the update's transaction — models production, where
+        // the edited role is already cached; entries created inside the failing transaction
+        // are rollback-evicted (CommitListenerCacheWrapper.put) and would mask the poisoning
+        roleAPI.loadRoleById(role.getId());
 
-        resource.updateRole(adminRequest(), new MockHttpResponse().response(), role.getId(), form);
+        final String originalName = role.getName();
+        final String originalKey = role.getRoleKey();
+        final String originalDescription = role.getDescription();
+        final String originalParent = role.getParent();
+
+        final RoleForm form = formFrom(role)
+                .roleName("missing-parent-rename-" + uniq())
+                .parentRoleId(UUID.randomUUID().toString())
+                .build();
+
+        try {
+            resource.updateRole(adminRequest(), new MockHttpResponse().response(), role.getId(), form);
+            fail("Should have thrown DoesNotExistException for a missing parent role");
+        } catch (final DoesNotExistException e) {
+            // expected
+        }
+
+        final Role reloaded = roleAPI.loadRoleById(role.getId());
+        assertEquals(originalName, reloaded.getName());
+        assertEquals(originalKey, reloaded.getRoleKey());
+        assertEquals(originalDescription, reloaded.getDescription());
+        assertEquals(originalParent, reloaded.getParent());
     }
 
     /**

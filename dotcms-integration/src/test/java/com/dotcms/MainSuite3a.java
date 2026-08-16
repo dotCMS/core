@@ -14,6 +14,7 @@ import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
+import com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.MetricTimeoutTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
@@ -102,7 +103,7 @@ import org.junit.runners.Suite;
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
         InodeExistenceCheckIntegrationTest.class,
-        com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest.class,
+        RoleResourceIntegrationTest.class,
 })
 
 public class MainSuite3a {

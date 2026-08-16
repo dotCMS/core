@@ -392,14 +392,14 @@ public class RoleResource implements Serializable {
 					content = @Content(mediaType = "application/json"))
 	})
 	@PUT
-	@Path("/{roleId}")
+	@Path("/{roleid}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public ResponseEntityRoleDetailView updateRole(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
 			@Parameter(description = "Id of the role to update", required = true)
-			final @PathParam("roleId") String roleId,
+			final @PathParam("roleid") String roleId,
 			@io.swagger.v3.oas.annotations.parameters.RequestBody(
 				description = "Role information — same shape as POST /v1/roles",
 				required = true,
