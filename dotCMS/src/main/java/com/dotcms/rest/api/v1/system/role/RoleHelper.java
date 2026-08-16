@@ -12,6 +12,7 @@ import com.dotmarketing.business.DuplicateRoleException;
 import com.dotmarketing.business.DuplicateRoleKeyException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -258,6 +259,78 @@ public class RoleHelper {
                     "Please remove all references to the '%s' Role from the following Workflow Scheme Actions: %s",
                     role.getName(), schemesAndActions));
         }
+    }
+
+    /**
+     * Grants a role to a user. Legacy parity with the DWR {@code RoleAjax#addUserToRole} path
+     * ({@code RoleAPIImpl.addRoleToUser}), whose two behaviors this endpoint keeps (see #36937):
+     * <ul>
+     *   <li>the grant is IDEMPOTENT — when the user already holds the role, directly or
+     *       inherited through the role hierarchy, the API silently no-ops and this method still
+     *       succeeds. In particular, granting a role the user only inherits does NOT create a
+     *       direct membership</li>
+     *   <li>the only grant gate is the role's {@code editUsers} flag — pre-checked here so the
+     *       caller gets a clean 403 instead of the API's {@code DotStateException}. Workflow and
+     *       system roles are non-grantable because that flag is false on them. Checked AFTER the
+     *       already-holds check (legacy order), so re-grants stay a 200 no-op even on frozen
+     *       roles</li>
+     * </ul>
+     *
+     * Other guards: missing role or user → {@link DoesNotExistException} (404).
+     *
+     * @param roleId  id of the role to grant
+     * @param userId  id of the user to grant the role to
+     * @param modUser authenticated user performing the grant (audit logging)
+     * @return the target user the role was granted to
+     */
+    @WrapInTransaction
+    public User addUserToRole(final String roleId, final String userId, final User modUser)
+            throws DotDataException, DotSecurityException {
+
+        final Role role = this.roleAPI.loadRoleById(roleId);
+        if (null == role || !UtilMethods.isSet(role.getId())) {
+            throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        final User targetUser;
+        try {
+            targetUser = APILocator.getUserAPI().loadUserById(userId, modUser, false);
+        } catch (final NoSuchUserException e) {
+            throw new DoesNotExistException("User not found: " + userId);
+        }
+
+        // legacy order (RoleAPIImpl.addRoleToUser): the already-holds check comes FIRST, so a
+        // re-grant of a held role (direct or inherited) is a silent no-op even when the role's
+        // membership has since been frozen (editUsers=false)
+        if (this.roleAPI.doesUserHaveRole(targetUser, role)) {
+            return targetUser;
+        }
+
+        if (!role.isEditUsers()) {
+            throw new DotSecurityException(
+                    String.format("Users cannot be granted role '%s' (%s): the role does not allow user grants",
+                            role.getName(), role.getId()));
+        }
+
+        final String auditDetail = "Date: " + DateUtil.getCurrentDate()
+                + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId()
+                + "; Name: " + role.getName() + "; TargetUser: " + targetUser.getUserId();
+
+        ActivityLogger.logInfo(getClass(), "Adding Role to User", auditDetail);
+        AdminLogger.log(getClass(), "Adding Role to User", auditDetail);
+
+        try {
+            this.roleAPI.addRoleToUser(role, targetUser);
+        } catch (final DotDataException | DotStateException e) {
+            ActivityLogger.logInfo(getClass(), "Error Adding Role to User", auditDetail);
+            AdminLogger.log(getClass(), "Error Adding Role to User", auditDetail);
+            throw e;
+        }
+
+        ActivityLogger.logInfo(getClass(), "Role Added to User", auditDetail);
+        AdminLogger.log(getClass(), "Role Added to User", auditDetail);
+
+        return targetUser;
     }
 
     /**

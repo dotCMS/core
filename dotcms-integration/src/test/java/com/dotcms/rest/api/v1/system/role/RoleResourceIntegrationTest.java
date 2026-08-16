@@ -36,8 +36,13 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,6 +57,7 @@ import static org.junit.Assert.fail;
  * Covered here:
  * - PUT /api/v1/roles/{roleId} (update role + reparent) — issue #36936
  * - DELETE /api/v1/roles/{roleId} (delete role, cascading) — issue #36939
+ * - POST /api/v1/roles/{roleId}/users/{userId} (grant user to role) — issue #36937
  *
  * These tests invoke the resource directly with mock authenticated requests, following the
  * pattern established by {@code PermissionResourceIntegrationTest}.
@@ -819,4 +825,231 @@ public class RoleResourceIntegrationTest {
 
         assertNotNull(roleAPI.loadRoleById(role.getId()));
     }
+
+    // ==================== POST /v1/roles/{roleId}/users/{userId} — #36937 ====================
+
+    private static boolean isDirectMember(final Role role, final User user) throws Exception {
+        return roleAPI.findUsersForRole(role, false).stream()
+                .anyMatch(u -> u.getUserId().equals(user.getUserId()));
+    }
+
+    /**
+     * Method to test: {@link RoleResource#addUserToRole(HttpServletRequest, HttpServletResponse, String, String)}
+     * Given Scenario: An admin grants a grantable role (editUsers=true) to a user who does not
+     * hold it.
+     * Expected Result: 200 with {granted: true, roleId, user: {userId, email, fullName}}; the
+     * user becomes a DIRECT member of the role.
+     */
+    @Test
+    public void testAddUserToRole_success_grantsDirectMembership() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User target = UserTestUtil.getUser("grantuser" + uniq(), false, true);
+
+        final ResponseEntityRoleUserGrantView view = resource.addUserToRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(), target.getUserId());
+
+        final RoleUserGrantView entity = view.getEntity();
+        assertNotNull(entity);
+        assertTrue(entity.granted());
+        assertEquals(role.getId(), entity.roleId());
+        assertEquals(target.getUserId(), entity.user().userId());
+        assertEquals(target.getEmailAddress(), entity.user().email());
+        assertEquals(target.getFullName(), entity.user().fullName());
+
+        assertTrue("user must be a DIRECT member after grant", isDirectMember(role, target));
+    }
+
+    /**
+     * Given Scenario: The same grant is issued twice (user is already a direct member).
+     * Expected Result: 200 both times — the endpoint is idempotent (legacy
+     * RoleAPIImpl.addRoleToUser silently no-ops when doesUserHaveRole is true). No duplicate
+     * membership row is created.
+     */
+    @Test
+    public void testAddUserToRole_alreadyDirectMember_idempotent() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User target = UserTestUtil.getUser("regrantuser" + uniq(), false, true);
+
+        resource.addUserToRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(), target.getUserId());
+        final ResponseEntityRoleUserGrantView view = resource.addUserToRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(), target.getUserId());
+
+        assertTrue(view.getEntity().granted());
+
+        final long memberships = roleAPI.findUsersForRole(role, false).stream()
+                .filter(u -> u.getUserId().equals(target.getUserId()))
+                .count();
+        assertEquals("grant must not create a duplicate membership row", 1, memberships);
+    }
+
+    /**
+     * Given Scenario: The user holds a PARENT role, which makes every CHILD role an implicit
+     * (inherited) role for that user — dotCMS role inheritance flows DOWN the tree
+     * (RoleFactoryImpl#loadRolesForUser expands getRoleChildren()). An admin grants the CHILD
+     * role to that user.
+     * Expected Result: 200 — but NO direct membership is created, because legacy
+     * addRoleToUser's doesUserHaveRole check counts inherited roles and silently no-ops.
+     * This test PINS the quirk (documented in the OpenAPI description): the user will NOT
+     * appear in the child role's direct-users list after this call.
+     */
+    @Test
+    public void testAddUserToRole_inheritedMembership_noOpButOk() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+        final User target = UserTestUtil.getUser("inherituser" + uniq(), false, true);
+
+        roleAPI.addRoleToUser(parent, target);
+        assertTrue("precondition: the child role must be inherited via the parent",
+                roleAPI.doesUserHaveRole(target, child));
+        assertFalse("precondition: the child role must not be direct", isDirectMember(child, target));
+
+        final ResponseEntityRoleUserGrantView view = resource.addUserToRole(
+                adminRequest(), new MockHttpResponse().response(), child.getId(), target.getUserId());
+
+        assertTrue(view.getEntity().granted());
+        assertFalse("granting an inherited role must remain a no-op (legacy parity)",
+                isDirectMember(child, target));
+    }
+
+    /**
+     * Given Scenario: The user already holds the role, and the role's editUsers flag is later
+     * turned off (membership frozen). The same grant is issued again.
+     * Expected Result: 200 — legacy RoleAPIImpl.addRoleToUser checks doesUserHaveRole BEFORE
+     * the editUsers gate, so a re-grant of an already-held role is a silent no-op regardless
+     * of the flag. This pins the documented "retries are safe" idempotency for frozen roles.
+     */
+    @Test
+    public void testAddUserToRole_alreadyHeldOnEditUsersFalseRole_idempotent() throws Exception {
+        final Role role = new RoleDataGen().editUsers(true).nextPersisted();
+        final User target = UserTestUtil.getUser("regrantfrozen" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, target);
+        assertTrue(isDirectMember(role, target));
+
+        role.setEditUsers(false);
+        roleAPI.save(role);
+
+        final ResponseEntityRoleUserGrantView view = resource.addUserToRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(), target.getUserId());
+
+        assertTrue(view.getEntity().granted());
+        assertTrue("membership must be unchanged", isDirectMember(role, target));
+    }
+
+    /**
+     * Given Scenario: The role has editUsers=false — the single gate legacy has on grants
+     * (RoleAPIImpl.addRoleToUser throws DotStateException "Cannot alter users on this role").
+     * Workflow/system roles are non-grantable precisely because this flag is false on them.
+     * Expected Result: DotSecurityException (403); the user is not granted the role.
+     */
+    @Test
+    public void testAddUserToRole_editUsersFalse_forbidden() throws Exception {
+        final Role role = new RoleDataGen().editUsers(false).nextPersisted();
+        final User target = UserTestUtil.getUser("nogrmuseruser" + uniq(), false, true);
+
+        try {
+            resource.addUserToRole(
+                    adminRequest(), new MockHttpResponse().response(), role.getId(), target.getUserId());
+            fail("Should have thrown DotSecurityException for an editUsers=false role");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+
+        assertFalse(roleAPI.doesUserHaveRole(target, role));
+    }
+
+    /**
+     * Given Scenario: The roleId path parameter does not match any role.
+     * Expected Result: 404 DoesNotExistException (resource-wide convention).
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void testAddUserToRole_missingRole_notFound() throws Exception {
+        final User target = UserTestUtil.getUser("missingroleuser" + uniq(), false, true);
+
+        resource.addUserToRole(adminRequest(), new MockHttpResponse().response(),
+                UUID.randomUUID().toString(), target.getUserId());
+    }
+
+    /**
+     * Given Scenario: The userId path parameter does not match any user.
+     * Expected Result: 404 DoesNotExistException (NoSuchUserException mapped to the same
+     * resource-wide convention).
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void testAddUserToRole_missingUser_notFound() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        resource.addUserToRole(adminRequest(), new MockHttpResponse().response(),
+                role.getId(), "no-such-user-" + uniq());
+    }
+
+    /**
+     * Given Scenario: An anonymous caller (no session user, no Authorization header).
+     * Expected Result: rejected by the InitBuilder's rejectWhenNoUser gate (401).
+     */
+    @Test
+    public void testAddUserToRole_anonymous_unauthorized() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User target = UserTestUtil.getUser("anongrantuser" + uniq(), false, true);
+
+        try {
+            resource.addUserToRole(anonymousRequest(),
+                    new MockHttpResponse().response(), role.getId(), target.getUserId());
+            fail("Should have thrown a security exception for an anonymous caller");
+        } catch (final com.dotcms.rest.exception.SecurityException e) {
+            // expected: rejectWhenNoUser → 401
+        }
+
+        assertFalse(roleAPI.doesUserHaveRole(target, role));
+    }
+
+    /**
+     * Given Scenario: A backend user without the roles portlet and without the CMS admin role
+     * calls the endpoint.
+     * Expected Result: rejected with a security exception (403); no membership is created.
+     */
+    @Test
+    public void testAddUserToRole_nonAdmin_forbidden() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User target = UserTestUtil.getUser("nonadmingrant" + uniq(), false, true);
+
+        try {
+            resource.addUserToRole(requestFor(limitedUser),
+                    new MockHttpResponse().response(), role.getId(), target.getUserId());
+            fail("Should have thrown a security exception");
+        } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+            // expected: the InitBuilder portlet gate throws the REST SecurityException (→ 403),
+            // the CMS-admin check throws DotSecurityException (→ 403)
+        }
+
+        assertFalse(roleAPI.doesUserHaveRole(target, role));
+    }
+
+    /**
+     * Given Scenario: A backend user WITH access to the roles portlet but WITHOUT the CMS admin
+     * role calls the endpoint — exercises the CMS-admin gate specifically.
+     * Expected Result: rejected with a security exception (403); no membership is created.
+     */
+    @Test
+    public void testAddUserToRole_rolesPortletUserWithoutAdmin_forbidden() throws Exception {
+        final Layout rolesLayout = new LayoutDataGen().portletIds("roles").nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(rolesLayout).nextPersisted();
+        final User portletUser = UserTestUtil.getUser("rolesgrantuser" + uniq(), false, true);
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), portletUser);
+        roleAPI.addRoleToUser(portletRole, portletUser);
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User target = UserTestUtil.getUser("portletgrant" + uniq(), false, true);
+
+        try {
+            resource.addUserToRole(requestFor(portletUser),
+                    new MockHttpResponse().response(), role.getId(), target.getUserId());
+            fail("Should have thrown a security exception for a non-admin caller");
+        } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+            // expected: the CMS-admin check
+        }
+
+        assertFalse(roleAPI.doesUserHaveRole(target, role));
+    }
+
 }

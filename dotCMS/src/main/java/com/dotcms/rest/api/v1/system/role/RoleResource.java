@@ -480,6 +480,69 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
+	 * Grants a role to a user. Idempotent, mirroring the legacy DWR
+	 * {@code RoleAjax#addUserToRole} path: granting a role the user already holds — directly
+	 * or inherited through the role hierarchy — returns 200 and changes nothing. The only
+	 * grant gate is the role's {@code editUsers} flag (403). The caller must be a backend
+	 * user with access to the Roles portlet and the CMS Administrator role.
+	 */
+	@Operation(
+		operationId = "addUserToRole",
+		summary = "Grant a role to a user",
+		description = "Grants the role to the user as a DIRECT membership. The operation is " +
+				"IDEMPOTENT: granting a role the user already holds returns 200 and changes " +
+				"nothing — no duplicate membership is created and retries are safe, even when the " +
+				"role's editUsers flag has since been turned off. Note the " +
+				"inherited-membership behavior (legacy parity): role membership is inherited DOWN " +
+				"the role tree, so a user holding a parent role implicitly holds every child role. " +
+				"Granting a role the user already INHERITS this way also returns 200 but does NOT " +
+				"create a direct membership — the user will not appear in the role's direct-users " +
+				"list afterwards. Roles whose editUsers flag is false cannot be granted (403); " +
+				"workflow and system roles are non-grantable because that flag is false on them."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "User holds the role after the call; the response carries the granted "
+							+ "roleId and a minimal user payload",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleUserGrantView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required, or the role's editUsers flag is false",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role or user not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@POST
+	@Path("/{roleid}/users/{userId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleUserGrantView addUserToRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to grant", required = true)
+			final @PathParam("roleid") String roleId,
+			@Parameter(description = "Id of the user to grant the role to", required = true)
+			final @PathParam("userId") String userId) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		final User targetUser = this.roleHelper.addUserToRole(roleId, userId, user);
+
+		return new ResponseEntityRoleUserGrantView(RoleUserGrantView.builder()
+				.granted(true)
+				.roleId(roleId)
+				.user(RoleMemberUserView.builder()
+						.userId(targetUser.getUserId())
+						.email(targetUser.getEmailAddress())
+						.fullName(targetUser.getFullName())
+						.build())
+				.build());
+	}
+
+	/**
 	 * Saves set of layout into a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */

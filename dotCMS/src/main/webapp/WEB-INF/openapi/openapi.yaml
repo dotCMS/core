@@ -15353,6 +15353,57 @@ paths:
       summary: Load users and roles by role ID
       tags:
       - Roles
+  /v1/roles/{roleid}/users/{userId}:
+    post:
+      description: "Grants the role to the user as a DIRECT membership. The operation\
+        \ is IDEMPOTENT: granting a role the user already holds returns 200 and changes\
+        \ nothing — no duplicate membership is created and retries are safe, even\
+        \ when the role's editUsers flag has since been turned off. Note the inherited-membership\
+        \ behavior (legacy parity): role membership is inherited DOWN the role tree,\
+        \ so a user holding a parent role implicitly holds every child role. Granting\
+        \ a role the user already INHERITS this way also returns 200 but does NOT\
+        \ create a direct membership — the user will not appear in the role's direct-users\
+        \ list afterwards. Roles whose editUsers flag is false cannot be granted (403);\
+        \ workflow and system roles are non-grantable because that flag is false on\
+        \ them."
+      operationId: addUserToRole
+      parameters:
+      - description: Id of the role to grant
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      - description: Id of the user to grant the role to
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleUserGrantView"
+          description: User holds the role after the call; the response carries the
+            granted roleId and a minimal user payload
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role's editUsers\
+            \ flag is false"
+        "404":
+          content:
+            application/json: {}
+          description: Role or user not found
+      summary: Grant a role to a user
+      tags:
+      - Roles
   /v1/site:
     get:
       description: "Returns a paginated list of sites that the currently logged-in\
@@ -33487,6 +33538,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRoleUserGrantView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleUserGrantView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRoleViewListView:
       type: object
       properties:
@@ -35258,6 +35332,26 @@ components:
           uniqueItems: true
         roleId:
           type: string
+    RoleMemberUserView:
+      type: object
+      description: The user the role was granted to
+      properties:
+        email:
+          type: string
+          description: Email address of the user
+          example: user@example.com
+        fullName:
+          type: string
+          description: Full name of the user
+          example: Jane Doe
+        userId:
+          type: string
+          description: Id of the user
+          example: dotcms.org.2807
+      required:
+      - email
+      - fullName
+      - userId
     RolePermissionAssetView:
       type: object
       description: The updated asset with new permission assignments for this role
@@ -35548,6 +35642,25 @@ components:
           type: array
           items:
             type: string
+    RoleUserGrantView:
+      type: object
+      properties:
+        granted:
+          type: boolean
+          description: "Whether the user holds the role after the call. The grant\
+            \ is idempotent, so this is also true when the user already held the role\
+            \ and nothing changed"
+          example: true
+        roleId:
+          type: string
+          description: Id of the granted role
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        user:
+          $ref: "#/components/schemas/RoleMemberUserView"
+      required:
+      - granted
+      - roleId
+      - user
     RoleView:
       type: object
       properties:
