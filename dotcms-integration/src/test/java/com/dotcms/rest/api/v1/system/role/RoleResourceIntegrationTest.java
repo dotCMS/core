@@ -58,6 +58,7 @@ import static org.junit.Assert.fail;
  * - PUT /api/v1/roles/{roleId} (update role + reparent) — issue #36936
  * - DELETE /api/v1/roles/{roleId} (delete role, cascading) — issue #36939
  * - POST /api/v1/roles/{roleId}/users/{userId} (grant user to role) — issue #36937
+ * - DELETE /api/v1/roles/{roleId}/users (bulk remove members) — issue #36938
  *
  * These tests invoke the resource directly with mock authenticated requests, following the
  * pattern established by {@code PermissionResourceIntegrationTest}.
@@ -1052,4 +1053,266 @@ public class RoleResourceIntegrationTest {
         assertFalse(roleAPI.doesUserHaveRole(target, role));
     }
 
+    // ==================== DELETE /v1/roles/{roleId}/users — #36938 ====================
+
+    /**
+     * Method to test: {@link RoleResource#removeUsersFromRole(HttpServletRequest, HttpServletResponse, String, RoleUsersForm)}
+     * Given Scenario: An admin removes a single direct member from a role.
+     * Expected Result: 200 with removedUserIds=[userId], skipped empty; the membership row
+     * is gone.
+     */
+    @Test
+    public void testRemoveUsersFromRole_singleUser_removed() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User member = UserTestUtil.getUser("removeuser" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, member);
+        assertTrue(isDirectMember(role, member));
+
+        final ResponseEntityRoleUsersRemovalView view = resource.removeUsersFromRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(),
+                new RoleUsersForm(Set.of(member.getUserId())));
+
+        final RoleUsersRemovalView entity = view.getEntity();
+        assertNotNull(entity);
+        assertEquals(List.of(member.getUserId()), entity.removedUserIds());
+        assertTrue(entity.skipped().isEmpty());
+
+        assertFalse("membership row must be gone", isDirectMember(role, member));
+        assertFalse(roleAPI.doesUserHaveRole(member, role));
+    }
+
+    /**
+     * Given Scenario: An admin bulk-removes three direct members in one call (bulk is legacy
+     * functionality — DWR RoleAjax#removeUsersFromRole takes an array).
+     * Expected Result: 200; all three userIds in removedUserIds, all three memberships gone.
+     */
+    @Test
+    public void testRemoveUsersFromRole_bulk_allRemoved() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User memberA = UserTestUtil.getUser("bulkusera" + uniq(), false, true);
+        final User memberB = UserTestUtil.getUser("bulkuserb" + uniq(), false, true);
+        final User memberC = UserTestUtil.getUser("bulkuserc" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, memberA);
+        roleAPI.addRoleToUser(role, memberB);
+        roleAPI.addRoleToUser(role, memberC);
+
+        final ResponseEntityRoleUsersRemovalView view = resource.removeUsersFromRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(),
+                new RoleUsersForm(Set.of(
+                        memberA.getUserId(), memberB.getUserId(), memberC.getUserId())));
+
+        final RoleUsersRemovalView entity = view.getEntity();
+        assertEquals(Set.of(memberA.getUserId(), memberB.getUserId(), memberC.getUserId()),
+                Set.copyOf(entity.removedUserIds()));
+        assertTrue(entity.skipped().isEmpty());
+        assertTrue(roleAPI.findUsersForRole(role, false).isEmpty());
+    }
+
+    /**
+     * Given Scenario: A mixed batch — one valid direct member, one nonexistent userId, and one
+     * user whose membership is inherited-only (holds the PARENT role; the target role is a child).
+     * Expected Result: 200 with PARTIAL SUCCESS — this is the pin for the batch contract:
+     * removedUserIds contains only the valid member (who IS actually removed), skipped reports
+     * the nonexistent id with reason "not_found" and the inherited-only user with reason
+     * "inherited". The batch never fails as a whole (improvement over legacy DWR's fail-fast
+     * mid-loop with partial effects — same outcomes, but reported).
+     */
+    @Test
+    public void testRemoveUsersFromRole_mixedBatch_partialSuccess() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role role = new RoleDataGen().parent(parent.getId()).nextPersisted();
+
+        final User directMember = UserTestUtil.getUser("mixdirect" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, directMember);
+
+        final User inheritedOnly = UserTestUtil.getUser("mixinherit" + uniq(), false, true);
+        roleAPI.addRoleToUser(parent, inheritedOnly);
+        assertTrue(roleAPI.doesUserHaveRole(inheritedOnly, role));
+        assertFalse(isDirectMember(role, inheritedOnly));
+
+        final String missingUserId = "no-such-user-" + uniq();
+
+        final ResponseEntityRoleUsersRemovalView view = resource.removeUsersFromRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(),
+                new RoleUsersForm(Set.of(
+                        directMember.getUserId(), missingUserId, inheritedOnly.getUserId())));
+
+        final RoleUsersRemovalView entity = view.getEntity();
+        assertEquals(List.of(directMember.getUserId()), entity.removedUserIds());
+
+        final Map<String, String> skippedByUser = entity.skipped().stream()
+                .collect(Collectors.toMap(SkippedUserView::userId, SkippedUserView::reason));
+        assertEquals(2, skippedByUser.size());
+        assertEquals("not_found", skippedByUser.get(missingUserId));
+        assertEquals("inherited", skippedByUser.get(inheritedOnly.getUserId()));
+
+        assertFalse("the valid member must actually be removed", isDirectMember(role, directMember));
+        assertTrue("the inherited membership must be intact",
+                roleAPI.doesUserHaveRole(inheritedOnly, role));
+    }
+
+    /**
+     * Given Scenario: The only requested removal is for a user whose membership is
+     * inherited-only. Legacy silently no-ops here (the raw DELETE matches 0 rows,
+     * RoleFactoryImpl#removeRoleFromUser); this endpoint does the same thing but REPORTS it.
+     * Expected Result: 200 with removedUserIds empty and the user skipped with reason
+     * "inherited"; the inherited membership (via the parent role) is intact.
+     */
+    @Test
+    public void testRemoveUsersFromRole_inheritedOnly_skippedAndIntact() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+        final User target = UserTestUtil.getUser("inheritonly" + uniq(), false, true);
+        roleAPI.addRoleToUser(parent, target);
+        assertTrue(roleAPI.doesUserHaveRole(target, child));
+
+        final ResponseEntityRoleUsersRemovalView view = resource.removeUsersFromRole(
+                adminRequest(), new MockHttpResponse().response(), child.getId(),
+                new RoleUsersForm(Set.of(target.getUserId())));
+
+        final RoleUsersRemovalView entity = view.getEntity();
+        assertTrue(entity.removedUserIds().isEmpty());
+        assertEquals(1, entity.skipped().size());
+        assertEquals(target.getUserId(), entity.skipped().get(0).userId());
+        assertEquals("inherited", entity.skipped().get(0).reason());
+
+        assertTrue("inheritance must be intact", roleAPI.doesUserHaveRole(target, child));
+        assertTrue("direct parent membership must be intact", isDirectMember(parent, target));
+    }
+
+    /**
+     * Given Scenario: The request body carries an empty userIds set.
+     * Expected Result: 400 BadRequestException.
+     */
+    @Test(expected = BadRequestException.class)
+    public void testRemoveUsersFromRole_emptyUserIds_badRequest() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        resource.removeUsersFromRole(adminRequest(), new MockHttpResponse().response(),
+                role.getId(), new RoleUsersForm(Set.of()));
+    }
+
+    /**
+     * Given Scenario: The request body contains a null element inside userIds (Jackson accepts
+     * null elements in a JSON array bound to Set&lt;String&gt;).
+     * Expected Result: 400 BadRequestException — NOT an NPE-shaped 500 mid-batch, which would
+     * break the partial-success contract after earlier removals already committed.
+     */
+    @Test(expected = BadRequestException.class)
+    public void testRemoveUsersFromRole_nullEntry_badRequest() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        resource.removeUsersFromRole(adminRequest(), new MockHttpResponse().response(),
+                role.getId(), new RoleUsersForm(new HashSet<>(Arrays.asList("some-id", null))));
+    }
+
+    /**
+     * Given Scenario: The request body contains a blank (whitespace-only) userId entry.
+     * Expected Result: 400 BadRequestException — a trivially-invalid input must be rejected up
+     * front, not misreported as a per-user "error" (which is documented as a server failure).
+     */
+    @Test(expected = BadRequestException.class)
+    public void testRemoveUsersFromRole_blankEntry_badRequest() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        resource.removeUsersFromRole(adminRequest(), new MockHttpResponse().response(),
+                role.getId(), new RoleUsersForm(Set.of("  ")));
+    }
+
+    /**
+     * Given Scenario: The DELETE request carries no body at all (form is null).
+     * Expected Result: 400 BadRequestException — not an NPE-shaped 500.
+     */
+    @Test(expected = BadRequestException.class)
+    public void testRemoveUsersFromRole_missingBody_badRequest() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+
+        resource.removeUsersFromRole(adminRequest(), new MockHttpResponse().response(),
+                role.getId(), null);
+    }
+
+    /**
+     * Given Scenario: The roleId path parameter does not match any role.
+     * Expected Result: 404 DoesNotExistException (resource-wide convention).
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void testRemoveUsersFromRole_missingRole_notFound() throws Exception {
+        final User member = UserTestUtil.getUser("missingrolerm" + uniq(), false, true);
+
+        resource.removeUsersFromRole(adminRequest(), new MockHttpResponse().response(),
+                UUID.randomUUID().toString(), new RoleUsersForm(Set.of(member.getUserId())));
+    }
+
+    /**
+     * Given Scenario: An anonymous caller (no session user, no Authorization header).
+     * Expected Result: rejected by the InitBuilder's rejectWhenNoUser gate (401); the
+     * membership is intact.
+     */
+    @Test
+    public void testRemoveUsersFromRole_anonymous_unauthorized() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User member = UserTestUtil.getUser("anonremove" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, member);
+
+        try {
+            resource.removeUsersFromRole(anonymousRequest(), new MockHttpResponse().response(),
+                    role.getId(), new RoleUsersForm(Set.of(member.getUserId())));
+            fail("Should have thrown a security exception for an anonymous caller");
+        } catch (final com.dotcms.rest.exception.SecurityException e) {
+            // expected: rejectWhenNoUser → 401
+        }
+
+        assertTrue(isDirectMember(role, member));
+    }
+
+    /**
+     * Given Scenario: A backend user without the roles portlet and without the CMS admin role
+     * calls the endpoint.
+     * Expected Result: rejected with a security exception (403); the membership is intact.
+     */
+    @Test
+    public void testRemoveUsersFromRole_nonAdmin_forbidden() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User member = UserTestUtil.getUser("nonadminrm" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, member);
+
+        try {
+            resource.removeUsersFromRole(requestFor(limitedUser), new MockHttpResponse().response(),
+                    role.getId(), new RoleUsersForm(Set.of(member.getUserId())));
+            fail("Should have thrown a security exception");
+        } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+            // expected: the InitBuilder portlet gate throws the REST SecurityException (→ 403),
+            // the CMS-admin check throws DotSecurityException (→ 403)
+        }
+
+        assertTrue(isDirectMember(role, member));
+    }
+
+    /**
+     * Given Scenario: A backend user WITH access to the roles portlet but WITHOUT the CMS admin
+     * role calls the endpoint — exercises the CMS-admin gate specifically.
+     * Expected Result: rejected with a security exception (403); the membership is intact.
+     */
+    @Test
+    public void testRemoveUsersFromRole_rolesPortletUserWithoutAdmin_forbidden() throws Exception {
+        final Layout rolesLayout = new LayoutDataGen().portletIds("roles").nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(rolesLayout).nextPersisted();
+        final User portletUser = UserTestUtil.getUser("rolesrmuser" + uniq(), false, true);
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), portletUser);
+        roleAPI.addRoleToUser(portletRole, portletUser);
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User member = UserTestUtil.getUser("portletrm" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, member);
+
+        try {
+            resource.removeUsersFromRole(requestFor(portletUser), new MockHttpResponse().response(),
+                    role.getId(), new RoleUsersForm(Set.of(member.getUserId())));
+            fail("Should have thrown a security exception for a non-admin caller");
+        } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+            // expected: the CMS-admin check
+        }
+
+        assertTrue(isDirectMember(role, member));
+    }
 }

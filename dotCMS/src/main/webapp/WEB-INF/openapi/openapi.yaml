@@ -15353,6 +15353,60 @@ paths:
       summary: Load users and roles by role ID
       tags:
       - Roles
+  /v1/roles/{roleid}/users:
+    delete:
+      description: "Bulk-removes the DIRECT membership of the given users from the\
+        \ role. The batch has PARTIAL-SUCCESS semantics: it never fails as a whole\
+        \ once the role resolves — every removable membership is removed and every\
+        \ other entry is reported in the skipped list with a reason: not_found (no\
+        \ user matches the id), inherited (the user is not a direct member — the membership\
+        \ is inherited through the role hierarchy, or the user is not a member at\
+        \ all; inherited membership can only be revoked by removing the user from\
+        \ the ancestor role that grants it), or error (unexpected per-user failure,\
+        \ logged server-side). Removals are committed per user, so entries already\
+        \ processed stay removed regardless of later entries."
+      operationId: removeUsersFromRole
+      parameters:
+      - description: Id of the role to remove users from
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUsersForm"
+        description: Ids of the users to remove from the role
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleUsersRemovalView"
+          description: Batch processed; removedUserIds and skipped report the per-user
+            outcomes
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - missing body, empty userIds, or null/blank entries"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Remove users from a role
+      tags:
+      - Roles
   /v1/roles/{roleid}/users/{userId}:
     post:
       description: "Grants the role to the user as a DIRECT membership. The operation\
@@ -33561,6 +33615,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRoleUsersRemovalView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleUsersRemovalView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRoleViewListView:
       type: object
       properties:
@@ -35661,6 +35738,39 @@ components:
       - granted
       - roleId
       - user
+    RoleUsersForm:
+      type: object
+      properties:
+        userIds:
+          type: array
+          description: Ids of the users to remove from the role
+          example:
+          - dotcms.org.2807
+          items:
+            type: string
+            description: Ids of the users to remove from the role
+            example: "[\"dotcms.org.2807\"]"
+          uniqueItems: true
+      required:
+      - userIds
+    RoleUsersRemovalView:
+      type: object
+      properties:
+        removedUserIds:
+          type: array
+          description: Ids of the users whose direct membership in the role was removed
+          items:
+            type: string
+            description: Ids of the users whose direct membership in the role was
+              removed
+        skipped:
+          type: array
+          description: "Users that could not be removed, each with a reason"
+          items:
+            $ref: "#/components/schemas/SkippedUserView"
+      required:
+      - removedUserIds
+      - skipped
     RoleView:
       type: object
       properties:
@@ -36314,6 +36424,25 @@ components:
           type: string
         value:
           type: string
+    SkippedUserView:
+      type: object
+      description: "Users that could not be removed, each with a reason"
+      properties:
+        reason:
+          type: string
+          description: Why the user was skipped
+          enum:
+          - not_found
+          - inherited
+          - error
+          example: inherited
+        userId:
+          type: string
+          description: "Id of the skipped user, as submitted in the request"
+          example: dotcms.org.2807
+      required:
+      - reason
+      - userId
     SmallRoleView:
       type: object
       properties:

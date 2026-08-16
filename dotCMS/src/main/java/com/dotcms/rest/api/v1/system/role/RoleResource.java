@@ -5,6 +5,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
@@ -540,6 +541,71 @@ public class RoleResource implements Serializable {
 						.fullName(targetUser.getFullName())
 						.build())
 				.build());
+	}
+
+	/**
+	 * Bulk-removes users from a role with partial-success semantics: removable direct
+	 * memberships are removed, everything else is reported in {@code skipped} with a reason
+	 * ({@code not_found}, {@code inherited}, {@code error}) — the batch never fails as a whole
+	 * once the role resolves. The caller must be a backend user with access to the Roles
+	 * portlet and the CMS Administrator role.
+	 */
+	@Operation(
+		operationId = "removeUsersFromRole",
+		summary = "Remove users from a role",
+		description = "Bulk-removes the DIRECT membership of the given users from the role. The " +
+				"batch has PARTIAL-SUCCESS semantics: it never fails as a whole once the role " +
+				"resolves — every removable membership is removed and every other entry is " +
+				"reported in the skipped list with a reason: not_found (no user matches the id), " +
+				"inherited (the user is not a direct member — the membership is inherited through " +
+				"the role hierarchy, or the user is not a member at all; inherited membership can " +
+				"only be revoked by removing the user from the ancestor role that grants it), or " +
+				"error (unexpected per-user failure, logged server-side). Removals are committed " +
+				"per user, so entries already processed stay removed regardless of later entries."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Batch processed; removedUserIds and skipped report the per-user outcomes",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleUsersRemovalView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - missing body, empty userIds, or null/blank entries",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@DELETE
+	@Path("/{roleid}/users")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleUsersRemovalView removeUsersFromRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to remove users from", required = true)
+			final @PathParam("roleid") String roleId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Ids of the users to remove from the role",
+				required = true,
+				content = @Content(schema = @Schema(implementation = RoleUsersForm.class))
+			)
+			final RoleUsersForm roleUsersForm) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		if (null == roleUsersForm) {
+			throw new BadRequestException("Request body with userIds is required");
+		}
+		roleUsersForm.checkValid();
+
+		return new ResponseEntityRoleUsersRemovalView(
+				this.roleHelper.removeUsersFromRole(roleId, roleUsersForm.getUserIds(), user));
 	}
 
 	/**

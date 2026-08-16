@@ -25,6 +25,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -331,6 +333,90 @@ public class RoleHelper {
         AdminLogger.log(getClass(), "Role Added to User", auditDetail);
 
         return targetUser;
+    }
+
+    /**
+     * Bulk-removes users from a role with PARTIAL-SUCCESS semantics: once the role resolves,
+     * the batch never fails as a whole — every removable direct membership is removed and every
+     * non-removable entry is reported in the result's {@code skipped} list (see #36938):
+     * <ul>
+     *   <li>{@code not_found} — no user matches the id</li>
+     *   <li>{@code inherited} — the user is not a DIRECT member (holds the role only through
+     *       the hierarchy, or not at all). Legacy silently no-ops here: the raw membership
+     *       DELETE matches 0 rows ({@code RoleFactoryImpl#removeRoleFromUser}) and the Dojo
+     *       portlet only offered checkboxes on direct rows — same outcome, now reported</li>
+     *   <li>{@code error} — unexpected per-user failure, logged server-side</li>
+     * </ul>
+     *
+     * DELIBERATELY NOT {@code @WrapInTransaction}: partial-success semantics require per-user
+     * commits — each {@code roleAPI.removeRoleFromUser} call is already transactional, and a
+     * batch-level wrapper would roll back users 1..N-1 when user N fails.
+     *
+     * @param roleId  id of the role to remove users from
+     * @param userIds ids of the users to remove
+     * @param modUser authenticated user performing the removal (audit logging)
+     * @return per-user outcomes: removed user ids plus skipped entries with reasons
+     */
+    public RoleUsersRemovalView removeUsersFromRole(final String roleId, final Set<String> userIds,
+            final User modUser) throws DotDataException, DotSecurityException {
+
+        final Role role = this.roleAPI.loadRoleById(roleId);
+        if (null == role || !UtilMethods.isSet(role.getId())) {
+            throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        final List<String> removedUserIds = new ArrayList<>();
+        final List<SkippedUserView> skipped = new ArrayList<>();
+
+        for (final String userId : userIds) {
+            final String auditDetail = "Date: " + DateUtil.getCurrentDate()
+                    + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId()
+                    + "; Name: " + role.getName() + "; TargetUser: " + userId;
+            try {
+                final User targetUser;
+                try {
+                    targetUser = APILocator.getUserAPI().loadUserById(userId, modUser, false);
+                } catch (final NoSuchUserException e) {
+                    skipped.add(SkippedUserView.builder().userId(userId)
+                            .reason(SkippedUserView.REASON_NOT_FOUND).build());
+                    continue;
+                }
+
+                // direct-membership check per user, served by the role cache — scales with the
+                // batch size, not the role's total membership, and reads at removal time
+                final boolean directMember =
+                        this.roleAPI.loadRolesForUser(targetUser.getUserId(), false).stream()
+                                .anyMatch(userRole -> role.getId().equals(userRole.getId()));
+                if (!directMember) {
+                    skipped.add(SkippedUserView.builder().userId(userId)
+                            .reason(SkippedUserView.REASON_INHERITED).build());
+                    continue;
+                }
+
+                this.roleAPI.removeRoleFromUser(role, targetUser);
+
+                ActivityLogger.logInfo(getClass(), "Role Removed from User", auditDetail);
+                AdminLogger.log(getClass(), "Role Removed from User", auditDetail);
+                SecurityLogger.logInfo(getClass(), "Removing role:'" + role.getName()
+                        + "' from user:" + targetUser.getUserId()
+                        + " email:" + targetUser.getEmailAddress()
+                        + " by user:" + modUser.getUserId());
+
+                removedUserIds.add(targetUser.getUserId());
+            } catch (final Exception e) {
+                Logger.error(this, String.format(
+                        "Error removing user '%s' from role '%s': %s", userId, roleId, e.getMessage()), e);
+                ActivityLogger.logInfo(getClass(), "Error Removing Role from User", auditDetail);
+                AdminLogger.log(getClass(), "Error Removing Role from User", auditDetail);
+                skipped.add(SkippedUserView.builder().userId(userId)
+                        .reason(SkippedUserView.REASON_ERROR).build());
+            }
+        }
+
+        return RoleUsersRemovalView.builder()
+                .removedUserIds(removedUserIds)
+                .skipped(skipped)
+                .build();
     }
 
     /**
