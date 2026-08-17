@@ -31,12 +31,18 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
         Logger.debug(this, ()-> "Fetching StoryBlock field for contentlet: " + contentlet.getIdentifier() + " field: " + variableName);
 
         final Object fieldValue = contentlet.get(variableName);
-        if (null == fieldValue
-                || (fieldValue instanceof String && !UtilMethods.isSet((String) fieldValue))) {
+        if (null == fieldValue) {
             return null;
         }
 
         final Map<String, Object> storyBlockMap = new HashMap<>();
+        if (fieldValue instanceof String && !UtilMethods.isSet((String) fieldValue)) {
+            // Existing contract (see GraphQLTests postman collection): an empty Story Block
+            // field resolves to an empty json object, not to null.
+            storyBlockMap.put("json", Map.of());
+            return storyBlockMap;
+        }
+
         try {
             storyBlockMap.put("json", APILocator.getStoryBlockAPI().toMap(fieldValue));
         } catch (final Exception e) {

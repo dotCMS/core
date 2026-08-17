@@ -163,6 +163,30 @@ public class StoryBlockFieldDataFetcherIntegrationTest {
 
     /**
      * MethodToTest {@link StoryBlockFieldDataFetcher#get(DataFetchingEnvironment)}
+     * Given Scenario: a contentlet whose Block Editor field is empty (stored as an empty String).
+     * ExpectedResult: the field resolves to an empty json object — the existing contract pinned
+     * by the GraphQLTests postman collection ("Get Content With Empty StoryBlock via GraphQL") —
+     * on both the raw and the hydrated read paths.
+     */
+    @Test
+    public void emptyValue_resolvesToEmptyJsonObject() throws Exception {
+        final Contentlet persisted = persistContentlet("");
+
+        final Map<String, Object> rawResult =
+                new StoryBlockFieldDataFetcher().get(environmentFor(persisted));
+        assertNotNull(rawResult);
+        assertEquals(Map.of(), rawResult.get("json"));
+
+        final Contentlet hydrated = new DotTransformerBuilder()
+                .defaultOptions().content(persisted).build().hydrate().get(0);
+        final Map<String, Object> hydratedResult =
+                new StoryBlockFieldDataFetcher().get(environmentFor(hydrated));
+        assertNotNull(hydratedResult);
+        assertEquals(Map.of(), hydratedResult.get("json"));
+    }
+
+    /**
+     * MethodToTest {@link StoryBlockFieldDataFetcher#get(DataFetchingEnvironment)}
      * Given Scenario: the field holds a value that cannot be resolved into JSON.
      * ExpectedResult: the field resolves to null and no exception is thrown, so a single bad
      * field cannot fail the whole GraphQL query (see #36297).

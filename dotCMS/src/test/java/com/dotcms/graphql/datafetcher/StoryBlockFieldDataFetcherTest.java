@@ -94,8 +94,19 @@ public class StoryBlockFieldDataFetcherTest extends UnitTestBase {
         assertNull(fetcher.get(environmentWith(null)));
     }
 
+    /**
+     * Existing contract, pinned by the GraphQLTests postman collection ("Get Content With Empty
+     * StoryBlock via GraphQL"): an empty Story Block field resolves to an empty json object.
+     */
     @Test
-    public void blankValue_resolvesToNull() throws Exception {
-        assertNull(fetcher.get(environmentWith("  ")));
+    public void blankValue_resolvesToEmptyJsonObject() throws Exception {
+        final Map<String, Object> result = fetcher.get(environmentWith(""));
+
+        assertNotNull(result);
+        assertEquals(Map.of(), result.get("json"));
+
+        final Map<String, Object> whitespaceResult = fetcher.get(environmentWith("  "));
+        assertNotNull(whitespaceResult);
+        assertEquals(Map.of(), whitespaceResult.get("json"));
     }
 }
