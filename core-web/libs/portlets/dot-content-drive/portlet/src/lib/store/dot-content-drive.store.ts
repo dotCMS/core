@@ -405,7 +405,13 @@ export const DotContentDriveStore = signalStore(
                             return EMPTY;
                         })
                     )
-                    .subscribe((languages = []) => {
+                    .subscribe((response) => {
+                        // Coalesce with `??` rather than a default parameter: a default only covers
+                        // `undefined`, so a `null` body would reach `.find` and throw HERE, inside the
+                        // subscribe body and therefore past the pipe's `catchError`. That would leave
+                        // `defaultLanguageLoaded` false forever, and because `loadItems` patches
+                        // `LOADING` before its gate, the portlet would sit in LOADING for good.
+                        const languages = response ?? [];
                         const defaultLanguageId = languages.find(
                             (language) => language.defaultLanguage
                         )?.id;

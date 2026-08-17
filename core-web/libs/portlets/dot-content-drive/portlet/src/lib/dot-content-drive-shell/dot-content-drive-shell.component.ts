@@ -581,14 +581,25 @@ export class DotContentDriveShellComponent {
         });
 
         // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
-        // moved the URL). Push when opening the panel so Back can pop it (AC8); replace when closing
-        // it, so no phantom history entry is left whose Back would resurrect the removed param.
+        // moved the URL).
+        //
+        // Push for exactly one transition: the panel going from closed to open, which is the only
+        // case that needs its own history entry (AC8 — Back closes the panel). Everything else
+        // replaces.
+        //
+        // Filter and path writes must NOT push, because several of them are not user actions at all:
+        // the default-filter seed lands on a cold load, and the language seed lands again a moment
+        // later when the default language resolves. Pushing those buries the entry the user arrived
+        // on, so Back walks back through seeded URLs instead of leaving the portlet — it took two or
+        // three presses to escape. Replacing also removes the phantom entry that closing the panel
+        // would otherwise leave behind, whose Back would resurrect the param just removed.
         const newUrl = urlTree.toString();
         if (newUrl !== this.#location.path(true)) {
-            if (editContent === null && this.#editPanelUrlWasSet) {
-                this.#location.replaceState(newUrl);
-            } else {
+            const isOpeningPanel = editContent !== null && !this.#editPanelUrlWasSet;
+            if (isOpeningPanel) {
                 this.#location.go(newUrl);
+            } else {
+                this.#location.replaceState(newUrl);
             }
         }
         this.#editPanelUrlWasSet = editContent !== null;

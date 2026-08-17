@@ -471,9 +471,34 @@ describe('DotContentDriveShellComponent', () => {
                 queryParamsHandling: 'merge'
             });
 
-            expect(location.go).toHaveBeenCalledWith(
+            // A filter write REPLACES rather than pushes. Only opening the panel pushes (AC8), so
+            // Back always leaves the portlet instead of walking back through filter URLs.
+            expect(location.replaceState).toHaveBeenCalledWith(
                 expect.stringContaining('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3')
             );
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        it('does not push a history entry when the default filters are seeded', () => {
+            // The seed is not a user action, and it lands twice on a cold load: once for the
+            // sharedAssets default and again when the default language resolves. Pushing either would
+            // bury the entry the user arrived on, so Back would take two or three presses to escape
+            // the portlet instead of leaving it immediately.
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            (location.go as jest.Mock).mockClear();
+            (location.replaceState as jest.Mock).mockClear();
+
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            filtersSignal.set({ sharedAssets: 'true', languageId: ['1'] });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).toHaveBeenCalled();
         });
 
         it('should not include filters in query params when filters are empty', () => {
