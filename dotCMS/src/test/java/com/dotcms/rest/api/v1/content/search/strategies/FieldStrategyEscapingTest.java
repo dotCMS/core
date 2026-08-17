@@ -204,4 +204,21 @@ public class FieldStrategyEscapingTest {
         assertEquals("+SSS.props.key_value:*color_blue\\-green*",
                 new KeyValueFieldStrategy().generateQuery(ctx("SSS.props", "color_blue-green")));
     }
+
+    @Test
+    public void keyValueSlashIsNotEscapedSoAMimeTypeCanMatch() {
+        // Key/Value payloads routinely hold slashes: a File Asset's metadata stores
+        // `contenttype_image/jpeg`. Escaped, the term matched nothing at all.
+        assertEquals("+SSS.props.key_value:*contenttype_image/jpeg*",
+                new KeyValueFieldStrategy().generateQuery(
+                        ctx("SSS.props", "contenttype_image/jpeg")));
+    }
+
+    @Test
+    public void binarySlashIsNotEscapedSoItStopsFalsePositives() {
+        // A file name can never contain a slash, so this term should match nothing. Escaped, it did
+        // not merely miss: the analyzed clause broadened and returned unrelated files.
+        assertEquals("+(SSS.file:*/logo.png* SSS.file_dotraw:*/logo.png*)",
+                new BinaryFieldStrategy().generateQuery(ctx("SSS.file", "/logo.png")));
+    }
 }

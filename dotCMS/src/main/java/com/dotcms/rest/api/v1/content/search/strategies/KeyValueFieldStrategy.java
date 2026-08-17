@@ -53,7 +53,12 @@ public class KeyValueFieldStrategy implements FieldStrategy {
         return Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                 .map(String::trim)
                 .filter(token -> !token.isEmpty())
-                .map(token -> colonTransformed ? token : LuceneQueryUtils.escape(token))
+                // The slash is left unescaped: the term is wrapped in wildcards below, where an
+                // escaped slash is matched as a literal backslash and so can never match a stored
+                // one. Key/Value payloads routinely hold slashes — a File Asset's metadata stores
+                // `contenttype_image/jpeg` — so escaping it made those values unfilterable.
+                .map(token -> colonTransformed
+                        ? token : LuceneQueryUtils.escapeForWildcardTerm(token))
                 .map(token -> String.format("+%s%s:%s%s%s",
                         fieldName, ".key_value", "*", token, "*"))
                 .collect(Collectors.joining(SPACE));
