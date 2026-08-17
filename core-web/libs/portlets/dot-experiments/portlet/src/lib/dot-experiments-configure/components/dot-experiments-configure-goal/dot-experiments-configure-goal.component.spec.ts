@@ -109,8 +109,11 @@ describe('DotExperimentsConfigureGoalComponent', () => {
 
     const nameInput = () => spectator.query(byTestId('goal-name-input')) as HTMLInputElement;
 
+    const goalTypeRadio = (type: GOAL_TYPES) =>
+        spectator.query(byTestId(`goal-type-${type}`))?.querySelector('input') as HTMLInputElement;
+
     const selectGoalType = (type: GOAL_TYPES) => {
-        spectator.click(byTestId(`goal-type-${type}`));
+        goalTypeRadio(type).click();
         spectator.detectChanges();
     };
 
@@ -171,11 +174,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         it('should mark the picked type as checked', () => {
             selectGoalType(GOAL_TYPES.EXIT_RATE);
 
-            expect(
-                spectator
-                    .query(byTestId(`goal-type-${GOAL_TYPES.EXIT_RATE}`))
-                    ?.getAttribute('aria-checked')
-            ).toBe('true');
+            expect(goalTypeRadio(GOAL_TYPES.EXIT_RATE).checked).toBe(true);
         });
 
         it('should write the picked type into the slice', () => {
@@ -434,13 +433,12 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should disable every goal type', () => {
-            // The options are `dot-radio-card`s, which report disablement to assistive tech.
-            const options = Array.from(spectator.queryAll('[role="radio"]'));
+            // The options are native radios inside `dot-radio-card`s, so the field's disabled state
+            // reaches them through `[formField]` — no ARIA of our own to keep in sync.
+            const radios = Array.from(spectator.queryAll<HTMLInputElement>('input[type="radio"]'));
 
-            expect(options.length).toBe(4);
-            expect(options.every((option) => option.getAttribute('aria-disabled') === 'true')).toBe(
-                true
-            );
+            expect(radios.length).toBe(4);
+            expect(radios.every((radio) => radio.disabled)).toBe(true);
         });
 
         it('should disable the goal name', () => {
@@ -448,8 +446,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should not change the goal when a type is clicked', () => {
-            spectator.click(byTestId(`goal-type-${GOAL_TYPES.BOUNCE_RATE}`));
-            spectator.detectChanges();
+            selectGoalType(GOAL_TYPES.BOUNCE_RATE);
 
             expect(goal()).toEqual(EMPTY_GOAL_SLICE);
             expect(nameInput().value).toBe('');

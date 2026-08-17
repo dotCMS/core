@@ -43,7 +43,6 @@ export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-permissions-iframe-dialog/dot-permissions-iframe-dialog.component';
 export * from './lib/components/dot-radio-card/dot-radio-card.component';
-export * from './lib/components/dot-radio-group/dot-radio-group.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-search-input/dot-search-input.component';
 export * from './lib/components/dot-search-input/constants';
