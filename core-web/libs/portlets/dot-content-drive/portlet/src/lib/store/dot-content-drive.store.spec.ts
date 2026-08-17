@@ -1282,19 +1282,21 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
     describe('executeQuickAction', () => {
         it('should publish the running action so the toolbar can report it', () => {
+            // Lock, not Publish: Publish is no longer a quick action — it belongs to the
+            // Workflow Actions section, where it resolves through the scheme's mapping.
             // Never settles, so the in-flight state is observable.
             fireService.fireDefaultAction.mockReturnValue(NEVER);
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Publish', total: 2 });
+            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 2 });
         });
 
         it('should fire the default action with the given inodes', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: 'PUBLISH',
+                action: 'LOCK',
                 inodes: ['inode-1']
             });
         });
@@ -1309,10 +1311,10 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 })
             );
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Publish',
+                actionName: 'Lock',
                 successCount: 1,
                 skippedCount: 0,
                 failCount: 1
@@ -1320,14 +1322,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
         });
 
         it('should clear the running action once settled', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(store.actionExecution()).toBeUndefined();
             expect(store.actionExecutionResult()).toBeDefined();
         });
 
         it('should not fire when there are no inodes', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', []);
+            store.executeQuickAction('LOCK', 'Lock', []);
 
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
             expect(store.actionExecution()).toBeUndefined();
@@ -1338,8 +1340,8 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // dialog used to reset it, letting the same rows be fired twice.
             fireService.fireDefaultAction.mockReturnValue(NEVER);
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledTimes(1);
         });
@@ -1348,7 +1350,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             const error = new HttpErrorResponse({ status: 403 });
             fireService.fireDefaultAction.mockReturnValue(throwError(() => error));
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.actionExecution()).toBeUndefined();
@@ -1364,7 +1366,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 of({ results: [] } as unknown as DotFireDefaultActionResult)
             );
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecutionResult()).toBeUndefined();
             expect(store.actionExecution()).toBeUndefined();
@@ -1380,10 +1382,10 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 })
             );
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Publish',
+                actionName: 'Lock',
                 successCount: 0,
                 skippedCount: 0,
                 failCount: 2
@@ -1676,7 +1678,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
     describe('clearActionExecutionResult', () => {
         it('should drop the result once it has been presented', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
             expect(store.actionExecutionResult()).toBeDefined();
 
             store.clearActionExecutionResult();
