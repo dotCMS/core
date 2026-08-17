@@ -1,4 +1,4 @@
-import { EventCreator, Events } from '@ngrx/signals/events';
+import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
 
 import {
     afterNextRender,
@@ -37,7 +37,8 @@ import {
     DotMessageSeverity,
     DotMessageType,
     MAX_INPUT_DESCRIPTIVE_LENGTH,
-    MAX_INPUT_TITLE_LENGTH
+    MAX_INPUT_TITLE_LENGTH,
+    TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
@@ -53,7 +54,10 @@ import {
     DotExperimentsConfigureSchedulingComponent,
     schedulingFormSchema
 } from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
-import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
+import {
+    DotExperimentsConfigureVariantsComponent,
+    variantWeightsFormSchema
+} from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
 import {
     EXPERIMENTS_URL,
@@ -63,15 +67,20 @@ import {
 } from '../shared/constants';
 import { ConfigureFormModel, SchedulingDateBounds } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
+import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
 import { bindFormAutosave } from '../util/dot-experiments-autosave.util';
 import {
     ConfigureFormSource,
     emptyConfigureForm,
+    hasSameVariantIdentity,
+    isSameVariantWeights,
+    mergeVariantWeights,
     nextHalfHour,
     resolveDurationBounds,
     toConfigureFormModel,
-    toConfigurePatch
+    toConfigurePatch,
+    toVariantWeightRows
 } from '../util/dot-experiments-configure-form.util';
 
 /** Number of card placeholders drawn while an existing experiment loads. */
@@ -94,10 +103,12 @@ const CONFIG_ROUTE_DATA_KEY = 'config';
  * key of its body in one atomic update, so one form is what lets one binding turn any edit into one
  * multi-key call. Five separate card forms could only ever guess at each other's state.
  *
- * Variants are not part of it: they have their own endpoints, and nothing about them is a form
- * value. Nor is validation — no rule here fires before Start/Schedule is pressed (AC28); the schema
- * carries only what is live while typing (lengths, ranges, date bounds, read-only), and the
- * Start/Schedule rules stay in the store where the press can materialise them.
+ * A variant's existence is not part of it — adding, renaming and deleting one each have their own
+ * endpoint — but its weight is, since the weights are only valid as a set and travel as one key.
+ * Validation is not part of it either: no *required* rule fires before Start/Schedule is pressed
+ * (AC28); the schema carries only what is live while typing (lengths, ranges, date bounds, the
+ * weights totalling 100, read-only), and the Start/Schedule rules stay in the store where the press
+ * can materialise them.
  *
  * Which experiment to show is not read here: the store's `onInit` reads the route itself, so the
  * shell only provides it and the two services it injects that are not `providedIn: 'root'`.
@@ -161,6 +172,8 @@ export class DotExperimentsConfigureComponent {
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #events = inject(Events);
+    /** Only the weights are reported from here; everything else goes through `bindFormAutosave`. */
+    readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
@@ -249,6 +262,12 @@ export class DotExperimentsConfigureComponent {
                 bounds: this.$schedulingBounds
             })
         );
+        // The weights answer to the page's lock too, not only to the status: they are the one part
+        // of the form a variant endpoint also writes, and the card has always frozen them for both.
+        apply(
+            path.variantWeights,
+            variantWeightsFormSchema(() => !!this.store.$disabledTooltipKey())
+        );
     });
 
     /**
@@ -295,6 +314,68 @@ export class DotExperimentsConfigureComponent {
         untracked(() => {
             this.#hydratedExperimentId.set(experimentId);
             this.$model.set(toConfigureFormModel(this.#formSource()));
+        });
+    });
+
+    /**
+     * Re-seeds the weights slice whenever the *set* of variants changes.
+     *
+     * Keyed on which variants there are, not on what they weigh: an added or a deleted variant is a
+     * row appearing or disappearing, and the slice has to follow — including the first load, and the
+     * handover from the creation screen, where the POST is what creates the control. A save response
+     * echoing the weights back changes no identity, so a weight being typed survives it, exactly as
+     * it survives on the store's side (see `withoutSentKeys`).
+     *
+     * The slice already standing for the current set is left alone whatever it holds, which is also
+     * what lets the card re-split the weights the moment a variant is added (AC24) without this
+     * putting the backend's own back.
+     */
+    protected readonly seedVariantWeightsEffect = effect(() => {
+        const variants = this.store.$variants();
+
+        untracked(() => {
+            if (hasSameVariantIdentity(this.$model().variantWeights, variants)) {
+                return;
+            }
+
+            this.$model.update((model) => ({
+                ...model,
+                variantWeights: toVariantWeightRows(variants)
+            }));
+        });
+    });
+
+    /**
+     * Reports the weights as they are edited — including while they do not add up.
+     *
+     * The one key that travels invalid, deliberately: the rows on screen, the total under them and
+     * the warning count a Start press produces all read the store's copy, so holding an intermediate
+     * total back here would leave the screen describing something nobody typed. What must not reach
+     * the server is a *PATCH* carrying one, and that gate is the store's (`toOutgoingPatch`), where
+     * the key waits until the total is 100 again.
+     *
+     * Compared against the persisted weights rather than dispatched on every change: the store
+     * applies each edit to its own copy of the experiment, so a reported edit comes straight back as
+     * a change of `$variants` — and a binding that did not recognise its own echo would never stop.
+     */
+    protected readonly persistVariantWeightsEffect = effect(() => {
+        const rows = this.$model().variantWeights;
+
+        untracked(() => {
+            const variants = this.store.$variants();
+
+            // A slice that no longer stands for the current variants is mid-reseed and says nothing
+            // about weights yet; weights the store already holds are its own echo.
+            if (!hasSameVariantIdentity(rows, variants) || isSameVariantWeights(rows, variants)) {
+                return;
+            }
+
+            this.#dispatch.formEdited({
+                trafficProportion: {
+                    type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                    variants: mergeVariantWeights(variants, rows)
+                }
+            });
         });
     });
 

@@ -15,10 +15,13 @@ import {
     DotExperimentPatchBody,
     DotExperimentStatus,
     DotMessageSeverity,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     ExperimentsConfigProperties,
     GOAL_OPERATORS,
     GOAL_TYPES,
-    PROP_NOT_FOUND
+    PROP_NOT_FOUND,
+    TrafficProportionTypes,
+    Variant
 } from '@dotcms/dotcms-models';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -32,7 +35,11 @@ import { DotExperimentsConfigureVariantsComponent } from './components/dot-exper
 import { DotExperimentsConfigureComponent } from './dot-experiments-configure.component';
 
 import { LOCKED_BANNER_KEY_READ_ONLY, LOCKED_BANNER_KEY_RUNNING } from '../shared/constants';
-import { ConfigureFormModel, ConfigureValidationRule } from '../shared/models';
+import {
+    ConfigureFormModel,
+    ConfigureValidationRule,
+    VariantWeightFormRow
+} from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
@@ -85,6 +92,19 @@ const EXPERIMENT: DotExperiment = {
     trafficAllocation: 100
 };
 
+/** The control of the single-variant mock the screen loads by default. */
+const [CONTROL_VARIANT] = EXPERIMENT.trafficProportion.variants;
+
+const SECOND_VARIANT: Variant = { id: 'variant-b', name: 'Variant B', weight: 50 };
+
+/** The same experiment once a second variant exists, weights adding up. */
+const withVariants = (variants: Variant[]): DotExperiment => ({
+    ...EXPERIMENT,
+    trafficProportion: { ...EXPERIMENT.trafficProportion, variants }
+});
+
+const TWO_VARIANTS: Variant[] = [{ ...CONTROL_VARIANT, weight: 50 }, SECOND_VARIANT];
+
 /**
  * The cards are shallow-rendered: this screen owns the layout, the banner, the toasts, the scroll to
  * the first failing field — and the form the cards render slices of. What each card does with the
@@ -120,7 +140,9 @@ class PageStubComponent {
 }
 
 @Component({ selector: 'dot-experiments-configure-variants', template: '' })
-class VariantsStubComponent {}
+class VariantsStubComponent {
+    readonly weights = input<FieldTree<VariantWeightFormRow[]>>();
+}
 
 @Component({ selector: 'dot-experiments-configure-scheduling', template: '' })
 class SchedulingStubComponent {
@@ -145,6 +167,9 @@ const createStoreMock = () => ({
     $isAutosaving: signal(false),
     $isSaving: signal(false),
     experiment: signal<DotExperiment | null>(null),
+    // The weights slice is seeded from these, so they move with `experiment` (see `loadExperiment`).
+    $variants: signal<Variant[]>([]),
+    $disabledTooltipKey: signal<string | null>(null),
     draftName: signal(''),
     draftDescription: signal('')
 });
@@ -231,13 +256,24 @@ describe('DotExperimentsConfigureComponent', () => {
         spectator.detectChanges();
     };
 
-    /** Publishes a loaded experiment, which is what fills the form. */
+    /**
+     * Publishes a loaded experiment, which is what fills the form. `$variants` follows it the way
+     * the real store's computed does — the weights slice is seeded from it.
+     */
     const loadExperiment = (experiment: DotExperiment = EXPERIMENT) => {
         storeMock.experiment.set(experiment);
+        storeMock.$variants.set(experiment.trafficProportion?.variants ?? []);
         storeMock.draftName.set(experiment.name);
         storeMock.draftDescription.set(experiment.description ?? '');
         spectator.detectChanges();
     };
+
+    /**
+     * The weights slice as plain rows. Signal forms brand the items it writes back with a tracking
+     * symbol, which a deep comparison would otherwise report as a difference.
+     */
+    const weightsOf = (): VariantWeightFormRow[] =>
+        modelOf()().variantWeights.map(({ id, weight }) => ({ id, weight }));
 
     /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
     const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
@@ -472,7 +508,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     }
                 });
 
-                expect(modelOf()()).toEqual({
+                expect({ ...modelOf()(), variantWeights: weightsOf() }).toEqual({
                     name: EXPERIMENT.name,
                     description: EXPERIMENT.description,
                     goal: {
@@ -487,7 +523,8 @@ describe('DotExperimentsConfigureComponent', () => {
                     scheduling: {
                         startDate: new Date(1893456000000),
                         endDate: new Date(1893542400000)
-                    }
+                    },
+                    variantWeights: [{ id: CONTROL_VARIANT.id, weight: CONTROL_VARIANT.weight }]
                 });
             });
 
@@ -499,7 +536,8 @@ describe('DotExperimentsConfigureComponent', () => {
                     description: '',
                     goal: EMPTY_GOAL_SLICE,
                     trafficAllocation: 100,
-                    scheduling: { startDate: null, endDate: null }
+                    scheduling: { startDate: null, endDate: null },
+                    variantWeights: []
                 });
             });
 
@@ -519,6 +557,152 @@ describe('DotExperimentsConfigureComponent', () => {
                 spectator.detectChanges();
 
                 expect(modelOf()().trafficAllocation).toBe(40);
+            });
+        });
+
+        /**
+         * The weights slice is the one part of the form that is filled from the *store's* copy of the
+         * experiment rather than once per screen: variants come and go through their own endpoints,
+         * and each of those answers with a new list the rows have to follow.
+         */
+        describe('the weights slice', () => {
+            it('should hold one row per variant, in the order they are drawn', () => {
+                loadExperiment(withVariants(TWO_VARIANTS));
+
+                expect(weightsOf()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 50 },
+                    { id: SECOND_VARIANT.id, weight: 50 }
+                ]);
+            });
+
+            it('should re-seed when a variant is added', () => {
+                loadExperiment();
+
+                expect(weightsOf().length).toBe(1);
+
+                loadExperiment(withVariants(TWO_VARIANTS));
+
+                expect(weightsOf()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 50 },
+                    { id: SECOND_VARIANT.id, weight: 50 }
+                ]);
+            });
+
+            it('should re-seed when a variant is deleted, weights the backend recomputed included', () => {
+                loadExperiment(withVariants(TWO_VARIANTS));
+
+                loadExperiment(withVariants([{ ...CONTROL_VARIANT, weight: 100 }]));
+
+                expect(weightsOf()).toEqual([{ id: CONTROL_VARIANT.id, weight: 100 }]);
+            });
+
+            it('should not clobber a weight being typed when a save response echoes the old one', () => {
+                // The defect this guards: every PATCH answers with a whole experiment, and re-seeding
+                // from one that knows nothing about the weight just typed would snap the row back.
+                loadExperiment(withVariants(TWO_VARIANTS));
+
+                editForm({
+                    variantWeights: [
+                        { id: CONTROL_VARIANT.id, weight: 70 },
+                        { id: SECOND_VARIANT.id, weight: 50 }
+                    ]
+                });
+
+                storeMock.experiment.set(withVariants(TWO_VARIANTS));
+                spectator.detectChanges();
+
+                expect(weightsOf()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 70 },
+                    { id: SECOND_VARIANT.id, weight: 50 }
+                ]);
+            });
+
+            it('should hold no rows before the experiment exists', () => {
+                spectator.detectChanges();
+
+                expect(weightsOf()).toEqual([]);
+            });
+        });
+
+        /**
+         * Weights are the one key reported even while they are invalid: the rows, the total and the
+         * Start validation all read the store's copy, and the gate that keeps an intermediate total
+         * off the wire is the store's own (`toOutgoingPatch`).
+         */
+        describe('reporting the weights', () => {
+            beforeEach(() => loadExperiment(withVariants(TWO_VARIANTS)));
+
+            const reportWeights = (control: number, variantB: number | null) =>
+                editForm({
+                    variantWeights: [
+                        { id: CONTROL_VARIANT.id, weight: control },
+                        { id: SECOND_VARIANT.id, weight: variantB }
+                    ]
+                });
+
+            it('should report the whole proportion, not the row that changed', () => {
+                reportWeights(30, 70);
+
+                expect(reportedPatches()).toContainEqual({
+                    trafficProportion: {
+                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                        variants: [
+                            { ...CONTROL_VARIANT, weight: 30 },
+                            { ...SECOND_VARIANT, weight: 70 }
+                        ]
+                    }
+                });
+            });
+
+            it('should report weights that do not add up as well', () => {
+                reportWeights(70, 50);
+
+                expect(reportedPatches()).toContainEqual({
+                    trafficProportion: {
+                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                        variants: [
+                            { ...CONTROL_VARIANT, weight: 70 },
+                            { ...SECOND_VARIANT, weight: 50 }
+                        ]
+                    }
+                });
+            });
+
+            it('should report a cleared weight as the zero it counts as', () => {
+                reportWeights(70, null);
+
+                expect(reportedPatches()).toContainEqual({
+                    trafficProportion: {
+                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                        variants: [
+                            { ...CONTROL_VARIANT, weight: 70 },
+                            { ...SECOND_VARIANT, weight: 0 }
+                        ]
+                    }
+                });
+            });
+
+            it('should not report the weights it was just seeded with', () => {
+                expect(reportedPatches()).toEqual([]);
+            });
+
+            it('should not report an edit again when the store echoes it back', () => {
+                reportWeights(30, 70);
+                const reportedOnce = reportedPatches().length;
+
+                storeMock.experiment.set(
+                    withVariants([
+                        { ...CONTROL_VARIANT, weight: 30 },
+                        { ...SECOND_VARIANT, weight: 70 }
+                    ])
+                );
+                storeMock.$variants.set([
+                    { ...CONTROL_VARIANT, weight: 30 },
+                    { ...SECOND_VARIANT, weight: 70 }
+                ]);
+                spectator.detectChanges();
+
+                expect(reportedPatches().length).toBe(reportedOnce);
             });
         });
 
@@ -966,7 +1150,9 @@ describe('DotExperimentsConfigureComponent', () => {
             spectator = createComponent();
             dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
             storeMock.$isLocked.set(true);
-            loadExperiment();
+            // A locked status is also what the store explains a frozen variant row with.
+            storeMock.$disabledTooltipKey.set(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+            loadExperiment(withVariants(TWO_VARIANTS));
         });
 
         it('should disable every field of the form', () => {
@@ -982,6 +1168,7 @@ describe('DotExperimentsConfigureComponent', () => {
             expect(formTree.goal.name().disabled()).toBe(true);
             expect(formTree.scheduling.startDate().disabled()).toBe(true);
             expect(formTree.scheduling.endDate().disabled()).toBe(true);
+            expect(formTree.variantWeights[0].weight().disabled()).toBe(true);
         });
     });
 });

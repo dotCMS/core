@@ -1477,51 +1477,53 @@ describe('DotExperimentsConfigureStore', () => {
         });
     });
 
-    describe('split evenly (AC23/AC25)', () => {
-        const THREE_VARIANTS = buildExperiment({
+    /**
+     * The weights themselves are the form's, not the store's: the Variants card writes them into its
+     * slice — Split Evenly included (AC23) — and they arrive here as `formEdited` like any other
+     * edit. What the store still owns is the *state* they produce.
+     */
+    describe('weights (AC25)', () => {
+        const SPLIT_ACROSS_THREE = {
             trafficProportion: {
-                type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                type: TrafficProportionTypes.SPLIT_EVENLY,
                 variants: [
-                    buildVariant('DEFAULT', 100),
-                    buildVariant('variant-b', 0),
-                    buildVariant('variant-c', 0)
+                    buildVariant('DEFAULT', 34),
+                    buildVariant('variant-b', 33),
+                    buildVariant('variant-c', 33)
                 ]
             }
-        });
+        };
 
-        it('should give the remainder to the first variant so the total is exactly 100', () => {
-            initExisting(THREE_VARIANTS);
+        it('should apply a reported split at once, and send it as one PATCH', () => {
+            initExisting(
+                buildExperiment({
+                    trafficProportion: {
+                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                        variants: [
+                            buildVariant('DEFAULT', 100),
+                            buildVariant('variant-b', 0),
+                            buildVariant('variant-c', 0)
+                        ]
+                    }
+                })
+            );
 
-            dispatcher.dispatch(pageEvents.splitEvenly());
+            edit(SPLIT_ACROSS_THREE);
 
             expect(store.$variants().map(({ weight }) => weight)).toEqual([34, 33, 33]);
             expect(store.$totalWeight()).toBe(100);
             expect(store.$hasInvalidWeights()).toBe(false);
-        });
 
-        it('should persist the split through the same accumulated PATCH as any other edit', () => {
-            initExisting(THREE_VARIANTS);
-
-            dispatcher.dispatch(pageEvents.splitEvenly());
             flushAutosave();
 
-            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
-                trafficProportion: {
-                    type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [
-                        buildVariant('DEFAULT', 34),
-                        buildVariant('variant-b', 33),
-                        buildVariant('variant-c', 33)
-                    ]
-                }
-            });
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, SPLIT_ACROSS_THREE);
         });
 
-        it('should merge the split with a field edited in the same window', () => {
-            initExisting(THREE_VARIANTS);
+        it('should merge a split with a field edited in the same window', () => {
+            initExisting();
 
             edit({ name: 'Alpha campaign v2' });
-            dispatcher.dispatch(pageEvents.splitEvenly());
+            edit(SPLIT_ACROSS_THREE);
             flushAutosave();
 
             expect(patchExperiment).toHaveBeenCalledTimes(1);
@@ -1536,7 +1538,7 @@ describe('DotExperimentsConfigureStore', () => {
             );
         });
 
-        it('should do nothing while there are no variants', () => {
+        it('should say nothing about the weights of an experiment that has no variants', () => {
             initExisting(
                 buildExperiment({
                     trafficProportion: {
@@ -1546,10 +1548,6 @@ describe('DotExperimentsConfigureStore', () => {
                 })
             );
 
-            dispatcher.dispatch(pageEvents.splitEvenly());
-            flushAutosave();
-
-            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$hasInvalidWeights()).toBe(false);
         });
 

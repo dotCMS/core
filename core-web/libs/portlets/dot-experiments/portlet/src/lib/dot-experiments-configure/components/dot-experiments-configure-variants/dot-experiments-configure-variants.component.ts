@@ -1,7 +1,17 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
 
-import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    applyEach,
+    disabled,
+    FieldTree,
+    FormField,
+    max,
+    min,
+    SchemaFn,
+    validate
+} from '@angular/forms/signals';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -29,10 +39,15 @@ import {
     MAX_VARIANTS_ALLOWED,
     TOTAL_WEIGHT
 } from '../../../shared/constants';
-import { VariantRowViewModel } from '../../../shared/models';
+import { VariantRowViewModel, VariantWeightFormRow } from '../../../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import {
+    mergeVariantWeights,
+    toVariantWeightRows
+} from '../../../util/dot-experiments-configure-form.util';
+import { splitWeightsEvenly, totalWeight } from '../../../util/dot-experiments-configure.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogData,
@@ -75,12 +90,60 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
 };
 
 /**
+ * Kind of the cross-field error the weights raise when they do not add up to 100.
+ *
+ * Deliberately the same string as the `weightsTotal` validation rule the store publishes on a Start
+ * press: the two say the same thing at two different moments — the form's is live (AC25), the
+ * store's is what turns it into a scroll target (AC28) — and the card reads both.
+ */
+export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';
+
+/**
+ * Live constraints of the variant weights, applied to the root form by the Configure shell.
+ *
+ * Declared here rather than in the shell, as the Goal and Scheduling cards declare theirs: the rules
+ * sit with the card that renders the inputs they are about, and the shell only says where they go.
+ *
+ * Per row, the range every single weight has to be inside; the `disabled` rule covers the row as a
+ * whole, since a disabled field disables everything under it. Both reach the inputs as their native
+ * properties through `[formField]`, so the template states neither.
+ *
+ * And over the list, the one rule that is not about any single row: the weights have to add up to
+ * exactly 100. It is a cross-field rule of the slice because that is what it is — no row is wrong on
+ * its own, the set of them is — which is also what the backend asserts, on `TrafficProportion`
+ * *construction* (`AbstractTrafficProportion.java:44-58`). An empty list is not wrong: it is what the
+ * form holds before the experiment exists, and the backend makes the same exception.
+ *
+ * @param isLocked - Whether the weights may not be edited: not a draft (AC34), or the page is locked
+ */
+export function variantWeightsFormSchema(
+    isLocked: () => boolean
+): SchemaFn<VariantWeightFormRow[]> {
+    return (weights) => {
+        applyEach(weights, (row) => {
+            min(row.weight, 0);
+            max(row.weight, TOTAL_WEIGHT);
+            disabled(row, { when: isLocked });
+        });
+
+        validate(weights, ({ value }) => {
+            const rows = value();
+
+            return !rows.length || totalWeight(rows) === TOTAL_WEIGHT
+                ? undefined
+                : { kind: WEIGHTS_TOTAL_ERROR_KIND };
+        });
+    };
+}
+
+/**
  * Variants card of the Configure screen.
  *
  * Owns everything about the variant list: renaming inplace, per-row weights, Split Evenly, adding
- * through the 440px dialog and deleting behind the shell's confirm dialog. Every change leaves as
- * a dispatched event — the card holds no state of its own beyond the rows it derives from the
- * store, so what it draws is always what was last persisted.
+ * through the 440px dialog and deleting behind the shell's confirm dialog. Adding, renaming and
+ * deleting leave as dispatched commands, each with an endpoint of its own; the weights are a slice of
+ * the shell's root form, so the card edits them the way every other card edits its own fields and
+ * the shell's binding is what persists them.
  *
  * On the creation screen there is no experiment to derive rows from, so the card draws
  * `CONTROL_ROW_BEFORE_CREATION` — the Original row the POST is about to create — and freezes every
@@ -94,6 +157,7 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
 @Component({
     selector: 'dot-experiments-configure-variants',
     imports: [
+        FormField,
         ButtonModule,
         InputTextModule,
         TooltipModule,
@@ -106,11 +170,16 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
     providers: [DialogService]
 })
 export class DotExperimentsConfigureVariantsComponent {
+    /**
+     * The weights slice of the root form: one row per persisted variant, carrying its range rule and
+     * the cross-field rule over the set of them.
+     */
+    readonly $weights = input.required<FieldTree<VariantWeightFormRow[]>>({ alias: 'weights' });
+
     readonly store = inject(DotExperimentsConfigureStore);
 
     readonly MAX_VARIANTS_ALLOWED = MAX_VARIANTS_ALLOWED;
     readonly MAX_INPUT_TITLE_LENGTH = MAX_INPUT_TITLE_LENGTH;
-    readonly TOTAL_WEIGHT = TOTAL_WEIGHT;
 
     /** True on the creation screen: the experiment has not been POSTed, so nothing persists yet. */
     readonly $isBeforeCreation = computed<boolean>(() => !this.store.experiment());
@@ -152,16 +221,40 @@ export class DotExperimentsConfigureVariantsComponent {
         () => this.$isDisabled() || this.$isBeforeCreation()
     );
 
+    /**
+     * The input each row's weight is bound to, by variant id.
+     *
+     * A row without one renders its weight as read-only text: that is the Original row drawn before
+     * the experiment exists, which no form field stands behind.
+     */
+    readonly $weightFieldById = computed<Map<string, FieldTree<number | null>>>(() => {
+        const weights = this.$weights();
+
+        return new Map(
+            weights()
+                .value()
+                .map(({ id }, index) => [id, weights[index].weight])
+        );
+    });
+
     /** Reads 100% before creation: that is the proportion the POST will have written. */
     readonly $totalWeight = computed<number>(() =>
-        this.$isBeforeCreation() ? TOTAL_WEIGHT : this.store.$totalWeight()
+        this.$isBeforeCreation() ? TOTAL_WEIGHT : totalWeight(this.$weights()().value())
     );
 
     /**
-     * Live, per AC25: the weights not adding up is a fact about the card, not a validation result,
-     * so it is stated as soon as it is true rather than waiting for a Start press.
+     * Live, per AC25: the weights not adding up is a fact about what is on screen, not a validation
+     * result, so it is stated as soon as it is true rather than waiting for a Start press.
+     *
+     * Read off the slice's own error — the rule lives in the schema, so the bar and the form can
+     * never disagree about whether the total is wrong. `errors()` excludes the rows' own range
+     * errors: a single weight above 100 is that input's problem, not the total's.
      */
-    readonly $hasWeightWarning = computed<boolean>(() => this.store.$hasInvalidWeights());
+    readonly $hasWeightWarning = computed<boolean>(() =>
+        this.$weights()()
+            .errors()
+            .some(({ kind }) => kind === WEIGHTS_TOTAL_ERROR_KIND)
+    );
 
     /** Both of these turn a message into a scroll target, which only a Start press may do (AC28). */
     readonly $showMinVariantsError = computed<boolean>(() =>
@@ -169,7 +262,7 @@ export class DotExperimentsConfigureVariantsComponent {
     );
 
     readonly $showWeightsError = computed<boolean>(() =>
-        this.store.validationErrors().includes('weightsTotal')
+        this.store.validationErrors().includes(WEIGHTS_TOTAL_ERROR_KIND)
     );
 
     /** The hint gives way to the error, exactly as the design has it. */
@@ -204,30 +297,9 @@ export class DotExperimentsConfigureVariantsComponent {
         this.#dispatch.variantRenamed({ variantId, name });
     }
 
-    /**
-     * Sends the whole proportion, not the single weight that changed: the PATCH body replaces it
-     * wholesale, so the other rows have to travel with it.
-     *
-     * Reported as an edit like any other, so it merges into the accumulated PATCH the store is
-     * holding rather than racing it.
-     */
-    onWeightChanged(variantId: string, value: string | number): void {
-        const weight = clampWeight(Number(value));
-        const variants = this.store
-            .$variants()
-            .map((variant) => (variant.id === variantId ? { ...variant, weight } : variant));
-
-        this.#dispatch.formEdited({
-            trafficProportion: {
-                type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-                variants
-            }
-        });
-    }
-
-    /** `floor(100/n)` each with the first row absorbing the remainder — the store does the maths. */
+    /** `floor(100/n)` each, with the first row absorbing the remainder (AC23). */
     onSplitEvenly(): void {
-        this.#dispatch.splitEvenly();
+        this.#splitWeightsEvenly(this.store.$variants());
     }
 
     /** Opens the Add Variant dialog; a cancelled dialog closes with nothing and changes nothing. */
@@ -273,27 +345,47 @@ export class DotExperimentsConfigureVariantsComponent {
 
     /**
      * A new variant arrives with the weights the backend chose, which AC24 wants re-split evenly.
-     * Keyed off the *succeeded* event rather than the request: only then does the store hold the
-     * variant list the split has to be computed over.
+     * Split over the list the response carries, so it does not matter whether the store has already
+     * folded it in.
      */
     #resplitWeightsAfterAdd(): void {
         this.#events
             .on(dotExperimentsConfigureApiEvents.addVariantSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => this.#dispatch.splitEvenly());
+            .subscribe(({ payload }) =>
+                this.#splitWeightsEvenly(payload.trafficProportion?.variants ?? [])
+            );
+    }
+
+    /**
+     * Writes an even split into the slice, and reports it as the SPLIT_EVENLY proportion it is.
+     *
+     * The rows are the edit — they are what the inputs redraw from, and what the shell's binding
+     * persists. The dispatch is here for the one thing the form cannot carry: the proportion's
+     * *type*. A weight says what a share is, not whether the user asked for an even split, and the
+     * backend redistributes a later variant only while the type is SPLIT_EVENLY
+     * (`ExperimentsAPIImpl.addVariant`). Naming it here leaves the shell's binding with nothing to
+     * report — it compares against what the store already holds — so the edit still travels once.
+     */
+    #splitWeightsEvenly(variants: Variant[]): void {
+        if (!variants.length) {
+            return;
+        }
+
+        const rows = splitWeightsEvenly(toVariantWeightRows(variants));
+
+        this.$weights()().value.set(rows);
+
+        this.#dispatch.formEdited({
+            trafficProportion: {
+                type: TrafficProportionTypes.SPLIT_EVENLY,
+                variants: mergeVariantWeights(variants, rows)
+            }
+        });
     }
 }
 
 /** The control is the `DEFAULT` variant; older experiments identify it by its name instead. */
 function isControlVariant(variant: Variant): boolean {
     return variant.id === DEFAULT_VARIANT_ID || variant.name === DEFAULT_VARIANT_NAME;
-}
-
-/** A typed weight is only ever a percentage, and a cleared input reads as zero rather than NaN. */
-function clampWeight(value: number): number {
-    if (!Number.isFinite(value)) {
-        return 0;
-    }
-
-    return Math.min(TOTAL_WEIGHT, Math.max(0, value));
 }

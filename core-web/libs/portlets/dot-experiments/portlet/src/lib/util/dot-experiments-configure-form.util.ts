@@ -12,11 +12,17 @@ import {
     ReachPageGoalCondition,
     TIME_7_DAYS,
     TIME_90_DAYS,
-    UrlParameterGoalCondition
+    UrlParameterGoalCondition,
+    Variant
 } from '@dotcms/dotcms-models';
 
 import { DEFAULT_TRAFFIC_ALLOCATION } from '../shared/constants';
-import { ConfigureFormModel, GoalFormSlice, SchedulingFormSlice } from '../shared/models';
+import {
+    ConfigureFormModel,
+    GoalFormSlice,
+    SchedulingFormSlice,
+    VariantWeightFormRow
+} from '../shared/models';
 
 /**
  * The Configure screen's one form model: how it is filled from the store, and how it goes back out
@@ -92,8 +98,56 @@ export function toConfigureFormModel({
         description: draftDescription,
         goal: toGoalSlice(experiment?.goals),
         trafficAllocation: experiment?.trafficAllocation ?? DEFAULT_TRAFFIC_ALLOCATION,
-        scheduling: toSchedulingSlice(experiment?.scheduling)
+        scheduling: toSchedulingSlice(experiment?.scheduling),
+        variantWeights: toVariantWeightRows(experiment?.trafficProportion?.variants)
     };
+}
+
+/**
+ * One weight row per persisted variant, in the order the proportion holds them — which is the order
+ * the card draws, so a row and its input are the same thing.
+ */
+export function toVariantWeightRows(
+    variants: Variant[] | null | undefined
+): VariantWeightFormRow[] {
+    return (variants ?? []).map(({ id, weight }) => ({ id, weight: weight ?? 0 }));
+}
+
+/**
+ * The proportion the rows describe: the persisted variants with the edited weights written onto
+ * them.
+ *
+ * The variants are what the endpoint replaces — names and URLs included — so the form only ever
+ * supplies the weights, and a cleared input travels as the zero it reads as. A variant no row
+ * mentions keeps the weight it was persisted with.
+ */
+export function mergeVariantWeights(variants: Variant[], rows: VariantWeightFormRow[]): Variant[] {
+    const weightById = new Map(rows.map(({ id, weight }) => [id, weight ?? 0]));
+
+    return variants.map((variant) => ({
+        ...variant,
+        weight: weightById.get(variant.id) ?? variant.weight
+    }));
+}
+
+/**
+ * Whether the rows still stand for the same variants, in the same order.
+ *
+ * This is what tells an added or deleted variant — which the slice has to be re-seeded for — from a
+ * save response merely echoing the weights back, which it must not be.
+ */
+export function hasSameVariantIdentity(rows: VariantWeightFormRow[], variants: Variant[]): boolean {
+    return (
+        rows.length === variants.length && rows.every((row, index) => row.id === variants[index].id)
+    );
+}
+
+/** Whether every row already holds the weight its variant is persisted with. */
+export function isSameVariantWeights(rows: VariantWeightFormRow[], variants: Variant[]): boolean {
+    return (
+        hasSameVariantIdentity(rows, variants) &&
+        rows.every((row, index) => (row.weight ?? 0) === (variants[index].weight ?? 0))
+    );
 }
 
 /**
@@ -107,6 +161,11 @@ export function toConfigureFormModel({
  * This is the form layer's half of the contract. The store's `toOutgoingPatch` then drops a `name`
  * or `description` the experiment already holds, which is what keeps the flush that follows the
  * creation POST — whose body carried both — from writing them a second time.
+ *
+ * `variantWeights` is deliberately not here: unlike every other key, a weight has to reach the store
+ * even while the set of them is *invalid*, so the rows on screen and the Start validation see what
+ * was typed. It travels through its own binding (see the shell), and the store's `toOutgoingPatch`
+ * is what keeps an intermediate total off the wire.
  */
 export function toConfigurePatch(
     model: ConfigureFormModel,
