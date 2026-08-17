@@ -16,13 +16,8 @@ public class BinaryFieldStrategy implements FieldStrategy {
     public String generateQuery(final FieldContext fieldContext) {
         final String fieldName = fieldContext.fieldName();
         // Escape Lucene query-syntax characters in the (file-name) term so a hyphen, colon, etc.
-        // can't break query parsing; the `*` wildcards we add ourselves stay outside the escape. The
-        // slash is exempt: escaped, it is matched as a literal backslash, and since a file name can
-        // never contain a slash the escaped term did not simply miss — the analyzed clause below
-        // broadened and produced false positives (a search for `/logo.png` also returned
-        // `footer.vtl`). Unescaped, such a term correctly matches nothing.
-        final String fieldValue =
-                LuceneQueryUtils.escapeForWildcardTerm(fieldContext.fieldValue().toString());
+        // can't break query parsing; the `*` wildcards we add ourselves stay outside the escape.
+        final String fieldValue = LuceneQueryUtils.escape(fieldContext.fieldValue().toString());
         // Match against BOTH the analyzed field and its `_dotraw` keyword sub-field (like
         // TextFieldStrategy). The analyzed field tokenizes the file name on hyphens, slashes, dots,
         // etc. (`doc-dev-blue-cold.pdf` -> [doc, dev, blue, cold, pdf]), so a term spanning those
