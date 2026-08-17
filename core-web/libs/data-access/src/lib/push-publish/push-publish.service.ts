@@ -113,15 +113,21 @@ export class PushPublishService {
             'Content-Type': 'application/x-www-form-urlencoded'
         });
 
+        // Every value is encoded, not just the identifier. In practice these are all URL-safe —
+        // environment ids are UUIDs, `iWantTo` is a fixed enum, dates arrive pre-formatted and
+        // `timezoneId` is a Java zone id — but `filterKey` is a descriptor key with no such
+        // guarantee, and one unescaped `&` or `=` in a form-encoded body silently corrupts every
+        // parameter after it. `getPublishEnvironmentData` encodes only the identifier; this does not
+        // copy that.
         const params = [
             `assetIdentifier=${encodeURIComponent(assetIdentifier)}`,
-            `remotePublishDate=${value.publishDate}`,
-            `remotePublishTime=${value.publishTime}`,
-            `remotePublishExpireDate=${value.expireDate}`,
-            `remotePublishExpireTime=${value.expireTime}`,
-            `timezoneId=${value.timezoneId}`,
-            `iWantTo=${value.iWantTo}`,
-            `whoToSend=${value.whereToSend}`,
+            `remotePublishDate=${encodeURIComponent(value.publishDate)}`,
+            `remotePublishTime=${encodeURIComponent(value.publishTime)}`,
+            `remotePublishExpireDate=${encodeURIComponent(value.expireDate)}`,
+            `remotePublishExpireTime=${encodeURIComponent(value.expireTime)}`,
+            `timezoneId=${encodeURIComponent(value.timezoneId)}`,
+            `iWantTo=${encodeURIComponent(value.iWantTo)}`,
+            `whoToSend=${encodeURIComponent(value.whereToSend)}`,
             // Sent empty, as the legacy form does: a bundle name or id here would divert the push
             // into a bundle instead of sending it.
             'bundleName=',
@@ -131,7 +137,7 @@ export class PushPublishService {
         // Only when set. The servlet reads it straight into `getFilterDescriptorByKey`, and expiring
         // takes no filter, so an empty value is a real case rather than a missing one.
         if (value.filterKey) {
-            params.push(`filterKey=${value.filterKey}`);
+            params.push(`filterKey=${encodeURIComponent(value.filterKey)}`);
         }
 
         return this.http.post<DotAjaxActionResponseView>(this.publishUrl, params.join('&'), {

@@ -195,6 +195,8 @@ describe('PushPublishService', () => {
     });
 
     describe('pushPublishAssets', () => {
+        // Realistic values: `timezoneId` is a Java zone id (the older `mockFormValue` above uses
+        // "Costa Rica", which is not one), environments are ids, `filterKey` a descriptor key.
         const SETTINGS = {
             whereToSend: 'env1,env2',
             iWantTo: 'publish' as const,
@@ -202,8 +204,8 @@ describe('PushPublishService', () => {
             publishTime: '10-00',
             expireDate: '2026-10-01',
             expireTime: '23-59',
-            filterKey: 'hol',
-            timezoneId: 'Costa Rica'
+            filterKey: 'default.yml',
+            timezoneId: 'America/Costa_Rica'
         };
 
         it('should post the split date fields through untouched', () => {
@@ -221,8 +223,8 @@ describe('PushPublishService', () => {
             expect(req.request.body).toBe(
                 'assetIdentifier=id-1&remotePublishDate=2026-09-01&remotePublishTime=10-00' +
                     '&remotePublishExpireDate=2026-10-01&remotePublishExpireTime=23-59' +
-                    '&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1,env2' +
-                    '&bundleName=&bundleSelect=&filterKey=hol'
+                    '&timezoneId=America%2FCosta_Rica&iWantTo=publish&whoToSend=env1%2Cenv2' +
+                    '&bundleName=&bundleSelect=&filterKey=default.yml'
             );
             req.flush(mockResponse);
         });
@@ -252,6 +254,22 @@ describe('PushPublishService', () => {
             );
 
             expect(req.request.body).not.toContain('filterKey');
+            req.flush(mockResponse);
+        });
+
+        it('should escape a value carrying a reserved character', () => {
+            // One unescaped `&` or `=` in a form-encoded body silently swallows every parameter
+            // after it, so the push would fire with the wrong filter and no error anywhere.
+            spectator.service
+                .pushPublishAssets('id-1', { ...SETTINGS, filterKey: 'a&b=c d' })
+                .subscribe();
+
+            const req = spectator.expectOne(
+                '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
+                HttpMethod.POST
+            );
+
+            expect(req.request.body).toContain('filterKey=a%26b%3Dc%20d');
             req.flush(mockResponse);
         });
 
