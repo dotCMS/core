@@ -50,3 +50,4 @@ Release-25.07.10 LTS
 44. https://github.com/dotCMS/private-issues/issues/651 : Stored XSS → RCE: low-priv backend user name bypasses Xss filter, runs in admin session, deploys OSGi bundle #651
 45. https://github.com/dotCMS/private-issues/issues/642 : sec: Privilege Escalation + RCE via OSGi bundle upload (low-priv backend user → CMS Administrator) #642
 46. https://github.com/dotCMS/core/issues/36851 : Native, configurable HTML minification in the core rendering engine #36851
+47. https://github.com/dotCMS/core/issues/37085 : Upgrade BouncyCastle to 1.85 across all three bundled locations (CVE-2026-59638) #37085
