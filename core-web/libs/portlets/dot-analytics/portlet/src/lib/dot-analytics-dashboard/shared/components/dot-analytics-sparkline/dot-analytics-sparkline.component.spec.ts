@@ -133,9 +133,9 @@ describe('DotAnalyticsSparklineComponent', () => {
 
             const chartData = spectator.component['$chartData']();
             expect(chartData.datasets.length).toBe(2);
-            expect(chartData.datasets[0].borderDash).toBeUndefined();
+            expect((chartData.datasets[0] as { borderDash?: number[] }).borderDash).toBeUndefined();
             expect(chartData.datasets[0].fill).toBe(true);
-            expect(chartData.datasets[1].borderDash).toEqual([4, 2]);
+            expect((chartData.datasets[1] as { borderDash?: number[] }).borderDash).toEqual([4, 2]);
             expect(chartData.datasets[1].fill).toBe(true);
         });
 
@@ -176,8 +176,8 @@ describe('DotAnalyticsSparklineComponent', () => {
 
             const options = spectator.component['$chartOptions']();
             const scales = options.scales as Record<string, { display?: boolean }>;
-            expect(scales?.x?.display).toBe(false);
-            expect(scales?.y?.display).toBe(false);
+            expect(scales?.['x']?.display).toBe(false);
+            expect(scales?.['y']?.display).toBe(false);
         });
 
         it('should be responsive', () => {

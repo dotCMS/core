@@ -873,8 +873,8 @@ describe('DotTreeFolderComponent', () => {
         /** The node's own row: toggler, icon and label, but not its children. */
         const rowFor = (id: string): HTMLElement =>
             spectator
-                .query(`[data-testid="tree-node-label"][data-id="${id}"]`)
-                .closest('.p-tree-node-content');
+                .query(`[data-testid="tree-node-label"][data-id="${id}"]`)!
+                .closest<HTMLElement>('.p-tree-node-content')!;
 
         const rightClickOn = (target: Element) => {
             const event = new MouseEvent('contextmenu', { cancelable: true, bubbles: true });

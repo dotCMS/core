@@ -120,7 +120,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent({
                 firstChild: {
                     snapshot: { url: [new UrlSegment('pageview', {})] }
-                }
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['firstChild']
             });
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
@@ -131,7 +131,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent({
                 firstChild: {
                     snapshot: { url: [new UrlSegment('conversions', {})] }
-                }
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['firstChild']
             });
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
