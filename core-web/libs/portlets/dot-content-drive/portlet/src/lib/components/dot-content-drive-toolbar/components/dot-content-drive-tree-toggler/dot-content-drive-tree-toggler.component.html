@@ -2,38 +2,34 @@
      could never take focus and the toggle was unreachable by keyboard. The accessible name has to
      go through PrimeNG's `[ariaLabel]` input too — `[attr.aria-label]` would land on the
      non-focusable `<p-button>` host, leaving the actual `<button>` unnamed. The name carries the
-     state, since both glyphs are decorative.
+     state, since the glyph is decorative and no longer reflects it.
 
-     `p-button-icon-only` is set by hand because PrimeNG only derives it from the `icon` input, and
-     the glyphs are projected content here; without it the button takes label padding and renders as
-     a padded oval instead of a circle. -->
+     `p-button-icon-only` matters here: PrimeNG only derives icon-button sizing from its `icon`
+     input, and the glyph is projected content, so without it the button never gets the fixed square
+     box that gives a rounded hover surface around the icon — the control stopped reacting on hover.
+     `size="small"` matches UVE's equivalent toggle. -->
 
 <p-button
     [text]="true"
     [rounded]="true"
-    [disabled]="$treeForceCollapsed()"
+    size="small"
     styleClass="p-button-icon-only"
+    [disabled]="$treeForceCollapsed()"
     [ariaLabel]="
         ($treeExpanded() ? 'content-drive.tree.collapse' : 'content-drive.tree.expand') | dm
     "
     (onClick)="toggleTree()"
     data-testid="tree-toggler-button">
-    <!-- UVE's own palette / quick-edit toggle assets, kept as images rather than Material Symbols
-         glyphs on purpose: the pair carries the blue fill and the two files differ only in how much
-         of the panel is filled, which is the state cue. Both are rendered and toggled with `hidden`
-         so neither has to be fetched mid-interaction. -->
-    <img
-        class="size-5"
-        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
-        alt=""
-        draggable="false"
-        data-testid="tree-toggle-open-icon"
-        [class.hidden]="!$treeExpanded()" />
-    <img
-        class="size-5"
-        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
-        alt=""
-        draggable="false"
-        data-testid="tree-toggle-close-icon"
-        [class.hidden]="$treeExpanded()" />
+    <!-- Deliberately ONE static glyph that does not react to the expanded state: the icon names
+         where the panel docks, not what the click will do, so swapping it mid-interaction made the
+         control read as two different things. `dock_to_right` is the convention for a panel on the
+         LEFT; the right-hand Edit Content sidebar uses `dock_to_left` for the same reason, and this
+         mirrors its markup so the two controls stay identical.
+
+         `aria-hidden` keeps screen readers off the ligature text — the state lives on the button's
+         accessible name above. Left unsized on purpose: the shared Material Symbols styles render at
+         24px, the size UVE's equivalent toggle uses. -->
+    <i class="material-symbols-outlined" aria-hidden="true" data-testid="tree-toggle-icon">
+        dock_to_right
+    </i>
 </p-button>
