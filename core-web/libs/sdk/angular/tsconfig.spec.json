@@ -8,14 +8,11 @@
         "moduleResolution": "bundler",
         "isolatedModules": true
     },
-    "files": ["src/test-setup.ts", "next/test-setup.ts"],
+    "files": ["src/test-setup.ts"],
     "include": [
         "jest.config.ts",
         "src/**/*.test.ts",
         "src/**/*.spec.ts",
-        "src/**/*.d.ts",
-        "next/**/*.test.ts",
-        "next/**/*.spec.ts",
-        "next/**/*.d.ts"
+        "src/**/*.d.ts"
     ]
 }
