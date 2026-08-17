@@ -1,5 +1,5 @@
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -14,6 +14,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotActionBulkRequestOptions,
+    DotAjaxActionResponseView,
     DotBundle,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
@@ -102,6 +103,83 @@ export function withActionExecution() {
                             statusText: 'The action response carried no summary'
                         })
                     );
+                };
+
+                /**
+                 * Runs one of the legacy `RemotePublishAjaxAction` bulk operations.
+                 *
+                 * Add to Bundle and Push Publish differ only in which servlet command they call and
+                 * in what to say when it answers with nothing usable. Everything else — the replay
+                 * guard, the in-flight marker, the error routing and the count arithmetic — is the
+                 * *servlet's* response contract rather than either action's own logic, so it belongs
+                 * in one place. A third command should be a call, not another copy.
+                 *
+                 * Deliberately not `onUnknownOutcome`, which serves the `bulkFire` path: that
+                 * endpoint answers with a `summary` object, so "no honest count" is a different
+                 * shape and a different message from the servlet's non-numeric `errors`.
+                 *
+                 * @param actionName Shown in the toolbar indicator and the result toast
+                 * @param identifiers Asset identifiers — the servlet splits `assetIdentifier` on ","
+                 * @param request Built lazily, so nothing is posted when the guards refuse the run
+                 * @param noResultMessage Reported when the response carries no numeric `errors`
+                 */
+                const fireLegacyServletBulk = (
+                    actionName: string,
+                    identifiers: string[],
+                    request: () => Observable<DotAjaxActionResponseView>,
+                    noResultMessage: string
+                ): void => {
+                    if (!identifiers.length || store.actionExecution()) {
+                        return;
+                    }
+
+                    patchState(store, {
+                        actionExecution: { actionName, total: identifiers.length },
+                        actionExecutionResult: undefined
+                    });
+
+                    request()
+                        .pipe(
+                            take(1),
+                            catchError((error) => {
+                                patchState(store, { actionExecution: undefined });
+                                httpErrorManagerService.handle(error);
+
+                                return EMPTY;
+                            })
+                        )
+                        .subscribe((result) => {
+                            // The servlet answers 200 for its own failures too: on a
+                            // `DotPublisherException` it writes `{"errors": "<message>"}` with no
+                            // `total`, and when the publisher returns nothing it writes no body at
+                            // all. Either shape would arrive here as a "success" — the first
+                            // producing `NaN` from `total - "<message>"`, the second reporting zero
+                            // of everything on what may well have worked. Neither is a result worth
+                            // showing, so both go to the error handler instead.
+                            if (typeof result?.errors !== 'number') {
+                                patchState(store, { actionExecution: undefined });
+                                httpErrorManagerService.handle(
+                                    new HttpErrorResponse({
+                                        status: 500,
+                                        statusText:
+                                            typeof result?.errors === 'string'
+                                                ? result.errors
+                                                : noResultMessage
+                                    })
+                                );
+
+                                return;
+                            }
+
+                            onSettled({
+                                actionName,
+                                // `total` counts everything queued, failures included, so the
+                                // successes are what is left after removing them.
+                                successCount: Math.max((result.total ?? 0) - result.errors, 0),
+                                skippedCount: 0,
+                                failCount: result.errors
+                            });
+                        });
                 };
 
                 return {
@@ -243,62 +321,15 @@ export function withActionExecution() {
                         actionName: string,
                         bundle: DotBundle,
                         identifiers: string[]
-                    ): void => {
-                        if (!identifiers.length || store.actionExecution()) {
-                            return;
-                        }
-
-                        patchState(store, {
-                            actionExecution: { actionName, total: identifiers.length },
-                            actionExecutionResult: undefined
-                        });
-
-                        addToBundleService
+                    ): void =>
+                        fireLegacyServletBulk(
+                            actionName,
+                            identifiers,
                             // Comma-joined: the servlet splits `assetIdentifier` on "," and has
                             // always accepted several ids that way, so bulk needs no new endpoint.
-                            .addToBundle(identifiers.join(','), bundle)
-                            .pipe(
-                                take(1),
-                                catchError((error) => {
-                                    patchState(store, { actionExecution: undefined });
-                                    httpErrorManagerService.handle(error);
-
-                                    return EMPTY;
-                                })
-                            )
-                            .subscribe((result) => {
-                                // The servlet answers 200 for its own failures too: on a
-                                // `DotPublisherException` it writes `{"errors": "<message>"}` with no
-                                // `total`, and when the publisher returns nothing it writes no body at
-                                // all. Either shape would arrive here as a "success" — the first
-                                // producing `NaN` from `total - "<message>"`, the second reporting zero
-                                // of everything on what may well have worked. Neither is a result worth
-                                // showing, so both go to the error handler instead.
-                                if (typeof result?.errors !== 'number') {
-                                    patchState(store, { actionExecution: undefined });
-                                    httpErrorManagerService.handle(
-                                        new HttpErrorResponse({
-                                            status: 500,
-                                            statusText:
-                                                typeof result?.errors === 'string'
-                                                    ? result.errors
-                                                    : 'Adding to the bundle returned no result'
-                                        })
-                                    );
-
-                                    return;
-                                }
-
-                                onSettled({
-                                    actionName,
-                                    // `total` counts everything queued, failures included, so the
-                                    // successes are what is left after removing them.
-                                    successCount: Math.max((result.total ?? 0) - result.errors, 0),
-                                    skippedCount: 0,
-                                    failCount: result.errors
-                                });
-                            });
-                    },
+                            () => addToBundleService.addToBundle(identifiers.join(','), bundle),
+                            'Adding to the bundle returned no result'
+                        ),
 
                     /**
                      * Push publishes the given identifiers to the chosen environments.
@@ -321,53 +352,17 @@ export function withActionExecution() {
                         actionName: string,
                         identifiers: string[],
                         settings: DotWorkflowPushPublishValue
-                    ): void => {
-                        if (!identifiers.length || store.actionExecution()) {
-                            return;
-                        }
-
-                        patchState(store, {
-                            actionExecution: { actionName, total: identifiers.length },
-                            actionExecutionResult: undefined
-                        });
-
-                        pushPublishService
-                            // Comma-joined: `RemotePublishAjaxAction` splits `assetIdentifier` on
-                            // "," and has always accepted several ids that way.
-                            .pushPublishAssets(identifiers.join(','), settings)
-                            .pipe(
-                                take(1),
-                                catchError((error) => {
-                                    patchState(store, { actionExecution: undefined });
-                                    httpErrorManagerService.handle(error);
-
-                                    return EMPTY;
-                                })
-                            )
-                            .subscribe((result) => {
-                                if (typeof result?.errors !== 'number') {
-                                    patchState(store, { actionExecution: undefined });
-                                    httpErrorManagerService.handle(
-                                        new HttpErrorResponse({
-                                            status: 500,
-                                            statusText:
-                                                typeof result?.errors === 'string'
-                                                    ? result.errors
-                                                    : 'The push publish returned no result'
-                                        })
-                                    );
-
-                                    return;
-                                }
-
-                                onSettled({
-                                    actionName,
-                                    successCount: Math.max((result.total ?? 0) - result.errors, 0),
-                                    skippedCount: 0,
-                                    failCount: result.errors
-                                });
-                            });
-                    },
+                    ): void =>
+                        fireLegacyServletBulk(
+                            actionName,
+                            identifiers,
+                            () =>
+                                pushPublishService.pushPublishAssets(
+                                    identifiers.join(','),
+                                    settings
+                                ),
+                            'The push publish returned no result'
+                        ),
 
                     /** Called by the shell once the result has been presented. */
                     clearActionExecutionResult: (): void => {
