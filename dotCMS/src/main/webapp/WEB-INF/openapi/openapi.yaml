@@ -15351,6 +15351,63 @@ paths:
       summary: Load role by role ID
       tags:
       - Roles
+    put:
+      description: "Updates an existing role's name, key, description, can-grant flags\
+        \ and parent. PUT is a full replace: every field of the role is overwritten\
+        \ from the request body, so clients must send the complete role representation\
+        \ — omitted fields are reset (booleans default to false, omitted roleKey/description\
+        \ are cleared, omitted parentRoleId reparents to root). A null parentRoleId\
+        \ turns the role into a root role. Reparenting under the role's own descendant\
+        \ is rejected. System and locked roles cannot be updated. Note: the role is\
+        \ updated in place — grants and permissions attached to the role are preserved."
+      operationId: updateRole
+      parameters:
+      - description: Id of the role to update
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleForm"
+        description: Role information — same shape as POST /v1/roles
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - invalid role name, or the reparent would create\
+            \ a hierarchy cycle"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role is a system\
+            \ or locked role"
+        "404":
+          content:
+            application/json: {}
+          description: Role or parent role not found
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - duplicate role key, or duplicate role name under\
+            \ the same parent"
+      summary: Update a role
+      tags:
+      - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
       description: Load the user and roles by role id with optional hierarchy and
@@ -36203,6 +36260,10 @@ components:
           type: string
         parent:
           type: string
+        roleChildren:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleView"
         roleKey:
           type: string
         system:
