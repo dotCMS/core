@@ -39,7 +39,9 @@ import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
-const route: any = jest.spyOn(ActivatedRouteSnapshot, 'toString');
+// A plain bag, not a spy: `jest.spyOn(ActivatedRouteSnapshot, 'toString')` was only ever
+// used to obtain a mutable object, and `toString` is not a static of that class.
+const route: any = {};
 
 route.queryParams = {};
 

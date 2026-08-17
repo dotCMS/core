@@ -46,7 +46,7 @@ describe('DotContentDriveService', () => {
             const request: DotContentDriveSearchRequest = {
                 assetPath: '//demo.dotcms.com/',
                 contentTypes: ['Blog', 'News'],
-                offset: 0,
+                contentCursor: 0,
                 maxResults: 20
             };
 
@@ -83,7 +83,7 @@ describe('DotContentDriveService', () => {
                     text: 'test search',
                     filterFolders: false
                 },
-                offset: 10,
+                contentCursor: 10,
                 maxResults: 50,
                 sortBy: 'modDate:desc',
                 live: true,
