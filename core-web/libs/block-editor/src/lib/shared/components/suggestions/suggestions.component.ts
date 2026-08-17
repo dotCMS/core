@@ -58,10 +58,11 @@ export enum ItemsType {
     standalone: false
 })
 export class SuggestionsComponent implements OnInit {
-    @ViewChild('list', { static: false }) list: SuggestionListComponent;
-    @ViewChild('list', { static: false, read: ElementRef }) listElement: ElementRef;
+    @ViewChild('list', { static: false }) list!: SuggestionListComponent;
+    @ViewChild('list', { static: false, read: ElementRef }) listElement!: ElementRef;
 
-    @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
+    // Set imperatively by ActionsMenu before the first change detection pass.
+    @Input() onSelectContentlet!: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
 
     get sortedItems() {
@@ -80,10 +81,10 @@ export class SuggestionsComponent implements OnInit {
     @Input() allowedContentTypes = '';
     @Input() contentletIdentifier = '';
 
-    private itemsLoaded: ItemsType;
-    private selectedContentType: DotCMSContentType;
+    private itemsLoaded = ItemsType.BLOCK;
+    private selectedContentType?: DotCMSContentType;
     private dotLangs: { [key: string]: DotLanguage } = {};
-    private initialItems: DotMenuItem[];
+    private initialItems: DotMenuItem[] = [];
 
     isFilterActive = false;
 
@@ -177,7 +178,7 @@ export class SuggestionsComponent implements OnInit {
         switch (this.itemsLoaded) {
             case ItemsType.BLOCK:
                 this.items = this.initialItems.filter((item) =>
-                    item.label.toLowerCase().includes(filter.trim().toLowerCase())
+                    (item.label ?? '').toLowerCase().includes(filter.trim().toLowerCase())
                 );
                 break;
 
@@ -186,7 +187,9 @@ export class SuggestionsComponent implements OnInit {
                 break;
 
             case ItemsType.CONTENT:
-                this.loadContentlets(this.selectedContentType, filter);
+                if (this.selectedContentType) {
+                    this.loadContentlets(this.selectedContentType, filter);
+                }
         }
 
         this.isFilterActive = !!filter.length;

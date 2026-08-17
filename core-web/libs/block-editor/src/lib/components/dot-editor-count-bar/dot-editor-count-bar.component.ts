@@ -14,9 +14,11 @@ interface CharacterCountStorageShape {
     standalone: false
 })
 export class DotEditorCountBarComponent {
-    @Input() characterCount: CharacterCountStorageShape;
-    @Input() charLimit: number;
-    @Input() readingTime;
+    // The parent only renders this component inside its `@if (editor)` block, so both are
+    // always bound by the time the template reads them.
+    @Input() characterCount!: CharacterCountStorageShape;
+    @Input() charLimit = NaN;
+    @Input() readingTime = 0;
 
     constructor() {
         //

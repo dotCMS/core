@@ -78,7 +78,7 @@ describe('parser.utils', () => {
             const result = purifyNodeTree(content, getBlockMap(['paragraph']));
 
             expect(result[0].content).toHaveLength(3);
-            expect(result[0].content[1].type).toBe('hardBreak');
+            expect(result[0].content?.[1].type).toBe('hardBreak');
         });
 
         it('should keep a heading whose composite level key is allowed', () => {
@@ -130,7 +130,7 @@ describe('parser.utils', () => {
             const paragraph = result[0];
             expect(paragraph.type).toBe('paragraph');
 
-            const hardBreaks = paragraph.content.filter((node) => node.type === 'hardBreak');
+            const hardBreaks = paragraph.content?.filter((node) => node.type === 'hardBreak');
             expect(hardBreaks).toHaveLength(2);
         });
 
@@ -151,7 +151,7 @@ describe('parser.utils', () => {
 
             expect(result).toHaveLength(1);
             expect(result[0].type).toBe('paragraph');
-            expect(result[0].content.filter((node) => node.type === 'hardBreak')).toHaveLength(1);
+            expect(result[0].content?.filter((node) => node.type === 'hardBreak')).toHaveLength(1);
         });
 
         it('should keep paragraph nodes via the basic-node fallback even when not in allowedBlocks', () => {

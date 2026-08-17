@@ -32,9 +32,9 @@ export class DotExternalAssetComponent {
     @Output() addAsset = new EventEmitter();
 
     @Input()
-    type: EditorAssetTypes;
+    type!: EditorAssetTypes;
 
-    form: FormGroup;
+    form!: FormGroup;
     disableAction = false;
 
     get placerHolder(): string {

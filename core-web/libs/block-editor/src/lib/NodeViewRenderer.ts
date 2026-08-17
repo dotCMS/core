@@ -1,4 +1,4 @@
-import { DecorationSet, type DecorationSource } from 'prosemirror-view';
+import { type Decoration, DecorationSet, type DecorationSource } from 'prosemirror-view';
 
 import { Component, Injector, Input, Type, ChangeDetectionStrategy } from '@angular/core';
 
@@ -38,7 +38,9 @@ export class AngularNodeViewComponent implements NodeViewProps {
 }
 
 interface AngularNodeViewRendererOptions extends NodeViewRendererOptions {
-    update?: ((node: ProseMirrorNode, decorations: DecorationWithType[]) => boolean) | null;
+    update?:
+        | ((node: ProseMirrorNode, decorations: readonly DecorationWithType[]) => boolean)
+        | null;
     toJSON?: toJSONFn;
     injector: Injector;
 }
@@ -123,7 +125,12 @@ class AngularNodeView extends NodeView<
         }
     }
 
-    update(node: ProseMirrorNode, decorations: DecorationWithType[]): boolean {
+    // Signature mirrors ProseMirror's `NodeView.update`, which hands over a readonly
+    // `Decoration[]`. TipTap narrows those to `DecorationWithType` for node views, which is
+    // what every consumer below expects.
+    update(node: ProseMirrorNode, nodeDecorations: readonly Decoration[]): boolean {
+        const decorations = nodeDecorations as readonly DecorationWithType[];
+
         if (this.options.update) {
             return this.options.update(node, decorations);
         }
