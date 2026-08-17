@@ -101,8 +101,8 @@ describe('DotBubbleMenuComponent - superscript/subscript mutual exclusion', () =
             component['toggleSuperscript']();
 
             expect(callOrder).toEqual(['focus', 'unsetSubscript', 'toggleSuperscript']);
-            expect(chain.unsetSubscript).toHaveBeenCalledTimes(1);
-            expect(chain.toggleSuperscript).toHaveBeenCalledTimes(1);
+            expect(chain['unsetSubscript']).toHaveBeenCalledTimes(1);
+            expect(chain['toggleSuperscript']).toHaveBeenCalledTimes(1);
             expect(runSpy).toHaveBeenCalledTimes(1);
         });
     });
@@ -114,8 +114,8 @@ describe('DotBubbleMenuComponent - superscript/subscript mutual exclusion', () =
             component['toggleSubscript']();
 
             expect(callOrder).toEqual(['focus', 'unsetSuperscript', 'toggleSubscript']);
-            expect(chain.unsetSuperscript).toHaveBeenCalledTimes(1);
-            expect(chain.toggleSubscript).toHaveBeenCalledTimes(1);
+            expect(chain['unsetSuperscript']).toHaveBeenCalledTimes(1);
+            expect(chain['toggleSubscript']).toHaveBeenCalledTimes(1);
             expect(runSpy).toHaveBeenCalledTimes(1);
         });
     });

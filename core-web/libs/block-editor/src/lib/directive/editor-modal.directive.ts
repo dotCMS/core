@@ -115,7 +115,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         if (!node) return null;
 
         // Look for node view wrapper and get its first child
-        const nodeViewWrapper = node.dataset.nodeViewWrapper
+        const nodeViewWrapper = node.dataset['nodeViewWrapper']
             ? node
             : node.querySelector('[data-node-view-wrapper]');
 

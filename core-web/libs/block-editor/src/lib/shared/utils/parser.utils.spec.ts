@@ -7,46 +7,46 @@ describe('parser.utils', () => {
         it('should always include the basic nodes (paragraph, text, doc, hardBreak)', () => {
             const map = getBlockMap(['heading']);
 
-            expect(map.paragraph).toBe(true);
-            expect(map.text).toBe(true);
-            expect(map.doc).toBe(true);
-            expect(map.hardBreak).toBe(true);
+            expect(map['paragraph']).toBe(true);
+            expect(map['text']).toBe(true);
+            expect(map['doc']).toBe(true);
+            expect(map['hardBreak']).toBe(true);
         });
 
         it('should expand related content dependencies (e.g. table)', () => {
             const map = getBlockMap(['table']);
 
-            expect(map.table).toBe(true);
-            expect(map.tableRow).toBe(true);
-            expect(map.tableHeader).toBe(true);
-            expect(map.tableCell).toBe(true);
+            expect(map['table']).toBe(true);
+            expect(map['tableRow']).toBe(true);
+            expect(map['tableHeader']).toBe(true);
+            expect(map['tableCell']).toBe(true);
         });
 
         it('should add plain allowed blocks as-is', () => {
             const map = getBlockMap(['heading', 'blockquote']);
 
-            expect(map.heading).toBe(true);
-            expect(map.blockquote).toBe(true);
+            expect(map['heading']).toBe(true);
+            expect(map['blockquote']).toBe(true);
         });
 
         it('should add declared remote block names to the allow-map', () => {
             const map = getBlockMap(['heading'], ['customGallery']);
 
-            expect(map.customGallery).toBe(true);
+            expect(map['customGallery']).toBe(true);
         });
 
         it('should keep the remote "video" node name when expanding video aliases', () => {
             const map = getBlockMap(['heading'], ['video']);
 
-            expect(map.video).toBe(true);
-            expect(map.dotVideo).toBe(true);
-            expect(map.youtube).toBe(true);
+            expect(map['video']).toBe(true);
+            expect(map['dotVideo']).toBe(true);
+            expect(map['youtube']).toBe(true);
         });
 
         it('should always allow the unsupported-block placeholder', () => {
             const map = getBlockMap(['heading']);
 
-            expect(map.dotUnsupportedBlock).toBe(true);
+            expect(map['dotUnsupportedBlock']).toBe(true);
         });
     });
 

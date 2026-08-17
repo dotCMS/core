@@ -353,7 +353,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                         hasTitleImage: c.hasTitleImage,
                         inode: c.inode,
                         displayName: c.title,
-                        url: c.path || c.urlMap
+                        url: c['path'] || c['urlMap']
                     }))
                 );
                 this.isSearching.set(false);

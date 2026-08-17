@@ -71,8 +71,8 @@ export const getCurrentLeafBlock = (editor: Editor) => {
  * ```
  */
 const getNodeTypeWithLevel = (node: Node): string => {
-    const hasLevelAttribute = node.attrs.level;
+    const hasLevelAttribute = node.attrs['level'];
     const baseNodeType = node.type.name;
 
-    return hasLevelAttribute ? `${baseNodeType}${node.attrs.level}` : baseNodeType;
+    return hasLevelAttribute ? `${baseNodeType}${node.attrs['level']}` : baseNodeType;
 };
