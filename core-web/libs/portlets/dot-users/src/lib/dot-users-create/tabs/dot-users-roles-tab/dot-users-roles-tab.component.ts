@@ -255,13 +255,44 @@ export class DotUsersRolesTabComponent {
     protected readonly availableTree = computed<RoleTreeNode[]>(() => {
         const query = this.availableFilter().toLowerCase().trim();
         const grantedKeys = new Set(this.granted());
-        // Only leaves get moved between panels — parents remain in the
-        // tree so their still-available descendants stay reachable.
-        const pool = this.allRoles().filter(
-            (role) =>
-                this.rolesWithChildren().has(role.id) ||
-                !grantedKeys.has(this.grantIdentifier(role))
-        );
+        const grantableLeaves = this.grantableLeavesByRole();
+
+        // Map granted `roleKey`s back to leaf ids so we can ask "is
+        // every grantable descendant of this parent already granted?"
+        const grantedLeafIds = new Set<string>();
+        for (const role of this.allRoles()) {
+            if (grantedKeys.has(this.grantIdentifier(role))) {
+                grantedLeafIds.add(role.id);
+            }
+        }
+
+        // A parent stays in the tree if either:
+        //   - it never had any grantable descendants (workflow-only
+        //     branches such as Publisher / Legal — nothing to move,
+        //     so nothing to drop), or
+        //   - at least one of its grantable descendants hasn't been
+        //     granted yet.
+        // Dropping "empty" parents keeps the panel honest — a root
+        // whose entire grantable subtree is already on the right
+        // shouldn't linger on the left as an empty container.
+        const hasRemainingGrantable = (roleId: string): boolean => {
+            const leaves = grantableLeaves.get(roleId) ?? [];
+            if (leaves.length === 0) {
+                return true;
+            }
+
+            return leaves.some((leafId) => !grantedLeafIds.has(leafId));
+        };
+
+        const pool = this.allRoles().filter((role) => {
+            if (this.rolesWithChildren().has(role.id)) {
+                return hasRemainingGrantable(role.id);
+            }
+
+            // Leaves are moved between panels: keep only when not yet
+            // granted.
+            return !grantedKeys.has(this.grantIdentifier(role));
+        });
         const byParent = new Map<string, RoleOption[]>();
         for (const role of pool) {
             const key = role.parent ?? '__root__';
