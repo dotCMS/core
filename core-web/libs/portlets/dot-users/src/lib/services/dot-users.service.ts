@@ -139,6 +139,63 @@ interface DotToolgroupStateResponse {
     };
 }
 
+/**
+ * Row shape returned by GET /api/v1/apitoken/{userId}/tokens. Mirrors
+ * `com.dotcms.auth.providers.jwt.beans.ApiToken`. Dates are epoch
+ * milliseconds (`revokedDate` is null when not revoked). The three
+ * boolean flags reflect derived state on the backend: `valid = !expired
+ * && !revoked && after-notBefore`.
+ */
+export interface DotApiToken {
+    id: string;
+    userId: string;
+    requestingUserId: string;
+    requestingIp: string | null;
+    issuer: string | null;
+    subject: string | null;
+    tokenType: string | null;
+    claims: { label?: string } & Record<string, unknown>;
+    allowNetwork: string | null;
+    issueDate: number;
+    expiresDate: number;
+    revokedDate: number | null;
+    modificationDate: number;
+    valid: boolean;
+    expired: boolean;
+    revoked: boolean;
+}
+
+/**
+ * Payload accepted by POST /api/v1/apitoken. `expirationSeconds` is
+ * the TTL in seconds computed from the user-picked expiration date.
+ * `network` is a CIDR block ("0.0.0.0/0" = any). Free-form `claims`
+ * are stored verbatim; the UI only sets `label`.
+ */
+export interface DotApiTokenCreatePayload {
+    userId: string;
+    expirationSeconds: number;
+    network?: string;
+    claims?: { label?: string } & Record<string, unknown>;
+}
+
+/**
+ * Response envelope for POST /api/v1/apitoken. The raw JWT string is
+ * shown to the caller exactly once (design choice) — after that the
+ * token can only be revoked or deleted, not re-revealed.
+ */
+export interface DotApiTokenCreateResult {
+    jwt: string;
+    token: DotApiToken;
+}
+
+interface DotApiTokensListResponse {
+    entity: { tokens: DotApiToken[] };
+}
+
+interface DotApiTokenCreateResponse {
+    entity: { jwt: string; token: DotApiToken };
+}
+
 export interface DotUsersPaginatedParams {
     filter?: string;
     page?: number;
@@ -363,5 +420,61 @@ export class DotUsersService {
                 return this.expandDescendants(newlyDiscovered, flat, seen);
             })
         );
+    }
+
+    /**
+     * Lists every API token owned by a user. `showRevoked=false` (the
+     * default) filters revoked entries server-side; the tab flips this
+     * when the user checks "Show revoked/expired".
+     */
+    getApiTokens(userId: string, showRevoked: boolean): Observable<DotApiToken[]> {
+        return this.#http
+            .get<DotApiTokensListResponse>(
+                `/api/v1/apitoken/${encodeURIComponent(userId)}/tokens`,
+                { params: new HttpParams().set('showRevoked', String(showRevoked)) }
+            )
+            .pipe(map((response) => response.entity?.tokens ?? []));
+    }
+
+    /**
+     * Mints a new API token for the target user. The JWT string in the
+     * response is the ONLY chance the caller has to grab it — the tab
+     * surfaces it once, then hides it. Subsequent listings only return
+     * the token metadata.
+     */
+    createApiToken(payload: DotApiTokenCreatePayload): Observable<DotApiTokenCreateResult> {
+        return this.#http
+            .post<DotApiTokenCreateResponse>('/api/v1/apitoken', payload)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Mints a fresh JWT for an existing token id. The token record
+     * itself is unchanged — the backend simply signs a new JWT value
+     * over the same token, which supersedes any previously-issued one.
+     * Backend refuses this on revoked/expired tokens (400).
+     */
+    getApiTokenJwt(tokenId: string): Observable<string> {
+        return this.#http
+            .get<{ entity: { jwt: string } }>(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/jwt`)
+            .pipe(map((response) => response.entity?.jwt ?? ''));
+    }
+
+    /**
+     * Soft-revokes a token. The row stays in the list (with
+     * `revoked=true`, `revokedDate` populated) so an admin can prove
+     * when it was disabled; a subsequent DELETE is required to purge.
+     */
+    revokeApiToken(tokenId: string): Observable<unknown> {
+        return this.#http.put(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/revoke`, null);
+    }
+
+    /**
+     * Hard-deletes a token. Backend guards this to revoked or expired
+     * tokens only — the UI mirrors the guard so the button only shows
+     * for those rows.
+     */
+    deleteApiToken(tokenId: string): Observable<unknown> {
+        return this.#http.delete(`/api/v1/apitoken/${encodeURIComponent(tokenId)}`);
     }
 }
