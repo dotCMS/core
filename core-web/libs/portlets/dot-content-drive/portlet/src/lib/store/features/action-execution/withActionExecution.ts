@@ -9,9 +9,14 @@ import { catchError, take } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotHttpErrorManagerService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { DotActionBulkRequestOptions, DotBundle } from '@dotcms/dotcms-models';
+import {
+    DotActionBulkRequestOptions,
+    DotBundle,
+    DotWorkflowPushPublishValue
+} from '@dotcms/dotcms-models';
 
 import {
     DotContentDriveActionExecution,
@@ -57,7 +62,8 @@ export function withActionExecution() {
                 store,
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
                 httpErrorManagerService = inject(DotHttpErrorManagerService),
-                addToBundleService = inject(AddToBundleService)
+                addToBundleService = inject(AddToBundleService),
+                pushPublishService = inject(PushPublishService)
             ) => {
                 /**
                  * Settles a finished run by publishing its result for the shell to present.
@@ -100,7 +106,7 @@ export function withActionExecution() {
 
                 return {
                     /**
-                     * Fires a quick action (publish, unpublish, archive, …) over the given inodes.
+                     * Fires a quick action (lock, unlock) over the given inodes.
                      *
                      * Counts come from the response rather than `inodes.length`: the endpoint answers
                      * 200 with per-item failures inside, so a lock held by another user or a
@@ -287,6 +293,68 @@ export function withActionExecution() {
                                     actionName,
                                     // `total` counts everything queued, failures included, so the
                                     // successes are what is left after removing them.
+                                    successCount: Math.max((result.total ?? 0) - result.errors, 0),
+                                    skippedCount: 0,
+                                    failCount: result.errors
+                                });
+                            });
+                    },
+
+                    /**
+                     * Push publishes the given identifiers to the chosen environments.
+                     *
+                     * Identifiers, not inodes: push publish sends the *asset*, so every language
+                     * version of a contentlet is one entry — the same collapse Add to Bundle makes.
+                     *
+                     * Shares the legacy servlet's response shape with Add to Bundle, and the same
+                     * caveat: it answers 200 for its own failures, so a body without a numeric
+                     * `errors` is routed to the error handler rather than reported as a success.
+                     */
+                    executePushPublish: (
+                        actionName: string,
+                        identifiers: string[],
+                        settings: DotWorkflowPushPublishValue
+                    ): void => {
+                        if (!identifiers.length || store.actionExecution()) {
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecution: { actionName, total: identifiers.length },
+                            actionExecutionResult: undefined
+                        });
+
+                        pushPublishService
+                            // Comma-joined: `RemotePublishAjaxAction` splits `assetIdentifier` on
+                            // "," and has always accepted several ids that way.
+                            .pushPublishAssets(identifiers.join(','), settings)
+                            .pipe(
+                                take(1),
+                                catchError((error) => {
+                                    patchState(store, { actionExecution: undefined });
+                                    httpErrorManagerService.handle(error);
+
+                                    return EMPTY;
+                                })
+                            )
+                            .subscribe((result) => {
+                                if (typeof result?.errors !== 'number') {
+                                    patchState(store, { actionExecution: undefined });
+                                    httpErrorManagerService.handle(
+                                        new HttpErrorResponse({
+                                            status: 500,
+                                            statusText:
+                                                typeof result?.errors === 'string'
+                                                    ? result.errors
+                                                    : 'The push publish returned no result'
+                                        })
+                                    );
+
+                                    return;
+                                }
+
+                                onSettled({
+                                    actionName,
                                     successCount: Math.max((result.total ?? 0) - result.errors, 0),
                                     skippedCount: 0,
                                     failCount: result.errors

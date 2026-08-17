@@ -391,13 +391,61 @@ describe('action-center utils', () => {
             }
         });
 
-        it('should flag Push Publish and Refresh as coming soon', () => {
+        it('should flag Refresh as coming soon', () => {
             const byId = new Map(
                 getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
             );
 
-            expect(byId.get(PUSH_PUBLISH_ACTION_ID)?.comingSoon).toBe(true);
             expect(byId.get(REFRESH_ACTION_ID)?.comingSoon).toBe(true);
+        });
+
+        it('should block Push Publish on the environments, not on coming-soon', () => {
+            // Nothing is missing from dotCMS here, something is missing from the configuration, and
+            // the fix belongs to an administrator. The two states read differently on the row.
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
+            );
+
+            expect(byId.get(PUSH_PUBLISH_ACTION_ID)?.comingSoon).toBe(false);
+            expect(byId.get(PUSH_PUBLISH_ACTION_ID)?.missingEnvironments).toBe(true);
+        });
+
+        it('should release Push Publish once an environment is reachable', () => {
+            const push = getQuickActions([contentlet({ inode: 'a' }), contentlet({ inode: 'b' })], {
+                isAdmin: false,
+                hasPushPublishEnvironments: true
+            }).find((action) => action.id === PUSH_PUBLISH_ACTION_ID);
+
+            expect(push?.missingEnvironments).toBe(false);
+            // Every contentlet counts: no row state disqualifies a push.
+            expect(push?.count).toBe(2);
+        });
+
+        it('should keep Push Publish blocked while the environments are still unknown', () => {
+            // An unresolved lookup reads as "none" — enabling and then retracting is worse than a
+            // row that stays shut until the answer arrives.
+            const push = getQuickActions([contentlet({ inode: 'a' })], { isAdmin: false }).find(
+                (action) => action.id === PUSH_PUBLISH_ACTION_ID
+            );
+
+            expect(push?.missingEnvironments).toBe(true);
+        });
+
+        it('should never block the other rows on the environments', () => {
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a', locked: true })]).map((action) => [
+                    action.id,
+                    action
+                ])
+            );
+
+            for (const id of [
+                WORKFLOW_ACTION_ID.UNLOCK,
+                ADD_TO_BUNDLE_ACTION_ID,
+                REFRESH_ACTION_ID
+            ] as string[]) {
+                expect(byId.get(id)?.missingEnvironments).toBe(false);
+            }
         });
 
         it('should not flag the wired actions as coming soon', () => {

@@ -17,7 +17,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotBulkActionView, DotContentDriveItem, DotEnvironment } from '@dotcms/dotcms-models';
 import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
@@ -155,6 +155,10 @@ describe('DotContentDriveActionCenterComponent', () => {
     let spectator: Spectator<DotContentDriveActionCenterComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
+    /** What the push publish environments lookup answers; see the `mockProvider` below. */
+    let pushPublishEnvironments: DotEnvironment[] = [];
+    /** When true the lookup errors instead, for the fails-closed case. */
+    let pushPublishEnvironmentsFail = false;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
@@ -187,7 +191,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 clearDialogDrillDown: jest.fn(),
                 executeQuickAction: jest.fn(),
                 executeWorkflowAction: jest.fn(),
-                executeAddToBundle: jest.fn()
+                executeAddToBundle: jest.fn(),
+                executePushPublish: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
@@ -202,7 +207,15 @@ describe('DotContentDriveActionCenterComponent', () => {
             }),
             // Backs the env selector embedded in the push publish step.
             mockProvider(PushPublishService, {
-                getEnvironments: jest.fn(() => of([])),
+                // Reads `pushPublishEnvironments` on every call rather than being re-programmed per
+                // test: `mockProvider` builds this `jest.fn` once for the whole file, and the
+                // `afterEach` `clearAllMocks` drops any `mockReturnValue` set on it, so only the
+                // first test in a block would see one. A closure over a mutable answer is immune.
+                getEnvironments: jest.fn(() =>
+                    pushPublishEnvironmentsFail
+                        ? throwError(() => new Error('environments lookup failed'))
+                        : of(pushPublishEnvironments)
+                ),
                 lastEnvironmentPushed: null
             }),
             mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
@@ -246,6 +259,8 @@ describe('DotContentDriveActionCenterComponent', () => {
         ]);
         mockActionExecution.set(undefined);
         mockCurrentUserIsAdmin.set(false);
+        pushPublishEnvironments = [];
+        pushPublishEnvironmentsFail = false;
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
 
@@ -520,32 +535,47 @@ describe('DotContentDriveActionCenterComponent', () => {
             }
         });
 
-        it('should render Push Publish and Refresh as disabled placeholders', () => {
+        it('should render Refresh as a disabled placeholder', () => {
             spectator.detectChanges();
 
-            for (const id of ['PUSH_PUBLISH', 'REFRESH']) {
-                const row = spectator.query(
-                    `[data-testid="quick-action-${id}"]`
-                ) as HTMLButtonElement;
+            const row = spectator.query(
+                '[data-testid="quick-action-REFRESH"]'
+            ) as HTMLButtonElement;
 
-                expect(row).toBeTruthy();
-                expect(row.disabled).toBe(true);
-                expect(
-                    spectator.query(`[data-testid="quick-action-coming-soon-${id}"]`)
-                ).toBeTruthy();
-            }
+            expect(row).toBeTruthy();
+            expect(row.disabled).toBe(true);
+            expect(
+                spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')
+            ).toBeTruthy();
         });
 
-        it('should not open a preview for a placeholder row', () => {
+        it('should disable Push Publish without the coming-soon badge when no environment exists', () => {
+            // The default mock answers with no environments. Not a placeholder: the feature is
+            // built, the instance is not configured, and those read differently.
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-PUSH_PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(row.disabled).toBe(true);
+            expect(
+                spectator.query('[data-testid="quick-action-coming-soon-PUSH_PUBLISH"]')
+            ).toBeNull();
+        });
+
+        it('should not open a preview for a blocked row', () => {
             spectator.detectChanges();
 
             // Disabled, so a real click cannot land — called directly to prove the guard holds if
-            // one ever does.
-            spectator.component['onSelectQuickAction'](
-                spectator.component['$quickActions']().find(
-                    (action) => action.id === 'PUSH_PUBLISH'
-                )!
-            );
+            // one ever does. Both blocked states are covered: Refresh is a placeholder, Push
+            // Publish has nowhere to send to.
+            for (const id of ['REFRESH', 'PUSH_PUBLISH']) {
+                spectator.component['onSelectQuickAction'](
+                    spectator.component['$quickActions']().find((action) => action.id === id)!
+                );
+            }
+
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
@@ -1574,6 +1604,156 @@ describe('DotContentDriveActionCenterComponent', () => {
             goToPreview();
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeTruthy();
+        });
+    });
+
+    describe('push publish', () => {
+        const ENVIRONMENTS = [{ id: 'env-1', name: 'Production' }];
+
+        /**
+         * Renders as if an environment were reachable.
+         *
+         * Sets the resolved signal rather than the service answer. The lookup fires once from
+         * `ngOnInit`, and re-programming a `mockProvider` method per test proved unreliable here —
+         * the value only took for the first test in the block. The service-to-signal wiring is
+         * covered on its own by the two tests that exercise the real lookup (no environments, and
+         * the failing lookup); everything below is about what the dialog does *given* an answer.
+         */
+        const withEnvironments = (): void => {
+            spectator.detectChanges();
+            spectator.component['$hasPushPublishEnvironments'].set(true);
+            spectator.detectChanges();
+        };
+
+        /** Stands in for the push publish step emitting a complete payload. */
+        const fillPushPublishForm = (): void => {
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+        };
+
+        it('should enable the row once an environment is reachable', () => {
+            // Through the real lookup, so the service-to-signal wiring is covered.
+            pushPublishEnvironments = ENVIRONMENTS;
+
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-PUSH_PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(row.disabled).toBe(false);
+        });
+
+        it('should open the push publish form rather than the preview', () => {
+            // The same step the workflow-action path renders, so a push publish is collected the
+            // same way in both dialogs.
+            withEnvironments();
+
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+
+            // The configure bar is gated on the view; the step body itself is always rendered and
+            // merely hidden, so asserting on it alone would pass from the action list too.
+            expect(spectator.query('[data-testid="action-configure-bar"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-configure-push-publish"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+        });
+
+        it('should keep Continue disabled until the form is complete', () => {
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should reach the preview once the form is complete', () => {
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should push identifiers, deduped, with the collected settings', () => {
+            // Identifiers rather than inodes: a push sends the asset, so language versions of one
+            // contentlet are a single entry — the same collapse Add to Bundle makes.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-2', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-3', identifier: 'id-2' })
+            ]);
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executePushPublish).toHaveBeenCalledWith(
+                expect.any(String),
+                ['id-1', 'id-2'],
+                PUSH_PUBLISH_SETTINGS
+            );
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should honour rows unchecked in the preview', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'keep-me', identifier: 'id-keep' }),
+                contentlet({ inode: 'drop-me', identifier: 'id-drop' })
+            ]);
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            uncheckFirstRow();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executePushPublish).toHaveBeenCalledWith(
+                expect.any(String),
+                ['id-drop'],
+                PUSH_PUBLISH_SETTINGS
+            );
+        });
+
+        it('should not push without settings', () => {
+            // Refused here as well as by the disabled Continue: the servlet answers 200 having sent
+            // nothing anywhere, which would read as a success.
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+
+            spectator.component['onExecutePreview']();
+
+            expect(store.executePushPublish).not.toHaveBeenCalled();
+        });
+
+        it('should disable the row when the environments lookup fails', () => {
+            // Fails closed: offering a push with nowhere to go fails at the servlet with a message
+            // the user cannot act on.
+            pushPublishEnvironmentsFail = true;
+
+            spectator.detectChanges();
+
+            expect(
+                (spectator.query('[data-testid="quick-action-PUSH_PUBLISH"]') as HTMLButtonElement)
+                    .disabled
+            ).toBe(true);
         });
     });
 

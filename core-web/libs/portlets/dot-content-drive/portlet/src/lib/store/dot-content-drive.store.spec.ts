@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
+    PushPublishService,
     DotContentDriveService,
     DotCurrentUserService,
     DotFolderService,
@@ -73,6 +74,7 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -796,6 +798,7 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -854,6 +857,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -952,6 +956,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1239,6 +1244,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             }),
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
             mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
+            mockProvider(PushPublishService, { pushPublishAssets: jest.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {

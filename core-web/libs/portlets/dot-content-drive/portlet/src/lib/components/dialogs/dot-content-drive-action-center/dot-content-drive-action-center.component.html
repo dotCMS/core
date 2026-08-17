@@ -66,6 +66,7 @@
                                     [disabled]="
                                         $executing() ||
                                         quickAction.comingSoon ||
+                                        quickAction.missingEnvironments ||
                                         quickAction.count === 0
                                     "
                                     [pTooltip]="quickActionHint(quickAction) | dm"

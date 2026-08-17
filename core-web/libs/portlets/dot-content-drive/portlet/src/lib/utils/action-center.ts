@@ -26,9 +26,12 @@ export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
 /**
  * Push Publish over the selection — the old search toolbar's own bulk action, not a `SystemAction`.
  *
- * Placeholder: rendered but not wired. Push publishing needs an environment, a filter and a schedule
- * collected before it can fire, which is a configuration step this dialog does not have for a *quick*
- * action yet (the workflow-action path already has one, via `DotWorkflowPushPublishComponent`).
+ * Collects environments, a schedule and a filter on the configuration step (the same
+ * `DotWorkflowPushPublishComponent` the workflow-action path uses), then posts the whole selection to
+ * `RemotePublishAjaxAction` as comma-joined identifiers.
+ *
+ * Unavailable when the instance has no push publish environment the current user's role can send to —
+ * see {@link DotActionCenterContext.hasPushPublishEnvironments}.
  */
 export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
 
@@ -75,6 +78,14 @@ export interface DotActionCenterQuickAction {
      * reached them yet. Disabled with a tooltip is the honest state.
      */
     comingSoon: boolean;
+    /**
+     * Wired, but unusable here because the instance has no push publish environment configured for
+     * this user's role.
+     *
+     * Distinct from {@link comingSoon}: nothing is missing from dotCMS, something is missing from the
+     * *configuration*, and the fix is an administrator's rather than ours. The row says which.
+     */
+    missingEnvironments: boolean;
 }
 
 /** Caller state predicates need beyond row data. */
@@ -84,6 +95,13 @@ export interface DotActionCenterContext {
      * (see {@link isLockedByAnotherUser}).
      */
     isAdmin: boolean;
+    /**
+     * At least one push publish environment is reachable by this user's role.
+     *
+     * `undefined` means "not looked up yet" and reads the same as "none": Push Publish stays disabled
+     * until the answer arrives, rather than enabling for a moment and then retracting.
+     */
+    hasPushPublishEnvironments?: boolean;
 }
 
 /**
@@ -106,6 +124,8 @@ interface DotActionCenterQuickActionDef {
     warningHint?: string;
     /** Rendered but disabled — see {@link DotActionCenterQuickAction.comingSoon}. */
     comingSoon?: boolean;
+    /** Needs at least one push publish environment before it can run. */
+    requiresEnvironments?: boolean;
 }
 
 /**
@@ -165,20 +185,18 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: ADD_TO_BUNDLE_ACTION_ID,
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
-        // Every contentlet can go in a bundle: there is no state that disqualifies one, unlike
-        // Publish or Unarchive. Coverage is the whole selection, minus the identifier collapse the
-        // configuration step explains.
+        // Every contentlet can go in a bundle: no row state disqualifies one. Coverage is the whole
+        // selection, minus the identifier collapse the configuration step explains.
         eligibleWhen: () => true
     },
     {
         id: PUSH_PUBLISH_ACTION_ID,
         nameKey: 'Remote-Publish',
         icon: 'cloud_upload',
-        // Counted over the whole selection rather than left at zero: the row is disabled by
-        // `comingSoon`, and a `0` would read as "does not apply to these items", which is a
-        // different and untrue statement.
+        // No contentlet state disqualifies a push; the environment does, and that is not a per-row
+        // question. Counted over the whole selection so the row reports what it would send.
         eligibleWhen: () => true,
-        comingSoon: true
+        requiresEnvironments: true
     },
     {
         id: REFRESH_ACTION_ID,
@@ -244,7 +262,9 @@ export const getQuickActions = (
             count: eligibleInodes.length,
             warningCount,
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
-            comingSoon: !!quickAction.comingSoon
+            comingSoon: !!quickAction.comingSoon,
+            missingEnvironments:
+                !!quickAction.requiresEnvironments && !context.hasPushPublishEnvironments
         };
     });
 };

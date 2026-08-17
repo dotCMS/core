@@ -20,7 +20,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize, map, take } from 'rxjs/operators';
 
-import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotWorkflowsActionsService,
+    PushPublishService
+} from '@dotcms/data-access';
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
@@ -46,6 +50,7 @@ import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
+    PUSH_PUBLISH_ACTION_ID,
     DotActionInputKind,
     eligibleContentlets,
     excludeFolders,
@@ -165,6 +170,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
+    readonly #pushPublishService = inject(PushPublishService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -237,6 +243,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $loadingSchemes = signal<boolean>(true);
     /** True when the lookup failed — the workflow section renders an inline error. */
     protected readonly $schemesError = signal<boolean>(false);
+    /**
+     * Whether any push publish environment is reachable by this user's role.
+     *
+     * `undefined` until the lookup lands, which keeps the Push Publish row disabled in the meantime
+     * rather than enabling it and then retracting. A failed lookup settles on `false` for the same
+     * reason: offering a push with nowhere to send it is worse than one disabled row.
+     */
+    protected readonly $hasPushPublishEnvironments = signal<boolean | undefined>(undefined);
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -339,7 +353,16 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         const quickAction = this.$pendingQuickAction();
 
         if (quickAction) {
-            return quickAction.id === ADD_TO_BUNDLE_ACTION_ID ? ['bundle'] : [];
+            switch (quickAction.id) {
+                case ADD_TO_BUNDLE_ACTION_ID:
+                    return ['bundle'];
+                case PUSH_PUBLISH_ACTION_ID:
+                    // The same section the workflow-action path renders, so the two dialogs collect a
+                    // push publish the same way.
+                    return ['pushPublish'];
+                default:
+                    return [];
+            }
         }
 
         return requiredInputKinds(this.$selectedAction());
@@ -458,7 +481,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // fetched when this dialog opens: reopening the Action Center is cheap and common, and a
         // per-open request would leave the first render of every open warning as a non-admin until
         // it answered. Read as a signal so a late resolution still recomputes the rows.
-        getQuickActions(this.$contentlets(), { isAdmin: this.#store.currentUserIsAdmin() })
+        getQuickActions(this.$contentlets(), {
+            isAdmin: this.#store.currentUserIsAdmin(),
+            hasPushPublishEnvironments: this.$hasPushPublishEnvironments()
+        })
     );
 
     /** Number of contentlets still checked in the preview. */
@@ -543,6 +569,29 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadWorkflowActions();
+        this.loadPushPublishEnvironments();
+    }
+
+    /**
+     * Resolves whether Push Publish has anywhere to send to.
+     *
+     * Runs beside the workflow lookup rather than after it: the two answer different questions and
+     * neither needs the other, so chaining them would only delay the quick actions behind a request
+     * they do not depend on.
+     *
+     * A failure settles on "none", which disables the row. The alternative — treating an unreachable
+     * lookup as "probably fine" — offers a push that has nowhere to go and fails at the servlet with
+     * a message the user cannot act on.
+     */
+    private loadPushPublishEnvironments(): void {
+        this.#pushPublishService
+            .getEnvironments()
+            .pipe(take(1))
+            .subscribe({
+                next: (environments) =>
+                    this.$hasPushPublishEnvironments.set(environments.length > 0),
+                error: () => this.$hasPushPublishEnvironments.set(false)
+            });
     }
 
     /**
@@ -569,6 +618,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return 'content-drive.action-center.coming-soon';
         }
 
+        if (quickAction.missingEnvironments) {
+            // Only once the lookup has answered. While it is in flight the row is disabled with no
+            // tooltip, rather than blaming a configuration we have not checked yet.
+            return this.$hasPushPublishEnvironments() === undefined
+                ? ''
+                : 'content-drive.action-center.no-environments';
+        }
+
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -582,9 +639,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        // Guarded here as well as by the disabled row: a placeholder has no preview to open and no
-        // execution path behind it, so a stray call must not reach the preview screen.
-        if (!quickAction.count || quickAction.comingSoon) {
+        // Guarded here as well as by the disabled row: a placeholder has no preview to open, and a
+        // push with no environment has nowhere to go, so a stray call must not reach the preview.
+        if (!quickAction.count || quickAction.comingSoon || quickAction.missingEnvironments) {
             return;
         }
 
@@ -639,10 +696,16 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
-        // Add to Bundle leaves the workflow path entirely — different endpoint, different id kind,
-        // and a target that has to be present.
+        // Add to Bundle and Push Publish leave the workflow path entirely — different endpoints,
+        // different id kind, and settings that have to be present.
         if (quickAction.id === ADD_TO_BUNDLE_ACTION_ID) {
             this.fireAddToBundle(quickAction);
+
+            return;
+        }
+
+        if (quickAction.id === PUSH_PUBLISH_ACTION_ID) {
+            this.firePushPublish(quickAction);
 
             return;
         }
@@ -677,6 +740,29 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             this.#dotMessageService.get(quickAction.name),
             bundle,
             identifiers
+        );
+        this.handOffToToolbar();
+    }
+
+    /**
+     * Pushes the checked contentlets to the chosen environments.
+     *
+     * Sends **identifiers**, deduped, for the same reason Add to Bundle does: push publish sends the
+     * asset, so every language version of a contentlet is one entry. Refuses without settings rather
+     * than posting — the servlet would answer 200 having sent nothing anywhere.
+     */
+    private firePushPublish(quickAction: DotActionCenterQuickAction): void {
+        const settings = this.$pushPublish();
+        const identifiers = toDistinctIdentifiers(this.$includedItems());
+
+        if (!settings || !identifiers.length) {
+            return;
+        }
+
+        this.#store.executePushPublish(
+            this.#dotMessageService.get(quickAction.name),
+            identifiers,
+            settings
         );
         this.handOffToToolbar();
     }

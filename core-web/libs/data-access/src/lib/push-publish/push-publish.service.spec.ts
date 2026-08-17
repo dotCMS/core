@@ -193,4 +193,79 @@ describe('PushPublishService', () => {
         );
         req.flush(mockResponse);
     });
+
+    describe('pushPublishAssets', () => {
+        const SETTINGS = {
+            whereToSend: 'env1,env2',
+            iWantTo: 'publish' as const,
+            publishDate: '2026-09-01',
+            publishTime: '10-00',
+            expireDate: '2026-10-01',
+            expireTime: '23-59',
+            filterKey: 'hol',
+            timezoneId: 'Costa Rica'
+        };
+
+        it('should post the split date fields through untouched', () => {
+            // The whole point of this method over `pushPublishContent`: the payload arrives already
+            // in the servlet's shape, so nothing is re-parsed and the chosen timezone survives.
+            spectator.service.pushPublishAssets('id-1', SETTINGS).subscribe((items) => {
+                expect(items).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne(
+                '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
+                HttpMethod.POST
+            );
+
+            expect(req.request.body).toBe(
+                'assetIdentifier=id-1&remotePublishDate=2026-09-01&remotePublishTime=10-00' +
+                    '&remotePublishExpireDate=2026-10-01&remotePublishExpireTime=23-59' +
+                    '&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1,env2' +
+                    '&bundleName=&bundleSelect=&filterKey=hol'
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should send several identifiers comma-joined', () => {
+            // `RemotePublishAjaxAction` splits `assetIdentifier` on "," — bulk needs no new endpoint.
+            spectator.service.pushPublishAssets('id-1,id-2', SETTINGS).subscribe();
+
+            const req = spectator.expectOne(
+                '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
+                HttpMethod.POST
+            );
+
+            expect(req.request.body).toContain('assetIdentifier=id-1%2Cid-2');
+            req.flush(mockResponse);
+        });
+
+        it('should omit the filter key when there is none', () => {
+            // Expiring takes no filter, so an empty value is a real case. The servlet reads the
+            // parameter straight into `getFilterDescriptorByKey`, so it is left out rather than
+            // sent blank.
+            spectator.service.pushPublishAssets('id-1', { ...SETTINGS, filterKey: '' }).subscribe();
+
+            const req = spectator.expectOne(
+                '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
+                HttpMethod.POST
+            );
+
+            expect(req.request.body).not.toContain('filterKey');
+            req.flush(mockResponse);
+        });
+
+        it('should record the environments it last pushed to', () => {
+            spectator.service.pushPublishAssets('id-1', SETTINGS).subscribe();
+
+            spectator
+                .expectOne(
+                    '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
+                    HttpMethod.POST
+                )
+                .flush(mockResponse);
+
+            expect(spectator.service.lastEnvironmentPushed).toEqual(['env1', 'env2']);
+        });
+    });
 });

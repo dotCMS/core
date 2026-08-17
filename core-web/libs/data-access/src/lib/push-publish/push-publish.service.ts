@@ -10,7 +10,8 @@ import {
     DotAjaxActionResponseView,
     DotCurrentUser,
     DotEnvironment,
-    DotPushPublishData
+    DotPushPublishData,
+    DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
@@ -80,6 +81,62 @@ export class PushPublishService {
         const url = isBundle ? this.publishBundleURL : this.publishUrl;
 
         return this.http.post<DotAjaxActionResponseView>(url, body, { headers });
+    }
+
+    /**
+     * Push publishes one or more assets, from a payload already in the servlet's own shape.
+     *
+     * Backing endpoint: the same `RemotePublishAjaxAction/cmd/publish` servlet
+     * {@link pushPublishContent} uses. `assetIdentifier` accepts several **identifiers**
+     * comma-joined — the action splits on "," (`RemotePublishAjaxAction`, "Support for multiple ids
+     * in the assetIdentifier parameter"), so bulk needs no new endpoint.
+     *
+     * Separate from {@link pushPublishContent} because of the date handling, not the count.
+     * `DotPushPublishData` carries whole dates and this service splits them into the servlet's
+     * `remotePublishDate` / `remotePublishTime` pair. {@link DotWorkflowPushPublishValue} arrives
+     * already split — that is what the workflow push publish form emits — so routing it through the
+     * other method would mean recombining two strings into a `Date` for this service to take apart
+     * again, losing the timezone the user picked on the way. Here the values pass straight through.
+     *
+     * @param assetIdentifier One identifier, or several comma-joined
+     * @param value The payload emitted by `DotWorkflowPushPublishComponent`
+     * @returns Observable<DotAjaxActionResponseView>
+     * @memberof PushPublishService
+     */
+    pushPublishAssets(
+        assetIdentifier: string,
+        value: DotWorkflowPushPublishValue
+    ): Observable<DotAjaxActionResponseView> {
+        this._lastEnvironmentPushed = value.whereToSend.split(',');
+
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/x-www-form-urlencoded'
+        });
+
+        const params = [
+            `assetIdentifier=${encodeURIComponent(assetIdentifier)}`,
+            `remotePublishDate=${value.publishDate}`,
+            `remotePublishTime=${value.publishTime}`,
+            `remotePublishExpireDate=${value.expireDate}`,
+            `remotePublishExpireTime=${value.expireTime}`,
+            `timezoneId=${value.timezoneId}`,
+            `iWantTo=${value.iWantTo}`,
+            `whoToSend=${value.whereToSend}`,
+            // Sent empty, as the legacy form does: a bundle name or id here would divert the push
+            // into a bundle instead of sending it.
+            'bundleName=',
+            'bundleSelect='
+        ];
+
+        // Only when set. The servlet reads it straight into `getFilterDescriptorByKey`, and expiring
+        // takes no filter, so an empty value is a real case rather than a missing one.
+        if (value.filterKey) {
+            params.push(`filterKey=${value.filterKey}`);
+        }
+
+        return this.http.post<DotAjaxActionResponseView>(this.publishUrl, params.join('&'), {
+            headers
+        });
     }
 
     private getPublishEnvironmentData(
