@@ -1,0 +1,31 @@
+<p-message
+    severity="warn"
+    [pt]="{
+        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0 block' },
+        text: { class: 'w-full' }
+    }"
+    data-testid="velocity-playground-warnings-banner">
+    <ng-template #icon>
+        <span class="material-symbols-rounded" aria-hidden="true">warning</span>
+    </ng-template>
+    <div class="flex w-full flex-col gap-1">
+        <span class="font-medium" data-testid="velocity-playground-warnings-summary">
+            {{ 'velocityPlayground.warnings.summary' | dm: ['' + warnings().length] }}
+        </span>
+        <ul class="m-0 flex flex-col gap-0.5 pl-0 text-xs">
+            @for (warning of warnings(); track $index) {
+                <li
+                    class="flex flex-wrap items-baseline gap-x-2"
+                    data-testid="velocity-playground-warning-item">
+                    <!-- Read-only status label: severity comes from the theme preset so
+                         it tracks light/dark, rather than a literal yellow pairing. -->
+                    <p-tag severity="warn" [value]="warning.type" styleClass="font-mono" />
+                    <span class="wrap-break-word">{{ warning.message }}</span>
+                    @if (location(warning); as text) {
+                        <span class="text-muted-color">{{ text }}</span>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+</p-message>
