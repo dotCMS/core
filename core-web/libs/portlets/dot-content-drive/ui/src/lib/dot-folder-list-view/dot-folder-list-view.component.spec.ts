@@ -2250,8 +2250,14 @@ describe('DotFolderListViewComponent', () => {
 
         const notSortableHeaders = () =>
             spectator.queryAll(byTestId('header-column-not-sortable')) as HTMLElement[];
+        /** Finds a header by its label across both branches: sortable headers also carry a sort icon. */
         const headerByLabel = (label: string) =>
-            notSortableHeaders().find((th) => th.textContent?.trim() === label);
+            (
+                [
+                    ...notSortableHeaders(),
+                    ...(spectator.queryAll(byTestId('header-column-sortable')) as HTMLElement[])
+                ] as HTMLElement[]
+            ).find((th) => th.textContent?.trim().startsWith(label));
 
         beforeEach(() => {
             spectator.setInput('items', rows);
@@ -2419,17 +2425,34 @@ describe('DotFolderListViewComponent', () => {
             expect(headerByLabel('D')?.style.width).toBe('12rem');
         });
 
-        it('should keep a long header readable via its title, since the column clips it', () => {
-            // Column widths are capped, so a long enough header cannot fit however wide the column
-            // gets. It is clipped rather than allowed to overflow across the next header, which makes
-            // the full text reachable only through the title.
+        it('should size a column to fit its whole header, however long', () => {
+            // A header is never cut: it is the only place the column says what it holds. The width has
+            // to cover the label, its padding and the sort indicator.
             const header = 'Bool Radio With A Deliberately Long Header';
             spectator.setInput('extraColumns', [
-                { field: 'myBool', header, order: 0, type: 'boolean' }
+                { field: 'myBool', header, order: 0, type: 'boolean', sortable: true }
             ]);
             spectator.detectChanges();
 
+            const width = headerByLabel(header)?.style.width;
+
+            expect(parseInt(width ?? '0', 10)).toBeGreaterThanOrEqual(header.length);
             expect(headerByLabel(header)?.getAttribute('title')).toBe(header);
+        });
+
+        it('should pin the header width with min-width so the layout cannot squeeze it', () => {
+            // `table-layout: fixed` treats `width` as a share to distribute, and the fixed columns'
+            // percentages resolve against the table's enlarged min-width — so without this a short
+            // label like "Bool OK" got squeezed and cut.
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool OK', order: 0, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            const header = headerByLabel('Bool OK');
+
+            expect(header?.style.minWidth).toBe(header?.style.width);
+            expect(header?.style.minWidth).toBeTruthy();
         });
 
         it('should keep a fixed-width column from clipping a long header', () => {
@@ -2454,8 +2477,8 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should give a long header more room than a long value gets', () => {
-            // A field name is fixed metadata and the only place the column says what it holds, so it
-            // earns width a runaway value does not: the value clamp would cut this at 32ch.
+            // A value is still clamped at 32ch — the row beside it shows the same field and the cell
+            // truncates — but a header is not, so it can exceed that.
             spectator.setInput('extraColumns', [
                 {
                     field: 'myBool',

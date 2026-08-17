@@ -325,14 +325,10 @@ export class DotFolderListViewComponent implements OnInit {
     private readonly EXTRA_COL_MIN_CH = 8;
     private readonly EXTRA_COL_MAX_CH = 32;
     /**
-     * Higher clamp used when the HEADER, not the content, is what needs the room.
-     *
-     * The lower one exists to stop a single long *value* from blowing the column out, and truncating a
-     * value is cheap because the row next to it shows the same field. A header is different: it is the
-     * only place the column says what it holds, and a field name is fixed metadata rather than
-     * unbounded user input, so it is worth the extra width. Anything past this is still clipped.
+     * Extra `ch` reserved for the sort indicator, which sits inside the header cell next to the label.
+     * Without it the icon is what pushes a just-fitting label over the edge.
      */
-    private readonly EXTRA_COL_HEADER_MAX_CH = 44;
+    private readonly SORT_ICON_CH = 3;
     private readonly EXTRA_COL_PAD_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
     protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
@@ -577,32 +573,25 @@ export class DotFolderListViewComponent implements OnInit {
         // header, which is the one part that can outgrow the fixed width.
         const contentLength = fixed ? 0 : averageLength;
 
-        const headerLength = column.header?.length ?? 0;
-        // A header that outgrows its content gets the higher clamp: see EXTRA_COL_HEADER_MAX_CH for
-        // why a long field name is worth more room than a long value.
-        const maxChars =
-            headerLength > contentLength ? this.EXTRA_COL_HEADER_MAX_CH : this.EXTRA_COL_MAX_CH;
+        // The header is never clamped: a column has to be able to show the whole field name, which is
+        // the only place it says what it holds. A long VALUE is still clamped, because the row beside
+        // it shows the same field and the cell truncates.
+        const headerChars =
+            (column.header?.length ?? 0) +
+            this.EXTRA_COL_PAD_CH +
+            (column.sortable ? this.SORT_ICON_CH : 0);
+        const valueChars = Math.min(contentLength + this.EXTRA_COL_PAD_CH, this.EXTRA_COL_MAX_CH);
 
-        const chars = Math.min(
-            Math.max(
-                Math.max(headerLength, contentLength) + this.EXTRA_COL_PAD_CH,
-                this.EXTRA_COL_MIN_CH
-            ),
-            maxChars
-        );
+        const chars = Math.max(headerChars, valueChars, this.EXTRA_COL_MIN_CH);
 
         if (!fixed) {
             return `${chars}ch`;
         }
 
-        // The per-type width is a floor, not an override. As an override it clipped its own header:
-        // a Show-In-List field is effectively always sortable, so the header renders
-        // `whitespace-nowrap` with a sort icon under `table-layout: fixed` and no overflow clipping,
-        // so a label longer than the fixed width spilled into the neighbouring header.
-        //
-        // Resolved to whichever of the two is wider rather than emitted as a CSS `max()`, because
-        // these widths are also summed into the table's `min-width: calc(100% + …)` — keeping each one
-        // a single length keeps that expression readable and parseable.
+        // The per-type width is a floor, not an override: a boolean column pinned at 7rem could not
+        // show a header longer than that. Resolved to whichever is wider rather than a CSS `max()`,
+        // because these widths are also summed into the table's `min-width: calc(100% + …)` and a
+        // single length keeps that expression parseable.
         return chars > parseFloat(fixed) * this.REM_TO_CH ? `${chars}ch` : fixed;
     }
 
