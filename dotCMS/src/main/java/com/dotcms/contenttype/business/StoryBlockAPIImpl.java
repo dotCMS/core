@@ -599,6 +599,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     @SuppressWarnings("unchecked")
     public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
+        if (blockEditorValue instanceof Map) {
+            // Already hydrated into a Map -- e.g. by StoryBlockViewStrategy during page rendering.
+            // Map.toString() produces Java map notation, not JSON, so it must never be re-parsed.
+            return new LinkedHashMap<>((Map<String, Object>) blockEditorValue);
+        }
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                        .readValue(Try.of(blockEditorValue::toString)
                                           .getOrElse(StringPool.BLANK), LinkedHashMap.class);

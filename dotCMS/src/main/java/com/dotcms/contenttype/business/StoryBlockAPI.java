@@ -90,9 +90,12 @@ public interface StoryBlockAPI {
     Object addContentlet(final Object storyBlockValue, final Contentlet contentlet);
 
     /**
-     * Takes the actual value of the Story Block field in the form of JSON and transforms it into a Linked Map.
+     * Takes the actual value of the Story Block field and transforms it into a Linked Map. The value may arrive
+     * in two shapes depending on the read path: a raw JSON String, or a Map when the field has already been
+     * hydrated by the contentlet transformers (e.g. during page rendering). This method is the single canonical
+     * conversion for both shapes.
      *
-     * @param blockEditorValue The value of the Story Block field as JSON.
+     * @param blockEditorValue The value of the Story Block field, either a JSON String or an already-hydrated Map.
      *
      * @return The Story Block field as a {@link LinkedHashMap}.
      *
