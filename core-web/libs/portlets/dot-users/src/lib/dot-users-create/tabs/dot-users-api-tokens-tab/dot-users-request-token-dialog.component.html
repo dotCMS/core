@@ -42,6 +42,7 @@
             data-testid="users-request-token-cancel-btn" />
         <p-button
             [label]="'users.dialog.tokens.request.submit' | dm"
+            [disabled]="!canSubmit()"
             (onClick)="submit()"
             data-testid="users-request-token-submit-btn" />
     </div>
