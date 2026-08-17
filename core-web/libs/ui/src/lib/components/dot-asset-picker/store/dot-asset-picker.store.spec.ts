@@ -10,12 +10,7 @@ import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
-import {
-    DotContentDriveService,
-    DotFolderService,
-    DotHttpErrorManagerService,
-    DotSiteService
-} from '@dotcms/data-access';
+import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
@@ -24,7 +19,7 @@ import {
     TreeNodeItem
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
+import { ASSET_PICKER_ERROR_KEYS, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
 import { DotAssetPickerStore } from './dot-asset-picker.store';
 import { DotAssetPickerConfig } from './models';
 
@@ -95,7 +90,6 @@ describe('DotAssetPickerStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotAssetPickerStore>>;
     let store: InstanceType<typeof DotAssetPickerStore>;
     let contentDriveService: SpyObject<DotContentDriveService>;
-    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let folderService: SpyObject<DotFolderService>;
     let siteService: SpyObject<DotSiteService>;
 
@@ -111,9 +105,6 @@ describe('DotAssetPickerStore', () => {
             }),
             mockProvider(DotSiteService, {
                 getSites: jest.fn().mockReturnValue(of(SITES_RESPONSE))
-            }),
-            mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn().mockReturnValue(of({ redirected: false, status: 500 }))
             })
         ]
     });
@@ -122,7 +113,6 @@ describe('DotAssetPickerStore', () => {
         spectator = createService();
         store = spectator.service;
         contentDriveService = spectator.inject(DotContentDriveService, true);
-        httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
         folderService = spectator.inject(DotFolderService, true);
         siteService = spectator.inject(DotSiteService, true);
 
@@ -342,8 +332,12 @@ describe('DotAssetPickerStore', () => {
             spectator.flushEffects();
         });
 
-        it('should report through the shared HTTP error manager', () => {
-            expect(httpErrorManager.handle).toHaveBeenCalled();
+        it('should record the failure for the host to report', () => {
+            // Not `DotHttpErrorManagerService`: it transitively needs `Router`, which the legacy
+            // Dojo host has none of. The store says what failed; the picker component toasts it.
+            expect(store.requestError()).toEqual({
+                messageKey: ASSET_PICKER_ERROR_KEYS.assets
+            });
         });
 
         it('should not leave itself loading', () => {
@@ -522,8 +516,10 @@ describe('DotAssetPickerStore', () => {
                 store.initPicker(FILE_FIELD_CONFIG);
             });
 
-            it('should report through the shared HTTP error manager', () => {
-                expect(httpErrorManager.handle).toHaveBeenCalled();
+            it('should record the failure for the host to report', () => {
+                expect(store.requestError()).toEqual({
+                    messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                });
             });
 
             it('should stay in error instead of looking like an empty tree', () => {
@@ -613,7 +609,9 @@ describe('DotAssetPickerStore', () => {
                 store.expandNode(store.folders()[1]);
 
                 expect(renderedOtherSite()?.loading).toBeFalsy();
-                expect(httpErrorManager.handle).toHaveBeenCalled();
+                expect(store.requestError()).toEqual({
+                    messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                });
             });
 
             it('should not re-fetch a node that already has children', () => {

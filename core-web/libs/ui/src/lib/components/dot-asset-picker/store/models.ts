@@ -131,9 +131,29 @@ export interface DotAssetPickerSite {
     hostname: string;
 }
 
+/**
+ * A request that failed, in the only terms the host needs to report it.
+ *
+ * Deliberately not an `HttpErrorResponse`: the store's job is to say *what* could not be loaded, and
+ * the host's job is to decide how to say it. Kept as an object rather than a bare key so two
+ * identical failures in a row are still two distinct values, and the host re-reports the second.
+ */
+export interface DotAssetPickerRequestError {
+    /** Translation key for the toast summary. */
+    messageKey: string;
+}
+
 export interface DotAssetPickerState {
     /** `null` until the host calls `initPicker`. No search is issued before that. */
     config: DotAssetPickerConfig | null;
+    /**
+     * Last request failure, or `null` before anything has failed.
+     *
+     * The picker reports errors through its own toast rather than `DotHttpErrorManagerService`: that
+     * service transitively needs `Router` and `DotEventsSocket`, which the legacy Dojo binary-field
+     * host does not have, and injecting it made the whole dialog fail to construct there.
+     */
+    requestError: DotAssetPickerRequestError | null;
     /**
      * Site currently being browsed. Starts as `config.site` and changes as the user picks another
      * root in the sidebar — the picker is not pinned to the site that opened it.

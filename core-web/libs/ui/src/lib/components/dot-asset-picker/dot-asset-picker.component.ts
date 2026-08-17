@@ -25,7 +25,6 @@ import { ToastModule } from 'primeng/toast';
 import {
     DotContentletService,
     DotContentTypeService,
-    DotHttpErrorManagerService,
     DotMessageService,
     DotUploadFileService
 } from '@dotcms/data-access';
@@ -85,17 +84,16 @@ import {
     selector: 'dot-asset-picker',
     templateUrl: './dot-asset-picker.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // `DotHttpErrorManagerService` (store features) and `DotContentTypeService` (the toolbar's
-    // content-type filter) are `@Injectable()` with no `providedIn: 'root'`, and only the main app
-    // shell provides them. Without them here the picker throws `NullInjectorError` and renders blank
-    // in any other host — notably the legacy Dojo binary-field builder, which the File/Image field
-    // still runs inside. Providing them here is what makes the picker self-sufficient anywhere.
-    providers: [
-        DotAssetPickerStore,
-        MessageService,
-        DotHttpErrorManagerService,
-        DotContentTypeService
-    ],
+    // `DotContentTypeService` (the toolbar's content-type filter) is `@Injectable()` with no
+    // `providedIn: 'root'` and is only provided by the main app shell, so the picker provides it
+    // itself — otherwise it throws `NullInjectorError` and renders blank in any other host, notably
+    // the legacy Dojo binary-field builder the File/Image field still runs inside.
+    //
+    // `DotHttpErrorManagerService` deliberately does NOT appear here. Providing it would only move
+    // the failure: it transitively needs `DotAlertConfirmService`, `DotRouterService` -> `Router` and
+    // `DotEventsSocket`, and that host has no `Router` at all. The store reports failures as state
+    // instead and this component toasts them — see the `requestError` effect.
+    providers: [DotAssetPickerStore, MessageService, DotContentTypeService],
     imports: [
         ButtonModule,
         DialogModule,
@@ -162,6 +160,21 @@ export class DotAssetPickerComponent implements OnInit {
         // whenever `isFullscreen` flips. Same split as the image editor — the store holds the
         // flag, the shell does the DOM work.
         effect(() => this.#applyFullscreen(this.store.isFullscreen()));
+
+        // The store says *what* failed to load; saying it is this component's job. It reports through
+        // the picker's own toast rather than `DotHttpErrorManagerService`, which transitively needs
+        // `Router` and `DotEventsSocket` — neither exists in the legacy Dojo binary-field host, and
+        // injecting it there stopped the dialog from constructing at all.
+        //
+        // `requestError` is a fresh object per failure, so two identical failures in a row are two
+        // distinct values and both get reported.
+        effect(() => {
+            const requestError = this.store.requestError();
+
+            if (requestError) {
+                this.#reportRequestError(requestError.messageKey);
+            }
+        });
     }
 
     /** `DotFolderListView` pages by offset; the store pages by cursor + page number. */
@@ -247,6 +260,15 @@ export class DotAssetPickerComponent implements OnInit {
                         life: ERROR_MESSAGE_LIFE
                     })
             });
+    }
+
+    /** Toasts a failed request. `messageKey` comes from {@link ASSET_PICKER_ERROR_KEYS}. */
+    #reportRequestError(messageKey: string): void {
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get(messageKey),
+            life: ERROR_MESSAGE_LIFE
+        });
     }
 
     /**

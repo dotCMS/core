@@ -12,6 +12,7 @@ import { resolveSiteId } from '../../dot-folder-tree/site-tree.utils';
 
 const initialState: DotAssetPickerState = {
     config: null,
+    requestError: null,
     browsingSite: undefined,
     path: undefined,
     filters: {},

@@ -6,7 +6,11 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotUploadService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
 import { DotAssetPickerComponent } from './dot-asset-picker.component';
@@ -37,38 +41,38 @@ const CONFIG: DotAssetPickerConfig = { site: SITE_MOCK };
 describe('DotAssetPickerComponent — legacy Dojo host (no Router, no app shell)', () => {
     const createComponent = createComponentFactory({
         component: DotAssetPickerComponent,
-        // Deliberately minimal: this is the whole provider set the custom-element host has.
+        // Mirrors `apps/dotcms-binary-field-builder/src/app/app.module.ts` exactly — no more, no
+        // less. Everything below `provideHttpClientTesting` is what that host declares; the two
+        // dialog tokens come from `DialogService` at runtime. Deliberately NO Router and no
+        // app-shell providers.
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DotUploadService),
+            mockProvider(DotWorkflowActionsFireService),
             { provide: DynamicDialogConfig, useValue: { data: CONFIG } },
             mockProvider(DynamicDialogRef, { close: jest.fn(), onClose: of(undefined) })
         ],
         shallow: true
     });
 
-    xit('should construct without the app-shell providers', () => {
-        // SKIPPED — this fails today, and the failure IS the open PR finding, not a flaky test.
+    it('should construct without the app-shell providers', () => {
+        // What this guards, concretely: nothing the picker reaches may need a `Router`.
         //
-        // Adding `DotHttpErrorManagerService` + `DotContentTypeService` to the picker's `providers`
-        // (what the review proposed as "the smallest fix") is necessary but NOT sufficient.
-        // `DotContentTypeService` is satisfied — it only needs `HttpClient`.
-        // `DotHttpErrorManagerService` is not; it pulls in:
+        // The picker used to inject `DotHttpErrorManagerService` in its store features, which pulls in
         //
         //     DotHttpErrorManagerService
-        //       ├── DotAlertConfirmService   → ConfirmationService        ← fails here now
+        //       ├── DotAlertConfirmService   → ConfirmationService
         //       ├── DotMessageDisplayService → DotRouterService → Router, DotEventsSocket
         //       └── DotRouterService         → Router
         //
-        // and this host has no `Router` at all — the very reason `GlobalStore` was kept out of
-        // `DotFileFieldComponent`. The chain cannot be satisfied by component-level plumbing:
+        // and this host has none of that — the very reason `GlobalStore` was kept out of
+        // `DotFileFieldComponent`. Adding it to the picker's own `providers` could not fix it either:
         // `provideRouter` returns `EnvironmentProviders` and cannot go in a component's `providers`.
         //
-        // The fix that actually works is to drop the `DotHttpErrorManagerService` dependency from
-        // the picker's store features and report errors through the `MessageService` toast the
-        // picker already owns (it does exactly that for upload and confirm failures). Un-skip this
-        // test as part of that change.
+        // The store now records failures as `requestError` state and this component toasts them, so
+        // the dependency is gone. Re-introducing anything router-bound will fail here.
         expect(() => createComponent()).not.toThrow();
     });
 });

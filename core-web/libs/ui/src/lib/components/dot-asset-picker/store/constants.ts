@@ -17,6 +17,19 @@ export const DEFAULT_ASSET_PICKER_PAGE: DotAssetPickerPage = {
 };
 
 /**
+ * Toast summary keys for the two things that can fail to load.
+ *
+ * The store records one of these rather than calling `DotHttpErrorManagerService`: that service
+ * transitively needs `Router` and `DotEventsSocket`, neither of which exists in the legacy Dojo
+ * binary-field host, so injecting it stopped the picker from constructing there at all. The store
+ * says *what* failed; the host component decides how to show it.
+ */
+export const ASSET_PICKER_ERROR_KEYS = {
+    assets: 'dot.asset.picker.error.assets',
+    folders: 'dot.asset.picker.error.folders'
+} as const;
+
+/**
  * Shortest sidebar search term that reaches the folder-name search.
  *
  * Not a UX choice: `GET /api/v1/folder/search` rejects a `name` shorter than two characters, so a

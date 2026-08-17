@@ -6,7 +6,6 @@ import { inject } from '@angular/core';
 
 import { catchError, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DOT_FOLDER_TREE_PAGE_SIZE,
@@ -30,7 +29,7 @@ import {
     stripLoadMore,
     withLoadMore
 } from '../../../dot-folder-tree/site-tree.utils';
-import { MIN_TREE_SEARCH_LENGTH } from '../constants';
+import { ASSET_PICKER_ERROR_KEYS, MIN_TREE_SEARCH_LENGTH } from '../constants';
 import { DotAssetPickerFolderTreeState, DotAssetPickerSite, DotAssetPickerState } from '../models';
 
 const initialState: DotAssetPickerFolderTreeState = {
@@ -200,353 +199,363 @@ export function withAssetFolderTree() {
     return signalStoreFeature(
         { state: type<DotAssetPickerState>() },
         withState<DotAssetPickerFolderTreeState>(initialState),
-        withMethods(
-            (
-                store,
-                browsingService = inject(DotBrowsingService),
-                httpErrorManager = inject(DotHttpErrorManagerService)
-            ) => {
+        withMethods((store, browsingService = inject(DotBrowsingService)) => {
+            /**
+             * Publishes a tree, keeping the highlight on whatever node it was on.
+             *
+             * `selectedNode` is compared by reference by `p-tree`, and every publish hands it a
+             * new object graph, so the selection has to be re-pointed by key or the highlight
+             * silently disappears the first time a branch loads.
+             */
+            const publish = (folders: TreeNodeItem[]): void => {
+                const selectedKey = store.selectedNode()?.key;
+
+                patchState(store, {
+                    folders,
+                    ...(selectedKey
+                        ? { selectedNode: findNodeByKey(folders, selectedKey) ?? null }
+                        : {})
+                });
+            };
+
+            /**
+             * Applies `change` to the node with `key` in a **fresh clone** of the tree.
+             *
+             * Both halves matter, and they pull against each other. The clone is what makes the
+             * change visible: `p-tree` and its `p-treeNode`s are `OnPush` and their `*ngFor`
+             * tracks by object identity, so a node mutated in place is never re-rendered — the
+             * spinner would only clear the next time something else forced change detection.
+             * Addressing the node by key rather than by reference is what makes the clone safe:
+             * lazy loading spans a request, and a reference taken before it would point at an
+             * object the tree has since replaced.
+             */
+            const mutateNode = (key: string, change: (node: TreeNodeItem) => void): void => {
+                const folders = structuredClone(store.folders());
+                const target = findNodeByKey(folders, key);
+
+                if (!target) {
+                    return;
+                }
+
+                change(target);
+                publish(folders);
+            };
+
+            /** Current sites query: filtered by the sidebar term when one is active. */
+            const sitesPage = (page: number) =>
+                browsingService.getSitesPage({
+                    // Roots must all be browsable, and System Host is not.
+                    system: false,
+                    filter: activeSearchTerm() || '*',
+                    perPage: SITE_PAGE_LIMIT,
+                    page
+                });
+
+            /** The sidebar term, or `''` when it is too short for the folder-name search. */
+            const activeSearchTerm = (): string => {
+                const term = store.treeSearch().trim();
+
+                return term.length >= MIN_TREE_SEARCH_LENGTH ? term : '';
+            };
+
+            const methods = {
                 /**
-                 * Publishes a tree, keeping the highlight on whatever node it was on.
-                 *
-                 * `selectedNode` is compared by reference by `p-tree`, and every publish hands it a
-                 * new object graph, so the selection has to be re-pointed by key or the highlight
-                 * silently disappears the first time a branch loads.
+                 * Loads the tree: page 1 of the sites, then either the configured site's branch
+                 * or the folder matches for the active search term.
                  */
-                const publish = (folders: TreeNodeItem[]): void => {
-                    const selectedKey = store.selectedNode()?.key;
+                loadFolders: (): void => {
+                    const site = store.browsingSite();
 
-                    patchState(store, {
-                        folders,
-                        ...(selectedKey
-                            ? { selectedNode: findNodeByKey(folders, selectedKey) ?? null }
-                            : {})
-                    });
-                };
-
-                /**
-                 * Applies `change` to the node with `key` in a **fresh clone** of the tree.
-                 *
-                 * Both halves matter, and they pull against each other. The clone is what makes the
-                 * change visible: `p-tree` and its `p-treeNode`s are `OnPush` and their `*ngFor`
-                 * tracks by object identity, so a node mutated in place is never re-rendered — the
-                 * spinner would only clear the next time something else forced change detection.
-                 * Addressing the node by key rather than by reference is what makes the clone safe:
-                 * lazy loading spans a request, and a reference taken before it would point at an
-                 * object the tree has since replaced.
-                 */
-                const mutateNode = (key: string, change: (node: TreeNodeItem) => void): void => {
-                    const folders = structuredClone(store.folders());
-                    const target = findNodeByKey(folders, key);
-
-                    if (!target) {
+                    if (!site) {
                         return;
                     }
 
-                    change(target);
-                    publish(folders);
-                };
+                    const term = activeSearchTerm();
 
-                /** Current sites query: filtered by the sidebar term when one is active. */
-                const sitesPage = (page: number) =>
-                    browsingService.getSitesPage({
-                        // Roots must all be browsable, and System Host is not.
-                        system: false,
-                        filter: activeSearchTerm() || '*',
-                        perPage: SITE_PAGE_LIMIT,
-                        page
-                    });
+                    patchState(store, { foldersStatus: ComponentStatus.LOADING });
 
-                /** The sidebar term, or `''` when it is too short for the folder-name search. */
-                const activeSearchTerm = (): string => {
-                    const term = store.treeSearch().trim();
-
-                    return term.length >= MIN_TREE_SEARCH_LENGTH ? term : '';
-                };
-
-                const methods = {
-                    /**
-                     * Loads the tree: page 1 of the sites, then either the configured site's branch
-                     * or the folder matches for the active search term.
-                     */
-                    loadFolders: (): void => {
-                        const site = store.browsingSite();
-
-                        if (!site) {
-                            return;
-                        }
-
-                        const term = activeSearchTerm();
-
-                        patchState(store, { foldersStatus: ComponentStatus.LOADING });
-
-                        // The success work lives in `tap`, BEFORE `catchError`, so a failure can
-                        // never reach it. Handling it in `subscribe` instead would run it for the
-                        // error fallback too, patching LOADED back over ERROR and making a failed
-                        // load indistinguishable from a successfully loaded empty tree.
-                        sitesPage(1)
-                            .pipe(
-                                take(1),
-                                map(({ sites, pagination }) =>
-                                    withLoadMore(
-                                        sites,
-                                        hasMorePages(pagination),
-                                        SITES_LOAD_MORE_KEY,
-                                        2,
-                                        '',
-                                        ''
-                                    )
-                                ),
-                                switchMap((roots) =>
-                                    term
-                                        ? searchFoldersInBrowsingSite(
-                                              roots,
-                                              term,
-                                              site,
-                                              browsingService
-                                          )
-                                        : hydrateBrowsingSite(
-                                              roots,
-                                              site,
-                                              store.path(),
-                                              browsingService
-                                          )
-                                ),
-                                tap(({ folders, selectedNode }) =>
-                                    patchState(store, {
-                                        folders,
-                                        // Spread only when the loader actually decided on a node.
-                                        // `patchState` merges with `{...current, ...partial}`, so an
-                                        // absent key destructured to `undefined` would still be
-                                        // present in the partial and would wipe the highlight —
-                                        // exactly what `TreeLoadResult` says must not happen.
-                                        ...(selectedNode !== undefined ? { selectedNode } : {}),
-                                        foldersStatus: ComponentStatus.LOADED
-                                    })
-                                ),
-                                catchError((error) => {
-                                    httpErrorManager.handle(error);
-                                    patchState(store, { foldersStatus: ComponentStatus.ERROR });
-
-                                    // EMPTY, not `of([])`: there is nothing meaningful to emit, and
-                                    // a fallback value would only give the success path something
-                                    // to run on.
-                                    return EMPTY;
+                    // The success work lives in `tap`, BEFORE `catchError`, so a failure can
+                    // never reach it. Handling it in `subscribe` instead would run it for the
+                    // error fallback too, patching LOADED back over ERROR and making a failed
+                    // load indistinguishable from a successfully loaded empty tree.
+                    sitesPage(1)
+                        .pipe(
+                            take(1),
+                            map(({ sites, pagination }) =>
+                                withLoadMore(
+                                    sites,
+                                    hasMorePages(pagination),
+                                    SITES_LOAD_MORE_KEY,
+                                    2,
+                                    '',
+                                    ''
+                                )
+                            ),
+                            switchMap((roots) =>
+                                term
+                                    ? searchFoldersInBrowsingSite(
+                                          roots,
+                                          term,
+                                          site,
+                                          browsingService
+                                      )
+                                    : hydrateBrowsingSite(
+                                          roots,
+                                          site,
+                                          store.path(),
+                                          browsingService
+                                      )
+                            ),
+                            tap(({ folders, selectedNode }) =>
+                                patchState(store, {
+                                    folders,
+                                    // Spread only when the loader actually decided on a node.
+                                    // `patchState` merges with `{...current, ...partial}`, so an
+                                    // absent key destructured to `undefined` would still be
+                                    // present in the partial and would wipe the highlight —
+                                    // exactly what `TreeLoadResult` says must not happen.
+                                    ...(selectedNode !== undefined ? { selectedNode } : {}),
+                                    foldersStatus: ComponentStatus.LOADED
                                 })
-                            )
-                            .subscribe();
-                    },
+                            ),
+                            catchError(() => {
+                                patchState(store, {
+                                    foldersStatus: ComponentStatus.ERROR,
+                                    requestError: {
+                                        messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                                    }
+                                });
 
-                    /** Narrows the tree. Terms shorter than two characters behave as "no search". */
-                    setTreeSearch: (treeSearch: string): void => {
-                        if (treeSearch === store.treeSearch()) {
-                            return;
-                        }
-
-                        patchState(store, { treeSearch });
-                        methods.loadFolders();
-                    },
-
-                    /**
-                     * Lazily loads a node's first page of children the first time it is expanded.
-                     *
-                     * `mergeMap`, not `exhaustMap`: expanding a second node while the first is still
-                     * loading has to work — they are independent branches, not a repeated request.
-                     */
-                    expandNode: rxMethod<TreeNodeItem>(
-                        pipe(
-                            mergeMap((node) => {
-                                const data = node.data;
-                                const key = node.key;
-
-                                if (!key || !data || data.type === LOAD_MORE_NODE_TYPE) {
-                                    return EMPTY;
-                                }
-
-                                // Already populated, or known to have nothing to populate.
-                                if ((node.children?.length ?? 0) > 0 || node.leaf) {
-                                    mutateNode(key, (target) => (target.expanded = true));
-
-                                    return EMPTY;
-                                }
-
-                                const siteId = resolveSiteId(node, store.folders());
-
-                                if (!siteId) {
-                                    return EMPTY;
-                                }
-
-                                const path = data.path || '/';
-
-                                mutateNode(key, (target) => (target.loading = true));
-
-                                return browsingService
-                                    .searchFolders(
-                                        {
-                                            siteId,
-                                            path,
-                                            recursive: false,
-                                            page: 1,
-                                            per_page: DOT_FOLDER_TREE_PAGE_SIZE
-                                        },
-                                        data.hostname
-                                    )
-                                    .pipe(
-                                        tap(({ folders, pagination }) =>
-                                            mutateNode(key, (target) => {
-                                                target.loading = false;
-                                                target.expanded = true;
-                                                target.leaf = folders.length === 0;
-                                                target.children = withLoadMore(
-                                                    folders,
-                                                    hasMorePages(pagination),
-                                                    key,
-                                                    2,
-                                                    path,
-                                                    data.hostname
-                                                );
-                                            })
-                                        ),
-                                        catchError((error) => {
-                                            mutateNode(key, (target) => (target.loading = false));
-                                            httpErrorManager.handle(error);
-
-                                            // EMPTY keeps the rxMethod alive for the next expand.
-                                            return EMPTY;
-                                        })
-                                    );
+                                // EMPTY, not `of([])`: there is nothing meaningful to emit, and
+                                // a fallback value would only give the success path something
+                                // to run on.
+                                return EMPTY;
                             })
                         )
-                    ),
+                        .subscribe();
+                },
 
-                    /**
-                     * Loads the next page of a level when its "Load more" sentinel is clicked.
-                     *
-                     * The sites level is identified by having neither a hostname nor a parent path —
-                     * its sentinel is a sibling of the site roots, not a child of anything.
-                     */
-                    loadMore: rxMethod<TreeNodeItem>(
-                        pipe(
-                            mergeMap((node) => {
-                                const data = node.data as TreeNodeLoadMoreData | undefined;
-                                const key = node.key;
-
-                                if (!key || !data || data.type !== LOAD_MORE_NODE_TYPE) {
-                                    return EMPTY;
-                                }
-
-                                const nextPage = data.nextPage ?? 2;
-                                const parentPath = data.path ?? '';
-                                const hostname = data.hostname ?? '';
-                                const isSitesLevel = !hostname && parentPath === '';
-
-                                mutateNode(key, (target) => (target.loading = true));
-
-                                if (isSitesLevel) {
-                                    return sitesPage(nextPage).pipe(
-                                        tap(({ sites, pagination }) =>
-                                            // The sentinel is replaced wholesale here, so there is
-                                            // no loading flag left to clear.
-                                            publish(
-                                                withLoadMore(
-                                                    [...stripLoadMore(store.folders()), ...sites],
-                                                    hasMorePages(pagination),
-                                                    SITES_LOAD_MORE_KEY,
-                                                    nextPage + 1,
-                                                    '',
-                                                    ''
-                                                )
-                                            )
-                                        ),
-                                        catchError((error) => {
-                                            mutateNode(key, (target) => (target.loading = false));
-                                            httpErrorManager.handle(error);
-
-                                            return EMPTY;
-                                        })
-                                    );
-                                }
-
-                                const parentKey = findFolderParent(
-                                    store.folders(),
-                                    parentPath || '/',
-                                    hostname
-                                )?.key;
-                                const siteId = findSiteIdByHostname(hostname, store.folders());
-
-                                if (!parentKey || !siteId) {
-                                    mutateNode(key, (target) => (target.loading = false));
-
-                                    return EMPTY;
-                                }
-
-                                return browsingService
-                                    .searchFolders(
-                                        {
-                                            siteId,
-                                            path: parentPath || '/',
-                                            recursive: false,
-                                            page: nextPage,
-                                            per_page: DOT_FOLDER_TREE_PAGE_SIZE
-                                        },
-                                        hostname
-                                    )
-                                    .pipe(
-                                        tap(({ folders, pagination }) =>
-                                            // Keep what is already loaded, drop the old sentinel,
-                                            // append the new page.
-                                            mutateNode(parentKey, (parent) => {
-                                                parent.children = withLoadMore(
-                                                    [
-                                                        ...stripLoadMore(
-                                                            parent.children as TreeNodeItem[]
-                                                        ),
-                                                        ...folders
-                                                    ],
-                                                    hasMorePages(pagination),
-                                                    parentKey,
-                                                    nextPage + 1,
-                                                    parentPath || '/',
-                                                    hostname
-                                                );
-                                            })
-                                        ),
-                                        catchError((error) => {
-                                            mutateNode(key, (target) => (target.loading = false));
-                                            httpErrorManager.handle(error);
-
-                                            return EMPTY;
-                                        })
-                                    );
-                            })
-                        )
-                    ),
-
-                    setSelectedNode: (selectedNode: TreeNodeItem | null): void => {
-                        patchState(store, { selectedNode });
-                    },
-
-                    /**
-                     * Snaps the highlight back to the root of the site being browsed, for whatever
-                     * widens the list back to site-wide (today: free-text asset search).
-                     *
-                     * The highlight is not cosmetic — `$targetFolder` derives the upload destination
-                     * from it — so leaving it on a folder the list is no longer scoped to would send
-                     * uploads somewhere the user is not looking.
-                     */
-                    selectRootNode: (): void => {
-                        const site = store.browsingSite();
-
-                        patchState(store, {
-                            selectedNode: site
-                                ? (findSiteRoot(store.folders(), site.identifier) ?? null)
-                                : null
-                        });
+                /** Narrows the tree. Terms shorter than two characters behave as "no search". */
+                setTreeSearch: (treeSearch: string): void => {
+                    if (treeSearch === store.treeSearch()) {
+                        return;
                     }
-                };
 
-                return methods;
-            }
-        )
+                    patchState(store, { treeSearch });
+                    methods.loadFolders();
+                },
+
+                /**
+                 * Lazily loads a node's first page of children the first time it is expanded.
+                 *
+                 * `mergeMap`, not `exhaustMap`: expanding a second node while the first is still
+                 * loading has to work — they are independent branches, not a repeated request.
+                 */
+                expandNode: rxMethod<TreeNodeItem>(
+                    pipe(
+                        mergeMap((node) => {
+                            const data = node.data;
+                            const key = node.key;
+
+                            if (!key || !data || data.type === LOAD_MORE_NODE_TYPE) {
+                                return EMPTY;
+                            }
+
+                            // Already populated, or known to have nothing to populate.
+                            if ((node.children?.length ?? 0) > 0 || node.leaf) {
+                                mutateNode(key, (target) => (target.expanded = true));
+
+                                return EMPTY;
+                            }
+
+                            const siteId = resolveSiteId(node, store.folders());
+
+                            if (!siteId) {
+                                return EMPTY;
+                            }
+
+                            const path = data.path || '/';
+
+                            mutateNode(key, (target) => (target.loading = true));
+
+                            return browsingService
+                                .searchFolders(
+                                    {
+                                        siteId,
+                                        path,
+                                        recursive: false,
+                                        page: 1,
+                                        per_page: DOT_FOLDER_TREE_PAGE_SIZE
+                                    },
+                                    data.hostname
+                                )
+                                .pipe(
+                                    tap(({ folders, pagination }) =>
+                                        mutateNode(key, (target) => {
+                                            target.loading = false;
+                                            target.expanded = true;
+                                            target.leaf = folders.length === 0;
+                                            target.children = withLoadMore(
+                                                folders,
+                                                hasMorePages(pagination),
+                                                key,
+                                                2,
+                                                path,
+                                                data.hostname
+                                            );
+                                        })
+                                    ),
+                                    catchError(() => {
+                                        mutateNode(key, (target) => (target.loading = false));
+                                        patchState(store, {
+                                            requestError: {
+                                                messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                                            }
+                                        });
+
+                                        // EMPTY keeps the rxMethod alive for the next expand.
+                                        return EMPTY;
+                                    })
+                                );
+                        })
+                    )
+                ),
+
+                /**
+                 * Loads the next page of a level when its "Load more" sentinel is clicked.
+                 *
+                 * The sites level is identified by having neither a hostname nor a parent path —
+                 * its sentinel is a sibling of the site roots, not a child of anything.
+                 */
+                loadMore: rxMethod<TreeNodeItem>(
+                    pipe(
+                        mergeMap((node) => {
+                            const data = node.data as TreeNodeLoadMoreData | undefined;
+                            const key = node.key;
+
+                            if (!key || !data || data.type !== LOAD_MORE_NODE_TYPE) {
+                                return EMPTY;
+                            }
+
+                            const nextPage = data.nextPage ?? 2;
+                            const parentPath = data.path ?? '';
+                            const hostname = data.hostname ?? '';
+                            const isSitesLevel = !hostname && parentPath === '';
+
+                            mutateNode(key, (target) => (target.loading = true));
+
+                            if (isSitesLevel) {
+                                return sitesPage(nextPage).pipe(
+                                    tap(({ sites, pagination }) =>
+                                        // The sentinel is replaced wholesale here, so there is
+                                        // no loading flag left to clear.
+                                        publish(
+                                            withLoadMore(
+                                                [...stripLoadMore(store.folders()), ...sites],
+                                                hasMorePages(pagination),
+                                                SITES_LOAD_MORE_KEY,
+                                                nextPage + 1,
+                                                '',
+                                                ''
+                                            )
+                                        )
+                                    ),
+                                    catchError(() => {
+                                        mutateNode(key, (target) => (target.loading = false));
+                                        patchState(store, {
+                                            requestError: {
+                                                messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                                            }
+                                        });
+
+                                        return EMPTY;
+                                    })
+                                );
+                            }
+
+                            const parentKey = findFolderParent(
+                                store.folders(),
+                                parentPath || '/',
+                                hostname
+                            )?.key;
+                            const siteId = findSiteIdByHostname(hostname, store.folders());
+
+                            if (!parentKey || !siteId) {
+                                mutateNode(key, (target) => (target.loading = false));
+
+                                return EMPTY;
+                            }
+
+                            return browsingService
+                                .searchFolders(
+                                    {
+                                        siteId,
+                                        path: parentPath || '/',
+                                        recursive: false,
+                                        page: nextPage,
+                                        per_page: DOT_FOLDER_TREE_PAGE_SIZE
+                                    },
+                                    hostname
+                                )
+                                .pipe(
+                                    tap(({ folders, pagination }) =>
+                                        // Keep what is already loaded, drop the old sentinel,
+                                        // append the new page.
+                                        mutateNode(parentKey, (parent) => {
+                                            parent.children = withLoadMore(
+                                                [
+                                                    ...stripLoadMore(
+                                                        parent.children as TreeNodeItem[]
+                                                    ),
+                                                    ...folders
+                                                ],
+                                                hasMorePages(pagination),
+                                                parentKey,
+                                                nextPage + 1,
+                                                parentPath || '/',
+                                                hostname
+                                            );
+                                        })
+                                    ),
+                                    catchError(() => {
+                                        mutateNode(key, (target) => (target.loading = false));
+                                        patchState(store, {
+                                            requestError: {
+                                                messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                                            }
+                                        });
+
+                                        return EMPTY;
+                                    })
+                                );
+                        })
+                    )
+                ),
+
+                setSelectedNode: (selectedNode: TreeNodeItem | null): void => {
+                    patchState(store, { selectedNode });
+                },
+
+                /**
+                 * Snaps the highlight back to the root of the site being browsed, for whatever
+                 * widens the list back to site-wide (today: free-text asset search).
+                 *
+                 * The highlight is not cosmetic — `$targetFolder` derives the upload destination
+                 * from it — so leaving it on a folder the list is no longer scoped to would send
+                 * uploads somewhere the user is not looking.
+                 */
+                selectRootNode: (): void => {
+                    const site = store.browsingSite();
+
+                    patchState(store, {
+                        selectedNode: site
+                            ? (findSiteRoot(store.folders(), site.identifier) ?? null)
+                            : null
+                    });
+                }
+            };
+
+            return methods;
+        })
     );
 }

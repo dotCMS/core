@@ -13,7 +13,7 @@ import { computed, inject, untracked } from '@angular/core';
 
 import { catchError, filter, switchMap, tap } from 'rxjs/operators';
 
-import { DotContentDriveService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotContentDriveService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotContentDriveSearchRequest,
@@ -22,6 +22,7 @@ import {
 
 import { SYSTEM_HOST_ID } from '../../../dot-folder-tree/constants';
 import {
+    ASSET_PICKER_ERROR_KEYS,
     DEFAULT_ASSET_PICKER_PAGE,
     DEFAULT_ASSET_PICKER_PAGINATION,
     DEFAULT_ASSET_PICKER_SORT
@@ -141,87 +142,81 @@ export function withAssetBrowse() {
                 { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) }
             )
         })),
-        withMethods(
-            (
-                store,
-                contentDriveService = inject(DotContentDriveService),
-                httpErrorManager = inject(DotHttpErrorManagerService)
-            ) => ({
-                /**
-                 * Runs whenever the request changes. Feed it the `$request` signal (not a value) so
-                 * it re-runs on every change and cancels the in-flight call — a stale response can
-                 * never overwrite a newer one.
-                 */
-                loadItems: rxMethod<DotContentDriveSearchRequest>(
-                    pipe(
-                        filter(() => store.$isBrowsable()),
-                        tap(() =>
-                            patchState(store, {
-                                status: ComponentStatus.LOADING,
-                                // The list silently forgets its own PrimeNG selection whenever
-                                // `items` change (DotFolderListViewComponent's $cleanSelectedItems
-                                // effect assigns `selectedItems` without emitting `selectionChange`),
-                                // so `onSelect` never fires and the store has to clear itself.
-                                // Otherwise Confirm stays enabled for a row that is no longer in the
-                                // list and returns that stale asset.
-                                selectedAsset: null
+        withMethods((store, contentDriveService = inject(DotContentDriveService)) => ({
+            /**
+             * Runs whenever the request changes. Feed it the `$request` signal (not a value) so
+             * it re-runs on every change and cancels the in-flight call — a stale response can
+             * never overwrite a newer one.
+             */
+            loadItems: rxMethod<DotContentDriveSearchRequest>(
+                pipe(
+                    filter(() => store.$isBrowsable()),
+                    tap(() =>
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            // The list silently forgets its own PrimeNG selection whenever
+                            // `items` change (DotFolderListViewComponent's $cleanSelectedItems
+                            // effect assigns `selectedItems` without emitting `selectionChange`),
+                            // so `onSelect` never fires and the store has to clear itself.
+                            // Otherwise Confirm stays enabled for a row that is no longer in the
+                            // list and returns that stale asset.
+                            selectedAsset: null
+                        })
+                    ),
+                    switchMap((request) =>
+                        contentDriveService.search(request).pipe(
+                            tap((response: DotContentDriveSearchResponse) => {
+                                const page = store.pagination().page;
+                                const pages = [...store.pages()];
+
+                                // Bookmark where the NEXT page starts, so paging forward can
+                                // resume from a cursor instead of replaying from the top.
+                                pages[page] = {
+                                    contentCursor: response.nextContentCursor,
+                                    hasMoreContent: response.hasMoreContent
+                                };
+
+                                patchState(store, {
+                                    items: response.list,
+                                    totalItems: response.contentCount,
+                                    status: ComponentStatus.LOADED,
+                                    pages
+                                });
+                            }),
+                            catchError(() => {
+                                patchState(store, {
+                                    status: ComponentStatus.ERROR,
+                                    items: [],
+                                    requestError: { messageKey: ASSET_PICKER_ERROR_KEYS.assets }
+                                });
+
+                                // EMPTY keeps the rxMethod alive: the next request retries.
+                                return EMPTY;
                             })
-                        ),
-                        switchMap((request) =>
-                            contentDriveService.search(request).pipe(
-                                tap((response: DotContentDriveSearchResponse) => {
-                                    const page = store.pagination().page;
-                                    const pages = [...store.pages()];
-
-                                    // Bookmark where the NEXT page starts, so paging forward can
-                                    // resume from a cursor instead of replaying from the top.
-                                    pages[page] = {
-                                        contentCursor: response.nextContentCursor,
-                                        hasMoreContent: response.hasMoreContent
-                                    };
-
-                                    patchState(store, {
-                                        items: response.list,
-                                        totalItems: response.contentCount,
-                                        status: ComponentStatus.LOADED,
-                                        pages
-                                    });
-                                }),
-                                catchError((error) => {
-                                    patchState(store, {
-                                        status: ComponentStatus.ERROR,
-                                        items: []
-                                    });
-                                    httpErrorManager.handle(error);
-
-                                    // EMPTY keeps the rxMethod alive: the next request retries.
-                                    return EMPTY;
-                                })
-                            )
                         )
                     )
-                ),
+                )
+            ),
 
-                setPagination: (pagination: DotAssetPickerPagination) => {
-                    // Changing the page size invalidates every cursor bookmark.
-                    const limitChanged = pagination.limit !== store.pagination().limit;
+            setPagination: (pagination: DotAssetPickerPagination) => {
+                // Changing the page size invalidates every cursor bookmark.
+                const limitChanged = pagination.limit !== store.pagination().limit;
 
-                    patchState(store, {
-                        pagination: limitChanged ? { ...pagination, page: 1 } : pagination,
-                        ...(limitChanged ? { pages: [DEFAULT_ASSET_PICKER_PAGE] } : {})
-                    });
-                },
+                patchState(store, {
+                    pagination: limitChanged ? { ...pagination, page: 1 } : pagination,
+                    ...(limitChanged ? { pages: [DEFAULT_ASSET_PICKER_PAGE] } : {})
+                });
+            },
 
-                setSort: (sort: DotAssetPickerSort) => {
-                    // A different order means different results in a different place: cursors from
-                    // the previous ordering are meaningless.
-                    patchState(store, {
-                        sort,
-                        pagination: { ...store.pagination(), page: 1 },
-                        pages: [DEFAULT_ASSET_PICKER_PAGE]
-                    });
-                }
-            })
-        )
+            setSort: (sort: DotAssetPickerSort) => {
+                // A different order means different results in a different place: cursors from
+                // the previous ordering are meaningless.
+                patchState(store, {
+                    sort,
+                    pagination: { ...store.pagination(), page: 1 },
+                    pages: [DEFAULT_ASSET_PICKER_PAGE]
+                });
+            }
+        }))
     );
 }

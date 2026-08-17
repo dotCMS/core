@@ -112,6 +112,8 @@ const createMockStore = () => {
         treeSearch: signal(''),
         items: signal([]),
         status: signal(ComponentStatus.LOADED),
+        /** Failures the store records for this component to toast — see the `requestError` effect. */
+        requestError: signal<{ messageKey: string } | null>(null),
         pagination: signal({ limit: 20, page: 1 }),
         totalItems: signal(0),
         /** What the paginator actually reads — see `withAssetBrowse`'s cursor-based row count. */
@@ -209,6 +211,43 @@ describe('DotAssetPickerComponent', () => {
     });
 
     afterEach(() => jest.clearAllMocks());
+
+    describe('reporting failed requests', () => {
+        // The store cannot toast for itself and deliberately does not inject
+        // `DotHttpErrorManagerService` — that pulls in `Router`, which the legacy Dojo host has none
+        // of, and it stopped the picker from constructing there at all.
+        const messageService = () => spectator.inject(MessageService, true);
+
+        it('should toast what the store says failed', () => {
+            const spyAdd = jest.spyOn(messageService(), 'add');
+
+            store.requestError.set({ messageKey: 'dot.asset.picker.error.assets' });
+            spectator.detectChanges();
+
+            expect(spyAdd).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
+        });
+
+        it('should say nothing while nothing has failed', () => {
+            const spyAdd = jest.spyOn(messageService(), 'add');
+
+            spectator.detectChanges();
+
+            expect(spyAdd).not.toHaveBeenCalled();
+        });
+
+        it('should report a second identical failure', () => {
+            // Each failure is a fresh object precisely so the effect re-runs — a repeated outage
+            // must not go silent just because the message is the same.
+            const spyAdd = jest.spyOn(messageService(), 'add');
+
+            store.requestError.set({ messageKey: 'dot.asset.picker.error.folders' });
+            spectator.detectChanges();
+            store.requestError.set({ messageKey: 'dot.asset.picker.error.folders' });
+            spectator.detectChanges();
+
+            expect(spyAdd).toHaveBeenCalledTimes(2);
+        });
+    });
 
     describe('open', () => {
         it('should configure the store from the dialog data', () => {
