@@ -592,7 +592,7 @@ public class RoleResource implements Serializable {
 					content = @Content(mediaType = "application/json"))
 	})
 	@GET
-	@Path("/{roleId}/users")
+	@Path("/{roleid}/users")
 	@JSONP
 	@NoCache
 	@Produces(MediaType.APPLICATION_JSON)
@@ -600,7 +600,7 @@ public class RoleResource implements Serializable {
 			@Parameter(hidden = true) @Context final HttpServletRequest request,
 			@Parameter(hidden = true) @Context final HttpServletResponse response,
 			@Parameter(description = "Id of the role to list users for", required = true)
-			@PathParam("roleId") final String roleId,
+			@PathParam("roleid") final String roleId,
 			@Parameter(description = "Filter matching user id, first name, last name, email or full name")
 			@QueryParam("filter") final String filter,
 			@Parameter(description = "Page number for pagination")
