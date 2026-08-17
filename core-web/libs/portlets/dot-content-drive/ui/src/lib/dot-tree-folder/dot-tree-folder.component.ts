@@ -58,7 +58,27 @@ export class DotTreeFolderComponent {
 
     protected readonly treePt = {
         root: { class: 'w-full h-full border-none overflow-y-auto' },
-        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' }
+        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' },
+        /**
+         * The node icon (a globe on the site row, a folder on the rest) has never had dotCMS styling.
+         * `dotcms-theme/components/_tree.scss` is meant to own it, but that theme is not in the build
+         * at all — `dotcms-scss/angular/styles.scss` has its `@import "dotcms-theme/theme"` commented
+         * out — and its selectors predate PrimeNG 21 anyway (`.p-treenode-icon`, now
+         * `.p-tree-node-icon`). So the icon was left inheriting the 14px root font size, which made it
+         * the largest thing in the row, and relying on PrimeNG's 4px node gap.
+         *
+         * Like the toggler chevron, the icon owns its own centring: `flex size-4 items-center
+         * justify-center` gives the glyph a fixed square box and centres it inside that box, so its
+         * position stops depending on the icon font's baseline. A baseline-aligned glyph shifts as the
+         * em box changes, which is why the alignment previously got worse as the icon got smaller.
+         *
+         * The `!` modifiers are required because PrimeNG is provided without a `cssLayer`, so its CSS
+         * is injected unlayered and outranks Tailwind utilities, which live in `@layer utilities`.
+         * `mr-1` adds to the node's own 4px gap for the 8px the theme asked for.
+         */
+        nodeIcon: {
+            class: 'flex! size-4 shrink-0 translate-y-px items-center justify-center text-sm! leading-none! mr-1'
+        }
     };
 
     protected onLoadMore(node: TreeNode): void {
