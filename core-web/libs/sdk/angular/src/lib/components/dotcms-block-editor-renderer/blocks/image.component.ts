@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { BlockEditorNode } from '@dotcms/types';
 
@@ -20,24 +20,24 @@ import { BlockEditorNode } from '@dotcms/types';
         </figure>
 
         <ng-template #image>
-            <img [alt]="attrs?.['alt']" [src]="$srcURL()" />
+            <img [alt]="attrs()?.['alt']" [src]="$srcURL()" />
         </ng-template>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotImageBlock {
-    @Input() attrs!: BlockEditorNode['attrs'];
+    readonly attrs = input<BlockEditorNode['attrs']>();
 
-    protected readonly $srcURL = computed(() => this.attrs?.['src']);
+    protected readonly $srcURL = computed(() => this.attrs()?.['src']);
 
     /**
      * Link assigned to the image in the Block Editor, stored as `href` on the
      * `dotImage` node. `null` when never set, `''` after the editor unsets it —
      * both mean "no link", so the image renders without an anchor.
      */
-    protected readonly $href = computed(() => this.attrs?.['href'] || null);
+    protected readonly $href = computed(() => this.attrs()?.['href'] || null);
 
-    protected readonly $target = computed(() => this.attrs?.['target'] || null);
+    protected readonly $target = computed(() => this.attrs()?.['target'] || null);
 
     /** Guards against reverse tabnabbing when the link opens in a new tab. */
     protected readonly $rel = computed(() =>
@@ -45,8 +45,8 @@ export class DotImageBlock {
     );
 
     protected readonly $wrapperStyle = computed(() => {
-        const textWrap = this.attrs?.['textWrap'];
-        const textAlign = this.attrs?.['textAlign'];
+        const textWrap = this.attrs()?.['textWrap'];
+        const textAlign = this.attrs()?.['textAlign'];
 
         if (textWrap === 'left') {
             return { float: 'left', width: '50%', margin: '0 1rem 1rem 0' };
