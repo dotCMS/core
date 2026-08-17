@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, input, Signal } from '@angular/core';
-import { disabled, FieldTree, FormField, maxDate, minDate, SchemaFn } from '@angular/forms/signals';
+import { Component, computed, input } from '@angular/core';
+import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { ButtonModule } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -12,39 +12,6 @@ import { SchedulingDateBounds, SchedulingFormSlice } from '../../../shared/model
 
 /** Both pickers move in half hours, same as the old screen's. */
 const DATE_PICKER_STEP_MINUTE = 30;
-
-/** What the Scheduling slice's rules need from the shell, on top of the slice itself. */
-export interface SchedulingSchemaContext {
-    /** Whether the experiment is no longer a draft (AC34). */
-    isLocked: () => boolean;
-    /** Earliest instant a start date may name: "now" for the whole session. */
-    earliestStartDate: Date;
-    /** The window the end date has to fall in, which moves with the start date. */
-    bounds: Signal<SchedulingDateBounds>;
-}
-
-/**
- * Live constraints of the Scheduling slice, applied to the root form by the Configure shell.
- *
- * Declared here rather than in the shell so the rules sit with the card that renders the pickers
- * they bound; the shell only says where they go — `apply(path.scheduling, schedulingFormSchema(…))`
- * — and supplies the bounds, since it is the shell that reads them off the route.
- *
- * The pickers already keep an out-of-bounds date out of reach. These rules flag one that arrived
- * from the server anyway rather than silently discarding it, which is what the old screen did.
- */
-export function schedulingFormSchema({
-    isLocked,
-    earliestStartDate,
-    bounds
-}: SchedulingSchemaContext): SchemaFn<SchedulingFormSlice> {
-    return (scheduling) => {
-        minDate(scheduling.startDate, earliestStartDate);
-        minDate(scheduling.endDate, () => bounds().minEndDate);
-        maxDate(scheduling.endDate, () => bounds().maxEndDate);
-        disabled(scheduling, { when: isLocked });
-    };
-}
 
 /**
  * Scheduling card of the Configure screen: when the experiment starts collecting sessions, and

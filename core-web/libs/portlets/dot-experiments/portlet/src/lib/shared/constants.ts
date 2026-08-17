@@ -199,3 +199,12 @@ export const SELECT_PAGE_DIALOG_SIZE = { width: '900px', height: '560px' } as co
 
 /** Narrower than the 700px form default: the dialog holds a single optional name field. */
 export const ADD_VARIANT_DIALOG_WIDTH = '440px';
+
+/**
+ * Kind of the cross-field error the weights raise when they do not add up to 100.
+ *
+ * Deliberately the same string as the `weightsTotal` validation rule the store publishes on a Start
+ * press: the two say the same thing at two different moments — the form's is live (AC25), the
+ * store's is what turns it into a scroll target (AC28) — and the card reads both.
+ */
+export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';

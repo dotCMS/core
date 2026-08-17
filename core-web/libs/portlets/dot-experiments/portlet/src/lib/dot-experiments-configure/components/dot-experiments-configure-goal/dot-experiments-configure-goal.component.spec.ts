@@ -1,16 +1,13 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Injector, signal, WritableSignal } from '@angular/core';
-import { FieldTree, form } from '@angular/forms/signals';
+import { disabled, FieldTree, form, maxLength } from '@angular/forms/signals';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { GOAL_OPERATORS, GOAL_TYPES, MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import {
-    DotExperimentsConfigureGoalComponent,
-    goalFormSchema
-} from './dot-experiments-configure-goal.component';
+import { DotExperimentsConfigureGoalComponent } from './dot-experiments-configure-goal.component';
 
 import { ConfigureValidationRule, GoalFormSlice } from '../../../shared/models';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
@@ -95,12 +92,15 @@ describe('DotExperimentsConfigureGoalComponent', () => {
      */
     const mountWith = (initialGoal: GoalFormSlice = EMPTY_GOAL_SLICE) => {
         goal = signal(initialGoal);
+        // The shell's rules for this slice, restated: the card is only meaningful on a slice that
+        // carries them, and the shell is where they actually live now.
         field = form(
             goal,
-            goalFormSchema(() => $isLocked()),
-            {
-                injector: spectator.inject(Injector)
-            }
+            (path) => {
+                maxLength(path.name, MAX_INPUT_DESCRIPTIVE_LENGTH);
+                disabled(path, { when: () => $isLocked() });
+            },
+            { injector: spectator.inject(Injector) }
         );
 
         spectator.setInput('field', field);

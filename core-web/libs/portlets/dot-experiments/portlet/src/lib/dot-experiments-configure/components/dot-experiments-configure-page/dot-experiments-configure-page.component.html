@@ -82,7 +82,7 @@
             <div class="flex items-center gap-6">
                 <p-slider
                     class="min-w-0 flex-1"
-                    [formField]="$trafficAllocationField()"
+                    [formField]="$field()"
                     [min]="MIN_TRAFFIC_ALLOCATION"
                     [max]="MAX_TRAFFIC_ALLOCATION"
                     [step]="1"
@@ -97,7 +97,7 @@
                             id="experiments-traffic-allocation"
                             type="number"
                             class="text-right"
-                            [formField]="$trafficAllocationField()"
+                            [formField]="$field()"
                             [attr.aria-label]="'experiments.configure.traffic.allocation' | dm"
                             data-testid="experiments-configure-traffic-input" />
                         <p-inputgroup-addon>%</p-inputgroup-addon>

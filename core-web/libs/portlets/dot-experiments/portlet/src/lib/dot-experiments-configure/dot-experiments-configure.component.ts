@@ -14,7 +14,17 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { apply, disabled, form, max, maxLength, min } from '@angular/forms/signals';
+import {
+    applyEach,
+    disabled,
+    form,
+    max,
+    maxDate,
+    maxLength,
+    min,
+    minDate,
+    validate
+} from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -44,26 +54,19 @@ import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } fr
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
 import { DotExperimentsConfigureFooterComponent } from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
-import {
-    DotExperimentsConfigureGoalComponent,
-    goalFormSchema
-} from './components/dot-experiments-configure-goal/dot-experiments-configure-goal.component';
+import { DotExperimentsConfigureGoalComponent } from './components/dot-experiments-configure-goal/dot-experiments-configure-goal.component';
 import { DotExperimentsConfigureHeaderComponent } from './components/dot-experiments-configure-header/dot-experiments-configure-header.component';
 import { DotExperimentsConfigurePageComponent } from './components/dot-experiments-configure-page/dot-experiments-configure-page.component';
-import {
-    DotExperimentsConfigureSchedulingComponent,
-    schedulingFormSchema
-} from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
-import {
-    DotExperimentsConfigureVariantsComponent,
-    variantWeightsFormSchema
-} from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
+import { DotExperimentsConfigureSchedulingComponent } from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
+import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
 import {
     EXPERIMENTS_URL,
     MAX_TRAFFIC_ALLOCATION,
     MIN_TRAFFIC_ALLOCATION,
-    SUCCESS_MESSAGE_LIFE
+    SUCCESS_MESSAGE_LIFE,
+    TOTAL_WEIGHT,
+    WEIGHTS_TOTAL_ERROR_KIND
 } from '../shared/constants';
 import { ConfigureFormModel, SchedulingDateBounds } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
@@ -82,6 +85,7 @@ import {
     toConfigurePatch,
     toVariantWeightRows
 } from '../util/dot-experiments-configure-form.util';
+import { totalWeight } from '../util/dot-experiments-configure.util';
 
 /** Number of card placeholders drawn while an existing experiment loads. */
 const SKELETON_CARDS = [0, 1, 2];
@@ -253,21 +257,37 @@ export class DotExperimentsConfigureComponent {
         max(path.trafficAllocation, MAX_TRAFFIC_ALLOCATION);
         disabled(path.trafficAllocation, { when: isLocked });
 
-        apply(path.goal, goalFormSchema(isLocked));
-        apply(
-            path.scheduling,
-            schedulingFormSchema({
-                isLocked,
-                earliestStartDate: this.#now,
-                bounds: this.$schedulingBounds
-            })
-        );
+        // One `disabled` rule covers a whole slice: a disabled field disables everything under it,
+        // so every condition control of the goal follows without being named.
+        maxLength(path.goal.name, MAX_INPUT_DESCRIPTIVE_LENGTH);
+        disabled(path.goal, { when: isLocked });
+
+        // The pickers already keep an out-of-bounds date out of reach. These flag one that arrived
+        // from the server anyway, rather than silently discarding it as the old screen did.
+        minDate(path.scheduling.startDate, this.#now);
+        minDate(path.scheduling.endDate, () => this.$schedulingBounds().minEndDate);
+        maxDate(path.scheduling.endDate, () => this.$schedulingBounds().maxEndDate);
+        disabled(path.scheduling, { when: isLocked });
+
         // The weights answer to the page's lock too, not only to the status: they are the one part
         // of the form a variant endpoint also writes, and the card has always frozen them for both.
-        apply(
-            path.variantWeights,
-            variantWeightsFormSchema(() => !!this.store.$disabledTooltipKey())
-        );
+        const areWeightsLocked = () => !!this.store.$disabledTooltipKey();
+
+        applyEach(path.variantWeights, (row) => {
+            min(row.weight, 0);
+            max(row.weight, TOTAL_WEIGHT);
+            disabled(row, { when: areWeightsLocked });
+        });
+
+        // Cross-field, so it belongs to the array and not to any row: a single weight is only wrong
+        // in the company of the others.
+        validate(path.variantWeights, ({ value }) => {
+            const rows = value();
+
+            return !rows.length || totalWeight(rows) === TOTAL_WEIGHT
+                ? undefined
+                : { kind: WEIGHTS_TOTAL_ERROR_KIND };
+        });
     });
 
     /**
