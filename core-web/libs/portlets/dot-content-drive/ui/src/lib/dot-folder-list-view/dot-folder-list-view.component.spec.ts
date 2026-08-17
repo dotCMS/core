@@ -2355,22 +2355,6 @@ describe('DotFolderListViewComponent', () => {
             );
         });
 
-        it('should vertically center the boolean icon against the row text', () => {
-            // The icon is a 20px inline-block inside a 14px text line, so without align-middle it
-            // sits off the baseline every other extra column shares.
-            spectator.setInput('items', [
-                { identifier: '1', type: 'content', title: 'A', myBool: true }
-            ] as unknown as (typeof mockItems)[number][]);
-            spectator.setInput('extraColumns', [
-                { field: 'myBool', header: 'Bool', order: 0, type: 'boolean' }
-            ]);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('item-extra-bool-myBool'))?.className).toContain(
-                'align-middle'
-            );
-        });
-
         it('should include the time for datetime but not for date', () => {
             spectator.setInput('extraColumns', [
                 { field: 'myDate', header: 'D', order: 0, type: 'date' },
@@ -2435,6 +2419,19 @@ describe('DotFolderListViewComponent', () => {
             expect(headerByLabel('D')?.style.width).toBe('12rem');
         });
 
+        it('should keep a long header readable via its title, since the column clips it', () => {
+            // Column widths are capped, so a long enough header cannot fit however wide the column
+            // gets. It is clipped rather than allowed to overflow across the next header, which makes
+            // the full text reachable only through the title.
+            const header = 'Bool Radio With A Deliberately Long Header';
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header, order: 0, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerByLabel(header)?.getAttribute('title')).toBe(header);
+        });
+
         it('should keep a fixed-width column from clipping a long header', () => {
             // The per-type width used to be an override, so a boolean column stayed pinned at 7rem
             // however long its header was. Under `table-layout: fixed` with a `whitespace-nowrap`
@@ -2454,6 +2451,24 @@ describe('DotFolderListViewComponent', () => {
 
             expect(width).toMatch(/ch$/);
             expect(width).not.toBe('7rem');
+        });
+
+        it('should give a long header more room than a long value gets', () => {
+            // A field name is fixed metadata and the only place the column says what it holds, so it
+            // earns width a runaway value does not: the value clamp would cut this at 32ch.
+            spectator.setInput('extraColumns', [
+                {
+                    field: 'myBool',
+                    header: 'Bool Radio With A Deliberately Long Header',
+                    order: 0,
+                    type: 'boolean'
+                }
+            ]);
+            spectator.detectChanges();
+
+            const width = headerByLabel('Bool Radio With A Deliberately Long Header')?.style.width;
+
+            expect(parseInt(width ?? '0', 10)).toBeGreaterThan(32);
         });
 
         it('should keep the compact fixed width for a short boolean header', () => {

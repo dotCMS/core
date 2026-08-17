@@ -324,6 +324,15 @@ export class DotFolderListViewComponent implements OnInit {
     /** Character-count clamps for content-based (text/number) column widths, in `ch`. */
     private readonly EXTRA_COL_MIN_CH = 8;
     private readonly EXTRA_COL_MAX_CH = 32;
+    /**
+     * Higher clamp used when the HEADER, not the content, is what needs the room.
+     *
+     * The lower one exists to stop a single long *value* from blowing the column out, and truncating a
+     * value is cheap because the row next to it shows the same field. A header is different: it is the
+     * only place the column says what it holds, and a field name is fixed metadata rather than
+     * unbounded user input, so it is worth the extra width. Anything past this is still clipped.
+     */
+    private readonly EXTRA_COL_HEADER_MAX_CH = 44;
     private readonly EXTRA_COL_PAD_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
     protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
@@ -568,12 +577,18 @@ export class DotFolderListViewComponent implements OnInit {
         // header, which is the one part that can outgrow the fixed width.
         const contentLength = fixed ? 0 : averageLength;
 
+        const headerLength = column.header?.length ?? 0;
+        // A header that outgrows its content gets the higher clamp: see EXTRA_COL_HEADER_MAX_CH for
+        // why a long field name is worth more room than a long value.
+        const maxChars =
+            headerLength > contentLength ? this.EXTRA_COL_HEADER_MAX_CH : this.EXTRA_COL_MAX_CH;
+
         const chars = Math.min(
             Math.max(
-                Math.max(column.header?.length ?? 0, contentLength) + this.EXTRA_COL_PAD_CH,
+                Math.max(headerLength, contentLength) + this.EXTRA_COL_PAD_CH,
                 this.EXTRA_COL_MIN_CH
             ),
-            this.EXTRA_COL_MAX_CH
+            maxChars
         );
 
         if (!fixed) {

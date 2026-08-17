@@ -33,17 +33,31 @@
                 <p-tableHeaderCheckbox [disabled]="$disabled()" data-testId="header-checkbox" />
             </th>
             @for (column of $columns(); track column.field) {
+                <!-- The label is clipped inside its own inline-block rather than left to overflow:
+                     column widths are capped (see EXTRA_COL_MAX_CH), so a long enough header will
+                     always exceed its column, and `whitespace-nowrap` with no clipping spilled it
+                     across the next header. `title` keeps the full text reachable. The span, not the
+                     `th`, does the clipping so the cell stays a table cell (making it a flex/block box
+                     would take it out of the table layout that sizes these columns). -->
                 @if (column.sortable && !$readOnly()) {
                     <th
                         class="whitespace-nowrap"
                         [pSortableColumn]="column.field"
                         [style.width]="column.width"
+                        [attr.title]="column.header | dm"
                         data-testId="header-column-sortable">
-                        {{ column.header | dm }}
+                        <!-- Room reserved for the sort icon so it is never the part that gets cut. -->
+                        <span class="inline-block max-w-[calc(100%-1.5rem)] truncate align-middle">
+                            {{ column.header | dm }}
+                        </span>
                         <p-sortIcon [field]="column.field" data-testId="sort-icon" />
                     </th>
                 } @else {
-                    <th [style.width]="column.width" data-testId="header-column-not-sortable">
+                    <th
+                        class="truncate whitespace-nowrap"
+                        [style.width]="column.width"
+                        [attr.title]="column.header | dm"
+                        data-testId="header-column-not-sortable">
                         {{ column.header | dm }}
                     </th>
                 }
