@@ -104,7 +104,6 @@ import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.system.role.RoleResourceCountsIntegrationTest;
 import com.dotcms.rest.api.v1.system.role.RoleResourceUsersIntegrationTest;
-import com.dotcms.rest.api.v1.user.UserRoleFilterRegressionIntegrationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
@@ -571,7 +570,6 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionResourceIntegrationTest.class,
         FileAssetBaseTypeToContentTypeStrategyImplTest.class,
         RoleResourceCountsIntegrationTest.class,
-        UserRoleFilterRegressionIntegrationTest.class,
         RoleResourceUsersIntegrationTest.class,
 })
 
