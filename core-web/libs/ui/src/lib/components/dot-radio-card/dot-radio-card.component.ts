@@ -35,15 +35,11 @@ const SURFACE_BASE_CLASSES =
 const SURFACE_CHECKED_CLASSES = 'border-primary! bg-primary-50!';
 
 /**
- * The circle is `p-radioButton`'s, rebuilt rather than reused, so a radio in a card looks like every
- * other radio in dotCMS: `1.5rem` box with a 1px border, filled with `primary` when checked, holding a
- * `1rem` `primary.contrast` dot that scales from `0.1` to `1` over `form.field.transition.duration`.
- * Those are the rendered values of a real one, measured in the running app, not a guess.
- *
- * Rebuilt because `p-radioButton` cannot be mounted presentationally: it resolves `NgControl` from the
- * injector without `optional`, so without a reactive or template form binding it throws `NG0201`.
- * Reusing it would mean pulling `NgControl` into a control that is signal forms only, and nesting a
- * second focusable radio inside a host that is already `role="radio"`.
+ * The circle is `p-radioButton`'s look, rebuilt rather than reused (see the component doc for why), so
+ * a radio in a card matches every other radio in dotCMS: `1.5rem` box with a 1px border, filled with
+ * `primary` when checked, holding a `1rem` `primary.contrast` dot that scales from `0.1` to `1` over
+ * `form.field.transition.duration`. Those are a real one's rendered values, measured in the running
+ * app, not a guess — so if a theme upgrade changes the radio, these need re-measuring against it.
  */
 const INDICATOR_CHECKED_CLASSES = 'border-primary bg-primary';
 const INDICATOR_UNCHECKED_CLASSES = 'border-(--p-form-field-border-color) bg-surface-0';
@@ -65,6 +61,17 @@ const DISABLED_CLASSES = 'cursor-default opacity-60';
  * Signal forms only, by design: no `ControlValueAccessor`, so nothing here reaches into reactive
  * forms. Without a form, drive it with `[(value)]` — or `[value]` plus `(valueChange)` when the
  * group's value is not writable, e.g. when picking an option writes more than the option itself.
+ *
+ * The card is a `p-card` but the circle inside it is not a `p-radioButton`, and that asymmetry is the
+ * point: **`p-radioButton` cannot be mounted presentationally.** Its `onInit` does
+ * `this.injector.get(NgControl)` with no `optional`, so one rendered with no `ngModel`, `formControl`
+ * or `formControlName` throws `NG0201: No provider found for NgControl` — confirmed by mounting a bare
+ * one. Driving it would mean giving this component an internal reactive-forms control purely to paint
+ * a circle, in a control whose whole contract is signal forms, and nesting a second focusable radio
+ * inside a host that is already `role="radio"` — two radios for one choice, for the keyboard and for
+ * a screen reader. The circle is therefore drawn here from the radio's own tokens (below), which costs
+ * a handful of classes and keeps the semantics in one place. If PrimeNG ever makes `NgControl`
+ * optional, this is the decision to revisit.
  *
  * Gaining and losing the selection is animated in both directions, the way `p-radioButton` does it:
  * the dot stays in the DOM and scales between `0.1` and `1`, and the colours transition. Both are
