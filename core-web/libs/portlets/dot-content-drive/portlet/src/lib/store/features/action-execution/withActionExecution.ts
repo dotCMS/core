@@ -309,6 +309,13 @@ export function withActionExecution() {
                      * Shares the legacy servlet's response shape with Add to Bundle, and the same
                      * caveat: it answers 200 for its own failures, so a body without a numeric
                      * `errors` is routed to the error handler rather than reported as a success.
+                     *
+                     * Known under-report on `publishexpire`. `RemotePublishAjaxAction.publish`
+                     * creates one bundle for the publish half and a second for the expire half, and
+                     * the second `responseMap` overwrites the first — so the counts that come back
+                     * describe the expire half alone and the toast reports fewer items than were
+                     * actually queued. Not a regression here: `PushPublishActionlet.doPushPublish`
+                     * splits the same way, so the workflow path reports it identically.
                      */
                     executePushPublish: (
                         actionName: string,

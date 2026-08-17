@@ -19,8 +19,13 @@ export type DotWorkflowPushPublishAction = 'publish' | 'expire' | 'publishexpire
  * The push publish payload, in the shape the backend's `PushPublishBean` expects.
  *
  * Already converted — dates split into `yyyy-MM-dd` + `HH-mm` pairs, environments comma-joined into
- * `whereToSend` — so a consumer can hand it straight to a fire request without repeating the
- * transformation that `DotWorkflowEventHandlerService.processWorkflowPayload` does today.
+ * `whereToSend` — so consumers do not repeat the transformation that
+ * `DotWorkflowEventHandlerService.processWorkflowPayload` does today.
+ *
+ * Two consumers, two destinations. A workflow action carries it into `bulkFire` as one of its
+ * inputs; a Content Drive quick action has no workflow action to fire, so it posts the same values
+ * as the form body `RemotePublishAjaxAction` expects. The field names are the servlet's vocabulary
+ * either way, which is why one shape serves both.
  *
  * Lives here rather than beside `DotWorkflowPushPublishComponent` because both the component that
  * produces it (`@dotcms/ui`) and the service that posts it (`@dotcms/data-access`) need it, and

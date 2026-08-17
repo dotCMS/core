@@ -110,7 +110,7 @@ describe('PushPublishService', () => {
         );
 
         expect(req.request.body).toBe(
-            `assetIdentifier=${assetIdentifierEncoded}&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
+            `assetIdentifier=${assetIdentifierEncoded}&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa%20Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
         );
         req.flush(mockResponse);
     });
@@ -129,7 +129,7 @@ describe('PushPublishService', () => {
             HttpMethod.POST
         );
         expect(req.request.body).toBe(
-            `assetIdentifier=1234567890&remotePublishDate=${currentDateStr}&remotePublishTime=${currentTimeStr}&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
+            `assetIdentifier=1234567890&remotePublishDate=${currentDateStr}&remotePublishTime=${currentTimeStr}&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa%20Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
         );
         req.flush(mockResponse);
     });
@@ -149,7 +149,7 @@ describe('PushPublishService', () => {
         );
 
         expect(req.request.body).toBe(
-            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=`
+            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa%20Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=`
         );
         req.flush(mockResponse);
     });
@@ -168,7 +168,7 @@ describe('PushPublishService', () => {
             HttpMethod.POST
         );
         expect(req.request.body).toBe(
-            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=`
+            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa%20Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=`
         );
 
         req.flush(mockResponse);
@@ -189,7 +189,7 @@ describe('PushPublishService', () => {
             HttpMethod.POST
         );
         expect(req.request.body).toBe(
-            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
+            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa%20Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
         );
         req.flush(mockResponse);
     });

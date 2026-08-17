@@ -91,12 +91,23 @@ export class PushPublishService {
      * comma-joined — the action splits on "," (`RemotePublishAjaxAction`, "Support for multiple ids
      * in the assetIdentifier parameter"), so bulk needs no new endpoint.
      *
-     * Separate from {@link pushPublishContent} because of the date handling, not the count.
-     * `DotPushPublishData` carries whole dates and this service splits them into the servlet's
-     * `remotePublishDate` / `remotePublishTime` pair. {@link DotWorkflowPushPublishValue} arrives
-     * already split — that is what the workflow push publish form emits — so routing it through the
-     * other method would mean recombining two strings into a `Date` for this service to take apart
-     * again, losing the timezone the user picked on the way. Here the values pass straight through.
+     * **Why the servlet and not the workflow fire path.** There is nothing to route through. A push
+     * publish over an arbitrary selection has no workflow action to name: `bulkFire` needs a real
+     * action UUID belonging to the contentlets' own scheme and only pushes if that action wires
+     * `PushPublishActionlet`, and there is no `PUSH_PUBLISH` in `WorkflowAPI.SystemAction`, so no
+     * `default/fire/{systemAction}` route either — the way Lock and Unlock get one. A mixed
+     * content-type selection with no action chosen cannot supply one.
+     *
+     * Routing through it would buy nothing regardless: `PushPublishActionlet.doPushPublish` and
+     * `RemotePublishAjaxAction.publish` are duplicate implementations of the same sequence, and the
+     * actionlet imports the servlet's own `DIALOG_ACTION_*` constants.
+     *
+     * Separate from {@link pushPublishContent} for a second, smaller reason: date handling.
+     * `DotPushPublishData` carries whole dates that this service splits into the servlet's
+     * `remotePublishDate` / `remotePublishTime` pair, while {@link DotWorkflowPushPublishValue}
+     * arrives already split — that is what the workflow push publish form emits — so reusing that
+     * method would mean recombining two strings into a `Date` only to take it apart again, losing
+     * the timezone the user picked. Here the values pass straight through.
      *
      * @param assetIdentifier One identifier, or several comma-joined
      * @param value The payload emitted by `DotWorkflowPushPublishComponent`
@@ -113,12 +124,11 @@ export class PushPublishService {
             'Content-Type': 'application/x-www-form-urlencoded'
         });
 
-        // Every value is encoded, not just the identifier. In practice these are all URL-safe —
+        // Every value is encoded, not just the identifier. Most are URL-safe in practice —
         // environment ids are UUIDs, `iWantTo` is a fixed enum, dates arrive pre-formatted and
         // `timezoneId` is a Java zone id — but `filterKey` is a descriptor key with no such
-        // guarantee, and one unescaped `&` or `=` in a form-encoded body silently corrupts every
-        // parameter after it. `getPublishEnvironmentData` encodes only the identifier; this does not
-        // copy that.
+        // guarantee, and one unescaped `&` or `=` in a form-encoded body silently swallows every
+        // parameter after it.
         const params = [
             `assetIdentifier=${encodeURIComponent(assetIdentifier)}`,
             `remotePublishDate=${encodeURIComponent(value.publishDate)}`,
@@ -156,6 +166,8 @@ export class PushPublishService {
             timezoneId
         }: DotPushPublishData
     ): string {
+        // Encoded for the same reason as `pushPublishAssets`: an unescaped `&` or `=` in any value
+        // silently swallows every parameter after it in a form-encoded body.
         let result = '';
         result += `assetIdentifier=${encodeURIComponent(assetIdentifier)}`;
         result += `&remotePublishDate=${this.dotFormatDateService.format(
@@ -174,14 +186,14 @@ export class PushPublishService {
             expireDate ? new Date(expireDate) : new Date(),
             'HH-mm'
         )}`;
-        result += `&timezoneId=${timezoneId}`;
-        result += `&iWantTo=${pushActionSelected}`;
-        result += `&whoToSend=${environment}`;
+        result += `&timezoneId=${encodeURIComponent(timezoneId)}`;
+        result += `&iWantTo=${encodeURIComponent(pushActionSelected)}`;
+        result += `&whoToSend=${encodeURIComponent(environment.join(','))}`;
         result += '&bundleName=';
         result += '&bundleSelect=';
 
         if (filterKey) {
-            result += `&filterKey=${filterKey}`;
+            result += `&filterKey=${encodeURIComponent(filterKey)}`;
         }
 
         return result;
