@@ -47,36 +47,14 @@
 
     <div class="grid grid-cols-2 gap-3" role="radiogroup" data-testid="goal-type-options">
         @for (option of goalTypeOptions; track option.value) {
-            <button
-                type="button"
-                role="radio"
-                class="flex items-start gap-3 rounded-md border p-4 text-left disabled:opacity-60"
-                [class]="
-                    $goalType() === option.value
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-surface-200 bg-white'
-                "
-                [attr.aria-checked]="$goalType() === option.value"
+            <dot-radio-card
+                [option]="option.value"
+                [label]="option.labelKey | dm"
+                [description]="option.descriptionKey | dm"
+                [value]="$goalType()"
                 [disabled]="$isLocked()"
-                (click)="selectGoalType(option.value)"
-                [attr.data-testid]="'goal-type-' + option.value">
-                <span
-                    class="mt-0.5 flex size-[18px] flex-none items-center justify-center rounded-full border-2"
-                    [class]="
-                        $goalType() === option.value ? 'border-primary-500' : 'border-surface-300'
-                    "
-                    aria-hidden="true">
-                    @if ($goalType() === option.value) {
-                        <span class="size-2 rounded-full bg-primary"></span>
-                    }
-                </span>
-                <span class="flex flex-col gap-1">
-                    <span class="text-sm font-semibold text-surface-900">
-                        {{ option.labelKey | dm }}
-                    </span>
-                    <span class="text-sm text-surface-500">{{ option.descriptionKey | dm }}</span>
-                </span>
-            </button>
+                (valueChange)="selectGoalType(option.value)"
+                [attr.data-testid]="'goal-type-' + option.value" />
         }
     </div>
 

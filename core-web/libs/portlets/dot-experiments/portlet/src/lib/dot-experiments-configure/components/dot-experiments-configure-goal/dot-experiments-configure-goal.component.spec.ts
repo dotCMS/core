@@ -434,10 +434,13 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should disable every goal type', () => {
-            const options = Array.from(spectator.queryAll('[role="radio"]')) as HTMLButtonElement[];
+            // The options are `dot-radio-card`s, which report disablement to assistive tech.
+            const options = Array.from(spectator.queryAll('[role="radio"]'));
 
             expect(options.length).toBe(4);
-            expect(options.every(({ disabled }) => disabled)).toBe(true);
+            expect(options.every((option) => option.getAttribute('aria-disabled') === 'true')).toBe(
+                true
+            );
         });
 
         it('should disable the goal name', () => {

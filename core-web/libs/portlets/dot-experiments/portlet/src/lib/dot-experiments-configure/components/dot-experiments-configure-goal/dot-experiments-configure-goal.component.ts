@@ -13,7 +13,7 @@ import {
     GOALS_METADATA_MAP,
     MAX_INPUT_DESCRIPTIVE_LENGTH
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRadioCardComponent } from '@dotcms/ui';
 
 import {
     CONFIGURE_GOAL_TYPES,
@@ -93,7 +93,14 @@ export function goalFormSchema(isLocked: () => boolean): SchemaFn<GoalFormSlice>
  */
 @Component({
     selector: 'dot-experiments-configure-goal',
-    imports: [FormField, InputTextModule, SelectModule, TagModule, DotMessagePipe],
+    imports: [
+        FormField,
+        InputTextModule,
+        SelectModule,
+        TagModule,
+        DotMessagePipe,
+        DotRadioCardComponent
+    ],
     templateUrl: './dot-experiments-configure-goal.component.html'
 })
 export class DotExperimentsConfigureGoalComponent {
@@ -166,6 +173,11 @@ export class DotExperimentsConfigureGoalComponent {
      *
      * The whole slice is written at once — a type, a name and a condition are one choice, and
      * writing them field by field would report each intermediate state as an edit.
+     *
+     * This is why the `dot-radio-card`s are driven by `[value]` + `(valueChange)` rather than bound
+     * to `field.type` with `[formField]`: a form binding would write the type on its own, leaving
+     * the rest to a reaction on type changes — which would also fire while a saved goal is being
+     * loaded into the form, wiping the condition it arrived with.
      */
     protected selectGoalType(type: GOAL_TYPES): void {
         const goal = this.$goal();
