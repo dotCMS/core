@@ -13,8 +13,6 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
-
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -32,7 +30,8 @@ describe('DotContentDriveSearchInputComponent', () => {
                 removeFilter: jest.fn(),
                 getFilterValue: jest.fn(),
                 setGlobalSearch: jest.fn(),
-                setSelectedNode: jest.fn()
+                setSelectedNode: jest.fn(),
+                selectRootNode: jest.fn()
             })
         ],
         detectChanges: false
@@ -102,7 +101,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+            expect(mockStore.selectRootNode).toHaveBeenCalled();
         }));
 
         it('should call removeFilter when input is empty', fakeAsync(() => {
@@ -112,7 +111,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+            expect(mockStore.selectRootNode).toHaveBeenCalled();
         }));
 
         it('should debounce input changes by 500ms', fakeAsync(() => {
@@ -127,7 +126,7 @@ describe('DotContentDriveSearchInputComponent', () => {
 
             tick(1);
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+            expect(mockStore.selectRootNode).toHaveBeenCalled();
         }));
 
         it('should trim whitespace from input values', fakeAsync(() => {
@@ -137,7 +136,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+            expect(mockStore.selectRootNode).toHaveBeenCalled();
         }));
 
         it('should handle special characters correctly', fakeAsync(() => {
@@ -148,7 +147,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+            expect(mockStore.selectRootNode).toHaveBeenCalled();
         }));
     });
 

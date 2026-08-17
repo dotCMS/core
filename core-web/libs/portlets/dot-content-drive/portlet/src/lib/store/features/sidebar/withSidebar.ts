@@ -13,7 +13,7 @@ import { inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
@@ -23,12 +23,13 @@ import {
     getFolderHierarchyByPath,
     getFolderNodesByPath
 } from '../../../utils/functions';
-import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
+import { buildTreeFolderNodes, createSiteNode } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
     sidebarLoading: boolean;
     folders: DotFolderTreeNodeItem[];
-    selectedNode: DotFolderTreeNodeItem;
+    /** Undefined until a site resolves and its tree is built: there is no node to select before then. */
+    selectedNode: DotFolderTreeNodeItem | undefined;
 }
 
 export function withSidebar() {
@@ -39,7 +40,7 @@ export function withSidebar() {
         withState<WithSidebarState>({
             sidebarLoading: true,
             folders: [],
-            selectedNode: ALL_FOLDER
+            selectedNode: undefined
         }),
         withMethods((store, dotFolderService = inject(DotFolderService)) => ({
             /**
@@ -51,19 +52,7 @@ export function withSidebar() {
                     return;
                 }
 
-                // The root node *is* the site: selecting it browses the site root. It carries the
-                // hostname as its label so the sidebar names the site once, on the row that
-                // navigates there, rather than in a header that duplicated it.
-                const realAllFolder: DotFolderTreeNodeItem = {
-                    ...ALL_FOLDER,
-                    label: currentSite.hostname,
-                    data: {
-                        hostname: currentSite.hostname,
-                        path: '',
-                        type: 'folder',
-                        id: currentSite.identifier
-                    }
-                };
+                const siteNode = createSiteNode(currentSite);
 
                 const urlFolderPath = store.path() || '';
 
@@ -91,7 +80,7 @@ export function withSidebar() {
                         const { rootNodes, selectedNode } = buildTreeFolderNodes({
                             folderHierarchyLevels: levels.map((level) => level.folders),
                             targetPath: urlFolderPath || '/',
-                            rootNode: realAllFolder
+                            rootNode: siteNode
                         });
 
                         const rootsWithLoadMore = applyLoadMoreToHierarchy(
@@ -107,7 +96,7 @@ export function withSidebar() {
                             // its own subtree. As siblings they sat at the same level as the site
                             // while its chevron controlled nothing, and expanding it fetched them a
                             // second time — the tree showed every root folder twice.
-                            folders: [{ ...realAllFolder, children: rootsWithLoadMore }],
+                            folders: [{ ...siteNode, children: rootsWithLoadMore }],
                             selectedNode: selectedNode
                         });
                     });
@@ -143,6 +132,19 @@ export function withSidebar() {
             setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
                 patchState(store, {
                     selectedNode
+                });
+            },
+
+            /**
+             * Selects the tree's root row, the one that stands for the site rather than a folder.
+             *
+             * Used when a search spans the whole site, where no single folder is the selected one.
+             * A tree of plain folders has no such row, and then nothing is selected, which says the
+             * same thing.
+             */
+            selectRootNode: () => {
+                patchState(store, {
+                    selectedNode: store.folders().find((folder) => !folder.data?.path)
                 });
             },
 

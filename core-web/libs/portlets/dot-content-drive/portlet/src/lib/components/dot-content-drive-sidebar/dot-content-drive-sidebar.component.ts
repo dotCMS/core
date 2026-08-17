@@ -16,7 +16,6 @@ import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tre
 
 import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
-    ALL_FOLDER,
     DotContentDriveMoveItems,
     DotContentDriveTreeRightClick,
     DotContentDriveUploadFiles,
@@ -217,28 +216,34 @@ export class DotContentDriveSidebarComponent {
 
                 if (isRootLevel) {
                     const current = this.$folders();
-                    const siteNode = current.find((folder) => folder.key === ALL_FOLDER.key);
+                    const siteNode = this.#siteNode();
+                    const siblings = siteNode
+                        ? ((siteNode.children as DotFolderTreeNodeItem[]) ?? [])
+                        : current;
 
-                    if (!siteNode) {
-                        return;
-                    }
-
-                    const loaded = ((siteNode.children as DotFolderTreeNodeItem[]) ?? []).filter(
+                    const loaded = siblings.filter(
                         (folder) => folder.data?.type !== LOAD_MORE_NODE_TYPE
                     );
                     // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
                     // the top of a level out of sort order, and paging far enough returns it again.
-                    const combined = mergeFolderNodePage(loaded, folders);
-
-                    siteNode.children = appendLoadMoreNodes(
-                        combined,
+                    const nextSiblings = appendLoadMoreNodes(
+                        mergeFolderNodePage(loaded, folders),
                         totalEntries,
                         parentPath || '/',
                         hostname ?? '',
                         (nextPage ?? 1) + 1
                     );
 
-                    this.#store.updateFolders([...current]);
+                    // With a site row the root folders are its children; without one they are the
+                    // top level itself, which is how a plain folder tree is shaped.
+                    if (siteNode) {
+                        siteNode.children = nextSiblings;
+                        this.#store.updateFolders([...current]);
+
+                        return;
+                    }
+
+                    this.#store.updateFolders(nextSiblings);
 
                     return;
                 }
@@ -334,16 +339,28 @@ export class DotContentDriveSidebarComponent {
     }
 
     /**
-     * The site's root folders, which hang off the site node rather than sitting at the top level.
-     * Path walks start here: the site node's own path is empty and matches no segment.
+     * The site row, when the tree has one. Recognised by having no folder path: every folder node
+     * carries one, and the row that stands for a site does not. A tree can be a plain list of
+     * folders with no site row at all, which is why this is a lookup rather than an assumption about
+     * the first node.
      *
-     * @returns {DotFolderTreeNodeItem[]} the root folders, or the top level if there is no site node
+     * @returns {DotFolderTreeNodeItem | undefined} the site row, if the tree has one
+     */
+    #siteNode(): DotFolderTreeNodeItem | undefined {
+        return this.$folders().find((folder) => !folder.data?.path);
+    }
+
+    /**
+     * The folders at the top of the hierarchy: the site row's children when there is one, otherwise
+     * the top level itself. Path walks start here, since the site row's empty path matches no
+     * segment.
+     *
+     * @returns {DotFolderTreeNodeItem[]} the root folders
      */
     #rootFolders(): DotFolderTreeNodeItem[] {
-        const folders = this.$folders();
-        const siteNode = folders.find((folder) => folder.key === ALL_FOLDER.key);
+        const siteNode = this.#siteNode();
 
-        return siteNode ? ((siteNode.children as DotFolderTreeNodeItem[]) ?? []) : folders;
+        return siteNode ? ((siteNode.children as DotFolderTreeNodeItem[]) ?? []) : this.$folders();
     }
 
     /**

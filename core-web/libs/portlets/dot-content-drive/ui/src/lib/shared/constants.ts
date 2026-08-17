@@ -1,10 +1,6 @@
 import { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';
 
-import {
-    DotFolderListViewColumn,
-    DotFolderListViewColumnField,
-    DotFolderTreeNodeItem
-} from './models';
+import { DotFolderListViewColumn, DotFolderListViewColumnField } from './models';
 
 export { LOAD_MORE_NODE_TYPE };
 
@@ -29,8 +25,6 @@ export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [...FIXED_COLUMNS]
     (a, b) => a.order - b.order
 );
 
-export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
-
 /** i18n key for the "Load more" node label. */
 export const LOAD_MORE_LABEL_KEY = 'content-drive.tree.load-more';
 
@@ -39,31 +33,6 @@ export const LOAD_MORE_LABEL_KEY = 'content-drive.tree.load-more';
  * @type DOT_DRAG_ITEM
  */
 export const DOT_DRAG_ITEM = 'dotcms/item';
-
-/**
- * @export
- * @type ALL_FOLDER
- * @description The tree's synthetic root node: it stands for the site itself, and selecting it
- * browses the site root. The store clones it per site, filling in the hostname as the label and the
- * site identifier as the data id (see `withSidebar.loadFolders`), so the label here is only the
- * placeholder that exists before a site is resolved and is never rendered.
- */
-export const ALL_FOLDER: DotFolderTreeNodeItem = {
-    key: 'ALL_FOLDER',
-    label: '',
-    loading: false,
-    data: {
-        type: 'folder',
-        path: '',
-        hostname: '',
-        id: '',
-        inode: ''
-    },
-    // A globe, not a folder: this row is the site. PrimeNG renders `icon` beside the node label.
-    icon: 'pi pi-globe',
-    leaf: false,
-    expanded: true
-};
 
 /**
  * Pass-through styling for the popover that hosts a chip-filter listbox.

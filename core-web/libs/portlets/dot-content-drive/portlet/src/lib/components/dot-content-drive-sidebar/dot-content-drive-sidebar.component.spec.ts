@@ -15,14 +15,15 @@ import {
     DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
-    ALL_FOLDER,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { createFakeSite } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { createSiteNode } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
@@ -34,16 +35,13 @@ describe('DotContentDriveSidebarComponent', () => {
         siteName: 'Demo Site'
     };
 
-    const realAllFolder: DotFolderTreeNodeItem = {
-        ...ALL_FOLDER,
-        label: mockSiteDetails.hostname,
-        data: {
-            hostname: mockSiteDetails.hostname,
-            path: '',
-            type: 'folder',
-            id: mockSiteDetails.identifier
-        }
-    };
+    // The row that stands for the site: no folder path, which is what tells it apart from a folder.
+    const siteNode: DotFolderTreeNodeItem = createSiteNode(
+        createFakeSite({
+            identifier: mockSiteDetails.identifier,
+            hostname: mockSiteDetails.hostname
+        })
+    );
 
     const mockFolders: DotFolder[] = [
         {
@@ -68,7 +66,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     const mockTreeNodes: DotFolderTreeNodeItem[] = [
         {
-            ...realAllFolder,
+            ...siteNode,
             data: {
                 hostname: mockSiteDetails.hostname,
                 path: '',
@@ -677,11 +675,11 @@ describe('DotContentDriveSidebarComponent', () => {
                 };
                 // Root folders and their "Load more" are the site node's children, so this is the
                 // shape the root-level branch merges.
-                const siteNode: DotFolderTreeNodeItem = {
-                    ...realAllFolder,
+                const siteRow: DotFolderTreeNodeItem = {
+                    ...siteNode,
                     children: [pinned, loadMoreNode]
                 };
-                contentDriveStore.folders.mockReturnValue([siteNode]);
+                contentDriveStore.folders.mockReturnValue([siteRow]);
 
                 contentDriveStore.loadChildFolders.mockReturnValue(
                     of({
@@ -707,7 +705,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 // The pinned folder appears once: the page that returns it again is merged into the
                 // children already loaded, not concatenated onto them.
                 expect(contentDriveStore.updateFolders).toHaveBeenCalledWith([
-                    { ...realAllFolder, children: [pinned] }
+                    { ...siteNode, children: [pinned] }
                 ]);
             });
 

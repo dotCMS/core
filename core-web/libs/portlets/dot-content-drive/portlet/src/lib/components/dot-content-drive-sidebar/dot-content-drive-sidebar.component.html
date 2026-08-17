@@ -2,7 +2,7 @@
     #treeFolder
     [folders]="$folders()"
     [loading]="$loading()"
-    [selectedNode]="$selectedNode()"
+    [selectedNode]="$selectedNode() ?? null"
     (onNodeSelect)="onNodeSelect($event)"
     (onNodeExpand)="onNodeExpand($event)"
     (loadMore)="onLoadMore($event)"

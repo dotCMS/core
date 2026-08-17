@@ -17,8 +17,8 @@ export class ContentDrivePage {
         this.treeSelector = page.getByTestId('tree-selector');
         this.sidebar = page.getByTestId('sidebar');
         // The site is named by the tree's own root row rather than a header above it, so the
-        // hostname is that row's label.
-        this.currentSiteHostname = this.sidebar.locator('[data-node-key="ALL_FOLDER"]');
+        // hostname is that row's label, and that row is the first one.
+        this.currentSiteHostname = this.sidebar.getByTestId('tree-node-label').first();
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
     }

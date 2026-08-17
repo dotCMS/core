@@ -16,7 +16,6 @@ import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 import { isTreeNodeContentData } from '@dotcms/dotcms-models';
 import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
-import { ALL_FOLDER } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
@@ -26,8 +25,8 @@ import {
 } from '../shared/models';
 
 /**
- * Content Drive folder tree wrapper: owns drag-and-drop, ALL_FOLDER labeling,
- * and pulse empty-loading UX around the shared {@link DotFolderTreeComponent}.
+ * Content Drive folder tree wrapper: owns drag-and-drop, site-row styling, and pulse
+ * empty-loading UX around the shared {@link DotFolderTreeComponent}.
  */
 @Component({
     selector: 'dot-tree-folder',
@@ -56,8 +55,6 @@ export class DotTreeFolderComponent {
     readonly elementRef = inject(ElementRef);
 
     readonly $activeDropNode = signal<DotFolderTreeNodeData | null>(null);
-
-    protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
 
     protected readonly treePt = {
         root: { class: 'w-full h-full border-none overflow-y-auto' },
@@ -102,13 +99,11 @@ export class DotTreeFolderComponent {
         const data = JSON.parse(nodeData) as DotFolderTreeNodeData;
 
         // Only nodes that can actually produce a menu get the native one suppressed. "Load more"
-        // sentinels are not folders (and render a different template, so they should not reach
-        // here at all) and neither is the synthetic "All folders" root. Both keep the browser menu
-        // rather than having it swallowed for nothing.
-        if (
-            !isTreeNodeContentData(data) ||
-            label?.getAttribute('data-node-key') === this.ALL_FOLDER_KEY
-        ) {
+        // sentinels are not folders (and render a different template, so they should not reach here
+        // at all), and a row with no path is a site rather than a folder, so it has no folder
+        // permissions to build a menu from. Both keep the browser menu rather than having it
+        // swallowed for nothing.
+        if (!isTreeNodeContentData(data) || !data.path) {
             return;
         }
 

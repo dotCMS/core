@@ -5,7 +5,7 @@ import { NEVER, of } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
@@ -16,6 +16,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../../../shared/models';
+import { createSiteNode } from '../../../utils/tree-folder.utils';
 
 const mockSite = createFakeSite();
 
@@ -87,17 +88,8 @@ describe('withSidebar', () => {
     let store: InstanceType<typeof sidebarStoreMock>;
     let folderService: jest.Mocked<DotFolderService>;
 
-    const realAllFolder: DotFolderTreeNodeItem = {
-        ...ALL_FOLDER,
-        // The root node is the site, so it is labelled with the hostname.
-        label: mockSite.hostname,
-        data: {
-            hostname: mockSite.hostname,
-            path: '',
-            type: 'folder',
-            id: mockSite.identifier
-        }
-    };
+    // What `createSiteNode` produces for the mocked site: the row that stands for the site.
+    const siteNode: DotFolderTreeNodeItem = createSiteNode(mockSite);
 
     /**
      * The site node as the tree holds it: the site's folders are its children, so its chevron
@@ -107,7 +99,7 @@ describe('withSidebar', () => {
     const siteNodeWithChildren = (
         children: DotFolderTreeNodeItem[] = []
     ): DotFolderTreeNodeItem => ({
-        ...realAllFolder,
+        ...siteNode,
         children
     });
 
@@ -130,9 +122,7 @@ describe('withSidebar', () => {
         it('should set initial after loading folders', () => {
             expect(store.sidebarLoading()).toBe(false);
             expect(store.folders()).toEqual([siteNodeWithChildren()]);
-            expect(store.selectedNode()).toEqual({
-                ...realAllFolder
-            });
+            expect(store.selectedNode()).toEqual(siteNode);
         });
     });
 
@@ -156,7 +146,7 @@ describe('withSidebar', () => {
 
         it('should be the only top-level node', () => {
             expect(store.folders()).toHaveLength(1);
-            expect(store.folders()[0].key).toBe(ALL_FOLDER.key);
+            expect(store.folders()[0].key).toBe(mockSite.identifier);
         });
 
         it('should own the site folders as its children, so its chevron collapses the site', () => {
@@ -324,7 +314,7 @@ describe('withSidebar', () => {
 
         describe('updateFolders', () => {
             it('should update the folders array', () => {
-                const newFolders = [realAllFolder, ...mockTreeNodes];
+                const newFolders = [siteNode, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -333,7 +323,7 @@ describe('withSidebar', () => {
 
             it('should create a new array reference', () => {
                 const originalFolders = store.folders();
-                const newFolders = [realAllFolder, ...mockTreeNodes];
+                const newFolders = [siteNode, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
