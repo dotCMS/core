@@ -428,7 +428,21 @@ export class DotUsersCreateComponent {
 
         const roleKeys = this.currentRoleKeys();
         if (roleKeys && roleKeys.length > 0) {
-            payload.roles = roleKeys;
+            // Drop the user's personal role (its roleKey is the userId).
+            // The backend `processRoles` calls `removeAllRolesFromUser`
+            // and then loops `addRoleToUser` for every key we send —
+            // that loop throws `Cannot alter users on this role` when
+            // it hits a role with `editUsers=false`, and the personal
+            // role always has that flag. Filtering it here keeps the
+            // save from tripping the guard. Proper fix belongs in the
+            // backend (skip editUsers=false roles inside processRoles).
+            const personalRoleKey = this.user?.userId ?? '';
+            const outbound = personalRoleKey
+                ? roleKeys.filter((key) => key !== personalRoleKey)
+                : roleKeys;
+            if (outbound.length > 0) {
+                payload.roles = outbound;
+            }
         }
 
         return payload;
