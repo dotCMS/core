@@ -14,7 +14,8 @@ import { TOTAL_WEIGHT, WEIGHT_PRECISION } from '../shared/constants';
 import {
     ConfigureValidationRule,
     DotExperimentConfigurePage,
-    DotExperimentsConfigureViewState
+    DotExperimentsConfigureViewState,
+    WeightedVariant
 } from '../shared/models';
 
 /**
@@ -25,26 +26,29 @@ import {
  */
 
 /**
- * Splits 100% across the variants: `floor(100/n)` each, with the remainder absorbed by the first
- * one so the total is exactly 100 for any variant count (AC23).
+ * Splits 100% across the items: `floor(100/n)` each, with the remainder absorbed by the first one so
+ * the total is exactly 100 for any variant count (AC23).
+ *
+ * Generic over what carries the weight, so the same maths serves the form rows the Variants card
+ * splits and the persisted variants a proportion is rebuilt from.
  */
-export function splitWeightsEvenly(variants: Variant[]): Variant[] {
-    if (!variants.length) {
-        return variants;
+export function splitWeightsEvenly<T extends WeightedVariant>(items: readonly T[]): T[] {
+    if (!items.length) {
+        return [];
     }
 
-    const share = Math.floor(TOTAL_WEIGHT / variants.length);
-    const remainder = TOTAL_WEIGHT - share * variants.length;
+    const share = Math.floor(TOTAL_WEIGHT / items.length);
+    const remainder = TOTAL_WEIGHT - share * items.length;
 
-    return variants.map((variant, index) => ({
-        ...variant,
+    return items.map((item, index) => ({
+        ...item,
         weight: index === 0 ? share + remainder : share
     }));
 }
 
-/** Sum of the variant weights, rounded to the precision they are stored at. */
-export function totalWeight(variants: Variant[]): number {
-    const total = variants.reduce((sum, { weight }) => sum + (weight ?? 0), 0);
+/** Sum of the weights, rounded to the precision they are stored at. A cleared one counts as zero. */
+export function totalWeight(items: readonly WeightedVariant[]): number {
+    const total = items.reduce((sum, { weight }) => sum + (weight ?? 0), 0);
 
     return Math.round(total * WEIGHT_PRECISION) / WEIGHT_PRECISION;
 }

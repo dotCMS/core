@@ -89,18 +89,25 @@
                     data-testid="variant-weight-tooltip">
                     <div
                         class="flex items-center gap-1.5 rounded-md border border-surface-300 px-2.5 py-1.5">
-                        <input
-                            pInputText
-                            type="number"
-                            min="0"
-                            [attr.max]="TOTAL_WEIGHT"
-                            step="1"
-                            class="w-full min-w-0 border-none bg-transparent p-0 text-right text-sm font-semibold shadow-none!"
-                            [value]="row.weight.toString()"
-                            [disabled]="row.disabled"
-                            [attr.aria-label]="'experiments.configure.variants.weight' | dm"
-                            (change)="onWeightChanged(row.id, $any($event.target).value)"
-                            data-testid="variant-weight-input" />
+                        @if ($weightFieldById().get(row.id); as weightField) {
+                            <input
+                                pInputText
+                                type="number"
+                                step="1"
+                                class="w-full min-w-0 border-none bg-transparent p-0 text-right text-sm font-semibold shadow-none!"
+                                [formField]="weightField"
+                                [attr.aria-label]="'experiments.configure.variants.weight' | dm"
+                                data-testid="variant-weight-input" />
+                        } @else {
+                            <input
+                                pInputText
+                                type="number"
+                                class="w-full min-w-0 border-none bg-transparent p-0 text-right text-sm font-semibold shadow-none!"
+                                [value]="row.weight.toString()"
+                                [disabled]="true"
+                                [attr.aria-label]="'experiments.configure.variants.weight' | dm"
+                                data-testid="variant-weight-input" />
+                        }
                         <span class="flex-none text-sm text-surface-500">%</span>
                     </div>
                 </div>

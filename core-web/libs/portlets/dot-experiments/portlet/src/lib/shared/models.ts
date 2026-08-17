@@ -205,14 +205,38 @@ export interface SchedulingFormSlice {
 }
 
 /**
+ * One variant's share of the traffic, as the Variants card edits it.
+ *
+ * The identifier travels with the weight so the row maps back to the `TrafficProportion` entry it
+ * stands for: the endpoint replaces the whole proportion, and the names and URLs the rest of the
+ * card renders stay where they are persisted rather than being copied into the form.
+ *
+ * `null` is what a cleared number input writes, and it is kept: forcing it to `0` would fight the
+ * user mid-edit, and a total that no longer adds up is exactly what the card is there to report.
+ */
+export interface VariantWeightFormRow {
+    id: string;
+    /** Share of the traffic, in percent, or `null` while the input is empty. */
+    weight: number | null;
+}
+
+/** Anything carrying a variant weight: a persisted `Variant` or a {@link VariantWeightFormRow}. */
+export interface WeightedVariant {
+    weight?: number | null;
+}
+
+/**
  * Everything the Configure screen edits, as one model.
  *
  * The screen is a single signal form: the shell owns this model and the rules over it, and each
  * card renders the slice it is handed. That is what lets one binding turn any edit into one PATCH
  * body — a per-card form would have to negotiate that between five of them.
  *
- * Variants are deliberately absent: they have their own endpoints, not a `trafficProportion` PATCH,
- * so nothing about them belongs in a form.
+ * A variant's *existence* is deliberately absent: adding, renaming and deleting one each have their
+ * own endpoint, so none of them is a form value. Its *weight* is one: the weights are edited
+ * together, they are only ever valid as a set, and `PATCH /api/v1/experiments/{id}` takes them as
+ * one `trafficProportion` key. Holding them here is what makes "they add up to 100" a cross-field
+ * rule of the form rather than a sum recomputed wherever it happens to be needed.
  */
 export interface ConfigureFormModel {
     name: string;
@@ -221,6 +245,8 @@ export interface ConfigureFormModel {
     /** Percentage of the page's traffic that enters the experiment, 1–100. */
     trafficAllocation: number;
     scheduling: SchedulingFormSlice;
+    /** One row per persisted variant, in the order they are drawn. Empty before creation. */
+    variantWeights: VariantWeightFormRow[];
 }
 
 /**

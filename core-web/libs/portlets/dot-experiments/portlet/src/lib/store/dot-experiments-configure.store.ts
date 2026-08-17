@@ -31,8 +31,6 @@ import {
     DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
-    TrafficProportion,
-    TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -58,7 +56,6 @@ import {
     fromBrowserPage,
     hasPendingChanges,
     normalizePath,
-    splitWeightsEvenly,
     toConfigurePage,
     toOutgoingPatch,
     totalWeight,
@@ -169,7 +166,14 @@ export const DotExperimentsConfigureStore = signalStore(
             $lockedByAnotherUser,
             $variants,
             $totalWeight,
-            /** Warning bar condition (AC25). An experiment with no variants yet is not "wrong". */
+            /**
+             * Whether the weights the store holds do not add up (AC25). An experiment with no
+             * variants yet is not "wrong", which is the exception the backend makes as well.
+             *
+             * The Variants card states the same thing from its own slice, where the rule lives in
+             * the schema; this is what the *store* knows, and it is why an intermediate total is
+             * held back rather than PATCHed (see `toOutgoingPatch`).
+             */
             $hasInvalidWeights: computed<boolean>(
                 () => $variants().length > 0 && $totalWeight() !== TOTAL_WEIGHT
             ),
@@ -615,26 +619,6 @@ export const DotExperimentsConfigureStore = signalStore(
                             )
                         );
                     })
-                ),
-
-                /**
-                 * Split Evenly is a weight change like any other: it is reported as an edit, so it
-                 * folds into the same accumulated PATCH instead of having a path of its own.
-                 */
-                splitEvenly$: events.on(pageEvents.splitEvenly).pipe(
-                    map(() => store.experiment()?.trafficProportion),
-                    filter(
-                        (trafficProportion): trafficProportion is TrafficProportion =>
-                            !!trafficProportion?.variants?.length
-                    ),
-                    map((trafficProportion) =>
-                        pageEvents.formEdited({
-                            trafficProportion: {
-                                type: TrafficProportionTypes.SPLIT_EVENLY,
-                                variants: splitWeightsEvenly(trafficProportion.variants)
-                            }
-                        })
-                    )
                 ),
 
                 // Variants have dedicated endpoints; `mergeMap` so deleting one row does not

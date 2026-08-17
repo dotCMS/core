@@ -52,12 +52,11 @@ export const dotExperimentsConfigurePageEvents = eventGroup({
          */
         formEdited: type<DotExperimentPatchBody>(),
 
-        // Variants: dedicated endpoints, not a `trafficProportion` PATCH
+        // Variants: dedicated endpoints, not a `trafficProportion` PATCH. Their *weights* are not
+        // here at all — they are a slice of the screen's form, and travel as `formEdited`.
         variantAdded: type<string>(),
         variantRenamed: type<ConfigureVariantRename>(),
         variantDeleted: type<string>(),
-        /** Re-splits the weights; persisted through the same accumulated PATCH as any other edit. */
-        splitEvenly: type<void>(),
 
         // Transitions. Each is already confirmed in the shell where a confirmation applies.
         startRequested: type<void>(),
