@@ -1,19 +1,23 @@
-<p-card data-testid="radio-card-surface">
-    <div class="flex items-start gap-3">
-        <span class="radio-card__indicator" aria-hidden="true" data-testid="radio-card-indicator">
-            <span class="radio-card__dot" data-testid="radio-card-dot"></span>
-        </span>
+<label class="radio-card">
+    <p-card data-testid="radio-card-surface">
+        <div class="flex items-start gap-3">
+            <p-radioButton
+                [formField]="$field()"
+                [value]="$option()"
+                (onClick)="onClick($event)"
+                data-testid="radio-card-radio" />
 
-        <span class="flex flex-col gap-1">
-            <span class="text-sm font-semibold text-surface-900" data-testid="radio-card-label">
-                {{ label() }}
-            </span>
-            @if (description()) {
-                <span class="text-sm text-surface-500" data-testid="radio-card-description">
-                    {{ description() }}
+            <span class="flex flex-col gap-1">
+                <span class="text-sm font-semibold text-surface-900" data-testid="radio-card-label">
+                    {{ $label() }}
                 </span>
-            }
-            <ng-content />
-        </span>
-    </div>
-</p-card>
+                @if ($description()) {
+                    <span class="text-sm text-surface-500" data-testid="radio-card-description">
+                        {{ $description() }}
+                    </span>
+                }
+                <ng-content />
+            </span>
+        </div>
+    </p-card>
+</label>

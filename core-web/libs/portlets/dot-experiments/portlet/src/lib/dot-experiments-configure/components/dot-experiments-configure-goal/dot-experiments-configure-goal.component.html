@@ -44,18 +44,17 @@
             }
         </div>
 
-        <dot-radio-group class="grid grid-cols-2 gap-3" data-testid="goal-type-options">
+        <div class="grid grid-cols-2 gap-3" role="radiogroup" data-testid="goal-type-options">
             @for (option of goalTypeOptions; track option.value) {
                 <dot-radio-card
+                    [field]="$field().type"
                     [option]="option.value"
                     [label]="option.labelKey | dm"
                     [description]="option.descriptionKey | dm"
-                    [value]="$goalType()"
-                    [disabled]="$isLocked()"
-                    (valueChange)="selectGoalType(option.value)"
+                    (picked)="onGoalTypePicked(option.value)"
                     [attr.data-testid]="'goal-type-' + option.value" />
             }
-        </dot-radio-group>
+        </div>
 
         @if ($showGoalTypeError()) {
             <small class="p-error" data-error="1" data-testid="goal-type-error">

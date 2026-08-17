@@ -1,21 +1,14 @@
 /**
- * Appearance is driven off the radio's own ARIA state, so `aria-checked` is the single source of truth
- * for both what the card means and how it looks, and the class keeps no styling state at all.
+ * The selected state comes straight off the native radio inside, so nothing in the class or the
+ * template tracks it: `:has(:checked)` is the same source of truth the radio itself renders from.
  *
- * It lives in a stylesheet rather than in Tailwind utilities for one concrete reason: a component
- * stylesheet is unlayered and scoped, so `p-card[_ngcontent-x]` outranks PrimeNG's own `.p-card`,
- * while a utility sits in `@layer utilities` and loses to it no matter the specificity — which is what
- * `!important` was papering over.
+ * These live in a stylesheet rather than in Tailwind utilities because a component stylesheet is
+ * unlayered and scoped, so `p-card[_ngcontent-x]` outranks PrimeNG's own `.p-card`, while a utility
+ * sits in `@layer utilities` and loses to it no matter the specificity.
  */
-:host {
+.radio-card {
     display: block;
-    text-align: left;
     cursor: pointer;
-}
-
-:host([aria-disabled="true"]) {
-    cursor: default;
-    opacity: 0.6;
 }
 
 p-card {
@@ -24,61 +17,29 @@ p-card {
         border-color var(--p-transition-duration) ease;
 }
 
-:host([aria-checked="true"]) p-card {
+.radio-card:has(input:checked) p-card {
     border-color: var(--p-primary-color);
     background: var(--p-primary-50);
 }
 
 /**
- * The circle is `p-radioButton`'s, down to the tokens Lara's radiobutton maps to, so it tracks the
- * theme and reads as any other radio in dotCMS: a `1.5rem` box with a 1px border that fills with
- * `primary` when checked, holding a `1rem` `primary.contrast` dot that scales in from `0.1`.
- * The two sizes are the preset's own literals; everything else is a token.
+ * The radio draws its own hover, but only over the circle — and the whole card is the radio, so the
+ * card needs a cue of its own. It is the content hover background rather than the form field's hover
+ * border, which in this theme is `primary`: a hovered card would then be indistinguishable from the
+ * picked one. Measured both, they are the same `#4e65f1`.
  */
-.radio-card__indicator {
-    display: flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 1px solid var(--p-form-field-border-color);
-    border-radius: 50%;
-    background: var(--p-form-field-background);
-    transition:
-        background var(--p-form-field-transition-duration) ease,
-        border-color var(--p-form-field-transition-duration) ease;
+.radio-card:hover:not(:has(input:checked)):not(:has(input:disabled)) p-card {
+    background: var(--p-content-hover-background);
 }
 
-// Hovering anywhere on the card is hovering the radio, which is the point of a radio card — so the
-// circle takes the form field's hover border, over a target wider than `p-radioButton`'s own.
-:host(:hover:not([aria-disabled="true"])) .radio-card__indicator {
-    border-color: var(--p-form-field-hover-border-color);
-}
-
-:host([aria-checked="true"]) .radio-card__indicator {
-    border-color: var(--p-primary-color);
-    background: var(--p-primary-color);
-}
-
-.radio-card__dot {
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    background: var(--p-primary-contrast-color);
-    transform: scale(0.1);
-    transition: transform var(--p-form-field-transition-duration) ease;
-}
-
-:host([aria-checked="true"]) .radio-card__dot {
-    transform: scale(1);
+.radio-card:has(input:disabled) {
+    cursor: default;
+    opacity: 0.6;
 }
 
 // Motion is decoration here, so it is the first thing to drop for anyone who asked for less.
 @media (prefers-reduced-motion: reduce) {
-    p-card,
-    .radio-card__indicator,
-    .radio-card__dot {
+    p-card {
         transition: none;
     }
 }

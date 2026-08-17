@@ -1128,7 +1128,11 @@ describe('DotExperimentsConfigureComponent', () => {
         });
 
         it('should report the goal the card completed as one edit of the whole form', () => {
-            spectator.click(byTestId(`goal-type-${GOAL_TYPES.BOUNCE_RATE}`));
+            // The card is a `<label>` around a real radio, so a pick is a click on that radio.
+            const radio = spectator
+                .query(byTestId(`goal-type-${GOAL_TYPES.BOUNCE_RATE}`))
+                ?.querySelector('input') as HTMLInputElement;
+            radio.click();
             spectator.detectChanges();
 
             expect(reportedPatches()).toContainEqual({

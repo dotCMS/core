@@ -13,7 +13,7 @@ import {
     GOAL_TYPES,
     GOALS_METADATA_MAP
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRadioCardComponent, DotRadioGroupComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotRadioCardComponent } from '@dotcms/ui';
 
 import {
     CONFIGURE_GOAL_TYPES,
@@ -78,8 +78,7 @@ const GOAL_TYPE_OPTIONS: GoalTypeOption[] = CONFIGURE_GOAL_TYPES.map((type) => (
         SelectModule,
         TagModule,
         DotMessagePipe,
-        DotRadioCardComponent,
-        DotRadioGroupComponent
+        DotRadioCardComponent
     ],
     templateUrl: './dot-experiments-configure-goal.component.html'
 })
@@ -148,23 +147,19 @@ export class DotExperimentsConfigureGoalComponent {
     );
 
     /**
-     * Picks a goal type, proposing its default name and starting its condition from scratch: the
-     * condition of the type being left behind means nothing to the one being picked.
+     * Completes a choice the radio has already made. A type, its proposed name and a fresh condition
+     * are one decision — the condition of the type being left behind means nothing to the one being
+     * picked — so the rest of the slice follows in the same tick, and the autosave's debounce
+     * coalesces both writes into one PATCH.
      *
-     * The whole slice is written at once — a type, a name and a condition are one choice, and
-     * writing them field by field would report each intermediate state as an edit.
+     * Reacting to the pick rather than to the type changing is what keeps a saved goal intact:
+     * loading one writes the type too, and a reaction would wipe the condition it arrived with.
      *
-     * This is why the `dot-radio-card`s are driven by `[value]` + `(valueChange)` rather than bound
-     * to `field.type` with `[formField]`: a form binding would write the type on its own, leaving
-     * the rest to a reaction on type changes — which would also fire while a saved goal is being
-     * loaded into the form, wiping the condition it arrived with.
+     * No guards: `p-radioButton` only reports a pick from a `change` event, which a disabled radio
+     * and an already-checked one never fire.
      */
-    protected selectGoalType(type: GOAL_TYPES): void {
+    protected onGoalTypePicked(type: GOAL_TYPES): void {
         const goal = this.$goal();
-
-        if (this.$isLocked() || goal.type === type) {
-            return;
-        }
 
         this.$field()().value.set({
             type,
