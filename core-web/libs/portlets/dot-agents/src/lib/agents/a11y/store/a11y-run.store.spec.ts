@@ -1,0 +1,733 @@
+import { patchState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { concat, NEVER, Observable, of, throwError } from 'rxjs';
+
+import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
+
+import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
+
+import { A11yRunStore } from './a11y-run.store';
+
+import {
+    A11yAgentStreamEvent,
+    FixResult,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID,
+    StudioPageRow
+} from '../models/accessibility-studio.models';
+import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
+
+/**
+ * A canned SSE run in the current contract: the run-id frame, two `phase` steps,
+ * a `progress` count, a `workingChanged` file set, then `done` with the report.
+ */
+const MOCK_FIX_STREAM: A11yAgentStreamEvent[] = [
+    { type: 'run', runId: 'r_test_123' },
+    {
+        type: 'phase',
+        step: { message: 'Scanning live + working baseline', meta: { phase: 'scan' } }
+    },
+    { type: 'phase', step: { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } } },
+    { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } },
+    {
+        type: 'workingChanged',
+        changedFiles: [{ path: '//site/application/themes/x/style.css', identifier: 'css-id' }]
+    },
+    { type: 'done', result: MOCK_FIX_REPORT }
+];
+
+/**
+ * A fix stream that emits `events` and then STAYS OPEN, as a real SSE connection does
+ * mid-run.
+ *
+ * Use this — not a bare `of(...)` — for any run that has not reached a terminal frame.
+ * `of()` completes as soon as it has emitted, which the store reads as the connection
+ * dropping mid-run (its documented abnormal-close path), so a mid-run assertion written
+ * against `of()` would be asserting against a closed stream.
+ */
+const openStream = (...events: A11yAgentStreamEvent[]): Observable<A11yAgentStreamEvent> =>
+    concat(of<A11yAgentStreamEvent>(...events), NEVER);
+
+// Two violation rules (3 + 2 = 5 error elements) + one incomplete rule (2 warnings).
+const MOCK_SCAN_RESPONSE = {
+    ok: true,
+    standard: 'WCAG2AA',
+    axe: {
+        violations: [
+            {
+                id: 'image-alt',
+                impact: 'critical',
+                description: 'Images must have alternate text',
+                help: '',
+                helpUrl: 'https://example.com/image-alt',
+                tags: [],
+                nodes: [
+                    { html: '<img>', target: ['img.a'], impact: 'critical', failureSummary: '' },
+                    { html: '<img>', target: ['img.b'], impact: 'critical', failureSummary: '' },
+                    { html: '<img>', target: ['img.c'], impact: 'critical', failureSummary: '' }
+                ]
+            },
+            {
+                id: 'button-name',
+                impact: 'serious',
+                description: 'Buttons must have discernible text',
+                help: '',
+                helpUrl: 'https://example.com/button-name',
+                tags: [],
+                nodes: [
+                    {
+                        html: '<button>',
+                        target: ['button.x'],
+                        impact: 'serious',
+                        failureSummary: ''
+                    },
+                    {
+                        html: '<button>',
+                        target: ['button.y'],
+                        impact: 'serious',
+                        failureSummary: ''
+                    }
+                ]
+            }
+        ],
+        incomplete: [
+            {
+                id: 'color-contrast',
+                impact: 'moderate',
+                description: 'Elements must have sufficient color contrast',
+                help: '',
+                helpUrl: 'https://example.com/color-contrast',
+                tags: [],
+                nodes: [
+                    { html: '<a>', target: ['a.l1'], impact: 'moderate', failureSummary: '' },
+                    { html: '<a>', target: ['a.l2'], impact: 'moderate', failureSummary: '' }
+                ]
+            }
+        ]
+    }
+} as unknown as PageScannerA11yResponse;
+
+const MOCK_ROW: StudioPageRow = {
+    identifier: 'id-1',
+    title: 'About Us',
+    path: '/about-us',
+    type: 'htmlpageasset',
+    languageId: 1,
+    hostId: 'host-id-1',
+    hostName: 'demo.dotcms.com',
+    modDate: '04/09/2026',
+    modUserName: 'Admin User',
+    live: true
+};
+
+/** A second page, for switch-away assertions. */
+const OTHER_ROW: StudioPageRow = {
+    identifier: 'id-2',
+    title: 'Blog Post',
+    path: '/blog/post/hello',
+    type: 'Blog',
+    languageId: 1,
+    hostId: 'host-id-1',
+    hostName: 'demo.dotcms.com',
+    modDate: '03/10/2026',
+    modUserName: 'Admin User',
+    live: false
+};
+
+describe('A11yRunStore', () => {
+    let spectator: SpectatorService<InstanceType<typeof A11yRunStore>>;
+    let store: InstanceType<typeof A11yRunStore>;
+    let scannerService: jest.Mocked<DotPageScannerService>;
+    let agentService: jest.Mocked<DotA11yAgentService>;
+
+    const createService = createServiceFactory({
+        service: A11yRunStore,
+        providers: [
+            mockProvider(DotPageScannerService, {
+                checkA11y: jest.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
+            }),
+            mockProvider(DotA11yAgentService, {
+                fixStream: jest.fn().mockReturnValue(of(...MOCK_FIX_STREAM)),
+                stop: jest.fn().mockReturnValue(of(null))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        spectator = createService();
+        store = spectator.service;
+        scannerService = spectator.inject(
+            DotPageScannerService
+        ) as jest.Mocked<DotPageScannerService>;
+        agentService = spectator.inject(DotA11yAgentService) as jest.Mocked<DotA11yAgentService>;
+    });
+
+    /** Open the default page (id-1, /about-us) the way the page list hands it over. */
+    function openDefaultPage() {
+        store.openSelectedPage(MOCK_ROW);
+    }
+
+    it('starts in the ready phase with no page', () => {
+        expect(store.phase()).toBe('ready');
+        expect(store.selected()).toBeNull();
+    });
+
+    describe('openSelectedPage', () => {
+        it('adopts the row handed over by the page list and opens it to ready', () => {
+            store.openSelectedPage(MOCK_ROW);
+            expect(store.selected()).toEqual(MOCK_ROW);
+            expect(store.phase()).toBe('ready');
+        });
+
+        it('is a no-op when the same page is already selected (keeps an in-progress run)', () => {
+            store.openSelectedPage(MOCK_ROW);
+            store.runScan();
+            const scanResult = store.scanResult();
+
+            store.openSelectedPage({ ...MOCK_ROW });
+
+            // Same identifier → the run is left alone rather than reset.
+            expect(store.scanResult()).toBe(scanResult);
+            expect(store.phase()).toBe('scanned');
+        });
+
+        it('switches to a different page and resets the prior run', () => {
+            store.openSelectedPage(MOCK_ROW);
+            store.runScan();
+            expect(store.scanResult()).not.toBeNull();
+
+            store.openSelectedPage(OTHER_ROW);
+
+            expect(store.selected()).toEqual(OTHER_ROW);
+            expect(store.phase()).toBe('ready');
+            expect(store.scanResult()).toBeNull();
+        });
+    });
+
+    describe('scan + fix state machine', () => {
+        beforeEach(() => {
+            openDefaultPage();
+        });
+
+        it('opens the page to ready with the selection', () => {
+            expect(store.phase()).toBe('ready');
+            expect(store.selected()).toEqual(MOCK_ROW);
+            expect(store.scanResult()).toBeNull();
+            expect(store.report()).toBeNull();
+        });
+
+        it('runScan fires two scans: the primary EDIT_MODE (working) scan and the comparison LIVE scan', () => {
+            store.runScan();
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
+
+            const previewUrl = scannerService.checkA11y.mock.calls[0][0];
+            expect(previewUrl).toContain(`${window.location.origin}/about-us`);
+            expect(previewUrl).toContain('host_id=host-id-1');
+            expect(previewUrl).toContain('language_id=1');
+            expect(previewUrl).toContain('mode=EDIT_MODE');
+
+            const liveUrl = scannerService.checkA11y.mock.calls[1][0];
+            expect(liveUrl).toContain(`${window.location.origin}/about-us`);
+            expect(liveUrl).toContain('host_id=host-id-1');
+            expect(liveUrl).toContain('mode=LIVE');
+        });
+
+        it('runScan populates liveScanResult (comparison-only) alongside scanResult', () => {
+            store.runScan();
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.liveScanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.liveA11yGroups().length).toBe(3);
+        });
+
+        it('a failing LIVE scan does not derail the UI (comparison-only, error swallowed)', () => {
+            scannerService.checkA11y
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE))
+                .mockReturnValueOnce(throwError(() => new Error('live boom')));
+            store.runScan();
+            expect(store.phase()).toBe('scanned');
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.liveScanResult()).toBeNull();
+            // Comparison-only: it must not reach the banner either.
+            expect(store.runError()).toBeNull();
+        });
+
+        it('runScan stores the scan result and the real error/warning counts', () => {
+            store.runScan();
+            expect(store.phase()).toBe('scanned');
+            expect(store.hasResults()).toBe(true);
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.errorCount()).toBe(5); // 3 + 2 violation elements
+            expect(store.warningCount()).toBe(2); // 2 incomplete elements
+            expect(store.beforeCount()).toBe(5);
+            expect(store.a11yGroups().length).toBe(3);
+        });
+
+        it('runScan re-scans from the scanned phase (the re-scan button)', () => {
+            store.runScan(); // ready → scanned  (preview + live scan)
+            store.runScan(); // scanned → scanning → scanned again (re-scan)
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(4);
+            expect(store.phase()).toBe('scanned');
+        });
+
+        it('re-scanning drops the prior scan result before the new one lands', () => {
+            store.runScan(); // ready → scanned, result populated
+            scannerService.checkA11y.mockReturnValueOnce(NEVER);
+            store.runScan();
+            expect(store.phase()).toBe('scanning');
+            expect(store.scanResult()).toBeNull();
+        });
+
+        it('returns to ready and reports the error in the banner if the scan fails', () => {
+            scannerService.checkA11y.mockReturnValueOnce(throwError(() => new Error('boom')));
+            store.runScan();
+            expect(store.phase()).toBe('ready');
+            expect(store.scanResult()).toBeNull();
+            expect(store.runError()).toBe('boom');
+        });
+
+        it('startFix streams phase steps then moves scanned → done with the full report', () => {
+            store.runScan();
+            store.startFix();
+            expect(agentService.fixStream).toHaveBeenCalledTimes(1);
+            expect(store.steps()).toHaveLength(2);
+            expect(store.steps()[0]).toEqual({
+                message: 'Scanning live + working baseline',
+                meta: { phase: 'scan' }
+            });
+            expect(store.phase()).toBe('done');
+            expect(store.fixedCount()).toBe(7);
+            expect(store.reportedCount()).toBe(5);
+            expect(store.afterCount()).toBe(MOCK_FIX_REPORT.scan.after.violations);
+        });
+
+        it('progress events drive the live openCount down while fixing', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('fixing'); // stream still open, no terminal event
+            expect(store.openCount()).toBe(2);
+        });
+
+        it('re-scans the preview on each progress frame so the legend/ring track fixes', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } },
+                    { type: 'progress', progress: { baseline: 5, current: 1, cleared: 4 } }
+                )
+            );
+            store.runScan(); // (preview + live comparison scans)
+            scannerService.checkA11y.mockClear();
+            store.startFix();
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
+            expect(scannerService.checkA11y.mock.calls[0][0]).toContain('mode=EDIT_MODE');
+            expect(store.previewRevision()).toBe(2);
+        });
+
+        it('survives a mid-fix rescan failure without derailing the run', () => {
+            // `rescanPreviewDuringFix` fires on every progress frame and swallows scan
+            // failures — a named failure mode with no coverage. The run must continue: the
+            // agent is still working, and the next progress frame retries. A scanner blip
+            // must not end a fix pass.
+            scannerService.checkA11y
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // preview scan
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // live comparison scan
+                .mockReturnValueOnce(throwError(() => new Error('scanner blip'))); // mid-fix
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } }
+                )
+            );
+
+            store.runScan();
+            const revisionBeforeFix = store.previewRevision();
+            store.startFix();
+
+            expect(store.phase()).toBe('fixing');
+            // The failed rescan writes nothing: no stale scanResult, and no reload of a
+            // preview that has not been re-read.
+            expect(store.previewRevision()).toBe(revisionBeforeFix);
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            // And it is not surfaced as a run error — the run is still going.
+            expect(store.runError()).toBeNull();
+        });
+
+        it('fixedCount reflects the live progress.cleared while fixing', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 2, cleared: 3 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('fixing');
+            expect(store.fixedCount()).toBe(3);
+        });
+
+        it('keeps beforeCount pinned to the baseline while the preview re-scan shrinks', () => {
+            const REDUCED_SCAN = {
+                ok: true,
+                standard: 'WCAG2AA',
+                axe: {
+                    violations: [
+                        {
+                            id: 'image-alt',
+                            impact: 'critical',
+                            description: 'Images must have alternate text',
+                            help: '',
+                            helpUrl: '',
+                            tags: [],
+                            nodes: [
+                                {
+                                    html: '<img>',
+                                    target: ['img.a'],
+                                    impact: 'critical',
+                                    failureSummary: ''
+                                }
+                            ]
+                        }
+                    ],
+                    incomplete: []
+                }
+            } as unknown as PageScannerA11yResponse;
+
+            scannerService.checkA11y
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // preview scan
+                .mockReturnValueOnce(of(MOCK_SCAN_RESPONSE)) // live comparison scan
+                .mockReturnValueOnce(of(REDUCED_SCAN)); // mid-fix re-scan
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 1, cleared: 4 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+
+            expect(store.errorCount()).toBe(1);
+            expect(store.beforeCount()).toBe(5);
+        });
+
+        it('captures the run id from the stream and targets stop at it', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                openStream(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'step', step: { message: 'working' } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('fixing'); // stream still open, no terminal event
+            expect(store.runId()).toBe('r_test_123');
+
+            store.stopAgent();
+            expect(agentService.stop).toHaveBeenCalledWith('r_test_123');
+        });
+
+        it('stopAgent is a no-op when no run id has arrived yet', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                openStream({ type: 'step', step: { message: 'working' } })
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.runId()).toBeNull();
+
+            store.stopAgent();
+            expect(agentService.stop).not.toHaveBeenCalled();
+        });
+
+        it('startFix sends the selected page + skipCss in the agent request', () => {
+            store.setSkipCss(true);
+            store.runScan();
+            store.startFix();
+            const request = agentService.fixStream.mock.calls[0][0];
+            expect(request.identifier).toBe('id-1');
+            expect(request.languageId).toBe(1);
+            expect(request.skipCss).toBe(true);
+        });
+
+        it('startFix returns to scanned and records the error on a terminal error event', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('scanned');
+            expect(store.runError()).toBe('render unreliable');
+            expect(store.report()).toBeNull();
+        });
+
+        it('startFix returns to scanned and records the error if the stream throws', () => {
+            agentService.fixStream.mockReturnValueOnce(throwError(() => new Error('network down')));
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('scanned');
+            expect(store.runError()).toBe('network down');
+        });
+
+        it('a stream that closes with no terminal frame leaves fixing instead of wedging', () => {
+            // The transport completes the observable whenever the response body ends —
+            // an agent pod restart, an ingress idle timeout, or the relay closing on an
+            // upstream socket drop all look like this: frames, then a clean close and no
+            // `done`/`aborted`/`error`. Staying in `fixing` would spin the "still
+            // working…" indicator forever with no way back to the results.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>(
+                    { type: 'run', runId: 'r_test_123' },
+                    { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } }
+                )
+            );
+            store.runScan();
+            store.startFix();
+
+            expect(store.phase()).toBe('scanned');
+            expect(store.runError()).toContain('ended before it reported a result');
+            expect(store.report()).toBeNull();
+        });
+
+        it('a normal close after a terminal frame does not overwrite the outcome', () => {
+            // The default mock ends with `done` and then completes, which is the ordinary
+            // end of a run — the abnormal-close fallback must not fire here.
+            store.runScan();
+            store.startFix();
+
+            expect(store.phase()).toBe('done');
+            expect(store.runError()).toBeNull();
+            expect(store.report()).toEqual(MOCK_FIX_REPORT);
+        });
+
+        it('survives a terminal frame that carries no report', () => {
+            // `aborted` can arrive with a status-only payload — `FixReport.status` exists
+            // for exactly that — and the service hands that through as null. The counts
+            // must fall back to the pre-run scan rather than reading `report.scan` on
+            // something that has none, which threw inside change detection and blanked the
+            // score widget, footer and donut together.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>({ type: 'aborted', result: null })
+            );
+            store.runScan();
+            store.startFix();
+
+            expect(store.report()).toBeNull();
+            // The pre-run scan figures survive rather than the pane dying.
+            expect(() => store.beforeCount()).not.toThrow();
+            expect(store.beforeCount()).toBe(5);
+            expect(store.afterCount()).toBe(0);
+            expect(store.fixedCount()).toBe(0);
+        });
+
+        it('refreshes the preview on a terminal error, so fixes already written show up', () => {
+            // A run can fail AFTER writing fixes to the working version; without a bump the
+            // preview and changed-files panel keep their pre-run state and hide them.
+            agentService.fixStream.mockReturnValueOnce(
+                of<A11yAgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+            );
+            store.runScan();
+            const before = store.previewRevision();
+            store.startFix();
+
+            expect(store.previewRevision()).toBeGreaterThan(before);
+        });
+
+        it('surfaces a failed stop instead of swallowing it, and stays in fixing', () => {
+            // The service already treats 202 and 404 as equivalent, so anything reaching
+            // this path means the agent is likely still running and still writing to the
+            // working version. Silence here would claim a stop that never took.
+            agentService.fixStream.mockReturnValueOnce(
+                openStream({ type: 'run', runId: 'r_test_123' })
+            );
+            agentService.stop.mockReturnValueOnce(throwError(() => new Error('502 Bad Gateway')));
+
+            store.runScan();
+            store.startFix();
+            store.stopAgent();
+
+            expect(store.runError()).toContain('Could not stop the agent');
+            expect(store.phase()).toBe('fixing');
+        });
+
+        it('publish moves done → published', () => {
+            store.runScan();
+            store.startFix();
+            store.publish();
+            expect(store.phase()).toBe('published');
+        });
+
+        it('finished + runStarted track their phase sets', () => {
+            expect(store.runStarted()).toBe(false);
+            expect(store.finished()).toBe(false);
+
+            store.runScan();
+            expect(store.runStarted()).toBe(false);
+            expect(store.finished()).toBe(false);
+
+            store.startFix();
+            expect(store.phase()).toBe('done');
+            expect(store.runStarted()).toBe(true);
+            expect(store.finished()).toBe(true);
+
+            store.publish();
+            expect(store.runStarted()).toBe(true);
+            expect(store.finished()).toBe(true);
+        });
+
+        it('publish works from scanned — working changes can predate a fix run', () => {
+            store.runScan();
+            store.publish();
+            expect(store.phase()).toBe('published');
+        });
+
+        it('publish is a no-op while a scan is in flight', () => {
+            scannerService.checkA11y.mockReturnValueOnce(NEVER);
+            store.runScan();
+            expect(store.phase()).toBe('scanning');
+
+            store.publish();
+            expect(store.phase()).toBe('scanning');
+        });
+
+        it('discard returns from done to scanned', () => {
+            store.runScan();
+            store.startFix();
+            store.discard();
+            expect(store.phase()).toBe('scanned');
+        });
+
+        it('splits results into fixed vs reported buckets', () => {
+            store.runScan();
+            store.startFix();
+            expect(store.fixedResults().every((r) => r.status === 'fixed-to-working')).toBe(true);
+            expect(
+                store.reportedResults().every((r) => NEEDS_ATTENTION_STATUSES.includes(r.status))
+            ).toBe(true);
+        });
+
+        it('keeps `reported` deferrals out of the needs-attention bucket', () => {
+            store.runScan();
+            store.startFix();
+            // A `reported` row means the deterministic pass handed the violation to the
+            // agentic pass — an intermediate marker, so it must never be counted as
+            // unresolved work.
+            expect(store.reportedResults().some((r) => r.status === 'reported')).toBe(false);
+        });
+
+        it('derives both counts from the before/after rescan, not row counts', () => {
+            store.runScan();
+            store.startFix();
+            const report = store.report();
+            const before = report?.scan.before.violations ?? 0;
+            const after = report?.scan.after.violations ?? 0;
+
+            expect(store.fixedCount()).toBe(before - after);
+            expect(store.reportedCount()).toBe(after);
+        });
+
+        it('counts violations cleared by the agentic pass, which emits no fix rows', () => {
+            // 20 → 2 means 18 cleared, but only one row logs a deterministic fix. Counting
+            // rows would report "1 fixed"; the rescan is what knows the real number.
+            patchState(store, {
+                report: {
+                    ...MOCK_FIX_REPORT,
+                    scan: { before: { violations: 20 }, after: { violations: 2 } },
+                    results: [{ ruleId: 'color-contrast', status: 'fixed-to-working' }]
+                }
+            });
+
+            expect(store.fixedCount()).toBe(18);
+            expect(store.reportedCount()).toBe(2);
+        });
+
+        it('dedupes fixed rows emitted once per violating element', () => {
+            const duplicated: FixResult[] = [
+                {
+                    ruleId: 'color-contrast',
+                    status: 'fixed-to-working',
+                    file: '/style.css',
+                    diff: '- a\n+ b'
+                },
+                {
+                    ruleId: 'color-contrast',
+                    status: 'fixed-to-working',
+                    file: '/style.css',
+                    diff: '- a\n+ b'
+                },
+                { ruleId: RESEARCH_RULE_ID, status: 'fixed-to-working', file: '/t.vtl' }
+            ];
+            patchState(store, {
+                report: {
+                    ...MOCK_FIX_REPORT,
+                    results: duplicated
+                }
+            });
+
+            // One distinct edit survives; the research row is not a fix.
+            expect(store.fixedResults().length).toBe(1);
+        });
+    });
+
+    describe('skip CSS toggle', () => {
+        it('defaults to false and can be toggled', () => {
+            expect(store.skipCss()).toBe(false);
+            store.setSkipCss(true);
+            expect(store.skipCss()).toBe(true);
+        });
+    });
+
+    /**
+     * The store is provided per-route, so navigation destroys its injector. Instantiate it in a
+     * child environment injector here so `destroy()` fires the real `onDestroy` hook — Spectator's
+     * own injector outlives the individual test.
+     */
+    describe('teardown on destroy', () => {
+        let injector: EnvironmentInjector;
+        let scopedStore: InstanceType<typeof A11yRunStore>;
+
+        beforeEach(() => {
+            injector = createEnvironmentInjector(
+                [A11yRunStore],
+                spectator.inject(EnvironmentInjector)
+            );
+            scopedStore = injector.get(A11yRunStore);
+        });
+
+        it('aborts an in-flight fix stream when the store is destroyed', () => {
+            const fixTeardown = jest.fn();
+            agentService.fixStream.mockReturnValue(new Observable(() => fixTeardown));
+
+            scopedStore.openSelectedPage(MOCK_ROW);
+            scopedStore.runScan();
+            scopedStore.startFix();
+            expect(fixTeardown).not.toHaveBeenCalled();
+
+            injector.destroy();
+
+            expect(fixTeardown).toHaveBeenCalledTimes(1);
+        });
+
+        it('aborts both in-flight scans when the store is destroyed', () => {
+            const previewTeardown = jest.fn();
+            const liveTeardown = jest.fn();
+            scannerService.checkA11y
+                .mockReturnValueOnce(new Observable(() => previewTeardown))
+                .mockReturnValueOnce(new Observable(() => liveTeardown));
+
+            scopedStore.openSelectedPage(MOCK_ROW);
+            scopedStore.runScan();
+            expect(previewTeardown).not.toHaveBeenCalled();
+
+            injector.destroy();
+
+            expect(previewTeardown).toHaveBeenCalledTimes(1);
+            expect(liveTeardown).toHaveBeenCalledTimes(1);
+        });
+    });
+});
