@@ -54,7 +54,9 @@ The asymmetry is worth knowing: a **non-matching `include` glob is harmless**, a
 
 Both report exactly one error, and it is neither this project's nor strict-mode's: `TS2307: Cannot find module 'virtual:sdk-version'` in `libs/sdk/client/src/lib/client/adapters/fetch-http-client.ts` — a Vite virtual module raw `tsc` cannot resolve but the build can. Pre-existing, already documented in the `sdk-react` section of PR #36957.
 
-The spec config coming out clean was predicted rather than lucky: `jest.config.ts` transforms via `jest-preset-angular@17` → `ts-jest@29.4.6`, with `diagnostics` not disabled and transpile-only not set, reading `compilerOptions` from `tsconfig.spec.json`. So the specs *had* been type-checked all along — just per-file by ts-jest, never as a whole program. This is the exact opposite of `sdk-analytics` (#35946), where `babel-jest` stripped types and hid 14 errors.
+> **Corrected (established while working #35948).** This spec originally claimed the specs "had been type-checked all along, just per-file by ts-jest," and that the 234 passing tests evidenced type-cleanliness. **That is wrong.** ts-jest reads TypeScript's `isolatedModules` out of the tsconfig and uses it to switch itself into transpile-only mode — `config-set.js:229` copies the flag, `ts-compiler.js:74` builds the language-service host only `if (!isolatedModules)`, and `_doTypeChecking()` needs that host for `getSemanticDiagnostics`. `sdk-angular`'s `tsconfig.spec.json` sets `isolatedModules: true`, so **no type checking ran during `nx run sdk-angular:test`.** `data-access` is the counterexample that exposed it: same setup, 84 `tsc` errors alongside 754 passing tests.
+>
+> So these specs had never been type-checked **by anything** until the `TS6053` fix below made `tsc -p tsconfig.spec.json` runnable. The 0-error result stands — it was measured directly, not inferred from the test run. Only the explanation changes. And since `core-web/CLAUDE.md` mandates `isolatedModules: true` in every `tsconfig.spec.json`, this holds repo-wide; raised on #35932.
 
 ### 4. Clean without escape hatches
 
@@ -122,7 +124,7 @@ Scope `affected` with `--base=HEAD~1`. Against `origin/main` it sweeps the whole
 
 ## Testing Strategy
 
-No new tests. The 21 existing spec files already ran under ts-jest with diagnostics enabled; the gain here is that their tsconfig can now be checked as a whole program. Verification is compilation- and build-based, with `:test` guarding against files dropping out of the program.
+No new tests. The 21 existing spec files ran under ts-jest in transpile-only mode (see the correction above), so the gain here is that their tsconfig can be type-checked at all. Verification is compilation- and build-based, with `:test` guarding only against files dropping out of the program — not against type errors.
 
 ## Rollout status after this issue
 
@@ -143,5 +145,5 @@ Taken with #35946, the SDK picture is now precise. `libs/sdk/*` projects built b
 
 ## Follow-ups for the epic
 
-1. **Sweep tsconfigs for dangling `files` entries before trusting any error count.** `sdk-angular`'s spec config had never completed a semantic pass, and nothing surfaced that — no build step reads it, and ts-jest only consumes its `compilerOptions`. Two of the fourteen projects triaged so far were masked this way (#35944 via `TS2688`, #35947 via `TS6053`); the remaining 30 should be checked before their counts are believed. `core-web/CLAUDE.md` now documents both variants.
+1. **Sweep tsconfigs for dangling `files` entries before trusting any error count.** `sdk-angular`'s spec config had never completed a semantic pass, and nothing surfaced that — no build step reads it, and ts-jest only consumes its `compilerOptions` — in transpile-only mode at that. Two of the fourteen projects triaged so far were masked this way (#35944 via `TS2688`, #35947 via `TS6053`); the remaining 30 should be checked before their counts are believed. `core-web/CLAUDE.md` now documents both variants.
 2. **The `typecheck` gap raised in #35946 still stands** for Vite projects, and is unaffected by this issue.
