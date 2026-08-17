@@ -258,9 +258,10 @@ public class UserFactoryImpl implements UserFactory {
 
     /**
      * Returns the role's id, falling back to a lookup by roleKey for Role instances that were
-     * not loaded through the API and carry only a key. Returns null when neither resolves,
-     * which matches no users (the same behavior the previous role_key binding had for
-     * unresolvable roles).
+     * not loaded through the API and carry only a key. A role that does not resolve returns
+     * null, which matches no users (the same behavior the previous role_key binding had for
+     * unresolvable roles). A lookup infrastructure failure propagates instead of masquerading
+     * as an empty result.
      */
     private static String resolveRoleId(final Role role) {
         if (UtilMethods.isSet(role.getId())) {
@@ -273,7 +274,7 @@ public class UserFactoryImpl implements UserFactory {
                     return loaded.getId();
                 }
             } catch (final DotDataException e) {
-                Logger.warn(UserFactoryImpl.class,
+                throw new DotRuntimeException(
                         "Unable to resolve role id for roleKey: " + role.getRoleKey(), e);
             }
         }

@@ -9,6 +9,7 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.ArrayList;
@@ -127,7 +128,14 @@ public class RoleHelper {
                 final List<Role> children = new ArrayList<>();
                 for (final String childRoleId : role.getRoleChildren()) {
 
-                    children.add(roleAPI.loadRoleById(childRoleId));
+                    final Role child = roleAPI.loadRoleById(childRoleId);
+                    if (null == child || !UtilMethods.isSet(child.getId())) {
+
+                        Logger.warn(this, "Child role: " + childRoleId + " of role: "
+                                + role.getId() + " does not resolve, skipping it");
+                        continue;
+                    }
+                    children.add(child);
                     allRoleIds.add(childRoleId);
                 }
                 childrenByParentId.put(role.getId(), children);
