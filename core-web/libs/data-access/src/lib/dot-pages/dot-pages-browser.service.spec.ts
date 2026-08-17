@@ -1,15 +1,6 @@
-import {
-    createHttpFactory,
-    HttpMethod,
-    mockProvider,
-    SpectatorHttp,
-    SpyObject
-} from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { createHttpFactory, HttpMethod, mockProvider, SpectatorHttp } from '@openng/spectator/jest';
 
 import { HttpErrorResponse, HttpRequest } from '@angular/common/http';
-
-import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
 
 import {
     DotPageBrowserContentlet,
@@ -24,27 +15,8 @@ import { DotFolderService } from '../dot-folder/dot-folder.service';
 const PAGE_SEARCH_URL = '/api/v1/page/search';
 const ES_SEARCH_URL = '/api/es/search';
 
-const SITE_ID = 'site-1';
 const HOSTNAME = 'demo.dotcms.com';
 const PAGE_ID = 'page-1';
-
-/** `GET /api/v1/folder/search` reports the *parent* path and the folder name separately. */
-const folderView = (overrides: Partial<FolderSearchView> = {}): FolderSearchView => ({
-    id: 'folder-1',
-    inode: 'folder-inode-1',
-    name: 'about-us',
-    path: '/',
-    addChildrenAllowed: true,
-    hasChildren: false,
-    ...overrides
-});
-
-const pagination = (overrides: Partial<DotPagination> = {}): DotPagination => ({
-    currentPage: 1,
-    perPage: 40,
-    totalEntries: 1,
-    ...overrides
-});
 
 const contentlet = (
     overrides: Partial<DotPageBrowserContentlet> = {}
@@ -64,7 +36,6 @@ const contentlet = (
 
 describe('DotPagesBrowserService', () => {
     let spectator: SpectatorHttp<DotPagesBrowserService>;
-    let folderService: SpyObject<DotFolderService>;
 
     const createHttp = createHttpFactory({
         service: DotPagesBrowserService,
@@ -90,108 +61,9 @@ describe('DotPagesBrowserService', () => {
 
     beforeEach(() => {
         spectator = createHttp();
-        folderService = spectator.inject(DotFolderService);
     });
 
     afterEach(() => spectator.controller.verify());
-
-    describe('getFolderChildren', () => {
-        /** `null` stands for a response that carries no pagination block at all. */
-        const searchFoldersReturns = (
-            folders: FolderSearchView[],
-            paginationView: DotPagination | null = pagination()
-        ) =>
-            folderService.searchFolders.mockReturnValue(
-                of({ folders, pagination: paginationView ?? undefined } as {
-                    folders: FolderSearchView[];
-                    pagination: DotPagination;
-                })
-            );
-
-        it('should ask the folder search for the direct children of the given path', () => {
-            searchFoldersReturns([]);
-
-            spectator.service
-                .getFolderChildren({
-                    siteId: SITE_ID,
-                    hostname: HOSTNAME,
-                    path: '/about-us/',
-                    page: 2,
-                    perPage: 10
-                })
-                .subscribe();
-
-            expect(folderService.searchFolders).toHaveBeenCalledWith({
-                siteId: SITE_ID,
-                path: '/about-us/',
-                recursive: false,
-                page: 2,
-                per_page: 10
-            });
-        });
-
-        it('should default to the site root and the shared pagination defaults', () => {
-            searchFoldersReturns([]);
-
-            spectator.service
-                .getFolderChildren({ siteId: SITE_ID, hostname: HOSTNAME })
-                .subscribe();
-
-            expect(folderService.searchFolders).toHaveBeenCalledWith(
-                expect.objectContaining({ path: '/', page: 1, per_page: 40 })
-            );
-        });
-
-        it('should join the parent path and the name into a full folder path', () => {
-            // The endpoint never returns the joined path, and consumers query pages by it.
-            searchFoldersReturns([
-                folderView({ name: 'about-us', path: '/' }),
-                folderView({ id: 'folder-2', name: 'team', path: '/about-us/' })
-            ]);
-
-            let paths: string[] = [];
-            spectator.service
-                .getFolderChildren({ siteId: SITE_ID, hostname: HOSTNAME })
-                .subscribe(({ folders }) => (paths = folders.map(({ path }) => path)));
-
-            expect(paths).toEqual(['/about-us/', '/about-us/team/']);
-        });
-
-        it('should carry the hostname the folder search does not return', () => {
-            searchFoldersReturns([folderView()]);
-
-            let hostnames: string[] = [];
-            spectator.service
-                .getFolderChildren({ siteId: SITE_ID, hostname: HOSTNAME })
-                .subscribe(({ folders }) => (hostnames = folders.map((folder) => folder.hostname)));
-
-            expect(hostnames).toEqual([HOSTNAME]);
-        });
-
-        it('should report the total the caller needs to decide whether to page again', () => {
-            searchFoldersReturns([folderView()], pagination({ totalEntries: 12 }));
-
-            let children: { totalFolders: number; page: number; perPage: number } | null = null;
-            spectator.service
-                .getFolderChildren({ siteId: SITE_ID, hostname: HOSTNAME, page: 3, perPage: 5 })
-                .subscribe((result) => (children = result));
-
-            expect(children).toEqual(
-                expect.objectContaining({ totalFolders: 12, page: 3, perPage: 5 })
-            );
-        });
-
-        it('should fall back to the returned count when no pagination comes back', () => {
-            searchFoldersReturns([folderView(), folderView({ id: 'folder-2' })], null);
-
-            let totalFolders = 0;
-            spectator.service
-                .getFolderChildren({ siteId: SITE_ID, hostname: HOSTNAME })
-                .subscribe((result) => (totalFolders = result.totalFolders));
-
-            expect(totalFolders).toBe(2);
-        });
-    });
 
     describe('searchPages', () => {
         it('should scope the search to the site through the //hostname prefix', () => {
@@ -402,21 +274,6 @@ describe('DotPagesBrowserService', () => {
             expectPageSearch().flush('Boom', SERVER_ERROR);
 
             expect(status).toBe(500);
-            expect(emitted).toBe(false);
-        });
-
-        it('should surface a failed folder search', () => {
-            const error = new HttpErrorResponse({ status: 403, statusText: 'Forbidden' });
-            folderService.searchFolders.mockReturnValue(throwError(() => error));
-
-            let emitted = false;
-            let status: number | undefined;
-            spectator.service.getFolderChildren({ siteId: SITE_ID, hostname: HOSTNAME }).subscribe({
-                next: () => (emitted = true),
-                error: (failure: HttpErrorResponse) => (status = failure.status)
-            });
-
-            expect(status).toBe(403);
             expect(emitted).toBe(false);
         });
 

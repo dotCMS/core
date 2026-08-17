@@ -194,8 +194,28 @@ export const GOAL_TYPES_WITH_CONDITIONS: readonly GOAL_TYPES[] = [
     GOAL_TYPES.URL_PARAMETER
 ];
 
-/** Wide enough for the folder tree beside a four-column page table. */
-export const SELECT_PAGE_DIALOG_SIZE = { width: '900px', height: '560px' } as const;
+/** Same proportions the other consumers of the shared browser open it at. */
+export const SELECT_PAGE_DIALOG_WIDTH = '90%';
+export const SELECT_PAGE_DIALOG_MAX_WIDTH = '1040px';
+
+/**
+ * What the shared site browser is asked to list: pages, and only pages. An experiment runs on one, so
+ * links, files, assets and folders are noise — and with files and assets both off the browser drops
+ * its upload button, which would promise something a page picker cannot do.
+ *
+ * `showWorking` keeps unpublished pages in: an experiment can be configured against a draft, and the
+ * old screen listed them too.
+ */
+export const SELECT_PAGE_BROWSER_PARAMS = {
+    showPages: true,
+    showFolders: false,
+    showFiles: false,
+    showDotAssets: false,
+    showLinks: false,
+    showWorking: true,
+    showArchived: false,
+    sortByDesc: true
+} as const;
 
 /** Narrower than the 700px form default: the dialog holds a single optional name field. */
 export const ADD_VARIANT_DIALOG_WIDTH = '440px';

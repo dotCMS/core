@@ -144,25 +144,6 @@ export interface DotExperimentsConfigureViewState {
     lastSaveFailed: boolean;
 }
 
-/** Publish state of a page, shown in the Select A Page table's State column. */
-export type SelectPageDialogRowState = 'live' | 'working' | 'draft';
-
-/** A page the Select A Page dialog offers, plus everything its row would otherwise have to derive. */
-export interface SelectPageDialogRow {
-    /** Page identifier — what the experiment is created against. */
-    pageId: string;
-    title: string;
-    /** Site-relative path, e.g. `/about-us/index`. */
-    url: string;
-    template: string;
-    modDate: number;
-    state: SelectPageDialogRowState;
-    /** True when the page already hosts a non-archived experiment, so it cannot be picked. */
-    disabled: boolean;
-    /** i18n key explaining `disabled`; `null` when the row is selectable. */
-    disabledTooltipKey: string | null;
-}
-
 /**
  * The Goal card's single condition, flattened.
  *
