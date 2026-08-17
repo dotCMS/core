@@ -34,6 +34,7 @@ import org.apache.velocity.runtime.parser.node.MapGetExecutor;
 import org.apache.velocity.runtime.parser.node.MapSetExecutor;
 import org.apache.velocity.runtime.parser.node.PropertyExecutor;
 import org.apache.velocity.runtime.parser.node.PutExecutor;
+import org.apache.velocity.runtime.parser.node.RecordComponentExecutor;
 import org.apache.velocity.runtime.parser.node.SetExecutor;
 import org.apache.velocity.runtime.parser.node.SetPropertyExecutor;
 import org.apache.velocity.util.ArrayIterator;
@@ -232,7 +233,7 @@ public class UberspectImpl implements Uberspect
         /*
          * Let's see if we are a map...
          */
-        if (!executor.isAlive()) 
+        if (!executor.isAlive())
         {
             executor = new MapGetExecutor(claz, identifier);
         }
@@ -247,13 +248,29 @@ public class UberspectImpl implements Uberspect
         }
 
         /*
-         *  finally, look for boolean isFoo()
+         *  then look for boolean isFoo()
          */
 
         if (!executor.isAlive())
         {
             executor = new BooleanPropertyExecutor(introspector, claz,
                                                    identifier);
+        }
+
+        /*
+         *  finally, if the target is a record, look for the component accessor foo(). A record's
+         *  canonical accessor carries the component's own name, so none of the bean-shaped lookups
+         *  above can reach it and the reference would render as literal text.
+         *
+         *  Deliberately last in the chain: every strategy that could already resolve the reference
+         *  has been given its chance first, so this can only add a resolution where there was none.
+         *  It is also restricted to actual record components (see RecordComponentExecutor) rather
+         *  than to any no-argument method, which would silently change existing templates.
+         */
+
+        if (!executor.isAlive())
+        {
+            executor = new RecordComponentExecutor(introspector, claz, identifier);
         }
 
         return (executor.isAlive()) ? new VelGetterImpl(executor) : null;
