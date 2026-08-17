@@ -3,11 +3,12 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    forwardRef,
     input,
     model,
-    output
+    signal
 } from '@angular/core';
-import { FormValueControl } from '@angular/forms/signals';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { Card } from 'primeng/card';
 
@@ -17,16 +18,19 @@ import { Card } from 'primeng/card';
  * Semantics are `p-radioButton`'s, not a select's: **each card is one radio**, and several cards
  * sharing one value form the group — a card is checked while that value equals its own `option`.
  *
- * Signal forms only, by design: it implements `FormValueControl<string>` and no
- * `ControlValueAccessor`, so `[formField]` drives it natively and nothing here reaches into reactive
- * forms. Without a form, use `[(value)]` — or `[value]` plus `(valueChange)` when picking an option
- * has to write more than the option itself.
+ * It is a `ControlValueAccessor`, which is the one implementation that serves every caller: reactive
+ * forms bind it with `[formControl]` or `[formControlName]`, templates with `[(ngModel)]`, and signal
+ * forms with `[formField]` through the interop bridge — the same path every PrimeNG control takes, and
+ * the reason `p-slider` works under `[formField]` in this app. Without a form, `[(value)]` drives it
+ * directly, or `[value]` plus `(valueChange)` when picking has to write more than the option itself.
  *
- * The circle is drawn in the stylesheet rather than being a `p-radioButton`, which cannot be mounted
- * presentationally: its `onInit` resolves `NgControl` without `optional`, so one rendered with no
- * `ngModel` or `formControl` throws `NG0201`. Reusing it would mean an internal reactive-forms control
- * existing to paint a circle, and a second focusable radio nested in this host. Worth revisiting if
- * PrimeNG ever makes that injection optional.
+ * A `FormValueControl` would be the signal-forms-native alternative, but it is signal-forms-only, and
+ * `FormField` resolves a value accessor before a custom control, so the two cannot be combined: adding
+ * a CVA replaces the native path rather than adding to it.
+ *
+ * The circle is drawn in the stylesheet rather than being a `p-radioButton` nested inside: that would
+ * put a second focusable radio in a host that is already `role="radio"`. It is drawn from the tokens
+ * Lara's radiobutton maps to, so it tracks the theme.
  *
  * A radiogroup's roving tabindex and arrow keys belong to a future `dot-radio-group` and are
  * deliberately absent: a group knows the cards' order, and a card only knows itself.
@@ -37,19 +41,26 @@ import { Card } from 'primeng/card';
     templateUrl: './dot-radio-card.component.html',
     styleUrl: './dot-radio-card.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotRadioCardComponent),
+            multi: true
+        }
+    ],
     host: {
         role: 'radio',
         '[attr.aria-checked]': '$isChecked()',
-        '[attr.aria-disabled]': 'disabled()',
-        '[attr.tabindex]': 'disabled() ? -1 : 0',
+        '[attr.aria-disabled]': '$isDisabled()',
+        '[attr.tabindex]': '$isDisabled() ? -1 : 0',
         '(click)': 'select()',
         '(keydown.enter)': 'onKeydown($event)',
         '(keydown.space)': 'onKeydown($event)',
-        '(blur)': 'touch.emit()'
+        '(blur)': 'onBlur()'
     }
 })
-export class DotRadioCardComponent implements FormValueControl<string> {
-    /** The group's value, named by the control contract. Any value no card carries leaves it unpicked. */
+export class DotRadioCardComponent implements ControlValueAccessor {
+    /** The group's value: a bound control writes it here, and `[(value)]` does the same without one. */
     readonly value = model<string>('');
 
     /** The option this card stands for. */
@@ -60,21 +71,52 @@ export class DotRadioCardComponent implements FormValueControl<string> {
     /** Muted body under the title. Project content instead when it is not plain text. */
     readonly description = input('');
 
-    /** Part of the control contract: a bound field owns it and `[formField]` writes it here. */
+    /** Disables the card on its own. A bound control disables it through `setDisabledState`. */
     readonly disabled = input(false, { transform: booleanAttribute });
 
-    /** Marks the bound field touched. */
-    readonly touch = output<void>();
+    readonly #disabledByControl = signal(false);
+    #notifyChange: (value: string) => void = () => {
+        /* replaced by the bound control, absent without one */
+    };
+    #notifyTouched: () => void = () => {
+        /* replaced by the bound control, absent without one */
+    };
+
+    protected readonly $isDisabled = computed<boolean>(
+        () => this.disabled() || this.#disabledByControl()
+    );
 
     protected readonly $isChecked = computed<boolean>(() => this.value() === this.option());
 
+    writeValue(value: string | null): void {
+        // Not reported back: this is the control telling the card, not the user picking.
+        this.value.set(value ?? '');
+    }
+
+    registerOnChange(fn: (value: string) => void): void {
+        this.#notifyChange = fn;
+    }
+
+    registerOnTouched(fn: () => void): void {
+        this.#notifyTouched = fn;
+    }
+
+    setDisabledState(isDisabled: boolean): void {
+        this.#disabledByControl.set(isDisabled);
+    }
+
     protected select(): void {
         // A radio cannot be unchecked, so re-picking the checked card reports nothing.
-        if (this.disabled() || this.$isChecked()) {
+        if (this.$isDisabled() || this.$isChecked()) {
             return;
         }
 
         this.value.set(this.option());
+        this.#notifyChange(this.option());
+    }
+
+    protected onBlur(): void {
+        this.#notifyTouched();
     }
 
     protected onKeydown(event: Event): void {
