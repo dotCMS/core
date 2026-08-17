@@ -1,22 +1,26 @@
-<span
-    class="flex size-6 flex-none items-center justify-center rounded-full border transition-colors duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none"
-    [class]="$indicatorClasses()"
-    aria-hidden="true"
-    data-testid="radio-card-indicator">
-    <span
-        class="size-4 rounded-full bg-primary-contrast transition-transform duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none"
-        [class]="$isChecked() ? 'scale-100' : 'scale-[0.1]'"
-        data-testid="radio-card-dot"></span>
-</span>
-
-<span class="flex flex-col gap-1">
-    <span class="text-sm font-semibold text-surface-900" data-testid="radio-card-label">
-        {{ label() }}
-    </span>
-    @if (description()) {
-        <span class="text-sm text-surface-500" data-testid="radio-card-description">
-            {{ description() }}
+<p-card [class]="$surfaceClasses()" data-testid="radio-card-surface">
+    <div class="flex items-start gap-3">
+        <span
+            class="flex size-6 flex-none items-center justify-center rounded-full border transition-colors duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none"
+            [class]="$indicatorClasses()"
+            aria-hidden="true"
+            data-testid="radio-card-indicator">
+            <span
+                class="size-4 rounded-full bg-primary-contrast transition-transform duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none"
+                [class]="$isChecked() ? 'scale-100' : 'scale-[0.1]'"
+                data-testid="radio-card-dot"></span>
         </span>
-    }
-    <ng-content />
-</span>
+
+        <span class="flex flex-col gap-1">
+            <span class="text-sm font-semibold text-surface-900" data-testid="radio-card-label">
+                {{ label() }}
+            </span>
+            @if (description()) {
+                <span class="text-sm text-surface-500" data-testid="radio-card-description">
+                    {{ description() }}
+                </span>
+            }
+            <ng-content />
+        </span>
+    </div>
+</p-card>

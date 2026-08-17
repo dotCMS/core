@@ -29,6 +29,7 @@ describe('DotRadioCardComponent', () => {
         };
 
         const host = () => spectator.element;
+        const surface = () => spectator.query(byTestId('radio-card-surface')) as HTMLElement;
 
         // The model's `valueChange` output is reached through the model itself: Spectator's
         // `output()` helper only knows `@Output`s and `output()`s.
@@ -105,7 +106,7 @@ describe('DotRadioCardComponent', () => {
 
             expect(host().getAttribute('aria-checked')).toBe('true');
             expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain('scale-100');
-            expect(host().className).toContain('border-primary');
+            expect(surface().className).toContain('border-primary!');
         });
 
         // Only the declared transitions can be asserted: jsdom computes no styles and runs no
@@ -113,17 +114,25 @@ describe('DotRadioCardComponent', () => {
         it('should transition both the card and the dot so the selection animates in and out', () => {
             mount();
 
-            expect(host().className).toContain('transition-colors');
+            expect(surface().className).toContain('transition-colors');
             expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain(
                 'transition-transform'
             );
+        });
+
+        it('should render the card as a p-card so the theme owns its chrome', () => {
+            mount();
+
+            expect(surface().tagName.toLowerCase()).toBe('p-card');
+            expect(surface().className).toContain('p-card');
         });
 
         it('should read as unchecked while the group holds another option', () => {
             mount({ value: 'BOUNCE_RATE' });
 
             expect(host().getAttribute('aria-checked')).toBe('false');
-            expect(host().className).toContain('border-(--p-form-field-border-color)');
+            // An unselected card paints nothing of its own over the theme's card.
+            expect(surface().className).not.toContain('border-primary!');
         });
 
         it('should follow the group being pointed at another card', () => {
