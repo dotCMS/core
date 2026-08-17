@@ -9,28 +9,30 @@ import {
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 
-/**
- * The chrome is the theme's, from the token family this thing belongs to: a radio card is a form
- * control drawn as a card, not a container, so its outline follows `form.field` — the same radius and
- * border colour the `pInputText` next to it resolves to — while the interior keeps `1rem`, since
- * `form.field.padding` is a text inset (`0.625rem 0.75rem`) and this is a block holding a label and a
- * paragraph.
- *
- * Never `--p-radiobutton-*` or `--p-card-*`: PrimeNG emits a component's variables together with its
- * stylesheet, so on a screen with no `p-radioButton` and no `p-card` mounted both families are
- * undefined — measured empty on the Configure screen, where these cards live. `form.field` and the
- * primitives ship with the global theme CSS, so they always resolve.
- *
- * Raw variables rather than Tailwind utilities for radius, colour and duration: those tokens are
- * absolute (`6px`, `0.2s`) while Tailwind's scales are in rem, and at this app's 14px root
- * `rounded-md` renders 5.25px against the token's 6px.
- */
-const BASE_CLASSES =
-    'flex items-start gap-3 rounded-(--p-form-field-border-radius) border p-4 text-left transition-colors duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none';
+import { Card } from 'primeng/card';
 
-/** The selection accent, which is state rather than chrome: `primary` over its lightest tint. */
-const CHECKED_CLASSES = 'border-primary bg-primary-50';
-const UNCHECKED_CLASSES = 'border-(--p-form-field-border-color) bg-surface-0';
+/**
+ * The card is `p-card`, so the surface, radius, border and padding are whatever `components.card` in
+ * `theme.config.ts` says a dotCMS card is, and stay that way when the preset changes. Nothing here
+ * restates them.
+ *
+ * The host only carries the interaction state, because `p-card` puts its `.p-card` class on its own
+ * host element: the radio semantics have to stay on `<dot-radio-card>`, one level out, which leaves the
+ * host a bare block that the card fills.
+ */
+const HOST_BASE_CLASSES = 'block text-left';
+
+/**
+ * The selection accent is the only thing painted over the theme's card, and it needs `!` to land:
+ * PrimeNG injects its component CSS outside any cascade layer while Tailwind's utilities live in
+ * `@layer utilities`, and unlayered declarations win over layered ones no matter the specificity — so
+ * `.p-card`'s own border and background would otherwise beat these. Verified in the browser.
+ *
+ * Unchecked deliberately adds nothing: an unselected card is just a card.
+ */
+const SURFACE_BASE_CLASSES =
+    'transition-colors duration-(--p-transition-duration) ease-[ease] motion-reduce:transition-none';
+const SURFACE_CHECKED_CLASSES = 'border-primary! bg-primary-50!';
 
 /**
  * The circle is `p-radioButton`'s, rebuilt rather than reused, so a radio in a card looks like every
@@ -49,7 +51,7 @@ const ENABLED_CLASSES = 'cursor-pointer';
 const DISABLED_CLASSES = 'cursor-default opacity-60';
 
 /**
- * A radio rendered as a whole clickable card: radio circle, bold label and muted description.
+ * A radio rendered as a whole clickable `p-card`: radio circle, bold label and muted description.
  *
  * Semantics are `p-radioButton`'s, not a select's: **each card is one radio**, and several cards
  * sharing one value form the group — a card is checked while that value equals its own `option`.
@@ -88,6 +90,7 @@ const DISABLED_CLASSES = 'cursor-default opacity-60';
  */
 @Component({
     selector: 'dot-radio-card',
+    imports: [Card],
     templateUrl: './dot-radio-card.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -134,11 +137,16 @@ export class DotRadioCardComponent implements FormValueControl<string> {
         this.$isChecked() ? INDICATOR_CHECKED_CLASSES : INDICATOR_UNCHECKED_CLASSES
     );
 
+    protected readonly $surfaceClasses = computed<string>(() =>
+        this.$isChecked()
+            ? `${SURFACE_BASE_CLASSES} ${SURFACE_CHECKED_CLASSES}`
+            : SURFACE_BASE_CLASSES
+    );
+
     protected readonly $stateClasses = computed<string>(() => {
-        const state = this.$isChecked() ? CHECKED_CLASSES : UNCHECKED_CLASSES;
         const interaction = this.disabled() ? DISABLED_CLASSES : ENABLED_CLASSES;
 
-        return `${BASE_CLASSES} ${state} ${interaction}`;
+        return `${HOST_BASE_CLASSES} ${interaction}`;
     });
 
     /** Picks this card. Re-picking the checked one reports nothing: a radio cannot be unchecked. */
