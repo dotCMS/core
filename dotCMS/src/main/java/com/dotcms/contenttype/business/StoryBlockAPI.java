@@ -92,8 +92,9 @@ public interface StoryBlockAPI {
     /**
      * Takes the actual value of the Story Block field and transforms it into a Linked Map. The value may arrive
      * in two shapes depending on the read path: a raw JSON String, or a Map when the field has already been
-     * hydrated by the contentlet transformers (e.g. during page rendering). This method is the single canonical
-     * conversion for both shapes.
+     * hydrated by the contentlet transformers (e.g. during page rendering). Consumers of a Block Editor value
+     * should convert through this method rather than assuming one shape. Note that a Map input yields a
+     * <b>shallow</b> copy: nested structures are shared with the input and must not be mutated.
      *
      * @param blockEditorValue The value of the Story Block field, either a JSON String or an already-hydrated Map.
      *

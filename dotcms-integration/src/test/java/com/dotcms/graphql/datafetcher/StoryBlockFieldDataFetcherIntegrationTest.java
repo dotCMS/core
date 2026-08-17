@@ -38,7 +38,7 @@ import org.mockito.Mockito;
  * Both paths must return the same JSON structure for content whose text contains commas, colons
  * and hyperlinks (see issue #37087).
  */
-public class StoryBlockFieldDataFetcherTest {
+public class StoryBlockFieldDataFetcherIntegrationTest {
 
     private static final String STORY_BLOCK_JSON =
             "{"

@@ -602,6 +602,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         if (blockEditorValue instanceof Map) {
             // Already hydrated into a Map -- e.g. by StoryBlockViewStrategy during page rendering.
             // Map.toString() produces Java map notation, not JSON, so it must never be re-parsed.
+            // NOTE: this is a SHALLOW copy -- nested content lists/maps are shared with the
+            // caller's value. Callers must not mutate nested structures of a Map-sourced result.
             return new LinkedHashMap<>((Map<String, Object>) blockEditorValue);
         }
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
