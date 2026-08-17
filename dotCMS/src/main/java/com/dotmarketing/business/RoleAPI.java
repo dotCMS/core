@@ -329,10 +329,12 @@ public interface RoleAPI {
 	/**
 	 * Counts the users directly granted each of the given roles, resolved with one aggregated
 	 * query per call (chunked for large inputs). Grants inherited through the role hierarchy
-	 * are not included.
+	 * are not included, and neither are users hidden from the user listing (the system and
+	 * anonymous users, the default user, and users flagged for deletion), so the counts always
+	 * match the totals returned by the role users endpoint.
 	 *
 	 * @param roleIds the role ids to count direct user grants for
-	 * @return a map of role id to direct-user count; ids with no grants are absent from the map
+	 * @return a map of role id to direct-user count; ids with no countable grants are absent
 	 * @throws DotDataException if the count query fails
 	 */
 	 Map<String, Integer> countUsersByRoleIds(Collection<String> roleIds) throws DotDataException;

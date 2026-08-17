@@ -593,9 +593,18 @@ public class RoleFactoryImpl extends RoleFactory {
 					.collect(Collectors.joining(","));
 
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("select role_id, count(distinct user_id) as user_count from users_cms_roles"
-					+ " where role_id in (" + placeholders + ") group by role_id");
+			// Mirrors the visibility rules of UserFactoryImpl.getUsersByName (system, anonymous,
+			// default and delete-in-progress users excluded) so the count always matches the
+			// totals returned by the users listing
+			dc.setSQL("select ur.role_id, count(distinct ur.user_id) as user_count"
+					+ " from users_cms_roles ur join user_ u on u.userid = ur.user_id"
+					+ " where ur.role_id in (" + placeholders + ")"
+					+ " and u.userid <> 'system' and u.userid <> 'anonymous'"
+					+ " and u.companyid <> ? and u.delete_in_progress = "
+					+ DbConnectionFactory.getDBFalse()
+					+ " group by ur.role_id");
 			chunk.forEach(dc::addParam);
+			dc.addParam(User.DEFAULT);
 
 			for (final Map<String, Object> row : dc.loadObjectResults()) {
 				counts.put(row.get("role_id").toString(),

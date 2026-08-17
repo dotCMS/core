@@ -105,8 +105,9 @@ public class RoleView {
         return childCount;
     }
 
-    @Schema(description = "Number of users directly granted this role; grants inherited "
-            + "through the role hierarchy are not included",
+    @Schema(description = "Number of users directly granted this role, matching the totals of "
+            + "the role users listing: inherited grants and hidden users (system, anonymous, "
+            + "default, flagged for deletion) are not included",
             example = "12", requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0")
     public int getUserCount() {
         return userCount;

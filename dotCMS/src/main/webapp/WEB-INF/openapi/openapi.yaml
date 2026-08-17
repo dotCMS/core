@@ -35507,8 +35507,9 @@ components:
         userCount:
           type: integer
           format: int32
-          description: Number of users directly granted this role; grants inherited
-            through the role hierarchy are not included
+          description: "Number of users directly granted this role, matching the totals\
+            \ of the role users listing: inherited grants and hidden users (system,\
+            \ anonymous, default, flagged for deletion) are not included"
           example: 12
           minimum: 0
       required:

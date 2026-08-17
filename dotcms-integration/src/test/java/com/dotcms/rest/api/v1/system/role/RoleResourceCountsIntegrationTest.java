@@ -7,10 +7,13 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -213,6 +216,34 @@ public class RoleResourceCountsIntegrationTest {
                 .findFirst().orElse(null);
         assertNotNull("the user's own user-role must be listed", userRoleView);
         assertEquals("a user-role holds exactly its self-grant", 1, userRoleView.getUserCount());
+    }
+
+    /**
+     * userCount matches the users the companion GET /{roleid}/users endpoint actually
+     * returns: hidden users (the system user, users flagged delete_in_progress) are
+     * excluded from the count exactly like they are excluded from the listing, so the
+     * tree badge always equals the Users tab total.
+     */
+    @Test
+    public void userCount_matchesVisibleUsersOnly() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User visible = new UserDataGen().roles(role).nextPersisted();
+        final User deleting = new UserDataGen().roles(role).nextPersisted();
+        roleAPI.addRoleToUser(role, APILocator.systemUser());
+        new DotConnect().setSQL("update user_ set delete_in_progress = "
+                        + DbConnectionFactory.getDBTrue() + " where userid = ?")
+                .addParam(deleting.getUserId()).loadResult();
+
+        assertEquals("hidden users must not be counted",
+                1, loadRoleView(role.getId(), false).getUserCount());
+
+        final ResponseEntityPaginatedDataView usersView = resource.loadUsersByRoleId(
+                mockAdminRequest(), new MockHttpResponse(), role.getId(),
+                null, 1, 40, null, "ASC");
+        assertEquals("the badge must equal the users listing total",
+                (long) loadRoleView(role.getId(), false).getUserCount(),
+                usersView.getPagination().getTotalEntries());
+        assertNotNull(visible);
     }
 
     /**
