@@ -206,7 +206,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const menu = spectator.query(Menu)!;
-            menu.model![0].command({});
+            menu.model![0].command!({});
 
             expect(spy).toHaveBeenCalledWith(mockWorkflowsActionsWithMove[3]);
         });
@@ -225,7 +225,7 @@ describe('DotWorkflowActionsComponent', () => {
                 .query(byTestId(`action-button-${action.id}`))
                 ?.querySelector('button');
 
-            spectator.click(btn);
+            spectator.click(btn!);
 
             expect(spy).toHaveBeenCalledWith(action);
         });
@@ -438,7 +438,7 @@ describe('DotWorkflowActionsComponent', () => {
                 .query(byTestId(`action-button-${action.id}`))
                 ?.querySelector('button');
 
-            spectator.click(btn);
+            spectator.click(btn!);
 
             expect(spy).toHaveBeenCalledWith(action);
         });
@@ -483,7 +483,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const [splitButton] = spectator.queryAll(SplitButton);
-            splitButton.onClick.emit({});
+            splitButton.onClick.emit({} as MouseEvent);
 
             expect(spy).toHaveBeenCalledWith(mockWorkflowsActions[0]);
         });
@@ -494,7 +494,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const [splitButton] = spectator.queryAll(SplitButton);
-            splitButton.model![0].command({});
+            splitButton.model![0].command!({});
 
             expect(spy).toHaveBeenCalledWith(mockWorkflowsActions[1]);
         });

@@ -26,14 +26,16 @@ class MockContainersDropdownComponent {}
 
 const sortedContainersMock = containersMock
     .map((container) => ({
-        label: container.title,
+        label: container.title ?? '',
         value: container,
         inactive: false
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
 function getGroupByHostContainersMock() {
-    const containerobj = sortedContainersMock.reduce((acc, option) => {
+    const containerobj = sortedContainersMock.reduce<
+        Record<string, { items: typeof sortedContainersMock }>
+    >((acc, option) => {
         const hostname = option.value.hostName || 'SYSTEM_HOST';
 
         if (!acc[hostname]) {

@@ -55,7 +55,7 @@ describe('DotKeyValueComponent', () => {
             props: {
                 showHiddenField: false,
                 variables: [...mockKeyValue]
-            } as unknown
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
         spectator.detectChanges();
     });

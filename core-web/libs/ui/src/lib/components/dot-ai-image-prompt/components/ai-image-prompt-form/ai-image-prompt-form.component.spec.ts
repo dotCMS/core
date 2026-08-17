@@ -27,7 +27,7 @@ const MOCK_AI_VALUE = {
 
 describe('DotAiImagePromptFormComponent', () => {
     let spectator: Spectator<AiImagePromptFormComponent>;
-    let generateButton;
+    let generateButton: HTMLButtonElement;
 
     const createComponent = createComponentFactory({
         component: AiImagePromptFormComponent,
@@ -49,7 +49,7 @@ describe('DotAiImagePromptFormComponent', () => {
                 value: { ...MOCK_AI_VALUE }
             }
         });
-        generateButton = spectator.query('button');
+        generateButton = spectator.query<HTMLButtonElement>('button')!;
     });
 
     it('should create the component', () => {
@@ -59,9 +59,9 @@ describe('DotAiImagePromptFormComponent', () => {
 
     it('should initialize the form properly', () => {
         spectator.detectChanges();
-        expect(spectator.component.form.get('text').value).toEqual('');
-        expect(spectator.component.form.get('type').value).toEqual(PromptType.INPUT);
-        expect(spectator.component.form.get('size').value).toEqual('1024x1024');
+        expect(spectator.component.form.get('text')!.value).toEqual('');
+        expect(spectator.component.form.get('type')!.value).toEqual(PromptType.INPUT);
+        expect(spectator.component.form.get('size')!.value).toEqual('1024x1024');
     });
 
     it('should emit value when form value change', () => {
@@ -74,8 +74,8 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     it('should clear validators for text control when type is auto', () => {
-        spectator.component.form.get('type').setValue('auto');
-        expect(spectator.component.form.get('text').validator).toBeNull();
+        spectator.component.form.get('type')!.setValue('auto');
+        expect(spectator.component.form.get('text')!.validator).toBeNull();
     });
 
     it('should disable form controls when isLoading is true', () => {
@@ -112,7 +112,7 @@ describe('DotAiImagePromptFormComponent', () => {
         spectator.component.form.setValue(MOCK_FORM_VALUE);
         spectator.detectChanges();
 
-        spectator.click(generateButton);
+        spectator.click(generateButton!);
         expect(valueSpy).toHaveBeenCalled();
     });
 

@@ -60,7 +60,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
                     name: true
                 },
                 dragAndDrop: false
-            } as unknown
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
         spectator.detectChanges();
     });
@@ -234,7 +234,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             spectator.detectChanges();
             const switchInput = spectator.query(byTestId('hidden-switch'))!.querySelector('input');
 
-            spectator.click(switchInput);
+            spectator.click(switchInput!);
             spectator.detectChanges();
 
             const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'))!;
