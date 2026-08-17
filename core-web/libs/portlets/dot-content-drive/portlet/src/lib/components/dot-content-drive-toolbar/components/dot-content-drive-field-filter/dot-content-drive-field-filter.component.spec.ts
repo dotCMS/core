@@ -291,7 +291,12 @@ describe('DotContentDriveFieldFilterComponent', () => {
             // carries.
             spectator.setInput(
                 'field',
-                field({ variable: 'sitemap', name: 'Sitemap', fieldType: 'Checkbox', values: '|true' })
+                field({
+                    variable: 'sitemap',
+                    name: 'Sitemap',
+                    fieldType: 'Checkbox',
+                    values: '|true'
+                })
             );
             spectator.detectChanges();
             openPopover();
@@ -699,7 +704,9 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.detectChanges();
             openPopover();
 
-            expect(spectator.query(byTestId('field-filter-radio-true'), { root: true })).toBeTruthy();
+            expect(
+                spectator.query(byTestId('field-filter-radio-true'), { root: true })
+            ).toBeTruthy();
             expect(
                 spectator.query(byTestId('field-filter-radio-false'), { root: true })
             ).toBeTruthy();

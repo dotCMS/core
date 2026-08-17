@@ -214,7 +214,6 @@ describe('Utils Functions', () => {
                     { label: 'False', value: false }
                 ]);
             });
-
         });
 
         describe('Empty and null values', () => {
