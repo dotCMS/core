@@ -11,9 +11,11 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Fast, dependency-free unit tests for the escaping of Lucene query-syntax characters in the
- * per-field search strategies. A user term containing a hyphen, colon, slash, etc. must be escaped
- * so it can't break query parsing (which previously errored the whole search); the {@code *}
- * wildcards the strategy adds stay outside the escaped term. A clean term is unchanged.
+ * per-field search strategies. A user term containing a hyphen, colon, parenthesis, etc. must be
+ * escaped so it can't break query parsing (which previously errored the whole search); the
+ * {@code *} wildcards the strategy adds stay outside the escaped term. A clean term is unchanged.
+ * The forward slash is the deliberate exception -- inside a wildcard term an escaped slash is
+ * matched literally and so could never match a stored one.
  *
  * <p>{@link FieldContext} is built with a null Content Type, so the strategies take their plain
  * (non-URL-map) branch — no DB or index needed.</p>
@@ -132,35 +134,33 @@ public class FieldStrategyEscapingTest {
         // `htmlpageasset.url` indexes only the page's own last path segment ("index"), never the
         // folder path the grid displays. The field clauses are dropped rather than OR-ed: the analyzed
         // one is analyzed into the segments and BROADENS, which returned every page named "index" for
-        // a term of "/store/index". The slash becomes a wildcard separator rather than an escaped
-        // literal, since `path` holds the whole path as a single term and an escaped slash never
-        // matches it.
-        assertEquals("+path:*store*",
+        // a term of "/store/index". The term keeps its slashes: `path` holds the whole path as a
+        // single term, so a contains wildcard over it matches exactly what was typed.
+        assertEquals("+path:*/store*",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(pageType(), "htmlpageasset.url", "/store")));
     }
 
     @Test
-    public void pageUrlWithInnerSlashJoinsSegmentsWithWildcards() {
-        assertEquals("+path:*store*index*",
+    public void pageUrlKeepsTheSlashInThePathTerm() {
+        assertEquals("+path:*store/index*",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(pageType(), "htmlpageasset.url", "store/index")));
     }
 
     @Test
-    public void pageUrlSegmentsStayEscapedInThePathClause() {
-        // Only the slash is special-cased. Every other Lucene operator in a segment is still
-        // escaped, so the clause can't be broken out of.
-        assertEquals("+path:*about\\-us*index*",
+    public void pageUrlOperatorsStayEscapedInThePathClause() {
+        // The slash goes in as-is; every other Lucene operator is still escaped, so the clause
+        // can't be broken out of.
+        assertEquals("+path:*about\\-us/index*",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(pageType(), "htmlpageasset.url", "about-us/index")));
     }
 
     @Test
     public void pageUrlOfBareSlashMatchesAnyPath() {
-        // A lone slash leaves no segments; every path contains one, so the clause degrades to a
-        // plain wildcard rather than an empty term.
-        assertEquals("+path:*",
+        // Every path contains a slash, so a lone-slash term matches all of them.
+        assertEquals("+path:*/*",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(pageType(), "htmlpageasset.url", "/")));
     }
@@ -168,7 +168,7 @@ public class FieldStrategyEscapingTest {
     @Test
     public void fileAssetFileNameWithSlashQueriesPathInstead() {
         // Same defect, same shape: `fileName` indexes "logo.png", not the folders above it.
-        assertEquals("+path:*images*",
+        assertEquals("+path:*/images*",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(fileAssetType(), "fileAsset.fileName", "/images")));
     }

@@ -97,11 +97,13 @@ public class TextFieldStrategy implements FieldStrategy {
      * noise. A slash-free term can still match the field itself and is left exactly as it was, which
      * also means the term-dictionary scan this clause costs is paid only on terms that match nothing
      * useful today.</p>
-     * <p>The slash becomes a wildcard <i>separator</i> instead of an escaped literal: {@code path}
-     * holds the whole path as a single term, and an escaped slash matches nothing against it. Every
-     * other Lucene operator inside a segment is still escaped, so the clause cannot be broken out
-     * of. Note this makes the match "these segments, in order" rather than "these segments,
-     * adjacent" -- consistent with the contains-style semantics of every other text filter here.</p>
+     * <p>The term keeps its slashes and goes in whole. {@code path} holds the entire path as a single
+     * term, so a contains-style wildcard over it matches exactly what the user typed. Splitting the
+     * term on the slash and joining the segments with {@code *} wildcards -- which an earlier version
+     * of this did -- was both more expensive (one automaton branch per segment instead of a single
+     * literal) and <i>less</i> precise, because it discarded the adjacency the slashes encode: a term
+     * of {@code /images/} then also matched a file merely <b>named</b> {@code Images.vtl}, not one
+     * inside an {@code images} folder.</p>
      *
      * @param contentType The Content Type the field belongs to.
      * @param fieldName   The fully qualified field name, e.g. {@code htmlpageasset.url}.
@@ -115,15 +117,8 @@ public class TextFieldStrategy implements FieldStrategy {
         if (!token.contains(SLASH) || !this.isPathDerivedUrlField(contentType, fieldName)) {
             return BLANK;
         }
-        final String segments = Arrays.stream(token.split(SLASH))
-                .filter(segment -> !segment.isEmpty())
-                .map(LuceneQueryUtils::escapeForWildcardTerm)
-                .collect(Collectors.joining("*"));
-        // A lone slash leaves no segments. Every path contains one, so match any path rather than
-        // emitting an empty term.
-        return segments.isEmpty()
-                ? "+" + PATH_FIELD + ":*"
-                : String.format("+%s:*%s*", PATH_FIELD, segments);
+        return String.format("+%s:*%s*", PATH_FIELD,
+                LuceneQueryUtils.escapeForWildcardTerm(token));
     }
 
     /**
