@@ -50,6 +50,12 @@ p-card {
         border-color var(--p-form-field-transition-duration) ease;
 }
 
+// Hovering anywhere on the card is hovering the radio, which is the point of a radio card — so the
+// circle takes the form field's hover border, over a target wider than `p-radioButton`'s own.
+:host(:hover:not([aria-disabled="true"])) .radio-card__indicator {
+    border-color: var(--p-form-field-hover-border-color);
+}
+
 :host([aria-checked="true"]) .radio-card__indicator {
     border-color: var(--p-primary-color);
     background: var(--p-primary-color);
