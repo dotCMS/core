@@ -81,13 +81,13 @@ describe('DotAiImagePromptFormComponent', () => {
     it('should disable form controls when isLoading is true', () => {
         spectator.setInput('isLoading', true);
         spectator.detectChanges();
-        expect(spectator.query('form').getAttribute('disabled')).toBeDefined();
+        expect(spectator.query('form')!.getAttribute('disabled')).toBeDefined();
     });
 
     it('should enable form controls when isLoading is false', () => {
         spectator.setInput('$isLoading', false);
         spectator.detectChanges();
-        expect(spectator.query('form').getAttribute('disabled')).toBeNull();
+        expect(spectator.query('form')!.getAttribute('disabled')).toBeNull();
     });
 
     it('should disable button when form is invalid or isLoading is true', () => {
@@ -122,7 +122,7 @@ describe('DotAiImagePromptFormComponent', () => {
         spectator.setInput('isLoading', false);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('prompt-label')).classList).toContain(REQUIRED_CLASS);
+        expect(spectator.query(byTestId('prompt-label'))!.classList).toContain(REQUIRED_CLASS);
 
         spectator.setInput('value', {
             request: { ...MOCK_FORM_VALUE, type: PromptType.AUTO },
@@ -130,7 +130,7 @@ describe('DotAiImagePromptFormComponent', () => {
         } as DotGeneratedAIImage);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
+        expect(spectator.query(byTestId('prompt-label'))!.classList).not.toContain(REQUIRED_CLASS);
     });
 
     it('should not show the AI option when hasEditorContent is false', () => {

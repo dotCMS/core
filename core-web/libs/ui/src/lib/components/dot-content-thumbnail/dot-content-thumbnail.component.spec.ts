@@ -208,7 +208,7 @@ describe('DotContentThumbnailComponent', () => {
 
             expect(loading).toBeTruthy();
             expect(loading.classList).not.toContain('thumbnail-loading--hidden');
-            expect(spectator.query('dot-content-thumbnail-image').classList).toContain(
+            expect(spectator.query('dot-content-thumbnail-image')!.classList).toContain(
                 'thumbnail-media--hidden'
             );
         });
@@ -225,10 +225,10 @@ describe('DotContentThumbnailComponent', () => {
             spectator.dispatchFakeEvent(byTestId('dot-content-thumbnail-image'), 'load');
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dot-content-thumbnail-loading')).classList).toContain(
+            expect(spectator.query(byTestId('dot-content-thumbnail-loading'))!.classList).toContain(
                 'thumbnail-loading--hidden'
             );
-            expect(spectator.query('dot-content-thumbnail-image').classList).not.toContain(
+            expect(spectator.query('dot-content-thumbnail-image')!.classList).not.toContain(
                 'thumbnail-media--hidden'
             );
         });
@@ -260,7 +260,7 @@ describe('DotContentThumbnailComponent', () => {
             create(PLAYABLE_VIDEO_THUMBNAIL);
 
             expect(spectator.query(byTestId('dot-content-thumbnail-loading'))).toBeFalsy();
-            expect(spectator.query('dot-content-thumbnail-video').classList).not.toContain(
+            expect(spectator.query('dot-content-thumbnail-video')!.classList).not.toContain(
                 'thumbnail-media--hidden'
             );
         });
@@ -272,7 +272,7 @@ describe('DotContentThumbnailComponent', () => {
 
             expect(loading).toBeTruthy();
             expect(loading.classList).not.toContain('thumbnail-loading--hidden');
-            expect(spectator.query('dot-content-thumbnail-video').classList).toContain(
+            expect(spectator.query('dot-content-thumbnail-video')!.classList).toContain(
                 'thumbnail-media--hidden'
             );
 
@@ -282,10 +282,10 @@ describe('DotContentThumbnailComponent', () => {
             );
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dot-content-thumbnail-loading')).classList).toContain(
+            expect(spectator.query(byTestId('dot-content-thumbnail-loading'))!.classList).toContain(
                 'thumbnail-loading--hidden'
             );
-            expect(spectator.query('dot-content-thumbnail-video').classList).not.toContain(
+            expect(spectator.query('dot-content-thumbnail-video')!.classList).not.toContain(
                 'thumbnail-media--hidden'
             );
         });

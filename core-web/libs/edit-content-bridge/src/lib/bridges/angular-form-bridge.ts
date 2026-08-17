@@ -530,7 +530,7 @@ export class AngularFormBridge implements FormBridge {
         const header = options.header ?? 'Select Content';
 
         this.#zone.run(() => {
-            this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
+            const dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
                 header,
                 appendTo: 'body',
                 closable: true,
@@ -547,7 +547,9 @@ export class AngularFormBridge implements FormBridge {
                 }
             });
 
-            this.#dialogRef.onClose.subscribe((content) => {
+            this.#dialogRef = dialogRef;
+
+            dialogRef.onClose.subscribe((content) => {
                 if (content) {
                     options.onClose({
                         identifier: content.identifier,
