@@ -63,7 +63,7 @@ describe('EditorModalService — openAudioPicker', () => {
         const [component, config] = dialogService.open.mock.calls[0];
         expect(component).toBe(DotBrowserSelectorComponent);
         expect(config.header).toBe(AUDIO_DIALOG_TITLE_KEY);
-        expect(config.data.mimeTypes).toEqual(['audio']);
+        expect((config.data as { mimeTypes: string[] }).mimeTypes).toEqual(['audio']);
     });
 
     it('inserts the picked contentlet as a dotAudio node on close', () => {
