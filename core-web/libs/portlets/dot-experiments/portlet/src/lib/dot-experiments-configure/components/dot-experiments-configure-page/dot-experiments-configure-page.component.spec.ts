@@ -8,7 +8,13 @@ import { disabled, form, max, min } from '@angular/forms/signals';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperiment, EXP_CONFIG_ERROR_LABEL_CANT_EDIT } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotExperiment,
+    EXP_CONFIG_ERROR_LABEL_CANT_EDIT
+} from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotBrowserSelectorComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurePageComponent } from './dot-experiments-configure-page.component';
@@ -17,13 +23,11 @@ import {
     MAX_TRAFFIC_ALLOCATION,
     MIN_TRAFFIC_ALLOCATION,
     PAGE_PREFILL_ERROR_KEY,
-    SELECT_PAGE_DIALOG_SIZE
+    SELECT_PAGE_BROWSER_PARAMS
 } from '../../../shared/constants';
 import { ConfigureValidationRule, DotExperimentConfigurePage } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { DotExperimentsSelectPageDialogComponent } from '../dot-experiments-select-page-dialog/dot-experiments-select-page-dialog.component';
-import { SelectPageDialogViewRow } from '../dot-experiments-select-page-dialog/dot-experiments-select-page-dialog.models';
 
 const EMPTY_PAGE_COPY = 'No Page selected';
 const PAGE_REQUIRED_COPY = 'Pick the page the experiment runs on';
@@ -47,11 +51,15 @@ const SELECTED_PAGE: DotExperimentConfigurePage = {
     path: '/pricing/index'
 };
 
-const DIALOG_ROW = {
-    pageId: 'page-2',
+/** The site the browser must open on — anything else lands on System Host, which holds no pages. */
+const SITE_ID = 'site-1';
+
+/** What the shared browser closes with: the chosen page's contentlet. */
+const PICKED_PAGE = {
+    identifier: 'page-2',
     title: 'About us',
     url: '/about-us/index'
-} as SelectPageDialogViewRow;
+} as DotCMSContentlet;
 
 const EXPERIMENT: DotExperiment = { ...getExperimentMock(1), trafficAllocation: 100 };
 
@@ -69,7 +77,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurePageComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
     let dispatch: jest.SpyInstance;
-    let dialogClosed: Subject<SelectPageDialogViewRow | undefined>;
+    let dialogClosed: Subject<DotCMSContentlet | undefined>;
     let dialogService: { open: jest.Mock };
     let trafficAllocation: WritableSignal<number>;
 
@@ -94,7 +102,8 @@ describe('DotExperimentsConfigurePageComponent', () => {
         component: DotExperimentsConfigurePageComponent,
         providers: [
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
-            { provide: DotMessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: GlobalStore, useValue: { currentSiteId: signal(SITE_ID) } }
         ],
         // The card provides `DialogService` itself, so it is replaced at component level.
         componentProviders: [{ provide: DialogService, useFactory: () => dialogService }],
@@ -157,7 +166,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
-        dialogClosed = new Subject<SelectPageDialogViewRow | undefined>();
+        dialogClosed = new Subject<DotCMSContentlet | undefined>();
         dialogService = { open: jest.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
@@ -192,33 +201,32 @@ describe('DotExperimentsConfigurePageComponent', () => {
     });
 
     describe('picking a page', () => {
-        it('should open the select page dialog sized for its table', () => {
+        it('should open the shared site browser on the current site, asked for pages only', () => {
             spectator.click(selectButton());
 
             expect(dialogService.open).toHaveBeenCalledWith(
-                DotExperimentsSelectPageDialogComponent,
+                DotBrowserSelectorComponent,
                 expect.objectContaining({
                     header: SELECT_PAGE_HEADER_COPY,
-                    width: SELECT_PAGE_DIALOG_SIZE.width,
-                    height: SELECT_PAGE_DIALOG_SIZE.height,
-                    modal: true
+                    modal: true,
+                    data: { ...SELECT_PAGE_BROWSER_PARAMS, hostFolderId: SITE_ID }
                 })
             );
         });
 
-        it('should report the picked row as the selected page', () => {
+        it('should report the picked page as the selected page', () => {
             // The page is not a form value: it is immutable once the draft exists, so it is
             // reported to the store on its own.
             spectator.click(selectButton());
 
-            dialogClosed.next(DIALOG_ROW);
+            dialogClosed.next(PICKED_PAGE);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
                 dotExperimentsConfigurePageEvents.pageSelected({
-                    pageId: DIALOG_ROW.pageId,
-                    title: DIALOG_ROW.title,
-                    path: DIALOG_ROW.url
+                    pageId: PICKED_PAGE.identifier,
+                    title: PICKED_PAGE.title,
+                    path: PICKED_PAGE.url
                 })
             );
         });

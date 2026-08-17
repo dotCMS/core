@@ -16,18 +16,20 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotBrowserSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
     MAX_TRAFFIC_ALLOCATION,
     MIN_TRAFFIC_ALLOCATION,
-    SELECT_PAGE_DIALOG_SIZE
+    SELECT_PAGE_BROWSER_PARAMS,
+    SELECT_PAGE_DIALOG_MAX_WIDTH,
+    SELECT_PAGE_DIALOG_WIDTH
 } from '../../../shared/constants';
 import { DotExperimentConfigurePage } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { DotExperimentsSelectPageDialogComponent } from '../dot-experiments-select-page-dialog/dot-experiments-select-page-dialog.component';
-import { SelectPageDialogViewRow } from '../dot-experiments-select-page-dialog/dot-experiments-select-page-dialog.models';
 
 /** Title of the Select A Page dialog. Its chrome belongs to the caller, not to the dialog. */
 const SELECT_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.select-page.header';
@@ -125,30 +127,46 @@ export class DotExperimentsConfigurePageComponent {
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #dialogService = inject(DialogService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
 
     /** Opens the picker and reports the chosen page. Cancelling leaves the card as it was. */
+    /**
+     * Picks the page through the shared site browser — the same dialog the file fields and the block
+     * editor open, asked for pages only. It answers with the chosen contentlet, and the three fields
+     * the experiment needs are on it.
+     */
     protected openPageSelector(): void {
         this.#dialogService
-            .open(DotExperimentsSelectPageDialogComponent, {
+            .open(DotBrowserSelectorComponent, {
                 header: this.#dotMessageService.get(SELECT_PAGE_DIALOG_HEADER_KEY),
-                width: SELECT_PAGE_DIALOG_SIZE.width,
-                height: SELECT_PAGE_DIALOG_SIZE.height,
+                appendTo: 'body',
                 closable: true,
                 closeOnEscape: true,
-                modal: true
+                draggable: false,
+                keepInViewport: false,
+                maskStyleClass: 'p-dialog-mask-dynamic',
+                resizable: false,
+                modal: true,
+                width: SELECT_PAGE_DIALOG_WIDTH,
+                style: { 'max-width': SELECT_PAGE_DIALOG_MAX_WIDTH },
+                data: {
+                    ...SELECT_PAGE_BROWSER_PARAMS,
+                    // Without it the browser opens on System Host, which holds no pages.
+                    hostFolderId: this.#globalStore.currentSiteId()
+                }
             })
             .onClose.pipe(take(1), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((row: SelectPageDialogViewRow | undefined) => {
-                if (!row) {
+            .subscribe((page: DotCMSContentlet | undefined) => {
+                if (!page) {
                     return;
                 }
 
                 this.#dispatch.pageSelected({
-                    pageId: row.pageId,
-                    title: row.title,
-                    path: row.url
+                    pageId: page.identifier,
+                    title: page.title,
+                    path: page.url
                 });
             });
     }

@@ -9,19 +9,11 @@ import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import {
     DotPageBrowserContentlet,
-    DotPageBrowserFolderChildren,
-    DotPageBrowserFolderParams,
     DotPageBrowserPage,
     DotPageBrowserState,
     DotPageLockInfo,
     DotPagesBrowserSearchParams
 } from './dot-pages-browser.models';
-
-import {
-    DEFAULT_FOLDER_SEARCH_PAGE,
-    DEFAULT_FOLDER_SEARCH_PER_PAGE,
-    DotFolderService
-} from '../dot-folder/dot-folder.service';
 
 const PAGE_SEARCH_URL = '/api/v1/page/search';
 const ES_SEARCH_URL = '/api/es/search';
@@ -41,49 +33,6 @@ interface DotESSearchResponse<T> {
 @Injectable()
 export class DotPagesBrowserService {
     readonly #http = inject(HttpClient);
-    readonly #folderService = inject(DotFolderService);
-
-    /**
-     * Lists the direct child folders of a site or folder, one level at a time, so a tree can
-     * lazy-load on expand.
-     *
-     * Delegates to `GET /api/v1/folder/search` (the same paginated, site-scoped endpoint the
-     * shared folder tree uses) and resolves each folder's full site-relative path, which the
-     * endpoint only reports split into parent path + name.
-     *
-     * @param params - Site, hostname and parent folder path to expand, plus pagination
-     * @returns Observable of the requested page of child folders and its pagination metadata
-     */
-    getFolderChildren(
-        params: DotPageBrowserFolderParams
-    ): Observable<DotPageBrowserFolderChildren> {
-        const page = params.page ?? DEFAULT_FOLDER_SEARCH_PAGE;
-        const perPage = params.perPage ?? DEFAULT_FOLDER_SEARCH_PER_PAGE;
-
-        return this.#folderService
-            .searchFolders({
-                siteId: params.siteId,
-                path: params.path ?? SITE_ROOT_PATH,
-                recursive: false,
-                page,
-                per_page: perPage
-            })
-            .pipe(
-                map(({ folders, pagination }) => ({
-                    folders: folders.map((folder) => ({
-                        id: folder.id,
-                        inode: folder.inode,
-                        name: folder.name,
-                        path: this.#joinFolderPath(folder.path, folder.name),
-                        hostname: params.hostname,
-                        hasChildren: folder.hasChildren
-                    })),
-                    totalFolders: pagination?.totalEntries ?? folders.length,
-                    page,
-                    perPage
-                }))
-            );
-    }
 
     /**
      * Lists the pages matching a folder path, optionally narrowed by a text term.
@@ -145,14 +94,6 @@ export class DotPagesBrowserService {
             : `${SITE_ROOT_PATH}${path ?? ''}`;
 
         return hostname ? `//${hostname}${folderPath}` : folderPath;
-    }
-
-    #joinFolderPath(parentPath: string, name: string): string {
-        const normalizedParent = parentPath.endsWith(SITE_ROOT_PATH)
-            ? parentPath
-            : `${parentPath}${SITE_ROOT_PATH}`;
-
-        return `${normalizedParent}${name}${SITE_ROOT_PATH}`;
     }
 
     #toPageRow(page: DotPageBrowserContentlet): DotPageBrowserPage {
