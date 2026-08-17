@@ -65,10 +65,59 @@ public class LuceneQueryUtils {
      * @return The term with all Lucene special characters backslash-escaped.
      */
     public static String escape(final String term) {
+        return escape(term, LUCENE_SPECIAL_CHARS);
+    }
+
+    /**
+     * The same set as {@link #LUCENE_SPECIAL_CHARS} minus the forward slash — see
+     * {@link #escapeForWildcardTerm(String)} for why that one character has to be left alone.
+     */
+    private static final String WILDCARD_TERM_SPECIAL_CHARS = "\\+-!():^[]\"{}~*?|&";
+
+    /**
+     * Backslash-escapes the Lucene {@code query_string} special characters <b>except the forward
+     * slash</b>, for a term that the caller wraps in {@code *} wildcards.
+     *
+     * <p>An escaped slash cannot match a stored one. Inside a wildcard term the {@code \} is matched
+     * as a literal character, so {@code *\/store\/index*} looks for a value containing a backslash
+     * and finds nothing, while {@code *&#47;store&#47;index*} matches {@code /store/index} exactly. Escaping
+     * it made every filter on a URL-like value unusable: the term matched neither the analyzed field
+     * nor its {@code _dotraw} keyword, and the OR of two failing clauses degenerated into matching on
+     * individual path segments instead.</p>
+     *
+     * <p>Leaving it unescaped is safe <em>for a wildcard term specifically</em>. A {@code
+     * query_string} regex term is delimited by slashes and must <b>start</b> with one, and a term
+     * built for this method always starts with the {@code *} the caller prepends, so the slash can
+     * never open a regex. Every other special character is still escaped, so a crafted value cannot
+     * break out of the wildcard into query operators. Verified against a live index: {@code *&#47;*},
+     * {@code *&#47;&#47;*}, a full {@code https://} URL and an injection-flavoured {@code *x/")OR*} all parse
+     * and match correctly.</p>
+     *
+     * <p>Use {@link #escape(String)} for a term that is <b>not</b> wrapped in wildcards, where a
+     * leading slash could legitimately be read as a regex delimiter.</p>
+     *
+     * @param term The raw term to escape (must not be {@code null}).
+     *
+     * @return The term with all Lucene special characters except {@code /} backslash-escaped.
+     */
+    public static String escapeForWildcardTerm(final String term) {
+        return escape(term, WILDCARD_TERM_SPECIAL_CHARS);
+    }
+
+    /**
+     * Backslash-escapes every character of the given term that appears in the given special-character
+     * set.
+     *
+     * @param term         The raw term to escape.
+     * @param specialChars The characters to escape.
+     *
+     * @return The escaped term.
+     */
+    private static String escape(final String term, final String specialChars) {
         final StringBuilder sb = new StringBuilder(term.length() + 8);
         for (int i = 0; i < term.length(); i++) {
             final char c = term.charAt(i);
-            if (LUCENE_SPECIAL_CHARS.indexOf(c) >= 0) {
+            if (specialChars.indexOf(c) >= 0) {
                 sb.append('\\');
             }
             sb.append(c);

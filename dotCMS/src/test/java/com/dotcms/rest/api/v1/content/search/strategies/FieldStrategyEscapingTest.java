@@ -46,11 +46,30 @@ public class FieldStrategyEscapingTest {
     }
 
     @Test
-    public void textEscapesTheFullLuceneOperatorSet() {
-        // Not just hyphens: slash, parentheses, colon (and the rest of the Lucene set) are escaped
-        // too. (`+`, `,`, `|` and whitespace are token delimiters, so they never reach escaping.)
-        assertEquals("+(SSS.text:*a\\/\\(b\\)\\:c* SSS.text_dotraw:*a\\/\\(b\\)\\:c*)",
+    public void textEscapesTheFullLuceneOperatorSetExceptTheSlash() {
+        // Not just hyphens: parentheses, colon (and the rest of the Lucene set) are escaped too.
+        // (`+`, `,`, `|` and whitespace are token delimiters, so they never reach escaping.)
+        // The slash is the one exception — see textSlashIsNotEscapedSoItCanMatchAStoredSlash.
+        assertEquals("+(SSS.text:*a/\\(b\\)\\:c* SSS.text_dotraw:*a/\\(b\\)\\:c*)",
                 new TextFieldStrategy().generateQuery(ctx("SSS.text", "a/(b):c")));
+    }
+
+    @Test
+    public void textSlashIsNotEscapedSoItCanMatchAStoredSlash() {
+        // Inside a wildcard term an escaped slash is matched as a literal backslash, so `*\/a\/b*`
+        // can never match a value containing "/a/b". Escaping it made every filter on a URL-like
+        // value unusable: the term matched neither the analyzed field nor its `_dotraw` keyword, and
+        // the OR of two failing clauses degenerated into matching individual path segments.
+        assertEquals("+(SSS.text:*/store/index* SSS.text_dotraw:*/store/index*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "/store/index")));
+    }
+
+    @Test
+    public void textSlashInAnInjectionTermIsStillNeutralized() {
+        // Leaving the slash unescaped does not weaken the guard: a wildcard term always starts with
+        // the `*` we prepend, so the slash cannot open a regex, and every operator stays escaped.
+        assertEquals("+(SSS.text:*x/\\\"\\)OR* SSS.text_dotraw:*x/\\\"\\)OR*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "x/\")OR")));
     }
 
     @Test
@@ -157,7 +176,7 @@ public class FieldStrategyEscapingTest {
     @Test
     public void otherFieldOnAPageTypeIsUnchanged() {
         // The carve-out is the URL field specifically, not every field on a page type.
-        assertEquals("+(htmlpageasset.friendlyName:*a\\/b* htmlpageasset.friendlyName_dotraw:*a\\/b*)",
+        assertEquals("+(htmlpageasset.friendlyName:*a/b* htmlpageasset.friendlyName_dotraw:*a/b*)",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(pageType(), "htmlpageasset.friendlyName", "a/b")));
     }
@@ -166,7 +185,7 @@ public class FieldStrategyEscapingTest {
     public void urlFieldOnAContentTypeIsUnchanged() {
         // A regular Content Type that happens to have a `url` field stores the real string, slashes
         // included, so it needs no help and must keep today's behavior.
-        assertEquals("+(Blog.url:*a\\/b* Blog.url_dotraw:*a\\/b*)",
+        assertEquals("+(Blog.url:*a/b* Blog.url_dotraw:*a/b*)",
                 new TextFieldStrategy().generateQuery(
                         pathCtx(ImmutableSimpleContentType.builder().name("Blog").build(),
                                 "Blog.url", "a/b")));

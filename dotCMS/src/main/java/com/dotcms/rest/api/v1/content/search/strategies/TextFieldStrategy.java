@@ -40,17 +40,20 @@ public class TextFieldStrategy implements FieldStrategy {
             fieldValue = CharMatcher.is('\"').trimFrom(fieldValue).trim();
         }
         final String finalWildcard = wildcard;
-        // Escape Lucene query-syntax characters in the user's term (a hyphen, colon, slash, etc.
-        // would otherwise fail to parse and break the whole search) — but only for the wildcard
+        // Escape Lucene query-syntax characters in the user's term (a hyphen, colon, parenthesis,
+        // etc. would otherwise fail to parse and break the whole search) — but only for the wildcard
         // contains case; an explicitly quoted phrase is left as-is. The `*` wildcards we add
-        // ourselves stay outside the escaped token.
+        // ourselves stay outside the escaped token. The forward slash is deliberately NOT escaped
+        // here: inside a wildcard term an escaped slash is matched literally and so can never match
+        // a stored one. See LuceneQueryUtils.escapeForWildcardTerm.
         final boolean isWildcard = "*".equals(finalWildcard);
         final String luceneQuery;
         if (this.isFieldInURLMapPattern(fieldContext.contentType(), fieldName)) {
             luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                     .map(String::trim)
                     .filter(token -> !token.isEmpty())
-                    .map(token -> isWildcard ? LuceneQueryUtils.escape(token) : token)
+                    .map(token -> isWildcard
+                            ? LuceneQueryUtils.escapeForWildcardTerm(token) : token)
                     .map(token -> String.format("+%s_dotraw:%s%s%s",
                             fieldName, finalWildcard, token, finalWildcard))
                     .collect(Collectors.joining(SPACE));
@@ -67,7 +70,8 @@ public class TextFieldStrategy implements FieldStrategy {
                         if (!pathClause.isEmpty()) {
                             return pathClause;
                         }
-                        final String term = isWildcard ? LuceneQueryUtils.escape(token) : token;
+                        final String term = isWildcard
+                                ? LuceneQueryUtils.escapeForWildcardTerm(token) : token;
                         return String.format("+(%s:%s%s%s %s_dotraw:%s%s%s)",
                                 fieldName, finalWildcard, term, finalWildcard,
                                 fieldName, finalWildcard, term, finalWildcard);
@@ -113,7 +117,7 @@ public class TextFieldStrategy implements FieldStrategy {
         }
         final String segments = Arrays.stream(token.split(SLASH))
                 .filter(segment -> !segment.isEmpty())
-                .map(LuceneQueryUtils::escape)
+                .map(LuceneQueryUtils::escapeForWildcardTerm)
                 .collect(Collectors.joining("*"));
         // A lone slash leaves no segments. Every path contains one, so match any path rather than
         // emitting an empty term.
