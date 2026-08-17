@@ -229,8 +229,9 @@ public class UserFactoryImpl implements UserFactory {
 
     /**
      * Appends the parameterized {@code EXISTS} sub-query restricting results to users that hold
-     * any of the specified Roles. Callers must bind one parameter per Role at the same SQL
-     * position via {@link #addRoleFilterParams(DotConnect, List)}.
+     * any of the specified Roles, matched by role id so roles without a roleKey are supported.
+     * Callers must bind one parameter per Role at the same SQL position via
+     * {@link #addRoleFilterParams(DotConnect, List)}.
      */
     private static void appendRoleFilter(final StringBuilder sql, final List<Role> roles) {
         if (!UtilMethods.isSet(roles)) {
@@ -238,20 +239,45 @@ public class UserFactoryImpl implements UserFactory {
         }
         final String placeholders = roles.stream().map(role -> "?")
                 .collect(Collectors.joining(StringPool.COMMA));
-        sql.append(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (")
+        sql.append(" and exists ( select ur.user_id from users_cms_roles ur where ur.role_id in (")
                 .append(placeholders)
                 .append(") and ur.user_id = user_.userId )");
     }
 
     /**
-     * Binds the Role keys expected by the placeholders appended via
-     * {@link #appendRoleFilter(StringBuilder, List)}.
+     * Binds the Role ids expected by the placeholders appended via
+     * {@link #appendRoleFilter(StringBuilder, List)}, resolving each id defensively through
+     * {@link #resolveRoleId(Role)}.
      */
     private static void addRoleFilterParams(final DotConnect dotConnect, final List<Role> roles) {
         if (!UtilMethods.isSet(roles)) {
             return;
         }
-        roles.forEach(role -> dotConnect.addParam(role.getRoleKey()));
+        roles.forEach(role -> dotConnect.addParam(resolveRoleId(role)));
+    }
+
+    /**
+     * Returns the role's id, falling back to a lookup by roleKey for Role instances that were
+     * not loaded through the API and carry only a key. Returns null when neither resolves,
+     * which matches no users (the same behavior the previous role_key binding had for
+     * unresolvable roles).
+     */
+    private static String resolveRoleId(final Role role) {
+        if (UtilMethods.isSet(role.getId())) {
+            return role.getId();
+        }
+        if (UtilMethods.isSet(role.getRoleKey())) {
+            try {
+                final Role loaded = APILocator.getRoleAPI().loadRoleByKey(role.getRoleKey());
+                if (null != loaded && UtilMethods.isSet(loaded.getId())) {
+                    return loaded.getId();
+                }
+            } catch (final DotDataException e) {
+                Logger.warn(UserFactoryImpl.class,
+                        "Unable to resolve role id for roleKey: " + role.getRoleKey(), e);
+            }
+        }
+        return null;
     }
 
     @Override
