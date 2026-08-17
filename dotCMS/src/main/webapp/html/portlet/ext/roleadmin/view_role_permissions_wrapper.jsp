@@ -17,7 +17,15 @@
         when debugging JSP-level errors independent of Angular).
 --%>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ include file="/html/portlet/ext/roleadmin/init.jsp" %>
+<%--
+    Do NOT include `/html/portlet/ext/roleadmin/init.jsp` — it wraps
+    `<portlet:defineObjects />`, which requires a portlet container context
+    that is absent when this JSP is hit as a plain HTTP request from an
+    iframe. Include `/html/common/init.jsp` directly instead (same pattern
+    as `/html/portlet/ext/categories/permissions.jsp` and
+    `/html/portlet/ext/folders/permissions.jsp`).
+--%>
+<%@ include file="/html/common/init.jsp" %>
 <%@ include file="/html/common/top_inc.jsp" %>
 <%@ include file="/html/common/messages_inc.jsp" %>
 
@@ -56,6 +64,3 @@
         <% } %>
     });
 </script>
-
-</body>
-</html>
