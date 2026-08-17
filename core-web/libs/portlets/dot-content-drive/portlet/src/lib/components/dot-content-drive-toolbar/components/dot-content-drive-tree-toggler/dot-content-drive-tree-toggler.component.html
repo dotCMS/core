@@ -7,12 +7,16 @@
      `p-button-icon-only` matters here: PrimeNG only derives icon-button sizing from its `icon`
      input, and the glyph is projected content, so without it the button never gets the fixed square
      box that gives a rounded hover surface around the icon — the control stopped reacting on hover.
-     `size="small"` matches UVE's equivalent toggle. -->
+     No `size="small"`: with `p-button-icon-only` the size token fixes the box width
+     (`iconOnlyWidth`, 2rem small vs 2.5rem default) and zeroes the padding, so a small box around a
+     24px glyph leaves only ~4px of hover surface — invisible at this tint, which is why the control
+     read as not hoverable. The default box gives ~8px, matching what this toggle had when its icon
+     was 20px in a 2.5rem box.
+ -->
 
 <p-button
     [text]="true"
     [rounded]="true"
-    size="small"
     styleClass="p-button-icon-only"
     [disabled]="$treeForceCollapsed()"
     [ariaLabel]="
