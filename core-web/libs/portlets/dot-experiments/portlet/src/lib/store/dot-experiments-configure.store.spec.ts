@@ -1,11 +1,11 @@
 import { Dispatcher, Events, provideDispatcher } from '@ngrx/signals/events';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { of, Subject, throwError } from 'rxjs';
+import { concat, of, Subject, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import { ActivatedRoute, convertToParamMap, Params, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, ParamMap, Params, Router } from '@angular/router';
 
 import {
     DotContentSearchService,
@@ -153,8 +153,17 @@ describe('DotExperimentsConfigureStore', () => {
     let routeParams: Params;
     let routeQueryParams: Params;
 
-    /** The store reads the route once, through the snapshot's param maps. */
+    /**
+     * The store follows `paramMap` for as long as it lives and reads the query params off the
+     * snapshot when it lands on `/new`, so the stub offers both — and the subject lets a test push a
+     * later URL at a store that is already up.
+     */
+    let laterUrls$: Subject<ParamMap>;
+
     const activatedRouteStub = {
+        get paramMap() {
+            return concat(of(convertToParamMap(routeParams)), laterUrls$);
+        },
         snapshot: {
             get paramMap() {
                 return convertToParamMap(routeParams);
@@ -264,6 +273,7 @@ describe('DotExperimentsConfigureStore', () => {
 
         routeParams = {};
         routeQueryParams = {};
+        laterUrls$ = new Subject<ParamMap>();
 
         getById.mockReturnValue(of(VALID_DRAFT));
         add.mockReturnValue(of(VALID_DRAFT));
@@ -322,6 +332,57 @@ describe('DotExperimentsConfigureStore', () => {
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.status()).toBe(ComponentStatus.ERROR);
+        });
+    });
+
+    /**
+     * One route serves `/experiments/new` and `/experiments/:experimentId/configuration`, and the
+     * component is reused across them, so the store follows the URL instead of reading it once.
+     */
+    describe('a URL arriving while the screen is up', () => {
+        const OTHER_ID = 'another-experiment-id';
+
+        it('should load the experiment it points at', () => {
+            initExisting();
+            getById.mockClear();
+            getById.mockReturnValue(of({ ...VALID_DRAFT, id: OTHER_ID }));
+
+            laterUrls$.next(convertToParamMap({ experimentId: OTHER_ID }));
+
+            expect(getById).toHaveBeenCalledWith(OTHER_ID);
+            expect(store.experiment()?.id).toBe(OTHER_ID);
+        });
+
+        it('should not carry a pending diff over to it', () => {
+            initExisting();
+            dispatcher.dispatch(pageEvents.formEdited({ name: 'Typed but not yet sent' }));
+            expect(store.pendingPatch()).not.toEqual({});
+
+            laterUrls$.next(convertToParamMap({ experimentId: OTHER_ID }));
+
+            expect(store.pendingPatch()).toEqual({});
+        });
+
+        it('should ignore the swap to the experiment it just created', () => {
+            initNew();
+            createDraft();
+            getById.mockClear();
+
+            // What the store's own `createSucceeded` navigation produces.
+            laterUrls$.next(convertToParamMap({ experimentId: VALID_DRAFT.id }));
+
+            expect(getById).not.toHaveBeenCalled();
+            expect(store.experiment()).toEqual(VALID_DRAFT);
+        });
+
+        it('should go back to a creation form when the URL drops the id', () => {
+            initExisting();
+
+            laterUrls$.next(convertToParamMap({}));
+
+            expect(store.isNew()).toBe(true);
+            expect(store.experiment()).toBeNull();
+            expect(store.status()).toBe(ComponentStatus.LOADED);
         });
     });
 

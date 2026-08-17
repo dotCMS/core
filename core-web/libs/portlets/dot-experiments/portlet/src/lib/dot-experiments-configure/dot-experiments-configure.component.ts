@@ -189,15 +189,6 @@ export class DotExperimentsConfigureComponent {
     readonly #formatDate = (value: Date) => formatDate(value, 'medium', this.#locale);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
-    /**
-     * Whether the screen opened on `/experiments/new`. Read once, as the store reads the route.
-     *
-     * There, the form is what creates the draft, so nothing is ever read back into it: hydrating
-     * from the created experiment would drop a goal or a schedule entered before the name that
-     * created it, and those are still on their way to the server.
-     */
-    readonly #isCreationScreen = !this.#route.snapshot.paramMap.get('experimentId');
-
     /** How long an experiment may run. Read once: a modal-free screen outlives no resolve. */
     readonly #durationBounds = resolveDurationBounds(
         this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]
@@ -363,30 +354,34 @@ export class DotExperimentsConfigureComponent {
         iconStyle: 'material-symbols-rounded'
     };
 
-    /** Identifier of the experiment whose values are already in the form. */
+    /**
+     * Which experiment's values are in the form. `null` means an empty creation form — either the
+     * screen opened on `/experiments/new`, or a URL took it back there.
+     */
     readonly #hydratedExperimentId = signal<string | null>(null);
 
     /**
-     * Fills the form from the store once per experiment.
+     * Keeps the form on whichever experiment the store is showing, filling it once per experiment.
      *
-     * Keyed on the experiment's identifier rather than on the values themselves: every autosave
-     * response replaces `experiment`, and re-reading it would drop characters typed while the PATCH
-     * was travelling. On the creation screen nothing is read at all — see `#isCreationScreen`.
+     * Keyed on the identifier rather than on the values: every autosave response replaces
+     * `experiment`, and re-reading it would drop characters typed while the PATCH was travelling.
+     *
+     * A draft created on this screen is claimed as hydrated the moment its POST answers (see
+     * `#listenForActionSuccess`), which is what keeps this from reading it back: the form is what
+     * created it, and a goal or a schedule entered before the name is still on its way to the server.
      */
     protected readonly hydrateFormEffect = effect(() => {
         const experimentId = this.store.experiment()?.id ?? null;
 
-        if (
-            this.#isCreationScreen ||
-            !experimentId ||
-            experimentId === untracked(this.#hydratedExperimentId)
-        ) {
+        if (experimentId === untracked(this.#hydratedExperimentId)) {
             return;
         }
 
         untracked(() => {
             this.#hydratedExperimentId.set(experimentId);
-            this.$model.set(toConfigureFormModel(this.#formSource()));
+            this.$model.set(
+                experimentId ? toConfigureFormModel(this.#formSource()) : emptyConfigureForm()
+            );
         });
     });
 
@@ -483,6 +478,13 @@ export class DotExperimentsConfigureComponent {
 
     constructor() {
         this.#listenForActionSuccess();
+
+        // The form created this draft, so it already holds it: claiming it here is what stops
+        // `hydrateFormEffect` from reading the POST's answer back over what is still being typed.
+        this.#events
+            .on(dotExperimentsConfigureApiEvents.createSucceeded)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(({ payload }) => this.#hydratedExperimentId.set(payload.id));
     }
 
     /** Brings the first failing field into view. Public so the footer can re-run it on a re-press. */

@@ -244,7 +244,9 @@ export const DotExperimentsConfigureStore = signalStore(
         on(pageEvents.enterNew, () => ({ ...initialState, status: ComponentStatus.LOADED })),
         on(pageEvents.enterExisting, () => ({
             isNew: false,
-            status: ComponentStatus.LOADING
+            status: ComponentStatus.LOADING,
+            // Whatever was pending belonged to the experiment being left behind.
+            pendingPatch: {}
         })),
         on(apiEvents.loadSucceeded, ({ payload }) => ({
             experiment: payload,
@@ -745,35 +747,17 @@ export const DotExperimentsConfigureStore = signalStore(
             };
         }
     ),
-    withHooks(() => {
+    withHooks((store) => {
         const route = inject(ActivatedRoute);
         const router = inject(Router);
         const dispatcher = inject(Dispatcher);
         const events = inject(Events);
 
         let createdSubscription: SubscriptionLike;
+        let routeSubscription: SubscriptionLike;
 
         return {
             onInit() {
-                // Read once. The Configure screen has no filters to mirror back into the URL, so
-                // unlike the list there is nothing to keep in sync afterwards.
-                const experimentId = route.snapshot.paramMap.get('experimentId');
-
-                if (experimentId) {
-                    dispatcher.dispatch(pageEvents.enterExisting(experimentId));
-
-                    return;
-                }
-
-                dispatcher.dispatch(pageEvents.enterNew());
-
-                const pageId = route.snapshot.queryParamMap.get('pageId');
-                const url = route.snapshot.queryParamMap.get('url');
-
-                if (pageId || url) {
-                    dispatcher.dispatch(pageEvents.pagePrefillRequested({ pageId, url }));
-                }
-
                 /**
                  * Swap `/experiments/new` for the created experiment's own URL. `replaceUrl`
                  * keeps `/new` out of the history, so Back leaves the screen instead of
@@ -788,9 +772,44 @@ export const DotExperimentsConfigureStore = signalStore(
                             replaceUrl: true
                         });
                     });
+
+                /**
+                 * Followed for as long as the screen lives, not read once from the snapshot: one
+                 * route serves both `/experiments/new` and `/experiments/:experimentId/configuration`
+                 * and the component is reused across them, so a URL arriving while the screen is up
+                 * — the created experiment's own, or one pasted into the address bar — would
+                 * otherwise leave the store showing the wrong experiment, or a creation form on an
+                 * existing one's URL.
+                 */
+                routeSubscription = route.paramMap
+                    .pipe(
+                        map((params) => params.get('experimentId')),
+                        distinctUntilChanged()
+                    )
+                    .subscribe((experimentId) => {
+                        if (experimentId) {
+                            // Not for the swap this store just triggered: that experiment is already
+                            // here, possibly with edits the reload would throw away.
+                            if (experimentId !== store.experiment()?.id) {
+                                dispatcher.dispatch(pageEvents.enterExisting(experimentId));
+                            }
+
+                            return;
+                        }
+
+                        dispatcher.dispatch(pageEvents.enterNew());
+
+                        const pageId = route.snapshot.queryParamMap.get('pageId');
+                        const url = route.snapshot.queryParamMap.get('url');
+
+                        if (pageId || url) {
+                            dispatcher.dispatch(pageEvents.pagePrefillRequested({ pageId, url }));
+                        }
+                    });
             },
             onDestroy() {
                 createdSubscription?.unsubscribe();
+                routeSubscription?.unsubscribe();
             }
         };
     })
