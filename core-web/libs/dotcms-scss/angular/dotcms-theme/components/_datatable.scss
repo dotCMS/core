@@ -73,12 +73,9 @@
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
-    // `vertical-align: middle` centers the glyph against the label. As a bare inline-block it sits on
-    // the text baseline, which reads as riding high next to a bold header.
     display: inline-block;
-    vertical-align: middle;
     color: colors.$color-palette-gray-700;
-    margin-left: spacing.$spacing-2;
+    margin-left: spacing.$spacing-1;
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-badge {
