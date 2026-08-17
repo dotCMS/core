@@ -197,8 +197,10 @@ public class RoleResourceCountsIntegrationTest {
     @Test
     public void loadUserRoles_carriesCounts() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(role.getId()).nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
         final Role userRole = roleAPI.getUserRole(user);
+        assertNotNull(child);
 
         final ResponseEntityRoleViewListView view = resource.loadUserRoles(
                 mockAdminRequest(), response, user.getUserId());
@@ -210,6 +212,8 @@ public class RoleResourceCountsIntegrationTest {
                 .findFirst().orElse(null);
         assertNotNull("the granted role must be listed", grantedView);
         assertEquals(1, grantedView.getUserCount());
+        assertEquals("roles from loadRolesForUser must carry a hydrated childCount",
+                1, grantedView.getChildCount());
 
         final RoleView userRoleView = roleViews.stream()
                 .filter(roleView -> userRole.getId().equals(roleView.getId()))
