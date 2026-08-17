@@ -61,8 +61,8 @@
                 [nameField]="formTree.name"
                 [descriptionField]="formTree.description" />
             <dot-experiments-configure-goal [field]="formTree.goal" />
-            <dot-experiments-configure-page [trafficAllocationField]="formTree.trafficAllocation" />
-            <dot-experiments-configure-variants [weights]="formTree.variantWeights" />
+            <dot-experiments-configure-page [field]="formTree.trafficAllocation" />
+            <dot-experiments-configure-variants [field]="formTree.variantWeights" />
             <dot-experiments-configure-scheduling
                 [field]="formTree.scheduling"
                 [bounds]="$schedulingBounds()" />

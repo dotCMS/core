@@ -3,7 +3,7 @@ import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/j
 import { Subject } from 'rxjs';
 
 import { Injector, WritableSignal, signal } from '@angular/core';
-import { FieldTree, form } from '@angular/forms/signals';
+import { applyEach, disabled, FieldTree, form, max, min, validate } from '@angular/forms/signals';
 
 import { Confirmation, ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -24,17 +24,19 @@ import {
 import { DotCopyButtonComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import {
-    DotExperimentsConfigureVariantsComponent,
-    variantWeightsFormSchema
-} from './dot-experiments-configure-variants.component';
+import { DotExperimentsConfigureVariantsComponent } from './dot-experiments-configure-variants.component';
 
-import { ADD_VARIANT_DIALOG_WIDTH, TOTAL_WEIGHT } from '../../../shared/constants';
+import {
+    ADD_VARIANT_DIALOG_WIDTH,
+    TOTAL_WEIGHT,
+    WEIGHTS_TOTAL_ERROR_KIND
+} from '../../../shared/constants';
 import { DotExperimentConfigurePage, VariantWeightFormRow } from '../../../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 import { toVariantWeightRows } from '../../../util/dot-experiments-configure-form.util';
+import { totalWeight } from '../../../util/dot-experiments-configure.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogResult
@@ -130,14 +132,31 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
      */
     const render = (rows: VariantWeightFormRow[] = toVariantWeightRows(storeMock.$variants())) => {
         weights = signal(rows);
+        // The shell's rules for this slice, restated — including that the weights follow the page's
+        // lock and not only the status. The card is only meaningful on a slice that carries them.
         weightsField = form(
             weights,
-            // Exactly how the shell wires it: the weights follow the page's lock too.
-            variantWeightsFormSchema(() => !!storeMock.$disabledTooltipKey()),
+            (path) => {
+                const isLocked = () => !!storeMock.$disabledTooltipKey();
+
+                applyEach(path, (row) => {
+                    min(row.weight, 0);
+                    max(row.weight, TOTAL_WEIGHT);
+                    disabled(row, { when: isLocked });
+                });
+
+                validate(path, ({ value }) => {
+                    const rows = value();
+
+                    return !rows.length || totalWeight(rows) === TOTAL_WEIGHT
+                        ? undefined
+                        : { kind: WEIGHTS_TOTAL_ERROR_KIND };
+                });
+            },
             { injector: spectator.inject(Injector) }
         );
 
-        spectator.setInput('weights', weightsField);
+        spectator.setInput('field', weightsField);
         spectator.detectChanges();
     };
 

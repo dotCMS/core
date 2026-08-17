@@ -75,9 +75,7 @@ const PAGE_IMMUTABLE_TOOLTIP_KEY = 'experiments.configure.page.select.immutable.
 })
 export class DotExperimentsConfigurePageComponent {
     /** Traffic-allocation leaf of the root form, carrying its 1–100 rule. */
-    readonly $trafficAllocationField = input.required<FieldTree<number>>({
-        alias: 'trafficAllocationField'
-    });
+    readonly $field = input.required<FieldTree<number>>({ alias: 'field' });
 
     readonly store = inject(DotExperimentsConfigureStore);
 
@@ -115,13 +113,13 @@ export class DotExperimentsConfigurePageComponent {
 
     /** Arguments of the traffic helper copy: the share, and the page it is a share of. */
     protected readonly $trafficHelpArgs = computed<string[]>(() => [
-        String(this.$trafficAllocationField()().value()),
+        String(this.$field()().value()),
         this.$selectedPage()?.path ?? this.#dotMessageService.get(TRAFFIC_HELP_FALLBACK_PAGE_KEY)
     ]);
 
     /** True while the allocation is out of bounds, which is shown here rather than sent. */
     protected readonly $hasTrafficAllocationError = computed<boolean>(() =>
-        this.$trafficAllocationField()().invalid()
+        this.$field()().invalid()
     );
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);

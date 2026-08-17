@@ -1,15 +1,12 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { computed, Injector, signal, WritableSignal } from '@angular/core';
-import { FieldTree, form } from '@angular/forms/signals';
+import { disabled, FieldTree, form, maxDate, minDate } from '@angular/forms/signals';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import {
-    DotExperimentsConfigureSchedulingComponent,
-    schedulingFormSchema
-} from './dot-experiments-configure-scheduling.component';
+import { DotExperimentsConfigureSchedulingComponent } from './dot-experiments-configure-scheduling.component';
 
 import { SchedulingDateBounds, SchedulingFormSlice } from '../../../shared/models';
 
@@ -78,13 +75,16 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
             };
         });
 
+        // The shell's rules for this slice, restated: the card is only meaningful on a slice that
+        // carries them, and the shell is where they actually live now.
         field = form(
             scheduling,
-            schedulingFormSchema({
-                isLocked: () => $isLocked(),
-                earliestStartDate: new Date(),
-                bounds: $bounds
-            }),
+            (path) => {
+                minDate(path.startDate, new Date());
+                minDate(path.endDate, () => $bounds().minEndDate);
+                maxDate(path.endDate, () => $bounds().maxEndDate);
+                disabled(path, { when: () => $isLocked() });
+            },
             { injector: spectator.inject(Injector) }
         );
 

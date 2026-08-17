@@ -136,12 +136,12 @@ class GoalStubComponent {
 
 @Component({ selector: 'dot-experiments-configure-page', template: '' })
 class PageStubComponent {
-    readonly trafficAllocationField = input<FieldTree<number>>();
+    readonly field = input<FieldTree<number>>();
 }
 
 @Component({ selector: 'dot-experiments-configure-variants', template: '' })
 class VariantsStubComponent {
-    readonly weights = input<FieldTree<VariantWeightFormRow[]>>();
+    readonly field = input<FieldTree<VariantWeightFormRow[]>>();
 }
 
 @Component({ selector: 'dot-experiments-configure-scheduling', template: '' })

@@ -1,5 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { disabled, FieldTree, FormField, maxLength, SchemaFn } from '@angular/forms/signals';
+import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { Card } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
@@ -11,8 +11,7 @@ import {
     DotDropdownSelectOption,
     GOAL_OPERATORS,
     GOAL_TYPES,
-    GOALS_METADATA_MAP,
-    MAX_INPUT_DESCRIPTIVE_LENGTH
+    GOALS_METADATA_MAP
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotRadioCardComponent, DotRadioGroupComponent } from '@dotcms/ui';
 
@@ -53,28 +52,6 @@ const GOAL_TYPE_OPTIONS: GoalTypeOption[] = CONFIGURE_GOAL_TYPES.map((type) => (
     labelKey: GOALS_METADATA_MAP[type].label,
     descriptionKey: GOALS_METADATA_MAP[type].description
 }));
-
-/**
- * Live constraints of the Goal slice, applied to the root form by the Configure shell.
- *
- * Declared here rather than in the shell so the rules sit with the card that renders the fields
- * they are about; the shell only says where they go — `apply(path.goal, goalFormSchema(…))`.
- *
- * One `disabled` rule covers the whole slice: a disabled field disables everything under it, so
- * every condition control follows without being named.
- *
- * The goal's name being required is *not* a rule here (AC28): `required` reaches the DOM as the
- * native attribute, which would paint an untouched field red. The store checks it when
- * Start/Schedule is pressed, and the card reveals it only then.
- *
- * @param isLocked - Whether the experiment is no longer a draft (AC34)
- */
-export function goalFormSchema(isLocked: () => boolean): SchemaFn<GoalFormSlice> {
-    return (goal) => {
-        maxLength(goal.name, MAX_INPUT_DESCRIPTIVE_LENGTH);
-        disabled(goal, { when: isLocked });
-    };
-}
 
 /**
  * Goal card of the Configure screen: which conversion event the variants are compared on.

@@ -2,16 +2,7 @@ import { Events, injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-    applyEach,
-    disabled,
-    FieldTree,
-    FormField,
-    max,
-    min,
-    SchemaFn,
-    validate
-} from '@angular/forms/signals';
+import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -38,7 +29,8 @@ import { DotExperimentsVariantNameInplaceComponent } from './dot-experiments-var
 import {
     ADD_VARIANT_DIALOG_WIDTH,
     MAX_VARIANTS_ALLOWED,
-    TOTAL_WEIGHT
+    TOTAL_WEIGHT,
+    WEIGHTS_TOTAL_ERROR_KIND
 } from '../../../shared/constants';
 import { VariantRowViewModel, VariantWeightFormRow } from '../../../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
@@ -91,53 +83,6 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
 };
 
 /**
- * Kind of the cross-field error the weights raise when they do not add up to 100.
- *
- * Deliberately the same string as the `weightsTotal` validation rule the store publishes on a Start
- * press: the two say the same thing at two different moments — the form's is live (AC25), the
- * store's is what turns it into a scroll target (AC28) — and the card reads both.
- */
-export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';
-
-/**
- * Live constraints of the variant weights, applied to the root form by the Configure shell.
- *
- * Declared here rather than in the shell, as the Goal and Scheduling cards declare theirs: the rules
- * sit with the card that renders the inputs they are about, and the shell only says where they go.
- *
- * Per row, the range every single weight has to be inside; the `disabled` rule covers the row as a
- * whole, since a disabled field disables everything under it. Both reach the inputs as their native
- * properties through `[formField]`, so the template states neither.
- *
- * And over the list, the one rule that is not about any single row: the weights have to add up to
- * exactly 100. It is a cross-field rule of the slice because that is what it is — no row is wrong on
- * its own, the set of them is — which is also what the backend asserts, on `TrafficProportion`
- * *construction* (`AbstractTrafficProportion.java:44-58`). An empty list is not wrong: it is what the
- * form holds before the experiment exists, and the backend makes the same exception.
- *
- * @param isLocked - Whether the weights may not be edited: not a draft (AC34), or the page is locked
- */
-export function variantWeightsFormSchema(
-    isLocked: () => boolean
-): SchemaFn<VariantWeightFormRow[]> {
-    return (weights) => {
-        applyEach(weights, (row) => {
-            min(row.weight, 0);
-            max(row.weight, TOTAL_WEIGHT);
-            disabled(row, { when: isLocked });
-        });
-
-        validate(weights, ({ value }) => {
-            const rows = value();
-
-            return !rows.length || totalWeight(rows) === TOTAL_WEIGHT
-                ? undefined
-                : { kind: WEIGHTS_TOTAL_ERROR_KIND };
-        });
-    };
-}
-
-/**
  * Variants card of the Configure screen.
  *
  * Owns everything about the variant list: renaming inplace, per-row weights, Split Evenly, adding
@@ -176,7 +121,7 @@ export class DotExperimentsConfigureVariantsComponent {
      * The weights slice of the root form: one row per persisted variant, carrying its range rule and
      * the cross-field rule over the set of them.
      */
-    readonly $weights = input.required<FieldTree<VariantWeightFormRow[]>>({ alias: 'weights' });
+    readonly $field = input.required<FieldTree<VariantWeightFormRow[]>>({ alias: 'field' });
 
     readonly store = inject(DotExperimentsConfigureStore);
 
@@ -230,7 +175,7 @@ export class DotExperimentsConfigureVariantsComponent {
      * the experiment exists, which no form field stands behind.
      */
     readonly $weightFieldById = computed<Map<string, FieldTree<number | null>>>(() => {
-        const weights = this.$weights();
+        const weights = this.$field();
 
         return new Map(
             weights()
@@ -241,7 +186,7 @@ export class DotExperimentsConfigureVariantsComponent {
 
     /** Reads 100% before creation: that is the proportion the POST will have written. */
     readonly $totalWeight = computed<number>(() =>
-        this.$isBeforeCreation() ? TOTAL_WEIGHT : totalWeight(this.$weights()().value())
+        this.$isBeforeCreation() ? TOTAL_WEIGHT : totalWeight(this.$field()().value())
     );
 
     /**
@@ -253,7 +198,7 @@ export class DotExperimentsConfigureVariantsComponent {
      * errors: a single weight above 100 is that input's problem, not the total's.
      */
     readonly $hasWeightWarning = computed<boolean>(() =>
-        this.$weights()()
+        this.$field()()
             .errors()
             .some(({ kind }) => kind === WEIGHTS_TOTAL_ERROR_KIND)
     );
@@ -376,7 +321,7 @@ export class DotExperimentsConfigureVariantsComponent {
 
         const rows = splitWeightsEvenly(toVariantWeightRows(variants));
 
-        this.$weights()().value.set(rows);
+        this.$field()().value.set(rows);
 
         this.#dispatch.formEdited({
             trafficProportion: {

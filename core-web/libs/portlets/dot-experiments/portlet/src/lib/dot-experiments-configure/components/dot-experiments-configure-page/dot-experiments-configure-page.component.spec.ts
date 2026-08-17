@@ -118,7 +118,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
             { injector: spectator.inject(Injector) }
         );
 
-        spectator.setInput('trafficAllocationField', formTree);
+        spectator.setInput('field', formTree);
         spectator.detectChanges();
     };
 
