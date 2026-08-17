@@ -1,5 +1,6 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
+import { formatDate } from '@angular/common';
 import { computed, Injector, signal, WritableSignal } from '@angular/core';
 import { disabled, FieldTree, form, maxDate, minDate } from '@angular/forms/signals';
 
@@ -80,9 +81,19 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
         field = form(
             scheduling,
             (path) => {
-                minDate(path.startDate, new Date());
-                minDate(path.endDate, () => $bounds().minEndDate);
-                maxDate(path.endDate, () => $bounds().maxEndDate);
+                const boundsMessage = () =>
+                    messageServiceMock.get(
+                        'experiments.configure.scheduling.end.error.out-of-bounds',
+                        formatDate($bounds().minEndDate, 'medium', 'en-US'),
+                        formatDate($bounds().maxEndDate, 'medium', 'en-US')
+                    );
+
+                minDate(path.startDate, new Date(), {
+                    message: () =>
+                        messageServiceMock.get('experiments.configure.scheduling.start.error.past')
+                });
+                minDate(path.endDate, () => $bounds().minEndDate, { message: boundsMessage });
+                maxDate(path.endDate, () => $bounds().maxEndDate, { message: boundsMessage });
                 disabled(path, { when: () => $isLocked() });
             },
             { injector: spectator.inject(Injector) }

@@ -117,10 +117,11 @@ export class DotExperimentsConfigurePageComponent {
         this.$selectedPage()?.path ?? this.#dotMessageService.get(TRAFFIC_HELP_FALLBACK_PAGE_KEY)
     ]);
 
-    /** True while the allocation is out of bounds, which is shown here rather than sent. */
-    protected readonly $hasTrafficAllocationError = computed<boolean>(() =>
-        this.$field()().invalid()
-    );
+    /**
+     * Whatever the form says is wrong with the allocation, message included: the rules and their copy
+     * live in the shell's schema, so the card renders them without knowing which ones exist.
+     */
+    protected readonly $trafficErrors = computed(() => this.$field()().errors());
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #dialogService = inject(DialogService);

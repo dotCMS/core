@@ -28,11 +28,11 @@
                     [stepMinute]="DATE_PICKER_STEP_MINUTE"
                     data-testid="experiments-configure-scheduling-start" />
 
-                @if ($hasStartDateError()) {
+                @for (error of $startDateErrors(); track error.kind) {
                     <small
                         class="p-error"
                         data-testid="experiments-configure-scheduling-start-error">
-                        {{ 'experiments.configure.scheduling.start.error.past' | dm }}
+                        {{ error.message }}
                     </small>
                 }
             </div>
@@ -56,16 +56,9 @@
                     [stepMinute]="DATE_PICKER_STEP_MINUTE"
                     data-testid="experiments-configure-scheduling-end" />
 
-                @if ($hasEndDateError()) {
+                @for (error of $endDateErrors(); track error.kind) {
                     <small class="p-error" data-testid="experiments-configure-scheduling-end-error">
-                        {{
-                            'experiments.configure.scheduling.end.error.out-of-bounds'
-                                | dm
-                                    : [
-                                          ($bounds().minEndDate | date: 'medium') ?? '',
-                                          ($bounds().maxEndDate | date: 'medium') ?? ''
-                                      ]
-                        }}
+                        {{ error.message }}
                     </small>
                 }
             </div>

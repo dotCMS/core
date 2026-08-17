@@ -197,15 +197,13 @@ export class DotExperimentsConfigureVariantsComponent {
      * Live, per AC25: the weights not adding up is a fact about what is on screen, not a validation
      * result, so it is stated as soon as it is true rather than waiting for a Start press.
      *
-     * Read off the slice's own error — the rule lives in the schema, so the bar and the form can
-     * never disagree about whether the total is wrong. `errors()` excludes the rows' own range
-     * errors: a single weight above 100 is that input's problem, not the total's.
+     * Read off the slice's own errors, message included — the rule and its copy live in the schema,
+     * so the bar and the form can never disagree about the total. A row's own range error is that
+     * input's problem and stays on the row, so these are only ever about the total.
      */
-    readonly $hasWeightWarning = computed<boolean>(() =>
-        this.$field()()
-            .errors()
-            .some(({ kind }) => kind === WEIGHTS_TOTAL_ERROR_KIND)
-    );
+    readonly $weightsErrors = computed(() => this.$field()().errors());
+
+    readonly $hasWeightWarning = computed<boolean>(() => this.$weightsErrors().length > 0);
 
     /** Both of these turn a message into a scroll target, which only a Start press may do (AC28). */
     readonly $showMinVariantsError = computed<boolean>(() =>
