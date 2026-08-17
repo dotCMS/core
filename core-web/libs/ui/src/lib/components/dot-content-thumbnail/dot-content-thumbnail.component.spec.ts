@@ -57,7 +57,11 @@ describe('DotContentThumbnailComponent', () => {
     });
 
     const create = (thumbnail: DotContentThumbnail, props: Record<string, unknown> = {}) => {
-        spectator = createComponent({ props: { thumbnail, ...props } });
+        spectator = createComponent({
+            props: { thumbnail, ...props } as unknown as NonNullable<
+                Parameters<typeof createComponent>[0]
+            >['props']
+        });
     };
 
     describe('contentlet input', () => {
@@ -71,7 +75,11 @@ describe('DotContentThumbnailComponent', () => {
         } as unknown as DotCMSContentlet;
 
         it('resolves the thumbnail model from a contentlet', () => {
-            spectator = createComponent({ props: { contentlet } });
+            spectator = createComponent({
+                props: { contentlet } as unknown as NonNullable<
+                    Parameters<typeof createComponent>[0]
+                >['props']
+            });
 
             const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'))!;
 
@@ -83,7 +91,7 @@ describe('DotContentThumbnailComponent', () => {
                 props: {
                     contentlet: { ...contentlet, mimeType: 'video/mp4' } as DotCMSContentlet,
                     options: { playableVideo: true, fieldVariable: 'asset' }
-                }
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const video = spectator.query<HTMLVideoElement>(
@@ -94,7 +102,11 @@ describe('DotContentThumbnailComponent', () => {
         });
 
         it('prefers an explicit thumbnail model over the contentlet', () => {
-            spectator = createComponent({ props: { contentlet, thumbnail: ICON_THUMBNAIL } });
+            spectator = createComponent({
+                props: { contentlet, thumbnail: ICON_THUMBNAIL } as unknown as NonNullable<
+                    Parameters<typeof createComponent>[0]
+                >['props']
+            });
 
             expect(spectator.query(byTestId('dot-content-thumbnail-icon'))).toBeTruthy();
         });
@@ -292,7 +304,9 @@ describe('DotContentThumbnailComponent', () => {
 
         it('emits stateChange transitions', () => {
             spectator = createComponent({
-                props: { thumbnail: IMAGE_THUMBNAIL },
+                props: { thumbnail: IMAGE_THUMBNAIL } as unknown as NonNullable<
+                    Parameters<typeof createComponent>[0]
+                >['props'],
                 detectChanges: false
             });
 

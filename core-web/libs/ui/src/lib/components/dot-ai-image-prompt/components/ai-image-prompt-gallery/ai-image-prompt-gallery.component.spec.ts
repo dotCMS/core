@@ -97,7 +97,7 @@ describe('DotAiImagePromptGalleryComponent', () => {
         });
         spectator.detectChanges();
 
-        spectator.triggerEventHandler(DotEmptyContainerComponent, 'buttonAction', null);
+        spectator.triggerEventHandler(DotEmptyContainerComponent, 'buttonAction', undefined);
 
         expect(emitterSpy).toHaveBeenCalled();
     });

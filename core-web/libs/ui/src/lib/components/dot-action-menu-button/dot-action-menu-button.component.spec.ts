@@ -146,7 +146,7 @@ describe('ActionMenuButtonComponent', () => {
         const commandSpy = jest.spyOn(fakeActions[0].menuItem, 'command');
 
         const actionButtonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
-        spectator.click(actionButtonTooltip);
+        spectator.click(actionButtonTooltip!);
 
         expect(commandSpy).toHaveBeenCalledTimes(1);
         expect(commandSpy).toHaveBeenCalledWith(mockContentType);
@@ -288,13 +288,13 @@ describe('ActionMenuButtonComponent', () => {
 
         // Click the button to open the menu
         const actionButtonMenu = spectator.query(byTestId('dot-menu-button'));
-        spectator.click(actionButtonMenu);
+        spectator.click(actionButtonMenu!);
         spectator.detectChanges();
 
         // Simulate click on first menu item by calling its command
         const firstMenuItem = menuModel[0];
         const clickEvent = new MouseEvent('click');
-        firstMenuItem.command({ item: firstMenuItem, originalEvent: clickEvent });
+        firstMenuItem.command!({ item: firstMenuItem, originalEvent: clickEvent });
 
         expect(mockCommand).toHaveBeenCalledTimes(1);
         expect(mockCommand).toHaveBeenCalledWith(mockContentType);

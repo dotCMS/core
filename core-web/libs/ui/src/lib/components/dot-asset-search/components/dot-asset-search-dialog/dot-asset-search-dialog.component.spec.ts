@@ -19,7 +19,7 @@ describe('DotAssetSearchDialogComponent', () => {
             {
                 provide: DynamicDialogRef,
                 useValue: {
-                    close: (_) => {
+                    close: (_?: unknown) => {
                         /* */
                     }
                 }

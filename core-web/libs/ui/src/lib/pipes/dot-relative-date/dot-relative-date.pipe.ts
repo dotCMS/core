@@ -10,7 +10,11 @@ export class DotRelativeDatePipe implements PipeTransform {
     private readonly dotFormatDateService = inject(DotFormatDateService);
     private readonly dotMessageService = inject(DotMessageService);
 
-    transform(date: string | number, format = 'MM/dd/yyyy', timeStampAfter = 7): string {
+    transform(
+        date: string | number | null | undefined,
+        format = 'MM/dd/yyyy',
+        timeStampAfter = 7
+    ): string {
         const time = date || new Date().getTime();
         const isMilliseconds = !isNaN(Number(time));
 

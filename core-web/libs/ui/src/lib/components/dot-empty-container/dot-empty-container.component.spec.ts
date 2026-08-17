@@ -49,7 +49,7 @@ describe('DotEmptyContainerComponent', () => {
 
             expect(spectator.query(byTestId('message-subtitle'))).toExist();
             expect(spectator.query(byTestId('message-subtitle'))).toContainText(
-                BASIC_CONFIGURATION.subtitle
+                BASIC_CONFIGURATION.subtitle!
             );
         });
     });

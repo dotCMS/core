@@ -118,7 +118,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 variable: mockVariable,
                 index: 0,
                 dragAndDrop: false
-            } as unknown
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
 
         spectator.detectChanges();
@@ -156,7 +156,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
                 const deleteButton = spectator.query(byTestId('dot-key-value-delete-button'));
 
-                spectator.click(deleteButton);
+                spectator.click(deleteButton!);
                 spectator.detectChanges();
 
                 expect(deleteSpy).toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe('DotKeyValueTableRowComponent', () => {
                         variable: { ...mockVariable, hidden: true },
                         index: 0,
                         dragAndDrop: false
-                    } as unknown
+                    } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
                 });
                 spectator.detectChanges();
             });
@@ -228,7 +228,7 @@ describe('DotKeyValueTableRowComponent', () => {
                         variable: mockVariable,
                         index: 0,
                         dragAndDrop: false
-                    } as unknown
+                    } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
                 });
                 spectator.detectChanges();
 
@@ -248,7 +248,7 @@ describe('DotKeyValueTableRowComponent', () => {
                         variable: { key: 'imported-key', hidden: false, value: 'null' },
                         index: 0,
                         dragAndDrop: false
-                    } as unknown
+                    } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
                 });
                 spectator.detectChanges();
             });
@@ -272,7 +272,7 @@ describe('DotKeyValueTableRowComponent', () => {
                         variable: mockVariable,
                         index: 0,
                         dragAndDrop: true
-                    } as unknown
+                    } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
                 });
                 spectator.detectChanges();
             });
