@@ -38,8 +38,8 @@ export const DotImage = Image.extend({
                 parseHTML: (element) => element.getAttribute('src'),
                 renderHTML: (attributes) => ({
                     src: appendLanguageId(
-                        attributes.src || attributes.data?.asset,
-                        attributes.data?.languageId
+                        attributes['src'] || attributes['data']?.asset,
+                        attributes['data']?.languageId
                     )
                 })
             },
@@ -47,14 +47,14 @@ export const DotImage = Image.extend({
                 default: null,
                 parseHTML: (element) => element.getAttribute('alt'),
                 renderHTML: (attributes) => ({
-                    alt: attributes.alt || attributes.data?.title || null
+                    alt: attributes['alt'] || attributes['data']?.title || null
                 })
             },
             title: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('title'),
                 renderHTML: (attributes) => ({
-                    title: attributes.title || attributes.data?.title || null
+                    title: attributes['title'] || attributes['data']?.title || null
                 })
             },
             data: {
@@ -69,7 +69,7 @@ export const DotImage = Image.extend({
                     }
                 },
                 renderHTML: (attributes) =>
-                    attributes.data ? { data: JSON.stringify(attributes.data) } : {}
+                    attributes['data'] ? { data: JSON.stringify(attributes['data']) } : {}
             },
             textWrap: {
                 default: null,
@@ -185,7 +185,7 @@ export const DotImage = Image.extend({
                 figure.addEventListener('mousedown', (event) => {
                     event.preventDefault();
                     if (typeof getPos === 'function') {
-                        editor.commands.setNodeSelection(getPos());
+                        editor.commands.setNodeSelection(getPos()!);
                     }
                 });
             } else {
@@ -210,7 +210,7 @@ export const DotImage = Image.extend({
             setImageTextWrap:
                 (value) =>
                 ({ commands, editor }) => {
-                    const current = editor.getAttributes(DOT_IMAGE_NODE_NAME).textWrap;
+                    const current = editor.getAttributes(DOT_IMAGE_NODE_NAME)['textWrap'];
                     // Toggle: clicking the same direction again clears it.
                     // Also clear textAlign — wrap and align are mutually exclusive.
                     return commands.updateAttributes(DOT_IMAGE_NODE_NAME, {

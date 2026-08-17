@@ -70,7 +70,7 @@ export class EditorModalService implements OnDestroy {
             })
         );
 
-        this.imagePickerRef.onClose.subscribe((contentlet?: DotCMSContentlet) => {
+        this.imagePickerRef!.onClose.subscribe((contentlet?: DotCMSContentlet) => {
             if (contentlet) {
                 this.zone.run(() => insertDotImageFromContentlet(editor, contentlet));
             }
@@ -96,7 +96,7 @@ export class EditorModalService implements OnDestroy {
             })
         );
 
-        this.videoPickerRef.onClose.subscribe((contentlet?: DotCMSContentlet) => {
+        this.videoPickerRef!.onClose.subscribe((contentlet?: DotCMSContentlet) => {
             if (contentlet) {
                 this.zone.run(() => insertDotVideoFromContentlet(editor, contentlet));
             }
@@ -122,7 +122,7 @@ export class EditorModalService implements OnDestroy {
             })
         );
 
-        this.audioPickerRef.onClose.subscribe((contentlet?: DotCMSContentlet) => {
+        this.audioPickerRef!.onClose.subscribe((contentlet?: DotCMSContentlet) => {
             if (contentlet) {
                 this.zone.run(() => insertDotAudioFromContentlet(editor, contentlet));
             }
@@ -158,11 +158,11 @@ export class EditorModalService implements OnDestroy {
             data: { context: editor.getText() }
         });
 
-        this.aiImageDialogRef.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
-            if (selectedImage?.response?.contentlet) {
-                this.zone.run(() =>
-                    insertDotImageFromContentlet(editor, selectedImage.response.contentlet)
-                );
+        this.aiImageDialogRef!.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
+            const aiContentlet = selectedImage?.response?.contentlet;
+
+            if (aiContentlet) {
+                this.zone.run(() => insertDotImageFromContentlet(editor, aiContentlet));
             }
             this.aiImageDialogRef = null;
             this.zone.run(() => this.aiImageOpen.set(false));
@@ -203,7 +203,7 @@ export class EditorModalService implements OnDestroy {
             style: { 'max-width': '90vw' }
         });
 
-        this.aiContentDialogRef.onClose.subscribe((html?: string) => {
+        this.aiContentDialogRef!.onClose.subscribe((html?: string) => {
             if (html) {
                 this.zone.run(() => editor.chain().focus().insertContent(html).run());
             }

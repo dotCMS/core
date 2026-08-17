@@ -54,7 +54,7 @@ export const SelectionPreserveExtension = Extension.create({
             new Plugin({
                 key: SELECTION_PRESERVE_KEY,
                 state: {
-                    init: () => null,
+                    init: (): { from: number; to: number } | null => null,
                     apply(tr, prev) {
                         const meta = tr.getMeta(SELECTION_PRESERVE_KEY) as
                             | { active: boolean }
@@ -84,7 +84,7 @@ export const SelectionPreserveExtension = Extension.create({
             new Plugin({
                 key: BLOCK_TARGET_KEY,
                 state: {
-                    init: () => null,
+                    init: (): { from: number; to: number } | null => null,
                     apply(tr, prev) {
                         const meta = tr.getMeta(BLOCK_TARGET_KEY) as
                             | { active: boolean }
@@ -112,7 +112,7 @@ export const SelectionPreserveExtension = Extension.create({
             new Plugin({
                 key: LINK_SELECTION_KEY,
                 state: {
-                    init: () => null,
+                    init: (): { from: number; to: number } | null => null,
                     apply(tr, prev) {
                         const meta = tr.getMeta(LINK_SELECTION_KEY) as
                             | { active: boolean }
