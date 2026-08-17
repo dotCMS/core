@@ -79,12 +79,12 @@ describe('ContainerOptionsDirective', () => {
 
     it('should set the group property of the dropdown to true', async () => {
         await spectator.fixture.whenStable();
-        const dropdown = spectator.query(Select);
+        const dropdown = spectator.query(Select)!;
         expect(dropdown.group).toBeTruthy();
     });
 
     it('should group containers by host', () => {
-        const dropdown = spectator.query(Select);
+        const dropdown = spectator.query(Select)!;
         expect(dropdown.options).toEqual(getGroupByHostContainersMock());
     });
 });

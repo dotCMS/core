@@ -109,7 +109,7 @@ describe('DotAiImagePromptGalleryComponent', () => {
         });
         spectator.detectChanges();
 
-        const errorContainer = spectator.query(DotEmptyContainerComponent);
+        const errorContainer = spectator.query(DotEmptyContainerComponent)!;
         expect(errorContainer.configuration.title).toEqual(errorImagesMock[0].error);
     });
 

@@ -79,7 +79,7 @@ describe('DotFolderTreeComponent', () => {
 
     describe('p-tree bindings', () => {
         it('should default to single selection mode', () => {
-            const tree = spectator.query(Tree);
+            const tree = spectator.query(Tree)!;
             expect(tree.selectionMode).toBe('single');
             expect(component.$selection()).toEqual(mockSelectedNode);
         });
@@ -90,7 +90,7 @@ describe('DotFolderTreeComponent', () => {
             spectator.setInput('scrollHeight', 'auto');
             spectator.detectChanges();
 
-            const tree = spectator.query(Tree);
+            const tree = spectator.query(Tree)!;
             expect(tree.selectionMode).toBe('multiple');
             expect(tree.metaKeySelection).toBe(true);
             expect(tree.scrollHeight).toBe('auto');

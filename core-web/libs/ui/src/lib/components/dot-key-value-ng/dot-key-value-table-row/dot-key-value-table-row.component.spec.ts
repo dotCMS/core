@@ -127,8 +127,8 @@ describe('DotKeyValueTableRowComponent', () => {
     describe('Editable variables', () => {
         it('should load the component', () => {
             const deleteButton = spectator.query(byTestId('dot-key-value-delete-button'));
-            const valueInput = spectator.query(byTestId('dot-key-value-input'));
-            const keyElement = spectator.query(byTestId('dot-key-value-key'));
+            const valueInput = spectator.query(byTestId('dot-key-value-input'))!;
+            const keyElement = spectator.query(byTestId('dot-key-value-key'))!;
 
             expect(deleteButton).toBeTruthy();
             expect(valueInput).toBeTruthy();
@@ -140,7 +140,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 const saveSpy = jest.spyOn(spectator.component.save, 'emit');
                 const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                );
+                )!;
 
                 spectator.typeInElement('newValue', valueInput);
                 spectator.detectChanges();
@@ -166,7 +166,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 const saveSpy = jest.spyOn(spectator.component.save, 'emit');
                 const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                );
+                )!;
 
                 spectator.typeInElement('newValue', valueInput);
                 valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -182,7 +182,7 @@ describe('DotKeyValueTableRowComponent', () => {
             it('should set input type to text when not hidden', () => {
                 const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                );
+                )!;
 
                 expect(valueInput.type).toBe('text');
                 expect(spectator.component.inputType).toBe('text');
@@ -205,7 +205,7 @@ describe('DotKeyValueTableRowComponent', () => {
             it('should show the password placeholder instead of the value', () => {
                 const valueLabel = spectator.query<HTMLParagraphElement>(
                     byTestId('dot-key-value-label')
-                );
+                )!;
                 expect(valueLabel.textContent).toContain('Value hidden');
             });
 
@@ -254,10 +254,10 @@ describe('DotKeyValueTableRowComponent', () => {
             });
 
             it('should render the row and show "null" as value', () => {
-                const keyElement = spectator.query(byTestId('dot-key-value-key'));
+                const keyElement = spectator.query(byTestId('dot-key-value-key'))!;
                 const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                );
+                )!;
                 expect(keyElement.textContent).toContain('imported-key');
                 expect(valueInput).toBeTruthy();
                 expect(valueInput.value).toBe('null');

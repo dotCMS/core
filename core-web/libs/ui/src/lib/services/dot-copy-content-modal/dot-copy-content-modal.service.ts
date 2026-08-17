@@ -56,7 +56,7 @@ export class DotCopyContentModalService {
             contentStyle: { padding: '0px' }
         });
 
-        return ref.onClose.pipe(
+        return ref!.onClose.pipe(
             take(1),
             // If the user close the modal without select an option, we return false
             // This will complete the observable

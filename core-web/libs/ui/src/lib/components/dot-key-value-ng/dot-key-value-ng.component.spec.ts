@@ -65,14 +65,14 @@ describe('DotKeyValueComponent', () => {
         spectator.detectChanges();
 
         const headerRow = spectator.query(DotKeyValueTableHeaderRowComponent);
-        const noRowsElement = spectator.query(byTestId('no-rows'));
+        const noRowsElement = spectator.query(byTestId('no-rows'))!;
 
         expect(headerRow).toBeTruthy();
         expect(noRowsElement.textContent).toContain('No Rows');
     });
 
     it('should load the component with data', () => {
-        const table = spectator.query(Table);
+        const table = spectator.query(Table)!;
         const tableRow = spectator.queryAll(DotKeyValueTableRowComponent);
 
         expect(tableRow.length).toBe(2);

@@ -54,7 +54,7 @@ export class DotAssetCardListComponent implements OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.contentlets) {
+        if (changes['contentlets']) {
             this._offset = this.contentlets?.length || 0;
             this._itemRows = this.createRowItem(this.contentlets);
         }
@@ -88,7 +88,7 @@ export class DotAssetCardListComponent implements OnChanges {
      * @memberof DotAssetSearchStore
      */
     private createRowItem(contentlets: DotCMSContentlet[] = []) {
-        const rows = [];
+        const rows: DotCMSContentlet[][] = [];
         contentlets.forEach((contentlet) => {
             const i = rows.length - 1;
             rows[i]?.length < 2 ? rows[i].push(contentlet) : rows.push([contentlet]);

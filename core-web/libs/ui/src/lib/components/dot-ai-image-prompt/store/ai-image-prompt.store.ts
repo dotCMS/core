@@ -112,7 +112,7 @@ export const DotAiImagePromptStore = signalStore(
                                         const newImage: DotGeneratedAIImage = {
                                             request: formValue,
                                             response: response,
-                                            error: null
+                                            error: undefined
                                         };
                                         if (isImageWithError) {
                                             imagesArray[galleryActiveIndex] = newImage;
