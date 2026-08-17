@@ -1,5 +1,10 @@
 #set($allowedAligns = ["left", "center", "right", "justify"])
 
+## Link target set on the dotImage node. Checked against both "" and "null":
+## $! renders an unset reference as empty, but the value also reaches this
+## template as the literal string "null" (same idiom as the href check below).
+#set($imageTarget = "$!item.attrs.target")
+
 #if($item.attrs.textWrap == "left")
     #set($figureStyle = "float: left; width: 50%; margin: 0 1rem 1rem 0;")
 #elseif($item.attrs.textWrap == "right")
@@ -11,7 +16,7 @@
 <figure#if($figureStyle) style="$figureStyle"#end>
 
     #if ($!item.attrs.href != "null")
-    <a href="$!item.attrs.href">
+    <a href="$!item.attrs.href"#if($imageTarget != "null" && $imageTarget != "") target="$imageTarget"#end#if($imageTarget == "_blank") rel="noopener noreferrer"#end>
     #end
 
     <img
