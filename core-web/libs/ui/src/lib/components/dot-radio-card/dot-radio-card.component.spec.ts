@@ -69,9 +69,6 @@ describe('DotRadioCardComponent', () => {
             expect(host().getAttribute('role')).toBe('radio');
             expect(host().getAttribute('aria-checked')).toBe('false');
             expect(host().getAttribute('tabindex')).toBe('0');
-            // The dot is always in the DOM — it is scaled away, as `p-radioButton` does it, so that
-            // it can animate in and out of the selection.
-            expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain('scale-[0.1]');
         });
 
         it('should report the option it stands for when clicked', () => {
@@ -105,21 +102,11 @@ describe('DotRadioCardComponent', () => {
             mount({ value: 'REACH_PAGE' });
 
             expect(host().getAttribute('aria-checked')).toBe('true');
-            expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain('scale-100');
-            expect(surface().className).toContain('border-primary!');
         });
 
-        // Only the declared transitions can be asserted: jsdom computes no styles and runs no
-        // animations, so how they actually render is checked in the browser, not here.
-        it('should transition both the card and the dot so the selection animates in and out', () => {
-            mount();
-
-            expect(surface().className).toContain('transition-colors');
-            expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain(
-                'transition-transform'
-            );
-        });
-
+        // The look — accent, radio circle, transitions — is CSS keyed on `aria-checked`, so asserting
+        // it here would only restate the attribute above: jsdom computes no styles. What the browser
+        // renders is checked there.
         it('should render the card as a p-card so the theme owns its chrome', () => {
             mount();
 
@@ -131,8 +118,6 @@ describe('DotRadioCardComponent', () => {
             mount({ value: 'BOUNCE_RATE' });
 
             expect(host().getAttribute('aria-checked')).toBe('false');
-            // An unselected card paints nothing of its own over the theme's card.
-            expect(surface().className).not.toContain('border-primary!');
         });
 
         it('should follow the group being pointed at another card', () => {
@@ -160,7 +145,6 @@ describe('DotRadioCardComponent', () => {
             it('should read as a disabled radio out of the tab order', () => {
                 expect(host().getAttribute('aria-disabled')).toBe('true');
                 expect(host().getAttribute('tabindex')).toBe('-1');
-                expect(host().className).toContain('opacity-60');
             });
 
             it('should not be pickable by click', () => {
