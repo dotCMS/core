@@ -1,6 +1,43 @@
 <div
     class="flex min-h-0 flex-1 flex-col border-t border-surface-200"
     data-testid="users-dialog-body">
+    <header
+        class="flex items-center gap-5 border-b border-surface-200 px-7 py-6"
+        data-testid="users-dialog-header">
+        <p-avatar
+            [label]="initials()"
+            shape="circle"
+            size="xlarge"
+            styleClass="bg-primary-100 text-primary"
+            data-testid="users-dialog-avatar" />
+        <div class="flex min-w-0 flex-col gap-2">
+            <h2 class="m-0 truncate text-xl font-semibold" data-testid="users-dialog-title">
+                {{ displayName() }}
+            </h2>
+            @if (isEdit) {
+                <div class="flex flex-wrap items-center gap-2">
+                    <p-tag
+                        [value]="
+                            (isActive()
+                                ? 'users.dialog.status.active'
+                                : 'users.dialog.status.inactive'
+                            ) | dm
+                        "
+                        [severity]="isActive() ? 'success' : 'secondary'"
+                        [rounded]="true"
+                        data-testid="users-dialog-header-status" />
+                    @if (canLoginToAdmin()) {
+                        <p-tag
+                            [value]="'users.dialog.header.can-login' | dm"
+                            severity="info"
+                            [rounded]="true"
+                            data-testid="users-dialog-header-can-login" />
+                    }
+                </div>
+            }
+        </div>
+    </header>
+
     <p-tabs [(value)]="activeTab" class="flex min-h-0 flex-1 flex-col">
         <div class="border-b border-surface-200 px-7 pt-6">
             <p-tablist>
@@ -22,43 +59,6 @@
         <p-tabpanels class="flex min-h-0 flex-1 flex-col">
             <p-tabpanel [value]="0" class="block min-h-0 flex-1 overflow-auto">
                 <div class="px-7 pt-[22px] pb-7">
-                    <header class="mb-6 flex items-center gap-5" data-testid="users-dialog-header">
-                        <p-avatar
-                            [label]="initials()"
-                            shape="circle"
-                            size="xlarge"
-                            styleClass="bg-primary-100 text-primary"
-                            data-testid="users-dialog-avatar" />
-                        <div class="flex min-w-0 flex-col gap-2">
-                            <h2
-                                class="m-0 truncate text-xl font-semibold"
-                                data-testid="users-dialog-title">
-                                {{ displayName() }}
-                            </h2>
-                            @if (isEdit) {
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <p-tag
-                                        [value]="
-                                            (isActive()
-                                                ? 'users.dialog.status.active'
-                                                : 'users.dialog.status.inactive'
-                                            ) | dm
-                                        "
-                                        [severity]="isActive() ? 'success' : 'secondary'"
-                                        [rounded]="true"
-                                        data-testid="users-dialog-header-status" />
-                                    @if (canLoginToAdmin()) {
-                                        <p-tag
-                                            [value]="'users.dialog.header.can-login' | dm"
-                                            severity="info"
-                                            [rounded]="true"
-                                            data-testid="users-dialog-header-can-login" />
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </header>
-
                     <dot-users-profile-tab
                         [form]="form"
                         [isEdit]="isEdit"
