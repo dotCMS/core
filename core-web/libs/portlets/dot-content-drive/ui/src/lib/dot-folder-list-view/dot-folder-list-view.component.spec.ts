@@ -502,7 +502,10 @@ describe('DotFolderListViewComponent', () => {
             languagesService.get.mockClear();
 
             const scoped = createComponent({
-                props: { items: mockItems, visibleColumns: ['title', 'live', 'contentType'] }
+                props: {
+                    items: mockItems,
+                    visibleColumns: ['title', 'live', 'contentType']
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
             scoped.detectChanges();
 
@@ -602,7 +605,8 @@ describe('DotFolderListViewComponent', () => {
      */
     describe('visibleColumns', () => {
         /** Header cells excluding the leading checkbox column. */
-        const headerCells = (): HTMLElement[] => spectator.queryAll('thead th')!.slice(1);
+        const headerCells = (): HTMLElement[] =>
+            spectator.queryAll<HTMLElement>('thead th').slice(1);
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
@@ -926,7 +930,7 @@ describe('DotFolderListViewComponent', () => {
             const longTitle = 'Easy Snowboard Tricks You can Start Using Right Away';
 
             it('should lay the table out with fixed columns so the widths are honoured', () => {
-                expect(spectator.query('table')!.style.tableLayout).toBe('fixed');
+                expect(spectator.query<HTMLTableElement>('table')!.style.tableLayout).toBe('fixed');
             });
 
             it('should truncate a long title rather than widen the table', () => {
@@ -1499,7 +1503,7 @@ describe('DotFolderListViewComponent', () => {
                 expect(rowChecked()).toEqual([true, true, false, false, false]);
 
                 spectator.click(
-                    spectator.queryAll(byTestId('item-row'))![0].querySelector('input')
+                    spectator.queryAll(byTestId('item-row'))![0].querySelector('input')!
                 );
                 spectator.detectChanges();
 
@@ -1517,7 +1521,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 spectator.click(
-                    spectator.queryAll(byTestId('item-row'))![0].querySelector('input')
+                    spectator.queryAll(byTestId('item-row'))![0].querySelector('input')!
                 );
                 spectator.setInput('selection', [thirdItem]);
                 spectator.detectChanges();

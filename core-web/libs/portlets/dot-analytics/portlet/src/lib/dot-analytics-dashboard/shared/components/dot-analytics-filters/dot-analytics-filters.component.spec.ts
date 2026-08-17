@@ -35,7 +35,7 @@ describe('DotAnalyticsFiltersComponent', () => {
         spectator = createComponent({
             props: {
                 timeRange: TIME_RANGE_OPTIONS.last7days
-            } as unknown
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
     });
 
@@ -108,7 +108,7 @@ describe('DotAnalyticsFiltersComponent', () => {
             expect(calendar).toBeTruthy();
 
             expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.custom);
-            const customDateRange = spectator.component.$customDateRange();
+            const customDateRange = spectator.component.$customDateRange()!;
             const from = format(customDateRange[0], 'yyyy-MM-dd');
             const to = format(customDateRange[1], 'yyyy-MM-dd');
             expect([from, to]).toEqual(['2024-01-01', '2024-01-31']);

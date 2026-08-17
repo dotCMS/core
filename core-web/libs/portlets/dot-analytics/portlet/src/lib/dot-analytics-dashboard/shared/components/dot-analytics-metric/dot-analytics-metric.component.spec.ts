@@ -458,7 +458,9 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
     });
 
     beforeEach(() => {
-        spectator = createHost(undefined, { detectChanges: false });
+        // TestHostComponent provides the template; Spectator types this parameter as
+        // required even though it accepts being omitted.
+        spectator = createHost(undefined as unknown as string, { detectChanges: false });
         const messageService = spectator.inject(DotMessageService);
         messageService.get.mockReturnValue('Translated Message');
     });

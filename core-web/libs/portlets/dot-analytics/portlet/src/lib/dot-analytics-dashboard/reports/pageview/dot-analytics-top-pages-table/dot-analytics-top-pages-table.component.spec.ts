@@ -175,7 +175,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState([], ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const emptyState = spectator.query('[data-testid="empty-table-state"]')!;
@@ -186,7 +186,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState([], ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const emptyState = spectator.query('dot-analytics-empty-state')!;
@@ -197,7 +197,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState(mockTableData, ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const emptyState = spectator.query('[data-testid="empty-table-state"]')!;
@@ -210,7 +210,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState(mockTableData, ComponentStatus.ERROR)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const stateMessage = spectator.query('dot-analytics-state-message')!;
@@ -221,7 +221,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState(mockTableData, ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const stateMessage = spectator.query('dot-analytics-state-message')!;

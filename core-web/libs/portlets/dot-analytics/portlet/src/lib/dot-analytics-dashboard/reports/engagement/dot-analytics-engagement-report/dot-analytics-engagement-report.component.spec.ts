@@ -68,7 +68,11 @@ const MOCK_PLATFORMS: EngagementPlatforms = {
 describe('DotAnalyticsEngagementReportComponent', () => {
     let spectator: Spectator<DotAnalyticsEngagementReportComponent>;
 
-    const mockKpis = signal({
+    const mockKpis = signal<{
+        status: ComponentStatus;
+        data: typeof MOCK_KPIS | null;
+        error: string | null;
+    }>({
         status: ComponentStatus.LOADED,
         data: MOCK_KPIS,
         error: null
