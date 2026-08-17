@@ -408,6 +408,10 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         }
 
         const columns: DotFolderListViewColumn[] = [...fixed];
+        // Anchored to where the "type" column *sits in the canonical order*, not to whether it is
+        // rendered — the body's extra-column loop occupies that slot either way. Keying off the
+        // rendered index instead appended the extras when Type was hidden, putting every extra cell
+        // one heading early.
         const afterType = columns.findIndex((column) => column.order > TYPE_COLUMN_ORDER);
         const insertAt = afterType === -1 ? columns.length : afterType;
         columns.splice(insertAt, 0, ...extras);

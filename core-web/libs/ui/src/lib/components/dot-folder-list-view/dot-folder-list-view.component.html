@@ -109,6 +109,9 @@
                                     [attr.data-table-id]="item.identifier"></i>
                             }
                         </div>
+                        <!-- `title` keeps the full text reachable on hover: the cell's middle track is
+                             `minmax(0,1fr)` and `truncate` clips anything longer, so without it the
+                             rest is unreachable. -->
                         <span
                             data-testId="item-title-text"
                             class="block cursor-pointer truncate"
@@ -119,6 +122,10 @@
                         <span data-testId="lock-hint" class="text-gray-700">
                             @if (!isFolder) {
                                 @if (item.locked) {
+                                    <!-- A lock the current user does not hold: only its holder or a CMS
+                                         Administrator can release it, so a bulk Unlock may be refused
+                                         here. Coloured rather than a different glyph — it is still a
+                                         lock, just one that is not the user's to open. -->
                                     @if ($lockedByOthersSet().has(item.inode)) {
                                         <i
                                             class="pi pi-lock text-orange-500"
@@ -154,6 +161,8 @@
                         }
                     </td>
                 }
+                <!-- Clipped like the title: the column is a fixed 15%, so a long content type
+                     variable name would otherwise wrap and grow the row past its neighbours. -->
                 @if ($visibleColumnSet().has('contentType')) {
                     <td class="truncate" data-testId="item-content-type">
                         {{ (isFolder ? 'Folder' : item.contentType) | dm }}
