@@ -128,6 +128,20 @@
                             (actionFired)="workflowActionFired.emit($event)" />
                     }
 
+                    <!-- Content details section -->
+                    <dot-edit-content-sidebar-section
+                        key="actions.details"
+                        [title]="'details' | dm">
+                        <dot-edit-content-sidebar-information
+                            [data]="{
+                                contentlet: contentlet,
+                                contentType: contentType,
+                                loading: isLoadingInformation,
+                                referencesPageCount: referencePagesCount
+                            }"
+                            data-testId="information" />
+                    </dot-edit-content-sidebar-section>
+
                     <dot-edit-content-sidebar-section
                         key="actions.locales"
                         [title]="'edit.content.sidebar.locales' | dm">
@@ -146,10 +160,12 @@
                         }
                     </dot-edit-content-sidebar-section>
 
-                    <!-- Workflow section -->
+                    <!-- Workflow section — last, so it drops the shared bottom border to avoid a
+                         divider dangling at the end of the tab. -->
                     <dot-edit-content-sidebar-section
                         key="actions.workflow"
-                        [title]="'edit.content.sidebar.workflow.title' | dm">
+                        [title]="'edit.content.sidebar.workflow.title' | dm"
+                        class="[&_.dot-section]:border-b-0">
                         <dot-edit-content-sidebar-workflow
                             [workflowSelection]="$workflowSelection()"
                             [(showDialog)]="$showDialog"
@@ -159,21 +175,6 @@
                             [workflow]="$workflow()"
                             [isLoading]="$store.isLoadingWorkflow()"
                             data-testId="workflow" />
-                    </dot-edit-content-sidebar-section>
-
-                    <!-- Content details section -->
-                    <dot-edit-content-sidebar-section
-                        key="actions.details"
-                        [title]="'details' | dm"
-                        class="[&_.dot-section]:border-b-0">
-                        <dot-edit-content-sidebar-information
-                            [data]="{
-                                contentlet: contentlet,
-                                contentType: contentType,
-                                loading: isLoadingInformation,
-                                referencesPageCount: referencePagesCount
-                            }"
-                            data-testId="information" />
                     </dot-edit-content-sidebar-section>
                 </div>
             </p-tabpanel>

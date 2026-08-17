@@ -8,13 +8,15 @@ import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 
 import { delay } from 'rxjs/operators';
 
 import { DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolder, PermissionType, PERMISSIONS_TYPE } from '@dotcms/dotcms-models';
 import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
+    DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
-    ALL_FOLDER
+    ALL_FOLDER,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -124,6 +126,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
+                patchContextMenu: jest.fn(),
                 updateFolders: jest.fn(),
                 setSelectedNode: jest.fn()
             }),
@@ -570,6 +573,138 @@ describe('DotContentDriveSidebarComponent', () => {
                 expect(contentDriveStore.updateFolders).toHaveBeenCalled();
             });
 
+            it('should render a pinned folder once when paging reaches its real position', () => {
+                // The hierarchy pins a deep-linked folder to the top of its level, out of sort
+                // order. Page far enough and the same folder comes back in its proper place.
+                const pinned: DotFolderTreeNodeItem = {
+                    key: 'z',
+                    label: '/big/z/',
+                    data: { id: 'z', hostname: 'demo.dotcms.com', path: '/big/z/', type: 'folder' },
+                    leaf: false,
+                    expanded: true,
+                    children: [
+                        {
+                            key: 'inner',
+                            label: '/big/z/inner/',
+                            data: {
+                                id: 'inner',
+                                hostname: 'demo.dotcms.com',
+                                path: '/big/z/inner/',
+                                type: 'folder'
+                            },
+                            leaf: true
+                        }
+                    ]
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    expanded: true,
+                    children: [pinned, loadMoreNode]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
+
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                key: 'z',
+                                label: '/big/z/',
+                                data: {
+                                    id: 'z',
+                                    hostname: 'demo.dotcms.com',
+                                    path: '/big/z/',
+                                    type: 'folder'
+                                },
+                                leaf: false
+                            }
+                        ],
+                        totalEntries: 1
+                    })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                expect(parent.children?.map((child) => child.key)).toEqual(['z']);
+                // The on-screen node is kept, not the bare copy from the page, so the branch the
+                // user already has open does not collapse under them.
+                expect(parent.children?.[0]).toBe(pinned);
+                expect(parent.children?.[0].children).toHaveLength(1);
+            });
+
+            it('should render a pinned root folder once when paging reaches its real position', () => {
+                const pinned: DotFolderTreeNodeItem = {
+                    key: 'z',
+                    label: '/z/',
+                    data: { id: 'z', hostname: 'demo.dotcms.com', path: '/z/', type: 'folder' },
+                    leaf: false
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                contentDriveStore.folders.mockReturnValue([realAllFolder, pinned, loadMoreNode]);
+
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                key: 'z',
+                                label: '/z/',
+                                data: {
+                                    id: 'z',
+                                    hostname: 'demo.dotcms.com',
+                                    path: '/z/',
+                                    type: 'folder'
+                                },
+                                leaf: false
+                            }
+                        ],
+                        totalEntries: 1
+                    })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                // Root folders are siblings of "All folders", so this branch merges the top-level
+                // array rather than a parent's children.
+                expect(contentDriveStore.updateFolders).toHaveBeenCalledWith([
+                    realAllFolder,
+                    pinned
+                ]);
+            });
+
             it('should keep a refreshed "Load more" node when more pages still remain', () => {
                 const loadMoreNode: DotFolderTreeNodeItem = {
                     key: 'load-more:/big/',
@@ -838,6 +973,81 @@ describe('DotContentDriveSidebarComponent', () => {
         });
     });
 
+    describe('revealing the folder the drive opened on', () => {
+        const targetNode: DotFolderTreeNodeItem = {
+            key: 'deep-folder',
+            label: '/documents/reports/',
+            data: {
+                id: 'deep-folder',
+                hostname: 'demo.dotcms.com',
+                path: '/documents/reports/',
+                type: 'folder'
+            },
+            leaf: false
+        };
+
+        let scrollIntoView: jest.Mock;
+
+        beforeEach(() => {
+            scrollIntoView = jest.fn();
+            const treeFolder = spectator.query(DotTreeFolderComponent);
+            jest.spyOn(treeFolder.elementRef.nativeElement, 'querySelector').mockReturnValue({
+                scrollIntoView
+            } as unknown as Element);
+        });
+
+        it('should bring the selected folder into view once the cold load finishes', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).toHaveBeenCalledWith({
+                // Instant: this is where the tree should have opened, not somewhere to animate to.
+                behavior: 'instant',
+                block: 'center'
+            });
+        });
+
+        it('should not scroll while the tree is still loading', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(true);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('should wait for the tree to render rather than scrolling as the store publishes', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+
+            // The loading placeholder is still mounted at this point, so there is no row yet.
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('should not scroll when the selection is a load-more sentinel', () => {
+            contentDriveStore.selectedNode.mockReturnValue({
+                key: 'load-more:/documents/',
+                label: '',
+                data: {
+                    type: LOAD_MORE_NODE_TYPE,
+                    id: 'load-more:/documents/',
+                    path: '/documents/',
+                    hostname: 'demo.dotcms.com',
+                    nextPage: 2,
+                    remaining: 5
+                }
+            } as DotFolderTreeNodeItem);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+    });
+
     describe('handleSelectedNodeFromTable', () => {
         it('should handle selectedNode with fromTable flag', () => {
             const mockScrollIntoView = jest.fn();
@@ -884,7 +1094,9 @@ describe('DotContentDriveSidebarComponent', () => {
             // The method calls it with just segments, which defaults to this.$folders()
             expect(recursiveExpandSpy).toHaveBeenCalledWith(['documents']);
 
-            // Verify scrollIntoView was called if element was found
+            // The reveal waits for the tree to render the row before scrolling to it.
+            spectator.detectChanges();
+
             expect(mockScrollIntoView).toHaveBeenCalledWith({
                 behavior: 'smooth',
                 block: 'center'
@@ -961,9 +1173,10 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     describe('Tree Toggler', () => {
-        it('should render dot-content-drive-tree-toggler component', () => {
+        it('should not render its own toggler, since the toolbar keeps one in both states', () => {
             const treeToggler = spectator.query('[data-testid="tree-toggler"]');
-            expect(treeToggler).toBeTruthy();
+
+            expect(treeToggler).toBeNull();
         });
     });
 
@@ -1148,6 +1361,91 @@ describe('DotContentDriveSidebarComponent', () => {
 
             expect(nodeWithChildren.expanded).toBe(true);
             expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('right-click context menu', () => {
+        beforeEach(() => {
+            // The store mock is built once by the component factory, so its jest.fn call counts
+            // accumulate across tests in this file. Clear them (implementations are preserved) and
+            // restore the default lookup so each case starts from a known state.
+            jest.clearAllMocks();
+        });
+
+        const buildFolderData = (permissions?: PermissionType[]): DotFolderTreeNodeContentData => ({
+            id: 'docs-id',
+            inode: 'docs-inode',
+            hostname: 'demo.dotcms.com',
+            path: '/documents/reports/',
+            type: 'folder',
+            name: 'reports',
+            title: 'Reports',
+            sortOrder: 2,
+            filesMasks: '*.pdf',
+            defaultFileType: 'FileAsset',
+            defaultBaseType: 'DOTASSET',
+            showOnMenu: true,
+            permissions
+        });
+
+        const rightClick = (data: DotFolderTreeNodeContentData) => {
+            const event = new MouseEvent('contextmenu');
+            spectator.triggerEventHandler(DotTreeFolderComponent, 'rightClick', { event, data });
+
+            return event;
+        };
+
+        it('should publish the folder to the store in the shape the menu and dialog consume', () => {
+            const event = rightClick(
+                buildFolderData([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT])
+            );
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith({
+                triggeredEvent: event,
+                contentlet: {
+                    type: 'folder',
+                    identifier: 'docs-id',
+                    name: 'reports',
+                    path: '/documents/reports/',
+                    title: 'Reports',
+                    sortOrder: 2,
+                    showOnMenu: true,
+                    filesMasks: '*.pdf',
+                    defaultFileType: 'FileAsset',
+                    defaultBaseType: 'DOTASSET',
+                    permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+                }
+            });
+        });
+
+        it('should treat an empty permissions array as a resolved "no grants"', () => {
+            rightClick(buildFolderData([]));
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentlet: expect.objectContaining({ permissions: [] })
+                })
+            );
+        });
+
+        it('should open an empty menu rather than throwing for a folder without permissions', () => {
+            // Every source now resolves permissions, but an older backend or a rolled-back search
+            // can still deliver a folder without them; gating must degrade, not blow up.
+            rightClick(buildFolderData(undefined));
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentlet: expect.objectContaining({ permissions: [] })
+                })
+            );
+        });
+
+        it('should anchor the menu on the originating event', () => {
+            const event = rightClick(buildFolderData([PERMISSIONS_TYPE.EDIT]));
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({ triggeredEvent: event })
+            );
         });
     });
 });

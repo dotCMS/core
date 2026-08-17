@@ -50,17 +50,11 @@ export class ContentDrivePage {
     }
 
     /**
-     * Clicks the active tree toggler.
-     * Expanded → sidebar toggler (toolbar one is opacity/visibility hidden).
-     * Collapsed → toolbar toggler.
+     * Clicks the tree toggler, which lives in the toolbar in both states. The sidebar used to carry
+     * a second copy for the expanded state; it no longer does.
      */
     async toggleTree() {
-        const width = (await this.treeSelector.boundingBox())?.width ?? 0;
-        const toggler =
-            width > 100
-                ? this.sidebar.getByTestId('tree-toggler')
-                : this.toolbar.getByTestId('tree-toggler');
-        await toggler.click();
+        await this.toolbar.getByTestId('tree-toggler').click();
     }
 
     async expectTreeExpanded() {

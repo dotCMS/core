@@ -7,8 +7,21 @@ import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    AddToBundleService,
+    DotCurrentUserService,
+    DotFormatDateService,
+    DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService,
+    DotRolesService,
+    DotWorkflowsActionsService,
+    PushPublishService
+} from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
+import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
 
@@ -68,6 +81,46 @@ const BULK_ACTIONS_RESPONSE = {
                                 assignable: false,
                                 commentable: false
                             }
+                        },
+                        {
+                            count: 2,
+                            pushPublish: false,
+                            moveable: true,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-move',
+                                name: 'Move',
+                                assignable: false,
+                                commentable: false
+                            }
+                        },
+                        {
+                            // Assignable and commentable, which is still one screen.
+                            count: 2,
+                            pushPublish: false,
+                            moveable: false,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-assign',
+                                name: 'Send to Legal',
+                                assignable: true,
+                                commentable: true,
+                                nextAssign: 'role-legal',
+                                roleHierarchyForAssign: true
+                            }
+                        },
+                        {
+                            // Two screens' worth, which is what stays disabled.
+                            count: 2,
+                            pushPublish: true,
+                            moveable: false,
+                            conditionPresent: false,
+                            workflowAction: {
+                                id: 'action-approve',
+                                name: 'Approve and Push',
+                                assignable: true,
+                                commentable: false
+                            }
                         }
                     ]
                 }
@@ -75,6 +128,30 @@ const BULK_ACTIONS_RESPONSE = {
         }
     ]
 } as DotBulkActionView;
+
+/**
+ * What the fire carries when the action declared no inputs.
+ *
+ * Every slot is sent on every fire — the request shape is identical either way, and the server reads
+ * only the parts the action asked for.
+ */
+/** A complete push publish payload, in the shape the step emits. */
+const PUSH_PUBLISH_SETTINGS = {
+    whereToSend: 'env-1',
+    iWantTo: 'publish' as const,
+    publishDate: '2026-08-12',
+    publishTime: '10-30',
+    expireDate: '2026-08-12',
+    expireTime: '10-30',
+    filterKey: 'filter-b',
+    timezoneId: 'Europe/Madrid'
+};
+
+const NO_INPUTS_SENT = {
+    pathToMove: '',
+    assignComment: { assign: '', comment: '' },
+    pushPublish: undefined
+};
 
 describe('DotContentDriveActionCenterComponent', () => {
     let spectator: Spectator<DotContentDriveActionCenterComponent>;
@@ -85,6 +162,14 @@ describe('DotContentDriveActionCenterComponent', () => {
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
+    // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
+    const mockCurrentUserIsAdmin = signal<boolean>(false);
+    // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
+    const mockCurrentSite = signal<{ hostname: string } | undefined>({
+        hostname: 'demo.dotcms.com'
+    });
+    const mockPath = signal<string>('/blogs');
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
@@ -93,6 +178,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 actionExecution: mockActionExecution,
+                currentUserIsAdmin: mockCurrentUserIsAdmin,
+                // The folder being browsed, which seeds the move destination picker.
+                currentSite: mockCurrentSite,
+                path: mockPath,
                 loadItems: jest.fn(),
                 setStatus: jest.fn(),
                 setSelectedItems: jest.fn(),
@@ -100,10 +189,54 @@ describe('DotContentDriveActionCenterComponent', () => {
                 setDialogDrillDown: jest.fn(),
                 clearDialogDrillDown: jest.fn(),
                 executeQuickAction: jest.fn(),
-                executeWorkflowAction: jest.fn()
+                executeWorkflowAction: jest.fn(),
+                executeAddToBundle: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
+            }),
+            // Pulled in by the Content Drive grid, which the action preview renders for real.
+            mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
+            // `DotcmsConfigServiceMock` has no `getTimeZones` (it lives in a separate mock), and the
+            // push publish step loads timezones on init.
+            mockProvider(DotcmsConfigService, {
+                ...new DotcmsConfigServiceMock(),
+                getTimeZones: jest.fn(() => of([]))
+            }),
+            // Backs the env selector embedded in the push publish step.
+            mockProvider(PushPublishService, {
+                getEnvironments: jest.fn(() => of([])),
+                lastEnvironmentPushed: null
+            }),
+            mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotFormatDateService),
+            // Pulled in by the folder picker's own store, which the move configuration step renders
+            // for real. Mocked rather than stubbed out with a fake child component: whether that
+            // component can actually be instantiated inside this dialog is the thing worth proving.
+            mockProvider(DotHttpErrorManagerService),
+            // Backs the bundle step's list of the current user's unsent bundles.
+            mockProvider(AddToBundleService, { getBundles: jest.fn(() => of([])) }),
+            mockProvider(DotCurrentUserService),
+            mockProvider(DotBrowsingService, {
+                getSitesTreePath: jest.fn(() => of([])),
+                getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
+                // Returns a real node, not `null`. This is what makes the picker's
+                // `ControlValueAccessor` actually push a value outward on load — the emission that
+                // silently overwrote a chosen destination when the step was re-created. A `null` here
+                // makes the whole class of bug invisible to these tests.
+                getCurrentSiteAsTreeNodeItem: jest.fn(() =>
+                    of({
+                        key: 'site-1',
+                        label: 'demo.dotcms.com',
+                        data: {
+                            id: 'site-1',
+                            hostname: 'demo.dotcms.com',
+                            path: '',
+                            type: 'site'
+                        },
+                        leaf: false
+                    })
+                )
             })
         ],
         detectChanges: false
@@ -115,6 +248,9 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-2', live: true })
         ]);
         mockActionExecution.set(undefined);
+        mockCurrentUserIsAdmin.set(false);
+        mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
+        mockPath.set('/blogs');
 
         spectator = createComponent();
 
@@ -147,7 +283,7 @@ describe('DotContentDriveActionCenterComponent', () => {
     /** Arms the action and drills into its preview. */
     const goToPreview = (): void => {
         armAction();
-        spectator.click('[data-testid="continue-workflow-editorial"]');
+        spectator.click('[data-testid="action-center-continue"]');
         spectator.detectChanges();
     };
 
@@ -165,15 +301,93 @@ describe('DotContentDriveActionCenterComponent', () => {
         spectator.detectChanges();
     };
 
-    /** Clicks the real checkbox of the first preview row, dropping it from the included set. */
-    const uncheckFirstRow = (): void => {
-        const checkbox = spectator
-            .queryAll('[data-testid="preview-row"]')[0]
-            .querySelector('[data-testid="preview-row-checkbox"] input');
+    /** Every row the preview is listing. The preview renders the Content Drive grid. */
+    const previewRows = (): HTMLElement[] => spectator.queryAll('[data-testid="item-row"]');
 
-        spectator.click(checkbox);
+    /** Clicks a preview row's real checkbox, toggling it in or out of the included set. */
+    const toggleRow = (index: number): void => {
+        spectator.click(previewRows()[index].querySelector('input'));
         spectator.detectChanges();
     };
+
+    /** Drops the first preview row from the included set. */
+    const uncheckFirstRow = (): void => toggleRow(0);
+
+    /**
+     * Rows whose lock belongs to another user, marked in the preview so the user can drop them.
+     *
+     * The point of routing quick actions through a preview at all: the Unlock row warns that some
+     * locks are not the user's, and this is the only place that says *which*.
+     */
+    describe('marking locks held by another user', () => {
+        const lockedSelection = [
+            contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+            contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+        ];
+
+        it('should mark only the rows the current user does not hold', () => {
+            mockSelectedItems.set(lockedSelection);
+
+            openQuickActionPreview('UNLOCK');
+
+            expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(1);
+            expect(spectator.queryAll('[data-testid="lock-icon"]').length).toBe(1);
+        });
+
+        it('should mark foreign locks on any action’s preview, not just Unlock', () => {
+            // A lock held by somebody else fails a Publish or an Archive just as readily, so the
+            // marker is not scoped to Unlock. Both rows here are unpublished, so Publish applies to
+            // each of them and only the foreign lock is marked.
+            mockSelectedItems.set(lockedSelection);
+
+            openQuickActionPreview('PUBLISH');
+
+            expect(previewRows().length).toBe(2);
+            expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(1);
+        });
+
+        it('should mark nothing for an administrator', () => {
+            // Same signal as the row's warning: an admin releases every lock, so neither the
+            // warning nor the markers appear for them.
+            mockCurrentUserIsAdmin.set(true);
+            mockSelectedItems.set(lockedSelection);
+
+            openQuickActionPreview('UNLOCK');
+
+            expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(0);
+            expect(spectator.queryAll('[data-testid="lock-icon"]').length).toBe(2);
+        });
+
+        it('should keep marked rows checked, so the fired count matches what the row advertised', () => {
+            mockSelectedItems.set(lockedSelection);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine',
+                'theirs'
+            ]);
+        });
+
+        it('should drop a marked row from the payload once the user unchecks it', () => {
+            // The capability this screen exists for, end to end: see which locks are not yours,
+            // uncheck one, and fire without it.
+            mockSelectedItems.set(lockedSelection);
+            openQuickActionPreview('UNLOCK');
+
+            const markedRow = previewRows().findIndex((row) =>
+                row.querySelector('[data-testid="lock-foreign-icon"]')
+            );
+            toggleRow(markedRow);
+
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine'
+            ]);
+        });
+    });
 
     describe('loading the available actions', () => {
         it('should request bulk actions with the selected inodes', () => {
@@ -291,7 +505,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(publish.disabled).toBe(false);
         });
 
-        it('should render Add to Bundle but keep it non-selectable', () => {
+        it('should keep Add to Bundle selectable', () => {
             spectator.detectChanges();
 
             const addToBundle = spectator.query(
@@ -299,15 +513,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             ) as HTMLButtonElement;
 
             expect(addToBundle).toBeTruthy();
-            expect(addToBundle.disabled).toBe(true);
+            expect(addToBundle.disabled).toBe(false);
         });
 
-        it('should not fire Add to Bundle even if its row is clicked', () => {
+        it('should open the bundle step rather than the preview for Add to Bundle', () => {
+            // The one quick action that cannot fire from the selection alone: every other row goes
+            // straight to its preview.
             spectator.detectChanges();
 
             spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
             spectator.detectChanges();
 
+            expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeTruthy();
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
@@ -480,6 +697,54 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
         });
 
+        it('should not flag the Unlock row for an administrator', () => {
+            // The warning exists to tell a user their unlock may be refused. An admin's never is,
+            // so for the one role that could act on it the warning is pure noise.
+            mockCurrentUserIsAdmin.set(true);
+            mockSelectedItems.set([
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should drop the Unlock warning when the admin flag resolves late', () => {
+            // The flag starts `false` and is patched in when `getCurrentUser` answers, which can
+            // land after the dialog has rendered. `$quickActions` reads it as a signal so the row
+            // recomputes rather than keeping the warning it opened with.
+            mockSelectedItems.set([
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeTruthy();
+
+            mockCurrentUserIsAdmin.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="quick-action-warning-UNLOCK"]')).toBeNull();
+        });
+
+        it('should still fire every locked item for an administrator', () => {
+            // The warning going quiet must not change the payload: Unlock still attempts all of
+            // them, the same set a non-admin would have fired.
+            mockCurrentUserIsAdmin.set(true);
+            mockSelectedItems.set([
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false })
+            ]);
+
+            executeQuickAction('UNLOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('UNLOCK', expect.any(String), [
+                'mine',
+                'theirs'
+            ]);
+        });
+
         it('should still fire every locked item when some are held by other users', () => {
             // Attempt-all is deliberate: the client cannot know whether the user holds the CMS
             // Administrator role that lets them release someone else's lock.
@@ -542,7 +807,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // not offer inode-2 as something the user could include.
             openQuickActionPreview('PUBLISH');
 
-            const rows = spectator.queryAll('[data-testid="preview-row"]');
+            const rows = previewRows();
 
             expect(rows).toHaveLength(1);
             expect(rows[0].textContent).toContain('Title inode-1');
@@ -644,7 +909,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             // PrimeNG puts `disabled` on the inner <button>, not on the p-button host.
             const continueButton = spectator.query(
-                '[data-testid="continue-workflow-editorial"] button'
+                '[data-testid="action-center-continue"] button'
             ) as HTMLButtonElement;
 
             expect(continueButton.disabled).toBe(true);
@@ -653,7 +918,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should open the preview instead of firing when Continue is clicked', () => {
             armAction();
 
-            spectator.click('[data-testid="continue-workflow-editorial"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
@@ -678,14 +943,33 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
         });
 
-        it('should disable actions that need extra input', () => {
+        it.each([
+            ['nothing', 'action-review'],
+            ['a move path', 'action-move'],
+            ['an assignee and a comment', 'action-assign'],
+            ['push publish', 'action-pp'],
+            // The row that used to be greyed: two sections now render together.
+            ['both an assignee and push publish', 'action-approve']
+        ])('should enable an action needing %s', (_label, actionId) => {
+            // No input gate remains: whatever an action declares gets a section on the configuration
+            // screen, so every row is armable.
             spectator.detectChanges();
 
-            const pushPublish = spectator.query(
-                '[data-testid="workflow-action-action-pp"] input'
+            const row = spectator.query(
+                `[data-testid="workflow-action-${actionId}"] input`
             ) as HTMLInputElement;
 
-            expect(pushPublish.disabled).toBe(true);
+            expect(row.disabled).toBe(false);
+        });
+
+        it('should offer no requires-input hint on any row', () => {
+            spectator.detectChanges();
+
+            expect(spectator.queryAll('.pi-info-circle[aria-hidden]').length).toBe(
+                // Only the approximate-count icons remain; none of the fixture's actions carry a
+                // condition, so there should be none at all.
+                0
+            );
         });
 
         it('should not open the preview when the action applies to nothing', () => {
@@ -720,7 +1004,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 spectator.detectChanges();
 
                 const continueButton = spectator.query(
-                    '[data-testid="continue-workflow-editorial"] button'
+                    '[data-testid="action-center-continue"] button'
                 ) as HTMLButtonElement;
 
                 expect(continueButton.disabled).toBe(true);
@@ -764,7 +1048,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         beforeEach(() => goToPreview());
 
         it('should list every selected contentlet, all included', () => {
-            expect(spectator.queryAll('[data-testid="preview-row"]').length).toBe(2);
+            expect(previewRows().length).toBe(2);
             expect(spectator.component['$includedCount']()).toBe(2);
         });
 
@@ -809,7 +1093,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeWorkflowAction).toHaveBeenCalledWith(
                 'action-review',
                 expect.any(String),
-                ['inode-1', 'inode-2']
+                ['inode-1', 'inode-2'],
+                // This action declares no inputs, so every slot goes out empty and the server
+                // ignores them.
+                NO_INPUTS_SENT
             );
         });
 
@@ -823,7 +1110,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeWorkflowAction).toHaveBeenCalledWith(
                 'action-review',
                 expect.any(String),
-                ['inode-2']
+                ['inode-2'],
+                NO_INPUTS_SENT
             );
         });
 
@@ -889,6 +1177,231 @@ describe('DotContentDriveActionCenterComponent', () => {
 
                 expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
             });
+        });
+    });
+
+    describe('move configuration step', () => {
+        /** Arms the move action and drills in, which stops on the configuration step. */
+        const goToConfigure = (): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-move');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        /**
+         * Picks a destination, standing in for the step component's `pathToMoveChange`.
+         *
+         * Driven through the output rather than the real picker: that component owns an HTTP-backed
+         * sites/folders store, and the `hostname:/path` → `//hostname/path` conversion it performs on
+         * the way out is unit-tested in `action-center.spec.ts`. What matters here is what the dialog
+         * does with an already-chosen path.
+         */
+        const chooseDestination = (pathToMove = '//demo.dotcms.com/application'): void => {
+            spectator.component['onPathToMoveChange'](pathToMove);
+            spectator.detectChanges();
+        };
+
+        beforeEach(() => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2' })
+            ]);
+        });
+
+        it('should stop on the configuration step instead of the preview', () => {
+            goToConfigure();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+        });
+
+        it('should title the dialog header with the action and the item count', () => {
+            // The count has to survive into this step: it is the only place it appears, since the
+            // step deliberately does not repeat the row list.
+            goToConfigure();
+
+            expect(store.setDialogDrillDown).toHaveBeenLastCalledWith({
+                header: 'Move',
+                itemCount: 2
+            });
+        });
+
+        it('should seed the destination with the folder being browsed', () => {
+            // So the picker opens on the current location rather than the bare site list.
+            goToConfigure();
+
+            expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/blogs');
+        });
+
+        it('should warn but not block when the destination is the folder being browsed', () => {
+            // Advisory, not a gate. It compares against the *browsing* path, and with a search or
+            // filter applied the selection need not live there — blocking refused legitimate moves
+            // of filtered results to the site root.
+            goToConfigure();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(false);
+            expect(spectator.query('[data-testid="action-configure-warning"]')).toBeTruthy();
+        });
+
+        it('should drop the warning once a different destination is chosen', () => {
+            goToConfigure();
+            chooseDestination();
+
+            expect(spectator.query('[data-testid="action-configure-warning"]')).toBeNull();
+        });
+
+        it('should keep Continue disabled when the destination is cleared', () => {
+            goToConfigure();
+            chooseDestination('');
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should allow firing a move to the folder being browsed', () => {
+            // Wasteful, but the user's call — and the alternative blocked real moves. See the
+            // warning test above.
+            goToConfigure();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-move',
+                'Move',
+                ['inode-1', 'inode-2'],
+                expect.objectContaining({ pathToMove: '//demo.dotcms.com/blogs' })
+            );
+        });
+
+        it('should enable Continue once a destination is chosen', () => {
+            goToConfigure();
+            chooseDestination();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(false);
+        });
+
+        it('should reach the preview once a destination is chosen', () => {
+            goToConfigure();
+            chooseDestination();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+            expect(previewRows().length).toBe(2);
+        });
+
+        it('should fire with the chosen destination', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-move',
+                'Move',
+                ['inode-1', 'inode-2'],
+                { ...NO_INPUTS_SENT, pathToMove: '//demo.dotcms.com/application' }
+            );
+        });
+
+        it('should honour rows unchecked after the destination was chosen', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-move',
+                'Move',
+                ['inode-2'],
+                { ...NO_INPUTS_SENT, pathToMove: '//demo.dotcms.com/application' }
+            );
+        });
+
+        it('should refuse to fire a move with no destination', () => {
+            // Reachable only by skipping the guarded Continue, but the cost of getting here is a
+            // run where every item fails, so the commit point refuses it too.
+            goToConfigure();
+            chooseDestination('');
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should step back from the preview to the configuration step', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            // Back to the picker, not past it to the action list — otherwise correcting a
+            // destination would mean re-picking the action and re-trimming the rows.
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-center"]')).toBeNull();
+        });
+
+        it('should keep the chosen destination when stepping back to correct it', () => {
+            goToConfigure();
+            chooseDestination();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/application');
+        });
+
+        it('should drop the destination when returning to the action list', () => {
+            // A path belongs to the run being set up; carrying it into another action's step would
+            // pre-fill a decision never made for that action.
+            goToConfigure();
+            chooseDestination();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pathToMove']()).toBe('');
+            expect(store.clearDialogDrillDown).toHaveBeenCalled();
+        });
+
+        it('should keep the configuration step inert while an action is in flight', () => {
+            goToConfigure();
+            chooseDestination();
+            mockActionExecution.set({ actionName: 'Move', total: 2 });
+            spectator.detectChanges();
+
+            spectator.component['onContinueFromConfigure']();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
         });
     });
 
@@ -971,20 +1484,24 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
-            const rows = spectator.queryAll('[data-testid="preview-row"]');
+            const rows = previewRows();
 
             expect(rows.length).toBe(1);
-            expect(rows[0].getAttribute('data-inode')).toBe('blog-1');
+            // Identified by the title the row renders rather than an inode attribute: the grid
+            // carries no per-row identity attribute, and the title is what the user reads anyway.
+            expect(rows[0].querySelector('[data-testid="item-title-text"]').textContent).toContain(
+                'Title blog-1'
+            );
         });
 
         it('should fire only the eligible contentlet', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             spectator.click('[data-testid="action-preview-execute"]');
@@ -992,7 +1509,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeWorkflowAction).toHaveBeenCalledWith(
                 'copy-blog',
                 expect.any(String),
-                ['blog-1']
+                ['blog-1'],
+                NO_INPUTS_SENT
             );
         });
 
@@ -1000,7 +1518,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             expect(store.setDialogDrillDown).toHaveBeenCalledWith({
@@ -1014,7 +1532,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
             spectator.component['$selectedActionId'].set('copy-blog');
             spectator.detectChanges();
-            spectator.click('[data-testid="continue-workflow-Blogs"]');
+            spectator.click('[data-testid="action-center-continue"]');
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
@@ -1067,15 +1585,577 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
     });
 
-    describe('done', () => {
-        it('should close the dialog without firing anything', () => {
+    describe('add to bundle', () => {
+        const BUNDLE = { id: 'bundle-1', name: 'Release 1' };
+
+        /** Opens the bundle configuration step from the quick action row. */
+        const goToBundleStep = (): void => {
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+        };
+
+        /** Picks a bundle, standing in for the step component's `bundleChange`. */
+        const chooseBundle = (bundle = BUNDLE): void => {
+            spectator.component['onBundleChange'](bundle);
+            spectator.detectChanges();
+        };
+
+        it('should keep Continue disabled until a bundle is chosen', () => {
+            goToBundleStep();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should reach the preview once a bundle is chosen', () => {
+            goToBundleStep();
+            chooseBundle();
+
+            spectator.click('[data-testid="action-configure-continue"]');
             spectator.detectChanges();
 
-            spectator.click('[data-testid="action-center-done"]');
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
 
-            expect(store.closeDialog).toHaveBeenCalled();
-            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        it('should queue identifiers rather than inodes', () => {
+            // The only action here that does: a bundle holds one entry per identifier.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-2', identifier: 'id-2' })
+            ]);
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
+                'id-1',
+                'id-2'
+            ]);
+        });
+
+        it('should collapse language versions of the same content into one asset', () => {
+            // Two rows, one identifier: the endpoint dedupes anyway, and sending both would let the
+            // dialog promise two assets when the result will honestly report one.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-en', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-es', identifier: 'id-1' })
+            ]);
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
+                'id-1'
+            ]);
+        });
+
+        it('should not fire a workflow action', () => {
+            // Add to Bundle is not a SystemAction and does not touch a workflow endpoint.
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
             expect(store.executeQuickAction).not.toHaveBeenCalled();
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should refuse to fire without a bundle', () => {
+            goToBundleStep();
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).not.toHaveBeenCalled();
+        });
+
+        it('should honour rows unchecked after the bundle was chosen', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-2', identifier: 'id-2' })
+            ]);
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            uncheckFirstRow();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
+                'id-2'
+            ]);
+        });
+
+        it('should step back from the preview to the bundle step', () => {
+            goToBundleStep();
+            chooseBundle();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeTruthy();
+        });
+
+        it('should drop the chosen bundle when returning to the action list', () => {
+            goToBundleStep();
+            chooseBundle();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$selectedBundle']()).toBeNull();
+        });
+
+        it('should render the move step for a move action, not the bundle one', () => {
+            // One `configure` view, two bodies: the discriminator has to pick the right one.
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-move');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-configure-bundle-target"]')).toBeNull();
+        });
+    });
+
+    describe('single-input workflow actions', () => {
+        /** Arms an action and drills in, which stops on its configuration screen. */
+        const goToConfigure = (actionId: string): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set(actionId);
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        describe('assign and comment', () => {
+            it('should open the assign/comment screen, not the move or bundle one', () => {
+                goToConfigure('action-assign');
+
+                expect(
+                    spectator.query('[data-testid="action-configure-assign-comment"]')
+                ).toBeTruthy();
+                expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeNull();
+                expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            });
+
+            it('should pass the action assign metadata to the step', () => {
+                // Asserted on the child's inputs rather than on `DotRolesService`: the step provides
+                // that service itself, so a host-level mock is not the instance it calls. What is the
+                // dialog's job — and what these two fields exist on the UI action shape for — is
+                // handing the step the right role scope. The lookup itself is the step's own spec.
+                goToConfigure('action-assign');
+
+                const step = spectator.query(DotWorkflowAssignCommentComponent);
+
+                expect(step?.roleId()).toBe('role-legal');
+                expect(step?.roleHierarchy()).toBe(true);
+                expect(step?.assignable()).toBe(true);
+                expect(step?.commentable()).toBe(true);
+            });
+
+            it('should defer to the step for validity', () => {
+                // Whether an assignee is required depends on roles only the step loaded.
+                goToConfigure('action-assign');
+                const continueButton = () =>
+                    spectator.query(
+                        '[data-testid="action-configure-continue"] button'
+                    ) as HTMLButtonElement;
+
+                spectator.component['$assignCommentValid'].set(false);
+                spectator.detectChanges();
+                expect(continueButton().disabled).toBe(true);
+
+                spectator.component['$assignCommentValid'].set(true);
+                spectator.detectChanges();
+                expect(continueButton().disabled).toBe(false);
+            });
+
+            it('should fire with the assignee and comment collected', () => {
+                goToConfigure('action-assign');
+                spectator.component['onAssignCommentChange']({
+                    assign: 'role-legal',
+                    comment: 'Please review'
+                });
+                spectator.component['$assignCommentValid'].set(true);
+                spectator.detectChanges();
+
+                spectator.click('[data-testid="action-configure-continue"]');
+                spectator.detectChanges();
+                spectator.click('[data-testid="action-preview-execute"]');
+
+                expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                    'action-assign',
+                    'Send to Legal',
+                    ['inode-1', 'inode-2'],
+                    expect.objectContaining({
+                        assignComment: { assign: 'role-legal', comment: 'Please review' }
+                    })
+                );
+            });
+        });
+
+        describe('push publish', () => {
+            it('should open the push publish screen', () => {
+                goToConfigure('action-pp');
+
+                expect(
+                    spectator.query('[data-testid="action-configure-push-publish"]')
+                ).toBeTruthy();
+                expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            });
+
+            it('should defer to the step for validity', () => {
+                goToConfigure('action-pp');
+                const continueButton = () =>
+                    spectator.query(
+                        '[data-testid="action-configure-continue"] button'
+                    ) as HTMLButtonElement;
+
+                expect(continueButton().disabled).toBe(true);
+
+                spectator.component['$pushPublishValid'].set(true);
+                spectator.detectChanges();
+                expect(continueButton().disabled).toBe(false);
+            });
+
+            it('should fire with the push publish settings collected', () => {
+                const settings = {
+                    whereToSend: 'env-1',
+                    iWantTo: 'publish' as const,
+                    publishDate: '2026-08-12',
+                    publishTime: '10-30',
+                    expireDate: '2026-08-12',
+                    expireTime: '10-30',
+                    filterKey: 'filter-b',
+                    timezoneId: 'Europe/Madrid'
+                };
+
+                goToConfigure('action-pp');
+                spectator.component['onPushPublishChange'](settings);
+                spectator.component['$pushPublishValid'].set(true);
+                spectator.detectChanges();
+
+                spectator.click('[data-testid="action-configure-continue"]');
+                spectator.detectChanges();
+                spectator.click('[data-testid="action-preview-execute"]');
+
+                expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                    'action-pp',
+                    'Push Publish',
+                    ['inode-1', 'inode-2'],
+                    expect.objectContaining({ pushPublish: settings })
+                );
+            });
+
+            it('should refuse to fire before the step is satisfied', () => {
+                // Reachable only by skipping the guarded Continue; a push with no environment has
+                // nowhere to go, so the commit point refuses it too.
+                goToConfigure('action-pp');
+                spectator.component['$view'].set('preview');
+                spectator.detectChanges();
+
+                spectator.click('[data-testid="action-preview-execute"]');
+
+                expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should drop collected settings when returning to the action list', () => {
+            goToConfigure('action-pp');
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pushPublish']()).toBeNull();
+            expect(spectator.component['$pushPublishValid']()).toBe(false);
+        });
+    });
+
+    describe('actions needing several configuration sections', () => {
+        /** Arms `action-approve` (assignable + push publish) and drills into its configure screen. */
+        const goToConfigure = (): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set('action-approve');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        /** Satisfies both sections, as their step components would. */
+        const satisfyBoth = (): void => {
+            spectator.component['onAssignCommentChange']({ assign: 'role-1', comment: '' });
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+        };
+
+        const continueButton = (): HTMLButtonElement =>
+            spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+        it('should render every section the action needs on one screen', () => {
+            goToConfigure();
+
+            expect(spectator.query('[data-testid="action-configure-assign-comment"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-configure-push-publish"]')).toBeTruthy();
+        });
+
+        it('should render them in the legacy wizard order', () => {
+            goToConfigure();
+
+            const order = spectator
+                .queryAll('[data-testid^="action-configure-section-"]')
+                .map((section) => section.getAttribute('data-testid'));
+
+            expect(order).toEqual([
+                'action-configure-section-assignComment',
+                'action-configure-section-pushPublish'
+            ]);
+        });
+
+        it('should label the sections once there is more than one', () => {
+            // A lone form is left unlabelled — the dialog header already names the action.
+            goToConfigure();
+
+            expect(spectator.queryAll('[data-testid^="action-configure-section-"] h3').length).toBe(
+                2
+            );
+        });
+
+        it('should keep Continue disabled until every section is satisfied', () => {
+            goToConfigure();
+            expect(continueButton().disabled).toBe(true);
+
+            // One of two is not enough.
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.detectChanges();
+            expect(continueButton().disabled).toBe(true);
+
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+            expect(continueButton().disabled).toBe(false);
+        });
+
+        it('should name the first unsatisfied section in the footer', () => {
+            // With sections stacked, the field holding Continue back can be scrolled out of view, so
+            // the footer has to say which one it is.
+            goToConfigure();
+            expect(spectator.component['$configureHint']()).toBe(
+                'content-drive.action-center.assign.no-assignee'
+            );
+
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component['$configureHint']()).toBe(
+                'content-drive.action-center.push-publish.no-environment'
+            );
+        });
+
+        it('should clear the hint once nothing is missing', () => {
+            goToConfigure();
+            satisfyBoth();
+
+            expect(spectator.component['$configureHint']()).toBe('');
+        });
+
+        it('should fire one request carrying both payloads', () => {
+            // The point of stacking: two sections, one execute. Both step components emit from an
+            // effect, so this also guards against one emission clobbering the other.
+            goToConfigure();
+            satisfyBoth();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).toHaveBeenCalledTimes(1);
+            expect(store.executeWorkflowAction).toHaveBeenCalledWith(
+                'action-approve',
+                'Approve and Push',
+                ['inode-1', 'inode-2'],
+                {
+                    pathToMove: '',
+                    assignComment: { assign: 'role-1', comment: '' },
+                    pushPublish: PUSH_PUBLISH_SETTINGS
+                }
+            );
+        });
+
+        it('should refuse to fire while a section is still unsatisfied', () => {
+            goToConfigure();
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.component['$view'].set('preview');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executeWorkflowAction).not.toHaveBeenCalled();
+        });
+
+        it('should use the generic back label rather than the move-specific one', () => {
+            goToConfigure();
+
+            expect(spectator.component['$backLabel']()).toBe(
+                'content-drive.action-center.back.settings'
+            );
+        });
+    });
+
+    describe('surviving the trip to the preview and back', () => {
+        /**
+         * The regression guard for the two bugs found in review.
+         *
+         * Both had the same root cause: the `configure` block was destroyed on Continue, so stepping
+         * back re-created each step component — and every one of them emits its own fresh state on
+         * mount, overwriting what the dialog was holding rather than merely forgetting it. The step
+         * sections stay mounted now, so nothing is re-created and nothing re-emits.
+         */
+        const armAndConfigure = (actionId: string): void => {
+            spectator.detectChanges();
+            spectator.component['$selectedActionId'].set(actionId);
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-center-continue"]');
+            spectator.detectChanges();
+        };
+
+        const goToPreviewAndBack = (): void => {
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+        };
+
+        it('should keep a chosen move destination', () => {
+            armAndConfigure('action-move');
+            spectator.component['onPathToMoveChange']('//demo.dotcms.com/application');
+            spectator.detectChanges();
+
+            goToPreviewAndBack();
+
+            expect(spectator.component['$pathToMove']()).toBe('//demo.dotcms.com/application');
+        });
+
+        it('should not re-create the destination picker, which would re-seed and re-emit', () => {
+            // The picker is a `ControlValueAccessor` that pushes a value outward as soon as its store
+            // confirms a node. A re-created one would emit the *browsing* folder over the chosen
+            // destination — and in the window before that resolves, Execute could fire a path the UI
+            // never showed.
+            armAndConfigure('action-move');
+            const before = spectator.query('[data-testid="action-configure-move-target"]');
+
+            goToPreviewAndBack();
+
+            expect(spectator.query('[data-testid="action-configure-move-target"]')).toBe(before);
+        });
+
+        it('should keep a typed comment and chosen assignee', () => {
+            armAndConfigure('action-assign');
+            spectator.component['onAssignCommentChange']({
+                assign: 'role-legal',
+                comment: 'Please review'
+            });
+            spectator.component['$assignCommentValid'].set(true);
+            spectator.detectChanges();
+
+            goToPreviewAndBack();
+
+            expect(spectator.component['$assignComment']()).toEqual({
+                assign: 'role-legal',
+                comment: 'Please review'
+            });
+        });
+
+        it('should keep push publish settings', () => {
+            armAndConfigure('action-pp');
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+
+            goToPreviewAndBack();
+
+            expect(spectator.component['$pushPublish']()).toEqual(PUSH_PUBLISH_SETTINGS);
+        });
+
+        it('should hide the sections behind the preview rather than removing them', () => {
+            armAndConfigure('action-pp');
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            const body = spectator.query('[data-testid="action-configure-body"]');
+
+            expect(body).toBeTruthy();
+            expect(body?.classList.contains('hidden')).toBe(true);
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should still discard everything when returning to the action list', () => {
+            // Back to actions is a real reset — a different action must not inherit the last one's
+            // answers.
+            armAndConfigure('action-pp');
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-configure-back"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$pushPublish']()).toBeNull();
+        });
+    });
+
+    describe('the action list footer', () => {
+        it('should offer one Continue for the whole screen, not one per scheme', () => {
+            // A per-panel button repeated a single global decision — only one action can be armed
+            // across every scheme — and sat below a scrolling list, so the radio and the button
+            // acting on it could not be seen at once.
+            spectator.detectChanges();
+
+            expect(spectator.queryAll('[data-testid^="continue-workflow-"]')).toEqual([]);
+            expect(spectator.query('[data-testid="action-center-continue"]')).toBeTruthy();
+        });
+
+        it('should arm the footer Continue from any scheme panel', () => {
+            armAction();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-center-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(false);
+        });
+
+        it('should no longer close the dialog from the action list', () => {
+            // Done is gone: the screen's one button now advances instead of dismissing. Closing is
+            // the shell's job, through the X, ESC and the mask.
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-center-done"]')).toBeNull();
+            expect(store.closeDialog).not.toHaveBeenCalled();
         });
     });
 });

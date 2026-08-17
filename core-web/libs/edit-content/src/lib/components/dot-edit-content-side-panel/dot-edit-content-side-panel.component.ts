@@ -16,8 +16,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
-import { DrawerModule } from 'primeng/drawer';
+import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
@@ -64,7 +65,7 @@ function writeExpandedPreference(expanded: boolean): void {
  * It reuses the overlay editor plumbing: it provides {@link OverlayEditContentHost} (identity from
  * the dialog config, in-place navigation, chrome no-ops) and, since it is not opened through
  * `DialogService`, supplies the {@link DynamicDialogConfig} the host reads identity from — built
- * from the {@link data} input. The header shows the content title plus an expand toggle (70% ↔
+ * from the {@link data} input. The header shows the content title plus an expand toggle (80% ↔
  * full width) and a close button.
  *
  * It also self-provides `DialogService` and {@link IMAGE_EDITOR_LAUNCHER} — the same pair
@@ -99,10 +100,13 @@ function writeExpandedPreference(expanded: boolean): void {
     ],
     templateUrl: './dot-edit-content-side-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // ESC closes the panel through the unsaved-changes guard. Bound at document level because
-    // `appendTo="body"` moves the drawer out of this component's DOM subtree, so a template
-    // `(keydown.escape)` on the drawer would never receive the event.
-    host: { '(document:keydown.escape)': 'onEscape()' }
+    // ESC and click-outside close the panel through the unsaved-changes guard. Both are bound at
+    // document level because `appendTo="body"` moves the drawer (and its mask) out of this
+    // component's DOM subtree, so template listeners would never receive the events.
+    host: {
+        '(document:keydown.escape)': 'onEscape()',
+        '(document:click)': 'onMaskClick($event)'
+    }
 })
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
@@ -111,6 +115,13 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
 
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
+
+    /**
+     * This panel's own drawer. Needed for its `mask` element: the click-outside handler compares
+     * the clicked node against THIS mask, not against the shared `p-drawer-mask` class, so masks
+     * belonging to other drawers in the document never close this panel (see {@link onMaskClick}).
+     */
+    protected readonly $drawer = viewChild(Drawer);
 
     /** Identity (and header title) of the content to create/edit, or `null` when closed. */
     readonly data = input<EditContentDialogData | null>(null);
@@ -122,7 +133,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly saved = output<DotCMSContentlet>();
 
     /**
-     * Whether the panel is expanded to the full viewport width (vs the default ~70%). Seeded from
+     * Whether the panel is expanded to the full viewport width (vs the default ~80%). Seeded from
      * the user's persisted preference so a panel opens in the mode last chosen (see
      * {@link toggleExpanded}).
      */
@@ -171,6 +182,53 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * instead of one panel at a time.
      */
     protected onEscape(): void {
+        if (this.#hasOverlayAbove()) {
+            return;
+        }
+
+        if (this.#navController.isTop(this)) {
+            this.requestClose();
+        }
+    }
+
+    /**
+     * Whether another PrimeNG overlay is stacked on top of this panel — the image editor dialog, a
+     * confirm popup, an open select panel, or a second side panel.
+     *
+     * Such an overlay owns the ESC key, but it is appended to `body` outside this component's DOM,
+     * so the document-level listener would still fire and close the panel underneath it. Every
+     * PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing
+     * the top of that stack against this drawer's own z-index answers "is something above me?"
+     * without matching on overlay class names, which differ per component and change across versions.
+     */
+    #hasOverlayAbove(): boolean {
+        const container = this.$drawer()?.container;
+
+        return !!container && ZIndexUtils.getCurrent() > ZIndexUtils.get(container);
+    }
+
+    /**
+     * Click-outside handler: clicking the area behind the panel closes it with the exact same
+     * semantics as ESC and the X button — i.e. through the unsaved-changes guard.
+     *
+     * The drawer's own `dismissible` is deliberately left off: it hides the drawer and emits
+     * `visibleChange(false)` the moment the mask is clicked, which both bypasses the guard (unsaved
+     * edits lost silently) and desyncs the one-way `[visible]` binding. Matching the mask ourselves
+     * keeps the panel on screen until the guard says it is safe to close.
+     *
+     * The listener is document-wide because the mask is built imperatively into `document.body`, so
+     * no template binding can reach it. It matches on the mask's IDENTITY rather than its
+     * `p-drawer-mask` class: that class is shared by every modal drawer in the app (the UVE block
+     * editor sidebar is one), and a class check would let a foreign drawer's mask close this panel
+     * and pop the unsaved-changes prompt. Comparing the element also means a click inside the panel,
+     * or a drag that starts inside and ends on the mask, resolves to a different node and is
+     * ignored. As with ESC, only the frontmost stacked panel reacts.
+     */
+    protected onMaskClick(event: MouseEvent): void {
+        if (event.target !== this.$drawer()?.mask) {
+            return;
+        }
+
         if (this.#navController.isTop(this)) {
             this.requestClose();
         }
