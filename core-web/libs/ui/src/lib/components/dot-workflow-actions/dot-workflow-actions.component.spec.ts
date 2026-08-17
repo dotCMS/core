@@ -195,8 +195,8 @@ describe('DotWorkflowActionsComponent', () => {
             const menu = spectator.query(Menu)!;
             const overflowAction = mockWorkflowsActionsWithMove[3];
 
-            expect(menu.model.length).toBe(1);
-            expect(menu.model[0].label).toBe(overflowAction.name);
+            expect(menu.model!.length).toBe(1);
+            expect(menu.model![0].label).toBe(overflowAction.name);
         });
 
         it('should emit actionFired when an overflow menu item command is invoked', () => {
@@ -206,7 +206,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const menu = spectator.query(Menu)!;
-            menu.model[0].command({});
+            menu.model![0].command({});
 
             expect(spy).toHaveBeenCalledWith(mockWorkflowsActionsWithMove[3]);
         });
@@ -320,7 +320,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(spectator.queryAll(Button).length).toBe(1);
             expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
-            expect(spectator.query(Menu).model.length).toBe(3);
+            expect(spectator.query(Menu)!.model!.length).toBe(3);
         });
 
         it('should show one inline button when Small matches (cap 1)', () => {
@@ -330,7 +330,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(spectator.queryAll(Button).length).toBe(2);
             expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
-            expect(spectator.query(Menu).model.length).toBe(2);
+            expect(spectator.query(Menu)!.model!.length).toBe(2);
         });
 
         it('should show two inline buttons when Medium matches (cap 2)', () => {
@@ -340,7 +340,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(spectator.queryAll(Button).length).toBe(3);
             expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
-            expect(spectator.query(Menu).model.length).toBe(1);
+            expect(spectator.query(Menu)!.model!.length).toBe(1);
         });
 
         it('should show three inline buttons when Large matches (cap 3)', () => {
@@ -359,7 +359,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(spectator.queryAll(Button).length).toBe(4); // 3 inline + overflow button
             expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
-            expect(spectator.query(Menu).model.length).toBe(1);
+            expect(spectator.query(Menu)!.model!.length).toBe(1);
         });
 
         it('should show all four inline buttons when no CDK breakpoint matches (XLarge fallback, cap 4)', () => {
@@ -464,7 +464,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(splitButtons.length).toBe(1);
             expect(splitButtons[0].label).toBe(mockWorkflowsActions[0].name);
-            expect(splitButtons[0].model.length).toBe(2);
+            expect(splitButtons[0].model!.length).toBe(2);
         });
 
         it('should put sub-actions in the splitButton model with correct labels', () => {
@@ -473,8 +473,8 @@ describe('DotWorkflowActionsComponent', () => {
 
             const [splitButton] = spectator.queryAll(SplitButton);
 
-            expect(splitButton.model[0].label).toBe(mockWorkflowsActions[1].name);
-            expect(splitButton.model[1].label).toBe(mockWorkflowsActions[2].name);
+            expect(splitButton.model![0].label).toBe(mockWorkflowsActions[1].name);
+            expect(splitButton.model![1].label).toBe(mockWorkflowsActions[2].name);
         });
 
         it('should emit actionFired for the main action when the splitButton primary button is clicked', () => {
@@ -494,7 +494,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const [splitButton] = spectator.queryAll(SplitButton);
-            splitButton.model[0].command({});
+            splitButton.model![0].command({});
 
             expect(spy).toHaveBeenCalledWith(mockWorkflowsActions[1]);
         });

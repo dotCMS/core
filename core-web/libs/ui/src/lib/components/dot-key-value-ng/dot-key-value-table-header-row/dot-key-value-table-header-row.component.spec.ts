@@ -232,7 +232,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should switch to hidden mode when clicked on the hidden switch button', async () => {
             spectator.detectChanges();
-            const switchInput = spectator.query(byTestId('hidden-switch')).querySelector('input');
+            const switchInput = spectator.query(byTestId('hidden-switch'))!.querySelector('input');
 
             spectator.click(switchInput);
             spectator.detectChanges();
