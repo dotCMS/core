@@ -64,6 +64,8 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +76,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -2442,5 +2445,90 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .build()).stream()
                 .map(Treeable::getIdentifier)
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContent(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder tree holding File Assets -- including one whose name contains
+     *     dots and one nested in a sub-folder -- and an HTML Page is browsed the way the file browser dialog
+     *     does it.</li>
+     *     <li><b>Expected Result:</b> Every row already exposes the asset's <b>full</b> path in {@code path},
+     *     {@code url} and, for Pages, {@code pageURI}: the three agree with each other and each one ends with
+     *     the asset name exactly once. Consumers must therefore use one of them as-is and never append
+     *     {@code fileName} to them.</li>
+     * </ul>
+     * Regression guard for <a href="https://github.com/dotCMS/core/issues/37050">#37050</a>: the Vanity URL
+     * "Forward To" picker used to build its value as {@code path + fileName}, which duplicated the file name.
+     * It also pins the contract against the reverse change -- making {@code path} mean "parent path" in
+     * {@code WebAssetStrategy.addPath} would silently break every consumer of this payload.
+     */
+    @Test
+    public void test_getFolderContent_webAssetRows_carryTheFullPathExactlyOnce() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().name("pathFolder").site(host).nextPersisted();
+        final Folder subFolder = new FolderDataGen().name("pathSubFolder").parent(folder).nextPersisted();
+
+        final FileAsset plainFile = persistFileAsset(folder, fileNamed("pathPlainFile.txt"));
+        // Dots in the name are the interesting case: any extension-based trimming would mangle it
+        final FileAsset dottedFile = persistFileAsset(subFolder, fileNamed("my.report.v2.txt"));
+        final HTMLPageAsset page = new HTMLPageDataGen(folder,
+                new TemplateDataGen().host(host).nextPersisted()).title("pathPage").pageURL("path-page")
+                .nextPersisted();
+
+        assertWebAssetRow(folder, plainFile.getIdentifier(), "/pathFolder/pathPlainFile.txt",
+                plainFile.getFileName());
+        assertWebAssetRow(subFolder, dottedFile.getIdentifier(), "/pathFolder/pathSubFolder/my.report.v2.txt",
+                dottedFile.getFileName());
+        // Pages resolve through the 'pageURI' branch of the picker, which must keep agreeing with the rest
+        final Map<String, Object> pageRow = assertWebAssetRow(folder, page.getIdentifier(),
+                "/pathFolder/path-page", null);
+        assertEquals("A Page's 'pageURI' must agree with its 'url'", pageRow.get("url"),
+                pageRow.get("pageURI"));
+    }
+
+    /**
+     * Browses {@code folder} the way the file browser dialog does -- see
+     * {@code BrowserAjax.getFolderContentWithDotAssets} -- and asserts that the hydrated row for
+     * {@code identifier} exposes {@code expectedPath} in both {@code path} and {@code url}. When
+     * {@code fileName} is given, it also asserts the path ends with it exactly once.
+     */
+    private Map<String, Object> assertWebAssetRow(final Folder folder, final String identifier,
+            final String expectedPath, final String fileName) throws Exception {
+        final Map<String, Object> results = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showPages(true)
+                .showFiles(true)
+                .showFolders(false)
+                .showWorking(true)
+                .build());
+        final Map<String, Object> row =
+                ((List<Map<String, Object>>) results.get("list")).stream()
+                        .filter(item -> identifier.equals(item.get("identifier")))
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError(
+                                "The browse of '" + folder.getName() + "' must return " + identifier));
+
+        final String actualPath = (String) row.get("path");
+        assertEquals("'path' must be the asset's full path", expectedPath, actualPath);
+        assertEquals("'url' must agree with 'path'", expectedPath, row.get("url"));
+        if (null != fileName) {
+            assertTrue("'path' must end with the file name: " + actualPath,
+                    actualPath.endsWith("/" + fileName));
+            assertEquals("The file name must appear exactly once in 'path': " + actualPath, 1,
+                    StringUtils.countMatches(actualPath, fileName));
+        }
+        return row;
+    }
+
+    /**
+     * Creates a temporary file with an <b>exact</b> name. {@code File.createTempFile} appends random digits,
+     * which would defeat the path assertions above.
+     */
+    private static File fileNamed(final String name) throws IOException {
+        final File file = new File(Files.createTempDirectory("issue37050").toFile(), name);
+        FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
+        return file;
     }
 }

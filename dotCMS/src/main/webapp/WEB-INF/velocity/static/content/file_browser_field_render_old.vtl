@@ -6,9 +6,12 @@
 	}
 
 	function fileSelected(file) {
-		var path = file.pageURI;
+		// Every candidate here already carries the full path: 'pageURI' and 'url' come from
+		// Identifier.getURI(), 'path' from Identifier.getPath(). Concatenating 'fileName' onto any
+		// of them duplicates the file name -- see https://github.com/dotCMS/core/issues/37050
+		var path = file.pageURI || file.url || file.path;
 		if (!path) {
-			path = file.path + file.fileName;
+			return;
 		}
 		dojo.byId('vlUri').value = path;
 		dojo.byId('${field.velocityVarName}').value = path;

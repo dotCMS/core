@@ -12,10 +12,12 @@ import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteAuthValidator;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.*;
@@ -267,6 +269,21 @@ public class ContentAnalyticsUtil {
             Logger.error(ContentAnalyticsUtil.class,
                     "Error retrieving app secrets for site: " + currentSite.getIdentifier(), e);
             return Collections.emptyMap();
+        } catch (final DotRuntimeException e) {
+            // An unreadable App secrets store raises since issue #36724, where it previously wiped
+            // itself and returned nothing. This method must keep degrading: it feeds
+            // EventAnalyticsProxyHelper.buildAuthHeader(), which is called outside proxy()'s try
+            // block, so propagating here turns every analytics proxy/ingest request into a 500.
+            // The exception arrives wrapped as a plain DotRuntimeException -- SecretCachedKeyStoreImpl
+            // and friends re-wrap it -- so recognise it through the cause chain, and let every other
+            // runtime failure (DB, cache) keep propagating rather than masquerading as "no secrets".
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "App secrets store is unreadable; treating Content Analytics as unconfigured for site '%s'",
+                    currentSite.getIdentifier()));
+            return Collections.emptyMap();
         }
     }
 
@@ -306,6 +323,16 @@ public class ContentAnalyticsUtil {
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(ContentAnalyticsUtil.class,
                     "Error retrieving site key from app secrets for site: " + currentSite.getIdentifier(), e);
+            return Optional.empty();
+        } catch (final DotRuntimeException e) {
+            // Same reasoning as getAppSecrets() above: degrade on an unreadable store (see #36724),
+            // propagate anything else.
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "App secrets store is unreadable; no Content Analytics site key available for site '%s'",
+                    currentSite.getIdentifier()));
             return Optional.empty();
         }
     }

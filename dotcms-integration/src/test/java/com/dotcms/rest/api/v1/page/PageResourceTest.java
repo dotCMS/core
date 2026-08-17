@@ -115,6 +115,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -2721,6 +2722,81 @@ public class PageResourceTest {
             //When publish date is passed, we should still get only valid content since the base case only created expired content in the past, so we should only get valid content
             assertTrue("All content returned should be the valid - publish date provided",
                     validateAllContentletTitlesContaining(withFutureDatePassed, "Valid"));
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResource#loadJson}
+     * Given scenario: A headless page holds content that is live right now: one item expiring in 2 days,
+     *                 one expiring in 30 days, one that never expires, and one not published until day 20.
+     *                 The page is requested with a Time Machine date of now + 10 days.
+     * Expected result: The item whose Online To has passed at the Time Machine date is excluded, while the
+     *                 still-valid items are returned. Requesting now + 25 days additionally shows the
+     *                 not-yet-published item, proving the Online From fallback is preserved.
+     * @see <a href="https://github.com/dotCMS/core/issues/36731">#36731</a>
+     */
+    @Test
+    public void TestFutureTimeMachineExcludesLiveContentExpiredAtTimeMachineDate() throws Exception {
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            // Reference date is NOW, so this content really is live at request time -- that is precisely the
+            // scenario in which the live fallback used to resurrect expired content.
+            final Date now = new Date();
+            final PageInfo pageInfo = createTestPageWithContentConfigs(List.of(
+                    ContentConfig.validWithExpiration("TM Live Expiring Soon", 1, 2),
+                    ContentConfig.validWithExpiration("TM Live Expiring Later", 1, 30),
+                    ContentConfig.neverExpires("TM Live Never Expires", 1),
+                    ContentConfig.neverExpires("TM Not Published Yet", -20)
+            ), now);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            // Sanity check: with no Time Machine date the expiring content IS live and returned. Without this,
+            // the assertions below could pass simply because the content was never live to begin with.
+            final PageView livePageView = extractPageViewFromResponse(pageResource.loadJson(this.request,
+                    this.response, pageInfo.pageUri, PageMode.LIVE.name(), null, "1", null, null));
+            assertEquals("Content expiring in 2 days must be live right now", 1,
+                    validateContentletTitlesContainingInternal(livePageView, "TM Live Expiring Soon").matched);
+            assertEquals("Content with a future publish date must not be live yet", 0,
+                    validateContentletTitlesContainingInternal(livePageView, "TM Not Published Yet").matched);
+
+            // Time Machine 10 days ahead: past the Online To of "Expiring Soon", before the Online From of
+            // "Not Published Yet".
+            final String tenDaysAhead = now.toInstant().plus(Duration.ofDays(10)).toString();
+            final PageView tenDaysView = extractPageViewFromResponse(pageResource.loadJson(this.request,
+                    this.response, pageInfo.pageUri, PageMode.LIVE.name(), null, "1", null, tenDaysAhead));
+
+            assertEquals("Content expired at the Time Machine date must be excluded", 0,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Live Expiring Soon").matched);
+            assertEquals("Content expiring after the Time Machine date must be included", 1,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Live Expiring Later").matched);
+            assertEquals("Content with no expire date must be included", 1,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Live Never Expires").matched);
+            assertEquals("Content not yet published at the Time Machine date must be excluded", 0,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Not Published Yet").matched);
+
+            // Time Machine 25 days ahead: the scheduled content is now past its Online From, so the live
+            // fallback for the publish-date case must keep working.
+            final String twentyFiveDaysAhead = now.toInstant().plus(Duration.ofDays(25)).toString();
+            final PageView twentyFiveDaysView = extractPageViewFromResponse(pageResource.loadJson(this.request,
+                    this.response, pageInfo.pageUri, PageMode.LIVE.name(), null, "1", null, twentyFiveDaysAhead));
+
+            assertEquals("Content past its publish date must be included", 1,
+                    validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Not Published Yet").matched);
+            assertEquals("Expired content must stay excluded further into the future", 0,
+                    validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Live Expiring Soon").matched);
+            assertEquals("Content expiring after the Time Machine date must still be included", 1,
+                    validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Live Expiring Later").matched);
 
         } finally {
             TimeZone.setDefault(defaultZone);
