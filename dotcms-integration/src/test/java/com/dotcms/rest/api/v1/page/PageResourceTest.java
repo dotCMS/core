@@ -2764,7 +2764,7 @@ public class PageResourceTest {
             // Sanity check: with no Time Machine date the expiring content IS live and returned. Without this,
             // the assertions below could pass simply because the content was never live to begin with.
             final PageView livePageView = extractPageViewFromResponse(pageResource.loadJson(this.request,
-                    this.response, pageInfo.pageUri, PageMode.LIVE.name(), null, "1", null, null));
+                    this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null, "1", null, null));
             assertEquals("Content expiring in 2 days must be live right now", 1,
                     validateContentletTitlesContainingInternal(livePageView, "TM Live Expiring Soon").matched);
             assertEquals("Content with a future publish date must not be live yet", 0,
@@ -2774,7 +2774,7 @@ public class PageResourceTest {
             // "Not Published Yet".
             final String tenDaysAhead = now.toInstant().plus(Duration.ofDays(10)).toString();
             final PageView tenDaysView = extractPageViewFromResponse(pageResource.loadJson(this.request,
-                    this.response, pageInfo.pageUri, PageMode.LIVE.name(), null, "1", null, tenDaysAhead));
+                    this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null, "1", null, tenDaysAhead));
 
             assertEquals("Content expired at the Time Machine date must be excluded", 0,
                     validateContentletTitlesContainingInternal(tenDaysView, "TM Live Expiring Soon").matched);
@@ -2789,7 +2789,7 @@ public class PageResourceTest {
             // fallback for the publish-date case must keep working.
             final String twentyFiveDaysAhead = now.toInstant().plus(Duration.ofDays(25)).toString();
             final PageView twentyFiveDaysView = extractPageViewFromResponse(pageResource.loadJson(this.request,
-                    this.response, pageInfo.pageUri, PageMode.LIVE.name(), null, "1", null, twentyFiveDaysAhead));
+                    this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null, "1", null, twentyFiveDaysAhead));
 
             assertEquals("Content past its publish date must be included", 1,
                     validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Not Published Yet").matched);
