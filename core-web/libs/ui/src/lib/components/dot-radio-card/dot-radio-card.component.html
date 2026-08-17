@@ -1,0 +1,21 @@
+<span
+    class="mt-0.5 flex size-[18px] flex-none items-center justify-center rounded-full border-2"
+    [class]="$isChecked() ? 'border-primary-500' : 'border-surface-300'"
+    aria-hidden="true"
+    data-testid="radio-card-indicator">
+    @if ($isChecked()) {
+        <span class="size-2 rounded-full bg-primary" data-testid="radio-card-dot"></span>
+    }
+</span>
+
+<span class="flex flex-col gap-1">
+    <span class="text-sm font-semibold text-surface-900" data-testid="radio-card-label">
+        {{ label() }}
+    </span>
+    @if (description()) {
+        <span class="text-sm text-surface-500" data-testid="radio-card-description">
+            {{ description() }}
+        </span>
+    }
+    <ng-content />
+</span>
