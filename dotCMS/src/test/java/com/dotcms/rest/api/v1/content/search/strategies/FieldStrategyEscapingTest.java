@@ -89,6 +89,73 @@ public class FieldStrategyEscapingTest {
                 new TextFieldStrategy().generateQuery(ctx("SSS.text", "\"a-b\"")));
     }
 
+    // ---- Defensive cases: hostile or degenerate terms must stay literal data ----
+
+    @Test
+    public void textOnlySlashesStaysAWildcardTermNotARegex() {
+        // A query_string regex term must START with a slash. The `*` the strategy prepends always
+        // gets there first, so even an all-slash term cannot open one.
+        assertEquals("+(SSS.text:*///* SSS.text_dotraw:*///*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "///")));
+    }
+
+    @Test
+    public void textRegexShapedTermKeepsItsOperatorsEscaped() {
+        // `+` is a token delimiter, so this splits into two ANDed clauses; the bracket operators in
+        // the first are escaped, which is what stops it being read as a character class.
+        assertEquals("+(SSS.text:*/\\[a\\-z\\]* SSS.text_dotraw:*/\\[a\\-z\\]*) "
+                        + "+(SSS.text:*/* SSS.text_dotraw:*/*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "/[a-z]+/")));
+    }
+
+    @Test
+    public void textUserSuppliedAsteriskCannotWidenTheWildcard() {
+        // Otherwise a term of `*` would turn the clause into a match-everything filter.
+        assertEquals("+(SSS.text:*\\** SSS.text_dotraw:*\\**)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "*")));
+    }
+
+    @Test
+    public void textBackslashCannotFormAnEscapeSequence() {
+        // The backslash is still escaped, so a user cannot hand-build `\/` and have it interpreted.
+        assertEquals("+(SSS.text:*\\\\/* SSS.text_dotraw:*\\\\/*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "\\/")));
+    }
+
+    @Test
+    public void textTraversalStyleTermIsJustALiteral() {
+        // Nothing resolves paths here — this is a substring match against an indexed value, so a
+        // traversal-shaped term is inert rather than dangerous.
+        assertEquals("+(SSS.text:*/../../etc/passwd* SSS.text_dotraw:*/../../etc/passwd*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "/../../etc/passwd")));
+    }
+
+    @Test
+    public void textBooleanKeywordsBecomeAndedTermsNotOperators() {
+        // Whitespace is a token delimiter, so `a OR b` cannot inject a boolean operator: it becomes
+        // three ANDed contains-clauses, one of which happens to look for the literal text "OR".
+        assertEquals("+(SSS.text:*a* SSS.text_dotraw:*a*) "
+                        + "+(SSS.text:*OR* SSS.text_dotraw:*OR*) "
+                        + "+(SSS.text:*b* SSS.text_dotraw:*b*)",
+                new TextFieldStrategy().generateQuery(ctx("SSS.text", "a OR b")));
+    }
+
+    @Test
+    public void textLoneQuoteCharacterProducesNoClauseAtAll() {
+        // A single `"` both starts and ends with a quote, so it takes the quoted-phrase branch and
+        // then trims away to nothing, leaving no tokens and an empty query. Documented because the
+        // caller decides what an empty clause means: BrowserAPIImpl logs a warning and DROPS the
+        // criterion, so the filter silently stops narrowing instead of matching nothing.
+        assertEquals("", new TextFieldStrategy().generateQuery(ctx("SSS.text", "\"")));
+    }
+
+    @Test
+    public void pageUrlTraversalTermIsJustALiteralInThePathClause() {
+        assertEquals("+path:*/../secret*",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.url", "/../secret")));
+    }
+
     // ---- BinaryFieldStrategy (analyzed file-name + _dotraw keyword, like Text) ----
 
     @Test
