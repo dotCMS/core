@@ -1,11 +1,11 @@
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -22,13 +22,6 @@ import { EditContentDialogData } from '@dotcms/edit-content';
 import { mapQueryParamsToCDParams } from '@dotcms/utils';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-
-/**
- * How many language versions of one identifier the deep-link lookup asks for. An identifier has one
- * version per language, and this only needs enough of them to pick the preferred one — see
- * `#pickLanguageVersion`.
- */
-const MAX_LANGUAGE_VERSIONS = 20;
 
 /** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
 interface ContentSearchEntity {
@@ -236,12 +229,20 @@ export class DotContentDriveNavigationService {
      * full-screen editor — safe and functional, just not the panel.
      */
     openEditByIdentifier(identifier: string, languageId?: number): void {
-        this.#contentSearch
-            .get<ContentSearchEntity>({
-                query: `+identifier:${identifier} +working:true`,
-                limit: MAX_LANGUAGE_VERSIONS
-            })
+        const anyVersion = `+identifier:${identifier} +working:true`;
+        const preferred = this.#preferredLanguageId(languageId);
+
+        this.#resolveWorkingVersion(
+            preferred ? `${anyVersion} +languageId:${preferred}` : anyVersion
+        )
             .pipe(
+                // A link to content with no version in the preferred language must still open, so
+                // "nothing" falls back to any version rather than being read as "do not open". Only
+                // reached when that language is genuinely missing: the link carries the language that
+                // was open, so the first lookup normally hits.
+                switchMap((version) =>
+                    version || !preferred ? of(version) : this.#resolveWorkingVersion(anyVersion)
+                ),
                 take(1),
                 catchError((error: HttpErrorResponse) => {
                     this.#httpErrorManager.handle(error);
@@ -249,11 +250,7 @@ export class DotContentDriveNavigationService {
                     return EMPTY;
                 })
             )
-            .subscribe((entity) => {
-                const contentlet = this.#pickLanguageVersion(
-                    entity?.jsonObjectView?.contentlets ?? [],
-                    languageId
-                );
+            .subscribe((contentlet) => {
                 if (!contentlet?.inode) {
                     return;
                 }
@@ -277,52 +274,40 @@ export class DotContentDriveNavigationService {
     }
 
     /**
-     * Picks which language version of a contentlet the deep link should open.
+     * Resolves an identifier query to the single working contentlet it matches, or `undefined`.
      *
-     * One identifier has one inode PER LANGUAGE, so a lookup by identifier returns as many versions as
-     * the content has been translated into, and taking the first hands the user whichever the index
-     * ranked first. `languageId` -- carried by the URL that opened the panel -- names the exact version
-     * and is therefore preferred above everything else.
+     * @param query The Lucene query to run.
      *
-     * It is only absent on a link written before the language was recorded, and the remaining order is
-     * a best guess for that case: the drive's active Locale filter, then the environment default, then
-     * whatever exists. Note both are usually still unresolved here: this runs from the shell's
+     * @return {*} {Observable<DotCMSContentlet | undefined>} The matched contentlet, if any.
+     */
+    #resolveWorkingVersion(query: string): Observable<DotCMSContentlet | undefined> {
+        return this.#contentSearch
+            .get<ContentSearchEntity>({ query, limit: 1 })
+            .pipe(map((entity) => entity?.jsonObjectView?.contentlets?.[0]));
+    }
+
+    /**
+     * Which language version the deep link should open, most authoritative first.
+     *
+     * One identifier has one inode PER LANGUAGE, so the identifier alone does not name a version.
+     * `languageId` comes from the URL that opened the panel and names the exact one, so it wins. It is
+     * only absent on a link written before the language was recorded; the rest is a best guess for that
+     * case — the drive's active Locale filter (its first language, if several are selected), then the
+     * environment default. Note both are usually still unresolved here: this runs from the shell's
      * constructor while the store's languages request is in flight, which is exactly why the URL
      * carrying the language matters.
      *
-     * The preference is applied HERE rather than as a `+languageId:` term on the query on purpose: a
-     * query constrained to a language the content has no version in returns nothing at all, and this
-     * method's caller treats "nothing" as "do not open" — so a shared link to, say, English-only
-     * content would silently do nothing on an environment whose default is Spanish. Filtering client
-     * side keeps the link working in every case, and costs no extra request.
+     * @param languageId The language the URL asked for, when it carried one.
      *
-     * @param contentlets The language versions returned for the identifier.
-     * @param languageId  The language the URL asked for, when it carried one.
-     *
-     * @return {*} {DotCMSContentlet | undefined} The version to open, or `undefined` when there is none.
+     * @return {*} {number | undefined} The language to look for, or `undefined` when none is known.
      */
-    #pickLanguageVersion(
-        contentlets: DotCMSContentlet[],
-        languageId?: number
-    ): DotCMSContentlet | undefined {
-        if (contentlets.length <= 1) {
-            return contentlets[0];
+    #preferredLanguageId(languageId?: number): number | undefined {
+        if (languageId) {
+            return languageId;
         }
 
-        const selected = (this.#store.getFilterValue('languageId') as string[]) ?? [];
-        const defaultLanguageId = this.#store.defaultLanguageId();
-        const preferred = [languageId, ...(selected.length ? selected : [defaultLanguageId])]
-            .filter(Boolean)
-            .map(String);
+        const [selected] = (this.#store.getFilterValue('languageId') as string[]) ?? [];
 
-        return (
-            preferred
-                .map((languageId) =>
-                    contentlets.find(
-                        (contentlet) => String(contentlet.languageId) === String(languageId)
-                    )
-                )
-                .find(Boolean) ?? contentlets[0]
-        );
+        return Number(selected) || this.#store.defaultLanguageId() || undefined;
     }
 }

@@ -18,7 +18,11 @@ import {
     DotHttpErrorManagerService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
@@ -498,106 +502,98 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should open the version in the language the drive is showing', () => {
-            // One identifier has one inode PER LANGUAGE, so taking the first hit hands the user
-            // whichever version the index ranked first — possibly a language they are not looking at.
-            store.getFilterValue.mockReturnValue(['2']);
-            contentSearch.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            createFakeContentlet({ inode: 'en-inode', languageId: 1, title: 'EN' }),
-                            createFakeContentlet({ inode: 'es-inode', languageId: 2, title: 'ES' })
-                        ]
-                    }
-                })
+        /** Answers each `contentSearch.get` call in order, so a fallback lookup can be simulated. */
+        const answerWith = (...batches: DotCMSContentlet[][]) => {
+            let call = 0;
+            contentSearch.get.mockImplementation(() =>
+                of({ jsonObjectView: { contentlets: batches[call++] ?? [] } })
             );
+        };
 
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ contentletInode: 'es-inode' })
-            );
-        });
-
-        it('should NOT constrain the query by language', () => {
-            // A query pinned to a language the content has no version in returns nothing, and this
-            // method treats "nothing" as "do not open" — so a link to English-only content would
-            // silently do nothing on an environment whose default is Spanish. The preference is
-            // applied to the results instead, which keeps the link working and costs no extra request.
-            store.getFilterValue.mockReturnValue(['2']);
-            contentSearch.get.mockReturnValue(
-                of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'i' })] } })
-            );
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({ query: '+identifier:shared-identifier +working:true' })
-            );
-        });
-
-        it('should still open a version in another language when the selected one has none', () => {
-            store.getFilterValue.mockReturnValue(['2']);
-            contentSearch.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            createFakeContentlet({ inode: 'en-inode', languageId: 1, title: 'EN' })
-                        ]
-                    }
-                })
-            );
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ contentletInode: 'en-inode' })
-            );
-        });
-
-        it('should open the exact version the URL asked for, over the active filter', () => {
-            // The language from the URL wins: it names the version that was open when the link was
-            // shared. It also arrives before the store's languages request has resolved, which is why
-            // the filter cannot be relied on here.
-            store.getFilterValue.mockReturnValue(['1']);
-            contentSearch.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            createFakeContentlet({ inode: 'en-inode', languageId: 1 }),
-                            createFakeContentlet({ inode: 'es-inode', languageId: 2 })
-                        ]
-                    }
-                })
-            );
+        it('should look up the exact version the URL asked for', () => {
+            // One identifier has one inode PER LANGUAGE, so the identifier alone does not name a
+            // version. Pinning the query is exact and has no result-window ceiling.
+            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
 
             service.openEditByIdentifier('shared-identifier', 2);
 
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true +languageId:2',
+                limit: 1
+            });
             expect(service.$editPanelRequest()).toEqual(
                 expect.objectContaining({ contentletInode: 'es-inode', languageId: 2 })
             );
         });
 
-        it('should prefer the default language when no language filter is set', () => {
-            store.getFilterValue.mockReturnValue(undefined);
-            store.defaultLanguageId.mockReturnValue(2);
-            contentSearch.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            createFakeContentlet({ inode: 'en-inode', languageId: 1 }),
-                            createFakeContentlet({ inode: 'es-inode', languageId: 2 })
-                        ]
-                    }
+        it('should prefer the URL language over the active filter', () => {
+            store.getFilterValue.mockReturnValue(['1']);
+            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
+
+            service.openEditByIdentifier('shared-identifier', 2);
+
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: '+identifier:shared-identifier +working:true +languageId:2'
                 })
             );
+        });
+
+        it('should fall back to the drive language, then the environment default', () => {
+            store.getFilterValue.mockReturnValue(['3']);
+            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ contentletInode: 'es-inode' })
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: '+identifier:shared-identifier +working:true +languageId:3'
+                })
             );
+
+            contentSearch.get.mockClear();
+            store.getFilterValue.mockReturnValue(undefined);
+            store.defaultLanguageId.mockReturnValue(4);
+            answerWith([createFakeContentlet({ inode: 'i' })]);
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: '+identifier:shared-identifier +working:true +languageId:4'
+                })
+            );
+        });
+
+        it('should still open another language when the preferred one has no version', () => {
+            // A pinned query returns nothing for a language the content was never translated into, and
+            // "nothing" must not be read as "do not open" — a shared link to English-only content would
+            // silently do nothing on a Spanish-default environment.
+            answerWith([], [createFakeContentlet({ inode: 'en-inode', languageId: 1 })]);
+
+            service.openEditByIdentifier('shared-identifier', 2);
+
+            expect(contentSearch.get).toHaveBeenLastCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
+            });
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'en-inode' })
+            );
+        });
+
+        it('should not run a second lookup when no language is known at all', () => {
+            store.getFilterValue.mockReturnValue(undefined);
+            store.defaultLanguageId.mockReturnValue(undefined);
+            answerWith([createFakeContentlet({ inode: 'i' })]);
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledTimes(1);
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
+            });
         });
 
         it('should not open the panel when the identifier resolves to nothing', () => {
