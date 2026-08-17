@@ -17,13 +17,7 @@ import { StudioPhase } from '../../models/accessibility-studio.models';
  */
 @Component({
     selector: 'dot-a11y-actions',
-    imports: [
-        FormsModule,
-        ButtonModule,
-        ToggleSwitchModule,
-        DotColorIconComponent,
-        DotMessagePipe
-    ],
+    imports: [FormsModule, ButtonModule, ToggleSwitchModule, DotColorIconComponent, DotMessagePipe],
     templateUrl: './a11y-actions.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     // Scanner actions sit at the bottom of the panel's flex column and never grow.

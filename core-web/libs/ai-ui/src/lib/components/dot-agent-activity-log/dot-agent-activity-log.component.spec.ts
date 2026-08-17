@@ -63,7 +63,10 @@ describe('DotAgentActivityLogComponent', () => {
                 get: () => scrollHeight,
                 configurable: true
             });
-            Object.defineProperty(host, 'clientHeight', { value: clientHeight, configurable: true });
+            Object.defineProperty(host, 'clientHeight', {
+                value: clientHeight,
+                configurable: true
+            });
 
             // Browsers clamp scrollTop to the largest scrollable offset; jsdom stores
             // whatever it is handed. That difference matters: the component pins by
