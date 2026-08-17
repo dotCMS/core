@@ -15,6 +15,7 @@ import {
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { Card } from 'primeng/card';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
@@ -157,6 +158,7 @@ export function variantWeightsFormSchema(
 @Component({
     selector: 'dot-experiments-configure-variants',
     imports: [
+        Card,
         FormField,
         ButtonModule,
         InputTextModule,

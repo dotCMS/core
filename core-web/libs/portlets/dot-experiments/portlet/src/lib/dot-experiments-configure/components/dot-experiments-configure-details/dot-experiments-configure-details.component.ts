@@ -1,6 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
+import { Card } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { MAX_INPUT_DESCRIPTIVE_LENGTH, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
@@ -31,7 +32,7 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
  */
 @Component({
     selector: 'dot-experiments-configure-details',
-    imports: [FormField, InputTextModule, DotMessagePipe],
+    imports: [Card, FormField, InputTextModule, DotMessagePipe],
     templateUrl: './dot-experiments-configure-details.component.html'
 })
 export class DotExperimentsConfigureDetailsComponent {
