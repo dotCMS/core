@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -1487,11 +1488,19 @@ public class BrowserAPIImpl implements BrowserAPI {
      * "in list" semantics match Tag/Category (both OR-in-list) rather than the AND the shared text
      * strategy would produce.
      *
+     * <p>Each value is escaped with {@link LuceneQueryUtils#escape(String)} before the wildcards are
+     * wrapped around it, exactly as {@code TextFieldStrategy} does. Option values routinely contain
+     * {@code query_string} syntax -- {@code Yes/No}, {@code N/A}, {@code Level:1} -- and because these
+     * queries are not lenient, one unescaped character fails the WHOLE query, which surfaces as an
+     * empty result set with no error rather than as a bad request. The {@code *} wildcards are added
+     * after escaping so they are not themselves escaped.</p>
+     *
      * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
      * @param values    The selected values.
      * @return A clause like {@code +(f:*a* f_dotraw:*a* f:*b* f_dotraw:*b*)}, or {@link #BLANK}.
      */
-    private String buildMultiValueOrClause(final String fieldName, final List<String> values) {
+    @VisibleForTesting
+    static String buildMultiValueOrClause(final String fieldName, final List<String> values) {
         final StringBuilder inner = new StringBuilder();
         for (final String value : values) {
             final String token = value.trim();
@@ -1501,8 +1510,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (inner.length() > 0) {
                 inner.append(' ');
             }
-            inner.append(fieldName).append(":*").append(token).append("* ")
-                    .append(fieldName).append("_dotraw:*").append(token).append('*');
+            final String escaped = LuceneQueryUtils.escape(token);
+            inner.append(fieldName).append(":*").append(escaped).append("* ")
+                    .append(fieldName).append("_dotraw:*").append(escaped).append('*');
         }
         return inner.length() == 0 ? BLANK : "+(" + inner + ")";
     }
@@ -1546,7 +1556,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private String buildOptionValueClause(final String fieldName, final String value,
                                          final boolean matches) {
-        final String clause = this.buildMultiValueOrClause(fieldName, List.of(value));
+        final String clause = buildMultiValueOrClause(fieldName, List.of(value));
         if (!UtilMethods.isSet(clause)) {
             return BLANK;
         }
