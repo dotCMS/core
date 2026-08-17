@@ -13,6 +13,6 @@ export class ContentletBlockComponent extends AngularNodeViewComponent implement
     protected readonly data = signal(null);
 
     ngOnInit() {
-        this.data.set(this.node.attrs.data);
+        this.data.set(this.node.attrs['data']);
     }
 }

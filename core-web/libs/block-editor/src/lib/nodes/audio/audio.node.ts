@@ -37,17 +37,17 @@ export const AudioNode = Node.create({
             src: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('src'),
-                renderHTML: (attributes) => ({ src: attributes.src })
+                renderHTML: (attributes) => ({ src: attributes['src'] })
             },
             mimeType: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('mimeType'),
-                renderHTML: (attributes) => ({ mimeType: attributes.mimeType })
+                renderHTML: (attributes) => ({ mimeType: attributes['mimeType'] })
             },
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
-                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes['data']) })
             }
         };
     },

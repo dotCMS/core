@@ -4,10 +4,11 @@ import { Props } from 'tippy.js';
 
 import { ViewContainerRef } from '@angular/core';
 
+import { CommandProps } from '@tiptap/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 import { BubbleFormComponent } from './bubble-form.component';
-import { DynamicControl } from './model';
+import { BubbleFormValue, DynamicControl } from './model';
 import { bubbleFormPlugin } from './plugins/bubble-form.plugin';
 
 export const BUBBLE_FORM_PLUGIN_KEY = new PluginKey('bubble-form');
@@ -15,13 +16,21 @@ export const BUBBLE_FORM_PLUGIN_KEY = new PluginKey('bubble-form');
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         BubbleForm: {
+            /**
+             * Opens the bubble form. Returns the `Subject<BubbleFormValue>` that emits the
+             * result — which is not a `ReturnType`, so this command cannot be chained.
+             *
+             * Declared `any` on purpose: TipTap constrains every entry in `addCommands()` to
+             * `(...args) => Command`, and a command returning a Subject does not satisfy it.
+             * Callers should narrow with `Observable<BubbleFormValue>` at the call site.
+             */
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             openForm: (
                 form?: DynamicControl<string | boolean>[],
                 options?: { customClass: string }
-                // eslint-disable-next-line
             ) => any;
             closeForm: () => ReturnType;
-            updateValue: (value) => void;
+            updateValue: (value: BubbleFormValue) => void;
         };
     }
 }
@@ -43,7 +52,7 @@ const tippyOptions: Partial<Props> = {
 };
 
 export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
-    const formValue$ = new Subject<{ [key: string]: string }>();
+    const formValue$ = new Subject<BubbleFormValue>();
 
     return BubbleMenu.extend<unknown>({
         name: 'bubbleForm',
@@ -59,9 +68,11 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
 
         addCommands() {
             return {
+                // `chain` is annotated because `openForm` is declared `any` above, which stops
+                // TipTap from inferring `CommandProps` for this entry.
                 openForm:
                     (form, options) =>
-                    ({ chain }) => {
+                    ({ chain }: CommandProps) => {
                         chain()
                             .command(({ tr }) => {
                                 tr.setMeta(BUBBLE_FORM_PLUGIN_KEY, { form, options, open: true });
@@ -89,7 +100,7 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
                     },
                 updateValue:
                     (formValue) =>
-                    ({ editor }) => {
+                    ({ editor }: CommandProps) => {
                         formValue$.next(formValue);
                         editor.commands.closeForm();
                     }

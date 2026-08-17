@@ -42,11 +42,11 @@ export class DotExternalAssetComponent {
     }
 
     get error(): string {
-        return this.form.controls.url?.errors?.message || '';
+        return this.form.controls['url']?.errors?.['message'] || '';
     }
 
     get isInvalid(): boolean {
-        return this.form.controls.url?.invalid;
+        return this.form.controls['url']?.invalid;
     }
 
     private readonly fb = inject(FormBuilder);
@@ -91,12 +91,12 @@ export class DotExternalAssetComponent {
         this.disableAction = true;
 
         video.addEventListener('error', (e) => {
-            this.form.controls.url.setErrors({ message: handleLoadVideoError(e) });
+            this.form.controls['url'].setErrors({ message: handleLoadVideoError(e) });
             this.cd.detectChanges();
         });
 
         video.addEventListener('canplay', () => {
-            this.form.controls.url.setErrors(null);
+            this.form.controls['url'].setErrors(null);
             this.disableAction = false;
             this.cd.detectChanges();
         });

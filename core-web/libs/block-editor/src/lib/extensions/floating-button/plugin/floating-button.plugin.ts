@@ -87,7 +87,7 @@ export class DotFloatingButtonPluginView {
         const props = this.editor.getAttributes(ImageNode.name);
         const isImage = type === ImageNode.name;
 
-        if (empty || !isImage || props?.data) {
+        if (empty || !isImage || props?.['data']) {
             this.hide();
 
             return;
@@ -96,7 +96,7 @@ export class DotFloatingButtonPluginView {
         const node = view.nodeDOM(from) as HTMLElement;
         const image = node.querySelector('img');
 
-        this.imageUrl = props?.src;
+        this.imageUrl = props?.['src'];
         this.updateButtonLabel(this.initialLabel);
 
         this.createTooltip();

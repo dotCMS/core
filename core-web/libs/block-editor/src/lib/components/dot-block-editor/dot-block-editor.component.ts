@@ -120,27 +120,33 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     /** Field-level allowed blocks, with paragraph forced in as the legacy default. */
     #allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
 
-    @Input() field: DotCMSContentTypeField;
-    @Input() contentlet: DotCMSContentlet;
+    // Optional: both are read through `?.` already, so neither is required to be bound.
+    @Input() field?: DotCMSContentTypeField;
+    @Input() contentlet?: DotCMSContentlet;
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
     @Input() hasFieldError = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
-    public allowedContentTypes: string;
-    public customStyles: string;
+    public allowedContentTypes = '';
+    public customStyles = '';
     public displayCountBar: boolean | string = true;
-    public charLimit: number;
+    /** NaN until `setFieldVariable` runs, and NaN whenever the field variable is absent —
+     * `updateCharLimitValidity` treats any non-finite limit as "no limit". */
+    public charLimit = NaN;
     public customBlocks = '';
     public content: Content = '';
-    public contentletIdentifier: string;
+    public contentletIdentifier = '';
     public disabled = false;
-    editor: Editor;
+    /** Null until the async `ngOnInit` finishes building it; `writeValue` can arrive first. */
+    editor: Editor | null = null;
     subject = new Subject();
     freezeScroll = true;
-    private onChange: (value: string) => void;
-    private onTouched: () => void;
+    // Assigned by Angular through `registerOnChange` / `registerOnTouched` before either is
+    // called. Left without a no-op default so a call outside a form still fails loudly.
+    private onChange!: (value: string) => void;
+    private onTouched!: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
@@ -153,7 +159,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
-    private isAIPluginInstalled$: Observable<boolean>;
+    private isAIPluginInstalled$!: Observable<boolean>;
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
@@ -167,8 +173,9 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         placement: 'left'
     };
 
-    // v3 stopped exporting CharacterCountStorage; mirror the shape locally.
-    get characterCount(): { characters: () => number; words: () => number } {
+    // v3 stopped exporting CharacterCountStorage; mirror the shape locally. Undefined while
+    // the editor is still being built — every caller already guards with `?.`.
+    get characterCount(): { characters: () => number; words: () => number } | undefined {
         return this.editor?.storage.characterCount;
     }
 
@@ -744,7 +751,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         title: {
                             default: null,
                             parseHTML: (el) => el.getAttribute('title'),
-                            renderHTML: (attrs) => (attrs.title ? { title: attrs.title } : {})
+                            renderHTML: (attrs) => (attrs['title'] ? { title: attrs['title'] } : {})
                         },
                         'aria-label': {
                             default: null,
@@ -755,7 +762,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         rel: {
                             default: null,
                             parseHTML: (el) => el.getAttribute('rel'),
-                            renderHTML: (attrs) => (attrs.rel ? { rel: attrs.rel } : {})
+                            renderHTML: (attrs) => (attrs['rel'] ? { rel: attrs['rel'] } : {})
                         }
                     };
                 }

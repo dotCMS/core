@@ -45,45 +45,49 @@ export const ImageNode = Image.extend({
                 parseHTML: (element) => element.getAttribute('src'),
                 renderHTML: (attributes) => ({
                     src: addImageLanguageId(
-                        attributes.src || attributes.data?.asset,
-                        attributes.data?.languageId
+                        attributes['src'] || attributes['data']?.asset,
+                        attributes['data']?.languageId
                     )
                 })
             },
             alt: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('alt'),
-                renderHTML: (attributes) => ({ alt: attributes.alt || attributes.data?.title })
+                renderHTML: (attributes) => ({
+                    alt: attributes['alt'] || attributes['data']?.title
+                })
             },
             title: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('title'),
-                renderHTML: (attributes) => ({ title: attributes.title || attributes.data?.title })
+                renderHTML: (attributes) => ({
+                    title: attributes['title'] || attributes['data']?.title
+                })
             },
             href: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('href'),
-                renderHTML: (attributes) => ({ href: attributes.href })
+                renderHTML: (attributes) => ({ href: attributes['href'] })
             },
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
-                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes['data']) })
             },
             target: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('target'),
-                renderHTML: (attributes) => ({ target: attributes.target })
+                renderHTML: (attributes) => ({ target: attributes['target'] })
             },
             textWrap: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('textwrap'),
-                renderHTML: (attributes) => ({ textwrap: attributes.textWrap })
+                renderHTML: (attributes) => ({ textwrap: attributes['textWrap'] })
             },
             textAlign: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('textalign'),
-                renderHTML: (attributes) => ({ textalign: attributes.textAlign })
+                renderHTML: (attributes) => ({ textalign: attributes['textAlign'] })
             }
         };
     },
@@ -126,7 +130,7 @@ export const ImageNode = Image.extend({
             setImageTextWrap:
                 (value) =>
                 ({ commands, editor }) => {
-                    const currentTextWrap = editor.getAttributes(ImageNode.name).textWrap;
+                    const currentTextWrap = editor.getAttributes(ImageNode.name)['textWrap'];
                     const resolvedWrap = currentTextWrap === value ? null : value;
 
                     return commands.updateAttributes(ImageNode.name, {
@@ -159,7 +163,7 @@ export const ImageNode = Image.extend({
 
     addNodeView() {
         return ({ node, HTMLAttributes }) => {
-            const hasImageLink = !!HTMLAttributes.href;
+            const hasImageLink = !!HTMLAttributes['href'];
             const img = document.createElement('img');
             img.classList.add(`dot-image`);
             Object.entries(HTMLAttributes).forEach(([key, value]) => {
@@ -177,8 +181,8 @@ export const ImageNode = Image.extend({
             let inner: HTMLElement;
             if (hasImageLink) {
                 const a = document.createElement('a');
-                a.setAttribute('href', HTMLAttributes.href);
-                a.setAttribute('target', HTMLAttributes.target);
+                a.setAttribute('href', HTMLAttributes['href']);
+                a.setAttribute('target', HTMLAttributes['target']);
                 a.appendChild(img);
                 inner = a;
             } else {

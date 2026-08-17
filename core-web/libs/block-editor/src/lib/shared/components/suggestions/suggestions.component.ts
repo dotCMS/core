@@ -26,7 +26,17 @@ export interface SuggestionsCommandProps {
     type: { name: string; level?: number };
 }
 
-export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
+/**
+ * Extends `MenuItem` directly rather than through `Omit<MenuItem, 'icon'>`.
+ *
+ * `MenuItem` carries a `[key: string]: any` index signature, so `keyof MenuItem` is
+ * `string | number` and `Exclude<string | number, 'icon'>` removes nothing. `Omit` therefore
+ * collapsed the type to its index signatures alone and silently discarded every declared
+ * member — `id`, `label`, `command`, `disabled`. Consumers still compiled, because the index
+ * signature typed each of them as `any`. `MenuItem` already declares `icon?: string`, so the
+ * omission bought nothing; the redeclaration below is kept only to document the contract.
+ */
+export interface DotMenuItem extends MenuItem {
     icon?: string;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;

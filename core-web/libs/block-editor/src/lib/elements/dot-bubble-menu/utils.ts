@@ -19,5 +19,5 @@ export function getContentletDataFromSelection(editor: Editor) {
     }
 
     // Extract content type information from the selected node
-    return selectionNode?.attrs?.data || {};
+    return selectionNode?.attrs?.['data'] || {};
 }

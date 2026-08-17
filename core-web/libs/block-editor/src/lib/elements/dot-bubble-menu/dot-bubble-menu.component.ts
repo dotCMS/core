@@ -267,7 +267,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected imageHasLink() {
         const image = this.editor().getAttributes('dotImage');
 
-        return !!image?.href;
+        return !!image?.['href'];
     }
 
     protected setImageTextWrap(value: 'left' | 'right') {
@@ -400,8 +400,8 @@ export class DotBubbleMenuComponent implements OnInit {
 
         if (baseNodeType === 'dotImage') {
             const attrs = this.editor().getAttributes('dotImage');
-            this.imageTextWrap.set(attrs?.textWrap ?? null);
-            this.imageTextAlign.set(attrs?.textAlign ?? null);
+            this.imageTextWrap.set(attrs?.['textWrap'] ?? null);
+            this.imageTextAlign.set(attrs?.['textAlign'] ?? null);
         }
     }
 
