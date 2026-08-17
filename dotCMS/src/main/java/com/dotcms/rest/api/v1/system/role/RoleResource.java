@@ -34,6 +34,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -627,15 +628,26 @@ public class RoleResource implements Serializable {
 			throw new DoesNotExistException("The role: " + roleId + " does not exist");
 		}
 
+		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
+
+		// UserPaginator reads ordering from FilteringParams keys, not from the
+		// PaginationUtil orderBy/direction arguments, so pass them explicitly (the
+		// same wiring /v1/users/filter uses). The direction value is enum-gated and
+		// mapped to the SQLUtil constants FilteringParams expects (leading space).
 		final Map<String, Object> extraParams = new HashMap<>(
-				Map.of(UserPaginator.ROLES_PARAM, List.of(role)));
+				Map.of(UserPaginator.ROLES_PARAM, List.of(role),
+						UserAPI.FilteringParams.ORDER_DIRECTION_PARAM,
+						OrderDirection.DESC == orderDirection ? SQLUtil._DESC : SQLUtil._ASC));
+		if (UtilMethods.isSet(orderBy)) {
+			extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+		}
 
 		final PaginationUtilParams<Map<String, Object>, List<Map<String, Object>>> params =
 				new PaginationUtilParams.Builder<Map<String, Object>, List<Map<String, Object>>>()
 						.withRequest(request).withResponse(response)
 						.withUser(initData.getUser()).withFilter(filter)
 						.withPage(page).withPerPage(perPage)
-						.withOrderBy(orderBy).withDirection(OrderDirection.valueOf(direction))
+						.withOrderBy(orderBy).withDirection(orderDirection)
 						.withExtraParams(extraParams).build();
 
 		return this.userPaginationUtil.getPageView(params);

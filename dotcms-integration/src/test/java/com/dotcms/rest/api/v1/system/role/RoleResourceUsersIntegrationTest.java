@@ -160,6 +160,27 @@ public class RoleResourceUsersIntegrationTest {
     }
 
     /**
+     * The direction parameter orders the listing. Without an orderBy the listing sorts by
+     * full name, so DESC must return the exact reverse of ASC.
+     */
+    @Test
+    public void direction_ordersTheListing() throws Exception {
+        final String unique = "roleorder" + System.currentTimeMillis();
+        final Role role = new RoleDataGen().nextPersisted();
+        final User first = new UserDataGen().firstName("Aaa" + unique).roles(role).nextPersisted();
+        final User last = new UserDataGen().firstName("Zzz" + unique).roles(role).nextPersisted();
+
+        final List<String> ascending = userIds(resource.loadUsersByRoleId(mockAdminRequest(),
+                new MockHttpResponse(), role.getId(), unique, 1, 40, null, "ASC"));
+        assertEquals(List.of(first.getUserId(), last.getUserId()), ascending);
+
+        final List<String> descending = userIds(resource.loadUsersByRoleId(mockAdminRequest(),
+                new MockHttpResponse(), role.getId(), unique, 1, 40, null, "DESC"));
+        assertEquals("DESC must reverse the listing",
+                List.of(last.getUserId(), first.getUserId()), descending);
+    }
+
+    /**
      * Pagination boundaries: pages split the result set, the total stays constant, and a
      * page past the end is empty.
      */
