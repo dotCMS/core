@@ -27,13 +27,12 @@
                     <small class="p-error" data-error="1" data-testid="details-name-required-error">
                         {{ 'experiments.configure.details.name.required' | dm }}
                     </small>
-                } @else if ($showNameMaxLengthError()) {
-                    <small class="p-error" data-testid="details-name-max-length-error">
-                        {{
-                            'experiments.configure.details.name.max-length'
-                                | dm: [maxNameLength.toString()]
-                        }}
-                    </small>
+                } @else {
+                    @for (error of $nameField()().errors(); track error.kind) {
+                        <small class="p-error" data-testid="details-name-error">
+                            {{ error.message }}
+                        </small>
+                    }
                 }
             </div>
 
@@ -49,6 +48,11 @@
                     [formField]="$descriptionField()"
                     [placeholder]="'experiments.create.form.description.placeholder' | dm"
                     data-testid="details-description-textarea"></textarea>
+                @for (error of $descriptionField()().errors(); track error.kind) {
+                    <small class="p-error" data-testid="details-description-error">
+                        {{ error.message }}
+                    </small>
+                }
                 <small class="text-surface-500" data-testid="details-description-hint">
                     {{ 'experiments.configure.details.description.hint' | dm }}
                 </small>
