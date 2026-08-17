@@ -14,7 +14,7 @@ import {
     GOALS_METADATA_MAP,
     MAX_INPUT_DESCRIPTIVE_LENGTH
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRadioCardComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotRadioCardComponent, DotRadioGroupComponent } from '@dotcms/ui';
 
 import {
     CONFIGURE_GOAL_TYPES,
@@ -101,7 +101,8 @@ export function goalFormSchema(isLocked: () => boolean): SchemaFn<GoalFormSlice>
         SelectModule,
         TagModule,
         DotMessagePipe,
-        DotRadioCardComponent
+        DotRadioCardComponent,
+        DotRadioGroupComponent
     ],
     templateUrl: './dot-experiments-configure-goal.component.html'
 })
