@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Component, signal } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
 
 import { DotRadioCardComponent } from './dot-radio-card.component';
@@ -129,16 +130,6 @@ describe('DotRadioCardComponent', () => {
             expect(host().getAttribute('aria-checked')).toBe('false');
         });
 
-        it('should report that the user is done with it on blur', () => {
-            mount();
-            const touched = jest.fn();
-            spectator.component.touch.subscribe(touched);
-
-            spectator.dispatchFakeEvent(host(), 'blur');
-
-            expect(touched).toHaveBeenCalled();
-        });
-
         describe('disabled', () => {
             beforeEach(() => mount({ disabled: true }));
 
@@ -167,11 +158,77 @@ describe('DotRadioCardComponent', () => {
     });
 
     /**
-     * The whole contract is asserted on a real `[formField]` binding rather than on the interface
-     * members: what matters is that signal forms recognises the card as a custom control and drives
-     * it — value both ways, disabled state, and touched.
+     * Both forms APIs are asserted on real hosts rather than on the `ControlValueAccessor` members:
+     * what matters is that each one recognises the card and drives it — value both ways, disabled
+     * state, and touched. Signal forms reaches it through its interop bridge, the same path every
+     * PrimeNG control takes, so this is the guard against that path regressing.
      */
-    describe('bound to a field', () => {
+    describe('bound to a reactive form control', () => {
+        @Component({
+            selector: 'dot-test-reactive-form-host',
+            imports: [DotRadioCardComponent, ReactiveFormsModule],
+            template: `
+                <div role="radiogroup">
+                    @for (option of options; track option) {
+                        <dot-radio-card
+                            [formControl]="control"
+                            [option]="option"
+                            [label]="option"
+                            [attr.data-testid]="'card-' + option" />
+                    }
+                </div>
+            `
+        })
+        class ReactiveFormHostComponent {
+            readonly options = OPTIONS;
+            readonly control = new FormControl('', { nonNullable: true });
+        }
+
+        let spectator: Spectator<ReactiveFormHostComponent>;
+
+        const createHost = createComponentFactory(ReactiveFormHostComponent);
+        const card = (option: string) => spectator.query(byTestId(`card-${option}`)) as HTMLElement;
+
+        beforeEach(() => {
+            spectator = createHost();
+        });
+
+        it('should write the picked option into the control', () => {
+            spectator.click(card('BOUNCE_RATE'));
+            spectator.detectChanges();
+
+            expect(spectator.component.control.value).toBe('BOUNCE_RATE');
+        });
+
+        it('should check the card the control already holds', () => {
+            spectator.component.control.setValue('REACH_PAGE');
+            spectator.detectChanges();
+
+            expect(card('REACH_PAGE').getAttribute('aria-checked')).toBe('true');
+            expect(card('BOUNCE_RATE').getAttribute('aria-checked')).toBe('false');
+        });
+
+        it('should follow the control being disabled', () => {
+            spectator.component.control.disable();
+            spectator.detectChanges();
+
+            spectator.click(card('BOUNCE_RATE'));
+            spectator.detectChanges();
+
+            expect(card('BOUNCE_RATE').getAttribute('aria-disabled')).toBe('true');
+            expect(spectator.component.control.value).toBe('');
+        });
+
+        it('should mark the control as touched on blur', () => {
+            expect(spectator.component.control.touched).toBe(false);
+
+            spectator.dispatchFakeEvent(card('REACH_PAGE'), 'blur');
+
+            expect(spectator.component.control.touched).toBe(true);
+        });
+    });
+
+    describe('bound to a signal form field', () => {
         @Component({
             selector: 'dot-test-signal-form-host',
             imports: [DotRadioCardComponent, FormField],
