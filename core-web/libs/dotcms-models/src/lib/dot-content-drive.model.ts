@@ -145,7 +145,7 @@ export interface DotContentDriveQueryFilters {
  *   filters: { text: "product review" },
  *   contentTypes: ["Blog", "News"],
  *   sortBy: "title:asc",
- *   offset: 0,
+ *   contentCursor: 0,
  *   maxResults: 20
  * }
  */

@@ -2,7 +2,7 @@
 import { DotUploadService } from './dot-upload.service';
 
 xdescribe('DotUploadService', () => {
-    function FormDataMock() {
+    function FormDataMock(this: { append: jest.Mock }) {
         this.append = jest.fn();
     }
 

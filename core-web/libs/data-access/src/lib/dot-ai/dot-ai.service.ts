@@ -14,7 +14,7 @@ import {
     DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
 
-export { DotAiProviderConfig };
+export type { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
