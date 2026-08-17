@@ -54,13 +54,13 @@ export class DotExperimentsConfigureSchedulingComponent {
         () => !this.$isLocked() && !!this.$startDate()
     );
 
-    protected readonly $hasStartDateError = computed<boolean>(() =>
-        this.$field().startDate().invalid()
-    );
+    /**
+     * Whatever the form says is wrong with each date, message included — the bounds copy quotes the
+     * bounds, and those live with the rules that enforce them rather than being re-formatted here.
+     */
+    protected readonly $startDateErrors = computed(() => this.$field().startDate().errors());
 
-    protected readonly $hasEndDateError = computed<boolean>(() =>
-        this.$field().endDate().invalid()
-    );
+    protected readonly $endDateErrors = computed(() => this.$field().endDate().errors());
 
     /**
      * Drops both dates, which puts the experiment back to "starts when Start is pressed".

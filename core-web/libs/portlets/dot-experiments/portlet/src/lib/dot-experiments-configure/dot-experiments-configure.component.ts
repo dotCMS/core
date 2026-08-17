@@ -1,5 +1,6 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
 
+import { formatDate } from '@angular/common';
 import {
     afterNextRender,
     Component,
@@ -9,6 +10,7 @@ import {
     ElementRef,
     inject,
     Injector,
+    LOCALE_ID,
     signal,
     untracked,
     viewChild
@@ -181,6 +183,10 @@ export class DotExperimentsConfigureComponent {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #locale = inject(LOCALE_ID);
+
+    /** Same format the pickers' own copy uses, so the bounds read the same wherever they appear. */
+    readonly #formatDate = (value: Date) => formatDate(value, 'medium', this.#locale);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
     /**
@@ -267,8 +273,15 @@ export class DotExperimentsConfigureComponent {
         });
         disabled(path.description, { when: isLocked });
 
-        min(path.trafficAllocation, MIN_TRAFFIC_ALLOCATION);
-        max(path.trafficAllocation, MAX_TRAFFIC_ALLOCATION);
+        const trafficRangeMessage = () =>
+            this.#dotMessageService.get(
+                'experiments.configure.page.traffic.range.error',
+                String(MIN_TRAFFIC_ALLOCATION),
+                String(MAX_TRAFFIC_ALLOCATION)
+            );
+
+        min(path.trafficAllocation, MIN_TRAFFIC_ALLOCATION, { message: trafficRangeMessage });
+        max(path.trafficAllocation, MAX_TRAFFIC_ALLOCATION, { message: trafficRangeMessage });
         disabled(path.trafficAllocation, { when: isLocked });
 
         // One `disabled` rule covers a whole slice: a disabled field disables everything under it,
@@ -278,9 +291,26 @@ export class DotExperimentsConfigureComponent {
 
         // The pickers already keep an out-of-bounds date out of reach. These flag one that arrived
         // from the server anyway, rather than silently discarding it as the old screen did.
-        minDate(path.scheduling.startDate, this.#now);
-        minDate(path.scheduling.endDate, () => this.$schedulingBounds().minEndDate);
-        maxDate(path.scheduling.endDate, () => this.$schedulingBounds().maxEndDate);
+        const endDateBoundsMessage = () => {
+            const { minEndDate, maxEndDate } = this.$schedulingBounds();
+
+            return this.#dotMessageService.get(
+                'experiments.configure.scheduling.end.error.out-of-bounds',
+                this.#formatDate(minEndDate),
+                this.#formatDate(maxEndDate)
+            );
+        };
+
+        minDate(path.scheduling.startDate, this.#now, {
+            message: () =>
+                this.#dotMessageService.get('experiments.configure.scheduling.start.error.past')
+        });
+        minDate(path.scheduling.endDate, () => this.$schedulingBounds().minEndDate, {
+            message: endDateBoundsMessage
+        });
+        maxDate(path.scheduling.endDate, () => this.$schedulingBounds().maxEndDate, {
+            message: endDateBoundsMessage
+        });
         disabled(path.scheduling, { when: isLocked });
 
         // The weights answer to the page's lock too, not only to the status: they are the one part
@@ -298,9 +328,18 @@ export class DotExperimentsConfigureComponent {
         validate(path.variantWeights, ({ value }) => {
             const rows = value();
 
-            return !rows.length || totalWeight(rows) === TOTAL_WEIGHT
-                ? undefined
-                : { kind: WEIGHTS_TOTAL_ERROR_KIND };
+            if (!rows.length || totalWeight(rows) === TOTAL_WEIGHT) {
+                return undefined;
+            }
+
+            // The total is right here, so the message quoting it is written where it is known.
+            return {
+                kind: WEIGHTS_TOTAL_ERROR_KIND,
+                message: this.#dotMessageService.get(
+                    'experiments.configure.variants.weights.warning',
+                    String(totalWeight(rows))
+                )
+            };
         });
     });
 

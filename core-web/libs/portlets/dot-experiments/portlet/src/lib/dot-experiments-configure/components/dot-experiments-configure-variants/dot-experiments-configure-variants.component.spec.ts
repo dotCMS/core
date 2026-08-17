@@ -148,9 +148,17 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
                 validate(path, ({ value }) => {
                     const rows = value();
 
-                    return !rows.length || totalWeight(rows) === TOTAL_WEIGHT
-                        ? undefined
-                        : { kind: WEIGHTS_TOTAL_ERROR_KIND };
+                    if (!rows.length || totalWeight(rows) === TOTAL_WEIGHT) {
+                        return undefined;
+                    }
+
+                    return {
+                        kind: WEIGHTS_TOTAL_ERROR_KIND,
+                        message: messageServiceMock.get(
+                            'experiments.configure.variants.weights.warning',
+                            String(totalWeight(rows))
+                        )
+                    };
                 });
             },
             { injector: spectator.inject(Injector) }

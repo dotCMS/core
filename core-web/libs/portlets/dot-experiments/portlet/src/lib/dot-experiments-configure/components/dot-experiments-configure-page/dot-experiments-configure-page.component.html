@@ -105,17 +105,12 @@
                 </div>
             </div>
 
-            @if ($hasTrafficAllocationError()) {
-                <small class="p-error" data-testid="experiments-configure-traffic-error">
-                    {{
-                        'experiments.configure.page.traffic.range.error'
-                            | dm
-                                : [
-                                      MIN_TRAFFIC_ALLOCATION.toString(),
-                                      MAX_TRAFFIC_ALLOCATION.toString()
-                                  ]
-                    }}
-                </small>
+            @if ($trafficErrors().length) {
+                @for (error of $trafficErrors(); track error.kind) {
+                    <small class="p-error" data-testid="experiments-configure-traffic-error">
+                        {{ error.message }}
+                    </small>
+                }
             } @else {
                 <small class="text-surface-500" data-testid="experiments-configure-traffic-help">
                     {{ 'experiments.configure.page.traffic.help' | dm: $trafficHelpArgs() }}

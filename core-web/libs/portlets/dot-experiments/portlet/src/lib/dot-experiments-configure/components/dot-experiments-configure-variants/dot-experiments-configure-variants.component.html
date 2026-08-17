@@ -232,10 +232,9 @@
                     warning
                 </span>
                 <span>
-                    {{
-                        'experiments.configure.variants.weights.warning'
-                            | dm: [$totalWeight().toString()]
-                    }}
+                    @for (error of $weightsErrors(); track error.kind) {
+                        {{ error.message }}
+                    }
                 </span>
             </div>
         }
