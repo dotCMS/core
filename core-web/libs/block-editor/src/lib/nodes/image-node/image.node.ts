@@ -120,7 +120,7 @@ export const ImageNode = Image.extend({
                     const { head } = selection;
                     const node = {
                         attrs: getImageAttr(attrs),
-                        type: ImageNode.name
+                        type: this.name
                     };
 
                     return chain()
@@ -130,10 +130,10 @@ export const ImageNode = Image.extend({
             setImageTextWrap:
                 (value) =>
                 ({ commands, editor }) => {
-                    const currentTextWrap = editor.getAttributes(ImageNode.name)['textWrap'];
+                    const currentTextWrap = editor.getAttributes(this.name)['textWrap'];
                     const resolvedWrap = currentTextWrap === value ? null : value;
 
-                    return commands.updateAttributes(ImageNode.name, {
+                    return commands.updateAttributes(this.name, {
                         textWrap: resolvedWrap,
                         textAlign: null
                     });
@@ -142,7 +142,11 @@ export const ImageNode = Image.extend({
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { href = null, textWrap, textAlign } = HTMLAttributes || {};
+        const {
+            href = null,
+            textWrap,
+            textAlign
+        } = (HTMLAttributes || {}) as Record<string, string | null>;
 
         let divStyle: string | undefined;
 
@@ -191,8 +195,8 @@ export const ImageNode = Image.extend({
 
             const wrapper = document.createElement('div');
             // Use node.attrs (camelCase) not HTMLAttributes — renderHTML lowercases keys to textwrap/textalign
-            const textWrap = node.attrs['textWrap'];
-            const textAlign = node.attrs['textAlign'];
+            const textWrap = node.attrs['textWrap'] as string | null;
+            const textAlign = node.attrs['textAlign'] as string | null;
 
             if (textWrap === 'left' || textWrap === 'right') {
                 wrapper.style.cssText = FLOAT_STYLES[textWrap];

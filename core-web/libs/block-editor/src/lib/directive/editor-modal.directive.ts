@@ -16,9 +16,10 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     readonly tippyOptions = input<Partial<TippyProps>>({});
 
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
-    private tippy: Instance;
+    // Both stay undefined when `ngOnInit` bails out because the editor is not attached yet.
+    private tippy: Instance | undefined;
 
-    private editorElement: HTMLElement;
+    private editorElement: HTMLElement | undefined;
 
     /** Stable reference so {@link ngOnDestroy} can actually remove the listener it registered. */
     private readonly hideOnEditorMousedown = () => this.hide();
@@ -72,15 +73,15 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     }
 
     show() {
-        this.tippy.show();
+        this.tippy?.show();
     }
 
     hide() {
-        this.tippy.hide();
+        this.tippy?.hide();
     }
 
     toggle() {
-        this.tippy.state.isVisible ? this.hide() : this.show();
+        this.tippy?.state.isVisible ? this.hide() : this.show();
     }
 
     private getReferenceClientRect() {

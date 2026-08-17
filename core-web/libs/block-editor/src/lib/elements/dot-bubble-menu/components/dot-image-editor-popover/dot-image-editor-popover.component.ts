@@ -30,7 +30,7 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
 })
 export class DotImageEditorPopoverComponent {
     @ViewChild('popover', { read: EditorModalDirective })
-    private readonly popover: EditorModalDirective;
+    private readonly popover?: EditorModalDirective;
     @ViewChild('input', { read: ElementRef })
     private readonly urlInput?: ElementRef<HTMLInputElement>;
 

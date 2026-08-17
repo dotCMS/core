@@ -25,9 +25,10 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     @HostBinding('attr.data-index')
     @Input()
-    index: string;
+    index = '';
 
-    @Input() command: () => void;
+    // Assigned by SuggestionsComponent for every item it renders.
+    @Input() command!: () => void;
     @Input() label = '';
     @Input() url = '';
     @Input() page = false;
@@ -74,6 +75,10 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
         if (!this.isIntoView()) {
             const child = this.element.nativeElement as HTMLElement;
             const parent = child.parentElement;
+
+            if (!parent) {
+                return;
+            }
 
             // Get BoundingClientRect of the elements
             const {

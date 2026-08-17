@@ -151,7 +151,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
                 {
                     status: 'fulfilled',
                     value: { customGallery: { name: 'customGallery' } }
-                } as unknown as PromiseFulfilledResult<AnyExtension>
+                } as unknown as PromiseFulfilledResult<Record<string, AnyExtension>>
             ]);
 
             return internals.getCustomRemoteExtensions();
@@ -245,8 +245,8 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
             // Check that when editor exists, setEditable is called properly
             const mockEditor = {
                 setEditable: jest.fn()
-            } as Partial<typeof blockEditorComponent.editor>;
-            blockEditorComponent.editor = mockEditor as typeof blockEditorComponent.editor;
+            } as unknown as NonNullable<typeof blockEditorComponent.editor>;
+            blockEditorComponent.editor = mockEditor;
 
             blockEditorComponent.setDisabledState(false);
             spectator.detectChanges();

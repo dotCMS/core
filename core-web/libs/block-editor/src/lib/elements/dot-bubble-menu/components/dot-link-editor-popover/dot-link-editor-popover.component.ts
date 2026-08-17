@@ -84,7 +84,7 @@ const REL_OPTIONS = [
     imports: [FormsModule, Listbox, InputText, Select, Skeleton, Button, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
-    @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
+    @ViewChild('popover', { read: EditorModalDirective }) private popover!: EditorModalDirective;
     @ViewChild('input', { read: ElementRef }) private searchInput?: ElementRef<HTMLInputElement>;
     @ViewChild('resultListbox') private searchResultsListbox?: Listbox;
 

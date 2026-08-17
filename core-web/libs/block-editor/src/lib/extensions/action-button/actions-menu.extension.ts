@@ -31,8 +31,8 @@ import {
 } from '../../shared';
 import { NodeTypes } from '../../shared/utils';
 import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
-import { BubbleFormValue, BubbleFormValues } from '../bubble-form/model';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
+import { BubbleFormValue, BubbleFormValues } from '../bubble-form/model';
 
 const AI_BLOCK_EXTENSIONS_IDS = [AI_CONTENT_PROMPT_EXTENSION_NAME, AI_IMAGE_PROMPT_EXTENSION_NAME];
 declare module '@tiptap/core' {

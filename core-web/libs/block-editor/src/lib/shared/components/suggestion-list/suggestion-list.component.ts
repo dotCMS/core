@@ -30,11 +30,12 @@ import { DotMenuItem } from '../suggestions/suggestions.component';
     standalone: false
 })
 export class SuggestionListComponent implements AfterViewInit, OnDestroy {
-    @ContentChildren(SuggestionsListItemComponent) items: QueryList<SuggestionsListItemComponent>;
+    @ContentChildren(SuggestionsListItemComponent) items!: QueryList<SuggestionsListItemComponent>;
     @HostBinding('attr.id') id = 'editor-suggestion-list';
     @Input() suggestionItems: DotMenuItem[] = [];
 
-    keyManager: FocusKeyManager<SuggestionsListItemComponent>;
+    // Built in ngAfterViewInit, once `items` has been projected.
+    keyManager!: FocusKeyManager<SuggestionsListItemComponent>;
     private destroy$ = new Subject<boolean>();
     private mouseMove = true;
 
@@ -113,7 +114,7 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
      * @memberof SuggestionListComponent
      */
     execCommand() {
-        this.keyManager.activeItem.command();
+        this.keyManager.activeItem?.command();
     }
 
     /**

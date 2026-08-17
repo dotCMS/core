@@ -56,7 +56,7 @@ interface NodeTypeOption {
     command: () => boolean;
 }
 
-const BUBBLE_MENU_VISIBLE_NODES = {
+const BUBBLE_MENU_VISIBLE_NODES: Record<string, boolean> = {
     text: true,
     heading: true,
     dotImage: true,
@@ -396,7 +396,7 @@ export class DotBubbleMenuComponent implements OnInit {
         // Use the found reference or the first item's reference
         this.dropdownItem.set(foundOption ?? this.nodeTypeOptions[0]);
         this.currentNodeType.set(baseNodeType);
-        this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType]);
+        this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType] ?? false);
 
         if (baseNodeType === 'dotImage') {
             const attrs = this.editor().getAttributes('dotImage');

@@ -24,10 +24,10 @@ declare module '@tiptap/core' {
              * `(...args) => Command`, and a command returning a Subject does not satisfy it.
              * Callers should narrow with `Observable<BubbleFormValue>` at the call site.
              */
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             openForm: (
                 form?: DynamicControl<string | boolean>[],
                 options?: { customClass: string }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ) => any;
             closeForm: () => ReturnType;
             updateValue: (value: BubbleFormValue) => void;
