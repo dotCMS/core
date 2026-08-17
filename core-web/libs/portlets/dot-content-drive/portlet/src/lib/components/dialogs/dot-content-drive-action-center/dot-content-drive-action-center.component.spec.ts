@@ -509,15 +509,16 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should render actions that apply to nothing as non-selectable', () => {
-            // Nothing archived, so Delete applies to no item — the row stays, disabled.
+            // Nothing locked, so Unlock applies to no item — the row stays, disabled. Unlock rather
+            // than Delete because the gated rows no longer carry a row-state filter at all.
             spectator.detectChanges();
 
-            const remove = spectator.query(
-                '[data-testid="quick-action-DELETE"]'
+            const unlock = spectator.query(
+                '[data-testid="quick-action-UNLOCK"]'
             ) as HTMLButtonElement;
 
-            expect(remove).toBeTruthy();
-            expect(remove.disabled).toBe(true);
+            expect(unlock).toBeTruthy();
+            expect(unlock.disabled).toBe(true);
         });
 
         it('should keep applicable actions selectable', () => {
@@ -590,7 +591,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should not fire an action that applies to nothing', () => {
             spectator.detectChanges();
 
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
             spectator.detectChanges();
 
             // Never even reaches the preview.
@@ -599,11 +600,27 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should fire only the inodes the action applies to, not the whole selection', () => {
-            // Selection is inode-1 (not live) and inode-2 (live). Publish applies to inode-1 only.
+            // Lock keeps its state filter, so it still narrows: inode-2 is already locked.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
+
+            executeQuickAction('LOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('LOCK', expect.any(String), [
+                'inode-1'
+            ]);
+        });
+
+        it('should fire a gated action over the whole mapped selection', () => {
+            // No row-state filter any more: what Publish means is the mapping's business, and both
+            // rows are the same mapped content type.
             executeQuickAction('PUBLISH');
 
             expect(store.executeQuickAction).toHaveBeenCalledWith('PUBLISH', expect.any(String), [
-                'inode-1'
+                'inode-1',
+                'inode-2'
             ]);
         });
 
@@ -620,11 +637,17 @@ describe('DotContentDriveActionCenterComponent', () => {
             const [, , inodes] = (store.executeQuickAction as unknown as jest.Mock).mock
                 .calls[0] as [string, string, string[]];
 
-            expect(advertised).toBe(1);
+            expect(advertised).toBe(2);
             expect(inodes).toHaveLength(advertised);
         });
 
-        it('should fire only archived items for Delete', () => {
+        it('should not narrow Delete by archived state', () => {
+            // Delete used to be offered for archived rows only. That filter assumed deleting was the
+            // whole effect of the system action, which a mapping makes untrue.
+            //
+            // NOTE for manual QA: `ESContentletAPIImpl` still refuses to delete unarchived content
+            // that has more than one language version, so those rows come back as per-item failures
+            // in the result toast rather than being filtered out here.
             mockSelectedItems.set([
                 contentlet({ inode: 'archived-1', archived: true }),
                 contentlet({ inode: 'live-1', live: true })
@@ -638,7 +661,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             executeQuickAction('DELETE');
 
             expect(store.executeQuickAction).toHaveBeenCalledWith('DELETE', expect.any(String), [
-                'archived-1'
+                'archived-1',
+                'live-1'
             ]);
         });
 
@@ -921,18 +945,21 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="quick-action-unmapped-PUBLISH"]')).toBeTruthy();
         });
 
-        it('should render the gated and exempt rows in separate groups', () => {
+        it('should render one list with the ungatable rows leading it', () => {
+            // One list, not two groups. The three rows no mapping can gate come first, so the top of
+            // the list does not move with the selection or the content type.
             spectator.detectChanges();
 
-            const gated = spectator.query('[data-testid="quick-actions-gated"]');
-            const exempt = spectator.query('[data-testid="quick-actions-exempt"]');
+            const ids = spectator
+                .queryAll('[data-testid="quick-actions-list"] button')
+                .map((row) => row.getAttribute('data-testid'));
 
-            expect(gated?.querySelector('[data-testid="quick-action-PUBLISH"]')).toBeTruthy();
-            expect(gated?.querySelector('[data-testid="quick-action-LOCK"]')).toBeNull();
-            expect(exempt?.querySelector('[data-testid="quick-action-LOCK"]')).toBeTruthy();
-            expect(
-                exempt?.querySelector('[data-testid="quick-action-ADD_TO_BUNDLE"]')
-            ).toBeTruthy();
+            expect(ids.slice(0, 3)).toEqual([
+                'quick-action-LOCK',
+                'quick-action-UNLOCK',
+                'quick-action-ADD_TO_BUNDLE'
+            ]);
+            expect(ids).toContain('quick-action-PUBLISH');
         });
 
         it('should explain the gate with an info link', () => {
@@ -957,9 +984,14 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should list only the contentlets the quick action applies to', () => {
-            // inode-1 is not live, inode-2 is. Publish applies to inode-1 only, so the preview must
-            // not offer inode-2 as something the user could include.
-            openQuickActionPreview('PUBLISH');
+            // inode-2 is already locked, so Lock applies to inode-1 only and the preview must not
+            // offer inode-2 as something the user could include.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
+
+            openQuickActionPreview('LOCK');
 
             const rows = previewRows();
 
@@ -972,7 +1004,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(store.setDialogDrillDown).toHaveBeenCalledWith({
                 header: 'Default-Action-Publish',
-                itemCount: 1
+                itemCount: 2
             });
         });
 

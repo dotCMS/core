@@ -81,8 +81,11 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  * Two sections:
  *
  * 1. **Quick Actions** — system actions fired over the whole eligible selection in one request via
- *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Counts are derived client-side
- *    from row state (see `getQuickActions`).
+ *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Availability comes from the
+ *    workflow **mapping**, not from row state: a row appears only where the content type's scheme
+ *    maps that system action to an action the selection can run (see {@link loadSystemActionMappings}
+ *    and `resolvedSystemActions`). Lock, Unlock and Add to Bundle are exempt — nothing maps them —
+ *    and lead the list for that reason.
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
  *    `POST /api/v1/workflow/contentlet/actions/bulk`, queried **once per content type** in the
  *    selection (see {@link loadWorkflowActions}). Counts come from the backend's Elasticsearch
@@ -104,8 +107,8 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  * preview is worth most on Unlock, where the row warns that some locks belong to other users and the
  * only way to act on that warning is to uncheck those rows.
  *
- * What still differs is what the count means. A quick action's count and its preview rows are the
- * same client-side filter, so they always agree. A workflow action's count comes from the backend and
+ * What still differs is what the count means. A quick action's count and its preview rows come from
+ * the same resolution, so they always agree. A workflow action's count comes from the backend and
  * can be lower than the rows shown, which is why only that path renders the partial-match warning.
  *
  * The preview retitles the shell's dialog header to the action name through the store's drill-down
@@ -497,22 +500,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             isAdmin: this.#store.currentUserIsAdmin(),
             mappedSystemActions: this.$mappedSystemActions()
         })
-    );
-
-    /**
-     * Quick actions that fire a `SystemAction` and are therefore gated on the workflow mapping.
-     *
-     * Split from the exempt rows so the two can be labelled apart. Grouping them under one heading
-     * would make "quick actions only run when mapped to a workflow action" false on its face for the
-     * three rows sitting right underneath it.
-     */
-    protected readonly $gatedQuickActions = computed(() =>
-        this.$quickActions().filter((quickAction) => quickAction.workflowGated)
-    );
-
-    /** Quick actions with no mapping to gate on — Lock, Unlock, Add to Bundle. */
-    protected readonly $exemptQuickActions = computed(() =>
-        this.$quickActions().filter((quickAction) => !quickAction.workflowGated)
     );
 
     /** Number of contentlets still checked in the preview. */

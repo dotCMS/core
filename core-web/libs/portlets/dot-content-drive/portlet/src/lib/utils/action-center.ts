@@ -15,7 +15,9 @@ import { WORKFLOW_ACTION_ID } from './workflow-actions';
  * Action Center helpers.
  *
  * Two action sources, one dialog:
- * 1. **Quick actions** — fixed list (`QUICK_ACTIONS`), eligibility from row state.
+ * 1. **Quick actions** — fixed list (`QUICK_ACTIONS`). Gated rows are available only where the
+ *    content type's workflow maps the system action ({@link resolvedSystemActions}); the three exempt
+ *    rows fall back to row state.
  * 2. **Workflow actions** — from bulk-actions API, one request per content type, then merged.
  *
  * Folders are always dropped: endpoints take contentlet inodes only.
@@ -106,8 +108,13 @@ interface DotActionCenterQuickActionDef {
     nameKey: string;
     icon: string;
     danger: boolean;
-    /** Row-state heuristic — not a permission check. Counted items can still fail at fire. */
-    eligibleWhen: (item: DotCMSContentlet) => boolean;
+    /**
+     * Row-state heuristic — not a permission check. Counted items can still fail at fire.
+     *
+     * Omit it to apply to every contentlet. Gated rows all do: what the action means is decided by
+     * the mapping, so row state cannot say whether it applies. See {@link QUICK_ACTIONS}.
+     */
+    eligibleWhen?: (item: DotCMSContentlet) => boolean;
     /** i18n key for confirm before fire (destructive actions). */
     confirmMessage?: string;
     /** Among eligible items; feeds `warningCount`. */
@@ -223,14 +230,28 @@ export const isLockedByAnotherUser = (
 /**
  * Quick actions in display order (fixed — rows never reshuffle).
  *
- * Order: Lock, Unlock, Publish, Unpublish, Archive, Delete, Unarchive, Add to Bundle.
+ * Order: Lock, Unlock, Add to Bundle, then Publish, Unpublish, Archive, Delete, Unarchive.
+ *
+ * **The three exempt rows lead.** They are the only ones whose availability never depends on a
+ * workflow mapping, so they are the rows a user can always count on being there. Putting them first
+ * keeps the top of the list stable across selections and content types, while everything below it
+ * moves with the mapping.
+ *
+ * **Gated rows carry no row-state filter.** They used to — Publish was hidden for live content,
+ * Delete shown only for archived, and so on. Those filters assumed a system action's *only* effect is
+ * the state change named in its label, and a mapping makes that false: `PUBLISH` mapped to "Send for
+ * Review" moves the workflow step, assigns a reviewer and fires that action's actionlets. Suppressing
+ * it because the content is already live hides work the user legitimately wants done. What a gated row
+ * means is now decided by the mapping alone, so the mapping alone decides whether it appears.
+ *
+ * The exempt rows keep their filters, because there the label really is the whole effect: Unlock on
+ * unlocked content has nothing to do, and no mapping can change that.
  *
  * All except Add to Bundle fire via `POST .../workflow/actions/default/fire/{systemAction}`; Add to
  * Bundle posts to the legacy bundle servlet and collects a target first.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
-        // Least destructive; sit away from Archive/Delete.
         id: WORKFLOW_ACTION_ID.LOCK,
         nameKey: 'content-drive.context-menu.lock',
         exemptFromWorkflowGate: true,
@@ -252,53 +273,48 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
     },
     {
+        id: ADD_TO_BUNDLE_ACTION_ID,
+        nameKey: 'content-drive.action-center.add-to-bundle',
+        exemptFromWorkflowGate: true,
+        icon: 'inventory_2',
+        danger: false
+        // No filter: every contentlet can go in a bundle. Coverage is the whole selection, minus the
+        // identifier collapse the configuration step explains.
+    },
+    {
         id: WORKFLOW_ACTION_ID.PUBLISH,
         nameKey: 'Default-Action-Publish',
         icon: 'publish',
-        danger: false,
-        eligibleWhen: (item) => !item.live && !item.archived
+        danger: false
     },
     {
         id: WORKFLOW_ACTION_ID.UNPUBLISH,
         nameKey: 'Default-Action-Unpublish',
         icon: 'visibility_off',
-        danger: false,
-        eligibleWhen: (item) => !!item.live && !item.archived
+        danger: false
     },
     {
         id: WORKFLOW_ACTION_ID.ARCHIVE,
         nameKey: 'Default-Action-Archive',
         icon: 'archive',
-        danger: true,
-        eligibleWhen: (item) => !item.archived
+        // Still flagged destructive whatever it maps to: when the mapped action has no archive
+        // actionlet, `SystemActionApiFireCommandFactory` forces the archive anyway, so the intent
+        // holds even where the mapping does not carry it.
+        danger: true
     },
     {
         id: WORKFLOW_ACTION_ID.DELETE,
         nameKey: 'Default-Action-Delete',
         icon: 'delete',
         danger: true,
-        eligibleWhen: (item) => !!item.archived,
         // Kept from the old toolbar Delete confirm.
         confirmMessage: 'content.drive.worflow.action.delete.confirm'
     },
     {
-        // After Delete so archived-only actions stay together.
         id: WORKFLOW_ACTION_ID.UNARCHIVE,
         nameKey: 'Default-Action-Unarchive',
         icon: 'unarchive',
-        danger: false,
-        eligibleWhen: (item) => !!item.archived
-    },
-    {
-        id: ADD_TO_BUNDLE_ACTION_ID,
-        nameKey: 'content-drive.action-center.add-to-bundle',
-        exemptFromWorkflowGate: true,
-        icon: 'inventory_2',
-        danger: false,
-        // Every contentlet can go in a bundle: there is no state that disqualifies one, unlike
-        // Publish or Unarchive. Coverage is the whole selection, minus the identifier collapse the
-        // configuration step explains.
-        eligibleWhen: () => true
+        danger: false
     }
 ];
 
@@ -349,8 +365,10 @@ export const getQuickActions = (
     return QUICK_ACTIONS.map((quickAction) => {
         const workflowGated = !quickAction.exemptFromWorkflowGate;
         // Row state first, then the workflow gate — the split is what lets the row tell the two
-        // reasons apart instead of collapsing both into one silent zero.
-        const stateEligible = contentlets.filter(quickAction.eligibleWhen);
+        // reasons apart instead of collapsing both into one silent zero. A row with no
+        // `eligibleWhen` starts from the whole selection, which is every gated row.
+        const { eligibleWhen } = quickAction;
+        const stateEligible = eligibleWhen ? contentlets.filter(eligibleWhen) : contentlets;
         const eligible = workflowGated
             ? stateEligible.filter((item) => isSystemActionMapped(quickAction.id, item, context))
             : stateEligible;

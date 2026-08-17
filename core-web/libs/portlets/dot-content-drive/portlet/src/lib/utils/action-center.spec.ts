@@ -185,7 +185,10 @@ describe('action-center utils', () => {
             expect(getQuickActions([folder('f1')])).toEqual([]);
         });
 
-        it('should count Publish for items that are not live', () => {
+        it('should count Publish over every mapped item, live or not', () => {
+            // The old filter hid Publish for live content, on the assumption that publishing was the
+            // whole effect. A mapping makes that false — `PUBLISH` mapped to "Send for Review" moves
+            // the step and assigns a reviewer, which is worth doing to a live item.
             const items = [
                 contentlet({ inode: 'a', live: false }),
                 contentlet({ inode: 'b', live: true }),
@@ -196,10 +199,10 @@ describe('action-center utils', () => {
                 (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
             );
 
-            expect(publish?.count).toBe(2);
+            expect(publish?.count).toBe(3);
         });
 
-        it('should count Unpublish only for live items', () => {
+        it('should count Unpublish over every mapped item, live or not', () => {
             const items = [
                 contentlet({ inode: 'a', live: true }),
                 contentlet({ inode: 'b', live: false })
@@ -209,10 +212,10 @@ describe('action-center utils', () => {
                 (action) => action.id === WORKFLOW_ACTION_ID.UNPUBLISH
             );
 
-            expect(unpublish?.count).toBe(1);
+            expect(unpublish?.count).toBe(2);
         });
 
-        it('should count Delete and Unarchive only for archived items', () => {
+        it('should not narrow Delete or Unarchive by archived state', () => {
             const items = [
                 contentlet({ inode: 'a', archived: true }),
                 contentlet({ inode: 'b', archived: false })
@@ -222,8 +225,25 @@ describe('action-center utils', () => {
                 getQuickActions(items, ALL_MAPPED).map((action) => [action.id, action.count])
             );
 
-            expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(1);
-            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
+            expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(2);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(2);
+        });
+
+        it('should keep the state filters on the exempt rows', () => {
+            // Where no mapping is involved the label really is the whole effect, so row state still
+            // decides: Unlock on unlocked content has nothing to do.
+            const items = [
+                contentlet({ inode: 'locked', locked: true }),
+                contentlet({ inode: 'free', locked: false })
+            ];
+
+            const byId = new Map(
+                getQuickActions(items, ALL_MAPPED).map((action) => [action.id, action.count])
+            );
+
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)).toBe(1);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)).toBe(1);
+            expect(byId.get(ADD_TO_BUNDLE_ACTION_ID)).toBe(2);
         });
 
         it('should count Lock for items that are not locked', () => {
@@ -353,15 +373,16 @@ describe('action-center utils', () => {
         });
 
         it('should keep a fixed display order regardless of the selection', () => {
+            // The three rows no mapping can gate lead, so the top of the list never moves.
             const expected = [
                 WORKFLOW_ACTION_ID.LOCK,
                 WORKFLOW_ACTION_ID.UNLOCK,
+                ADD_TO_BUNDLE_ACTION_ID,
                 WORKFLOW_ACTION_ID.PUBLISH,
                 WORKFLOW_ACTION_ID.UNPUBLISH,
                 WORKFLOW_ACTION_ID.ARCHIVE,
                 WORKFLOW_ACTION_ID.DELETE,
-                WORKFLOW_ACTION_ID.UNARCHIVE,
-                ADD_TO_BUNDLE_ACTION_ID
+                WORKFLOW_ACTION_ID.UNARCHIVE
             ];
 
             expect(getQuickActions([contentlet({ inode: 'a' })]).map((a) => a.id)).toEqual(
@@ -420,17 +441,17 @@ describe('action-center utils', () => {
 
         it('should expose the eligible inodes, matching the count', () => {
             const items = [
-                contentlet({ inode: 'not-live', live: false }),
-                contentlet({ inode: 'is-live', live: true }),
+                contentlet({ inode: 'unlocked', locked: false }),
+                contentlet({ inode: 'is-locked', locked: true }),
                 folder('f1')
             ];
 
-            const publish = getQuickActions(items, ALL_MAPPED).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+            const lock = getQuickActions(items, ALL_MAPPED).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
             );
 
-            expect(publish?.eligibleInodes).toEqual(['not-live']);
-            expect(publish?.count).toBe(publish?.eligibleInodes.length);
+            expect(lock?.eligibleInodes).toEqual(['unlocked']);
+            expect(lock?.count).toBe(lock?.eligibleInodes.length);
         });
 
         it('should keep count and eligibleInodes in step for every action', () => {
@@ -614,19 +635,15 @@ describe('action-center utils', () => {
                 expect(byId.get(ADD_TO_BUNDLE_ACTION_ID)?.count).toBe(1);
             });
 
-            it('should not count rows the state filter already excluded as unmapped', () => {
-                // A live item is not publishable regardless of the mapping. Counting it as unmapped
-                // would blame the workflow for a row-state exclusion.
-                const publish = getQuickActions(
-                    [contentlet({ inode: 'live-1', contentType: 'Blog', live: true })],
-                    {
-                        isAdmin: false,
-                        mappedSystemActions: new Map([['Blog', new Set(['PUBLISH'])]])
-                    }
-                ).find((action) => action.id === WORKFLOW_ACTION_ID.PUBLISH);
+            it('should never report an exempt row as unmapped, whatever its state filter drops', () => {
+                // Exempt rows are the only ones left with a state filter, and a state exclusion is
+                // not a mapping problem — blaming the workflow for it would name the wrong fix.
+                const unlock = getQuickActions([
+                    contentlet({ inode: 'free', contentType: 'Blog', locked: false })
+                ]).find((action) => action.id === WORKFLOW_ACTION_ID.UNLOCK);
 
-                expect(publish?.count).toBe(0);
-                expect(publish?.unmappedCount).toBe(0);
+                expect(unlock?.count).toBe(0);
+                expect(unlock?.unmappedCount).toBe(0);
             });
 
             it('should keep count and eligibleInodes in step once the gate has run', () => {

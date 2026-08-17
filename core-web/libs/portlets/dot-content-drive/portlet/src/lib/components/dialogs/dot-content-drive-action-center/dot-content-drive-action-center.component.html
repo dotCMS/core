@@ -74,44 +74,18 @@
                     </h3>
 
                     @if ($quickActions().length) {
-                        <div class="flex flex-col gap-4">
-                            @if ($gatedQuickActions().length) {
-                                <div
-                                    class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50"
-                                    data-testid="quick-actions-gated">
-                                    @for (
-                                        quickAction of $gatedQuickActions();
-                                        track quickAction.id
-                                    ) {
-                                        <ng-container
-                                            [ngTemplateOutlet]="quickActionRow"
-                                            [ngTemplateOutletContext]="{
-                                                $implicit: quickAction
-                                            }" />
-                                    }
-                                </div>
-                            }
-
-                            @if ($exemptQuickActions().length) {
-                                <div data-testid="quick-actions-exempt">
-                                    <h4
-                                        class="mb-2 text-[10px] font-semibold tracking-widest text-surface-400 uppercase">
-                                        {{ 'content-drive.action-center.always-available' | dm }}
-                                    </h4>
-                                    <div
-                                        class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50">
-                                        @for (
-                                            quickAction of $exemptQuickActions();
-                                            track quickAction.id
-                                        ) {
-                                            <ng-container
-                                                [ngTemplateOutlet]="quickActionRow"
-                                                [ngTemplateOutletContext]="{
-                                                    $implicit: quickAction
-                                                }" />
-                                        }
-                                    </div>
-                                </div>
+                        <!--
+                            One list. The three rows no mapping can gate — Lock, Unlock, Add to
+                            Bundle — lead it, so the top of the list is the part that never moves
+                            with the selection or the content type.
+                        -->
+                        <div
+                            class="divide-y divide-surface-100 overflow-hidden rounded-xl border border-surface-100 bg-surface-50"
+                            data-testid="quick-actions-list">
+                            @for (quickAction of $quickActions(); track quickAction.id) {
+                                <ng-container
+                                    [ngTemplateOutlet]="quickActionRow"
+                                    [ngTemplateOutletContext]="{ $implicit: quickAction }" />
                             }
                         </div>
                     } @else {
