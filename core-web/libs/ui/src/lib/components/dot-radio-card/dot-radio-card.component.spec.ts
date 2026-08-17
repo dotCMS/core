@@ -68,7 +68,9 @@ describe('DotRadioCardComponent', () => {
             expect(host().getAttribute('role')).toBe('radio');
             expect(host().getAttribute('aria-checked')).toBe('false');
             expect(host().getAttribute('tabindex')).toBe('0');
-            expect(spectator.query(byTestId('radio-card-dot'))).toBeNull();
+            // The dot is always in the DOM — it is scaled away, as `p-radioButton` does it, so that
+            // it can animate in and out of the selection.
+            expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain('scale-[0.1]');
         });
 
         it('should report the option it stands for when clicked', () => {
@@ -102,15 +104,26 @@ describe('DotRadioCardComponent', () => {
             mount({ value: 'REACH_PAGE' });
 
             expect(host().getAttribute('aria-checked')).toBe('true');
-            expect(spectator.query(byTestId('radio-card-dot'))).not.toBeNull();
-            expect(host().className).toContain('border-primary-500');
+            expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain('scale-100');
+            expect(host().className).toContain('border-primary');
+        });
+
+        // Only the declared transitions can be asserted: jsdom computes no styles and runs no
+        // animations, so how they actually render is checked in the browser, not here.
+        it('should transition both the card and the dot so the selection animates in and out', () => {
+            mount();
+
+            expect(host().className).toContain('transition-colors');
+            expect(spectator.query(byTestId('radio-card-dot'))?.className).toContain(
+                'transition-transform'
+            );
         });
 
         it('should read as unchecked while the group holds another option', () => {
             mount({ value: 'BOUNCE_RATE' });
 
             expect(host().getAttribute('aria-checked')).toBe('false');
-            expect(host().className).toContain('border-surface-200');
+            expect(host().className).toContain('border-(--p-form-field-border-color)');
         });
 
         it('should follow the group being pointed at another card', () => {
