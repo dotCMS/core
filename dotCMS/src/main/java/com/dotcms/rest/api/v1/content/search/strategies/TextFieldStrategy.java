@@ -61,64 +61,70 @@ public class TextFieldStrategy implements FieldStrategy {
             luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
                     .map(String::trim)
                     .filter(token -> !token.isEmpty())
-                    .map(token -> {
-                        // A path-derived URL field cannot hold the slash the user typed, so for such
-                        // a term the field clauses can only add noise. The path clause replaces them.
-                        final String pathClause = isWildcard
-                                ? this.pathClause(fieldContext.contentType(), fieldName, token)
-                                : BLANK;
-                        if (!pathClause.isEmpty()) {
-                            return pathClause;
-                        }
-                        final String term = isWildcard
-                                ? LuceneQueryUtils.escapeForWildcardTerm(token) : token;
-                        return String.format("+(%s:%s%s%s %s_dotraw:%s%s%s)",
-                                fieldName, finalWildcard, term, finalWildcard,
-                                fieldName, finalWildcard, term, finalWildcard);
-                    })
+                    .map(token -> this.tokenClause(fieldContext.contentType(), fieldName, token,
+                            finalWildcard, isWildcard))
                     .collect(Collectors.joining(SPACE));
         }
         return luceneQuery;
     }
 
     /**
-     * Builds a {@code path} clause for the URL field of an asset whose URL is <b>derived from its
-     * path</b> rather than stored in the field being queried.
+     * Builds the clause for a single token, adding a {@code path} alternative for the URL field of an
+     * asset whose URL is <b>derived from its path</b> rather than stored in the field being queried.
+     *
      * <p>A Page's {@code url} field indexes only the page's own last path segment -- {@code index},
      * not {@code /store/index} -- and a File Asset's {@code fileName} indexes {@code logo.png}, not
-     * {@code /application/themes/travel/images/logo.png}. Both render the full path in the listing,
-     * so a user who types a path fragment is querying a value the field never held. The full path
-     * <i>is</i> indexed, as {@code path}.</p>
-     * <p>This applies only when the term contains a slash, and then it <b>replaces</b> the field
-     * clauses rather than joining them with OR. Replacing matters: the analyzed field clause does not
-     * simply fail to match a slash term, it is analyzed into its segments and <i>broadens</i>, so
-     * OR-ing it in returned every page named {@code index} for a term of {@code /store/index}. Since
-     * the field can never contain a slash, those clauses carry no signal for such a term, only
-     * noise. A slash-free term can still match the field itself and is left exactly as it was, which
-     * also means the term-dictionary scan this clause costs is paid only on terms that match nothing
-     * useful today.</p>
-     * <p>The term keeps its slashes and goes in whole. {@code path} holds the entire path as a single
-     * term, so a contains-style wildcard over it matches exactly what the user typed. Splitting the
-     * term on the slash and joining the segments with {@code *} wildcards -- which an earlier version
-     * of this did -- was both more expensive (one automaton branch per segment instead of a single
+     * {@code /application/themes/travel/images/logo.png}. Both render the <i>full path</i> in the
+     * listing, so someone filtering by what they can see is querying a value the field never held.
+     * The full path <i>is</i> indexed, as {@code path}.</p>
+     *
+     * <p>What the token looks like decides how the two are combined:</p>
+     * <ul>
+     *     <li><b>It contains a slash</b> ({@code /store/index}): the {@code path} clause
+     *     <b>replaces</b> the field clauses. The field cannot hold a slash, so they carry no signal --
+     *     and worse than none, because the analyzed clause does not simply fail, it is analyzed into
+     *     the separate segments and <i>broadens</i>. OR-ing it in returned every page named
+     *     {@code index} for a term of {@code /store/index}.</li>
+     *     <li><b>It has no slash</b> ({@code store}): the {@code path} clause is OR-ed in
+     *     <b>alongside</b> them, because now both are meaningful -- the field matches an asset
+     *     <i>named</i> for the term, the path matches one <i>sitting in a folder</i> named for it.
+     *     Requiring a leading slash to reach the second group would be an invisible rule: the listing
+     *     shows a path, so typing a piece of it is the obvious thing to do, and {@code store} used to
+     *     return nothing at all.</li>
+     * </ul>
+     *
+     * <p>The token keeps its slashes and goes in whole. {@code path} holds the entire path as a single
+     * term, so a contains-style wildcard over it matches exactly what was typed. Splitting the token
+     * on the slash and joining the segments with {@code *} wildcards -- which an earlier version of
+     * this did -- was both more expensive (an automaton branch per segment rather than a single
      * literal) and <i>less</i> precise, because it discarded the adjacency the slashes encode: a term
-     * of {@code /images/} then also matched a file merely <b>named</b> {@code Images.vtl}, not one
-     * inside an {@code images} folder.</p>
+     * of {@code /images/} then also matched a file merely <b>named</b> {@code Images.vtl} rather than
+     * one inside an {@code images} folder.</p>
      *
-     * @param contentType The Content Type the field belongs to.
-     * @param fieldName   The fully qualified field name, e.g. {@code htmlpageasset.url}.
-     * @param token       The raw, unescaped user term.
+     * @param contentType   The Content Type the field belongs to.
+     * @param fieldName     The fully qualified field name, e.g. {@code htmlpageasset.url}.
+     * @param rawToken      The raw, unescaped user term.
+     * @param wildcard      The delimiter wrapping the term: {@code *} for contains, {@code "} for an
+     *                      explicit phrase.
+     * @param isWildcard    Whether this is the wildcard contains case.
      *
-     * @return The complete {@code path} clause for this token, or a blank String when this field or
-     * term does not need one and the regular field clauses should be used.
+     * @return The complete Lucene clause for this token.
      */
-    private String pathClause(final ContentType contentType, final String fieldName,
-                              final String token) {
-        if (!token.contains(SLASH) || !this.isPathDerivedUrlField(contentType, fieldName)) {
-            return BLANK;
+    private String tokenClause(final ContentType contentType, final String fieldName,
+                               final String rawToken, final String wildcard,
+                               final boolean isWildcard) {
+        final String term = isWildcard
+                ? LuceneQueryUtils.escapeForWildcardTerm(rawToken) : rawToken;
+        final boolean pathDerived = isWildcard
+                && this.isPathDerivedUrlField(contentType, fieldName);
+        if (pathDerived && rawToken.contains(SLASH)) {
+            return String.format("+%s:*%s*", PATH_FIELD, term);
         }
-        return String.format("+%s:*%s*", PATH_FIELD,
-                LuceneQueryUtils.escapeForWildcardTerm(token));
+        final String pathAlternative = pathDerived
+                ? String.format(" %s:*%s*", PATH_FIELD, term) : BLANK;
+        return String.format("+(%s:%s%s%s %s_dotraw:%s%s%s%s)",
+                fieldName, wildcard, term, wildcard,
+                fieldName, wildcard, term, wildcard, pathAlternative);
     }
 
     /**

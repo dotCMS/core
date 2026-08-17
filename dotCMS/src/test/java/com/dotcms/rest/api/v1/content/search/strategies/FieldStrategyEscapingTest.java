@@ -188,12 +188,20 @@ public class FieldStrategyEscapingTest {
     }
 
     @Test
-    public void pageUrlWithoutSlashIsUnchanged() {
-        // No slash means the term can still match the field itself, so the query must stay exactly
-        // as it is today — the `path` clause is only for terms the field can never match.
-        assertEquals("+(htmlpageasset.url:*index* htmlpageasset.url_dotraw:*index*)",
+    public void pageUrlWithoutSlashQueriesTheFieldAndThePath() {
+        // Without a slash both are meaningful, so they are OR-ed: the field matches a page NAMED for
+        // the term, the path matches one sitting in a FOLDER named for it. Requiring a leading slash
+        // to reach the second group would be an invisible rule, since the listing shows a path.
+        assertEquals("+(htmlpageasset.url:*store* htmlpageasset.url_dotraw:*store* path:*store*)",
                 new TextFieldStrategy().generateQuery(
-                        pathCtx(pageType(), "htmlpageasset.url", "index")));
+                        pathCtx(pageType(), "htmlpageasset.url", "store")));
+    }
+
+    @Test
+    public void fileAssetFileNameWithoutSlashQueriesTheFieldAndThePath() {
+        assertEquals("+(fileAsset.fileName:*logo* fileAsset.fileName_dotraw:*logo* path:*logo*)",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(fileAssetType(), "fileAsset.fileName", "logo")));
     }
 
     @Test
