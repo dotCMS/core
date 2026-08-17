@@ -33,18 +33,19 @@
                 <p-tableHeaderCheckbox [disabled]="$disabled()" data-testId="header-checkbox" />
             </th>
             @for (column of $columns(); track column.field) {
-                <!-- A header is never cut: the column is sized to fit the whole field name (see
-                     `#resolveExtraColumnWidth`), and `min-width` is set alongside `width` because
-                     `table-layout: fixed` treats `width` as a share to distribute — the fixed columns'
-                     percentages resolve against the table's enlarged `min-width`, so they would
-                     otherwise inflate and squeeze these columns below the size they asked for, cutting
-                     even a short label. `title` stays as a belt-and-braces affordance. -->
+                <!-- `min-width: max-content` is what guarantees a header is never cut, and the browser
+                     measures it exactly, so the column is never wider than the label needs either.
+                     It is also what stops `table-layout: fixed` from squeezing the cell: `width` there
+                     is only a share to distribute, and the fixed columns' percentages resolve against
+                     the table's enlarged `min-width`, so they inflate and take room back — which cut
+                     even a short label. Values still truncate in their own cells.
+                     `title` stays as a belt-and-braces affordance. -->
                 @if (column.sortable && !$readOnly()) {
                     <th
                         class="whitespace-nowrap"
                         [pSortableColumn]="column.field"
                         [style.width]="column.width"
-                        [style.minWidth]="column.width"
+                        [style.minWidth]="'max-content'"
                         [attr.title]="column.header | dm"
                         data-testId="header-column-sortable">
                         {{ column.header | dm }}
@@ -54,7 +55,7 @@
                     <th
                         class="whitespace-nowrap"
                         [style.width]="column.width"
-                        [style.minWidth]="column.width"
+                        [style.minWidth]="'max-content'"
                         [attr.title]="column.header | dm"
                         data-testId="header-column-not-sortable">
                         {{ column.header | dm }}

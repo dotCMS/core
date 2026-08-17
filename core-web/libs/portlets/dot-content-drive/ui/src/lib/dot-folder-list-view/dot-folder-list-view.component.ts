@@ -324,11 +324,7 @@ export class DotFolderListViewComponent implements OnInit {
     /** Character-count clamps for content-based (text/number) column widths, in `ch`. */
     private readonly EXTRA_COL_MIN_CH = 8;
     private readonly EXTRA_COL_MAX_CH = 32;
-    /**
-     * Extra `ch` reserved for the sort indicator, which sits inside the header cell next to the label.
-     * Without it the icon is what pushes a just-fitting label over the edge.
-     */
-    private readonly SORT_ICON_CH = 3;
+
     private readonly EXTRA_COL_PAD_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
     protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
@@ -573,16 +569,18 @@ export class DotFolderListViewComponent implements OnInit {
         // header, which is the one part that can outgrow the fixed width.
         const contentLength = fixed ? 0 : averageLength;
 
-        // The header is never clamped: a column has to be able to show the whole field name, which is
-        // the only place it says what it holds. A long VALUE is still clamped, because the row beside
-        // it shows the same field and the cell truncates.
-        const headerChars =
-            (column.header?.length ?? 0) +
-            this.EXTRA_COL_PAD_CH +
-            (column.sortable ? this.SORT_ICON_CH : 0);
-        const valueChars = Math.min(contentLength + this.EXTRA_COL_PAD_CH, this.EXTRA_COL_MAX_CH);
-
-        const chars = Math.max(headerChars, valueChars, this.EXTRA_COL_MIN_CH);
+        // Both are clamped here, and neither has to be exact: a header is guaranteed to fit by
+        // `min-width: max-content` on the header cell, which the browser measures precisely. Sizing it
+        // from a character count instead over-reserved badly — `1ch` is the width of "0", wider than
+        // the average character in a proportional font, so a 41-character label asked for ~40% more
+        // room than it needed.
+        const chars = Math.min(
+            Math.max(
+                Math.max(column.header?.length ?? 0, contentLength) + this.EXTRA_COL_PAD_CH,
+                this.EXTRA_COL_MIN_CH
+            ),
+            this.EXTRA_COL_MAX_CH
+        );
 
         if (!fixed) {
             return `${chars}ch`;

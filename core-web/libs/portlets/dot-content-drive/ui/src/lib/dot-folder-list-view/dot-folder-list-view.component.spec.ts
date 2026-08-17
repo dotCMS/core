@@ -2425,34 +2425,21 @@ describe('DotFolderListViewComponent', () => {
             expect(headerByLabel('D')?.style.width).toBe('12rem');
         });
 
-        it('should size a column to fit its whole header, however long', () => {
-            // A header is never cut: it is the only place the column says what it holds. The width has
-            // to cover the label, its padding and the sort indicator.
+        it('should let the browser size a header so it is never cut nor over-reserved', () => {
+            // `max-content` is measured, not estimated: a character count over-reserved badly (`1ch` is
+            // the width of "0", wider than the average character), and it is also what stops
+            // `table-layout: fixed` from squeezing a cell until even a short label like "Bool OK" lost
+            // its end.
             const header = 'Bool Radio With A Deliberately Long Header';
             spectator.setInput('extraColumns', [
-                { field: 'myBool', header, order: 0, type: 'boolean', sortable: true }
+                { field: 'long', header, order: 0, type: 'boolean', sortable: true },
+                { field: 'short', header: 'Bool OK', order: 1, type: 'boolean' }
             ]);
             spectator.detectChanges();
 
-            const width = headerByLabel(header)?.style.width;
-
-            expect(parseInt(width ?? '0', 10)).toBeGreaterThanOrEqual(header.length);
+            expect(headerByLabel(header)?.style.minWidth).toBe('max-content');
+            expect(headerByLabel('Bool OK')?.style.minWidth).toBe('max-content');
             expect(headerByLabel(header)?.getAttribute('title')).toBe(header);
-        });
-
-        it('should pin the header width with min-width so the layout cannot squeeze it', () => {
-            // `table-layout: fixed` treats `width` as a share to distribute, and the fixed columns'
-            // percentages resolve against the table's enlarged min-width — so without this a short
-            // label like "Bool OK" got squeezed and cut.
-            spectator.setInput('extraColumns', [
-                { field: 'myBool', header: 'Bool OK', order: 0, type: 'boolean' }
-            ]);
-            spectator.detectChanges();
-
-            const header = headerByLabel('Bool OK');
-
-            expect(header?.style.minWidth).toBe(header?.style.width);
-            expect(header?.style.minWidth).toBeTruthy();
         });
 
         it('should keep a fixed-width column from clipping a long header', () => {
@@ -2476,9 +2463,9 @@ describe('DotFolderListViewComponent', () => {
             expect(width).not.toBe('7rem');
         });
 
-        it('should give a long header more room than a long value gets', () => {
-            // A value is still clamped at 32ch — the row beside it shows the same field and the cell
-            // truncates — but a header is not, so it can exceed that.
+        it('should not over-reserve width for a long header', () => {
+            // The estimate is clamped and `max-content` does the real work, so the column does not end
+            // up far wider than the label — which is what a per-character reservation caused.
             spectator.setInput('extraColumns', [
                 {
                     field: 'myBool',
@@ -2491,7 +2478,7 @@ describe('DotFolderListViewComponent', () => {
 
             const width = headerByLabel('Bool Radio With A Deliberately Long Header')?.style.width;
 
-            expect(parseInt(width ?? '0', 10)).toBeGreaterThan(32);
+            expect(parseInt(width ?? '0', 10)).toBeLessThanOrEqual(32);
         });
 
         it('should keep the compact fixed width for a short boolean header', () => {
