@@ -29,23 +29,32 @@
                             size="xlarge"
                             styleClass="bg-primary-100 text-primary"
                             data-testid="users-dialog-avatar" />
-                        <div class="flex min-w-0 flex-wrap items-center gap-3">
+                        <div class="flex min-w-0 flex-col gap-2">
                             <h2
                                 class="m-0 truncate text-xl font-semibold"
                                 data-testid="users-dialog-title">
                                 {{ displayName() }}
                             </h2>
                             @if (isEdit) {
-                                <p-tag
-                                    [value]="
-                                        (isActive()
-                                            ? 'users.dialog.status.active'
-                                            : 'users.dialog.status.inactive'
-                                        ) | dm
-                                    "
-                                    [severity]="isActive() ? 'success' : 'secondary'"
-                                    [rounded]="true"
-                                    data-testid="users-dialog-header-status" />
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p-tag
+                                        [value]="
+                                            (isActive()
+                                                ? 'users.dialog.status.active'
+                                                : 'users.dialog.status.inactive'
+                                            ) | dm
+                                        "
+                                        [severity]="isActive() ? 'success' : 'secondary'"
+                                        [rounded]="true"
+                                        data-testid="users-dialog-header-status" />
+                                    @if (canLoginToAdmin()) {
+                                        <p-tag
+                                            [value]="'users.dialog.header.can-login' | dm"
+                                            severity="info"
+                                            [rounded]="true"
+                                            data-testid="users-dialog-header-can-login" />
+                                    }
+                                </div>
                             }
                         </div>
                     </header>

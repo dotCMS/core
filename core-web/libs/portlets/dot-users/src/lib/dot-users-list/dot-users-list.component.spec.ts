@@ -101,6 +101,7 @@ describe('DotUsersListComponent', () => {
         componentProviders: [
             mockProvider(DotUsersListStore, {
                 users: jest.fn().mockReturnValue(MOCK_USERS),
+                userRoles: jest.fn().mockReturnValue({}),
                 selectedUsers: jest.fn().mockReturnValue([]),
                 filter: jest.fn().mockReturnValue(''),
                 roleFilter: jest.fn().mockReturnValue(''),

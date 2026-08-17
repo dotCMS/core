@@ -145,9 +145,31 @@ export class DotUsersCreateComponent {
             cmsAdmin: [false],
             backend: [true],
             frontend: [false],
-            canLogin: [true],
             showGettingStarted: [true]
         })
+    });
+
+    /**
+     * Signal mirror of `form.controls.access.valueChanges`. Drives the
+     * header `Can login to Admin UI` chip reactively — the value is
+     * derived from CMS Admin || Back-end User, so the chip appears
+     * and disappears as those toggles change without any manual
+     * change detection.
+     */
+    private readonly accessValue = toSignal(this.form.controls.access.valueChanges, {
+        initialValue: this.form.controls.access.getRawValue()
+    });
+
+    /**
+     * Whether the user has console access. Derived on the backend as
+     * `admin OR backendUser`, so we mirror the same rule locally —
+     * lets the header chip react instantly to Access toggle changes
+     * without waiting for a save round-trip.
+     */
+    readonly canLoginToAdmin = computed(() => {
+        const access = this.accessValue();
+
+        return !!access.cmsAdmin || !!access.backend;
     });
 
     /**
@@ -297,8 +319,6 @@ export class DotUsersCreateComponent {
             this.enableCreatePasswordValidators();
             this.dataReady.set(true);
         }
-        this.disableCanLoginToggle();
-        this.wireCanLoginDerivation();
     }
 
     protected close(): void {
@@ -369,8 +389,6 @@ export class DotUsersCreateComponent {
      * before {@link loadUserDetail} finishes the round-trip.
      */
     private hydrateFromListItem(item: DotUserListItem): void {
-        const cmsAdmin = item.admin ?? false;
-        const backend = item.backendUser ?? false;
         this.form.patchValue({
             account: {
                 firstName: item.firstName ?? '',
@@ -379,10 +397,9 @@ export class DotUsersCreateComponent {
                 active: item.active ?? true
             },
             access: {
-                cmsAdmin,
-                backend,
+                cmsAdmin: item.admin ?? false,
+                backend: item.backendUser ?? false,
                 frontend: item.frontendUser ?? false,
-                canLogin: cmsAdmin || backend,
                 showGettingStarted: false
             }
         });
@@ -428,9 +445,6 @@ export class DotUsersCreateComponent {
                     const roleKeySet = new Set(roleKeys);
                     const additionalInfo = user.additionalInfo ?? {};
 
-                    const cmsAdmin = roleKeySet.has(ACCESS_ROLE_KEYS.cmsAdmin);
-                    const backend = roleKeySet.has(ACCESS_ROLE_KEYS.backend);
-
                     this.form.patchValue({
                         account: {
                             firstName: user.firstName ?? '',
@@ -446,10 +460,9 @@ export class DotUsersCreateComponent {
                             website: (additionalInfo['website'] as string) ?? ''
                         },
                         access: {
-                            cmsAdmin,
-                            backend,
+                            cmsAdmin: roleKeySet.has(ACCESS_ROLE_KEYS.cmsAdmin),
+                            backend: roleKeySet.has(ACCESS_ROLE_KEYS.backend),
                             frontend: roleKeySet.has(ACCESS_ROLE_KEYS.frontend),
-                            canLogin: cmsAdmin || backend,
                             showGettingStarted: gettingStarted
                         }
                     });
@@ -466,37 +479,6 @@ export class DotUsersCreateComponent {
         account.controls.confirmPassword.setValidators([Validators.required]);
         account.controls.password.updateValueAndValidity({ emitEvent: false });
         account.controls.confirmPassword.updateValueAndValidity({ emitEvent: false });
-    }
-
-    /**
-     * `Can Login to Admin UI` mirrors the backend's `hasConsoleAccess`
-     * getter (`admin OR backendUser`). The property is derived, not
-     * persisted — nothing to write to — so the toggle stays disabled
-     * and instead tracks the two Access toggles that DO drive it.
-     */
-    private disableCanLoginToggle(): void {
-        this.form.controls.access.controls.canLogin.disable({ emitEvent: false });
-    }
-
-    /**
-     * Keeps `canLogin` in sync with the visible toggles that grant
-     * console access. Any time `cmsAdmin` or `backend` changes we
-     * recompute the disabled control's value so the user can see the
-     * consequence of their pick without waiting for a save round-trip.
-     *
-     * `emitEvent: false` prevents this patch from re-firing the outer
-     * `valueChanges` and looping.
-     */
-    private wireCanLoginDerivation(): void {
-        const access = this.form.controls.access.controls;
-        const update = () => {
-            access.canLogin.setValue(!!access.cmsAdmin.value || !!access.backend.value, {
-                emitEvent: false
-            });
-        };
-
-        access.cmsAdmin.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(update);
-        access.backend.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(update);
     }
 
     /**
@@ -519,10 +501,7 @@ export class DotUsersCreateComponent {
         const raw = this.form.getRawValue();
         const account = raw.account;
         const additionalInfoValue = raw.additionalInfo;
-        // `access.canLogin` is a disabled control so it's absent from
-        // getRawValue. We read the whole group directly to avoid an
-        // undefined dereference on the toggles that DO participate.
-        const access = this.form.controls.access.getRawValue();
+        const access = raw.access;
 
         const additionalInfo = ADDITIONAL_INFO_KEYS.reduce<Record<string, string>>((acc, key) => {
             const value = (additionalInfoValue[key] ?? '').trim();
@@ -568,6 +547,21 @@ export class DotUsersCreateComponent {
      * the list the backend expects. In create mode the cache is empty,
      * so the outbound list is just whichever access toggles are ON —
      * safe because create semantics ADD roles instead of replacing.
+     *
+     * The user's implicit personal role (roleKey === userId) is
+     * filtered out because `UserResource#processRoles` first calls
+     * `removeAllRolesFromUser` (no `editUsers` guard) and then tries
+     * to re-add every key in the payload. Re-adding the personal role
+     * fails at `RoleAPIImpl.addRoleToUser` because it has
+     * `editUsers=false`, and the exception rolls the whole save back
+     * with `"Cannot alter users on this role"`. Leaving that key out
+     * of the payload keeps the save from tripping the guard.
+     *
+     * The trade-off: the backend still removes the personal role in
+     * step 1, so after the save the user is missing that link. In
+     * practice most permissions live on the well-known roles above,
+     * not the personal role — but this needs a proper backend fix
+     * (add an `editUsers` guard to `removeAllRolesFromUser`).
      */
     private mergeRoleKeysForSave(access: {
         cmsAdmin: boolean;
@@ -575,7 +569,10 @@ export class DotUsersCreateComponent {
         frontend: boolean;
     }): string[] {
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
-        const nonAccess = this.loadedUserRoleKeys().filter((key) => !accessKeys.has(key));
+        const personalRoleKey = this.user?.userId ?? '';
+        const nonAccess = this.loadedUserRoleKeys().filter(
+            (key) => !accessKeys.has(key) && key !== personalRoleKey
+        );
         const merged = new Set(nonAccess);
 
         if (access.cmsAdmin) merged.add(ACCESS_ROLE_KEYS.cmsAdmin);

@@ -15,7 +15,7 @@ import { DotUserListItem } from '../../../services/dot-users.service';
 import { generateSecurePassword } from '../../dot-users-form.model';
 
 interface AccessRow {
-    key: 'cmsAdmin' | 'backend' | 'frontend' | 'canLogin' | 'showGettingStarted';
+    key: 'cmsAdmin' | 'backend' | 'frontend' | 'showGettingStarted';
     titleKey: string;
     descriptionKey: string;
 }
@@ -35,11 +35,6 @@ const ACCESS_ROWS: AccessRow[] = [
         key: 'frontend',
         titleKey: 'users.dialog.toggle.frontend.title',
         descriptionKey: 'users.dialog.toggle.frontend.description'
-    },
-    {
-        key: 'canLogin',
-        titleKey: 'users.dialog.toggle.can-login.title',
-        descriptionKey: 'users.dialog.toggle.can-login.description'
     },
     {
         key: 'showGettingStarted',

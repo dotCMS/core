@@ -21,7 +21,6 @@ export interface DotUsersAccessForm {
     cmsAdmin: boolean;
     backend: boolean;
     frontend: boolean;
-    canLogin: boolean;
     showGettingStarted: boolean;
 }
 

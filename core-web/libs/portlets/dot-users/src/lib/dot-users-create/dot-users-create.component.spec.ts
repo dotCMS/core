@@ -204,28 +204,23 @@ describe('DotUsersCreateComponent', () => {
             expect(access.frontend).toBe(false);
         });
 
-        it('should keep Can Login toggle disabled (backend-derived)', () => {
-            const canLogin = spectator.component.form.controls.access.controls.canLogin;
-            expect(canLogin.disabled).toBe(true);
-        });
-
-        it('should recompute Can Login when CMS Admin or Back-end toggles change', () => {
+        it('should derive canLoginToAdmin from CMS Admin or Back-end toggles', () => {
             const access = spectator.component.form.controls.access.controls;
 
-            // Loaded user has DOTCMS_BACK_END_USER → canLogin starts true.
-            expect(access.canLogin.value).toBe(true);
+            // Loaded user has DOTCMS_BACK_END_USER → chip shows.
+            expect(spectator.component.canLoginToAdmin()).toBe(true);
 
             access.backend.setValue(false);
-            expect(access.canLogin.value).toBe(false);
+            expect(spectator.component.canLoginToAdmin()).toBe(false);
 
             access.cmsAdmin.setValue(true);
-            expect(access.canLogin.value).toBe(true);
+            expect(spectator.component.canLoginToAdmin()).toBe(true);
 
             access.cmsAdmin.setValue(false);
-            expect(access.canLogin.value).toBe(false);
+            expect(spectator.component.canLoginToAdmin()).toBe(false);
         });
 
-        it('should merge access toggles into `roles` and preserve non-access role keys on save', () => {
+        it('should merge access toggles into `roles` and drop the personal role on save', () => {
             spectator.component.form.controls.access.patchValue({
                 cmsAdmin: true,
                 backend: true,
@@ -240,14 +235,21 @@ describe('DotUsersCreateComponent', () => {
                     mode: 'update',
                     payload: expect.objectContaining({
                         userId: 'user-42',
+                        // Personal role (roleKey === userId) is filtered
+                        // out to avoid the backend `Cannot alter users
+                        // on this role` guard on editUsers=false roles.
                         roles: expect.arrayContaining([
-                            'user-42', // personal role preserved
                             'DOTCMS_BACK_END_USER',
                             'CMS Administrator'
                         ])
                     })
                 })
             );
+
+            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+                payload: { roles: string[] };
+            };
+            expect(call.payload.roles).not.toContain('user-42');
         });
 
         it('should emit `gettingStartedChange: add` when the toggle flips ON', () => {

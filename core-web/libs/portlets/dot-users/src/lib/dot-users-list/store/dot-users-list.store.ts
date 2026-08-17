@@ -14,6 +14,7 @@ import {
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import {
+    DotRoleView,
     DotUserFormPayload,
     DotUserListItem,
     DotUsersService
@@ -38,6 +39,13 @@ export interface DotUsersListState {
     sortField: string;
     sortOrder: DotUsersListSortDirection;
     status: DotUsersListStatus;
+    /**
+     * Role NAMES per userId for the currently displayed page. Filled in
+     * after the users response resolves via parallel `getUserRoles`
+     * fan-out — the users grid renders immediately and the Roles
+     * column back-fills as each per-user request lands.
+     */
+    userRoles: Record<string, string[]>;
 }
 
 const initialState: DotUsersListState = {
@@ -50,7 +58,8 @@ const initialState: DotUsersListState = {
     roleFilter: '',
     sortField: 'lastLoginDate',
     sortOrder: 'DESC',
-    status: 'init'
+    status: 'init',
+    userRoles: {}
 };
 
 export const DotUsersListStore = signalStore(
@@ -80,16 +89,55 @@ export const DotUsersListStore = signalStore(
                             direction: store.sortOrder()
                         })
                         .pipe(
-                            // Consume the response inside the inner `.pipe()` where the
-                            // Observable is strongly typed. The standalone `pipe(...)`
-                            // outside can't propagate the response type through the
-                            // switchMap chain under Angular's strict production build.
-                            tap((response) => {
+                            // Populate the users grid straight away; the Roles
+                            // column back-fills once the parallel per-user role
+                            // fan-out lands. `userRoles` resets here so a page
+                            // change never renders stale role data.
+                            switchMap((response) => {
                                 patchState(store, {
                                     users: response.entity,
                                     totalRecords: response.pagination?.totalEntries ?? 0,
-                                    status: 'loaded'
+                                    status: 'loaded',
+                                    userRoles: {}
                                 });
+
+                                if (response.entity.length === 0) {
+                                    return of(null);
+                                }
+
+                                const roleFetches = response.entity.map((user) =>
+                                    usersService.getUserRoles(user.userId).pipe(
+                                        map((roles) => ({ userId: user.userId, roles })),
+                                        // A per-user failure shouldn't kill the
+                                        // whole batch; empty the row's roles.
+                                        catchError(() =>
+                                            of({
+                                                userId: user.userId,
+                                                roles: [] as DotRoleView[]
+                                            })
+                                        )
+                                    )
+                                );
+
+                                return forkJoin(roleFetches).pipe(
+                                    tap((results) => {
+                                        const rolesMap: Record<string, string[]> = {};
+                                        for (const { userId, roles } of results) {
+                                            rolesMap[userId] = roles
+                                                .filter(
+                                                    (role) =>
+                                                        !!role.name &&
+                                                        // Skip the user's
+                                                        // implicit personal
+                                                        // role (its key is
+                                                        // the userId).
+                                                        role.roleKey !== userId
+                                                )
+                                                .map((role) => role.name as string);
+                                        }
+                                        patchState(store, { userRoles: rolesMap });
+                                    })
+                                );
                             }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);

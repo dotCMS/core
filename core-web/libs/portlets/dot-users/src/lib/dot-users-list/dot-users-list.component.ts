@@ -219,6 +219,24 @@ export class DotUsersListComponent {
         this.store.deleteSelectedUsers(replacement.userId);
     }
 
+    /**
+     * Formats the Roles column: first two role names comma-separated,
+     * followed by `and N more` when the user carries more. Returns
+     * `null` while the per-user role fetch is still in flight so the
+     * cell renders empty instead of a misleading `and -2 more`.
+     */
+    formatRoles(userId: string): { visible: string; more: number } | null {
+        const roles = this.store.userRoles()[userId];
+        if (!roles || roles.length === 0) {
+            return null;
+        }
+
+        return {
+            visible: roles.slice(0, 2).join(', '),
+            more: Math.max(0, roles.length - 2)
+        };
+    }
+
     initials(user: DotUserListItem): string {
         const first = (user.firstName ?? '').charAt(0);
         const last = (user.lastName ?? '').charAt(0);

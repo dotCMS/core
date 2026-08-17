@@ -79,6 +79,7 @@ describe('DotUsersListStore', () => {
         providers: [
             mockProvider(DotUsersService, {
                 getUsersPaginated: jest.fn().mockReturnValue(of(MOCK_RESPONSE)),
+                getUserRoles: jest.fn().mockReturnValue(of([])),
                 deleteUser: jest.fn().mockReturnValue(of({})),
                 createUser: jest.fn().mockReturnValue(of(MOCK_USERS[0])),
                 updateUser: jest.fn().mockReturnValue(of(MOCK_USERS[0]))
@@ -97,6 +98,7 @@ describe('DotUsersListStore', () => {
         // Implementations set via mockReturnValue are preserved.
         jest.clearAllMocks();
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
+        usersService.getUserRoles.mockReturnValue(of([]));
         usersService.deleteUser.mockReturnValue(of({}));
         usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
         usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));

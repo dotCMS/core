@@ -117,22 +117,29 @@
                     </td>
                     <td data-testid="users-cell-email">{{ user.emailAddress }}</td>
                     <td data-testid="users-cell-roles">
-                        <!-- Roles column requires a per-user call to
-                             GET /api/v1/roles/users/{userIdOrEmail}.
-                             Populated in a follow-up (batch endpoint or lazy fetch). -->
+                        @if (formatRoles(user.userId); as roles) {
+                            <span>{{ roles.visible }}</span>
+                            @if (roles.more > 0) {
+                                <span class="text-color-secondary italic">
+                                    {{ 'users.roles.and-more' | dm: [roles.more.toString()] }}
+                                </span>
+                            }
+                        }
                     </td>
                     <td data-testid="users-cell-access">
-                        <div class="flex gap-1">
+                        <div class="flex flex-wrap gap-1">
                             @if (user.backendUser) {
                                 <p-tag
                                     [value]="'users.access.backend' | dm"
                                     severity="info"
+                                    styleClass="whitespace-nowrap"
                                     data-testid="users-access-backend-chip" />
                             }
                             @if (user.frontendUser) {
                                 <p-tag
                                     [value]="'users.access.frontend' | dm"
                                     severity="success"
+                                    styleClass="whitespace-nowrap"
                                     data-testid="users-access-frontend-chip" />
                             }
                         </div>
