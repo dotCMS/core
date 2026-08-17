@@ -75,7 +75,7 @@ describe('DotLocalesListComponent', () => {
         spectator.detectChanges();
         tick();
 
-        const localeElements = spectator.queryAll(byTestId('locale-cell'));
+        const localeElements = spectator.queryAll(byTestId('locale-cell'))!;
         expect(localeElements.length).toEqual(2);
         expect(localeElements[0]).toHaveText('English (en-US)');
     }));
@@ -96,7 +96,7 @@ describe('DotLocalesListComponent', () => {
         spectator.detectChanges();
         tick();
 
-        expect(spectator.query('p-chip')).toHaveText('Default');
+        expect(spectator.query('p-chip')!).toHaveText('Default');
     }));
 
     it('should open edit dialog when row is clicked', fakeAsync(() => {
@@ -105,7 +105,7 @@ describe('DotLocalesListComponent', () => {
 
         const dialogService = spectator.inject(DialogService, true);
 
-        const row = spectator.query(byTestId('locale-row'));
+        const row = spectator.query(byTestId('locale-row'))!;
         spectator.click(row);
 
         expect(dialogService.open).toHaveBeenCalled();

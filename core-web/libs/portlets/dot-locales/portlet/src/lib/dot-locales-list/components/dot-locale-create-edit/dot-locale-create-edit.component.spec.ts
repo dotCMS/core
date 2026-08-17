@@ -64,18 +64,18 @@ describe('DotLocaleCreateEditComponent', () => {
         });
 
         it('should load the edit form correctly', () => {
-            expect((spectator.query(byTestId('langEdit')) as HTMLInputElement).value).toBe(
+            expect((spectator.query(byTestId('langEdit'))! as HTMLInputElement).value).toBe(
                 'English'
             );
-            expect((spectator.query(byTestId('isoCodeEdit')) as HTMLInputElement).value).toBe(
+            expect((spectator.query(byTestId('isoCodeEdit'))! as HTMLInputElement).value).toBe(
                 'en-US'
             );
-            expect((spectator.query(byTestId('id')) as HTMLInputElement).value).toBe('1');
+            expect((spectator.query(byTestId('id'))! as HTMLInputElement).value).toBe('1');
         });
 
         it('should save the form correctly', () => {
-            spectator.typeInElement('Spanish', spectator.query(byTestId('langEdit')));
-            spectator.click(spectator.query(byTestId('submit-button')));
+            spectator.typeInElement('Spanish', spectator.query(byTestId('langEdit'))!);
+            spectator.click(spectator.query(byTestId('submit-button'))!);
 
             expect(ref.close).toHaveBeenCalledWith({
                 language: 'Spanish',
@@ -128,7 +128,7 @@ describe('DotLocaleCreateEditComponent', () => {
             );
             expect(languageDropdown.componentInstance.options).toEqual(mockLanguagesISO.languages);
             expect(countryDropdown.componentInstance.options).toEqual(mockLanguagesISO.countries);
-            expect((spectator.query(byTestId('isoCode')) as HTMLInputElement).value).toBe('');
+            expect((spectator.query(byTestId('isoCode'))! as HTMLInputElement).value).toBe('');
         });
 
         it('should save the form correctly', () => {
@@ -142,7 +142,7 @@ describe('DotLocaleCreateEditComponent', () => {
 
             spectator.detectChanges();
 
-            spectator.click(spectator.query(byTestId('submit-button')));
+            spectator.click(spectator.query(byTestId('submit-button'))!);
 
             expect(ref.close).toHaveBeenCalledWith({
                 language: 'Spanish',
@@ -157,18 +157,18 @@ describe('DotLocaleCreateEditComponent', () => {
             spectator.component.form.get('localeType')?.setValue(2);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('language'))).not.toBeNull();
-            expect(spectator.query(byTestId('languageCode'))).not.toBeNull();
+            expect(spectator.query(byTestId('language'))!).not.toBeNull();
+            expect(spectator.query(byTestId('languageCode'))!).not.toBeNull();
         });
 
         it('should save the custom Locale form correctly', () => {
             spectator.component.form.get('localeType')?.setValue(2);
             spectator.detectChanges();
 
-            spectator.typeInElement('Spanish', spectator.query(byTestId('language')));
-            spectator.typeInElement('es', spectator.query(byTestId('languageCode')));
+            spectator.typeInElement('Spanish', spectator.query(byTestId('language'))!);
+            spectator.typeInElement('es', spectator.query(byTestId('languageCode'))!);
 
-            spectator.click(spectator.query(byTestId('submit-button')));
+            spectator.click(spectator.query(byTestId('submit-button'))!);
 
             expect(ref.close).toHaveBeenCalledWith({
                 language: 'Spanish',
@@ -183,13 +183,13 @@ describe('DotLocaleCreateEditComponent', () => {
             spectator.component.form.get('localeType')?.setValue(2);
             spectator.detectChanges();
 
-            spectator.typeInElement('English', spectator.query(byTestId('language')));
-            spectator.typeInElement('en-US', spectator.query(byTestId('languageCode')));
+            spectator.typeInElement('English', spectator.query(byTestId('language'))!);
+            spectator.typeInElement('en-US', spectator.query(byTestId('languageCode'))!);
 
-            spectator.click(spectator.query(byTestId('submit-button')));
+            spectator.click(spectator.query(byTestId('submit-button'))!);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('error-message'))).not.toBeNull();
+            expect(spectator.query(byTestId('error-message'))!).not.toBeNull();
         });
     });
 });
