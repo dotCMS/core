@@ -8,6 +8,8 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { DialogService } from 'primeng/dynamicdialog';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -106,6 +108,8 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
         Card,
         FormField,
         ButtonModule,
+        InputGroupModule,
+        InputGroupAddonModule,
         InputTextModule,
         TooltipModule,
         DotCopyButtonComponent,
