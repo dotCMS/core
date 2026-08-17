@@ -279,11 +279,11 @@ describe('ActionMenuButtonComponent', () => {
         spectator.detectChanges();
 
         // Get the dot-menu component
-        const dotMenuComponent = spectator.query(DotMenuComponent);
+        const dotMenuComponent = spectator.query(DotMenuComponent)!;
         expect(dotMenuComponent).toBeTruthy();
 
         // Get the menu model from the PrimeNG menu
-        const menuModel = dotMenuComponent.menu.model;
+        const menuModel = dotMenuComponent.menu.model!;
         expect(menuModel.length).toBeGreaterThan(0);
 
         // Click the button to open the menu

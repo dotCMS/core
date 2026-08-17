@@ -28,7 +28,7 @@ class TestHostComponent {
 
 xdescribe('DotAddToBundleComponent', () => {
     let comp: DotAddToBundleComponent;
-    let fixture: ComponentFixture<TestHostComponent>;
+    let fixture!: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let addToBundleServiceMock: AddToBundleServiceMock;
 

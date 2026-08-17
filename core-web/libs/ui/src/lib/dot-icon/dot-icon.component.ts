@@ -14,6 +14,6 @@ import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
     templateUrl: './dot-icon.component.html'
 })
 export class DotIconComponent {
-    @Input() name: string;
-    @Input() size: number;
+    @Input() name = '';
+    @Input() size?: number;
 }

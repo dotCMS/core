@@ -63,7 +63,7 @@ describe('DotEmptyContainerComponent', () => {
             });
             spectator.detectChanges();
 
-            const icon = spectator.query(byTestId('message-icon'));
+            const icon = spectator.query(byTestId('message-icon'))!;
             expect(icon).toExist();
             expect(icon.tagName.toLowerCase()).toBe('span');
             expect(icon).toHaveClass('material-symbols-rounded');
@@ -95,7 +95,7 @@ describe('DotEmptyContainerComponent', () => {
             spectator.setInput('buttonLabel', BUTTON_LABEL);
             spectator.setInput('secondaryButton', true);
 
-            const button = spectator.query(byTestId('message-button'));
+            const button = spectator.query(byTestId('message-button'))!;
 
             expect(button.classList.contains('p-button-outlined')).toBe(true);
         });

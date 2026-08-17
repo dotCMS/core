@@ -16,5 +16,5 @@ import { DotContentletStatusBadgeComponent } from '../../../dot-contentlet-statu
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetCardComponent {
-    @Input() contentlet: DotCMSContentlet;
+    @Input() contentlet!: DotCMSContentlet;
 }

@@ -21,5 +21,5 @@ export interface InfoPage {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotInfoPageComponent {
-    @Input({ required: true }) info: InfoPage;
+    @Input({ required: true }) info!: InfoPage;
 }

@@ -95,7 +95,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            const button = spectator.query(Button);
+            const button = spectator.query(Button)!;
 
             expect(button.loading).toBeTruthy();
             expect(button.disabled).toBeFalsy();
@@ -103,7 +103,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should show disabled button with no-workflow label when not loading', () => {
-            const button = spectator.query(Button);
+            const button = spectator.query(Button)!;
 
             expect(button.disabled).toBeTruthy();
             expect(button.loading).toBeFalsy();
@@ -192,7 +192,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
-            const menu = spectator.query(Menu);
+            const menu = spectator.query(Menu)!;
             const overflowAction = mockWorkflowsActionsWithMove[3];
 
             expect(menu.model.length).toBe(1);
@@ -205,7 +205,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.detectChanges();
 
             const spy = jest.spyOn(spectator.component.actionFired, 'emit');
-            const menu = spectator.query(Menu);
+            const menu = spectator.query(Menu)!;
             menu.model[0].command({});
 
             expect(spy).toHaveBeenCalledWith(mockWorkflowsActionsWithMove[3]);

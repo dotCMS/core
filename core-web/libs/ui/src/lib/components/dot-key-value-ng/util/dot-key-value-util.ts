@@ -73,7 +73,10 @@ export class DotKeyValueUtil {
      * @returns number | null
      * @memberof DotKeyValueUtil
      */
-    static getVariableIndexChanged(variable: DotKeyValue, variableList: DotKeyValue[]): number {
+    static getVariableIndexChanged(
+        variable: DotKeyValue,
+        variableList: DotKeyValue[]
+    ): number | null {
         let index = null;
         for (let i = 0, total = variableList.length; total > i; i++) {
             if (variableList[i].key === variable.key) {

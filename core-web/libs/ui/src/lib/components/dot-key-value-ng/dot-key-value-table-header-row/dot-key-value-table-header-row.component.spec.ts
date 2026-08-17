@@ -154,7 +154,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
     describe('Key Input Events', () => {
         it('should focus on "Value" field, if entered a valid "Key"', () => {
-            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
+            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'))!;
             spectator.typeInElement('valid-key', keyInput);
             expect(spectator.component.keyControl.value).toBe('valid-key');
             keyInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -164,7 +164,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         });
 
         it('should stay on key input when key is invalid and Enter is pressed', () => {
-            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
+            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'))!;
             spectator.typeInElement('name', keyInput); // This is a forbidden key
             keyInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
@@ -176,7 +176,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
     describe('Value Input Events', () => {
         it('should call saveVariable when Enter is pressed in value input', () => {
             const saveVariableSpy = jest.spyOn(spectator.component, 'saveVariable');
-            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'));
+            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'))!;
             valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
             expect(saveVariableSpy).toHaveBeenCalled();
@@ -184,7 +184,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should reset form when press "Escape"', () => {
             const spyForm = jest.spyOn(spectator.component.form, 'reset');
-            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'));
+            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'))!;
             valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
             expect(spyForm).toHaveBeenCalled();
         });
@@ -237,7 +237,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             spectator.click(switchInput);
             spectator.detectChanges();
 
-            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'));
+            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'))!;
             expect(valueInput.type).toBe('password');
         });
     });

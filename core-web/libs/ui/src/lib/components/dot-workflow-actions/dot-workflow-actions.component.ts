@@ -157,7 +157,7 @@ export class DotWorkflowActionsComponent {
         return this.actions()
             .reduce<DotCMSWorkflowAction[][]>(
                 (acc, action) => {
-                    if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
+                    if (action?.metadata?.['subtype'] === DotCMSActionSubtype.SEPARATOR) {
                         acc.push([]);
                     } else {
                         acc[acc.length - 1].push(action);
@@ -188,7 +188,7 @@ export class DotWorkflowActionsComponent {
      */
     protected $flatActions = computed(() =>
         this.actions().filter(
-            (action) => action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR
+            (action) => action?.metadata?.['subtype'] !== DotCMSActionSubtype.SEPARATOR
         )
     );
 
