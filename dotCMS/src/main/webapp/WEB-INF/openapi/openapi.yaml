@@ -2928,6 +2928,54 @@ paths:
       summary: List dotAI provider configuration metadata
       tags:
       - AI
+  /v1/ai/providers/test/{capability}:
+    post:
+      description: "Builds the provider client for the given capability from the posted\
+        \ configuration and issues one minimal real request against the provider (a\
+        \ short chat reply, a one-line embedding, or a single test image). Masked\
+        \ credential fields (\"*****\") in the posted config are resolved against\
+        \ the real value already stored for siteId before testing. Returns success=false\
+        \ with a message on any validation or provider error rather than an HTTP error\
+        \ status, so the caller can always render the result."
+      operationId: testAiProviderConnection
+      parameters:
+      - in: path
+        name: capability
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Provider config section to test
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAiTestConnectionView"
+          description: Test executed — check the success field for the outcome
+        "400":
+          content:
+            application/json: {}
+          description: Unknown capability or malformed request body
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - access denied to site
+      summary: Test a dotAI provider connection
+      tags:
+      - AI
   /v1/ai/search:
     get:
       operationId: searchByGet
@@ -31305,6 +31353,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityAiTestConnectionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/TestConnectionResult"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityApiTokenWithJwtView:
       type: object
       properties:
@@ -36769,6 +36840,13 @@ components:
         title:
           type: string
         working:
+          type: boolean
+    TestConnectionResult:
+      type: object
+      properties:
+        message:
+          type: string
+        success:
           type: boolean
     TextAreaField:
       type: object

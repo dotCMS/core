@@ -1,0 +1,52 @@
+<div class="field" [formGroup]="formGroup()">
+    <label [for]="field().name" class="text-xs font-medium text-gray-600">
+        {{ label() }}
+        @if (field().required) {
+            <span class="text-red-500">*</span>
+        }
+    </label>
+
+    @switch (field().type) {
+        @case (DotAiProviderFieldType.NUMBER) {
+            <p-inputnumber
+                [inputId]="field().name"
+                [formControlName]="field().name"
+                [useGrouping]="false"
+                [invalid]="isInvalid()"
+                styleClass="w-full"
+                inputStyleClass="w-full" />
+        }
+        @case (DotAiProviderFieldType.SECRET) {
+            @if (isMaskedSecret()) {
+                <input
+                    pInputText
+                    type="text"
+                    [id]="field().name"
+                    [formControlName]="field().name"
+                    [invalid]="isInvalid()"
+                    class="w-full" />
+            } @else {
+                <p-password
+                    [inputId]="field().name"
+                    [formControlName]="field().name"
+                    [feedback]="false"
+                    [toggleMask]="true"
+                    [invalid]="isInvalid()"
+                    styleClass="w-full"
+                    inputStyleClass="w-full" />
+            }
+        }
+        @default {
+            <input
+                pInputText
+                [id]="field().name"
+                [formControlName]="field().name"
+                [invalid]="isInvalid()"
+                class="w-full" />
+        }
+    }
+
+    @if (field().hint) {
+        <small class="text-gray-500">{{ field().hint }}</small>
+    }
+</div>
