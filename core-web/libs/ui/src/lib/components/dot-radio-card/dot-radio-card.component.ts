@@ -11,36 +11,18 @@ import { FormValueControl } from '@angular/forms/signals';
 
 import { Card } from 'primeng/card';
 
-/**
- * The card is `p-card`, so the surface, radius, border and padding are whatever `components.card` in
- * `theme.config.ts` says a dotCMS card is, and stay that way when the preset changes. Nothing here
- * restates them.
- *
- * The host only carries the interaction state, because `p-card` puts its `.p-card` class on its own
- * host element: the radio semantics have to stay on `<dot-radio-card>`, one level out, which leaves the
- * host a bare block that the card fills.
- */
+/** The host is only the radio: `p-card` carries `.p-card` on its own element, one level in. */
 const HOST_BASE_CLASSES = 'block text-left';
 
 /**
- * The selection accent is the only thing painted over the theme's card, and it needs `!` to land:
- * PrimeNG injects its component CSS outside any cascade layer while Tailwind's utilities live in
- * `@layer utilities`, and unlayered declarations win over layered ones no matter the specificity — so
- * `.p-card`'s own border and background would otherwise beat these. Verified in the browser.
- *
- * Unchecked deliberately adds nothing: an unselected card is just a card.
+ * The accent needs `!` to land: PrimeNG injects component CSS outside any cascade layer, Tailwind's
+ * utilities live in `@layer utilities`, and unlayered declarations win regardless of specificity.
  */
 const SURFACE_BASE_CLASSES =
     'transition-colors duration-(--p-transition-duration) ease-[ease] motion-reduce:transition-none';
 const SURFACE_CHECKED_CLASSES = 'border-primary! bg-primary-50!';
 
-/**
- * The circle is `p-radioButton`'s look, rebuilt rather than reused (see the component doc for why), so
- * a radio in a card matches every other radio in dotCMS: `1.5rem` box with a 1px border, filled with
- * `primary` when checked, holding a `1rem` `primary.contrast` dot that scales from `0.1` to `1` over
- * `form.field.transition.duration`. Those are a real one's rendered values, measured in the running
- * app, not a guess — so if a theme upgrade changes the radio, these need re-measuring against it.
- */
+/** `p-radioButton`'s own tokens and its rendered geometry, measured in the running app. */
 const INDICATOR_CHECKED_CLASSES = 'border-primary bg-primary';
 const INDICATOR_UNCHECKED_CLASSES = 'border-(--p-form-field-border-color) bg-surface-0';
 const ENABLED_CLASSES = 'cursor-pointer';
@@ -52,48 +34,19 @@ const DISABLED_CLASSES = 'cursor-default opacity-60';
  * Semantics are `p-radioButton`'s, not a select's: **each card is one radio**, and several cards
  * sharing one value form the group — a card is checked while that value equals its own `option`.
  *
- * It is a signal forms custom control (`FormValueControl<string>`), so `[formField]` binds
- * it natively: the directive keeps `value` in sync with the field in both directions and pushes the
- * field's `disabled` state into the input of the same name. Cards bound to one field therefore stay
- * in sync with each other — the field writes its new value to every binding, so the card that was
- * checked before is told it no longer is.
+ * Signal forms only, by design: it implements `FormValueControl<string>` and no
+ * `ControlValueAccessor`, so `[formField]` drives it natively and nothing here reaches into reactive
+ * forms. Without a form, use `[(value)]` — or `[value]` plus `(valueChange)` when picking an option
+ * has to write more than the option itself.
  *
- * Signal forms only, by design: no `ControlValueAccessor`, so nothing here reaches into reactive
- * forms. Without a form, drive it with `[(value)]` — or `[value]` plus `(valueChange)` when the
- * group's value is not writable, e.g. when picking an option writes more than the option itself.
+ * The circle is drawn here rather than being a `p-radioButton`, which cannot be mounted
+ * presentationally: its `onInit` resolves `NgControl` without `optional`, so one rendered with no
+ * `ngModel` or `formControl` throws `NG0201`. Reusing it would mean an internal reactive-forms
+ * control existing to paint a circle, and a second focusable radio nested in this host. Worth
+ * revisiting if PrimeNG ever makes that injection optional.
  *
- * The card is a `p-card` but the circle inside it is not a `p-radioButton`, and that asymmetry is the
- * point: **`p-radioButton` cannot be mounted presentationally.** Its `onInit` does
- * `this.injector.get(NgControl)` with no `optional`, so one rendered with no `ngModel`, `formControl`
- * or `formControlName` throws `NG0201: No provider found for NgControl` — confirmed by mounting a bare
- * one. Driving it would mean giving this component an internal reactive-forms control purely to paint
- * a circle, in a control whose whole contract is signal forms, and nesting a second focusable radio
- * inside a host that is already `role="radio"` — two radios for one choice, for the keyboard and for
- * a screen reader. The circle is therefore drawn here from the radio's own tokens (below), which costs
- * a handful of classes and keeps the semantics in one place. If PrimeNG ever makes `NgControl`
- * optional, this is the decision to revisit.
- *
- * Gaining and losing the selection is animated in both directions, the way `p-radioButton` does it:
- * the dot stays in the DOM and scales between `0.1` and `1`, and the colours transition. Both are
- * dropped under `prefers-reduced-motion`.
- *
- * A11y: the host is the radio (`role="radio"`, `aria-checked`, `aria-disabled`), focusable while
- * enabled, and Space/Enter picks it. A radiogroup's roving tabindex and arrow-key navigation
- * belong to a future `dot-radio-group` wrapper and are deliberately not implemented here: a group
- * is what knows the cards' order, and each card only knows itself.
- *
- * @example
- * ```html
- * <div role="radiogroup">
- *   @for (item of items; track item.value) {
- *     <dot-radio-card
- *       [formField]="field.type"
- *       [option]="item.value"
- *       [label]="item.label"
- *       [description]="item.description" />
- *   }
- * </div>
- * ```
+ * A radiogroup's roving tabindex and arrow keys belong to a future `dot-radio-group` and are
+ * deliberately absent: a group knows the cards' order, and a card only knows itself.
  */
 @Component({
     selector: 'dot-radio-card',
@@ -113,29 +66,21 @@ const DISABLED_CLASSES = 'cursor-default opacity-60';
     }
 })
 export class DotRadioCardComponent implements FormValueControl<string> {
-    /**
-     * The group's value, which is the whole point of the contract: `[formField]` keeps it in sync
-     * with the bound field, and `[(value)]` does the same without a form. The empty string — like
-     * any value no card carries — leaves the group unpicked.
-     */
+    /** The group's value, named by the control contract. Any value no card carries leaves it unpicked. */
     readonly value = model<string>('');
 
-    /** The option this card stands for: it reads as checked while the group holds this value. */
+    /** The option this card stands for. */
     readonly option = input.required<string>();
 
-    /** Bold title of the card. */
     readonly label = input.required<string>();
 
-    /** Muted body under the title. Project content instead when the body is not plain text. */
+    /** Muted body under the title. Project content instead when it is not plain text. */
     readonly description = input('');
 
-    /**
-     * Whether the card can be picked. Part of the control contract rather than a private input: a
-     * bound field owns it, and `[formField]` writes the field's disabled state here.
-     */
+    /** Part of the control contract: a bound field owns it and `[formField]` writes it here. */
     readonly disabled = input(false, { transform: booleanAttribute });
 
-    /** Reports that the user is done with the card, which is what marks the bound field touched. */
+    /** Marks the bound field touched. */
     readonly touch = output<void>();
 
     protected readonly $isChecked = computed<boolean>(() => this.value() === this.option());
@@ -156,8 +101,8 @@ export class DotRadioCardComponent implements FormValueControl<string> {
         return `${HOST_BASE_CLASSES} ${interaction}`;
     });
 
-    /** Picks this card. Re-picking the checked one reports nothing: a radio cannot be unchecked. */
     protected select(): void {
+        // A radio cannot be unchecked, so re-picking the checked card reports nothing.
         if (this.disabled() || this.$isChecked()) {
             return;
         }
