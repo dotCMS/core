@@ -1,6 +1,7 @@
 import {
     DotCMSContentTypeField,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
+    DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
     DotSite
@@ -83,7 +84,11 @@ export interface DotContentDriveInit {
  */
 export interface DotContentDriveContextMenu {
     triggeredEvent: Event | null;
-    contentlet: DotContentDriveItem | null;
+    /**
+     * The item the menu acts on. Folders arrive from two sources — a full row from the table and a
+     * search view from the sidebar tree — so this is the narrower actionable shape both satisfy.
+     */
+    contentlet: DotContentDriveActionableItem | null;
     showAddToBundle: boolean;
 }
 
@@ -106,9 +111,36 @@ export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
     payload?:
-        | DotContentDriveFolder
+        | DotContentDriveActionableFolder
         | DotContentDriveContentTypeSelectorPayload
         | DotContentDriveUploadSelectorPayload;
+}
+
+/**
+ * A workflow action currently being applied to the selection.
+ *
+ * Held in the store rather than in the Action Center dialog so it survives the dialog being closed:
+ * the run continues, the toolbar keeps reporting it, and reopening the dialog sees a run already in
+ * progress instead of offering to fire it again.
+ */
+export interface DotContentDriveActionExecution {
+    /** Already-resolved action label, not an i18n key — it goes straight into the indicator. */
+    actionName: string;
+    /** Number of contentlets the run was fired over. */
+    total: number;
+}
+
+/**
+ * Outcome of a finished run, published for the shell to present as a toast.
+ *
+ * Counts come from the response, never from the number of items submitted: both endpoints answer 200
+ * with per-item failures inside, so an item locked by another user would otherwise read as a success.
+ */
+export interface DotContentDriveActionExecutionResult {
+    actionName: string;
+    successCount: number;
+    skippedCount: number;
+    failCount: number;
 }
 
 /**
@@ -187,6 +219,27 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * >1 content types are selected. Consumed by the results table as extra columns.
      */
     showInListFields: DotCMSContentTypeField[];
+    /**
+     * Whether the Edit Content side panel is forcing the folder tree visually collapsed on a
+     * narrow viewport. Purely transient UI state — never persisted, never read from or written to
+     * the URL — kept separate from {@link DotContentDriveInit.isTreeExpanded} (the user's real,
+     * shareable preference) so the panel's temporary collapse can never overwrite it. See
+     * `isTreeVisuallyExpanded` (the computed both should render from) and `setTreeForceCollapsed`.
+     */
+    isTreeForceCollapsed: boolean;
+    /**
+     * Whether the logged-in user holds the CMS Administrator role, from
+     * `DotCurrentUserService.getCurrentUser()`.
+     *
+     * Fetched once on portlet init rather than per consumer: it never changes within a session, and
+     * the Action Center needs it the instant the dialog opens.
+     *
+     * `false` until the request answers, which deliberately means an unresolved flag behaves exactly
+     * like a non-admin. The only consumer is the Unlock warning, whose copy says a foreign lock
+     * *may* require administrator permission — so an unresolved flag over-warns rather than letting
+     * a non-admin fire with no heads-up at all.
+     */
+    currentUserIsAdmin: boolean;
 }
 
 /**

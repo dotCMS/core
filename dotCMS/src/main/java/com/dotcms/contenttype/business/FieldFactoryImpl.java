@@ -337,8 +337,11 @@ public class FieldFactoryImpl implements FieldFactory {
 
             // assign an inode and db column if needed
             if (throwAwayField.id() == null) {
+                // normalize before seeding so the id reflects the actual persisted dataType
+                // (e.g. SYSTEM for TagField, BinaryField, ConstantField, RowField, etc.)
+                final Field normalizedForSeed = normalizeData(builder.build());
                 builder.id(APILocator.getDeterministicIdentifierAPI()
-                        .generateDeterministicIdBestEffort(throwAwayField, () -> tryVar));
+                        .generateDeterministicIdBestEffort(normalizedForSeed, () -> tryVar));
             }
         }
 

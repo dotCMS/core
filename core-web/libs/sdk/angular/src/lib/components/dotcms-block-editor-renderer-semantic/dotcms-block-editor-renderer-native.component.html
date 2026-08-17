@@ -348,7 +348,7 @@
                 <ng-container
                     *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             } @else {
-                {{ text }}
+                <ng-container>{{ text }}</ng-container>
             }
         }
     }

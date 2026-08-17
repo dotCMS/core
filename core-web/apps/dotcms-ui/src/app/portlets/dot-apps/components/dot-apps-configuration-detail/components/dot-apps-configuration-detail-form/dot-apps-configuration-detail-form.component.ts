@@ -11,7 +11,8 @@ import {
     OnDestroy,
     OnInit,
     output,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     FormGroupDirective,
@@ -58,6 +59,7 @@ enum FieldStatus {
         DotAppsConfigurationDetailGeneratedStringFieldComponent,
         NgTemplateOutlet
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [FormGroupDirective]
 })
 export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestroy {

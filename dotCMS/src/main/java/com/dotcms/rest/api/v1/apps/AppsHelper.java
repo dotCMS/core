@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -14,6 +15,7 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
@@ -25,6 +27,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
@@ -63,6 +66,9 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  * and forward it to AppsResource
  */
 class AppsHelper {
+
+    /** Reported as the "file" for an unreadable secrets store, mirroring the per-file YAML errors. */
+    private static final String SECRETS_STORE_FILE_NAME = "dotSecretsStore.p12";
 
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
@@ -104,9 +110,11 @@ class AppsHelper {
     }
 
     /**
-     * Same as {@link #getAvailableDescriptorViews(User, String)} but also returns the list of
-     * YAML files that failed to load, so the REST layer can surface partial load failures via the
-     * response's {@code errors} field without preventing the successful apps from being listed.
+     * Same as {@link #getAvailableDescriptorViews(User, String)} but also returns the partial
+     * failures the REST layer should surface via the response's {@code errors} field without
+     * preventing the apps it could resolve from being listed: YAML descriptor files that failed to
+     * load, and -- since issue #36724 -- a secrets store this node cannot read, in which case the
+     * configuration counts are reported as zero rather than raising.
      */
     Tuple2<List<AppView>, List<AppDescriptorLoadError>> getAvailableDescriptorViewsWithErrors(
             final User user, final String filter) throws DotSecurityException, DotDataException {
@@ -118,7 +126,40 @@ class AppsHelper {
             appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
                     Collectors.toList());
         }
-        final Set<String> siteIdentifiers = appsAPI.appKeysByHost().keySet();
+        final List<AppDescriptorLoadError> errors = new ArrayList<>(loadErrors);
+        // appKeysByHost() reads the secrets store, which raises when this node cannot open it
+        // (issue #36724, where it previously wiped the store and returned nothing). Note this is
+        // evaluated as the *argument* to the guarded filterSitesForAppKey below, so that method's
+        // own guard cannot help here -- the raise happens before it is entered.
+        //
+        // The listing degrades to zero counts rather than propagating, so the portlet still renders
+        // and the administrator can reach the rest of it. But it must not degrade *silently*: "0
+        // configurations" on the secrets screen reads as "your secrets are gone", which is the exact
+        // misreading that would prompt someone to re-enter them. So the condition rides this
+        // endpoint's existing partial-failure channel and is reported explicitly instead.
+        //
+        // Deliberately guarded here and not inside appKeysByHost(): removeApp(), removeSecretsForSite()
+        // and exportSecrets() all read it too, and an empty map would turn the removes into silent
+        // no-ops and make exportSecrets() write an empty backup that reports success -- worse than
+        // the bug this fixes. Those paths must keep raising.
+        Set<String> siteIdentifiers;
+        try {
+            siteIdentifiers = appsAPI.appKeysByHost().keySet();
+        } catch (final DotRuntimeException e) {
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.warnAndDebug(AppsHelper.class,
+                    "App secrets store is unreadable on this node; listing apps with no configuration"
+                            + " counts. Stored secrets are intact.", e);
+            siteIdentifiers = Set.of();
+            errors.add(new AppDescriptorLoadError(SECRETS_STORE_FILE_NAME,
+                    "This node cannot read the App secrets store, so configuration counts are"
+                            + " unavailable. Existing secrets are intact and are not modified by this"
+                            + " condition; a node with the correct key still serves them. Check the"
+                            + " server log for the underlying cause.",
+                    AppDescriptorLoadError.SECRETS_STORE_UNREADABLE_ERROR_CODE));
+        }
         for (final AppDescriptor appDescriptor : appDescriptors) {
             final String appKey = appDescriptor.getKey();
             final int configurationsCount = appsAPI.filterSitesForAppKey(appKey, siteIdentifiers, user).size();
@@ -127,14 +168,15 @@ class AppsHelper {
         }
         final List<AppView> sorted = views.stream().sorted(compareByCountAndName)
                 .collect(CollectionsUtils.toImmutableList());
-        return Tuple.of(sorted, loadErrors);
+        return Tuple.of(sorted, List.copyOf(errors));
     }
 
     /**
      * Re-reads the app yaml directories to capture per-file load errors. Called from the list
      * endpoint only; the main descriptor path is still served from the cache in {@link AppsAPI}.
      */
-    private List<AppDescriptorLoadError> collectLoadErrors() {
+    @VisibleForTesting
+    List<AppDescriptorLoadError> collectLoadErrors() {
         try {
             return new AppDescriptorHelper().loadAppDescriptorsWithErrors()._2;
         } catch (Exception e) {

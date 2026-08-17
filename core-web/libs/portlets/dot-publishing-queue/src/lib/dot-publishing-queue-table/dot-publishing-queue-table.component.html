@@ -36,8 +36,8 @@
                     {{ 'publishing-queue.column.filter' | dm }}
                 </th>
                 <th
-                    style="width: 6rem"
-                    class="text-right whitespace-nowrap"
+                    style="width: 7rem"
+                    class="whitespace-nowrap"
                     data-testid="pq-bundles-col-items">
                     {{ 'publishing-queue.column.items' | dm }}
                 </th>
@@ -99,8 +99,8 @@
                         </span>
                     </td>
                     <td>
-                        <span class="flex h-full items-center justify-end">
-                            <p-skeleton height="1.5rem" width="2rem" />
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="4rem" />
                         </span>
                     </td>
                     <td>
@@ -150,7 +150,7 @@
                             <p-button
                                 text
                                 size="small"
-                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-4! h-4! min-w-0!"
+                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
                                 [pTooltip]="'publishing-queue.copy-bundle-id' | dm"
                                 tooltipPosition="top"
                                 [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
@@ -169,30 +169,26 @@
                             {{ row.filterName || row.filterKey || '—' }}
                         </div>
                     </td>
-                    <td class="text-right whitespace-nowrap" data-testid="pq-bundles-items">
+                    <td class="whitespace-nowrap" data-testid="pq-bundles-items">
+                        <!-- Text link rather than a count chip: the chip read as a
+                             passive badge, so users didn't discover it opens the
+                             bundle's contents. Empty bundles have nothing to
+                             open, so they render as plain text. -->
                         @if ((row.assetCount ?? 0) > 0) {
                             <button
                                 type="button"
-                                class="cursor-pointer border-none bg-transparent p-0"
-                                [pTooltip]="'publishing-queue.history.kebab.view-contents' | dm"
+                                class="cursor-pointer border-none bg-transparent p-0 text-inherit underline-offset-2 hover:underline"
+                                [pTooltip]="'publishing-queue.column.items.view' | dm"
                                 tooltipPosition="top"
-                                [attr.aria-label]="
-                                    'publishing-queue.history.kebab.view-contents' | dm
-                                "
+                                [attr.aria-label]="'publishing-queue.column.items.view' | dm"
                                 (click)="
                                     $event.stopPropagation(); store.openAssetList(row.bundleId)
                                 "
                                 data-testid="pq-bundles-items-btn">
-                                <p-tag
-                                    severity="secondary"
-                                    [rounded]="false"
-                                    [value]="(row.assetCount ?? 0).toString()" />
+                                {{ itemsLabel(row.assetCount ?? 0) }}
                             </button>
                         } @else {
-                            <p-tag
-                                severity="secondary"
-                                [rounded]="false"
-                                [value]="(row.assetCount ?? 0).toString()" />
+                            <span class="text-color-secondary">{{ itemsLabel(0) }}</span>
                         }
                     </td>
                     <td

@@ -13,9 +13,13 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
+    isLockedByAnotherUser,
     mergeActionCenterSchemes,
+    requiredInputKinds,
     toActionCenterSchemes,
-    toContentletInodes
+    toContentletInodes,
+    toHostFolderValue,
+    toPathToMove
 } from './action-center';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
@@ -33,6 +37,26 @@ const contentlet = (
 
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
+
+/** An action that fires straight from the selection. */
+const NO_INPUTS = {
+    moveable: false,
+    pushPublish: false,
+    assignable: false,
+    commentable: false
+};
+
+/** Builds a bare action carrying only the input flags under test. */
+const actionWithInputs = (
+    inputs: Partial<DotActionCenterWorkflowAction['inputs']>
+): DotActionCenterWorkflowAction =>
+    ({
+        id: 'a1',
+        name: 'Action',
+        count: 1,
+        inputs: { ...NO_INPUTS, ...inputs },
+        contentTypes: []
+    }) as DotActionCenterWorkflowAction;
 
 /**
  * Builds a `BulkActionView` fixture. `steps` is a list of `[stepCount, actions]` pairs so tests can
@@ -96,6 +120,45 @@ describe('action-center utils', () => {
         });
     });
 
+    describe('isLockedByAnotherUser', () => {
+        const row = (overrides: Partial<DotCMSContentlet>) =>
+            contentlet({ inode: 'a', ...overrides }) as DotCMSContentlet;
+
+        it('should flag a locked row the current user cannot edit', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: false }), {
+                    isAdmin: false
+                })
+            ).toBe(true);
+        });
+
+        it('should not flag a lock the current user holds', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: true }), {
+                    isAdmin: false
+                })
+            ).toBe(false);
+        });
+
+        it('should not flag an unlocked row', () => {
+            // `contentEditable` is false on plenty of unlocked rows (no WRITE permission); only a
+            // lock makes it mean "somebody else holds this".
+            expect(
+                isLockedByAnotherUser(row({ locked: false, contentEditable: false }), {
+                    isAdmin: false
+                })
+            ).toBe(false);
+        });
+
+        it('should never flag anything for an administrator', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: false }), {
+                    isAdmin: true
+                })
+            ).toBe(false);
+        });
+    });
+
     describe('getQuickActions', () => {
         it('should return no actions for an empty selection', () => {
             expect(getQuickActions([])).toEqual([]);
@@ -144,6 +207,122 @@ describe('action-center utils', () => {
             expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
         });
 
+        it('should count Lock for items that are not locked', () => {
+            const items = [
+                contentlet({ inode: 'a', locked: false }),
+                contentlet({ inode: 'b', locked: true }),
+                contentlet({ inode: 'c', locked: false })
+            ];
+
+            const lock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
+            );
+
+            expect(lock?.count).toBe(2);
+            expect(lock?.eligibleInodes).toEqual(['a', 'c']);
+        });
+
+        it('should not count archived items as lockable or unlockable', () => {
+            // Locking an archived row serves no purpose and leaves it undeletable by anyone but
+            // the holder, since `canLock` is a delete precondition. Unlock is covered by `locked`
+            // alone (archive refuses locked content), but excluded explicitly so the pair reads the
+            // same. This narrows the dialog only — the lock endpoints accept archived content.
+            const items = [contentlet({ inode: 'a', archived: true, locked: false })];
+
+            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
+
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)).toBe(0);
+        });
+
+        it('should count Unlock only for locked items', () => {
+            const items = [
+                contentlet({ inode: 'a', locked: true }),
+                contentlet({ inode: 'b', locked: false }),
+                contentlet({ inode: 'c', locked: true })
+            ];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.count).toBe(2);
+            expect(unlock?.eligibleInodes).toEqual(['a', 'c']);
+        });
+
+        it('should warn on Unlock about locks held by other users', () => {
+            // `contentEditable` is the server's answer to "is this locked by *me*?" — false on a
+            // locked row means someone else holds it, and only an administrator can release it.
+            const items = [
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false }),
+                contentlet({ inode: 'also-theirs', locked: true, contentEditable: false })
+            ];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            // Every locked item is still fired — the server is the authority on who may unlock.
+            expect(unlock?.count).toBe(3);
+            expect(unlock?.warningCount).toBe(2);
+            expect(unlock?.warningHint).toBeTruthy();
+        });
+
+        it('should not warn on Unlock when every lock is the current user’s own', () => {
+            const items = [contentlet({ inode: 'mine', locked: true, contentEditable: true })];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.warningCount).toBe(0);
+        });
+
+        it('should not warn on Unlock for an administrator, whatever the locks', () => {
+            // `canLock` returns true for a CMS Admin before it ever looks at the lock owner, so an
+            // admin releases every one of these. Warning them is noise about an outcome that will
+            // not happen — and it was the only role the warning was ever addressed to.
+            const items = [
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false }),
+                contentlet({ inode: 'also-theirs', locked: true, contentEditable: false })
+            ];
+
+            const unlock = getQuickActions(items, { isAdmin: true }).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            // Still fired over both — the warning was never a filter.
+            expect(unlock?.count).toBe(2);
+            expect(unlock?.eligibleInodes).toEqual(['theirs', 'also-theirs']);
+            expect(unlock?.warningCount).toBe(0);
+            expect(unlock?.warningHint).toBeUndefined();
+        });
+
+        it('should warn on Unlock while the admin flag is still unresolved', () => {
+            // An unresolved flag arrives as `false` (the store's default), so it behaves like a
+            // non-admin. Deliberate: the hint says a foreign lock *may* require administrator
+            // permission, so over-warning is honest, whereas staying quiet would let a non-admin
+            // fire with no heads-up at all.
+            const items = [contentlet({ inode: 'theirs', locked: true, contentEditable: false })];
+
+            const unlock = getQuickActions(items, { isAdmin: false }).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.warningCount).toBe(1);
+        });
+
+        it('should not warn on actions other than Unlock', () => {
+            const items = [contentlet({ inode: 'a', locked: true, contentEditable: false })];
+
+            for (const action of getQuickActions(items)) {
+                if (action.id !== WORKFLOW_ACTION_ID.UNLOCK) {
+                    expect(action.warningCount).toBe(0);
+                }
+            }
+        });
+
         it('should still list actions that apply to nothing, with a zero count', () => {
             // Nothing archived, so Delete applies to no item — but stays in the list so the dialog
             // can render it as non-selectable rather than dropping the row.
@@ -156,6 +335,8 @@ describe('action-center utils', () => {
 
         it('should keep a fixed display order regardless of the selection', () => {
             const expected = [
+                WORKFLOW_ACTION_ID.LOCK,
+                WORKFLOW_ACTION_ID.UNLOCK,
                 WORKFLOW_ACTION_ID.PUBLISH,
                 WORKFLOW_ACTION_ID.UNPUBLISH,
                 WORKFLOW_ACTION_ID.ARCHIVE,
@@ -172,14 +353,18 @@ describe('action-center utils', () => {
                     (a) => a.id
                 )
             ).toEqual(expected);
+            expect(
+                getQuickActions([contentlet({ inode: 'c', locked: true })]).map((a) => a.id)
+            ).toEqual(expected);
         });
 
-        it('should mark Add to Bundle as pending so it can never be fired', () => {
+        it('should leave Add to Bundle selectable', () => {
+            // No longer pending: the bundle picker exists, so the row opens its configuration step.
             const addToBundle = getQuickActions([contentlet({ inode: 'a' })]).find(
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.pendingHint).toBeTruthy();
+            expect(addToBundle?.count).toBe(1);
         });
 
         it('should count Add to Bundle against every selected contentlet', () => {
@@ -300,7 +485,7 @@ describe('action-center utils', () => {
             expect(toActionCenterSchemes(view)).toEqual([]);
         });
 
-        it('should flag actions needing extra input', () => {
+        it('should carry the input flags the API advertises', () => {
             const view = bulkActionView('System Workflow', [
                 [
                     1,
@@ -317,7 +502,7 @@ describe('action-center utils', () => {
             const byId = new Map(
                 toActionCenterSchemes(view)[0].actions.map((action) => [
                     action.id,
-                    action.requiresInput
+                    Object.values(action.inputs).some(Boolean)
                 ])
             );
 
@@ -326,6 +511,43 @@ describe('action-center utils', () => {
             expect(byId.get('as')).toBe(true);
             expect(byId.get('cm')).toBe(true);
             expect(byId.get('ok')).toBe(false);
+        });
+
+        it('should carry each input flag through individually', () => {
+            // The roll-up is not enough: the dialog collects a move path but not the other three, so
+            // it has to be able to tell which kind an action is asking for.
+            const view = bulkActionView('System Workflow', [
+                [
+                    1,
+                    [
+                        {
+                            id: 'combo',
+                            name: 'Approve',
+                            count: 1,
+                            flags: { assignable: true, commentable: true, pushPublish: true }
+                        },
+                        { id: 'mv', name: 'Move', count: 1, flags: { moveable: true } }
+                    ]
+                ]
+            ]);
+
+            const byId = new Map(
+                toActionCenterSchemes(view)[0].actions.map((action) => [action.id, action.inputs])
+            );
+
+            // One action, three inputs at once — the case a single boolean cannot express.
+            expect(byId.get('combo')).toEqual({
+                moveable: false,
+                pushPublish: true,
+                assignable: true,
+                commentable: true
+            });
+            expect(byId.get('mv')).toEqual({
+                moveable: true,
+                pushPublish: false,
+                assignable: false,
+                commentable: false
+            });
         });
 
         it('should flag a count as approximate when the action has a condition', () => {
@@ -511,7 +733,7 @@ describe('action-center utils', () => {
             id: 'a1',
             name: 'Copy',
             count: 1,
-            requiresInput: false,
+            inputs: NO_INPUTS,
             approximateCount: false,
             contentTypes
         });
@@ -539,6 +761,113 @@ describe('action-center utils', () => {
 
         it('should return nothing when no contentlet matches', () => {
             expect(eligibleContentlets(action(['Unrelated']), items)).toEqual([]);
+        });
+    });
+
+    describe('requiredInputKinds', () => {
+        it('should return nothing for an action that fires from the selection alone', () => {
+            expect(requiredInputKinds(actionWithInputs({}))).toEqual([]);
+        });
+
+        it('should collapse assignable and commentable into one screen', () => {
+            expect(
+                requiredInputKinds(actionWithInputs({ assignable: true, commentable: true }))
+            ).toEqual(['assignComment']);
+        });
+
+        it('should order the screens as the legacy wizard does', () => {
+            // Assign/comment before push publish, so the sequence matches the old dialog.
+            expect(
+                requiredInputKinds(
+                    actionWithInputs({ pushPublish: true, commentable: true, moveable: true })
+                )
+            ).toEqual(['move', 'assignComment', 'pushPublish']);
+        });
+
+        it('should return nothing when there is no action', () => {
+            expect(requiredInputKinds(undefined)).toEqual([]);
+        });
+
+        it.each([
+            ['a move path', { moveable: true }, ['move']],
+            ['an assignee', { assignable: true }, ['assignComment']],
+            ['a comment', { commentable: true }, ['assignComment']],
+            ['push publish', { pushPublish: true }, ['pushPublish']]
+        ])('should return one section for an action needing %s', (_label, inputs, expected) => {
+            expect(requiredInputKinds(actionWithInputs(inputs))).toEqual(expected);
+        });
+
+        it.each([
+            ['a move path and an assignee', { moveable: true, assignable: true }],
+            ['push publish and a comment', { pushPublish: true, commentable: true }],
+            ['a move path and push publish', { moveable: true, pushPublish: true }]
+        ])('should return every section for an action needing %s', (_label, inputs) => {
+            // Nothing is refused any more: all of them render together on one screen.
+            expect(requiredInputKinds(actionWithInputs(inputs)).length).toBe(2);
+        });
+    });
+
+    describe('toPathToMove', () => {
+        it('should convert the picker value into the actionlet path format', () => {
+            expect(toPathToMove('demo.dotcms.com:/application/containers')).toBe(
+                '//demo.dotcms.com/application/containers'
+            );
+        });
+
+        it('should handle a site root', () => {
+            expect(toPathToMove('demo.dotcms.com:/')).toBe('//demo.dotcms.com/');
+        });
+
+        it('should insert the missing separator when the path has none', () => {
+            expect(toPathToMove('demo.dotcms.com:application')).toBe(
+                '//demo.dotcms.com/application'
+            );
+        });
+
+        it.each([
+            ['unset', undefined],
+            ['null', null],
+            ['empty', ''],
+            // No hostname to build a path from — `//:/x` would be sent as a valid-looking path and
+            // rejected server-side with an opaque error.
+            ['a leading separator', ':/application'],
+            ['no separator', 'demo.dotcms.com']
+        ])('should return nothing for %s', (_label, value) => {
+            expect(toPathToMove(value)).toBe('');
+        });
+    });
+
+    describe('toHostFolderValue', () => {
+        it('should convert the actionlet path into the picker format', () => {
+            expect(toHostFolderValue('//demo.dotcms.com/application/containers')).toBe(
+                'demo.dotcms.com:/application/containers'
+            );
+        });
+
+        it('should convert a site root', () => {
+            expect(toHostFolderValue('//demo.dotcms.com/')).toBe('demo.dotcms.com:/');
+        });
+
+        it('should treat a bare host as the site root', () => {
+            expect(toHostFolderValue('//demo.dotcms.com')).toBe('demo.dotcms.com:/');
+        });
+
+        it.each([
+            ['unset', undefined],
+            ['null', null],
+            ['empty', ''],
+            ['a missing prefix', 'demo.dotcms.com/application'],
+            ['only the prefix', '//']
+        ])('should return nothing for %s', (_label, value) => {
+            expect(toHostFolderValue(value)).toBe('');
+        });
+
+        it('should round-trip with toPathToMove', () => {
+            // The two conversions bracket the picker, so a value that survives one has to survive
+            // both — otherwise the seeded destination would differ from the one that gets sent.
+            const path = '//demo.dotcms.com/application/containers';
+
+            expect(toPathToMove(toHostFolderValue(path))).toBe(path);
         });
     });
 });

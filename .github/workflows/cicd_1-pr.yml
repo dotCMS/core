@@ -66,6 +66,14 @@ jobs:
     with:
       core-build: true
       run-pr-checks: true
+    secrets:
+      # READ-ONLY key: PR code is untrusted, and a build cache an attacker can
+      # write is replayed as a build output on trunk (CVE-2025-36852). Fork PRs
+      # receive no secrets at all and fall back to a normal uncached build.
+      build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY_RO }}
+      build-cache-secret-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_SECRET_KEY_RO }}
+      build-cache-endpoint: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ENDPOINT }}
+      build-cache-bucket: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_NAME }}
     permissions:
       contents: read
       packages: write

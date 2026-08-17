@@ -1,6 +1,6 @@
 import { MarkdownModule } from 'ngx-markdown';
 
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -32,6 +32,7 @@ import { OnboardingFramework } from './models';
         TagModule,
         TooltipModule
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         style: 'background: linear-gradient(135deg, #d8e9ff 0%, #ffffff 70%, #faf5ff 100%); padding-block-start: 1.5rem;',
         class: 'h-full flex flex-col flex-1 overflow-auto gap-5'

@@ -1,6 +1,6 @@
 import { DragulaModule } from 'ng2-dragula';
 
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, inject, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
@@ -20,6 +20,7 @@ import { FieldType } from '..';
 @Component({
     selector: 'dot-content-types-fields-list',
     templateUrl: './content-types-fields-list.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {

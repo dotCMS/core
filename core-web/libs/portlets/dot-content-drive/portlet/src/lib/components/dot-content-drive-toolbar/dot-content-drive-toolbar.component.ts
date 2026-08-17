@@ -14,6 +14,7 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -41,6 +42,25 @@ import { excludeFolders } from '../../utils/action-center';
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
+
+/** Characters that would let an interpolated value become markup. */
+const HTML_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+
+/**
+ * Escapes a value that will be interpolated into a message rendered as HTML.
+ *
+ * Needed only because `content-drive.action-center.applying` carries its own `<b>`, which forces the
+ * label to be bound with `[innerHTML]` rather than interpolated. Everything substituted into such a
+ * message has to be escaped, or the message stops being the only source of markup in it.
+ */
+const escapeHtml = (value: string): string =>
+    value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 
 /**
  * Base-type options in the "New" menu (all base types except FORM, which is deprecated).
@@ -116,7 +136,8 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowActionsComponent,
         DotContentDriveWorkflowFilterComponent,
         DotContentDriveFieldFilterComponent,
-        DotContentDriveFieldFilterMenuComponent
+        DotContentDriveFieldFilterMenuComponent,
+        TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -241,9 +262,38 @@ export class DotContentDriveToolbarComponent {
         });
     }
 
-    readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    /**
+     * The action currently being applied, surfaced here because the run outlives the Action Center
+     * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
+     * so without this the work would continue with no indication until the completion toast fired.
+     */
+    readonly $actionExecution = this.#store.actionExecution;
+
+    /**
+     * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
+     * `string[]` arguments and the item count is a number.
+     *
+     * The action name is escaped because this label is bound with `[innerHTML]` — the message itself
+     * carries a `<b>`, which is the only reason it is not plain interpolation. For a workflow action
+     * that name is `WorkflowAction.name` straight from the backend, so without this a name containing
+     * markup becomes real DOM. Angular's sanitizer already drops event-handler attributes, so this is
+     * not an XSS fix; what it stops is structural injection that survives sanitizing — an `<img>`
+     * pointing at an arbitrary URL, a link, or markup that simply breaks the toolbar's layout.
+     */
+    readonly $actionExecutionLabel = computed(() => {
+        const execution = this.$actionExecution();
+
+        return execution
+            ? this.#dotMessageService.get(
+                  'content-drive.action-center.applying',
+                  escapeHtml(execution.actionName),
+                  String(execution.total)
+              )
+            : '';
+    });
 
     /**
      * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
@@ -301,19 +351,30 @@ export class DotContentDriveToolbarComponent {
      * Opens the Action Center dialog for the current selection.
      */
     protected onOpenActionCenter(): void {
+        // The button is disabled during a run, but the guard lives here too: a disabled attribute
+        // is a UI affordance, not a lock on the store.
+        if (this.$actionExecution()) {
+            return;
+        }
+
         this.#store.setDialog({
             type: DIALOG_TYPE.ACTION_CENTER,
             header: this.#dotMessageService.get('content-drive.action-center.header')
         });
     }
 
-    readonly $togglerStyles = computed(() => ({
-        opacity: this.$treeExpanded() ? '0' : '1',
-        visibility: this.$treeExpanded() ? 'hidden' : 'visible',
-        transition: 'all 0.3s ease-in-out',
-        width: this.$treeExpanded() ? '0' : undefined,
-        minWidth: this.$treeExpanded() ? '0' : undefined
-    }));
+    /**
+     * Why the Workflow Center is unavailable, or `''` when it is available.
+     *
+     * The dialog is refused outright during a run rather than opened in a useless state. Reopening
+     * mid-run used to give a dialog with every row, both footers and Done disabled — because
+     * `$executing` gates all of them — which then closed itself the moment the run settled. Firing a
+     * second action over a fresh selection was never possible either way: the store rejects a second
+     * run while one is in flight.
+     */
+    readonly $actionCenterTooltip = computed(() =>
+        this.$actionExecution() ? 'content-drive.action-center.busy' : ''
+    );
 
     /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
     #animationTimeout: ReturnType<typeof setTimeout> | undefined;

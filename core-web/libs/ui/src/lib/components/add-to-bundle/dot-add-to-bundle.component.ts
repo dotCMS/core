@@ -10,7 +10,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -47,6 +48,7 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
         DotFieldValidationMessageComponent
     ],
     providers: [AddToBundleService, DotCurrentUserService],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['dot-add-to-bundle.component.scss']
 })
 export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
