@@ -990,14 +990,45 @@ describe('DotExperimentsConfigureComponent', () => {
             spectator.detectChanges();
         });
 
+        /** What a POST answering does: the API event fires and the store gets the created draft. */
+        const createExperiment = (experiment: DotExperiment = EXPERIMENT) => {
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.createSucceeded(experiment));
+            loadExperiment(experiment);
+        };
+
         it('should not read the created experiment back into the form', () => {
             // The form is what created the draft, so re-reading it would drop a goal or a schedule
             // entered before the name that created it — and those are still on their way out.
             editForm({ trafficAllocation: 40, name: 'Summer landing test' });
 
-            loadExperiment({ ...EXPERIMENT, trafficAllocation: 100 });
+            createExperiment({ ...EXPERIMENT, trafficAllocation: 100 });
 
             expect(modelOf()().trafficAllocation).toBe(40);
+        });
+
+        /**
+         * One route serves `/experiments/new` and `/experiments/:experimentId/configuration` and the
+         * component is reused across them, so the store follows the URL — and the form follows the
+         * store, whichever experiment that turns out to be.
+         */
+        it('should fill the form when a different experiment arrives', () => {
+            createExperiment({ ...EXPERIMENT, trafficAllocation: 40 });
+
+            loadExperiment({ ...EXPERIMENT, id: 'another-experiment', trafficAllocation: 100 });
+
+            expect(modelOf()().trafficAllocation).toBe(100);
+        });
+
+        it('should empty the form when the store goes back to a creation form', () => {
+            createExperiment();
+            editForm({ name: 'Summer landing test' });
+
+            storeMock.experiment.set(null);
+            spectator.detectChanges();
+
+            expect(modelOf()().name).toBe('');
         });
 
         it('should not report an allocation while there is no experiment to patch', () => {
