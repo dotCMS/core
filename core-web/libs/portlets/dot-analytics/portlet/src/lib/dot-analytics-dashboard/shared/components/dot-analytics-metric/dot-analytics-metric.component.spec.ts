@@ -42,8 +42,8 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
-            const subtitle = spectator.query(byTestId('metric-subtitle'));
+            const value = spectator.query(byTestId('metric-value'))!;
+            const subtitle = spectator.query(byTestId('metric-subtitle'))!;
 
             expect(value).toHaveText('12,345');
             expect(subtitle).toBeTruthy();
@@ -55,7 +55,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
             expect(value).toHaveText('1,234,567');
         });
 
@@ -65,7 +65,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const icon = spectator.query(byTestId('metric-icon'));
+            const icon = spectator.query(byTestId('metric-icon'))!;
             expect(icon).toBeTruthy();
             expect(icon).toHaveClass('pi-eye');
         });
@@ -75,7 +75,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const icon = spectator.query(byTestId('metric-icon'));
+            const icon = spectator.query(byTestId('metric-icon'))!;
             expect(icon).toBeFalsy();
         });
 
@@ -84,7 +84,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const subtitle = spectator.query(byTestId('metric-subtitle'));
+            const subtitle = spectator.query(byTestId('metric-subtitle'))!;
             expect(subtitle).toBeFalsy();
         });
     });
@@ -97,7 +97,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
             expect(value).toHaveText('45.2%');
         });
 
@@ -108,7 +108,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
             expect(value).toHaveText('2m 34s');
         });
 
@@ -118,7 +118,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
             expect(value).toHaveText('45,000');
         });
 
@@ -129,7 +129,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
             expect(value).toHaveText('0m 0s');
         });
 
@@ -140,7 +140,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
             expect(value).toHaveText('0%');
         });
     });
@@ -151,9 +151,9 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
 
-            const skeletons = spectator.queryAll('p-skeleton');
-            const title = spectator.query(byTestId('metric-title'));
-            const value = spectator.query(byTestId('metric-value'));
+            const skeletons = spectator.queryAll('p-skeleton')!;
+            const title = spectator.query(byTestId('metric-title'))!;
+            const value = spectator.query(byTestId('metric-value'))!;
 
             expect(skeletons.length).toBeGreaterThan(0);
             expect(title).toBeFalsy();
@@ -165,9 +165,9 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            const skeletons = spectator.queryAll('p-skeleton');
-            const title = spectator.query(byTestId('metric-title'));
-            const value = spectator.query(byTestId('metric-value'));
+            const skeletons = spectator.queryAll('p-skeleton')!;
+            const title = spectator.query(byTestId('metric-title'))!;
+            const value = spectator.query(byTestId('metric-value'))!;
 
             expect(skeletons.length).toBeGreaterThan(0);
             expect(title).toBeFalsy();
@@ -179,9 +179,9 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
-            const errorMessage = spectator.query('.state-message');
-            const value = spectator.query(byTestId('metric-value'));
+            const errorIcon = spectator.query('.pi.pi-exclamation-triangle')!;
+            const errorMessage = spectator.query('.state-message')!;
+            const value = spectator.query(byTestId('metric-value'))!;
 
             expect(errorIcon).toBeTruthy();
             expect(errorMessage).toBeTruthy();
@@ -193,9 +193,9 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
-            const skeletons = spectator.queryAll('p-skeleton');
-            const errorIcon = spectator.query('.pi-exclamation-triangle');
+            const value = spectator.query(byTestId('metric-value'))!;
+            const skeletons = spectator.queryAll('p-skeleton')!;
+            const errorIcon = spectator.query('.pi-exclamation-triangle')!;
 
             expect(value).toBeTruthy();
             expect(skeletons.length).toBe(0);
@@ -208,26 +208,26 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
-            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('p-skeleton')!.length).toBeGreaterThan(0);
 
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
-            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('p-skeleton')!.length).toBeGreaterThan(0);
 
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.queryAll('p-skeleton').length).toBe(0);
+            expect(spectator.queryAll('p-skeleton')!.length).toBe(0);
         });
 
         it('should show error icon for ERROR, hide it for LOADED', () => {
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
-            expect(spectator.query('.pi.pi-exclamation-triangle')).toBeTruthy();
+            expect(spectator.query('.pi.pi-exclamation-triangle')!).toBeTruthy();
 
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.query('.pi.pi-exclamation-triangle')).toBeFalsy();
+            expect(spectator.query('.pi.pi-exclamation-triangle')!).toBeFalsy();
         });
 
         it('should show empty state for null values but not for 0', () => {
@@ -235,16 +235,16 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
             // 0 shows loaded state, not empty
-            expect(spectator.query(byTestId('metric-value'))).toHaveText('0');
+            expect(spectator.query(byTestId('metric-value'))!).toHaveText('0');
 
             spectator.setInput('value', null);
             spectator.detectChanges();
             // null shows dash (empty state)
-            expect(spectator.query(byTestId('metric-value'))).toHaveText('—');
+            expect(spectator.query(byTestId('metric-value'))!).toHaveText('—');
 
             spectator.setInput('value', 100);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('metric-value'))).toHaveText('100');
+            expect(spectator.query(byTestId('metric-value'))!).toHaveText('100');
         });
 
         it('should render icon element with correct classes when icon is provided', () => {
@@ -253,7 +253,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const icon = spectator.query(byTestId('metric-icon'));
+            const icon = spectator.query(byTestId('metric-icon'))!;
             expect(icon).toBeTruthy();
             expect(icon).toHaveClass('pi');
             expect(icon).toHaveClass('pi-eye');
@@ -267,7 +267,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
 
             expect(value).toExist();
             expect(value).toHaveText('0');
@@ -278,8 +278,8 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
-            const subtitle = spectator.query(byTestId('metric-subtitle'));
+            const value = spectator.query(byTestId('metric-value'))!;
+            const subtitle = spectator.query(byTestId('metric-subtitle'))!;
 
             expect(value).toExist();
             expect(value).toHaveText('—');
@@ -293,7 +293,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const value = spectator.query(byTestId('metric-value'));
+            const value = spectator.query(byTestId('metric-value'))!;
 
             expect(value).toExist();
             expect(value).not.toHaveClass('metric-value--empty');
@@ -306,8 +306,8 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
-            const errorMessage = spectator.query('.state-message');
+            const errorIcon = spectator.query('.pi.pi-exclamation-triangle')!;
+            const errorMessage = spectator.query('.state-message')!;
 
             expect(errorIcon).toExist();
             expect(errorIcon).toHaveClass('text-gray-400');
@@ -322,7 +322,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const card = spectator.query(byTestId('metric-card'));
+            const card = spectator.query(byTestId('metric-card'))!;
             const titleRegion =
                 card.querySelector('[data-testid="metric-title"]') ??
                 card.querySelector('.p-card-title');
@@ -335,7 +335,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const card = spectator.query(byTestId('metric-card'));
+            const card = spectator.query(byTestId('metric-card'))!;
             expect(card.querySelector('[data-testid="metric-title"]')).toBeFalsy();
         });
 
@@ -345,7 +345,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const card = spectator.query(byTestId('metric-card'));
+            const card = spectator.query(byTestId('metric-card'))!;
             const titleRegion =
                 card.querySelector('[data-testid="metric-title"]') ??
                 card.querySelector('.p-card-title');
@@ -364,7 +364,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const comparison = spectator.query(byTestId('metric-comparison'));
+            const comparison = spectator.query(byTestId('metric-comparison'))!;
             expect(comparison).toExist();
             expect(comparison).toHaveText('from previous 7 days');
         });
@@ -375,7 +375,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const comparison = spectator.query(byTestId('metric-comparison'));
+            const comparison = spectator.query(byTestId('metric-comparison'))!;
             expect(comparison).toBeFalsy();
         });
 
@@ -386,7 +386,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const noPrior = spectator.query(byTestId('metric-no-prior'));
+            const noPrior = spectator.query(byTestId('metric-no-prior'))!;
             expect(noPrior).toExist();
         });
     });
@@ -399,10 +399,10 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('metric-card'))).toBeTruthy();
-            expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
-            expect(spectator.query(byTestId('metric-subtitle'))).toBeTruthy();
-            expect(spectator.query(byTestId('metric-icon'))).toBeTruthy();
+            expect(spectator.query(byTestId('metric-card'))!).toBeTruthy();
+            expect(spectator.query(byTestId('metric-value'))!).toBeTruthy();
+            expect(spectator.query(byTestId('metric-subtitle'))!).toBeTruthy();
+            expect(spectator.query(byTestId('metric-icon'))!).toBeTruthy();
         });
     });
 
@@ -413,7 +413,7 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component).toBeTruthy();
-            expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
+            expect(spectator.query(byTestId('metric-value'))!).toBeTruthy();
         });
 
         it('should render correctly during state transitions with animations', () => {
@@ -421,12 +421,12 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('p-skeleton')!.length).toBeGreaterThan(0);
 
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const metricValue = spectator.query(byTestId('metric-value'));
+            const metricValue = spectator.query(byTestId('metric-value'))!;
             expect(metricValue).toBeTruthy();
             expect(metricValue).toHaveText('100');
             expect(metricValue).toBeVisible();
@@ -467,7 +467,7 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         spectator.hostComponent.status = ComponentStatus.LOADED;
         spectator.detectChanges();
 
-        const projectedContent = spectator.query(byTestId('projected-content'));
+        const projectedContent = spectator.query(byTestId('projected-content'))!;
         expect(projectedContent).toExist();
         expect(projectedContent).toHaveText('Projected Chart');
     });
@@ -476,7 +476,7 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         spectator.hostComponent.status = ComponentStatus.LOADING;
         spectator.detectChanges();
 
-        const projectedContent = spectator.query(byTestId('projected-content'));
+        const projectedContent = spectator.query(byTestId('projected-content'))!;
         expect(projectedContent).toExist();
     });
 
@@ -484,7 +484,7 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         spectator.hostComponent.status = ComponentStatus.ERROR;
         spectator.detectChanges();
 
-        const container = spectator.query(byTestId('metric-projected-content'));
+        const container = spectator.query(byTestId('metric-projected-content'))!;
         expect(container).toHaveClass('hidden');
         expect(container).toHaveClass('pointer-events-none');
     });
