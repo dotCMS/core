@@ -4,7 +4,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface RoleAPI {
 
@@ -323,9 +325,20 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 */
 	 List<String> findUserIdsForRole(Role role) throws DotDataException;
-	
+
 	/**
-	 * 
+	 * Counts the users directly granted each of the given roles, resolved with one aggregated
+	 * query per call (chunked for large inputs). Grants inherited through the role hierarchy
+	 * are not included.
+	 *
+	 * @param roleIds the role ids to count direct user grants for
+	 * @return a map of role id to direct-user count; ids with no grants are absent from the map
+	 * @throws DotDataException if the count query fails
+	 */
+	 Map<String, Integer> countUsersByRoleIds(Collection<String> roleIds) throws DotDataException;
+
+	/**
+	 *
 	 * @param FQN
 	 * @return
 	 * @throws DotDataException

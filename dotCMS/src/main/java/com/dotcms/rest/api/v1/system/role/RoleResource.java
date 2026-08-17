@@ -596,15 +596,9 @@ public class RoleResource implements Serializable {
 			throw new DoesNotExistException("The role: " + roleId + " does not exists");
 		}
 
-		final List<RoleView> childrenRoles = new ArrayList<>();
-		if(loadChildrenRoles){
-			final List<String> roleChildrenIdList = null!=role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
-			for(final String childRoleId : roleChildrenIdList){
-				childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),new ArrayList<>()));
-			}
-		}
-
-		return Response.ok(new ResponseEntityRoleDetailView(new RoleView(role,childrenRoles))).build();
+		return Response.ok(new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(role), loadChildrenRoles, this.roleAPI)
+						.get(0))).build();
 
 	}
 
@@ -646,26 +640,10 @@ public class RoleResource implements Serializable {
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
 
-		final List<RoleView> rootRolesView = new ArrayList<>();
 		final List<Role> rootRoles = this.roleAPI.findRootRoles();
 
-		if(loadChildrenRoles){
-			for(final Role role : rootRoles) {
-				final List<RoleView> childrenRoles = new ArrayList<>();
-				final List<String> roleChildrenIdList =
-						null != role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
-				for (final String childRoleId : roleChildrenIdList) {
-					childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),
-							new ArrayList<>()));
-				}
-				rootRolesView.add(new RoleView(role,childrenRoles));
-			}
-		} else {
-			rootRoles.stream()
-					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
-		}
-
-		return Response.ok(new ResponseEntityRoleViewListView(rootRolesView)).build();
+		return Response.ok(new ResponseEntityRoleViewListView(
+				this.roleHelper.toRoleViews(rootRoles, loadChildrenRoles, this.roleAPI))).build();
 	}
 
 	/**
@@ -869,13 +847,10 @@ public class RoleResource implements Serializable {
 				throw new com.dotmarketing.business.NoSuchUserException("No user found with id: " + userIdOrEmail);
 			}
 
-			final List<RoleView> userRolesView = new ArrayList<>();
 			final List<Role> userRoles = this.roleAPI.loadRolesForUser(userRecover.getUserId());
 
-			userRoles.stream()
-					.forEach(role -> userRolesView.add(new RoleView(role, new ArrayList<>())));
-
-			return new ResponseEntityRoleViewListView(userRolesView);
+			return new ResponseEntityRoleViewListView(
+					this.roleHelper.toRoleViews(userRoles, false, this.roleAPI));
 		}
 
 		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
