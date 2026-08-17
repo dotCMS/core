@@ -1,3 +1,5 @@
+import { forkJoin } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,10 +14,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
-
 import { ButtonModule } from 'primeng/button';
+
+import { map } from 'rxjs/operators';
 
 import {
     DotAiService,

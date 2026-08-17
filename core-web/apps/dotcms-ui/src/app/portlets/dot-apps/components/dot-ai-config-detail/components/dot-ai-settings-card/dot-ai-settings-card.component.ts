@@ -20,14 +20,14 @@ import { TextareaModule } from 'primeng/textarea';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
-    DotAiAdditionalPropertiesComponent,
-    DotAiAdditionalPropertyGroup
-} from '../dot-ai-additional-properties/dot-ai-additional-properties.component';
-import {
     IMAGE_SIZE_OPTIONS,
     SETTINGS_ADVANCED_FIELDS,
     SETTINGS_COMMON_FIELDS
 } from '../../dot-ai-config.constants';
+import {
+    DotAiAdditionalPropertiesComponent,
+    DotAiAdditionalPropertyGroup
+} from '../dot-ai-additional-properties/dot-ai-additional-properties.component';
 
 export type DotAiSettingsValue = Record<string, unknown>;
 

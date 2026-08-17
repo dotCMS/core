@@ -29,7 +29,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import {
-    DotAiCapability,
     DotAiProviderField,
     DotAiProviderMetadata,
     DotAiTestConnectionResult
@@ -37,16 +36,16 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
-    DotAiAdditionalPropertiesComponent,
-    DotAiAdditionalPropertyGroup
-} from '../dot-ai-additional-properties/dot-ai-additional-properties.component';
-import { DotAiDynamicFieldComponent } from '../dot-ai-dynamic-field/dot-ai-dynamic-field.component';
-import {
     CAPABILITY_LABELS,
     DotAiCapabilityMeta,
     PROVIDER_DISPLAY_NAMES,
     PROVIDER_ORDER
 } from '../../dot-ai-config.constants';
+import {
+    DotAiAdditionalPropertiesComponent,
+    DotAiAdditionalPropertyGroup
+} from '../dot-ai-additional-properties/dot-ai-additional-properties.component';
+import { DotAiDynamicFieldComponent } from '../dot-ai-dynamic-field/dot-ai-dynamic-field.component';
 
 /** Raw shape of one `chat`/`embeddings`/`image` section inside the `providerConfig` JSON. */
 export type DotAiCapabilitySectionValue = Record<string, unknown> & { provider?: string };
