@@ -2,11 +2,17 @@ package com.dotcms.rest.api.v1.system.role;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
@@ -45,6 +51,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -95,6 +102,7 @@ public class RoleResource implements Serializable {
 	private final RoleAPI roleAPI;
 	private final RoleHelper roleHelper = new RoleHelper();
 	private final UserAPI userAPI     = APILocator.getUserAPI();
+	private final PaginationUtil userPaginationUtil = new PaginationUtil(new UserPaginator());
 
 	/**
 	 * Default class constructor.
@@ -538,6 +546,99 @@ public class RoleResource implements Serializable {
 				roleList.stream().filter(myRole -> myRole.getName().toLowerCase()
 						.startsWith(roleNameToFilterClean)).collect(Collectors.toList()):
 				roleList;
+	}
+
+	/**
+	 * Returns the paginated list of users directly granted the given role, using the standard
+	 * user serialization (email address included). Grants inherited through the role hierarchy
+	 * are not part of the response: clients that need the effective member list walk the
+	 * ancestor chain through the {@code parent} attribute of {@link RoleView} and call this
+	 * endpoint per role.
+	 *
+	 * @param request   {@link HttpServletRequest}
+	 * @param response  {@link HttpServletResponse}
+	 * @param roleId    id of the role to list users for
+	 * @param filter    optional search matching user id, first name, last name, email or full name
+	 * @param page      page number, 1-based
+	 * @param perPage   page size
+	 * @param orderBy   column to sort by
+	 * @param direction sorting direction, ASC or DESC
+	 * @return the paginated user list
+	 * @throws DotDataException if loading the role fails
+	 */
+	@Operation(
+		operationId = "loadUsersByRoleId",
+		summary = "Get the users directly granted a role",
+		description = "Returns the paginated list of users directly granted the given role, "
+				+ "using the standard user serialization (email address included). Grants "
+				+ "inherited through the role hierarchy are not included."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Users retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - invalid pagination or sorting parameters",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - roles portlet access required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@GET
+	@Path("/{roleId}/users")
+	@JSONP
+	@NoCache
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityPaginatedDataView loadUsersByRoleId(
+			@Parameter(hidden = true) @Context final HttpServletRequest request,
+			@Parameter(hidden = true) @Context final HttpServletResponse response,
+			@Parameter(description = "Id of the role to list users for", required = true)
+			@PathParam("roleId") final String roleId,
+			@Parameter(description = "Filter matching user id, first name, last name, email or full name")
+			@QueryParam("filter") final String filter,
+			@Parameter(description = "Page number for pagination")
+			@DefaultValue("1") @QueryParam(PaginationUtil.PAGE) final int page,
+			@Parameter(description = "Number of items per page")
+			@DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+			@Parameter(description = "Column name for sorting results")
+			@QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+			@Parameter(description = "Sorting direction: ASC or DESC")
+			@DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction)
+			throws DotDataException {
+
+		final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+				.requiredBackendUser(true).requiredFrontendUser(false)
+				.requiredPortlet("roles")
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		Logger.debug(this, () -> "Loading the users directly granted the role: " + roleId);
+
+		final Role role = this.roleAPI.loadRoleById(roleId);
+		if (null == role || !UtilMethods.isSet(role.getId())) {
+
+			throw new DoesNotExistException("The role: " + roleId + " does not exist");
+		}
+
+		final Map<String, Object> extraParams = new HashMap<>(
+				Map.of(UserPaginator.ROLES_PARAM, List.of(role)));
+
+		final PaginationUtilParams<Map<String, Object>, List<Map<String, Object>>> params =
+				new PaginationUtilParams.Builder<Map<String, Object>, List<Map<String, Object>>>()
+						.withRequest(request).withResponse(response)
+						.withUser(initData.getUser()).withFilter(filter)
+						.withPage(page).withPerPage(perPage)
+						.withOrderBy(orderBy).withDirection(OrderDirection.valueOf(direction))
+						.withExtraParams(extraParams).build();
+
+		return this.userPaginationUtil.getPageView(params);
 	}
 
 

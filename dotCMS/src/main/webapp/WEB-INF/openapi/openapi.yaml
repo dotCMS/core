@@ -15159,6 +15159,76 @@ paths:
       summary: Find role layouts
       tags:
       - Roles
+  /v1/roles/{roleId}/users:
+    get:
+      description: "Returns the paginated list of users directly granted the given\
+        \ role, using the standard user serialization (email address included). Grants\
+        \ inherited through the role hierarchy are not included."
+      operationId: loadUsersByRoleId
+      parameters:
+      - description: Id of the role to list users for
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      - description: "Filter matching user id, first name, last name, email or full\
+          \ name"
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: Page number for pagination
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Number of items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      - description: Column name for sorting results
+        in: query
+        name: orderby
+        schema:
+          type: string
+      - description: "Sorting direction: ASC or DESC"
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Users retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination or sorting parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - roles portlet access required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Get the users directly granted a role
+      tags:
+      - Roles
   /v1/roles/{roleid}:
     get:
       description: Load role based on the role id with optional children roles
@@ -35404,6 +35474,12 @@ components:
     RoleView:
       type: object
       properties:
+        childCount:
+          type: integer
+          format: int32
+          description: "Number of direct child roles, independent of children hydration"
+          example: 3
+          minimum: 0
         dbfqn:
           type: string
         description:
@@ -35428,6 +35504,16 @@ components:
           type: string
         system:
           type: boolean
+        userCount:
+          type: integer
+          format: int32
+          description: Number of users directly granted this role; grants inherited
+            through the role hierarchy are not included
+          example: 12
+          minimum: 0
+      required:
+      - childCount
+      - userCount
     RowField:
       type: object
       allOf:
