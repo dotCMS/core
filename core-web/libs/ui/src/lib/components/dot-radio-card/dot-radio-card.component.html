@@ -1,14 +1,7 @@
-<p-card [class]="$surfaceClasses()" data-testid="radio-card-surface">
+<p-card data-testid="radio-card-surface">
     <div class="flex items-start gap-3">
-        <span
-            class="flex size-6 flex-none items-center justify-center rounded-full border transition-colors duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none"
-            [class]="$indicatorClasses()"
-            aria-hidden="true"
-            data-testid="radio-card-indicator">
-            <span
-                class="size-4 rounded-full bg-primary-contrast transition-transform duration-(--p-form-field-transition-duration) ease-[ease] motion-reduce:transition-none"
-                [class]="$isChecked() ? 'scale-100' : 'scale-[0.1]'"
-                data-testid="radio-card-dot"></span>
+        <span class="radio-card__indicator" aria-hidden="true" data-testid="radio-card-indicator">
+            <span class="radio-card__dot" data-testid="radio-card-dot"></span>
         </span>
 
         <span class="flex flex-col gap-1">

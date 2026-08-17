@@ -11,23 +11,6 @@ import { FormValueControl } from '@angular/forms/signals';
 
 import { Card } from 'primeng/card';
 
-/** The host is only the radio: `p-card` carries `.p-card` on its own element, one level in. */
-const HOST_BASE_CLASSES = 'block text-left';
-
-/**
- * The accent needs `!` to land: PrimeNG injects component CSS outside any cascade layer, Tailwind's
- * utilities live in `@layer utilities`, and unlayered declarations win regardless of specificity.
- */
-const SURFACE_BASE_CLASSES =
-    'transition-colors duration-(--p-transition-duration) ease-[ease] motion-reduce:transition-none';
-const SURFACE_CHECKED_CLASSES = 'border-primary! bg-primary-50!';
-
-/** `p-radioButton`'s own tokens and its rendered geometry, measured in the running app. */
-const INDICATOR_CHECKED_CLASSES = 'border-primary bg-primary';
-const INDICATOR_UNCHECKED_CLASSES = 'border-(--p-form-field-border-color) bg-surface-0';
-const ENABLED_CLASSES = 'cursor-pointer';
-const DISABLED_CLASSES = 'cursor-default opacity-60';
-
 /**
  * A radio rendered as a whole clickable `p-card`: radio circle, bold label and muted description.
  *
@@ -39,11 +22,11 @@ const DISABLED_CLASSES = 'cursor-default opacity-60';
  * forms. Without a form, use `[(value)]` — or `[value]` plus `(valueChange)` when picking an option
  * has to write more than the option itself.
  *
- * The circle is drawn here rather than being a `p-radioButton`, which cannot be mounted
+ * The circle is drawn in the stylesheet rather than being a `p-radioButton`, which cannot be mounted
  * presentationally: its `onInit` resolves `NgControl` without `optional`, so one rendered with no
- * `ngModel` or `formControl` throws `NG0201`. Reusing it would mean an internal reactive-forms
- * control existing to paint a circle, and a second focusable radio nested in this host. Worth
- * revisiting if PrimeNG ever makes that injection optional.
+ * `ngModel` or `formControl` throws `NG0201`. Reusing it would mean an internal reactive-forms control
+ * existing to paint a circle, and a second focusable radio nested in this host. Worth revisiting if
+ * PrimeNG ever makes that injection optional.
  *
  * A radiogroup's roving tabindex and arrow keys belong to a future `dot-radio-group` and are
  * deliberately absent: a group knows the cards' order, and a card only knows itself.
@@ -52,10 +35,10 @@ const DISABLED_CLASSES = 'cursor-default opacity-60';
     selector: 'dot-radio-card',
     imports: [Card],
     templateUrl: './dot-radio-card.component.html',
+    styleUrl: './dot-radio-card.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         role: 'radio',
-        '[class]': '$stateClasses()',
         '[attr.aria-checked]': '$isChecked()',
         '[attr.aria-disabled]': 'disabled()',
         '[attr.tabindex]': 'disabled() ? -1 : 0',
@@ -84,22 +67,6 @@ export class DotRadioCardComponent implements FormValueControl<string> {
     readonly touch = output<void>();
 
     protected readonly $isChecked = computed<boolean>(() => this.value() === this.option());
-
-    protected readonly $indicatorClasses = computed<string>(() =>
-        this.$isChecked() ? INDICATOR_CHECKED_CLASSES : INDICATOR_UNCHECKED_CLASSES
-    );
-
-    protected readonly $surfaceClasses = computed<string>(() =>
-        this.$isChecked()
-            ? `${SURFACE_BASE_CLASSES} ${SURFACE_CHECKED_CLASSES}`
-            : SURFACE_BASE_CLASSES
-    );
-
-    protected readonly $stateClasses = computed<string>(() => {
-        const interaction = this.disabled() ? DISABLED_CLASSES : ENABLED_CLASSES;
-
-        return `${HOST_BASE_CLASSES} ${interaction}`;
-    });
 
     protected select(): void {
         // A radio cannot be unchecked, so re-picking the checked card reports nothing.
