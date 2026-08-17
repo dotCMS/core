@@ -54,11 +54,4 @@ export class DotExperimentsConfigureDetailsComponent {
     protected readonly $showNameRequiredError = computed<boolean>(
         () => this.#store.validationErrors().includes('name') && !this.$nameField()().value().trim()
     );
-
-    /** Read off the field rather than re-measured here: the rule belongs to the form. */
-    protected readonly $showNameMaxLengthError = computed<boolean>(() =>
-        this.$nameField()()
-            .errors()
-            .some(({ kind }) => kind === 'maxLength')
-    );
 }

@@ -247,10 +247,24 @@ export class DotExperimentsConfigureComponent {
     protected readonly formTree = form(this.$model, (path) => {
         const isLocked = () => this.store.$isLocked();
 
-        maxLength(path.name, MAX_INPUT_TITLE_LENGTH);
+        // Each rule carries its own message, so a card renders whatever its field reports instead of
+        // enumerating the kinds it knows about. Resolved lazily: the schema runs once, at construction.
+        maxLength(path.name, MAX_INPUT_TITLE_LENGTH, {
+            message: () =>
+                this.#dotMessageService.get(
+                    'experiments.configure.details.name.max-length',
+                    String(MAX_INPUT_TITLE_LENGTH)
+                )
+        });
         disabled(path.name, { when: isLocked });
 
-        maxLength(path.description, MAX_INPUT_DESCRIPTIVE_LENGTH);
+        maxLength(path.description, MAX_INPUT_DESCRIPTIVE_LENGTH, {
+            message: () =>
+                this.#dotMessageService.get(
+                    'experiments.configure.details.description.max-length',
+                    String(MAX_INPUT_DESCRIPTIVE_LENGTH)
+                )
+        });
         disabled(path.description, { when: isLocked });
 
         min(path.trafficAllocation, MIN_TRAFFIC_ALLOCATION);

@@ -14,10 +14,12 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
 
 const NAME_REQUIRED_COPY = 'Give the experiment a name';
 const NAME_MAX_LENGTH_COPY = 'The name cannot be longer than {0} characters';
+const DESCRIPTION_MAX_LENGTH_COPY = 'The description cannot be longer than {0} characters';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.details.name.required': NAME_REQUIRED_COPY,
-    'experiments.configure.details.name.max-length': NAME_MAX_LENGTH_COPY
+    'experiments.configure.details.name.max-length': NAME_MAX_LENGTH_COPY,
+    'experiments.configure.details.description.max-length': DESCRIPTION_MAX_LENGTH_COPY
 });
 
 /** The two leaves of the root form the card is handed. */
@@ -64,9 +66,21 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         const formTree = form(
             model,
             (path) => {
-                maxLength(path.name, MAX_INPUT_TITLE_LENGTH);
+                maxLength(path.name, MAX_INPUT_TITLE_LENGTH, {
+                    message: () =>
+                        messageServiceMock.get(
+                            'experiments.configure.details.name.max-length',
+                            String(MAX_INPUT_TITLE_LENGTH)
+                        )
+                });
                 disabled(path.name, { when: () => storeMock.$isLocked() });
-                maxLength(path.description, MAX_INPUT_DESCRIPTIVE_LENGTH);
+                maxLength(path.description, MAX_INPUT_DESCRIPTIVE_LENGTH, {
+                    message: () =>
+                        messageServiceMock.get(
+                            'experiments.configure.details.description.max-length',
+                            String(MAX_INPUT_DESCRIPTIVE_LENGTH)
+                        )
+                });
                 disabled(path.description, { when: () => storeMock.$isLocked() });
             },
             { injector: spectator.inject(Injector) }
@@ -199,7 +213,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
             spectator.typeInElement('a'.repeat(MAX_INPUT_TITLE_LENGTH), nameInput());
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('details-name-max-length-error'))).toBeNull();
+            expect(spectator.query(byTestId('details-name-error'))).toBeNull();
         });
 
         it('should say how long the name may be once the form reports it too long', () => {
@@ -208,9 +222,9 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
             spectator.typeInElement(overlongName, nameInput());
             spectator.detectChanges();
 
-            expect(
-                spectator.query(byTestId('details-name-max-length-error'))?.textContent
-            ).toContain(`longer than ${MAX_INPUT_TITLE_LENGTH} characters`);
+            expect(spectator.query(byTestId('details-name-error'))?.textContent).toContain(
+                `longer than ${MAX_INPUT_TITLE_LENGTH} characters`
+            );
         });
 
         it('should replace the required error rather than stack with it', () => {
@@ -222,7 +236,37 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('details-name-required-error'))).toBeNull();
-            expect(spectator.query(byTestId('details-name-max-length-error'))).not.toBeNull();
+            expect(spectator.query(byTestId('details-name-error'))).not.toBeNull();
+        });
+    });
+
+    // The description had a length rule and nowhere to report it, so an overlong one used to
+    // invalidate the form in silence.
+    describe('description length error', () => {
+        it('should stay hidden while the description fits', () => {
+            mountWith(EXPERIMENT_DETAILS);
+
+            spectator.typeInElement(
+                'a'.repeat(MAX_INPUT_DESCRIPTIVE_LENGTH),
+                descriptionTextarea()
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('details-description-error'))).toBeNull();
+        });
+
+        it('should say how long the description may be once the form reports it too long', () => {
+            mountWith(EXPERIMENT_DETAILS);
+
+            spectator.typeInElement(
+                'a'.repeat(MAX_INPUT_DESCRIPTIVE_LENGTH + 1),
+                descriptionTextarea()
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('details-description-error'))?.textContent).toContain(
+                `longer than ${MAX_INPUT_DESCRIPTIVE_LENGTH} characters`
+            );
         });
     });
 
