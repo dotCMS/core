@@ -31,22 +31,22 @@ export const CAPABILITY_META: DotAiCapabilityMeta[] = [
     {
         capability: DotAiCapability.CHAT,
         sectionKey: 'chat',
-        title: 'Chat',
-        description: 'Text generation for AI Blocks, workflows and the $ai viewtool.',
+        title: 'apps.ai.capability.chat.title',
+        description: 'apps.ai.capability.chat.description',
         icon: 'pi pi-comments'
     },
     {
         capability: DotAiCapability.EMBEDDINGS,
         sectionKey: 'embeddings',
-        title: 'Embeddings',
-        description: 'Vector indexing for semantic search over your content.',
+        title: 'apps.ai.capability.embeddings.title',
+        description: 'apps.ai.capability.embeddings.description',
         icon: 'pi pi-sitemap'
     },
     {
         capability: DotAiCapability.IMAGE,
         sectionKey: 'image',
-        title: 'Image Generation',
-        description: 'Generated imagery for content items and Block Editor.',
+        title: 'apps.ai.capability.image.title',
+        description: 'apps.ai.capability.image.description',
         icon: 'pi pi-image'
     }
 ];
@@ -73,10 +73,11 @@ export const PROVIDER_ORDER = [
     'openrouter'
 ];
 
+/** Message keys for the lowercase, mid-sentence capability word (e.g. "no {0} support"). */
 export const CAPABILITY_LABELS: Record<DotAiCapability, string> = {
-    [DotAiCapability.CHAT]: 'chat',
-    [DotAiCapability.EMBEDDINGS]: 'embeddings',
-    [DotAiCapability.IMAGE]: 'images'
+    [DotAiCapability.CHAT]: 'apps.ai.capability.chat.label',
+    [DotAiCapability.EMBEDDINGS]: 'apps.ai.capability.embeddings.label',
+    [DotAiCapability.IMAGE]: 'apps.ai.capability.image.label'
 };
 
 export const IMAGE_SIZE_OPTIONS = [
@@ -99,66 +100,93 @@ export interface DotAiSettingsField {
     defaultValue?: boolean;
 }
 
-/** Always-visible shared settings — surfaced across every capability. */
+/**
+ * Always-visible shared settings — surfaced across every capability. Only `key` is consumed
+ * (to exclude these from the additional-properties list); `label`/`hint` mirror the message keys
+ * the fixed markup in `dot-ai-settings-card.component.html` renders directly for these fields.
+ */
 export const SETTINGS_COMMON_FIELDS: DotAiSettingsField[] = [
     {
         key: 'rolePrompt',
-        label: 'Role prompt',
-        hint: 'Describes the role the AI plays for content authors.',
+        label: 'apps.ai.settings.role-prompt.label',
+        hint: 'apps.ai.settings.role-prompt.hint',
         type: 'textarea'
     },
     {
         key: 'textPrompt',
-        label: 'Text prompt',
-        hint: 'Use Descriptive writing style.',
+        label: 'apps.ai.settings.text-prompt.label',
         type: 'text'
     },
-    { key: 'imagePrompt', label: 'Image prompt', hint: 'Use 16:9 aspect ratio.', type: 'text' }
+    {
+        key: 'imagePrompt',
+        label: 'apps.ai.settings.image-prompt.label',
+        type: 'text'
+    }
 ];
 
 /** Advanced embeddings/indexing settings, mirroring `com.dotcms.ai.app.AppKeys`. */
 export const SETTINGS_ADVANCED_FIELDS: DotAiSettingsField[] = [
     {
         key: 'embeddingsSplitAtTokens',
-        label: 'Split into (tokens)',
-        hint: 'Token count used to chunk content before indexing.',
+        label: 'apps.ai.settings.field.embeddingsSplitAtTokens.label',
+        hint: 'apps.ai.settings.field.embeddingsSplitAtTokens.hint',
         type: 'number'
     },
     {
         key: 'embeddingsMinimumTextLength',
-        label: 'Minimum text length to index',
+        label: 'apps.ai.settings.field.embeddingsMinimumTextLength.label',
         type: 'number'
     },
     {
         key: 'embeddingsMinimumFileSize',
-        label: 'Minimum file size (bytes)',
+        label: 'apps.ai.settings.field.embeddingsMinimumFileSize.label',
         type: 'number'
     },
     {
         key: 'embeddingsFileExtensions',
-        label: 'File extensions',
-        hint: 'Comma-separated, e.g. pdf,doc,docx,txt,html',
+        label: 'apps.ai.settings.field.embeddingsFileExtensions.label',
+        hint: 'apps.ai.settings.field.embeddingsFileExtensions.hint',
         type: 'text'
     },
     {
         key: 'embeddingsSearchThreshold',
-        label: 'Search threshold',
+        label: 'apps.ai.settings.field.embeddingsSearchThreshold.label',
         type: 'number'
     },
-    { key: 'embeddingsThreads', label: 'Threads', type: 'number' },
-    { key: 'embeddingsThreadsMax', label: 'Max threads', type: 'number' },
-    { key: 'embeddingsThreadsQueue', label: 'Thread queue size', type: 'number' },
-    { key: 'embeddingsCacheTtlSeconds', label: 'Cache TTL (s)', type: 'number' },
-    { key: 'embeddingsCacheSize', label: 'Cache size', type: 'number' },
+    {
+        key: 'embeddingsThreads',
+        label: 'apps.ai.settings.field.embeddingsThreads.label',
+        type: 'number'
+    },
+    {
+        key: 'embeddingsThreadsMax',
+        label: 'apps.ai.settings.field.embeddingsThreadsMax.label',
+        type: 'number'
+    },
+    {
+        key: 'embeddingsThreadsQueue',
+        label: 'apps.ai.settings.field.embeddingsThreadsQueue.label',
+        type: 'number'
+    },
+    {
+        key: 'embeddingsCacheTtlSeconds',
+        label: 'apps.ai.settings.field.embeddingsCacheTtlSeconds.label',
+        type: 'number'
+    },
+    {
+        key: 'embeddingsCacheSize',
+        label: 'apps.ai.settings.field.embeddingsCacheSize.label',
+        type: 'number'
+    },
     {
         key: 'embeddingsDeleteOldOnUpdate',
-        label: 'Delete old embeddings on content update',
+        label: 'apps.ai.settings.field.embeddingsDeleteOldOnUpdate.label',
         type: 'checkbox',
         defaultValue: true
     },
     {
         key: 'debugLogging',
-        label: 'Enable verbose debug logging',
+        label: 'apps.ai.settings.field.debugLogging.label',
         type: 'checkbox',
         defaultValue: false
     }

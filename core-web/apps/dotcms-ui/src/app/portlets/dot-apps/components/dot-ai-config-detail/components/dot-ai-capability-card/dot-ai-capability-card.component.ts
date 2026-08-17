@@ -27,7 +27,7 @@ import { TagModule } from 'primeng/tag';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAiCapability,
     DotAiProviderField,
@@ -72,6 +72,7 @@ export type DotAiCapabilitySectionValue = Record<string, unknown> & { provider?:
 })
 export class DotAiCapabilityCardComponent implements OnInit {
     private readonly dotAiService = inject(DotAiService);
+    private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
 
     readonly meta = input.required<DotAiCapabilityMeta>();
@@ -86,7 +87,9 @@ export class DotAiCapabilityCardComponent implements OnInit {
     readonly fieldsGroup = signal(new FormGroup({}));
     readonly additionalProperties = new FormArray<DotAiAdditionalPropertyGroup>([]);
 
-    readonly capabilityLabel = computed(() => CAPABILITY_LABELS[this.meta().capability]);
+    readonly capabilityLabel = computed(() =>
+        this.dotMessageService.get(CAPABILITY_LABELS[this.meta().capability])
+    );
 
     readonly orderedProviders = computed(() => {
         const list = [...this.providers()];
@@ -107,15 +110,9 @@ export class DotAiCapabilityCardComponent implements OnInit {
         this.fieldsForCurrentProvider().filter((f) => !f.required)
     );
 
-    readonly advancedHeaderLabel = computed(() => {
-        const count = this.optionalFields().length;
-
-        return `Advanced ${count} optional field${count === 1 ? '' : 's'}`;
-    });
-
     readonly badgeLabel = computed(() => {
         if (!this.enabled() || !this.providerId()) {
-            return 'Not Configured';
+            return 'apps.ai.badge.not-configured';
         }
 
         return displayName(this.providerId() as string);
@@ -159,10 +156,15 @@ export class DotAiCapabilityCardComponent implements OnInit {
 
     providerCaption(provider: DotAiProviderMetadata): string {
         if (!this.isProviderSupported(provider)) {
-            return `No ${this.capabilityLabel()} support`;
+            return this.dotMessageService.get(
+                'apps.ai.provider.capability.unsupported',
+                this.capabilityLabel()
+            );
         }
 
-        return provider.supportedCapabilities.map((c) => CAPABILITY_LABELS[c]).join(' · ');
+        return provider.supportedCapabilities
+            .map((c) => this.dotMessageService.get(CAPABILITY_LABELS[c]))
+            .join(' · ');
     }
 
     displayNameFor(providerId: string): string {
@@ -189,7 +191,7 @@ export class DotAiCapabilityCardComponent implements OnInit {
             this.markAllTouched();
             this.testResult.set({
                 success: false,
-                message: 'Please fill in the required fields before testing.'
+                message: 'apps.ai.validation.required-fields-test'
             });
 
             return;
@@ -218,7 +220,7 @@ export class DotAiCapabilityCardComponent implements OnInit {
                             (err as { error?: { error?: string }; message?: string })?.error
                                 ?.error ??
                             (err as { message?: string })?.message ??
-                            'Failed to test the connection.'
+                            'apps.ai.error.test-connection'
                     });
                 }
             });

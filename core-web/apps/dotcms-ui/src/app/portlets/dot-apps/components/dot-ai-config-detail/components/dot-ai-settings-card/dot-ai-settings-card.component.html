@@ -2,9 +2,11 @@
     <div class="flex items-start gap-3">
         <i class="pi pi-cog text-lg text-gray-500"></i>
         <div class="flex min-w-0 flex-1 flex-col gap-1">
-            <span class="text-sm font-semibold text-gray-900">{{ 'Settings' | dm }}</span>
+            <span class="text-sm font-semibold text-gray-900">
+                {{ 'apps.ai.settings.title' | dm }}
+            </span>
             <span class="text-sm text-gray-500">
-                {{ 'Prompts and behavior applied across all capabilities.' | dm }}
+                {{ 'apps.ai.settings.description' | dm }}
             </span>
         </div>
     </div>
@@ -12,7 +14,7 @@
     <form [formGroup]="form" class="flex flex-col gap-4">
         <div class="field">
             <label for="rolePrompt" class="text-xs font-medium text-gray-600">
-                {{ 'Role prompt' | dm }}
+                {{ 'apps.ai.settings.role-prompt.label' | dm }}
             </label>
             <textarea
                 pTextarea
@@ -20,40 +22,40 @@
                 formControlName="rolePrompt"
                 rows="3"
                 class="w-full resize-y"
-                [placeholder]="'You are dotCMSbot...' | dm"></textarea>
+                [placeholder]="'apps.ai.settings.role-prompt.placeholder' | dm"></textarea>
             <small class="text-gray-500">
-                {{ 'Describes the role the AI plays for content authors.' | dm }}
+                {{ 'apps.ai.settings.role-prompt.hint' | dm }}
             </small>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
             <div class="field">
                 <label for="textPrompt" class="text-xs font-medium text-gray-600">
-                    {{ 'Text prompt' | dm }}
+                    {{ 'apps.ai.settings.text-prompt.label' | dm }}
                 </label>
                 <input
                     pInputText
                     id="textPrompt"
                     formControlName="textPrompt"
                     class="w-full"
-                    [placeholder]="'Use Descriptive writing style.' | dm" />
+                    [placeholder]="'apps.ai.settings.text-prompt.placeholder' | dm" />
             </div>
             <div class="field">
                 <label for="imagePrompt" class="text-xs font-medium text-gray-600">
-                    {{ 'Image prompt' | dm }}
+                    {{ 'apps.ai.settings.image-prompt.label' | dm }}
                 </label>
                 <input
                     pInputText
                     id="imagePrompt"
                     formControlName="imagePrompt"
                     class="w-full"
-                    [placeholder]="'Use 16:9 aspect ratio.' | dm" />
+                    [placeholder]="'apps.ai.settings.image-prompt.placeholder' | dm" />
             </div>
         </div>
 
         <div class="field w-1/2">
             <label for="imageSize" class="text-xs font-medium text-gray-600">
-                {{ 'Image size' | dm }}
+                {{ 'apps.ai.settings.image-size.label' | dm }}
             </label>
             <p-select
                 inputId="imageSize"
@@ -69,7 +71,7 @@
         [toggleable]="true"
         [toggler]="'header'"
         [collapsed]="true"
-        [header]="'Advanced ' + advancedFields.length + ' settings'"
+        [header]="'apps.ai.settings.advanced.header' | dm: [advancedFields.length.toString()]"
         transitionOptions="250ms cubic-bezier(0.4, 0, 0.2, 1)">
         <form [formGroup]="advancedForm" class="grid grid-cols-2 gap-4">
             @for (settingsField of advancedFields; track settingsField.key) {

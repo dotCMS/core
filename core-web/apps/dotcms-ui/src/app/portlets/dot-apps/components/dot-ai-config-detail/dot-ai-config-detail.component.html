@@ -2,19 +2,16 @@
     <div class="mx-auto flex max-w-3xl flex-col gap-4">
         <div class="mb-2">
             <h2 class="m-0 text-xl font-semibold text-gray-900">
-                {{ 'dotAI Configuration' | dm }}
+                {{ 'apps.ai.config.title' | dm }}
             </h2>
             <p class="mt-1 mb-0 text-sm text-gray-500">
-                {{
-                    'Configure the AI providers used for chat, embeddings and image generation. Each capability is configured independently — you can mix providers.'
-                        | dm
-                }}
+                {{ 'apps.ai.config.subtitle' | dm }}
             </p>
         </div>
 
         @if (loading()) {
             <div class="flex items-center justify-center py-12 text-sm text-gray-400">
-                {{ 'Loading...' | dm }}
+                {{ 'apps.ai.loading' | dm }}
             </div>
         } @else {
             @for (meta of capabilityMeta; track meta.capability) {
@@ -34,8 +31,12 @@
 <div
     class="flex shrink-0 items-center justify-end gap-4 border-t border-gray-200 bg-white px-6 py-3">
     @if (dirty()) {
-        <span class="mr-auto text-sm text-gray-500">{{ 'Unsaved changes' | dm }}</span>
-        <p-button [label]="'Cancel' | dm" [text]="true" severity="secondary" (onClick)="cancel()" />
+        <span class="mr-auto text-sm text-gray-500">{{ 'apps.ai.unsaved.changes' | dm }}</span>
+        <p-button
+            [label]="'apps.ai.button.cancel' | dm"
+            [text]="true"
+            severity="secondary"
+            (onClick)="cancel()" />
     }
-    <p-button [label]="'Save Configuration' | dm" [loading]="saving()" (onClick)="save()" />
+    <p-button [label]="'apps.ai.button.save' | dm" [loading]="saving()" (onClick)="save()" />
 </div>

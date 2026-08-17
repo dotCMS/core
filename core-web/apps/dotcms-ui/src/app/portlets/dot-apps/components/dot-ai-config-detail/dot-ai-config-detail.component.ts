@@ -129,7 +129,7 @@ export class DotAiConfigDetailComponent implements OnInit {
                 },
                 error: (err) => {
                     this.loading.set(false);
-                    this.showError(err, 'Failed to load AI configuration');
+                    this.showError(err, this.dotMessageService.get('apps.ai.error.load'));
                 }
             });
     }
@@ -155,7 +155,7 @@ export class DotAiConfigDetailComponent implements OnInit {
             invalidCard.markAllTouched();
             this.dotMessageDisplayService.push({
                 life: 5000,
-                message: 'Please fill in the required fields before saving.',
+                message: this.dotMessageService.get('apps.ai.validation.required-fields'),
                 severity: DotMessageSeverity.ERROR,
                 type: DotMessageType.SIMPLE_MESSAGE
             });
@@ -183,7 +183,7 @@ export class DotAiConfigDetailComponent implements OnInit {
                 },
                 error: (err) => {
                     this.saving.set(false);
-                    this.showError(err, 'Failed to save AI configuration');
+                    this.showError(err, this.dotMessageService.get('apps.ai.error.save'));
                 }
             });
     }
