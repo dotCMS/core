@@ -198,7 +198,12 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(DATE_VAR, date(2024))
                 .setProperty(MULTI_VAR, "news")
                 .setProperty(BOOL_VAR, "true")
-                .setProperty(BOOL_RADIO_VAR, "1")
+                // Stored as the canonical literal, NOT as the option's own `1`. The field's OPTIONS
+                // stay db-style (`Yes|1 / No|0`) because that is the shape this filter has to handle,
+                // but a contentlet saved with `"1"` is subject to a separate, still-open divergence
+                // where the value persists as `true` yet indexes as `false`. Storing the literal keeps
+                // this test measuring the filter rather than that gap.
+                .setProperty(BOOL_RADIO_VAR, "true")
                 .setProperty(SINGLE_CHECK_VAR, "yes")
                 .setProperty(JSON_VAR, "{\"env\":\"prod\"}")
                 .setProperty(CUSTOM_VAR, "alpha")
@@ -216,7 +221,7 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 .setProperty(DATE_VAR, date(2020))
                 .setProperty(MULTI_VAR, "press")
                 .setProperty(BOOL_VAR, "false")
-                .setProperty(BOOL_RADIO_VAR, "0")
+                .setProperty(BOOL_RADIO_VAR, "false")
                 // SINGLE_CHECK_VAR deliberately left unset: an unticked checkbox stores nothing.
                 .setProperty(JSON_VAR, "{\"env\":\"dev\"}")
                 .setProperty(CUSTOM_VAR, "beta")
