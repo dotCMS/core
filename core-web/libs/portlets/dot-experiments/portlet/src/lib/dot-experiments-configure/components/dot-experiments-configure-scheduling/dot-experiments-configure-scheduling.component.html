@@ -1,97 +1,99 @@
-<section
-    class="flex flex-col gap-5 rounded-lg border border-surface-200 bg-white p-6"
-    data-testid="experiments-configure-scheduling-card">
-    <header class="flex flex-col gap-1">
-        <h2 class="text-lg font-bold text-surface-900" data-section="scheduling">
-            {{ 'experiments.configure.scheduling.name' | dm }}
-        </h2>
-        <p class="text-sm text-surface-500">
-            {{ 'experiments.configure.scheduling.subtitle' | dm }}
-        </p>
-    </header>
+<p-card data-testid="experiments-configure-scheduling-card">
+    <section class="flex flex-col gap-5">
+        <header class="flex flex-col gap-1">
+            <h2 class="text-lg font-bold text-surface-900" data-section="scheduling">
+                {{ 'experiments.configure.scheduling.name' | dm }}
+            </h2>
+            <p class="text-sm text-surface-500">
+                {{ 'experiments.configure.scheduling.subtitle' | dm }}
+            </p>
+        </header>
 
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-surface-900" for="experiments-start-date">
-                {{ 'experiments.configure.scheduling.start.time' | dm }}
-            </label>
-            <p-datepicker
-                inputId="experiments-start-date"
-                inputStyleClass="w-full"
-                styleClass="w-full"
-                [formField]="$field().startDate"
-                [defaultDate]="$bounds().initialStartDate"
-                [minDate]="$bounds().initialStartDate"
-                [showTime]="true"
-                [showIcon]="true"
-                [showClear]="true"
-                [readonlyInput]="true"
-                [stepMinute]="DATE_PICKER_STEP_MINUTE"
-                data-testid="experiments-configure-scheduling-start" />
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-semibold text-surface-900" for="experiments-start-date">
+                    {{ 'experiments.configure.scheduling.start.time' | dm }}
+                </label>
+                <p-datepicker
+                    inputId="experiments-start-date"
+                    inputStyleClass="w-full"
+                    styleClass="w-full"
+                    [formField]="$field().startDate"
+                    [defaultDate]="$bounds().initialStartDate"
+                    [minDate]="$bounds().initialStartDate"
+                    [showTime]="true"
+                    [showIcon]="true"
+                    [showClear]="true"
+                    [readonlyInput]="true"
+                    [stepMinute]="DATE_PICKER_STEP_MINUTE"
+                    data-testid="experiments-configure-scheduling-start" />
 
-            @if ($hasStartDateError()) {
-                <small class="p-error" data-testid="experiments-configure-scheduling-start-error">
-                    {{ 'experiments.configure.scheduling.start.error.past' | dm }}
-                </small>
-            }
+                @if ($hasStartDateError()) {
+                    <small
+                        class="p-error"
+                        data-testid="experiments-configure-scheduling-start-error">
+                        {{ 'experiments.configure.scheduling.start.error.past' | dm }}
+                    </small>
+                }
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-semibold text-surface-900" for="experiments-end-date">
+                    {{ 'experiments.configure.scheduling.end.time' | dm }}
+                </label>
+                <p-datepicker
+                    inputId="experiments-end-date"
+                    inputStyleClass="w-full"
+                    styleClass="w-full"
+                    [formField]="$field().endDate"
+                    [defaultDate]="$bounds().minEndDate"
+                    [minDate]="$bounds().minEndDate"
+                    [maxDate]="$bounds().maxEndDate"
+                    [showTime]="true"
+                    [showIcon]="true"
+                    [showClear]="true"
+                    [readonlyInput]="true"
+                    [stepMinute]="DATE_PICKER_STEP_MINUTE"
+                    data-testid="experiments-configure-scheduling-end" />
+
+                @if ($hasEndDateError()) {
+                    <small class="p-error" data-testid="experiments-configure-scheduling-end-error">
+                        {{
+                            'experiments.configure.scheduling.end.error.out-of-bounds'
+                                | dm
+                                    : [
+                                          ($bounds().minEndDate | date: 'medium') ?? '',
+                                          ($bounds().maxEndDate | date: 'medium') ?? ''
+                                      ]
+                        }}
+                    </small>
+                }
+            </div>
         </div>
 
-        <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-surface-900" for="experiments-end-date">
-                {{ 'experiments.configure.scheduling.end.time' | dm }}
-            </label>
-            <p-datepicker
-                inputId="experiments-end-date"
-                inputStyleClass="w-full"
-                styleClass="w-full"
-                [formField]="$field().endDate"
-                [defaultDate]="$bounds().minEndDate"
-                [minDate]="$bounds().minEndDate"
-                [maxDate]="$bounds().maxEndDate"
-                [showTime]="true"
-                [showIcon]="true"
-                [showClear]="true"
-                [readonlyInput]="true"
-                [stepMinute]="DATE_PICKER_STEP_MINUTE"
-                data-testid="experiments-configure-scheduling-end" />
-
-            @if ($hasEndDateError()) {
-                <small class="p-error" data-testid="experiments-configure-scheduling-end-error">
+        <div
+            class="flex items-center justify-between gap-4 rounded-md border border-surface-200 bg-surface-50 px-4 py-3"
+            data-testid="experiments-configure-scheduling-note">
+            <span class="text-sm text-surface-600">
+                @if ($startDate(); as startDate) {
                     {{
-                        'experiments.configure.scheduling.end.error.out-of-bounds'
-                            | dm
-                                : [
-                                      ($bounds().minEndDate | date: 'medium') ?? '',
-                                      ($bounds().maxEndDate | date: 'medium') ?? ''
-                                  ]
+                        'experiments.configure.scheduling.note.scheduled'
+                            | dm: [(startDate | date: 'medium') ?? '']
                     }}
-                </small>
+                } @else {
+                    {{ 'experiments.configure.scheduling.note.immediate' | dm }}
+                }
+            </span>
+
+            @if ($canClearSchedule()) {
+                <p-button
+                    type="button"
+                    severity="secondary"
+                    [outlined]="true"
+                    [label]="'experiments.configure.scheduling.action.clear' | dm"
+                    (onClick)="clearSchedule()"
+                    data-testid="experiments-configure-scheduling-clear-btn" />
             }
         </div>
-    </div>
-
-    <div
-        class="flex items-center justify-between gap-4 rounded-md border border-surface-200 bg-surface-50 px-4 py-3"
-        data-testid="experiments-configure-scheduling-note">
-        <span class="text-sm text-surface-600">
-            @if ($startDate(); as startDate) {
-                {{
-                    'experiments.configure.scheduling.note.scheduled'
-                        | dm: [(startDate | date: 'medium') ?? '']
-                }}
-            } @else {
-                {{ 'experiments.configure.scheduling.note.immediate' | dm }}
-            }
-        </span>
-
-        @if ($canClearSchedule()) {
-            <p-button
-                type="button"
-                severity="secondary"
-                [outlined]="true"
-                [label]="'experiments.configure.scheduling.action.clear' | dm"
-                (onClick)="clearSchedule()"
-                data-testid="experiments-configure-scheduling-clear-btn" />
-        }
-    </div>
-</section>
+    </section>
+</p-card>

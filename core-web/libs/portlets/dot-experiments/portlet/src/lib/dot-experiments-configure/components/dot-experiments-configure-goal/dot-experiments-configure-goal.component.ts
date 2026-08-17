@@ -1,6 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { disabled, FieldTree, FormField, maxLength, SchemaFn } from '@angular/forms/signals';
 
+import { Card } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
@@ -94,6 +95,7 @@ export function goalFormSchema(isLocked: () => boolean): SchemaFn<GoalFormSlice>
 @Component({
     selector: 'dot-experiments-configure-goal',
     imports: [
+        Card,
         FormField,
         InputTextModule,
         SelectModule,

@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { ButtonModule } from 'primeng/button';
+import { Card } from 'primeng/card';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
@@ -58,6 +59,7 @@ const PAGE_IMMUTABLE_TOOLTIP_KEY = 'experiments.configure.page.select.immutable.
 @Component({
     selector: 'dot-experiments-configure-page',
     imports: [
+        Card,
         FormField,
         ButtonModule,
         InputGroupModule,

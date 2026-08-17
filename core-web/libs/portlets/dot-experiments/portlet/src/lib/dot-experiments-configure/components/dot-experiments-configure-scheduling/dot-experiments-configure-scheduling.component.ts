@@ -3,6 +3,7 @@ import { Component, computed, input, Signal } from '@angular/core';
 import { disabled, FieldTree, FormField, maxDate, minDate, SchemaFn } from '@angular/forms/signals';
 
 import { ButtonModule } from 'primeng/button';
+import { Card } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -64,7 +65,7 @@ export function schedulingFormSchema({
  */
 @Component({
     selector: 'dot-experiments-configure-scheduling',
-    imports: [DatePipe, FormField, ButtonModule, DatePickerModule, DotMessagePipe],
+    imports: [DatePipe, Card, FormField, ButtonModule, DatePickerModule, DotMessagePipe],
     templateUrl: './dot-experiments-configure-scheduling.component.html'
 })
 export class DotExperimentsConfigureSchedulingComponent {
