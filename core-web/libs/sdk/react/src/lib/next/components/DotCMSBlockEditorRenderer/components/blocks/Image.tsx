@@ -3,6 +3,8 @@ import { BlockEditorNode } from '@dotcms/types';
 interface DotCMSImageProps {
     src: string;
     alt: string;
+    href?: string | null;
+    target?: string | null;
     textWrap?: 'left' | 'right';
     textAlign?: string;
 }
@@ -10,11 +12,16 @@ interface DotCMSImageProps {
 /**
  * Renders an image component for dotCMS.
  *
+ * When the Block Editor assigns a link to the image, it is stored as `href` /
+ * `target` on the `dotImage` node and the image is wrapped in an anchor. `href`
+ * is `null` when never set and `''` once the editor unsets it — both mean "no
+ * link", so the image renders bare.
+ *
  * @param node - The node for the DotCMSImage component.
  * @returns The rendered image component.
  */
 export const DotCMSImage = ({ node }: { node: BlockEditorNode }) => {
-    const { src, alt, textWrap, textAlign } = node.attrs as DotCMSImageProps;
+    const { src, alt, href, target, textWrap, textAlign } = node.attrs as DotCMSImageProps;
 
     let wrapperStyle: React.CSSProperties = {};
 
@@ -26,13 +33,27 @@ export const DotCMSImage = ({ node }: { node: BlockEditorNode }) => {
         wrapperStyle = { textAlign: textAlign as React.CSSProperties['textAlign'] };
     }
 
+    const image = (
+        <img
+            alt={alt}
+            src={src}
+            style={textWrap ? { maxWidth: '100%', height: 'auto' } : undefined}
+        />
+    );
+
     return (
         <figure style={wrapperStyle}>
-            <img
-                alt={alt}
-                src={src}
-                style={textWrap ? { maxWidth: '100%', height: 'auto' } : undefined}
-            />
+            {href ? (
+                <a
+                    href={href}
+                    target={target ?? undefined}
+                    // Guards against reverse tabnabbing when the link opens in a new tab.
+                    rel={target === '_blank' ? 'noopener noreferrer' : undefined}>
+                    {image}
+                </a>
+            ) : (
+                image
+            )}
         </figure>
     );
 };

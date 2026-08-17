@@ -134,6 +134,27 @@ export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
         return {};
     }
 
+    /**
+     * The link assigned to a `dotImage` in the Block Editor, stored as
+     * `href`/`target` on the node. Returns `null` when the image has no link —
+     * `href` is `null` when never set and `''` once the editor unsets it.
+     *
+     * `rel` guards against reverse tabnabbing when the link opens in a new tab.
+     */
+    imageLink(
+        attrs: BlockEditorNode['attrs']
+    ): { href: string; target: string | null; rel: string | null } | null {
+        const href = attrs?.['href'];
+
+        if (!href) {
+            return null;
+        }
+
+        const target = attrs?.['target'] || null;
+
+        return { href, target, rel: target === '_blank' ? 'noopener noreferrer' : null };
+    }
+
     /** Poster URL for a `dotVideo` `<video>` (from `attrs.data.thumbnail`). */
     videoPoster(attrs: BlockEditorNode['attrs']): string | undefined {
         return attrs?.['data']?.['thumbnail'];
