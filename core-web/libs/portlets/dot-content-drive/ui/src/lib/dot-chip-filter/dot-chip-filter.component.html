@@ -1,6 +1,6 @@
 <span class="truncate">
     <span class="font-semibold" data-testid="chip-title">{{ title() }}</span>
-    @if (active()) {
+    @if (active() && !isToggle()) {
         <span data-testid="chip-values">: {{ valuesLabel() }}</span>
     }
 </span>
@@ -13,6 +13,8 @@
         data-testid="chip-remove">
         <i class="pi pi-times text-sm leading-none"></i>
     </button>
-} @else {
+} @else if (!isToggle()) {
+    <!-- A toggle that is off shows nothing here: there is no overlay to promise, and no selection
+         to clear. Only the dropdown chip keeps a trailing affordance in every state. -->
     <i class="pi pi-chevron-down text-sm leading-none"></i>
 }

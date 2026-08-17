@@ -110,6 +110,22 @@ export const DEBOUNCE_TIME = 500;
 export const USER_SEARCHABLE_PREFIX = 'us.';
 
 /**
+ * Filter-bag key backing the "Show shared assets" toggle, which drives `includeSystemHost` on the
+ * search request. It lives in the bag rather than in its own query param so it inherits the URL
+ * encode/decode, the back/forward guard, and the legacy-editor `CD_` round-trip.
+ *
+ * Like `languageId`, it is always seeded rather than written only when it differs from the default,
+ * so the state that is applied is always visible in the URL instead of being implied by absence.
+ */
+export const SHARED_ASSETS_FILTER_KEY = 'sharedAssets';
+
+/** Shows SYSTEM_HOST (shared) assets. The seeded default. */
+export const SHARED_ASSETS_ENABLED_VALUE = 'true';
+
+/** Hides SYSTEM_HOST (shared) assets. */
+export const SHARED_ASSETS_DISABLED_VALUE = 'false';
+
+/**
  * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
  * The string values match the backend field-type contract (edit-content `FIELD_TYPES`). Grouped by
  * the control rendered and the value shape stored/sent:

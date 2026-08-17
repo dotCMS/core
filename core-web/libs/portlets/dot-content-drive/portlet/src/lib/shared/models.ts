@@ -284,6 +284,10 @@ export type DotKnownContentDriveFilters = {
     languageId: string[];
     // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
     workflow: string[];
+    // `'false'` hides SYSTEM_HOST (shared) assets. Only ever written when off: the flag defaults to
+    // on, so its absence is what carries the default, which keeps it out of untouched URLs and lets
+    // "Clear all" restore it for free.
+    sharedAssets: string;
 };
 
 /**

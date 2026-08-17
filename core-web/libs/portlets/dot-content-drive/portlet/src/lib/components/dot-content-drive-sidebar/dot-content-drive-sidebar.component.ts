@@ -12,11 +12,7 @@ import {
     viewChild
 } from '@angular/core';
 
-import type {
-    TreeNodeCollapseEvent,
-    TreeNodeExpandEvent,
-    TreeNodeSelectEvent
-} from 'primeng/types/tree';
+import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
 import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
@@ -43,10 +39,13 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
     templateUrl: './dot-content-drive-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotTreeFolderComponent],
-    host: { class: 'w-full h-full grid grid-rows-[min-content_1fr]' },
+    host: { class: 'block w-full h-full' },
     styles: `
+        /* The top inset used to come from the site-name header that sat above the tree. With the
+           site now named by the tree's own root row, the tree owns that spacing — and the amount is
+           what centers that first row on the toolbar's search box and tree toggler beside it. */
         :host ::ng-deep .p-tree {
-            padding: 0 0.75rem 0.75rem;
+            padding: 1.25rem 0.75rem 0.75rem;
         }
     `
 })
@@ -199,8 +198,8 @@ export class DotContentDriveSidebarComponent {
      * Loads the next page of children for a folder level when its "Load more" node is clicked,
      * appending them and refreshing (or removing) the "Load more" node.
      *
-     * Root-level sentinels are siblings of root folders (not children of ALL_FOLDER), so they
-     * update the top-level folders array. Nested sentinels update `parent.children`.
+     * Root-level sentinels live alongside the root folders, which are the site node's children, so
+     * they update that node's children. Nested sentinels update their own `parent.children`.
      *
      * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
      */
@@ -218,27 +217,28 @@ export class DotContentDriveSidebarComponent {
 
                 if (isRootLevel) {
                     const current = this.$folders();
-                    const allFolder =
-                        current.find((folder) => folder.key === ALL_FOLDER.key) ?? ALL_FOLDER;
-                    const loaded = current.filter(
-                        (folder) =>
-                            folder.key !== ALL_FOLDER.key &&
-                            folder.data?.type !== LOAD_MORE_NODE_TYPE
+                    const siteNode = current.find((folder) => folder.key === ALL_FOLDER.key);
+
+                    if (!siteNode) {
+                        return;
+                    }
+
+                    const loaded = ((siteNode.children as DotFolderTreeNodeItem[]) ?? []).filter(
+                        (folder) => folder.data?.type !== LOAD_MORE_NODE_TYPE
                     );
                     // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
                     // the top of a level out of sort order, and paging far enough returns it again.
                     const combined = mergeFolderNodePage(loaded, folders);
 
-                    this.#store.updateFolders([
-                        allFolder,
-                        ...appendLoadMoreNodes(
-                            combined,
-                            totalEntries,
-                            parentPath || '/',
-                            hostname ?? '',
-                            (nextPage ?? 1) + 1
-                        )
-                    ]);
+                    siteNode.children = appendLoadMoreNodes(
+                        combined,
+                        totalEntries,
+                        parentPath || '/',
+                        hostname ?? '',
+                        (nextPage ?? 1) + 1
+                    );
+
+                    this.#store.updateFolders([...current]);
 
                     return;
                 }
@@ -334,18 +334,16 @@ export class DotContentDriveSidebarComponent {
     }
 
     /**
-     * Handles node collapse events
-     * Prevents collapse of the special 'ALL_FOLDER' node
+     * The site's root folders, which hang off the site node rather than sitting at the top level.
+     * Path walks start here: the site node's own path is empty and matches no segment.
      *
-     * @param {TreeNodeCollapseEvent} event - The tree node collapse event
+     * @returns {DotFolderTreeNodeItem[]} the root folders, or the top level if there is no site node
      */
-    protected onNodeCollapse(event: TreeNodeCollapseEvent): void {
-        const { node } = event;
+    #rootFolders(): DotFolderTreeNodeItem[] {
+        const folders = this.$folders();
+        const siteNode = folders.find((folder) => folder.key === ALL_FOLDER.key);
 
-        if (node.key === ALL_FOLDER.key) {
-            node.expanded = true;
-            return;
-        }
+        return siteNode ? ((siteNode.children as DotFolderTreeNodeItem[]) ?? []) : folders;
     }
 
     /**
@@ -357,7 +355,7 @@ export class DotContentDriveSidebarComponent {
      */
     recursiveExpandOneNode(
         segments: string[],
-        nodes: DotFolderTreeNodeItem[] = this.$folders()
+        nodes: DotFolderTreeNodeItem[] = this.#rootFolders()
     ): void {
         if (segments.length === 0) {
             return;

@@ -29,6 +29,8 @@ import {
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
 } from '../shared/constants';
@@ -127,7 +129,8 @@ export const decodeByFilterKey: Record<
     title: singleSelector,
     languageId: multiSelector,
     // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
-    workflow: multiSelector
+    workflow: multiSelector,
+    sharedAssets: singleSelector
 };
 
 /**
@@ -268,6 +271,81 @@ export function withDefaultLanguage(
     }
 
     return { ...filters, languageId: [String(defaultLanguageId)] };
+}
+
+/**
+ * Seeds the shared-assets toggle with its default when the filters do not carry it.
+ *
+ * The toggle is on by default, which could have been left implicit — no key meaning on. It is
+ * seeded instead so the state that is applied is always visible in the URL rather than inferred from
+ * something missing, and so "Clear all" lands on the same explicit value a fresh load does.
+ *
+ * Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @return {*} {DotContentDriveFilters} The filters, with the shared-assets key guaranteed.
+ */
+export function withDefaultSharedAssets(filters: DotContentDriveFilters): DotContentDriveFilters {
+    if (filters?.[SHARED_ASSETS_FILTER_KEY]) {
+        return filters;
+    }
+
+    return { ...filters, [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE };
+}
+
+/**
+ * Whether any filter is set to something other than its default.
+ *
+ * Not the same question as "are there filters at all": the seeded defaults — the environment language
+ * and the shared-assets toggle — are always present, so counting keys would answer yes on a drive
+ * nobody has filtered. Consumers use this to decide whether there is anything worth offering to
+ * clear.
+ *
+ * A filter explicitly set to its default value counts as default, which is deliberate: selecting the
+ * default language by hand is indistinguishable from the seeded state, and clearing it would just
+ * re-select the same thing.
+ *
+ * @param {DotContentDriveFilters} filters The filters to inspect.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {boolean} True when at least one filter differs from its default.
+ */
+export function hasNonDefaultFilters(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): boolean {
+    return Object.entries(filters ?? {}).some(([key, value]) => {
+        if (key === SHARED_ASSETS_FILTER_KEY) {
+            return value !== SHARED_ASSETS_ENABLED_VALUE;
+        }
+
+        if (key === 'languageId') {
+            const languages = Array.isArray(value) ? value : [value];
+
+            return !(
+                defaultLanguageId &&
+                languages.length === 1 &&
+                languages[0] === String(defaultLanguageId)
+            );
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Applies every filter default in one pass, for the paths that build a filter set from scratch or
+ * from the URL: init, "Clear all", removing a single filter, and history restore. Keeping them
+ * together is what stops one of those paths from quietly missing a default.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with defaults applied.
+ */
+export function withFilterDefaults(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    return withDefaultSharedAssets(withDefaultLanguage(filters, defaultLanguageId));
 }
 
 /**

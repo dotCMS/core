@@ -44,12 +44,21 @@ import {
     resolveHierarchyAncestor,
     serializeUserSearchableValue,
     toLocalIsoString,
+    hasNonDefaultFilters,
     withDefaultLanguage,
+    withDefaultSharedAssets,
+    withFilterDefaults,
     workflowEntryToToken
 } from './functions';
 import { createTreeNode } from './tree-folder.utils';
 
-import { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE } from '../shared/constants';
+import {
+    FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+    FOLDER_TREE_PAGE_SIZE,
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY
+} from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
@@ -428,6 +437,138 @@ describe('Utility Functions', () => {
             withDefaultLanguage(filters, DEFAULT_LANGUAGE_ID);
 
             expect(filters).toEqual({ title: 'Blog' });
+        });
+    });
+
+    describe('withDefaultSharedAssets', () => {
+        it('should seed the toggle as on when the key is absent', () => {
+            expect(withDefaultSharedAssets({ title: 'Blog' })).toEqual({
+                title: 'Blog',
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+            });
+        });
+
+        it('should leave an explicit opt-out untouched', () => {
+            expect(
+                withDefaultSharedAssets({
+                    [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                })
+            ).toEqual({ [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE });
+        });
+
+        it('should not mutate the filters it was given', () => {
+            const filters: DotContentDriveFilters = { title: 'Blog' };
+
+            withDefaultSharedAssets(filters);
+
+            expect(filters).toEqual({ title: 'Blog' });
+        });
+    });
+
+    describe('withFilterDefaults', () => {
+        it('should apply every default in one pass', () => {
+            expect(withFilterDefaults({}, 2)).toEqual({
+                languageId: ['2'],
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+            });
+        });
+
+        it('should still seed the toggle when the default language is unknown', () => {
+            // The languages request has not answered yet; that must not hold back an unrelated
+            // default.
+            expect(withFilterDefaults({}, undefined)).toEqual({
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+            });
+        });
+
+        it('should preserve values the caller already set', () => {
+            expect(
+                withFilterDefaults(
+                    {
+                        languageId: ['3'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    },
+                    2
+                )
+            ).toEqual({
+                languageId: ['3'],
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+            });
+        });
+    });
+
+    describe('hasNonDefaultFilters', () => {
+        const DEFAULT_LANGUAGE_ID = 1;
+
+        it('should report nothing to clear when only the seeded defaults are set', () => {
+            // Both defaults are always present, so counting keys would report a filtered drive to
+            // every user who has filtered nothing.
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['1'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(false);
+        });
+
+        it('should report nothing to clear for an empty filter set', () => {
+            expect(hasNonDefaultFilters({}, DEFAULT_LANGUAGE_ID)).toBe(false);
+        });
+
+        it('should report a change once shared assets are turned off', () => {
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['1'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(true);
+        });
+
+        it('should report a change once a non-default language is picked', () => {
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['2'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(true);
+        });
+
+        it('should report a change once more than one language is picked', () => {
+            expect(hasNonDefaultFilters({ languageId: ['1', '2'] }, DEFAULT_LANGUAGE_ID)).toBe(
+                true
+            );
+        });
+
+        it('should treat a language selection as a change while the default is unknown', () => {
+            expect(hasNonDefaultFilters({ languageId: ['1'] }, undefined)).toBe(true);
+        });
+
+        it.each([
+            ['title', { title: 'Blog' }],
+            ['contentType', { contentType: ['Blog'] }],
+            ['baseType', { baseType: ['1'] }],
+            ['workflow', { workflow: ['scheme-1'] }],
+            ['a field filter', { 'us.body': 'hello' }]
+        ])('should report a change for %s', (_label: string, filters: DotContentDriveFilters) => {
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['1'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE,
+                        ...filters
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(true);
         });
     });
 

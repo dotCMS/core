@@ -51,8 +51,12 @@ export function withSidebar() {
                     return;
                 }
 
+                // The root node *is* the site: selecting it browses the site root. It carries the
+                // hostname as its label so the sidebar names the site once, on the row that
+                // navigates there, rather than in a header that duplicated it.
                 const realAllFolder: DotFolderTreeNodeItem = {
                     ...ALL_FOLDER,
+                    label: currentSite.hostname,
                     data: {
                         hostname: currentSite.hostname,
                         path: '',
@@ -98,7 +102,12 @@ export function withSidebar() {
 
                         patchState(store, {
                             sidebarLoading: false,
-                            folders: [realAllFolder, ...rootsWithLoadMore],
+                            // The site's folders are the site node's children, not its siblings, so
+                            // its chevron collapses the whole site the way any folder's collapses
+                            // its own subtree. As siblings they sat at the same level as the site
+                            // while its chevron controlled nothing, and expanding it fetched them a
+                            // second time — the tree showed every root folder twice.
+                            folders: [{ ...realAllFolder, children: rootsWithLoadMore }],
                             selectedNode: selectedNode
                         });
                     });

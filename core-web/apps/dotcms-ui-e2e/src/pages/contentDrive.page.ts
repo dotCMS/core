@@ -16,7 +16,9 @@ export class ContentDrivePage {
         this.toolbar = page.getByTestId('toolbar');
         this.treeSelector = page.getByTestId('tree-selector');
         this.sidebar = page.getByTestId('sidebar');
-        this.currentSiteHostname = page.getByTestId('current-site-hostname');
+        // The site is named by the tree's own root row rather than a header above it, so the
+        // hostname is that row's label.
+        this.currentSiteHostname = this.sidebar.locator('[data-node-key="ALL_FOLDER"]');
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
     }
@@ -36,10 +38,12 @@ export class ContentDrivePage {
         await this.page.waitForLoadState('domcontentloaded');
         await expect(this.toolbar).toBeVisible({ timeout: 20000 });
         await expect(this.treeSelector).toBeVisible({ timeout: 20000 });
-        await expect(this.currentSiteHostname).toBeVisible({ timeout: 20000 });
         await folderSearch;
         // Wait for tree nodes via projected labels (more specific than the p-tree host test id).
         await expect(this.treeNodeLabels.first()).toBeVisible({ timeout: 20000 });
+        // Waited on after the tree, not before it: the hostname is the root node's label, so it only
+        // exists once the folder tree has rendered.
+        await expect(this.currentSiteHostname).toBeVisible({ timeout: 20000 });
     }
 
     async expectSiteHostname(hostname: string) {

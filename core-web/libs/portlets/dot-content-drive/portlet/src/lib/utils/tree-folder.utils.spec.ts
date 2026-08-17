@@ -8,7 +8,9 @@ describe('Sidebar Utils', () => {
         it('should have correct structure', () => {
             expect(ALL_FOLDER).toEqual({
                 key: 'ALL_FOLDER',
-                label: 'content-drive.all-folder.label',
+                // Blank: the store fills in the current site's hostname per site, so the constant
+                // carries no label of its own.
+                label: '',
                 loading: false,
                 data: {
                     type: 'folder',
@@ -17,7 +19,7 @@ describe('Sidebar Utils', () => {
                     id: '',
                     inode: ''
                 },
-                icon: 'pi pi-folder',
+                icon: 'pi pi-globe',
                 leaf: false,
                 expanded: true
             });
@@ -35,8 +37,8 @@ describe('Sidebar Utils', () => {
             expect(ALL_FOLDER.leaf).toBe(false);
         });
 
-        it('should use a native PrimeNG folder icon', () => {
-            expect(ALL_FOLDER.icon).toBe('pi pi-folder');
+        it('should use a globe icon, because the node stands for the site', () => {
+            expect(ALL_FOLDER.icon).toBe('pi pi-globe');
         });
     });
 

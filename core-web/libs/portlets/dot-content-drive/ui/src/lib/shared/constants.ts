@@ -43,11 +43,14 @@ export const DOT_DRAG_ITEM = 'dotcms/item';
 /**
  * @export
  * @type ALL_FOLDER
- * @description All folder node
+ * @description The tree's synthetic root node: it stands for the site itself, and selecting it
+ * browses the site root. The store clones it per site, filling in the hostname as the label and the
+ * site identifier as the data id (see `withSidebar.loadFolders`), so the label here is only the
+ * placeholder that exists before a site is resolved and is never rendered.
  */
 export const ALL_FOLDER: DotFolderTreeNodeItem = {
     key: 'ALL_FOLDER',
-    label: 'content-drive.all-folder.label',
+    label: '',
     loading: false,
     data: {
         type: 'folder',
@@ -56,7 +59,8 @@ export const ALL_FOLDER: DotFolderTreeNodeItem = {
         id: '',
         inode: ''
     },
-    icon: 'pi pi-folder',
+    // A globe, not a folder: this row is the site. PrimeNG renders `icon` beside the node label.
+    icon: 'pi pi-globe',
     leaf: false,
     expanded: true
 };

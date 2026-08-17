@@ -215,6 +215,29 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
         });
 
+        it('should not render when only the seeded defaults are set', () => {
+            // The default language and the shared-assets toggle are always present, so counting
+            // filter keys would leave this button on screen permanently.
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should render once shared assets are turned off', () => {
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'false' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
+        });
+
+        it('should render once a non-default language is picked', () => {
+            filtersSignal.set({ languageId: ['2'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
+        });
+
         it('should render when at least one filter is applied', () => {
             filtersSignal.set({ contentType: ['Blog'] });
             spectator.detectChanges();

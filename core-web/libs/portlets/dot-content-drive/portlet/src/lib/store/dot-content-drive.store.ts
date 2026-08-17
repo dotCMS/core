@@ -40,6 +40,8 @@ import {
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
@@ -57,7 +59,7 @@ import {
     getUserSearchableActive,
     parseWorkflowFilter,
     sortedEncodedFilters,
-    withDefaultLanguage
+    withFilterDefaults
 } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
@@ -122,7 +124,12 @@ export const DotContentDriveStore = signalStore(
 
                         return {
                             assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                            includeSystemHost: true,
+                            // Off only when explicitly turned off. The key is seeded on every path
+                            // that builds filters (see `withFilterDefaults`), so a missing one means
+                            // state that predates the seeding, not a deliberate opt-out.
+                            includeSystemHost:
+                                filters()?.[SHARED_ASSETS_FILTER_KEY] !==
+                                SHARED_ASSETS_DISABLED_VALUE,
                             filters: {
                                 text: filters()?.title || '',
                                 filterFolders: true
@@ -176,7 +183,7 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, {
                     currentSite: currentSite ?? SYSTEM_HOST,
                     path,
-                    filters: withDefaultLanguage(filters, store.defaultLanguageId()),
+                    filters: withFilterDefaults(filters, store.defaultLanguageId()),
                     status: DotContentDriveStatus.LOADING,
                     isTreeExpanded,
                     pagination: {
@@ -220,9 +227,10 @@ export const DotContentDriveStore = signalStore(
             },
             clearFilters() {
                 patchState(store, {
-                    // Clearing every filter still leaves the default language selected: an empty
-                    // language filter is not a neutral state (see `withDefaultLanguage`).
-                    filters: withDefaultLanguage({}, store.defaultLanguageId()),
+                    // Clearing every filter still leaves the defaults applied: an empty language
+                    // filter is not a neutral state, and shared assets stay on (see
+                    // `withFilterDefaults`).
+                    filters: withFilterDefaults({}, store.defaultLanguageId()),
                     pagination: { ...store.pagination(), offset: 0, page: 1 },
                     pages: [DEFAULT_PAGE]
                 });
@@ -242,9 +250,9 @@ export const DotContentDriveStore = signalStore(
                 const { [filter]: removedFilter, ...restFilters } = store.filters();
                 if (removedFilter) {
                     patchState(store, {
-                        // Re-seeded so dropping `languageId` can never leave the language filter
-                        // unset, whichever caller does it.
-                        filters: withDefaultLanguage(restFilters, store.defaultLanguageId()),
+                        // Re-seeded so dropping a defaulted key — `languageId`, or the shared-assets
+                        // toggle — can never leave it unset, whichever caller does it.
+                        filters: withFilterDefaults(restFilters, store.defaultLanguageId()),
                         pagination: { ...store.pagination(), page: 1, offset: 0 },
                         pages: [DEFAULT_PAGE]
                     });
@@ -406,7 +414,7 @@ export const DotContentDriveStore = signalStore(
                             languages,
                             defaultLanguageId,
                             defaultLanguageLoaded: true,
-                            filters: withDefaultLanguage(store.filters(), defaultLanguageId)
+                            filters: withFilterDefaults(store.filters(), defaultLanguageId)
                         });
                     });
             },
@@ -567,7 +575,7 @@ export const DotContentDriveStore = signalStore(
                     // this the seed becomes a history trap: the write-back pushes the seeded URL, Back
                     // returns to the language-less one, the guard sees a difference, re-hydration
                     // re-seeds, and the same entry is pushed again — the user can never Back out.
-                    const restoredFilters = withDefaultLanguage(
+                    const restoredFilters = withFilterDefaults(
                         decodeFilters(filtersRaw),
                         store.defaultLanguageId()
                     );

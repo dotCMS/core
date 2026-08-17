@@ -39,10 +39,27 @@ import {
     DEFAULT_PATH,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST
 } from '../shared/constants';
 import { MOCK_ITEMS, MOCK_SEARCH_RESPONSE, MOCK_SITES } from '../shared/mocks';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveFilters,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
+
+/**
+ * Expected filters, with the shared-assets default the store seeds on every path that builds a
+ * filter set. Spelled out here rather than assumed so a test that cares about the toggle can pass
+ * its own value and still read as one object.
+ */
+const withSeeded = (filters: DotContentDriveFilters = {}): DotContentDriveFilters => ({
+    [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE,
+    ...filters
+});
 
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
@@ -108,7 +125,7 @@ describe('DotContentDriveStore', () => {
             expect(store.path()).toBe(DEFAULT_PATH);
             // The default language is seeded during onInit — "no language selected" is never a
             // state the portlet sits in.
-            expect(store.filters()).toEqual({ languageId: ['1'] });
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             expect(store.items()).toEqual([]);
             expect(store.selectedItems()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
@@ -190,7 +207,7 @@ describe('DotContentDriveStore', () => {
                 isTreeExpanded: false
             });
 
-            expect(store.filters()).toEqual({ languageId: ['1'] });
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
         });
 
         it('should leave a language restored from the URL untouched', () => {
@@ -201,7 +218,7 @@ describe('DotContentDriveStore', () => {
                 isTreeExpanded: false
             });
 
-            expect(store.filters()).toEqual({ languageId: ['2'] });
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['2'] }));
         });
 
         it('should re-seed the default language when every filter is cleared', () => {
@@ -209,7 +226,7 @@ describe('DotContentDriveStore', () => {
 
             store.clearFilters();
 
-            expect(store.filters()).toEqual({ languageId: ['1'] });
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
         });
 
         it('should re-seed the default language when the language filter is removed', () => {
@@ -219,7 +236,7 @@ describe('DotContentDriveStore', () => {
 
             store.removeFilter('languageId');
 
-            expect(store.filters()).toEqual({ languageId: ['1'] });
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
         });
 
         it('should keep other filters when re-seeding after a language removal', () => {
@@ -227,7 +244,7 @@ describe('DotContentDriveStore', () => {
 
             store.removeFilter('languageId');
 
-            expect(store.filters()).toEqual({ title: 'Blog', languageId: ['1'] });
+            expect(store.filters()).toEqual(withSeeded({ title: 'Blog', languageId: ['1'] }));
         });
 
         it('should still show folders when a language is selected', () => {
@@ -271,6 +288,61 @@ describe('DotContentDriveStore', () => {
                 expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
                 expect(request.archived).toBe(false);
                 expect(request.showFolders).toBe(true);
+            });
+
+            describe('includeSystemHost', () => {
+                it('should stay on when the shared-assets filter carries its seeded default', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.filters()[SHARED_ASSETS_FILTER_KEY]).toBe(
+                        SHARED_ASSETS_ENABLED_VALUE
+                    );
+                    expect(store.$request().includeSystemHost).toBe(true);
+                });
+
+                it('should turn off when the shared-assets filter is disabled', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().includeSystemHost).toBe(false);
+                });
+
+                it('should follow the filter when it is toggled after init', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    store.patchFilters({
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    });
+
+                    expect(store.$request().includeSystemHost).toBe(false);
+                });
+
+                it('should come back on when "Clear all" drops every filter', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE },
+                        isTreeExpanded: false
+                    });
+
+                    store.clearFilters();
+
+                    expect(store.$request().includeSystemHost).toBe(true);
+                });
             });
 
             it('should include path in assetPath when provided', () => {
@@ -574,7 +646,7 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.currentSite()).toEqual(testSite);
                 expect(store.path()).toBe(testPath);
-                expect(store.filters()).toEqual({ ...testFilters, languageId: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ ...testFilters, languageId: ['1'] }));
                 expect(store.status()).toBe(DotContentDriveStatus.LOADING);
                 expect(store.isTreeExpanded()).toBe(true);
             });
@@ -622,7 +694,9 @@ describe('DotContentDriveStore', () => {
         describe('setGlobalSearch', () => {
             it('should update filters with title search value', () => {
                 store.setGlobalSearch('test search');
-                expect(store.filters()).toEqual({ languageId: ['1'], title: 'test search' });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], title: 'test search' })
+                );
             });
 
             it('should preserve other filters when setting a search value', () => {
@@ -630,20 +704,26 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test search');
 
-                expect(store.filters()).toEqual({
-                    languageId: ['1'],
-                    contentType: ['Blog'],
-                    baseType: ['1'],
-                    title: 'test search'
-                });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        baseType: ['1'],
+                        title: 'test search'
+                    })
+                );
             });
 
             it('should preserve other filters when search is empty', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ languageId: ['1'], contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
 
                 store.setGlobalSearch('');
-                expect(store.filters()).toEqual({ languageId: ['1'], contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
 
             it('should reset pagination offset when setting global search', () => {
@@ -672,7 +752,7 @@ describe('DotContentDriveStore', () => {
 
                 // Clearing everything still leaves the default language: an empty language filter
                 // is not a neutral state.
-                expect(store.filters()).toEqual({ languageId: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should reset pagination when clearing filters', () => {
@@ -687,14 +767,16 @@ describe('DotContentDriveStore', () => {
         describe('removeFilter', () => {
             it('should remove the specified filter', () => {
                 store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
-                expect(store.filters()).toEqual({
-                    languageId: ['1'],
-                    contentType: ['Blog'],
-                    baseType: ['1']
-                });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        baseType: ['1']
+                    })
+                );
 
                 store.removeFilter('contentType');
-                expect(store.filters()).toEqual({ languageId: ['1'], baseType: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'], baseType: ['1'] }));
             });
 
             it('should reset pagination offset when removing filter', () => {
@@ -713,7 +795,9 @@ describe('DotContentDriveStore', () => {
 
                 store.removeFilter('nonExistentFilter');
 
-                expect(store.filters()).toEqual({ ...initialFilters, languageId: ['1'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ ...initialFilters, languageId: ['1'] })
+                );
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
             });
         });
@@ -721,15 +805,19 @@ describe('DotContentDriveStore', () => {
         describe('patchFilters', () => {
             it('should update filters with provided values', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ languageId: ['1'], contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
 
             it('should remove filter if value is undefined', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ languageId: ['1'], contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
 
                 store.patchFilters({ contentType: undefined });
-                expect(store.filters()).toEqual({ languageId: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should update filters and reset pagination offset', () => {
@@ -738,7 +826,9 @@ describe('DotContentDriveStore', () => {
 
                 store.patchFilters({ contentType: ['Blog'] });
                 expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
-                expect(store.filters()).toEqual({ languageId: ['1'], contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
         });
 
@@ -838,25 +928,29 @@ describe('DotContentDriveStore', () => {
             it('should not touch filters when changing path', () => {
                 store.patchFilters({ contentType: ['Blog'] });
                 store.setGlobalSearch('hello');
-                expect(store.filters()).toEqual({
-                    languageId: ['1'],
-                    contentType: ['Blog'],
-                    title: 'hello'
-                });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'hello'
+                    })
+                );
 
                 store.setPath('/documents/');
 
-                expect(store.filters()).toEqual({
-                    languageId: ['1'],
-                    contentType: ['Blog'],
-                    title: 'hello'
-                });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'hello'
+                    })
+                );
             });
 
             it('should leave filters at just the default language when entering a folder', () => {
                 store.setPath('/some/folder/');
 
-                expect(store.filters()).toEqual({ languageId: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
         });
     });
@@ -923,10 +1017,12 @@ describe('DotContentDriveStore - onInit', () => {
         spectator.flushEffects();
 
         expect(store.path()).toBe('/initial/test/path');
-        expect(store.filters()).toEqual({
-            contentType: ['InitialTestContentType'],
-            languageId: ['1']
-        });
+        expect(store.filters()).toEqual(
+            withSeeded({
+                contentType: ['InitialTestContentType'],
+                languageId: ['1']
+            })
+        );
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
     });
@@ -992,7 +1088,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
     it('re-hydrates the store when Back changes the filters param (fixes the stale-list bug)', () => {
         popstate('/c/content-drive?filters=contentType:Blog');
 
-        expect(store.filters()).toEqual({ contentType: ['Blog'], languageId: ['1'] });
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
         // Reset to LOADING is what the search effect turns into a fresh load.
         expect(store.status()).toBe(DotContentDriveStatus.LOADING);
     });
@@ -1031,7 +1127,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
 
         expect(initSpy).not.toHaveBeenCalled();
         expect(store.path()).toBe('/keep');
-        expect(store.filters()).toEqual({ contentType: ['Blog'], languageId: ['1'] });
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
     });
 
     it('does NOT re-hydrate when Back returns to a URL with no filters while the default is seeded', () => {
@@ -1049,7 +1145,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
         popstate('/c/content-drive?path=/keep&isTreeExpanded=true');
 
         expect(initSpy).not.toHaveBeenCalled();
-        expect(store.filters()).toEqual({ languageId: ['1'] });
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
     });
 
     it('does NOT re-hydrate when the restored filters differ only in key order', () => {
@@ -1151,7 +1247,7 @@ describe('DotContentDriveStore - default language resolution', () => {
 
         expect(store.defaultLanguageLoaded()).toBe(true);
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
-        expect(store.filters()).toEqual({});
+        expect(store.filters()).toEqual(withSeeded({}));
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
     });
 
@@ -1162,7 +1258,7 @@ describe('DotContentDriveStore - default language resolution', () => {
         spectator.flushEffects();
 
         expect(store.defaultLanguageId()).toBeUndefined();
-        expect(store.filters()).toEqual({});
+        expect(store.filters()).toEqual(withSeeded({}));
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
     });
 

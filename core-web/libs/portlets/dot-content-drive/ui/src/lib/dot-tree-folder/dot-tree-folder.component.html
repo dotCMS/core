@@ -17,14 +17,18 @@
         (onNodeCollapse)="onNodeCollapse.emit($event)"
         (loadMore)="onLoadMore($event)">
         <ng-template #folderTreeNodeLabel let-node>
+            <!-- The root row needs no special label handling: it stands for the site and carries the
+                 hostname, which `dotFolderName` passes through untouched (it has no path segments to
+                 strip), and its globe comes from the node's own `icon`, which PrimeNG renders beside
+                 this label. Only the weight sets it apart, marking it as the tree's root. -->
             <span
                 data-testid="tree-node-label"
                 [attr.data-json-node]="node.data | json"
                 [attr.data-id]="node?.data?.id"
                 [attr.data-node-key]="node.key"
-                class="font-normal"
+                [class]="node.key === ALL_FOLDER_KEY ? 'font-semibold' : 'font-normal'"
                 [class.active]="$activeDropNode()?.id === node?.data.id">
-                {{ node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | dotFolderName) }}
+                {{ node.label | dotFolderName }}
             </span>
         </ng-template>
     </dot-folder-tree>
