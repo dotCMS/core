@@ -1,0 +1,21 @@
+<main class="grid min-h-0 flex-1 grid-cols-2 gap-4 p-5">
+    <!-- AFTER — the working render carrying the agent's fixes -->
+    <dot-a11y-preview-frame
+        #previewFrame
+        [url]="$previewUrl()"
+        [address]="$address()"
+        labelKey="accessibility.studio.preview.mode.preview"
+        icon="auto_awesome"
+        testId="studio-preview"
+        (loaded)="onPreviewLoad()" />
+
+    <!-- BEFORE — the published page + markers -->
+    <dot-a11y-preview-frame
+        #liveFrame
+        [url]="$liveUrl()"
+        [address]="$address()"
+        labelKey="accessibility.studio.preview.mode.live"
+        icon="public"
+        testId="studio-live"
+        (loaded)="onLiveLoad()" />
+</main>
