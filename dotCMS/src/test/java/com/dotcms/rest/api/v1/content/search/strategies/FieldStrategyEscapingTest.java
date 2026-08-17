@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.content.search.strategies;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import org.junit.Test;
 
@@ -78,6 +82,94 @@ public class FieldStrategyEscapingTest {
         // match the escaped term against the `_dotraw` keyword that stores the whole file name.
         assertEquals("+(SSS.file:*quarterly\\-report* SSS.file_dotraw:*quarterly\\-report*)",
                 new BinaryFieldStrategy().generateQuery(ctx("SSS.file", "quarterly-report")));
+    }
+
+    // ---- Path-derived URL fields: a Page's `url` and a File Asset's `fileName` ----
+
+    private FieldContext pathCtx(final ContentType type, final String fieldName, final String value) {
+        return new FieldContext.Builder().withContentType(type).withFieldName(fieldName)
+                .withFieldValue(value).build();
+    }
+
+    private ContentType pageType() {
+        return ImmutablePageContentType.builder().name("Test Page").build();
+    }
+
+    private ContentType fileAssetType() {
+        return ImmutableFileAssetContentType.builder().name("Test File").build();
+    }
+
+    @Test
+    public void pageUrlWithoutSlashIsUnchanged() {
+        // No slash means the term can still match the field itself, so the query must stay exactly
+        // as it is today — the `path` clause is only for terms the field can never match.
+        assertEquals("+(htmlpageasset.url:*index* htmlpageasset.url_dotraw:*index*)",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.url", "index")));
+    }
+
+    @Test
+    public void pageUrlWithLeadingSlashQueriesPathInstead() {
+        // `htmlpageasset.url` indexes only the page's own last path segment ("index"), never the
+        // folder path the grid displays. The field clauses are dropped rather than OR-ed: the analyzed
+        // one is analyzed into the segments and BROADENS, which returned every page named "index" for
+        // a term of "/store/index". The slash becomes a wildcard separator rather than an escaped
+        // literal, since `path` holds the whole path as a single term and an escaped slash never
+        // matches it.
+        assertEquals("+path:*store*",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.url", "/store")));
+    }
+
+    @Test
+    public void pageUrlWithInnerSlashJoinsSegmentsWithWildcards() {
+        assertEquals("+path:*store*index*",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.url", "store/index")));
+    }
+
+    @Test
+    public void pageUrlSegmentsStayEscapedInThePathClause() {
+        // Only the slash is special-cased. Every other Lucene operator in a segment is still
+        // escaped, so the clause can't be broken out of.
+        assertEquals("+path:*about\\-us*index*",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.url", "about-us/index")));
+    }
+
+    @Test
+    public void pageUrlOfBareSlashMatchesAnyPath() {
+        // A lone slash leaves no segments; every path contains one, so the clause degrades to a
+        // plain wildcard rather than an empty term.
+        assertEquals("+path:*",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.url", "/")));
+    }
+
+    @Test
+    public void fileAssetFileNameWithSlashQueriesPathInstead() {
+        // Same defect, same shape: `fileName` indexes "logo.png", not the folders above it.
+        assertEquals("+path:*images*",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(fileAssetType(), "fileAsset.fileName", "/images")));
+    }
+
+    @Test
+    public void otherFieldOnAPageTypeIsUnchanged() {
+        // The carve-out is the URL field specifically, not every field on a page type.
+        assertEquals("+(htmlpageasset.friendlyName:*a\\/b* htmlpageasset.friendlyName_dotraw:*a\\/b*)",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(pageType(), "htmlpageasset.friendlyName", "a/b")));
+    }
+
+    @Test
+    public void urlFieldOnAContentTypeIsUnchanged() {
+        // A regular Content Type that happens to have a `url` field stores the real string, slashes
+        // included, so it needs no help and must keep today's behavior.
+        assertEquals("+(Blog.url:*a\\/b* Blog.url_dotraw:*a\\/b*)",
+                new TextFieldStrategy().generateQuery(
+                        pathCtx(ImmutableSimpleContentType.builder().name("Blog").build(),
+                                "Blog.url", "a/b")));
     }
 
     // ---- KeyValueFieldStrategy (regular, colon-less path — what Content Drive sends) ----
