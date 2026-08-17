@@ -927,7 +927,9 @@ describe('DotContentDriveActionCenterComponent', () => {
             ]);
         });
 
-        it('should mark the excluded rows on the row itself', () => {
+        it('should account for the excluded rows in the row tooltip, without a second marker', () => {
+            // One warning per row: a dedicated icon here meant two tooltips on the same row, and
+            // they overlapped each other on hover.
             mockSelectedItems.set([
                 contentlet({ inode: 'blog-1', contentType: 'Blog' }),
                 contentlet({ inode: 'banner-1', contentType: 'Banner' })
@@ -942,7 +944,15 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="quick-action-unmapped-PUBLISH"]')).toBeTruthy();
+            const publish = spectator.component['$quickActions']().find(
+                (action) => action.id === 'PUBLISH'
+            )!;
+
+            expect(spectator.query('[data-testid="quick-action-unmapped-PUBLISH"]')).toBeNull();
+            expect(publish.unmappedCount).toBe(1);
+            expect(spectator.component['quickActionHint'](publish)).toBe(
+                'content-drive.action-center.partly-mapped'
+            );
         });
 
         it('should render one list with the ungatable rows leading it', () => {

@@ -62,7 +62,7 @@
                         <!-- Explains the gate where it applies, rather than in a tooltip on each
                          disabled row. -->
                         <a
-                            class="flex items-center text-surface-400 transition-colors hover:text-primary"
+                            class="flex items-center text-surface-400 no-underline transition-colors hover:text-primary"
                             [href]="quickActionsDocsUrl"
                             [pTooltip]="'content-drive.action-center.gate-explainer' | dm"
                             target="_blank"
@@ -494,19 +494,9 @@
                 aria-hidden="true"></i>
         }
 
-        <!-- Items dropped by the workflow gate, not by row state. Marked separately from the
-         warning icon above: that one flags rows that will still be fired, this one accounts for
-         rows that will not be. -->
-        @if (quickAction.unmappedCount > 0) {
-            <i
-                class="pi pi-lock text-xs text-surface-400"
-                [pTooltip]="
-                    'content-drive.action-center.unmapped-items'
-                        | dm: [quickAction.unmappedCount.toString()]
-                "
-                [attr.data-testid]="'quick-action-unmapped-' + quickAction.id"
-                aria-hidden="true"></i>
-        }
+        <!-- Items dropped by the workflow gate get no icon of their own. The row's own tooltip
+         already names the count, and a second marker put two tooltips on one row that overlapped
+         each other on hover. `unmappedCount` still drives that tooltip's wording. -->
 
         <span class="text-xs font-medium text-surface-400">({{ quickAction.count }})</span>
         <i class="material-symbols-outlined text-[20px]! text-surface-300" aria-hidden="true">
