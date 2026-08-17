@@ -178,7 +178,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            const emptyState = spectator.query('[data-testid="empty-table-state"]')!;
             expect(emptyState).toExist();
         });
 
@@ -189,7 +189,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('dot-analytics-empty-state');
+            const emptyState = spectator.query('dot-analytics-empty-state')!;
             expect(emptyState).toExist();
         });
 
@@ -200,7 +200,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            const emptyState = spectator.query('[data-testid="empty-table-state"]')!;
             expect(emptyState).not.toExist();
         });
     });
@@ -213,7 +213,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const stateMessage = spectator.query('dot-analytics-state-message');
+            const stateMessage = spectator.query('dot-analytics-state-message')!;
             expect(stateMessage).toExist();
         });
 
@@ -224,7 +224,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const stateMessage = spectator.query('dot-analytics-state-message');
+            const stateMessage = spectator.query('dot-analytics-state-message')!;
             expect(stateMessage).not.toExist();
         });
     });

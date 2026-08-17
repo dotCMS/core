@@ -141,7 +141,7 @@ describe('DotTreeFolderComponent', () => {
         let treeComponent: Tree;
 
         beforeEach(() => {
-            treeComponent = spectator.query(Tree);
+            treeComponent = spectator.query(Tree)!;
         });
 
         it('should pass folders to p-tree value property', () => {
@@ -202,7 +202,7 @@ describe('DotTreeFolderComponent', () => {
         let treeComponent: Tree;
 
         beforeEach(() => {
-            treeComponent = spectator.query(Tree);
+            treeComponent = spectator.query(Tree)!;
         });
 
         it('should emit onNodeSelect when tree node is selected', () => {
@@ -293,7 +293,7 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('folders', [loadMoreNode]);
             spectator.detectChanges();
 
-            const button = spectator.query('[data-testid="tree-load-more"]');
+            const button = spectator.query('[data-testid="tree-load-more"]')!;
             expect(button).toBeTruthy();
             expect(button?.querySelector('.pi-plus-circle')).toBeTruthy();
             expect(button?.textContent).not.toContain('(40)');
@@ -310,7 +310,7 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('loading', false);
             spectator.detectChanges();
 
-            const treeElement = spectator.query('p-tree');
+            const treeElement = spectator.query('p-tree')!;
             expect(treeElement).toBeTruthy();
         });
 
@@ -318,25 +318,25 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('loading', true);
             spectator.detectChanges();
 
-            const treeElement = spectator.query('p-tree');
+            const treeElement = spectator.query('p-tree')!;
             expect(treeElement).toBeFalsy();
         });
 
         it('should render folder name through pipe in node template', () => {
             // The template is rendered by p-tree, check if p-tree exists
-            const treeElement = spectator.query('p-tree');
+            const treeElement = spectator.query('p-tree')!;
             expect(treeElement).toBeTruthy();
         });
 
         it('should render toggler icons in custom template', () => {
             // The template exists in the component but is rendered by p-tree internally
-            const treeElement = spectator.query('p-tree');
+            const treeElement = spectator.query('p-tree')!;
             expect(treeElement).toBeTruthy();
         });
 
         it('should have tree component with custom templates', () => {
             // The templates are defined but rendered internally by p-tree
-            const treeElement = spectator.query('p-tree');
+            const treeElement = spectator.query('p-tree')!;
             expect(treeElement).toBeTruthy();
         });
     });
@@ -360,7 +360,7 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('folders', newFolders);
             spectator.detectChanges();
 
-            const treeComponent = spectator.query(Tree);
+            const treeComponent = spectator.query(Tree)!;
             expect(treeComponent.value).toEqual(newFolders);
         });
 
@@ -369,7 +369,7 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('loading', false);
             spectator.detectChanges();
 
-            const treeComponent = spectator.query(Tree);
+            const treeComponent = spectator.query(Tree)!;
             expect(treeComponent?.loading).toBe(false);
         });
     });
@@ -917,7 +917,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should respond anywhere on the row, not only on the label text', () => {
-            const label = spectator.query('[data-testid="tree-node-label"][data-id="folder-1"]');
+            const label = spectator.query('[data-testid="tree-node-label"][data-id="folder-1"]')!;
 
             rightClickOn(label);
 
@@ -945,7 +945,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should ignore "Load more" sentinels rather than opening the parent menu', () => {
-            const loadMore = spectator.query(byTestId('tree-load-more'));
+            const loadMore = spectator.query(byTestId('tree-load-more'))!;
 
             const event = rightClickOn(loadMore);
 

@@ -42,12 +42,12 @@ describe('DotAnalyticsSparklineComponent', () => {
 
         it('should render p-chart element', () => {
             spectator.detectChanges();
-            expect(spectator.query('p-chart')).toExist();
+            expect(spectator.query('p-chart')!).toExist();
         });
 
         it('should pass height to p-chart', () => {
             spectator.detectChanges();
-            const chart = spectator.query('p-chart');
+            const chart = spectator.query('p-chart')!;
             expect(chart).toExist();
         });
     });
@@ -209,17 +209,17 @@ describe('DotAnalyticsSparklineComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            expect(spectator.query('.sparkline-skeleton')).toExist();
-            expect(spectator.query('p-skeleton')).toExist();
-            expect(spectator.query('p-chart')).not.toExist();
+            expect(spectator.query('.sparkline-skeleton')!).toExist();
+            expect(spectator.query('p-skeleton')!).toExist();
+            expect(spectator.query('p-chart')!).not.toExist();
         });
 
         it('should show skeleton when status is INIT', () => {
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
 
-            expect(spectator.query('.sparkline-skeleton')).toExist();
-            expect(spectator.query('p-chart')).not.toExist();
+            expect(spectator.query('.sparkline-skeleton')!).toExist();
+            expect(spectator.query('p-chart')!).not.toExist();
         });
 
         it('should show chart when status is LOADED and datasets have data', () => {
@@ -227,8 +227,8 @@ describe('DotAnalyticsSparklineComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            expect(spectator.query('p-chart')).toExist();
-            expect(spectator.query('.sparkline-skeleton')).not.toExist();
+            expect(spectator.query('p-chart')!).toExist();
+            expect(spectator.query('.sparkline-skeleton')!).not.toExist();
         });
 
         it('should show empty state when datasets are empty', () => {
@@ -236,8 +236,8 @@ describe('DotAnalyticsSparklineComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            expect(spectator.query('.sparkline-empty')).toExist();
-            expect(spectator.query('p-chart')).not.toExist();
+            expect(spectator.query('.sparkline-empty')!).toExist();
+            expect(spectator.query('p-chart')!).not.toExist();
         });
     });
 });
