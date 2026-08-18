@@ -96,7 +96,7 @@ export class DotTagsComponent {
 
     @Watch('value')
     valueWatch(): void {
-        this.value = checkProp<DotTagsComponent, string>(this, 'value', 'string');
+        this.value = checkProp<DotTagsComponent, string>(this, 'value', 'string') ?? '';
     }
 
     componentWillLoad(): void {
@@ -123,7 +123,7 @@ export class DotTagsComponent {
                             onEnter={this.onEnterHandler.bind(this)}
                             onLostFocus={this.blurHandler.bind(this)}
                             onSelection={this.onSelectHandler.bind(this)}
-                            placeholder={this.placeholder || null}
+                            placeholder={this.placeholder || undefined}
                             threshold={this.threshold}
                         />
                         <div class="dot-tags__chips">

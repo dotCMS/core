@@ -145,10 +145,10 @@ export class DotRadioComponent {
                             return (
                                 <label>
                                     <input
-                                        checked={this.value.indexOf(item.value) >= 0 || null}
+                                        checked={this.value.indexOf(item.value) >= 0 || undefined}
                                         class={getErrorClass(this.isValid())}
                                         name={getId(this.name)}
-                                        disabled={this.disabled || null}
+                                        disabled={this.disabled || undefined}
                                         onInput={(event: Event) => this.setValue(event)}
                                         type="radio"
                                         value={item.value}
@@ -181,8 +181,8 @@ export class DotRadioComponent {
         return this.isValid() ? '' : this.requiredMessage;
     }
 
-    private setValue(event): void {
-        this.value = event.target.value.trim();
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLInputElement).value.trim();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

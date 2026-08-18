@@ -159,7 +159,7 @@ export class DotKeyValueComponent {
 
     @Watch('value')
     valueWatch(): void {
-        this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string');
+        this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string') ?? '';
 
         let formattedValue = '';
         if (this.value) {

@@ -193,7 +193,7 @@ export class DotBinaryFileComponent {
 
     @Watch('accept')
     optionsWatch(): void {
-        this.accept = checkProp<DotBinaryFileComponent, string>(this, 'accept');
+        this.accept = checkProp<DotBinaryFileComponent, string>(this, 'accept') ?? '';
 
         let arr;
         if (this.accept) {
