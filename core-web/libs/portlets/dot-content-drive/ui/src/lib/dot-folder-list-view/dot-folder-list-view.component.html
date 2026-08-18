@@ -94,22 +94,8 @@
                         class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                         data-testId="item-title">
                         <div
-                            class="relative h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                            class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
                             (click)="onDoubleClick(item); $event.stopPropagation()">
-                            @if (isSharedAsset(item)) {
-                                <!-- Badged onto the thumbnail rather than dropped in the row's hint
-                                 slot: that slot always renders a padlock for a contentlet, so a glyph
-                                 beside it read as two unrelated icons stuck together. On the tile it
-                                 reads as a property of the asset, which is what it is. The globe
-                                 matches the folder tree's site row, and the tooltip carries the
-                                 meaning — the glyph alone would be a guess. -->
-                                <i
-                                    class="material-symbols-outlined absolute right-0 bottom-0 rounded-full bg-white text-sm! leading-none! text-gray-700"
-                                    data-testid="shared-asset-icon"
-                                    [title]="'content-drive.list-view.shared-asset' | dm">
-                                    public
-                                </i>
-                            }
                             @if (!isFolder) {
                                 <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                  resolves through titleImage / the default /dA path. Passing the
@@ -139,7 +125,18 @@
                         <!-- The row's trailing hint slot. Both hints live in this one element on
                          purpose: the cell is a three-column grid, so a fourth child would wrap onto
                          a second row instead of sitting beside the lock. -->
-                        <span data-testId="lock-hint" class="text-gray-700">
+                        <span data-testId="lock-hint" class="flex items-center gap-2 text-gray-700">
+                            @if (isSharedAsset(item)) {
+                                <!-- A PrimeIcon, matching the padlock beside it and the folder icon in
+                                 this same cell. A Material Symbols glyph here read as a mismatched
+                                 pair. The globe is the same one the folder tree uses for a site row,
+                                 so "lives on every site" reads the same in both places, and the
+                                 tooltip carries the meaning — the glyph alone would be a guess. -->
+                                <i
+                                    class="pi pi-globe"
+                                    data-testid="shared-asset-icon"
+                                    [title]="'content-drive.list-view.shared-asset' | dm"></i>
+                            }
                             @if (!isFolder) {
                                 @if (item.locked) {
                                     <!-- A lock the current user does not hold: only its holder or a CMS
