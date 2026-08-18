@@ -65,6 +65,7 @@ public class StoryBlockFieldDataFetcherIntegrationTest {
                 .nextPersisted();
         storyBlockField = new FieldDataGen()
                 .type(StoryBlockField.class)
+                .defaultValue(null)
                 .contentTypeId(storyBlockType.id())
                 .nextPersisted();
     }
