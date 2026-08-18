@@ -25,7 +25,9 @@ export class DotUploadService {
         if (typeof file === 'string') {
             return this.uploadFileByURL(file);
         } else {
-            return this.uploadBinaryFile(file, maxSize) as Promise<DotCMSTempFile>;
+            // `undefined` for the progress callback: `maxSize` belongs in the third slot. Passing it
+            // second meant `maxFileLength` was never sent and the callback got a string instead.
+            return this.uploadBinaryFile(file, undefined, maxSize) as Promise<DotCMSTempFile>;
         }
     }
 
@@ -98,7 +100,7 @@ export class DotUploadService {
     private dotRequest(
         url: string,
         opts: DotHttpRequestOptions,
-        progressCallBack: (progress: number) => {}
+        progressCallBack?: (progress: number) => void
     ): Promise<XMLHttpRequest> {
         return new Promise((res, rej) => {
             const xhr = new XMLHttpRequest();

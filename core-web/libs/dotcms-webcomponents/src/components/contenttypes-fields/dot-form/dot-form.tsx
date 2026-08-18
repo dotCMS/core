@@ -195,7 +195,8 @@ export class DotFormComponent {
                     this.submit.emit(contentlet);
                 })
                 .catch(({ message, status }: DotHttpErrorResponse) => {
-                    this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                    this.errorMessage =
+                        getErrorMessage(message) || fallbackErrorMessages[status] || '';
                 })
                 .finally(() => {
                     this.processingSubmit = false;
@@ -215,12 +216,18 @@ export class DotFormComponent {
         });
     }
 
-    private getUpdateValue(): { [key: string]: string } {
+    /**
+     * The form's current value, keyed by field variable.
+     *
+     * Values are nullable: a non-TEXT field with no `defaultValue` contributes null, which is what
+     * the expression below has always produced.
+     */
+    private getUpdateValue(): { [key: string]: string | null } {
         return getFieldsFromLayout(this.layout)
             .filter((field: DotCMSContentTypeField) => field.fixed === false)
             .reduce(
                 (
-                    acc: { [key: string]: string },
+                    acc: { [key: string]: string | null },
                     { variable, defaultValue, dataType, values }: DotCMSContentTypeField
                 ) => {
                     return {
@@ -232,7 +239,7 @@ export class DotFormComponent {
             );
     }
 
-    private getMaxSize(event: any): string {
+    private getMaxSize(event: any): string | undefined {
         const attributes = [...event.target.attributes];
         const maxSize = attributes.filter((item) => {
             return item.name === 'max-file-length';
@@ -240,7 +247,11 @@ export class DotFormComponent {
         return maxSize && maxSize.value;
     }
 
-    private uploadFile(event: CustomEvent): Promise<DotCMSTempFile> {
+    /**
+     * Uploads the dropped file, or resolves null when it is rejected — over the size limit, or the
+     * request failed. The caller reads it as `tempFile && tempFile.id` for that reason.
+     */
+    private uploadFile(event: CustomEvent): Promise<DotCMSTempFile | null> {
         const uploadService = new DotUploadService();
         const file = event.detail.value;
         const maxSize = this.getMaxSize(event);
@@ -261,7 +272,8 @@ export class DotFormComponent {
                 .catch(({ message, status }: DotHttpErrorResponse) => {
                     binary.clearValue();
                     this.uploadFileInProgress = false;
-                    binary.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                    binary.errorMessage =
+                        getErrorMessage(message) || fallbackErrorMessages[status] || '';
                     return null;
                 });
         } else {
