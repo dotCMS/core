@@ -12,6 +12,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
@@ -30,6 +31,7 @@ import {
     ACTION_PAYLOAD_MOCK,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
+    mockCurrentUser,
     MOCK_CONTENTLET_AREA,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
@@ -38,7 +40,6 @@ import { ActionPayload, SelectedContentlet } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 import { withWorkflow } from '../workflow/withWorkflow';
 
@@ -121,6 +122,83 @@ describe('withEditor', () => {
     // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
 
     describe('withComputed', () => {
+        describe('editorHasAccessToEditMode', () => {
+            const lockedByAnotherUser = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: 'another-user',
+                    lockedByName: 'Another User'
+                }
+            };
+
+            const lockedByCurrentUser = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: mockCurrentUser.userId,
+                    lockedByName: mockCurrentUser.givenName
+                }
+            };
+
+            it('should return false when the user lacks edit permission', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                    }
+                });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return true when the page is not locked', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return true when the page is locked by the current user', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: lockedByCurrentUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return false when the page is locked by another user', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return false when locked by another user even with the toggle-lock feature flag enabled', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true }
+                });
+                store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return true when locked by the current user with the toggle-lock feature flag enabled', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true }
+                });
+                store.setPageAsset({ pageAsset: lockedByCurrentUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+        });
+
         describe('$areaContentType', () => {
             it('should return empty string when contentArea is null', () => {
                 patchStoreState(store, {

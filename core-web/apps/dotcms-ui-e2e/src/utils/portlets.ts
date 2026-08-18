@@ -4,5 +4,6 @@
  */
 export const Portlet = {
     Content: '/dotAdmin/#/c/content',
-    ContentTypes: '/dotAdmin/#/content-types-angular'
+    ContentTypes: '/dotAdmin/#/content-types-angular',
+    ContentDrive: '/dotAdmin/#/content-drive'
 } as const;

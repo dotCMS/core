@@ -12,7 +12,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { debounceTime, filter, map, takeUntil } from 'rxjs/operators';
@@ -45,6 +46,7 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
             }
         `
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {

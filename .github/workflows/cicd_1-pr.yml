@@ -66,6 +66,14 @@ jobs:
     with:
       core-build: true
       run-pr-checks: true
+    secrets:
+      # READ-ONLY key: PR code is untrusted, and a build cache an attacker can
+      # write is replayed as a build output on trunk (CVE-2025-36852). Fork PRs
+      # receive no secrets at all and fall back to a normal uncached build.
+      build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY_RO }}
+      build-cache-secret-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_SECRET_KEY_RO }}
+      build-cache-endpoint: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ENDPOINT }}
+      build-cache-bucket: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_NAME }}
     permissions:
       contents: read
       packages: write
@@ -109,6 +117,13 @@ jobs:
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: ${{ fromJSON(needs.initialize.outputs.filters).build == 'true' }}
+      # Run the integration battery under an ES->OS migration phase when the PR carries an
+      # "OpenSearch:Phase-<N>" label. No label -> empty -> default phase-0 behavior.
+      opensearch_phase: >-
+        ${{ (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-1') && '1')
+         || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-2') && '2')
+         || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-3') && '3')
+         || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 

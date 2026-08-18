@@ -146,7 +146,8 @@ export class DotEsSearchPageComponent {
     readonly noHitsConfig: PrincipalConfiguration = {
         title: this.#messageService.get('esSearch.results.noHits'),
         subtitle: this.#messageService.get('esSearch.results.noHits.subtitle'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     readonly $parsedAggregations = computed<ParsedAggregation[]>(() => {

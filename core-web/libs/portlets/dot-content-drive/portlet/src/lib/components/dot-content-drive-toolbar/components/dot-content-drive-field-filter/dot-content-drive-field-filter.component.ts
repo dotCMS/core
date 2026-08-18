@@ -48,13 +48,17 @@ import { DotContentDriveRelationshipFooterComponent } from './dot-content-drive-
 
 import {
     DEBOUNCE_TIME,
+    FIELD_FILTER_BINARY_TYPE,
     FIELD_FILTER_CATEGORY_TYPE,
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TIME_TYPE,
+    FIELD_FILTER_JSON_TYPE,
+    FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTISELECT_TYPE,
     FIELD_FILTER_RADIO_TYPE,
     FIELD_FILTER_RELATIONSHIP_TYPE,
     FIELD_FILTER_SELECT_TYPE,
+    FIELD_FILTER_STORY_BLOCK_TYPE,
     FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_TIME_ONLY_TYPE,
     PANEL_SCROLL_HEIGHT,
@@ -65,7 +69,8 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 import {
     isDateFieldFilterType,
     parseMultiValue,
-    serializeUserSearchableValue
+    serializeUserSearchableValue,
+    toLocalIsoString
 } from '../../../../utils/functions';
 import {
     DotContentDriveLazyMultiselectComponent,
@@ -83,7 +88,8 @@ type FieldFilterControl =
     | 'radio'
     | 'lazy-multiselect'
     | 'relationship'
-    | 'date';
+    | 'date'
+    | 'key-value';
 
 interface FieldFilterOption {
     label: string;
@@ -198,6 +204,8 @@ export class DotContentDriveFieldFilterComponent {
                 return 'single-select';
             case FIELD_FILTER_RELATIONSHIP_TYPE:
                 return 'relationship';
+            case FIELD_FILTER_KEY_VALUE_TYPE:
+                return 'key-value';
             default:
                 return 'text';
         }
@@ -235,6 +243,18 @@ export class DotContentDriveFieldFilterComponent {
         return type === 'integer' ? 'numeric' : type === 'decimal' ? 'decimal' : 'text';
     });
     protected readonly $textPlaceholderKey = computed(() => {
+        // Field types whose contains-search targets something more specific than "the value" get a
+        // clarifying placeholder (Binary matches the file name, not its contents).
+        const byFieldType: Record<string, string> = {
+            [FIELD_FILTER_BINARY_TYPE]: 'content-drive.field-filter.binary.placeholder',
+            [FIELD_FILTER_JSON_TYPE]: 'content-drive.field-filter.json.placeholder',
+            [FIELD_FILTER_STORY_BLOCK_TYPE]: 'content-drive.field-filter.story-block.placeholder'
+        };
+        const byField = byFieldType[this.$field().fieldType];
+        if (byField) {
+            return byField;
+        }
+
         const type = this.$textType();
 
         return type === 'integer'
@@ -672,8 +692,8 @@ export class DotContentDriveFieldFilterComponent {
         this.$dateValue.set(dates);
         const [from, to] = dates ?? [];
         const range = {
-            from: from ? from.toISOString() : '',
-            to: to ? to.toISOString() : ''
+            from: from ? toLocalIsoString(from) : '',
+            to: to ? toLocalIsoString(to) : ''
         };
         this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
     }
@@ -725,8 +745,8 @@ export class DotContentDriveFieldFilterComponent {
         const from = this.$timeFrom();
         const to = this.$timeTo();
         const range = {
-            from: from ? from.toISOString() : '',
-            to: to ? to.toISOString() : ''
+            from: from ? toLocalIsoString(from) : '',
+            to: to ? toLocalIsoString(to) : ''
         };
         this.#patch(serializeUserSearchableValue(range, this.$field().fieldType));
     }

@@ -102,7 +102,7 @@ permissions:
 **Key Features**:
 - JVM unit tests with Java 21
 - Integration tests with `-Pcoreit` profile
-- Frontend tests using Nx and Yarn
+- Frontend tests using Nx and pnpm
 - E2E tests (conditional)
 - Matrix strategy for parallel execution
 
@@ -171,7 +171,7 @@ backend: &backend
 frontend: &frontend
   - 'core-web/**'
   - 'package.json'
-  - 'yarn.lock'
+  - 'pnpm-lock.yaml'
   - '.nvmrc'
 
 # CLI changes
@@ -229,7 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run frontend tests
-        run: cd core-web && nx run dotcms-ui:test
+        run: cd core-web && pnpm nx run dotcms-ui:test
 ```
 
 ## Artifact Management
@@ -282,8 +282,8 @@ jobs:
   uses: actions/setup-node@v4
   with:
     node-version-file: 'core-web/.nvmrc'
-    cache: 'yarn'
-    cache-dependency-path: 'core-web/yarn.lock'
+    cache: 'pnpm'
+    cache-dependency-path: 'core-web/pnpm-lock.yaml'
 ```
 
 ### Docker Cache

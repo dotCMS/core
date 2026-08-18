@@ -432,6 +432,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    // Base fee for asking for one contentlet. If the factory misses cache and falls through
+    // to findInDb, that adds the CONTENT_FROM_DB surcharge - so warm is 1, cold is 11.
     @RequestCost(Price.CONTENT_FROM_CACHE)
     @CloseDBIfOpened
     @Override
@@ -575,6 +577,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    // Deliberately NOT a terminal, and the stacking is intended: move() calls
+    // indexAPI.addContentToIndex(..) below, which reaches the annotated
+    // addContentToIndex(List) and adds CONTENT_INDEX on top of this CONTENT_MOVE. A move
+    // really does reindex, so it really should cost both. This is not the "annotating two
+    // methods in one chain double-charges" trap - that is about one operation being counted
+    // twice, this is two distinct operations each counted once. Do not remove either.
+    @RequestCost(Price.CONTENT_MOVE)
     @Override
     public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host,
             final Folder folder,
@@ -1706,7 +1715,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
-    void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+    @Override
+    public void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
         if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return;
         }
@@ -3109,9 +3119,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Delete all the versions of the contentlets to delete
         this.contentFactory.delete(contentletsVersion);
-        // Remove the contentlets from the Elastic index and cache
+        // Remove the contentlets from the search index and cache
+        final Set<String> removedFromIndex = new HashSet<>();
         for (final Contentlet contentlet : contentletsVersion) {
 
+            // The index document ID is per identifier/language/variant, so removing it once per version
+            // would be pure repetition. Relying on forceUnpublishArchive() alone is not enough either:
+            // it only removes live content, leaving working-only versions behind as stale documents.
+            final String documentKey = contentlet.getIdentifier() + StringPool.UNDERLINE
+                    + contentlet.getLanguageId() + StringPool.UNDERLINE + contentlet.getVariantId();
+            if (removedFromIndex.add(documentKey)) {
+                this.indexAPI.removeContentFromIndex(contentlet);
+            }
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
 
@@ -5717,6 +5736,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet.isWorkflowInProgress();
     }
 
+    @RequestCost(Price.CONTENT_CHECKIN)
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> categories,
             final User incomingUser,
@@ -7099,6 +7119,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_CHECKOUT)
     @Override
     public Contentlet checkout(final String contentletInode, final User user,
             final boolean respectFrontendRoles)
@@ -9463,6 +9484,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_COPY)
     @Override
     @SuppressWarnings("unchecked")
     public Contentlet copyContentlet(final Contentlet sourceContentlet,

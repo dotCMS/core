@@ -47,6 +47,7 @@ import { DotFileFieldUploadService } from '../../fields/dot-edit-content-file-fi
 import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
+import { DotEditContentLineDividerFieldComponent } from '../../fields/dot-edit-content-line-divider-field/dot-edit-content-line-divider-field.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentRelationshipFieldComponent } from '../../fields/dot-edit-content-relationship-field/dot-edit-content-relationship-field.component';
@@ -65,6 +66,7 @@ import {
     createFormGroupDirectiveMock,
     DOT_MESSAGE_SERVICE_MOCK,
     FIELDS_MOCK,
+    LINE_DIVIDER_MOCK,
     TREE_SELECT_MOCK
 } from '../../utils/mocks';
 
@@ -269,7 +271,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         component: null // this field is not being rendered for now.
     },
     [FIELD_TYPES.LINE_DIVIDER]: {
-        component: null
+        component: DotEditContentLineDividerFieldComponent
     }
 };
 
@@ -403,6 +405,55 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             expect(component).toBeTruthy();
             expect(component instanceof FIELD_TYPE).toBeTruthy();
         });
+    });
+});
+
+describe('DotEditContentFieldComponent - Line Divider Field', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            {
+                provide: ControlContainer,
+                useValue: createFormGroupDirectiveMock()
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                field: LINE_DIVIDER_MOCK
+            }
+        });
+    });
+
+    it('should render the line divider field component', () => {
+        spectator.detectChanges();
+
+        const lineDividerField = spectator.query(DotEditContentLineDividerFieldComponent);
+        expect(lineDividerField).toBeTruthy();
+    });
+
+    it('should render the line divider title with the field name', () => {
+        spectator.detectChanges();
+
+        const title = spectator.query(byTestId('line-divider-title'));
+        expect(title?.textContent?.trim()).toBe(LINE_DIVIDER_MOCK.name);
     });
 });
 

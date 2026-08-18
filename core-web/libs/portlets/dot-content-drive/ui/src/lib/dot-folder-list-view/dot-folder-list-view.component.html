@@ -2,23 +2,23 @@
     #dataTable
     [value]="$items()"
     [tableStyle]="{ width: '100%', maxHeight: '100%' }"
-    [paginator]="true"
+    [paginator]="$paginator()"
     [showFirstLastIcon]="false"
     [showPageLinks]="false"
     [showCurrentPageReport]="true"
-    [totalRecords]="$totalItems()"
+    [totalRecords]="$recordCount()"
     [rows]="MIN_ROWS_PER_PAGE"
     [rowsPerPageOptions]="rowsPerPageOptions"
-    [lazy]="true"
-    [lazyLoadOnInit]="true"
+    [lazy]="$lazy()"
+    [lazyLoadOnInit]="$lazy()"
     [scrollable]="true"
-    [(selection)]="selectedItems"
-    (selectionChange)="onSelectionChange()"
+    [selection]="$tableSelection()"
+    (selectionChange)="onSelectionChange($event)"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
     [first]="$offset()"
     (firstChange)="onFirstChange()"
-    dataKey="identifier"
+    [dataKey]="$dataKey()"
     sortMode="single"
     selectionMode="multiple"
     sortField="modDate"
@@ -30,11 +30,12 @@
     <ng-template #header>
         <tr data-testId="header-row">
             <th [style.width]="'3rem'">
-                <p-tableHeaderCheckbox data-testId="header-checkbox" />
+                <p-tableHeaderCheckbox [disabled]="$disabled()" data-testId="header-checkbox" />
             </th>
-            @for (column of HEADER_COLUMNS; track column.field) {
-                @if (column.sortable) {
+            @for (column of $columns(); track column.field) {
+                @if (column.sortable && !$readOnly()) {
                     <th
+                        class="whitespace-nowrap"
                         [pSortableColumn]="column.field"
                         [style.width]="column.width"
                         data-testId="header-column-sortable">
@@ -62,95 +63,193 @@
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
+                [pSelectableRowDisabled]="$disabled() || $readOnly()"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
-                [draggable]="true"
+                [draggable]="!$readOnly()"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()"
                 (dragover)="onDragOver($event, item)"
                 (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
-                    <p-tableCheckbox [value]="item" />
+                    <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
                 </td>
-                <td
-                    class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
-                    data-testId="item-title">
-                    <div
-                        class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
-                        (click)="onDoubleClick(item); $event.stopPropagation()">
-                        @if (!isFolder) {
-                            <!-- No fieldVariable: rows are the assets themselves, so the mapper
+                @if ($visibleColumnSet().has('title')) {
+                    <td
+                        class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
+                        data-testId="item-title">
+                        <div
+                            class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                            (click)="onDoubleClick(item); $event.stopPropagation()">
+                            @if (!isFolder) {
+                                <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                  resolves through titleImage / the default /dA path. Passing the
                                  contentType here (legacy quirk) 404s the /contentAsset-based
                                  types (SVG, PDF) — that endpoint needs the real field variable. -->
-                            <dot-content-thumbnail
-                                [contentlet]="item"
-                                iconSize="36px"
-                                data-testId="contentlet-thumbnail"
-                                [attr.data-table-id]="item.identifier" />
-                        } @else {
-                            <i
-                                class="pi pi-folder flex! size-full! items-center! justify-center! text-4xl! text-gray-700"
-                                data-testId="folder-icon"
-                                [attr.data-table-id]="item.identifier"></i>
-                        }
-                    </div>
-                    <span
-                        data-testId="item-title-text"
-                        class="block cursor-pointer truncate"
-                        (click)="onDoubleClick(item); $event.stopPropagation()">
-                        {{ isFolder ? item.name : item.title }}
-                    </span>
-                    <span data-testId="lock-hint" class="text-gray-700">
-                        @if (!isFolder) {
-                            @if (item.locked) {
-                                <i class="pi pi-lock" data-testId="lock-icon"></i>
+                                <dot-content-thumbnail
+                                    [contentlet]="item"
+                                    iconSize="36px"
+                                    data-testId="contentlet-thumbnail"
+                                    [attr.data-table-id]="item.identifier" />
                             } @else {
-                                <i class="pi pi-lock-open" data-testId="lock-open-icon"></i>
+                                <i
+                                    class="pi pi-folder flex! size-full! items-center! justify-center! text-4xl! text-gray-700"
+                                    data-testId="folder-icon"
+                                    [attr.data-table-id]="item.identifier"></i>
+                            }
+                        </div>
+                        <!-- `title` keeps the full text reachable on hover: the column is a fixed width
+                         and `truncate` clips anything longer, so without it the rest is unreadable. -->
+                        <span
+                            data-testId="item-title-text"
+                            class="block cursor-pointer truncate"
+                            [title]="isFolder ? item.name : item.title"
+                            (click)="onDoubleClick(item); $event.stopPropagation()">
+                            {{ isFolder ? item.name : item.title }}
+                        </span>
+                        <span data-testId="lock-hint" class="text-gray-700">
+                            @if (!isFolder) {
+                                @if (item.locked) {
+                                    <!-- A lock the current user does not hold: only its holder or a CMS
+                                     Administrator can release it, so a bulk Unlock may be refused
+                                     here. Coloured rather than a different glyph — it is still a
+                                     lock, just one that is not the user's to open. -->
+                                    @if ($lockedByOthersSet().has(item.inode)) {
+                                        <i
+                                            class="pi pi-lock text-orange-500"
+                                            data-testId="lock-foreign-icon"
+                                            [title]="
+                                                'content-drive.list-view.locked-by-another-user'
+                                                    | dm
+                                            "></i>
+                                    } @else {
+                                        <i class="pi pi-lock" data-testId="lock-icon"></i>
+                                    }
+                                } @else {
+                                    <i class="pi pi-lock-open" data-testId="lock-open-icon"></i>
+                                }
+                            }
+                        </span>
+                    </td>
+                }
+                @if ($visibleColumnSet().has('live')) {
+                    <td data-testId="item-status">
+                        @if (!isFolder) {
+                            <dot-contentlet-status-badge [state]="item" />
+                        }
+                    </td>
+                }
+                @if ($visibleColumnSet().has('languageId')) {
+                    <td data-testId="item-language">
+                        @if (!isFolder) {
+                            <p-tag
+                                class="whitespace-nowrap"
+                                severity="info"
+                                [value]="item.languageId | dotLocaleTag: state.languagesMap()" />
+                        }
+                    </td>
+                }
+                <!-- Clipped like the title: the column is a fixed 15%, so a long content type
+                     variable name would otherwise wrap and grow the row past its neighbours. -->
+                @if ($visibleColumnSet().has('contentType')) {
+                    <td class="truncate" data-testId="item-content-type">
+                        {{ (isFolder ? 'Folder' : item.contentType) | dm }}
+                    </td>
+                }
+                @for (column of $safeExtraColumns(); track column.field) {
+                    <td class="truncate" [attr.data-testid]="'item-extra-' + column.field">
+                        @if (!isFolder) {
+                            @let value = item[column.field];
+                            @switch (column.type) {
+                                <!-- Date/time content fields render as ABSOLUTE values on purpose
+                                     (not the relative `modDate` pipe below, which would misrepresent
+                                     a content date as "in 2 days"). Formatted in UTC — dotCMS stores
+                                     these fields against the server timezone (UTC), and the editor
+                                     shows/edits them in that zone; formatting in the browser's zone
+                                     (DatePipe's default) would shift a 09:00 event to 12:00 for a
+                                     UTC+3 user, so the table wouldn't match the editor or the filter. -->
+                                @case (COLUMN_TYPE.DATE) {
+                                    {{ value ? (value | date: 'MM/dd/yyyy' : 'UTC') : '' }}
+                                }
+                                @case (COLUMN_TYPE.DATETIME) {
+                                    {{ value ? (value | date: 'MM/dd/yyyy h:mm a' : 'UTC') : '' }}
+                                }
+                                @case (COLUMN_TYPE.TIME) {
+                                    {{ value ? (value | date: 'h:mm a' : 'UTC') : '' }}
+                                }
+                                @case (COLUMN_TYPE.BOOLEAN) {
+                                    <!-- Only render for an actual boolean value; a missing value
+                                         (null/undefined/empty) stays blank so it doesn't read as false. -->
+                                    @if (value !== null && value !== undefined && value !== '') {
+                                        <i
+                                            class="material-symbols-outlined text-[1.25rem]! leading-none"
+                                            [class.text-green-600]="value"
+                                            [class.text-gray-500]="!value"
+                                            data-testId="item-extra-bool">
+                                            {{ value ? 'check_circle' : 'cancel' }}
+                                        </i>
+                                    }
+                                }
+                                @case (COLUMN_TYPE.IMAGE) {
+                                    <!-- Same size/styling as the row's leading title thumbnail (fixed
+                                         box + tint + padding, 36px icon), only pointed at the field's
+                                         OWN asset (fieldVariable) so a secondary/gallery image shows
+                                         its own thumbnail instead of the contentlet's title image.
+                                         Non-image assets fall back to a file-type icon. No click. -->
+                                    @if (value) {
+                                        <div
+                                            class="h-14 max-h-14 w-18 bg-(--color-palette-primary-100) p-1">
+                                            <dot-content-thumbnail
+                                                [contentlet]="item"
+                                                [options]="{ fieldVariable: column.field }"
+                                                iconSize="36px"
+                                                [attr.data-testid]="
+                                                    'item-extra-image-' + column.field
+                                                "
+                                                [attr.data-table-id]="item.identifier" />
+                                        </div>
+                                    }
+                                }
+                                @default {
+                                    {{ value }}
+                                }
                             }
                         }
-                    </span>
-                </td>
-                <td data-testId="item-status">
-                    @if (!isFolder) {
-                        <dot-contentlet-status-badge [state]="item" />
-                    }
-                </td>
-                <td data-testId="item-language">
-                    @if (!isFolder) {
-                        <p-tag
-                            class="whitespace-nowrap"
-                            severity="info"
-                            [value]="item.languageId | dotLocaleTag: state.languagesMap()" />
-                    }
-                </td>
-
-                <td data-testId="item-content-type">
-                    {{ (isFolder ? 'Folder' : item.contentType) | dm }}
-                </td>
-                <td data-testId="item-mod-user-name">
-                    {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
-                </td>
-                <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
-                <td data-testId="item-actions" class="text-center">
-                    <p-button
-                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                        icon="pi pi-ellipsis-v"
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        (onClick)="onContextMenu($event, item)"
-                        data-testId="kebab-menu-button"
-                        aria-label="More actions" />
-                </td>
+                    </td>
+                }
+                @if ($visibleColumnSet().has('modUser')) {
+                    <td data-testId="item-mod-user-name">
+                        {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
+                    </td>
+                }
+                @if ($visibleColumnSet().has('modDate')) {
+                    <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
+                }
+                <!-- The cell stays even when the kebab is hidden so the column count (and every
+                     colspan derived from it) matches the header. -->
+                @if ($visibleColumnSet().has('actions')) {
+                    <td data-testId="item-actions" class="text-center">
+                        @if (!$readOnly()) {
+                            <p-button
+                                class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                                icon="pi pi-ellipsis-v"
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                (onClick)="onContextMenu($event, item)"
+                                data-testId="kebab-menu-button"
+                                aria-label="More actions" />
+                        }
+                    </td>
+                }
             </tr>
         }
     </ng-template>
     <ng-template pTemplate="emptymessage">
         @if (!$loading()) {
             <tr class="h-max hover:bg-transparent!">
-                <td colspan="7" class="h-full border-none p-6 text-center">
+                <td [attr.colspan]="$columnSpan()" class="h-full border-none p-6 text-center">
                     <div class="mx-auto flex max-w-100 flex-col items-center gap-4">
                         <div class="flex size-20 items-center justify-center rounded-full">
                             <i class="pi pi-folder-open text-6xl! text-(--surface-500)"></i>
@@ -181,7 +280,7 @@
                 <p-skeleton height="1.5rem" width="1.5rem" />
             </span>
         </td>
-        @for (column of HEADER_COLUMNS; track column.field) {
+        @for (column of $columns(); track column.field) {
             <td [style.width]="column.width">
                 <span class="flex h-full items-center justify-center first:text-left">
                     <p-skeleton height="1.5rem" width="100%" />

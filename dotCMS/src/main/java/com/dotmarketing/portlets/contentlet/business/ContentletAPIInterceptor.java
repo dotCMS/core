@@ -2206,6 +2206,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public void addCategoryPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) {
+		conAPI.addCategoryPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
+	}
+
+	@Override
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.setContentletProperty(contentlet, field, value);

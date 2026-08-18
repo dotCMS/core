@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
+import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -45,13 +46,18 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -70,6 +76,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -114,6 +121,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
 
+    /**
+     * Synthetic MIME Type that dotCMS assigns to HTML Pages at display time. It is never persisted to the
+     * {@code contentlet_as_json} column, so it can only be resolved through the HTMLPAGE base type. Legacy display
+     * code declares its own copies of this value; they are intentionally left alone.
+     */
+    private static final String DOTPAGE_MIME_TYPE = "application/dotpage";
+
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
@@ -126,6 +140,23 @@ public class BrowserAPIImpl implements BrowserAPI {
                     "        }\n" +
                     "    }\n" +
             "}";
+
+    /**
+     * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
+     * {@link #ES_QUERY_TEMPLATE}. The shared field strategies emit backslash-escaped Lucene special
+     * characters (e.g. {@code angular\-cms}) and double-quoted phrases; a raw backslash or double
+     * quote is an invalid JSON escape, so without this the Elasticsearch request body is malformed
+     * and the whole search fails (json_parse_exception) — silently returning no results. Backslash
+     * must be escaped before the double quote so the backslash introduced for {@code \"} is not
+     * doubled.
+     *
+     * @param luceneQuery The Lucene query to embed in the JSON request body.
+     * @return The query with {@code \} and {@code "} escaped for JSON.
+     */
+    @VisibleForTesting
+    static String jsonEscape(final String luceneQuery) {
+        return luceneQuery.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 
 
     /**
@@ -839,7 +870,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> inodesList = new ArrayList<>(inodes);
             final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
             final String luceneQuery = inodeFilter + baseQuery;
-            final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery));
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
@@ -1157,13 +1188,16 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
-            final String titleFilters = String.format(
-                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:*%s*^10",
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter);
-            textGroup.append(titleFilters);
+            // Reuse the Content Search global-search strategy so Content Drive keyword search stays
+            // consistent with the Search portlet (issue #36688). It builds a selective mandatory
+            // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
+            // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
+            // scanned slowly on large, indexed datasets.
+            final FieldContext globalSearchContext = new FieldContext.Builder()
+                    .withFieldName("title")
+                    .withFieldValue(browserQuery.filter)
+                    .build();
+            textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1858,8 +1892,16 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
         }
+        // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
+        // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
+        // Skipped when showArchived is true: everything archived already shows, so the archive-step
+        // logic must not run (it would force cvi.deleted='false' on the live branch and hide the
+        // archived content the caller explicitly asked for). See spec §3.5.
+        final Set<String> archiveStepIds = browserQuery.showArchived
+                ? Set.of()
+                : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
-                browserQuery.workflowStepIds, parameters);
+                browserQuery.workflowStepIds, archiveStepIds, parameters);
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
@@ -1878,7 +1920,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
         }
-        if (!browserQuery.showArchived) {
+        // Suppress the global archived exclusion ONLY when an archive-target step is present; in
+        // that case appendWorkflowQuery owns cvi.deleted per branch. Otherwise (no archive step,
+        // or showArchived) the generated SQL is byte-identical to before.
+        if (!browserQuery.showArchived && archiveStepIds.isEmpty()) {
             appendExcludeArchivedQuery(selectQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
@@ -2190,9 +2235,9 @@ public class BrowserAPIImpl implements BrowserAPI {
      * No-ops when both sets are empty. All ids are sanitized via
      * {@link SQLUtil#sanitizeParameter(String)} and bound as {@code ?} parameters.
      */
-    private void appendWorkflowQuery(final StringBuilder sqlQuery,
+    private static void appendWorkflowQuery(final StringBuilder sqlQuery,
             final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
-            final List<Object> parameters) {
+            final Set<String> archiveStepIds, final List<Object> parameters) {
 
         final boolean hasSchemes = UtilMethods.isSet(workflowSchemeIds);
         final boolean hasSteps = UtilMethods.isSet(workflowStepIds);
@@ -2200,29 +2245,147 @@ public class BrowserAPIImpl implements BrowserAPI {
             return;
         }
 
-        final List<String> orClauses = new ArrayList<>();
+        // Byte-identical path: with no archive-target step the global cvi.deleted='false'
+        // (appendExcludeArchivedQuery) still applies, so the workflow clause is emitted verbatim.
+        if (!UtilMethods.isSet(archiveStepIds)) {
+            final List<String> orClauses = new ArrayList<>();
+            if (hasSchemes) {
+                orClauses.add(schemeExistsClause(workflowSchemeIds, parameters));
+            }
+            if (hasSteps) {
+                orClauses.add(stepExistsClause(workflowStepIds, parameters));
+            }
+            sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
+            return;
+        }
 
+        // Archive-target step present: own cvi.deleted per branch. The live branch (scheme-only
+        // entries + normal steps) keeps cvi.deleted='false'; the archive branch admits archived
+        // rows. Any empty inner group is omitted. archiveStepIds is a subset of workflowStepIds,
+        // so the archive branch is always present here.
+        final Set<String> normalStepIds = new LinkedHashSet<>(workflowStepIds);
+        normalStepIds.removeAll(archiveStepIds);
+
+        final List<String> liveClauses = new ArrayList<>();
         if (hasSchemes) {
-            final String placeholders = workflowSchemeIds.stream()
-                    .map(id -> "?").collect(Collectors.joining(","));
-            orClauses.add(" exists (select 1 from workflow_scheme_x_structure wss "
-                    + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
-                    + ")) ");
-            workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+            liveClauses.add(schemeExistsClause(workflowSchemeIds, parameters));
+        }
+        if (!normalStepIds.isEmpty()) {
+            liveClauses.add(stepExistsClause(normalStepIds, parameters));
         }
 
-        if (hasSteps) {
-            final String placeholders = workflowStepIds.stream()
-                    .map(id -> "?").collect(Collectors.joining(","));
-            // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
-            // not a step name — so workflowStepIds are matched against it directly.
-            orClauses.add(" exists (select 1 from workflow_task wt "
-                    + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
-                    + " and wt.status in (" + placeholders + ")) ");
-            workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        final List<String> branches = new ArrayList<>();
+        if (!liveClauses.isEmpty()) {
+            branches.add(" ( cvi.deleted = " + DbConnectionFactory.getDBFalse()
+                    + " and (" + String.join(" or ", liveClauses) + ") ) ");
         }
+        branches.add(stepExistsClause(archiveStepIds, parameters));
 
-        sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
+        sqlQuery.append(" and (").append(String.join(" or ", branches)).append(") ");
+    }
+
+    /**
+     * Builds the scheme-only {@code EXISTS} sub-select (match by content-type assignment via
+     * {@code workflow_scheme_x_structure}) and binds the ids as {@code ?} parameters, sanitized via
+     * {@link SQLUtil#sanitizeParameter(String)}. Placeholders and parameters are produced in the
+     * same iteration order.
+     */
+    private static String schemeExistsClause(final Set<String> workflowSchemeIds,
+            final List<Object> parameters) {
+        final String placeholders = workflowSchemeIds.stream()
+                .map(id -> "?").collect(Collectors.joining(","));
+        workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        return " exists (select 1 from workflow_scheme_x_structure wss "
+                + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
+                + ")) ";
+    }
+
+    /**
+     * Builds the step-pinned {@code EXISTS} sub-select (match the contentlet's current task via
+     * {@code workflow_task.status}, which holds the current STEP ID) and binds the ids as
+     * {@code ?} parameters, sanitized via {@link SQLUtil#sanitizeParameter(String)}. Placeholders
+     * and parameters are produced in the same iteration order.
+     */
+    private static String stepExistsClause(final Set<String> workflowStepIds,
+            final List<Object> parameters) {
+        final String placeholders = workflowStepIds.stream()
+                .map(id -> "?").collect(Collectors.joining(","));
+        // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
+        // not a step name — so workflowStepIds are matched against it directly.
+        workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        return " exists (select 1 from workflow_task wt "
+                + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
+                + " and wt.status in (" + placeholders + ")) ";
+    }
+
+    /**
+     * Resolves, once per request, which of the given step-pinned ids are archive-target steps —
+     * a step reached by an action carrying {@link ArchiveContentActionlet}. Only step-pinned
+     * entries qualify; scheme-only entries always stay live-only. Lookups hit the cached
+     * {@link WorkflowAPI} config tables (no per-row work) and are memoized per scheme within the
+     * call. On any failure the step is treated as non-archive, falling back to the current
+     * live-only behavior — never fails the browse.
+     *
+     * @param workflowStepIds the step-pinned ids from the request (may be empty).
+     * @return the subset of {@code workflowStepIds} that are archive-target; never {@code null}.
+     */
+    private Set<String> resolveArchiveTargetSteps(final Set<String> workflowStepIds) {
+        if (!UtilMethods.isSet(workflowStepIds)) {
+            return Set.of();
+        }
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Map<String, Set<String>> archiveTargetsByScheme = new HashMap<>();
+        final Set<String> archiveStepIds = new LinkedHashSet<>();
+        for (final String stepId : workflowStepIds) {
+            final WorkflowStep step = Try.of(() -> workflowAPI.findStep(stepId)).getOrNull();
+            if (step == null || !UtilMethods.isSet(step.getSchemeId())) {
+                continue;
+            }
+            final Set<String> targets = archiveTargetsByScheme.computeIfAbsent(step.getSchemeId(),
+                    schemeId -> archiveTargetStepsForScheme(workflowAPI, schemeId));
+            if (targets.contains(stepId)) {
+                archiveStepIds.add(stepId);
+            }
+        }
+        return archiveStepIds;
+    }
+
+    /**
+     * Returns the set of step ids that a dedicated archive action targets ({@code nextStep}) within
+     * the given scheme. A step qualifies when some action's {@link WorkflowAction#getNextStep()}
+     * points to it and that action carries {@link ArchiveContentActionlet}. Archive-in-place
+     * actions ({@code nextStep == CURRENT_STEP}) are excluded (spec §3.6). Never throws — on failure
+     * an empty set is returned so the browse falls back to live-only behavior.
+     *
+     * <p>Whether a step is archive-target is a property of the scheme's configuration, not of who
+     * is browsing, so actions are resolved with the {@link APILocator#systemUser()} — a user
+     * lacking permission on the archive action must not silently see the step as non-archive.</p>
+     */
+    private Set<String> archiveTargetStepsForScheme(final WorkflowAPI workflowAPI,
+            final String schemeId) {
+        final Set<String> targets = new HashSet<>();
+        try {
+            final WorkflowScheme scheme = workflowAPI.findScheme(schemeId);
+            final List<WorkflowAction> actions = workflowAPI.findActions(scheme,
+                    APILocator.systemUser());
+            final String archiveActionletClass = ArchiveContentActionlet.class.getName();
+            for (final WorkflowAction action : actions) {
+                if (action.isNextStepCurrentStep() || !UtilMethods.isSet(action.getNextStep())) {
+                    continue;
+                }
+                final List<WorkflowActionClass> actionClasses = workflowAPI.findActionClasses(action);
+                final boolean carriesArchive = actionClasses.stream()
+                        .anyMatch(actionClass -> archiveActionletClass.equals(actionClass.getClazz()));
+                if (carriesArchive) {
+                    targets.add(action.getNextStep());
+                }
+            }
+        } catch (final Exception e) {
+            Logger.warn(this, "Unable to resolve archive-target steps for workflow scheme "
+                    + schemeId + "; treating as non-archive. " + e.getMessage());
+            return Set.of();
+        }
+        return targets;
     }
 
     /**
@@ -2277,14 +2440,32 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Appends the specified MIME Types to the main SQL query.
+     * Appends the specified MIME Types to the main SQL query. Every requested MIME Type is routed to the only
+     * condition that can actually match it, and the resulting conditions are OR'ed together:
+     * <ul>
+     *     <li>{@link #DOTPAGE_MIME_TYPE} resolves to the {@link BaseContentType#HTMLPAGE} base type. That value is
+     *     synthetic: it is stamped onto a Page's view map at display time and is never written to
+     *     {@code contentlet_as_json}, so the asset metadata check below can never match a Page.</li>
+     *     <li>Any other MIME Type keeps the asset metadata {@code contentType} check. Only File Assets and
+     *     dotAssets carry asset metadata, which is precisely the "MIME type(s) (for file assets)" scoping that
+     *     ADR-0018 assigns to this predicate.</li>
+     * </ul>
+     * The match on the synthetic value is exact on purpose. A MIME Type that merely starts with it -- say,
+     * {@code application/dotpage-foo} -- must still go through the metadata check.
+     * <p>The {@code struc} table is already joined by {@link #buildSelectBaseQuery(BrowserQuery, String)}, so the
+     * base type condition needs no extra join and no bound parameter.
      *
      * @param sqlQuery  The main SQL query.
      * @param mimeTypes The list of MIME Types specified by the client.
      */
     private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
         final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
-                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType))
+                .map(mimeType -> {
+                    if (DOTPAGE_MIME_TYPE.equals(mimeType)) {
+                        return String.format("struc.structuretype = %d", BaseContentType.HTMLPAGE.getType());
+                    }
+                    return String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType);
+                })
                 .collect(Collectors.joining(" OR ")));
         sqlQuery.append(mimeTypesFilter);
     }

@@ -479,7 +479,8 @@ export class DotUveStyleEditorFormComponent {
                 contentletIdentifier: activeContentlet.contentlet.identifier,
                 styleProperties: filteredFormValues,
                 pageId: activeContentlet.pageId,
-                containerUUID: activeContentlet.container.uuid
+                containerUUID: activeContentlet.container.uuid,
+                personaTag: this.#uveStore.$pageData().personaTag
             })
             .pipe(
                 map((): SaveResult => ({ ok: true, isTraditionalPage })),

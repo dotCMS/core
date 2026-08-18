@@ -5,7 +5,7 @@ Runs two OpenSearch clusters side-by-side for ES → OpenSearch migration testin
 | Service | Version | URL |
 |---|---|---|
 | OpenSearch 1.x (primary) | 1.3.x | https://localhost:9200 |
-| OpenSearch 3.x (shadow) | 3.4.0 | https://localhost:9201 |
+| OpenSearch 3.x (shadow) | 3.8.0 | https://localhost:9201 |
 | OS 1.x Dashboards | 1.3.x | http://localhost:5601 |
 | OS 3.x Dashboards | 3.0.0 | http://localhost:5602 |
 | dotCMS | latest | http://localhost:8082 |
@@ -31,7 +31,7 @@ docker compose up -d
 | Cluster | Username | Password |
 |---|---|---|
 | OpenSearch 1.x | `admin` | `admin` |
-| OpenSearch 3.x | `admin` | `Dev!Strong-OSAdmin-2026` |
+| OpenSearch 3.x | `admin` | `Dev!Search3-Kx9mP-2026` |
 
 ### Provisioned user (dotCMS)
 
@@ -63,10 +63,10 @@ curl -sk https://localhost:9200/_cat/indices?v -u dotcms-es-user:Dev!dotcms-EsUs
 
 ```bash
 # List indices
-curl -sk https://localhost:9201/_cat/indices?v -u admin:Dev!Strong-OSAdmin-2026
+curl -sk https://localhost:9201/_cat/indices?v -u admin:Dev!Search3-Kx9mP-2026
 
 # List internal users
-curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:Dev!Strong-OSAdmin-2026
+curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:Dev!Search3-Kx9mP-2026
 ```
 
 ### OpenSearch 3.x — provisioned user

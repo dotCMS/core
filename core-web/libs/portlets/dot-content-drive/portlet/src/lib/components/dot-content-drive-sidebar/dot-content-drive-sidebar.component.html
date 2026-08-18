@@ -1,5 +1,20 @@
 <div class="flex h-17.5 items-center gap-2 px-3 pt-7 pb-4">
-    <dot-content-drive-tree-toggler data-testid="tree-toggler" />
+    <!-- The toggler that used to sit here now lives in the toolbar for both tree states, and this
+         icon takes over its slot. It carries the toggler's own button classes rather than a
+         hardcoded box so the footprint stays identical to it (that geometry is theme-token driven,
+         so any fixed size would drift), which is what keeps the site name lined up with the folder
+         rows underneath. `pointer-events-none` keeps it from behaving like a button, and the
+         button's own flex centering handles the glyph, which `.material-symbols-outlined` renders
+         as `inline-block`. -->
+    <span
+        class="p-button p-button-icon-only p-button-rounded p-button-text pointer-events-none shrink-0">
+        <i
+            class="material-symbols-outlined text-[1.25rem]! leading-none text-primary"
+            aria-hidden="true"
+            data-testid="current-site-icon">
+            language
+        </i>
+    </span>
     <h3 class="m-0 text-base font-semibold" data-testid="current-site-hostname">
         {{ $currentSite()?.hostname }}
     </h3>
@@ -8,11 +23,11 @@
     #treeFolder
     [folders]="$folders()"
     [loading]="$loading()"
-    [showFolderIconOnFirstOnly]="true"
     [selectedNode]="$selectedNode()"
     (onNodeSelect)="onNodeSelect($event)"
     (onNodeExpand)="onNodeExpand($event)"
     (onNodeCollapse)="onNodeCollapse($event)"
     (loadMore)="onLoadMore($event)"
+    (rightClick)="onNodeRightClick($event)"
     (uploadFiles)="uploadFiles.emit($event)"
     (moveItems)="moveItems.emit($event)" />

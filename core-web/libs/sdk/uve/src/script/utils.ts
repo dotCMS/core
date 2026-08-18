@@ -167,7 +167,7 @@ export function registerUVEEvents() {
  * This is typically called after all UVE event handlers and DOM listeners
  * have been set up successfully.
  */
-export function setClientIsReady(config?: DotCMSPageResponse): void {
+export function setClientIsReady(config?: Partial<DotCMSPageResponse>): void {
     sendMessageToUVE({
         action: DotCMSUVEAction.CLIENT_READY,
         payload: config

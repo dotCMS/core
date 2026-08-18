@@ -1,3 +1,4 @@
+export { ContentDrivePage } from './contentDrive.page';
 export { ContentTypeBuilderPage } from './contentTypeBuilder.page';
 export { LegacyEditContentFormPage } from './legacyEditContentForm.page';
 export { ListingContentPage } from './listingContent.page';

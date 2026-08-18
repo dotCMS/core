@@ -13,12 +13,16 @@ import { inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotFolder } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
-import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
+import {
+    applyLoadMoreToHierarchy,
+    FolderTreeHierarchyLevel,
+    getFolderHierarchyByPath,
+    getFolderNodesByPath
+} from '../../../utils/functions';
 import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
@@ -59,6 +63,12 @@ export function withSidebar() {
 
                 const urlFolderPath = store.path() || '';
 
+                // Only the initial state used to set this, so every later cold load (a site
+                // change) left the previous site's tree on screen while its replacement was
+                // fetched, with no indication anything was happening. It also gives consumers the
+                // loaded edge they need to reveal the folder the drive opened on.
+                patchState(store, { sidebarLoading: true });
+
                 getFolderHierarchyByPath(urlFolderPath, currentSite, dotFolderService)
                     .pipe(
                         take(1),
@@ -70,19 +80,25 @@ export function withSidebar() {
                                 console.error('Error loading folders:', response);
                             }
 
-                            return of([] as DotFolder[][]);
+                            return of([] as FolderTreeHierarchyLevel[]);
                         })
                     )
-                    .subscribe((folders) => {
+                    .subscribe((levels) => {
                         const { rootNodes, selectedNode } = buildTreeFolderNodes({
-                            folderHierarchyLevels: folders,
+                            folderHierarchyLevels: levels.map((level) => level.folders),
                             targetPath: urlFolderPath || '/',
                             rootNode: realAllFolder
                         });
 
+                        const rootsWithLoadMore = applyLoadMoreToHierarchy(
+                            rootNodes,
+                            levels,
+                            currentSite.hostname
+                        );
+
                         patchState(store, {
                             sidebarLoading: false,
-                            folders: [realAllFolder, ...rootNodes],
+                            folders: [realAllFolder, ...rootsWithLoadMore],
                             selectedNode: selectedNode
                         });
                     });
@@ -111,6 +127,7 @@ export function withSidebar() {
                     page
                 );
             },
+
             /**
              * Sets the selected node
              */

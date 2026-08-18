@@ -2,6 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { of, throwError } from 'rxjs';
 
 import {
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
@@ -15,7 +16,8 @@ import {
     PublishingJobDetailView,
     PublishingJobsResponse,
     PublishingJobView,
-    RetryBundleResultView
+    RetryBundleResultView,
+    UnsentBundlesResponse
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -42,6 +44,21 @@ const BUNDLES_RESPONSE: PublishingJobsResponse = {
         buildJob({ bundleId: 'bundle-B', status: PublishAuditStatus.SUCCESS })
     ],
     pagination: { currentPage: 1, perPage: 10, totalEntries: 2 }
+};
+
+/** Shape returned by the legacy `/api/bundle/getunsendbundles` endpoint. Three
+ * drafts, so `draftBundlesTotal` should settle on 3 — note `numRows` is
+ * deliberately wrong here (the real BE reports the page size, not the total) to
+ * pin that the store counts `items` rather than trusting `numRows`. */
+const UNSENT_BUNDLES_RESPONSE: UnsentBundlesResponse = {
+    identifier: 'id',
+    label: 'name',
+    items: [
+        { id: 'draft-1', name: 'Draft One' },
+        { id: 'draft-2', name: 'Draft Two' },
+        { id: 'draft-3', name: 'Draft Three' }
+    ],
+    numRows: 1
 };
 
 const MOCK_ASSETS: BundleAssetView[] = [
@@ -73,6 +90,7 @@ describe('DotPublishingQueueStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPublishingQueueStore>>;
     let store: InstanceType<typeof DotPublishingQueueStore>;
     let service: jest.Mocked<DotPublishingQueueService>;
+    let currentUserService: jest.Mocked<DotCurrentUserService>;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
     let messageDisplay: jest.Mocked<DotMessageDisplayService>;
 
@@ -91,7 +109,11 @@ describe('DotPublishingQueueStore', () => {
                 retryBundles: jest.fn().mockReturnValue(of([])),
                 deleteBundle: jest.fn().mockReturnValue(of({ message: 'ok' })),
                 deleteBundles: jest.fn().mockReturnValue(of({ entity: 'ok' })),
-                purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } }))
+                purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } })),
+                getUnsendBundles: jest.fn().mockReturnValue(of(UNSENT_BUNDLES_RESPONSE))
+            }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'user-1' }))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageDisplayService, {
@@ -116,6 +138,9 @@ describe('DotPublishingQueueStore', () => {
         service = spectator.inject(
             DotPublishingQueueService
         ) as jest.Mocked<DotPublishingQueueService>;
+        currentUserService = spectator.inject(
+            DotCurrentUserService
+        ) as jest.Mocked<DotCurrentUserService>;
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
         ) as jest.Mocked<DotHttpErrorManagerService>;
@@ -213,6 +238,49 @@ describe('DotPublishingQueueStore', () => {
             (service.listPublishingJobs as jest.Mock).mockClear();
             store.refresh();
             expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
+        });
+
+        it('also reloads the draft count — pushing/deleting moves rows in and out of the unsent set', () => {
+            (service.getUnsendBundles as jest.Mock).mockClear();
+            store.refresh();
+            expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('loadDraftBundlesCount', () => {
+        it('counts the drafts on init, resolving the user and asking for the list unbounded', () => {
+            expect(currentUserService.getCurrentUser).toHaveBeenCalled();
+            // count = -1 → BundleResource forwards it as an unlimited `maxRows`,
+            // so the response holds every draft and `items.length` is the total.
+            expect(service.getUnsendBundles).toHaveBeenCalledWith('user-1', '*', 0, -1);
+            expect(store.draftBundlesTotal()).toBe(3);
+        });
+
+        it('counts `items` rather than the BE `numRows` (which is only the page size)', () => {
+            // UNSENT_BUNDLES_RESPONSE carries numRows: 1 with 3 items on purpose.
+            expect(store.draftBundlesTotal()).toBe(3);
+        });
+
+        it('reuses the cached user id instead of re-resolving the current user', () => {
+            (currentUserService.getCurrentUser as jest.Mock).mockClear();
+            store.loadDraftBundlesCount();
+            expect(currentUserService.getCurrentUser).not.toHaveBeenCalled();
+            expect(service.getUnsendBundles).toHaveBeenCalledWith('user-1', '*', 0, -1);
+        });
+
+        it('keeps the last known count and shows no toast when a refresh fails', () => {
+            expect(store.draftBundlesTotal()).toBe(3);
+            (httpErrorManager.handle as jest.Mock).mockClear();
+            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+                throwError(() => new Error('boom'))
+            );
+
+            store.loadDraftBundlesCount();
+
+            // A failed count must not blank out a good number, and must not
+            // nag the user about decoration they never asked for.
+            expect(store.draftBundlesTotal()).toBe(3);
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
         });
     });
 

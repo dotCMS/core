@@ -51,16 +51,16 @@
             @let isSingleColumnTab = isSingleColumnLayout(tab.layout);
             <div class="p-4">
                 <div
-                    [class]="isSingleColumnTab ? 'mx-auto max-w-206' : 'mx-auto max-w-286'"
+                    [class]="isSingleColumnTab ? 'mx-auto max-w-206' : 'mx-auto max-w-343'"
                     data-testId="tab-layout-container">
                     @for (row of tab.layout; track row) {
                         <div
-                            class="mb-5 grid auto-cols-fr grid-flow-col gap-5 last:mb-0"
+                            class="mb-5 grid auto-cols-fr grid-flow-col gap-9 last:mb-0"
                             [class.hidden]="row.columns.some(c => c.fields.length > 0) && row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
                             data-testId="row">
                             @for (column of row.columns; track column) {
                                 <div
-                                    class="flex flex-col gap-5"
+                                    class="flex flex-col gap-8"
                                     [class.hidden]="column.fields.length > 0 && column.fields.every(f => hiddenFields[f.variable])"
                                     data-testId="column">
                                     @for (field of column.fields; track field) {
@@ -132,7 +132,13 @@
             }
         }
 
-        <!-- Sidebar toggle: always visible, icon reflects open/closed state (matches UVE pattern) -->
+        <!-- Sidebar toggle: always visible. Single `dock_to_left` glyph, rendered as-is (NOT
+             mirrored — the previous SVG pair carried a `-scale-x-100` flip that pointed it the wrong
+             way). The glyph no longer changes per state, so the open/closed cue lives on the
+             accessible name — `aria-hidden` keeps screen readers off the ligature text.
+             The name MUST go through PrimeNG's `[ariaLabel]` input, not `[attr.aria-label]`: the
+             latter lands on the non-focusable `<p-button>` host, leaving the real `<button>` (whose
+             only content is the aria-hidden icon) with no accessible name at all. -->
         <div
             class="-mr-4 flex min-h-[52px] shrink-0 items-center justify-center"
             data-testId="sidebar-toggle">
@@ -140,22 +146,17 @@
                 [rounded]="true"
                 [text]="true"
                 (click)="$store.toggleSidebar()"
+                [ariaLabel]="
+                    (showSidebar ? 'edit.content.sidebar.close' : 'edit.content.sidebar.open') | dm
+                "
                 size="small"
                 data-testId="sidebar-toggle-button">
-                <img
-                    src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
-                    [alt]="'edit.content.sidebar.close' | dm"
-                    [class.hidden]="!showSidebar"
-                    class="-scale-x-100"
-                    draggable="false"
-                    data-testId="sidebar-open-icon" />
-                <img
-                    src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
-                    [alt]="'edit.content.sidebar.open' | dm"
-                    [class.hidden]="showSidebar"
-                    class="-scale-x-100"
-                    draggable="false"
-                    data-testId="sidebar-close-icon" />
+                <i
+                    class="material-symbols-outlined"
+                    aria-hidden="true"
+                    data-testId="sidebar-toggle-icon">
+                    dock_to_left
+                </i>
             </p-button>
         </div>
     </div>

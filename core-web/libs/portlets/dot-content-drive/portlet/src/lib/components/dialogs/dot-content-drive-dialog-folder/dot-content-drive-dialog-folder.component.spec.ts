@@ -1,12 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { delay, of, throwError } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
-import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotContentDriveFolder } from '@dotcms/dotcms-models';
+import { DotContentDriveActionableFolder, DotContentDriveFolder } from '@dotcms/dotcms-models';
 import { createFakeSite, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog-folder.component';
@@ -28,6 +28,33 @@ const mockFileAssetTypes = [
         variable: 'Video'
     }
 ];
+
+/** An existing folder as it comes back from the backend, for the edit-mode flows. */
+const editableFolder = (overrides: Partial<DotContentDriveFolder> = {}): DotContentDriveFolder =>
+    ({
+        name: 'app',
+        title: 'App',
+        sortOrder: 1,
+        filesMasks: '',
+        defaultFileType: 'FileAsset',
+        showOnMenu: false,
+        __icon__: 'folderIcon',
+        description: '',
+        extension: 'folder',
+        hasTitleImage: false,
+        hostId: '1',
+        iDate: 1,
+        identifier: '1',
+        inode: '1',
+        mimeType: '',
+        modDate: 1,
+        owner: null,
+        parent: '',
+        path: '',
+        permissions: [],
+        type: 'folder',
+        ...overrides
+    }) as DotContentDriveFolder;
 
 describe('DotContentDriveDialogFolderComponent', () => {
     let spectator: Spectator<DotContentDriveDialogFolderComponent>;
@@ -161,22 +188,30 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/new-folder/');
         });
 
-        it('should return hostname only when name is empty', () => {
+        it('should preview the current folder (not root) when name is empty', () => {
             component.folderForm.patchValue({ name: '' });
             spectator.detectChanges();
 
-            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
         });
 
-        it('should return hostname only when name is null', () => {
+        it('should preview the current folder (not root) when name is null', () => {
             component.folderForm.patchValue({ name: null });
             spectator.detectChanges();
 
-            expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
         });
 
-        it('should return hostname only when name is whitespace', () => {
+        it('should preview the current folder (not root) when name is whitespace', () => {
             component.folderForm.patchValue({ name: '   ' });
+            spectator.detectChanges();
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
+        });
+
+        it('should preview the site root when at root (no path) and name is empty', () => {
+            store.path.mockReturnValue(undefined);
+            component.folderForm.patchValue({ name: '' });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/');
@@ -202,6 +237,21 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/test-folder-name/');
+        });
+    });
+
+    describe('create form respects the currently opened folder', () => {
+        it('previews the opened folder as the parent before a name is typed', () => {
+            // Opening "New folder" while inside /documents must show that folder as the parent in
+            // the create form — not the site root — otherwise the form misrepresents where the
+            // folder will be created (issue: "New button not respecting the current opened folder").
+            store.path.mockReturnValue('/documents');
+            component.folderForm.patchValue({ name: '' });
+            spectator.detectChanges();
+
+            const preview = spectator.query(byTestId('folder-path-preview'))?.textContent?.trim();
+
+            expect(preview).toBe('//demo.dotcms.com/documents/');
         });
     });
 
@@ -254,7 +304,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/existing-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -300,6 +350,37 @@ describe('DotContentDriveDialogFolderComponent', () => {
     });
 
     describe('file extensions functionality', () => {
+        /** The AutoComplete's own text input (the one the user types extensions into). */
+        const extensionsInput = () =>
+            (spectator.query(AutoComplete) as AutoComplete).inputEL?.nativeElement as
+                | HTMLInputElement
+                | undefined;
+
+        /** The chips the field is actually showing, which must mirror the form control. */
+        const renderedChips = () => (spectator.query(AutoComplete) as AutoComplete).modelValue();
+
+        /**
+         * A real Enter press. `code` matters: PrimeNG's own key handler switches on it, so without
+         * it only our `(keydown.enter)` binding (which matches on `key`) would run and the test
+         * would miss that PrimeNG handles the same press first, on the inner input.
+         */
+        const pressEnter = () =>
+            new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true });
+
+        /** Types `text` and lets the AutoComplete debounce run so the suggestions get filtered. */
+        const type = (text: string) => {
+            const input = extensionsInput();
+            input.value = text;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            jest.advanceTimersByTime(500);
+            spectator.detectChanges();
+
+            return input;
+        };
+
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
         it('should filter file extensions on autocomplete', () => {
             const event: AutoCompleteCompleteEvent = {
                 query: 'jpg',
@@ -312,19 +393,49 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
 
         it('should add extension on enter key if not duplicate', () => {
-            spectator.triggerEventHandler(
-                '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keyup.enter',
-                {
-                    target: {
-                        value: '*.pdf'
-                    }
-                }
-            );
-
+            const input = type('*.pdf');
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toContain('*.pdf');
+            // Input is cleared so the next entry starts fresh and existing chips are preserved.
+            expect(input.value).toBe('');
+        });
+
+        it('should preserve existing selection when adding another extension', () => {
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            const input = type('*.png');
+            input.dispatchEvent(pressEnter());
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([
+                '*.jpg',
+                '*.png'
+            ]);
+        });
+
+        it('should keep the rendered chips in sync with the form value when adding an extension', () => {
+            // Regression: adding an extension used to write the whole array back through the form
+            // control, and PrimeNG re-derives the chips from the *filtered* suggestions on write.
+            // Every already-selected extension outside the active filter was dropped from the
+            // chips while staying in the form value, so the stale extension came back on reload.
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            const input = type('*.png');
+            input.dispatchEvent(pressEnter());
+            spectator.detectChanges();
+
+            expect(renderedChips()).toEqual(['*.jpg', '*.png']);
+            expect(renderedChips()).toEqual(
+                component.folderForm.get('allowedFileExtensions')?.value
+            );
         });
 
         it('should not add duplicate extension on enter key', () => {
@@ -333,19 +444,215 @@ describe('DotContentDriveDialogFolderComponent', () => {
             });
             spectator.detectChanges();
 
-            spectator.triggerEventHandler(
-                '[data-testid="allowed-file-extensions-autocomplete"]',
-                'keyup.enter',
-                {
-                    target: {
-                        value: '*.pdf'
-                    }
-                }
-            );
-
+            const input = type('*.pdf');
+            input.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.pdf']);
+            expect(input.value).toBe('');
+        });
+
+        it('should render a chip for every saved extension, including ones off the suggested list', () => {
+            // Regression: PrimeNG re-derives the chips from `suggestions` on every control write,
+            // including the one that loads the folder. An extension the suggested list does not
+            // carry was dropped from the chips while staying in the form value, so the user could
+            // neither see nor remove it and it was sent straight back on save. The folder is bound
+            // at creation time here because that is how the shell opens this dialog.
+            const editSpectator = createComponent({
+                props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+            });
+            editSpectator.detectChanges();
+
+            const chips = (editSpectator.query(AutoComplete) as AutoComplete).modelValue();
+
+            expect(chips).toEqual(['*.jpg', '*.svg']);
+            expect(chips).toEqual(
+                editSpectator.component.folderForm.get('allowedFileExtensions')?.value
+            );
+        });
+
+        describe('while the file asset types are still loading', () => {
+            // `getContentTypes` is mocked once for the whole file, so restore it or the delayed
+            // observable leaks into every test that runs after this one.
+            afterEach(() => {
+                (
+                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
+                ).mockReturnValue(of(mockFileAssetTypes));
+            });
+
+            const openWhileLoading = () => {
+                (
+                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
+                ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
+
+                const loading = createComponent({
+                    props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+                });
+                loading.detectChanges();
+
+                return loading;
+            };
+
+            it('should show a spinner and render no field at all', () => {
+                // Not only the extensions field: no input may exist before the values that belong in
+                // it, or setFolderFormEffect overwrites whatever was typed in the meantime. The save
+                // button has to stay away too, since submitting now would persist an empty form over
+                // the folder's real data.
+                const loading = openWhileLoading();
+
+                expect(loading.query(byTestId('folder-form-loading'))).toBeTruthy();
+                expect(loading.query('#name')).toBeNull();
+                expect(loading.query('#title')).toBeNull();
+                expect(
+                    loading.query('[data-testid="allowed-file-extensions-autocomplete"]')
+                ).toBeNull();
+                expect(
+                    loading.query('[data-testid="content-drive-dialog-folder-create"]')
+                ).toBeNull();
+            });
+
+            it('should render the form already populated once they arrive', () => {
+                // The form must never be visible before its values: patching a form the user can
+                // already type into overwrites their input, and on this field it also pruned chips
+                // down to whatever the active suggestion filter matched.
+                const loading = openWhileLoading();
+
+                jest.advanceTimersByTime(1000);
+                loading.detectChanges();
+
+                const autoComplete = loading.query(AutoComplete) as AutoComplete;
+
+                expect(loading.query(byTestId('folder-form-loading'))).toBeNull();
+                expect(autoComplete.modelValue()).toEqual(['*.jpg', '*.svg']);
+                expect(autoComplete.modelValue()).toEqual(
+                    loading.component.folderForm.get('allowedFileExtensions')?.value
+                );
+            });
+        });
+
+        it('should replace the saved extension when it is removed and a new one is typed', () => {
+            // The reported flow: open a folder that already has an extension, remove it, type a
+            // different one. The new extension must be what ends up in the payload.
+            const autoComplete = spectator.query(AutoComplete) as AutoComplete;
+
+            component.folderForm.patchValue({
+                allowedFileExtensions: ['*.jpg']
+            });
+            spectator.detectChanges();
+
+            autoComplete.removeOption({ stopPropagation: () => undefined } as unknown as Event, 0);
+            spectator.detectChanges();
+
+            const input = type('*.png');
+            input.dispatchEvent(pressEnter());
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.png']);
+            expect(renderedChips()).toEqual(['*.png']);
+        });
+    });
+
+    describe('overlay panels', () => {
+        // Both panels are appended to the body: inside the dialog's scrolling content they get
+        // clipped, and the wheel events land on the dialog instead of the panel's own list.
+        it('should append the file extensions suggestions panel to the body', () => {
+            expect(
+                spectator
+                    .query('[data-testid="allowed-file-extensions-autocomplete"]')
+                    ?.getAttribute('appendTo')
+            ).toBe('body');
+        });
+
+        it('should append the default file asset type options panel to the body', () => {
+            expect(spectator.query('#defaultFileAssetType')?.getAttribute('appendTo')).toBe('body');
+        });
+    });
+
+    describe('upload behavior (defaultBaseType)', () => {
+        const editableFolder = (
+            overrides: Partial<DotContentDriveFolder> = {}
+        ): DotContentDriveFolder =>
+            ({
+                name: 'app',
+                title: 'App',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                __icon__: 'folderIcon',
+                description: '',
+                extension: 'folder',
+                hasTitleImage: false,
+                hostId: '1',
+                iDate: 1,
+                identifier: '1',
+                inode: '1',
+                mimeType: '',
+                modDate: 1,
+                owner: null,
+                parent: '',
+                path: '/documents/app/',
+                permissions: [],
+                type: 'folder',
+                ...overrides
+            }) as DotContentDriveFolder;
+
+        it('should render the three upload-behavior options', () => {
+            expect(spectator.query('[data-testid="upload-behavior-option-null"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="upload-behavior-option-DOTASSET"]')).toBeTruthy();
+            expect(
+                spectator.query('[data-testid="upload-behavior-option-FILEASSET"]')
+            ).toBeTruthy();
+        });
+
+        it('should default to "Ask each time" (null) on create', () => {
+            expect(component.folderForm.get('defaultBaseType')?.value).toBeNull();
+        });
+
+        it('should pre-select the radio from the folder defaultBaseType on edit', () => {
+            spectator.setInput('folder', editableFolder({ defaultBaseType: 'DOTASSET' }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
+        });
+
+        it('should normalize a non-uppercase defaultBaseType to the uppercase radio value', () => {
+            // The radio options and the shell/toolbar consumers use the uppercase enum; a
+            // lowercase backend value must still select the matching option (not "Ask each time").
+            spectator.setInput('folder', editableFolder({ defaultBaseType: 'dotasset' }));
+            spectator.detectChanges();
+
+            expect(component.folderForm.get('defaultBaseType')?.value).toBe('DOTASSET');
+        });
+
+        it('should send defaultBaseType in the body when a preference is chosen', () => {
+            component.folderForm.patchValue({
+                title: 'App',
+                name: 'app',
+                defaultBaseType: 'FILEASSET'
+            });
+            spectator.detectChanges();
+
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+
+            expect(folderService.createFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: 'FILEASSET' })
+                })
+            );
+        });
+
+        it('should send defaultBaseType as null when "Ask each time" so the backend can clear it', () => {
+            component.folderForm.patchValue({ title: 'App', name: 'app' });
+            spectator.detectChanges();
+
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+
+            expect(folderService.createFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: null })
+                })
+            );
         });
     });
 
@@ -371,7 +678,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -394,7 +702,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });
@@ -416,7 +725,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -438,7 +748,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -539,7 +850,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: true,
                     sortOrder: 1,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -579,7 +891,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 5,
-                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id
+                    defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
+                    defaultBaseType: null
                 }
             });
         });
@@ -618,7 +931,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: false,
                     sortOrder: 1,
                     defaultAssetType: DEFAULT_FILE_ASSET_TYPES[0].id,
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
         });
@@ -656,7 +970,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     title: 'Test Folder',
                     showOnMenu: false,
                     sortOrder: 1,
-                    defaultAssetType: 'Video'
+                    defaultAssetType: 'Video',
+                    defaultBaseType: null
                 }
             });
         });
@@ -714,7 +1029,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/original-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -749,6 +1064,63 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(lastCall?.assetPath).toBe('//demo.dotcms.com/documents/test-folder/');
         });
 
+        it('should anchor the edit assetPath on the folder itself, not the open folder', () => {
+            // The sidebar tree can open this dialog for any folder in the site, not just a child of
+            // the folder currently open in the drive (`store.path()` is '/documents'). Anchoring on
+            // the open path would build '//demo.dotcms.com/documents/marketing-assets/' — a
+            // different folder, which would 404 on save or silently overwrite a same-named sibling.
+            const folderInAnotherBranch: DotContentDriveActionableFolder = {
+                name: 'marketing-assets',
+                title: 'Marketing Assets',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                identifier: 'other-branch-id',
+                path: '/campaigns/2026/marketing-assets/',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', folderInAnotherBranch);
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalled();
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/campaigns/2026/marketing-assets/');
+        });
+
+        it('should anchor the edit assetPath at the site root for a root-level folder', () => {
+            const rootLevelFolder: DotContentDriveActionableFolder = {
+                name: 'archive',
+                title: 'Archive',
+                sortOrder: 1,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                showOnMenu: false,
+                identifier: 'root-level-id',
+                path: '/archive/',
+                permissions: [],
+                type: 'folder'
+            };
+
+            spectator.setInput('folder', rootLevelFolder);
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
+            expect(lastCall?.assetPath).toBe('//demo.dotcms.com/archive/');
+        });
+
         it('should include name in data when originalName exists and name has changed', () => {
             // Simulate editing an existing folder
             const mockFolder: DotContentDriveFolder = {
@@ -770,7 +1142,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/original-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -835,7 +1207,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/original-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -890,7 +1262,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 modDate: 1234567890,
                 owner: null,
                 parent: '',
-                path: '',
+                path: '/documents/existing-folder/',
                 permissions: [],
                 type: 'folder'
             };
@@ -933,9 +1305,30 @@ describe('DotContentDriveDialogFolderComponent', () => {
                     showOnMenu: true,
                     sortOrder: 1,
                     defaultAssetType: 'File',
-                    fileMasks: ['*.jpg', '*.png']
+                    fileMasks: ['*.jpg', '*.png'],
+                    defaultBaseType: null
                 }
             });
+        });
+
+        it('should send a blank mask when every extension is removed, so the saved list is cleared', () => {
+            // The backend skips the write when `fileMasks` is absent or an empty list, so neither
+            // can express "clear" and the saved extensions came back on the next load. A single
+            // blank mask joins to an empty string server-side, which is how a folder with no
+            // restrictions is stored.
+            component.folderForm.patchValue({ allowedFileExtensions: [] });
+            spectator.detectChanges();
+
+            const saveButton = spectator.query(
+                '[data-testid="content-drive-dialog-folder-create"]'
+            );
+            spectator.click(saveButton);
+
+            expect(folderService.saveFolder).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ fileMasks: [''] })
+                })
+            );
         });
 
         it('should reload content drive, load folders and close dialog on success', () => {

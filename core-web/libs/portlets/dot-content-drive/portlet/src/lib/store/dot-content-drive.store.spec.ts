@@ -1,12 +1,32 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import {
+    createServiceFactory,
+    SpectatorService,
+    mockProvider,
+    SpyObject
+} from '@openng/spectator/jest';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
+import { Location } from '@angular/common';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
+import {
+    AddToBundleService,
+    DotContentDriveService,
+    DotCurrentUserService,
+    DotFolderService,
+    DotHttpErrorManagerService,
+    DotPropertiesService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import {
+    DotContentDriveItem,
+    DotContentDriveSearchResponse,
+    DotCurrentUser,
+    DotFireDefaultActionResult,
+    DotSite
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
 
@@ -25,6 +45,8 @@ import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/model
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
+    /** Feeds the store's one-shot current-user fetch; re-created per test so emissions don't leak. */
+    let currentUser$: Subject<DotCurrentUser>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -38,14 +60,35 @@ describe('DotContentDriveStore', () => {
                 siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
             }),
             mockProvider(DotContentDriveService),
+            // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
+            // rather than a fixed `of(...)` so a test can control *when* — the store subscribes
+            // during construction, and "hasn't answered yet" is a case the flag has to get right.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn(() => currentUser$)
+            }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ]
     });
 
     beforeEach(() => {
+        // Assigned before the store is built: `onInit` subscribes straight away.
+        currentUser$ = new Subject<DotCurrentUser>();
         spectator = createService();
         store = spectator.service;
     });
@@ -60,6 +103,62 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
+        });
+    });
+
+    describe('currentUserIsAdmin', () => {
+        it('should start false, before the request has answered', () => {
+            // The unresolved case. Nothing waits on the flag, so consumers read this default — the
+            // non-admin behaviour, i.e. the Unlock row keeps warning. Over-warning is the safe way
+            // to fail here; the copy already says a foreign lock *may* be refused.
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should resolve to true for a CMS Administrator', () => {
+            currentUser$.next({ admin: true } as DotCurrentUser);
+
+            expect(store.currentUserIsAdmin()).toBe(true);
+        });
+
+        it('should resolve to false for a non-administrator', () => {
+            currentUser$.next({ admin: false } as DotCurrentUser);
+
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should stay false when the response carries no body', () => {
+            // `catchError` sits upstream of `subscribe`, so it only covers observable errors.
+            // Destructuring the response inside the subscriber would throw on a 204, a proxy that
+            // strips the body, or a session-expired gateway returning no JSON — an unhandled error
+            // during store init, for a flag that is explicitly non-essential.
+            expect(() => currentUser$.next(null as unknown as DotCurrentUser)).not.toThrow();
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should stay false when the request fails', () => {
+            // A portlet that cannot answer "is this an admin?" should still work: the role only
+            // softens a warning, so a failure is swallowed rather than surfaced.
+            currentUser$.error(new HttpErrorResponse({ status: 500 }));
+
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should not re-fetch the current user as the store changes', () => {
+            // The role is fixed for the session, so state changes that re-run the store's effects
+            // must not re-request it. Measured as a delta rather than an absolute count: the spy is
+            // shared by the factory, so it carries calls from earlier tests.
+            const { getCurrentUser } = spectator.inject(DotCurrentUserService, true);
+            const callsAfterInit = getCurrentUser.mock.calls.length;
+
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setPath('/some/other/path/');
+
+            expect(getCurrentUser.mock.calls.length).toBe(callsAfterInit);
         });
     });
 
@@ -683,11 +782,28 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
             }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
             mockProvider(DotContentDriveService, {
                 search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ]
@@ -710,6 +826,102 @@ describe('DotContentDriveStore - onInit', () => {
     });
 });
 
+describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            mockProvider(DotHttpErrorManagerService),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    /** Invokes the popstate handler the store registered in onInit with the given restored URL. */
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as jest.Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    });
+
+    it('re-hydrates the store when Back changes the filters param (fixes the stale-list bug)', () => {
+        popstate('/c/content-drive?filters=contentType:Blog');
+
+        expect(store.filters()).toEqual({ contentType: ['Blog'] });
+        // Reset to LOADING is what the search effect turns into a fresh load.
+        expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+    });
+
+    it('re-hydrates the store when Back changes the path param', () => {
+        popstate('/c/content-drive?path=/foo/bar');
+
+        expect(store.path()).toBe('/foo/bar');
+    });
+
+    it('re-hydrates the tree-expanded preference from the URL on Back', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: {},
+            isTreeExpanded: true
+        });
+
+        popstate('/c/content-drive?isTreeExpanded=false');
+
+        expect(store.isTreeExpanded()).toBe(false);
+    });
+
+    it('does NOT re-hydrate when only the editContent param changed (closing the panel via Back)', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: { contentType: ['Blog'] },
+            isTreeExpanded: true
+        });
+        const initSpy = jest.spyOn(store, 'initContentDrive');
+
+        // Same browsing params — only editContent differs (here, absent). Must be a no-op so the
+        // list isn't reset/reloaded just because the side panel closed.
+        popstate('/c/content-drive?path=/keep&filters=contentType:Blog&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+        expect(store.path()).toBe('/keep');
+        expect(store.filters()).toEqual({ contentType: ['Blog'] });
+    });
+});
+
 describe('DotContentDriveStore - Content Loading Effect', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
@@ -726,11 +938,28 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
             }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
             mockProvider(DotContentDriveService, {
                 search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient()
         ]
@@ -959,6 +1188,356 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             });
 
             expect(store.userSearchableActive()).toEqual(['title', 'tags']);
+        });
+    });
+
+    describe('Show In List fields', () => {
+        it('should set and expose the Show In List fields', () => {
+            const fields = [createFakeTextField({ variable: 'summary' })];
+
+            store.setShowInListFields(fields);
+
+            expect(store.showInListFields()).toEqual(fields);
+        });
+
+        it('should clear the Show In List fields when field filters are cleared', () => {
+            store.setShowInListFields([createFakeTextField({ variable: 'summary' })]);
+
+            store.clearUserSearchableFilters();
+
+            expect(store.showInListFields()).toEqual([]);
+        });
+    });
+});
+
+describe('DotContentDriveStore - withActionExecution', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let fireService: jest.Mocked<DotWorkflowActionsFireService>;
+    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(DotWorkflowActionsFireService, {
+                fireDefaultAction: jest.fn(),
+                bulkFire: jest.fn()
+            }),
+            // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
+            mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    beforeEach(() => {
+        // The provider mocks live in the factory closure, so call counts would otherwise accumulate
+        // across tests in this block.
+        jest.clearAllMocks();
+
+        spectator = createService();
+        store = spectator.service;
+        fireService = spectator.inject(
+            DotWorkflowActionsFireService
+        ) as jest.Mocked<DotWorkflowActionsFireService>;
+        httpErrorManager = spectator.inject(
+            DotHttpErrorManagerService
+        ) as jest.Mocked<DotHttpErrorManagerService>;
+
+        fireService.fireDefaultAction.mockReturnValue(
+            of({ results: [], summary: { affected: 2, successCount: 2, failCount: 0, time: 1 } })
+        );
+        fireService.bulkFire.mockReturnValue(of({ successCount: 2, skippedCount: 0, fails: [] }));
+    });
+
+    describe('executeQuickAction', () => {
+        it('should publish the running action so the toolbar can report it', () => {
+            // Never settles, so the in-flight state is observable.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecution()).toEqual({ actionName: 'Publish', total: 2 });
+        });
+
+        it('should fire the default action with the given inodes', () => {
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'PUBLISH',
+                inodes: ['inode-1']
+            });
+        });
+
+        it('should report the counts the endpoint returned, not the number of inodes sent', () => {
+            // Per-item failures are an expected outcome (a lock held by another user, a permission
+            // the row state cannot see), so the result has to reflect what the server actually did.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 1, failCount: 1, time: 1 }
+                })
+            );
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        it('should clear the running action once settled', () => {
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toBeDefined();
+        });
+
+        it('should not fire when there are no inodes', () => {
+            store.executeQuickAction('PUBLISH', 'Publish', []);
+
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should refuse to start a second run while one is in flight', () => {
+            // Guards the double-fire the old component-owned flag allowed: closing and reopening the
+            // dialog used to reset it, letting the same rows be fired twice.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledTimes(1);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            const error = new HttpErrorResponse({ status: 403 });
+            fireService.fireDefaultAction.mockReturnValue(throwError(() => error));
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not report a success when the response arrives without a summary', () => {
+            // The endpoint streams `results` then `summary`, and the writer swallows an IOException
+            // mid-stream — so a 200 with no summary is reachable. Counting the inodes sent would
+            // report every one of them as succeeded, which is the most reassuring possible message
+            // for the case where nothing is known to have succeeded.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({ results: [] } as unknown as DotFireDefaultActionResult)
+            );
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+        });
+
+        it('should still report a zeroed summary the endpoint actually sent', () => {
+            // A real `successCount: 0` is a fact, not a missing field, so it goes to the toast.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 0, failCount: 2, time: 1 }
+                })
+            );
+
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Publish',
+                successCount: 0,
+                skippedCount: 0,
+                failCount: 2
+            });
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('executeWorkflowAction', () => {
+        it('should fire the bulk request with the given contentlet ids', () => {
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
+
+            expect(fireService.bulkFire).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    workflowActionId: 'action-review',
+                    contentletIds: ['inode-1', 'inode-2']
+                })
+            );
+        });
+
+        it('should carry skipped items through to the result', () => {
+            // A mixed-type selection partially skips by design: contentlets whose scheme does not own
+            // the action are skipped server-side.
+            fireService.bulkFire.mockReturnValue(
+                of({ successCount: 1, skippedCount: 1, fails: [] })
+            );
+
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Send for Review',
+                successCount: 1,
+                skippedCount: 1,
+                failCount: 0
+            });
+        });
+
+        it('should count per-item failures from the fails list', () => {
+            fireService.bulkFire.mockReturnValue(
+                of({
+                    successCount: 1,
+                    skippedCount: 0,
+                    fails: [{ inode: 'inode-2', errorMessage: 'locked' }]
+                })
+            );
+
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()?.failCount).toBe(1);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            fireService.bulkFire.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('executeAddToBundle', () => {
+        const BUNDLE = { id: 'bundle-1', name: 'Release 1' };
+        let addToBundleService: SpyObject<AddToBundleService>;
+
+        beforeEach(() => {
+            addToBundleService = spectator.inject(AddToBundleService);
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+        });
+
+        it('should post the identifiers comma-joined', () => {
+            // The servlet splits `assetIdentifier` on "," and has always accepted several ids that
+            // way, which is why bulk needs no new endpoint.
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,id-2', BUNDLE);
+        });
+
+        it('should report the server count of assets queued, not the number sent', () => {
+            // The server dedupes by identifier and drops anything already in the bundle, so `total`
+            // can be lower than what was posted. Reporting the input would overstate the result.
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0
+            });
+        });
+
+        it('should split failures out of the total', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 2,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        it('should never report a negative success count', () => {
+            // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(store.actionExecutionResult()?.successCount).toBe(0);
+        });
+
+        it('should mark the run in progress while it is in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(store.actionExecution()).toEqual({ actionName: 'Add to Bundle', total: 2 });
+        });
+
+        it('should refuse a second run while one is in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-2']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('clearActionExecutionResult', () => {
+        it('should drop the result once it has been presented', () => {
+            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            expect(store.actionExecutionResult()).toBeDefined();
+
+            store.clearActionExecutionResult();
+
+            expect(store.actionExecutionResult()).toBeUndefined();
         });
     });
 });

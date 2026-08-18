@@ -19,5 +19,10 @@ export default {
             }
         ]
     },
-    transformIgnorePatterns: ['node_modules/(?!.*.mjs$)']
+    // These deps ship ESM-only entry points that Jest cannot parse untransformed.
+    // `y-protocols` is reached via @tiptap/extension-drag-handle → extension-collaboration
+    // and made this whole suite fail to run. Mirrors the new-block-editor config.
+    transformIgnorePatterns: [
+        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked|lowlight|devlop))'
+    ]
 };

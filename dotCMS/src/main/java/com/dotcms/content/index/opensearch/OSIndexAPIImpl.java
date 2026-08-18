@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
@@ -672,8 +673,20 @@ public class OSIndexAPIImpl implements IndexAPI {
      * instead of only echoing a raw transport message (issue #36244 follow-up: error classification
      * hardening). Motivated by a TLS-scheme mismatch (an {@code http://} client against an
      * {@code https}-only OS 3.x port) that surfaced only as an opaque {@code ConnectionClosedException}.
+     *
+     * <p>Also reused to classify <em>operation</em> failures — an OS request that reaches the
+     * cluster and is rejected, most notably an {@code HTTP 403} on index creation when the
+     * configured OS user's role does not cover the dotCMS index-name prefix (issue #36222).</p>
      */
-    enum ConnectionFailureKind {
+    /**
+     * Matches an HTTP 401/403 status code that is not part of a longer digit run, so a real status
+     * code is recognised ({@code status: 403}, {@code HTTP/1.1 403}) while the same digits appearing
+     * inside an index-name timestamp are not (see {@link #classifyConnectionError}).
+     */
+    private static final Pattern AUTH_STATUS_CODE =
+            Pattern.compile("(?<![0-9])(401|403)(?![0-9])");
+
+    public enum ConnectionFailureKind {
         TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
                 + " server (e.g. http:// against an https-only OS port, or https:// against a"
                 + " plaintext port). Align OS_PROTOCOL / OS_TLS_ENABLED with the server's scheme"
@@ -690,7 +703,7 @@ public class OSIndexAPIImpl implements IndexAPI {
             this.remediation = remediation;
         }
 
-        String remediation() {
+        public String remediation() {
             return remediation;
         }
     }
@@ -705,44 +718,81 @@ public class OSIndexAPIImpl implements IndexAPI {
      * <p>Order matters: TLS/scheme is checked first (its symptoms — closed connection, SSL/plaintext
      * — otherwise look like a generic unreachable), then auth (401/403), then unreachable.</p>
      *
-     * @param error the last connection error observed, or {@code null}
+     * @param error the last connection or operation error observed, or {@code null}
      * @return the inferred {@link ConnectionFailureKind}; never {@code null}
      */
-    static ConnectionFailureKind classifyConnectionError(final Throwable error) {
+    public static ConnectionFailureKind classifyConnectionError(final Throwable error) {
         for (Throwable t = error; t != null; t = t.getCause()) {
-            final String type = t.getClass().getName().toLowerCase(Locale.ROOT);
-            final String msg  = t.getMessage() == null
-                    ? "" : t.getMessage().toLowerCase(Locale.ROOT);
+            final ConnectionFailureKind kind = classify(t.getClass().getName(), t.getMessage());
+            if (kind != ConnectionFailureKind.UNKNOWN) {
+                return kind;
+            }
+        }
+        return ConnectionFailureKind.UNKNOWN;
+    }
 
-            // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
-            // (the classic symptom of speaking http:// to an https-only port).
-            if (type.contains("sslexception")
-                    || type.contains("sslhandshake")
-                    || type.contains("connectionclosedexception")
-                    || msg.contains("unrecognized ssl message")
-                    || msg.contains("plaintext")
-                    || msg.contains("ssl")
-                    || msg.contains("certificat") // certificate / certification path (PKIX)
-                    || msg.contains("pkix")
-                    || msg.contains("connection closed")) {
-                return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
-            }
-            // Authentication / authorization.
-            if (msg.contains("401") || msg.contains("403")
-                    || msg.contains("unauthorized") || msg.contains("forbidden")) {
-                return ConnectionFailureKind.AUTH_FORBIDDEN;
-            }
-            // Host/port unreachable.
-            if (type.contains("connectexception")
-                    || type.contains("unknownhostexception")
-                    || type.contains("sockettimeoutexception")
-                    || type.contains("nohttpresponseexception")
-                    || msg.contains("connection refused")
-                    || msg.contains("timed out")
-                    || msg.contains("timeout")
-                    || msg.contains("unknown host")) {
-                return ConnectionFailureKind.UNREACHABLE;
-            }
+    /**
+     * Classifies a bare failure <em>message</em>, for rejections that never reach the caller as an
+     * exception. The motivating case is a bulk write: the OpenSearch client reports a per-item
+     * rejection as text on the bulk item (e.g. {@code security_exception: no permissions for
+     * [indices:data/write/bulk[s]] …}) rather than throwing, so a systemic permission problem is
+     * indistinguishable from a per-document problem unless the message itself is classified
+     * (issue #36222 follow-up).
+     *
+     * @param failureMessage the vendor-reported failure text, or {@code null}
+     * @return the inferred {@link ConnectionFailureKind}; never {@code null}
+     */
+    public static ConnectionFailureKind classifyFailureMessage(final String failureMessage) {
+        return classify("", failureMessage);
+    }
+
+    /**
+     * Matching core shared by {@link #classifyConnectionError(Throwable)} (once per link of the
+     * exception chain) and {@link #classifyFailureMessage(String)}.
+     *
+     * @param typeName fully-qualified exception type name, or {@code ""} when classifying a message
+     * @param message  the failure message, or {@code null}
+     */
+    private static ConnectionFailureKind classify(final String typeName, final String message) {
+        final String type = typeName == null ? "" : typeName.toLowerCase(Locale.ROOT);
+        final String msg  = message == null ? "" : message.toLowerCase(Locale.ROOT);
+
+        // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
+        // (the classic symptom of speaking http:// to an https-only port).
+        if (type.contains("sslexception")
+                || type.contains("sslhandshake")
+                || type.contains("connectionclosedexception")
+                || msg.contains("unrecognized ssl message")
+                || msg.contains("plaintext")
+                || msg.contains("ssl")
+                || msg.contains("certificat") // certificate / certification path (PKIX)
+                || msg.contains("pkix")
+                || msg.contains("connection closed")) {
+            return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
+        }
+        // Authentication / authorization. The status code must not be matched as a bare
+        // substring: dotCMS wrapper messages embed the physical index name, whose
+        // _yyyyMMddHHmmss timestamp regularly contains the digits 401/403 (e.g. an index
+        // created at 12:04:03 → working_20260728120403.os), which would misreport an unrelated
+        // failure — a settings-parse or orphan-delete error — as a permission problem and send
+        // the operator to change DOT_DOTCMS_CLUSTER_ID for nothing (issue #36222).
+        // The security plugin's own wording is matched too: a rejected bulk item never carries a
+        // status code, only "security_exception: no permissions for [action] and User [...]".
+        if (AUTH_STATUS_CODE.matcher(msg).find()
+                || msg.contains("unauthorized") || msg.contains("forbidden")
+                || msg.contains("security_exception") || msg.contains("no permissions for")) {
+            return ConnectionFailureKind.AUTH_FORBIDDEN;
+        }
+        // Host/port unreachable.
+        if (type.contains("connectexception")
+                || type.contains("unknownhostexception")
+                || type.contains("sockettimeoutexception")
+                || type.contains("nohttpresponseexception")
+                || msg.contains("connection refused")
+                || msg.contains("timed out")
+                || msg.contains("timeout")
+                || msg.contains("unknown host")) {
+            return ConnectionFailureKind.UNREACHABLE;
         }
         return ConnectionFailureKind.UNKNOWN;
     }
@@ -756,7 +806,12 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void createAlias(final String indexName, final String alias) {
         try {
             // Only create the alias when it is not already pointing at an index — mirrors ES.
-            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias) == null) {
+            // Re-tag the logical site-search names with .os before the lookup: the physical OpenSearch
+            // indices are .os-tagged, so a bare-name lookup always missed and made this a false
+            // negative, letting createAlias add unconditionally and risk a multi-index alias in
+            // Phases 2/3 (issue #36360).
+            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices().stream()
+                    .map(IndexTag.OS::tag).collect(Collectors.toList())).get(alias) == null) {
                 clientProvider.getClient().indices().updateAliases(UpdateAliasesRequest.of(r -> r
                         .actions(a -> a.add(add -> add
                                 .index(getNameWithClusterIDPrefix(indexName))
@@ -791,11 +846,16 @@ public class OSIndexAPIImpl implements IndexAPI {
                     .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
             // Batch the lookup so a large set (100+ site-search indices) never overflows the HTTP
-            // request line — otherwise OpenSearch returns too_long_http_line_exception, the whole
-            // lookup aborts, and a valid alias is reported as missing.
+            // request line — otherwise OpenSearch returns too_long_http_line_exception and the whole
+            // lookup aborts. Within each batch, ignoreUnavailable/allowNoIndices tolerate names
+            // absent on this engine: during the ES→OS migration callers pass a MERGED ES∪OS index
+            // list, so an OS-only read can receive ES-only names with no OpenSearch twin — without
+            // these a single missing index throws index_not_found and drops EVERY alias in the batch
+            // (issue #36360, I-3).
             for (final List<String> batch : Lists.partition(physicalNames, ALIAS_LOOKUP_BATCH_SIZE)) {
                 final GetAliasResponse response = clientProvider.getClient().indices()
-                        .getAlias(GetAliasRequest.of(b -> b.index(batch)));
+                        .getAlias(GetAliasRequest.of(b -> b.index(batch)
+                                .ignoreUnavailable(true).allowNoIndices(true)));
                 // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
                 response.result().forEach((indexName, indexAliases) -> {
                     final Map<String, ?> aliasMap = indexAliases.aliases();

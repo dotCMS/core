@@ -13,6 +13,7 @@ import {
     input,
     numberAttribute,
     OnDestroy,
+    OnInit,
     output,
     signal
 } from '@angular/core';
@@ -52,6 +53,7 @@ import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
+import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
@@ -123,6 +125,20 @@ function parseAllowedContentTypes(field: DotCMSContentTypeField | undefined): st
     return field?.fieldVariables?.find((v) => v.key === 'contentTypes')?.value ?? '';
 }
 
+function getKnownNodeNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.nodes));
+}
+
+function preserveUnknownNodesInDocument(
+    parsed: JSONContent,
+    knownNodeNames: Set<string>
+): JSONContent {
+    return {
+        ...parsed,
+        content: preserveUnknownBlockNodes(parsed.content, knownNodeNames)
+    };
+}
+
 /** True when {@link parsed} represents the same document already in {@link editor}. */
 function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
     const currentJson = editorDocumentJsonText(editor);
@@ -137,7 +153,10 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         }
         return parsed === editor.getHTML();
     }
-    return JSON.stringify(parsed) === currentJson;
+    return (
+        JSON.stringify(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor))) ===
+        currentJson
+    );
 }
 
 /**
@@ -276,7 +295,7 @@ function normalizeEditorContent(
         </div>
     `
 })
-export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
+export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
 
@@ -286,7 +305,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Opens/closes caret-anchored popovers and supplies payloads (e.g. link edit context). */
     private readonly popovers = inject(EditorPopoverService);
 
-    /** Uploads user-dropped image and video files to dotCMS. */
+    /** Uploads user-dropped image, video, and audio files to dotCMS. */
     private readonly dotUpload = inject(DotUploadService);
 
     /** Document root for fullscreen scroll lock and global key listeners. */
@@ -429,7 +448,11 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
                 syncCharacterStatsFromEditor(editor, this.stats);
-                const json = this.withDocStats(editor.getJSON());
+                const currentJson = editor.getJSON();
+                const json = this.withDocStats({
+                    ...currentJson,
+                    content: restoreUnknownBlockNodes(currentJson.content ?? [])
+                });
                 this.onChange(JSON.stringify(json));
                 this.valueChange.emit(json);
             },
@@ -445,7 +468,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                         slice,
                         moved,
                         (file) => this.dotUpload.uploadImage(file),
-                        (file) => this.dotUpload.uploadVideo(file)
+                        (file) => this.dotUpload.uploadVideo(file),
+                        (file) => this.dotUpload.uploadAudio(file)
                     ),
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
@@ -477,7 +501,12 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         if (this.pendingValue !== null) {
             const parsed = normalizeEditorContent(this.pendingValue);
             if (!editorContentMatchesParsed(editor, parsed)) {
-                editor.commands.setContent(parsed, { emitUpdate: false });
+                editor.commands.setContent(
+                    typeof parsed === 'string'
+                        ? parsed
+                        : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)),
+                    { emitUpdate: false }
+                );
             }
             this.pendingValue = null;
         }
@@ -591,14 +620,20 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         // Guard: skip when value is empty to avoid overriding CVA-set content on init;
         // skip when unchanged so two-way [value] + (valueChange) does not reset the cursor.
         // Also tracks `editor()` so the effect re-fires once the slow-path editor mounts.
+        // Skip while dragging — setContent mid-drag can turn a move into a duplicate (#36976).
         effect(() => {
             const v = this.value();
             if (!v) return;
             const ed = this.editor();
-            if (!ed) return;
+            if (!ed || ed.view.dragging) return;
             const parsed = normalizeEditorContent(v);
             if (editorContentMatchesParsed(ed, parsed)) return;
-            ed.commands.setContent(parsed, { emitUpdate: false });
+            ed.commands.setContent(
+                typeof parsed === 'string'
+                    ? parsed
+                    : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
+                { emitUpdate: false }
+            );
         });
 
         // Preserve selection highlight while any popover or slash menu is open
@@ -627,12 +662,24 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 this.document.body.style.overflow = '';
             });
         });
+    }
 
-        // Editor init: fast path (no customBlocks) is synchronous so existing tests
-        // and consumers see no behaviour change. Slow path (customBlocks set) defers
-        // construction until the remote ES-module URLs resolve — TipTap's schema is
-        // frozen at construction time, so adding extensions later is impossible
-        // without destroying the editor and losing ProseMirror state.
+    /**
+     * Builds the TipTap editor once the `field` input is bound.
+     *
+     * This MUST run in {@link ngOnInit}, not the constructor: `field` is a signal
+     * `input()` and Angular binds inputs *after* construction, so reading `this.field()`
+     * in the constructor always sees `undefined` — which silently skips every customer's
+     * `customBlocks` remote extensions (the editor would boot without them and then fail
+     * to parse stored content that references their node types). See #36646.
+     *
+     * Fast path (no customBlocks) builds synchronously. Slow path (customBlocks set) defers
+     * construction until the remote ES-module URLs resolve — TipTap's schema is frozen at
+     * construction time, so extensions must all be present before `new Editor`. `writeValue`
+     * / `setDisabledState` arriving before the editor mounts are buffered via
+     * {@link pendingValue} / {@link pendingDisabled} and drained in {@link commitEditor}.
+     */
+    ngOnInit(): void {
         const parsedCustomBlocks = parseCustomBlocksField(this.field());
         if (parsedCustomBlocks.extensions.length === 0) {
             this.commitEditor(this.buildEditor([]));
@@ -700,9 +747,15 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             this.pendingValue = content ?? '';
             return;
         }
+        if (ed.view.dragging) return;
         const parsed = normalizeEditorContent(content);
         if (editorContentMatchesParsed(ed, parsed)) return;
-        ed.commands.setContent(parsed, { emitUpdate: false });
+        ed.commands.setContent(
+            typeof parsed === 'string'
+                ? parsed
+                : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
+            { emitUpdate: false }
+        );
     }
 
     /** @inheritdoc */

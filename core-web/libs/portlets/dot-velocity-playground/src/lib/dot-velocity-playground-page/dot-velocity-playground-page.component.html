@@ -24,12 +24,33 @@
                             text
                             rounded
                             size="small"
-                            icon="pi pi-question-circle"
                             [pTooltip]="'velocityPlayground.action.help' | dm"
                             tooltipPosition="top"
                             [attr.aria-label]="'velocityPlayground.action.help' | dm"
                             (onClick)="$helpPopover().toggle($event)"
-                            data-testid="velocity-playground-help-btn" />
+                            data-testid="velocity-playground-help-btn">
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
+                                help
+                            </span>
+                        </p-button>
+                        <p-button
+                            text
+                            rounded
+                            size="small"
+                            [pTooltip]="'velocityPlayground.action.clearQuery' | dm"
+                            tooltipPosition="top"
+                            [attr.aria-label]="'velocityPlayground.action.clearQuery' | dm"
+                            [disabled]="!store.code()"
+                            (onClick)="store.clearPersistedQuery()"
+                            data-testid="velocity-playground-clear-query-btn">
+                            <span
+                                class="material-symbols-rounded text-lg! leading-none"
+                                aria-hidden="true">
+                                ink_eraser
+                            </span>
+                        </p-button>
                     </div>
                 </ng-template>
                 <ng-template pTemplate="icons">
@@ -71,7 +92,9 @@
                 }"
                 data-testid="velocity-playground-history-panel">
                 <ng-template pTemplate="headericons">
-                    <i [class]="$historyOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                    <span class="material-symbols-rounded" aria-hidden="true">
+                        {{ $historyOpen() ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+                    </span>
                 </ng-template>
                 <div class="form p-3" data-testid="velocity-playground-history-content">
                     <div class="field">
@@ -96,11 +119,14 @@
                         <p-button
                             text
                             size="small"
-                            icon="pi pi-trash"
-                            [label]="'velocityPlayground.action.clearHistory' | dm"
                             [disabled]="!store.hasHistory()"
                             (onClick)="store.clearHistory()"
-                            data-testid="velocity-playground-clear-history-btn" />
+                            data-testid="velocity-playground-clear-history-btn">
+                            <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                            <span class="p-button-label">
+                                {{ 'velocityPlayground.action.clearHistory' | dm }}
+                            </span>
+                        </p-button>
                     </div>
                 </div>
             </p-panel>
@@ -110,11 +136,12 @@
                 class="flex shrink-0 items-center justify-end border-t border-surface-200 bg-surface-0 p-3"
                 data-testid="velocity-playground-run-footer">
                 <p-button
-                    [label]="'velocityPlayground.action.run' | dm"
-                    icon="pi pi-play"
                     [loading]="store.isLoading()"
                     (onClick)="onRun()"
-                    data-testid="velocity-playground-run-btn" />
+                    data-testid="velocity-playground-run-btn">
+                    <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
+                    <span class="p-button-label">{{ 'velocityPlayground.action.run' | dm }}</span>
+                </p-button>
             </div>
         </div>
     </ng-template>
@@ -122,16 +149,66 @@
     <!-- Right: Output -->
     <ng-template pTemplate>
         <div class="flex h-full flex-col overflow-hidden">
-            @if (store.hasError()) {
+            @if (store.error(); as error) {
                 <p-message
                     severity="error"
-                    icon="pi pi-exclamation-triangle"
                     [pt]="{
-                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0' }
+                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0 block' },
+                        text: { class: 'w-full' }
                     }"
                     data-testid="velocity-playground-error-banner">
-                    {{ store.errorMessage() | dm }}
+                    <ng-template #icon>
+                        <span class="material-symbols-rounded" aria-hidden="true">warning</span>
+                    </ng-template>
+                    <div class="flex w-full flex-col gap-1">
+                        <span
+                            class="font-medium wrap-break-word"
+                            data-testid="velocity-playground-error-message">
+                            {{ $errorSummary() }}
+                        </span>
+                        @if (error.structured; as detail) {
+                            <div
+                                class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
+                                data-testid="velocity-playground-error-detail">
+                                @if (detail.errorType) {
+                                    <!-- Read-only status label: severity comes from the
+                                         theme preset so it tracks light/dark, rather than
+                                         a literal red palette pairing. -->
+                                    <p-tag
+                                        severity="danger"
+                                        [value]="detail.errorType"
+                                        styleClass="font-mono"
+                                        data-testid="velocity-playground-error-type" />
+                                }
+                                @if (detail.line !== undefined && detail.line !== null) {
+                                    <span
+                                        class="inline-flex items-center gap-1"
+                                        data-testid="velocity-playground-error-location">
+                                        <span
+                                            class="material-symbols-outlined text-[0.7rem]!"
+                                            aria-hidden="true">
+                                            location_on
+                                        </span>
+                                        {{
+                                            'velocityPlayground.error.location'
+                                                | dm
+                                                    : [
+                                                          '' + detail.line,
+                                                          detail.column !== undefined &&
+                                                          detail.column !== null
+                                                              ? '' + detail.column
+                                                              : '—'
+                                                      ]
+                                        }}
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
                 </p-message>
+            }
+            @if (store.hasWarnings() && !store.hasError()) {
+                <dot-velocity-playground-warnings [warnings]="store.warnings()" />
             }
             @if (store.status() === ComponentStatus.INIT && !store.hasError()) {
                 <dot-empty-container
@@ -144,14 +221,20 @@
                     class="flex flex-1 flex-col items-center justify-center gap-3"
                     data-testid="velocity-playground-loading">
                     <dot-spinner size="3rem" borderSize="3px" />
-                    <span class="text-color-secondary text-sm">
+                    <span class="text-sm text-muted-color">
                         {{ 'velocityPlayground.output.running' | dm }}
                     </span>
                 </div>
+            } @else if (store.hasError()) {
+                <ngx-monaco-editor
+                    class="min-h-0 flex-1"
+                    [ngModel]="$errorTrace()"
+                    [options]="$errorEditorOptions()"
+                    data-testid="velocity-playground-error-editor" />
             } @else {
                 <!-- Stats bar -->
                 <div
-                    class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
+                    class="flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm text-muted-color"
                     data-testid="velocity-playground-stats-bar">
                     <div class="flex items-center gap-1.5">
                         @if (store.hasOutput()) {
@@ -161,12 +244,17 @@
                                 {{ 'velocityPlayground.output.viewing' | dm }}
                                 {{ store.outputContentType() }}
                             </span>
-                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="mx-1 text-muted-color">&middot;</span>
                         }
-                        <i class="pi pi-circle-fill text-[0.5rem] text-green-600"></i>
+                        <span
+                            class="material-symbols-rounded text-xl! text-green-600"
+                            style="font-variation-settings: 'FILL' 1"
+                            aria-hidden="true">
+                            circle
+                        </span>
                         {{ 'velocityPlayground.output.ready' | dm }}
                         @if (store.elapsedMs() !== null) {
-                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="mx-1 text-muted-color">&middot;</span>
                             <span class="inline-flex items-center gap-1">
                                 <span class="font-bold text-color">{{ store.elapsedMs() }}</span>
                                 {{ 'velocityPlayground.output.timing' | dm }}
@@ -178,19 +266,28 @@
                             <p-button
                                 text
                                 size="small"
-                                [label]="'velocityPlayground.action.share' | dm"
-                                icon="pi pi-chevron-down"
-                                iconPos="right"
                                 (onClick)="toggleExportMenu($event)"
-                                data-testid="velocity-playground-share-btn" />
+                                data-testid="velocity-playground-share-btn">
+                                <span class="p-button-label">
+                                    {{ 'velocityPlayground.action.share' | dm }}
+                                </span>
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    keyboard_arrow_down
+                                </span>
+                            </p-button>
                             <p-menu #exportMenu [model]="exportItems" [popup]="true" />
                             <p-button
                                 [outlined]="true"
                                 size="small"
-                                [label]="'velocityPlayground.action.export' | dm"
-                                icon="pi pi-download"
                                 (onClick)="downloadOutput()"
-                                data-testid="velocity-playground-export-btn" />
+                                data-testid="velocity-playground-export-btn">
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    download
+                                </span>
+                                <span class="p-button-label">
+                                    {{ 'velocityPlayground.action.export' | dm }}
+                                </span>
+                            </p-button>
                         </div>
                     }
                 </div>
@@ -228,10 +325,15 @@
                             <p-button
                                 text
                                 size="small"
-                                icon="pi pi-copy"
-                                [label]="'velocityPlayground.help.copy' | dm"
                                 (onClick)="copyToClipboard(example.code)"
-                                data-testid="velocity-playground-help-copy-btn" />
+                                data-testid="velocity-playground-help-copy-btn">
+                                <span class="material-symbols-rounded" aria-hidden="true">
+                                    content_copy
+                                </span>
+                                <span class="p-button-label">
+                                    {{ 'velocityPlayground.help.copy' | dm }}
+                                </span>
+                            </p-button>
                             <p-button
                                 text
                                 size="small"
@@ -242,7 +344,7 @@
                     </div>
                     @if (example.description) {
                         <p
-                            class="text-color-secondary m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs"
+                            class="m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs text-muted-color"
                             data-testid="velocity-playground-help-description">
                             {{ example.description | dm }}
                         </p>

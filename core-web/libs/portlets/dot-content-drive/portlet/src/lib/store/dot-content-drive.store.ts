@@ -6,21 +6,24 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, SubscriptionLike } from 'rxjs';
 
+import { Location } from '@angular/common';
 import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentDriveService } from '@dotcms/data-access';
+import { DotContentDriveService, DotCurrentUserService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotContentDriveItem,
-    DotContentDriveSearchRequest
+    DotContentDriveSearchRequest,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
+import { GlobalStore, withFlags } from '@dotcms/store';
 
+import { withActionExecution } from './features/action-execution/withActionExecution';
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
@@ -47,6 +50,7 @@ import {
 import {
     buildUserSearchablePayload,
     decodeFilters,
+    encodeFilters,
     getUserSearchableActive,
     parseWorkflowFilter
 } from '../utils/functions';
@@ -61,17 +65,44 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    isTreeForceCollapsed: false,
     pages: [DEFAULT_PAGE],
     userSearchableFields: [],
     userSearchableActive: [],
-    userSearchableFieldsLoaded: false
+    userSearchableFieldsLoaded: false,
+    showInListFields: [],
+    // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
+    // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
+    currentUserIsAdmin: false
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
+    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
+    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
+    // vs full-screen editor.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed(
-        ({ path, filters, currentSite, pagination, sort, pages, userSearchableFields }) => {
+        ({
+            path,
+            filters,
+            currentSite,
+            pagination,
+            sort,
+            pages,
+            userSearchableFields,
+            isTreeExpanded,
+            isTreeForceCollapsed
+        }) => {
             return {
+                /**
+                 * The tree's VISUAL expanded state — the user's real preference (`isTreeExpanded`,
+                 * persisted/shareable via the URL) minus any transient collapse the side panel is
+                 * forcing on a narrow viewport (`isTreeForceCollapsed`, never persisted). Kept
+                 * separate so the panel's temporary collapse can never leak into the shareable
+                 * state — see `setTreeForceCollapsed`.
+                 */
+                isTreeVisuallyExpanded: computed(() => isTreeExpanded() && !isTreeForceCollapsed()),
                 $request: computed<DotContentDriveSearchRequest>(
                     () => {
                         const paginationSignal = pagination();
@@ -126,6 +157,7 @@ export const DotContentDriveStore = signalStore(
     ),
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
+        const dotCurrentUserService = inject(DotCurrentUserService);
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -236,6 +268,15 @@ export const DotContentDriveStore = signalStore(
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
             },
+            /**
+             * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
+             * Never touches `isTreeExpanded` — the real, shareable preference — so a panel-forced
+             * collapse can never be persisted to the URL or survive a refresh as if it were the
+             * user's own choice.
+             */
+            setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
+                patchState(store, { isTreeForceCollapsed });
+            },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
@@ -248,6 +289,13 @@ export const DotContentDriveStore = signalStore(
                     userSearchableFields: fields,
                     userSearchableFieldsLoaded: true
                 });
+            },
+            /**
+             * Sets the "Show In List" fields of the active content type (empty when 0 or >1 are
+             * selected). Consumed by the results table to render extra columns after the Type column.
+             */
+            setShowInListFields(fields: DotCMSContentTypeField[]) {
+                patchState(store, { showInListFields: fields });
             },
             /**
              * Shows a field-filter chip by adding it to the active list only — NOT to `filters`.
@@ -280,12 +328,33 @@ export const DotContentDriveStore = signalStore(
                     userSearchableFields: [],
                     userSearchableActive: [],
                     userSearchableFieldsLoaded: false,
+                    showInListFields: [],
                     pagination: { ...store.pagination(), offset: 0, page: 1 },
                     pages: [DEFAULT_PAGE]
                 });
             },
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });
+            },
+            /**
+             * Resolves the logged-in user's CMS Administrator role, once per portlet load.
+             *
+             * A failure leaves the flag at its `false` default rather than surfacing an error: the
+             * role only softens a warning, so a portlet that cannot answer "is this an admin?" should
+             * still work — it just keeps warning, which is what it did before the flag existed.
+             */
+            loadCurrentUserIsAdmin() {
+                dotCurrentUserService
+                    .getCurrentUser()
+                    .pipe(
+                        take(1),
+                        catchError(() => EMPTY)
+                    )
+                    // Read defensively rather than destructured: `catchError` is upstream of the
+                    // subscriber, so it covers a failed request but not a successful one with no
+                    // body (a 204, a proxy that strips it, a gateway answering without JSON). The
+                    // documented default — false — should hold for both.
+                    .subscribe((user) => patchState(store, { currentUserIsAdmin: !!user?.admin }));
             },
             loadItems() {
                 const request = store.$request();
@@ -380,11 +449,18 @@ export const DotContentDriveStore = signalStore(
     withHooks((store) => {
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
+        const location = inject(Location);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
+        let locationSub: SubscriptionLike;
 
         return {
             onInit() {
+                // Fired here, not from an effect: the role is fixed for the session, so one request
+                // per portlet load is enough and re-running it on every state change would be pure
+                // noise. Nothing waits on it — consumers read the flag's default until it lands.
+                store.loadCurrentUserIsAdmin();
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
@@ -402,6 +478,43 @@ export const DotContentDriveStore = signalStore(
                 });
 
                 /**
+                 * Browser Back/Forward re-hydration. The browsing params (path/filters/tree) are
+                 * written to the URL via `Location.go` (bypassing the router, so no content reload
+                 * fires on every filter change), and the init effect above hydrates from a one-time
+                 * `route.snapshot` read. Together that means a Back/Forward changes the URL but never
+                 * re-hydrates the store, leaving the list stale. `Location.subscribe` fires on
+                 * popstate (not on our own `go`/`replaceState`), so re-run the same hydration from
+                 * the restored URL — `initContentDrive` resets to LOADING, which the search effect
+                 * turns into a fresh load.
+                 */
+                locationSub = location.subscribe((event) => {
+                    const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+                    const path = params.get('path') || DEFAULT_PATH;
+                    const filtersRaw = params.get('filters') || '';
+                    const isTreeExpanded =
+                        (params.get('isTreeExpanded') ?? DEFAULT_TREE_EXPANDED.toString()) ===
+                        'true';
+
+                    // Only re-hydrate when a browsing param actually changed. A popstate that only
+                    // flips `editContent` (e.g. closing the side panel via Back) must NOT reset and
+                    // reload the list — that param is owned by the shell's own popstate handler.
+                    if (
+                        path === store.path() &&
+                        filtersRaw === encodeFilters(store.filters()) &&
+                        isTreeExpanded === store.isTreeExpanded()
+                    ) {
+                        return;
+                    }
+
+                    store.initContentDrive({
+                        currentSite: globalStore.siteDetails(),
+                        path,
+                        filters: decodeFilters(filtersRaw),
+                        isTreeExpanded
+                    });
+                });
+
+                /**
                  * Effect that triggers a content reload when search parameters change.
                  * loadItems internally uses $searchParams signal, so it will be triggered
                  * whenever query, pagination or sort changes.
@@ -413,11 +526,13 @@ export const DotContentDriveStore = signalStore(
             onDestroy() {
                 initEffect?.destroy();
                 searchEffect?.destroy();
+                locationSub?.unsubscribe();
             }
         };
     }),
     withContextMenu(),
     withDialog(),
     withSidebar(),
-    withDragging()
+    withDragging(),
+    withActionExecution()
 );

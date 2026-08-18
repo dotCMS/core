@@ -1,5 +1,6 @@
 export * from './lib/add-to-bundle/add-to-bundle.service';
 export * from './lib/can-deactivate/can-deactivate-guard.service';
+export * from './lib/dot-agent-run/dot-agent-run.service';
 export * from './lib/dot-ai/dot-ai.service';
 export * from './lib/dot-alert-confirm/dot-alert-confirm.service';
 export * from './lib/dot-analytics-search/dot-analytics-search.service';
@@ -36,6 +37,8 @@ export * from './lib/dot-iframe/dot-iframe.service';
 export * from './lib/dot-languages/dot-languages.service';
 export * from './lib/dot-license/dot-license.service';
 export * from './lib/dot-localstorage/dot-localstorage.service';
+export * from './lib/dot-localstorage/dot-persisted-query.utils';
+export * from './lib/dot-localstorage/with-persisted-query.feature';
 export * from './lib/dot-message-display/dot-message-display.service';
 export * from './lib/dot-messages/dot-messages.service';
 export * from './lib/dot-osgi/bundle-map.model';

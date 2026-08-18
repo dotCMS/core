@@ -1,20 +1,25 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { EMPTY } from 'rxjs';
 
 import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
+    DestroyRef,
     effect,
     inject,
+    Injector,
     OnInit,
     signal,
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -22,21 +27,24 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SplitterModule } from 'primeng/splitter';
 import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { take } from 'rxjs/operators';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
+    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent, EditContentDialogData } from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -83,9 +91,13 @@ const QUERY_EDITOR_OPTIONS = {
         MenuModule,
         PopoverModule,
         DotEmptyContainerComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
-    providers: [DotQueryToolStore, DotCurrentUserService, DotClipboardUtil],
+    // MessageService: the Edit Content side panel's editor injects PrimeNG's MessageService for
+    // inline toasts; provide it here (as Content Drive's shell does) so the panel works in-page.
+    providers: [DotQueryToolStore, DotCurrentUserService, DotClipboardUtil, MessageService],
     templateUrl: './dot-query-tool-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -100,8 +112,57 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
+    readonly #contentSearch = inject(DotContentSearchService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #injector = inject(Injector);
 
     #lastSyncedUrl: string | null = null;
+
+    /**
+     * The rendered side panel, so browser Back can route its close through the panel's guard.
+     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
+     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
+     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
+     * erased at compile time — it leaves no runtime reference).
+     */
+    readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
+
+    /**
+     * Feature flag gating the side panel. When off, editing a result opens the editor in a new
+     * browser tab (the previous behavior); when on, results that resolve to the new content editor
+     * open in the in-page side panel instead. Read from the store's `withFlags` slice (batch-fetched
+     * once on init, degrades to `false` on a failed config read) — defaults to `false` until it
+     * resolves, so the safe/previous new-tab behavior is used meanwhile.
+     */
+    readonly $sidePanelEnabled = computed(
+        () => this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
+    );
+
+    /** Content shown in the Edit Content side panel, or `null` when it is closed. */
+    readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Whether the last `editContent` URL write reflected an open panel — so a close writes with
+     * replaceState instead of a history push whose Back would resurrect the just-removed param.
+     */
+    #editContentUrlWasSet = false;
+
+    /**
+     * Reflects the open edit panel in the URL (`?editContent=<identifier>`) so it is shareable,
+     * refresh-safe, and dismissible with browser Back (see the popstate listener in ngOnInit).
+     * Written with `Location.go` (a history push) — NOT `replaceState` like the search-param sync
+     * above — precisely so Back has an entry to pop. `merge` preserves the query-tool params.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects
+    readonly #editContentUrlEffect = effect(() => {
+        const request = this.$editPanelRequest();
+
+        untracked(() =>
+            this.#syncEditContentParam(
+                request?.mode === 'edit' ? (request.identifier ?? null) : null
+            )
+        );
+    });
 
     // Mirrors store state into the address bar via Location.replaceState, but only
     // once the search settles (LOADED or ERROR). Tying the sync to `status` instead
@@ -143,7 +204,7 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly DEFAULT_LIMIT = DEFAULT_LIMIT;
     readonly DEFAULT_OFFSET = DEFAULT_OFFSET;
 
-    readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
+    readonly splitterPt = { root: { class: 'border-0! rounded-none!' }, panel: {} };
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
     readonly tabPanelPt = { root: { class: 'h-full p-0!' } };
 
@@ -152,7 +213,8 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly noHitsConfig: PrincipalConfiguration = {
         title: this.#messageService.get('queryTool.results.noHits'),
         subtitle: this.#messageService.get('queryTool.results.noHits.subtitle'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     readonly exportItems: MenuItem[] = [
@@ -210,14 +272,46 @@ export class DotQueryToolPageComponent implements OnInit {
         if (query.trim()) {
             this.store.runSearch();
         }
+
+        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. No flag
+        // gate — the param is only ever written while the side panel is active (flag on), so its
+        // presence already implies a panel context (and the flag may not have resolved yet).
+        const editContent = params.get('editContent');
+        if (editContent) {
+            this.#resolveAndOpenByIdentifier(editContent);
+        }
+
+        // Browser Back/Forward: nothing else reacts to the `editContent` param (written via
+        // Location.go, not the router). When Back removes/changes it while the panel is open, route
+        // the close through the panel's unsaved-changes guard — a direct clear would tear the editor
+        // down and discard unsaved edits silently.
+        const locationSubscription = this.#location.subscribe((event) => {
+            const backParams = new URLSearchParams(event.url?.split('?')[1] ?? '');
+            const editContentParam = backParams.get('editContent');
+            const request = this.$editPanelRequest();
+
+            if (request?.mode === 'edit' && request.identifier !== editContentParam) {
+                // Restore the param so the URL matches the still-open panel while the guard decides.
+                const restored = this.#router
+                    .createUrlTree([], {
+                        relativeTo: this.#route,
+                        queryParams: { editContent: request.identifier },
+                        queryParamsHandling: 'merge'
+                    })
+                    .toString();
+                this.#location.replaceState(restored);
+                this.$sidePanel()?.requestClose();
+            }
+        });
+        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
     }
 
     onQueryChange(value: string): void {
         this.store.setQuery(value);
     }
 
-    onTabChange(value: string): void {
-        if (VALID_TABS.has(value as QueryToolActiveTab)) {
+    onTabChange(value: string | number | undefined): void {
+        if (typeof value === 'string' && VALID_TABS.has(value as QueryToolActiveTab)) {
             this.store.setActiveTab(value as QueryToolActiveTab);
         }
     }
@@ -230,9 +324,39 @@ export class DotQueryToolPageComponent implements OnInit {
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
         event.preventDefault();
-        // Open the placeholder synchronously so the popup blocker accepts it; assign the
-        // resolved URL once DotContentletEditUrlService returns. The resolver may answer
-        // synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
+
+        // Side panel enabled: resolve first (no intermediate tab). New-editor content opens in
+        // the in-page panel; legacy-editor and HTMLPAGE content still open in a new tab. For a
+        // cached content type the resolver answers synchronously, so the fallback `window.open`
+        // stays within the click gesture and the popup blocker accepts it.
+        if (this.$sidePanelEnabled()) {
+            this.#editUrlResolver
+                .resolveEditUrl(contentlet)
+                .pipe(take(1))
+                .subscribe({
+                    next: (url) => {
+                        if (this.#isNewEditorUrl(url)) {
+                            this.$editPanelRequest.set({
+                                mode: 'edit',
+                                contentletInode: contentlet.inode,
+                                identifier: contentlet.identifier,
+                                title: contentlet.title
+                            });
+
+                            return;
+                        }
+
+                        window.open(url, '_blank');
+                    },
+                    error: () => this.#globalMessage.error()
+                });
+
+            return;
+        }
+
+        // Side panel disabled: open the placeholder synchronously so the popup blocker accepts it,
+        // then assign the resolved URL once DotContentletEditUrlService returns. The resolver may
+        // answer synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
         // delivers on the same tick.
         const placeholder = window.open('about:blank', '_blank');
         if (!placeholder) return;
@@ -245,6 +369,94 @@ export class DotQueryToolPageComponent implements OnInit {
                     placeholder.close();
                     this.#globalMessage.error();
                 }
+            });
+    }
+
+    /** Re-runs the search after a save so the results table reflects the edited content. */
+    onEditPanelSaved(): void {
+        this.store.runSearch();
+    }
+
+    /** Clears the side panel request, closing the panel. */
+    onEditPanelClosed(): void {
+        this.$editPanelRequest.set(null);
+    }
+
+    /**
+     * True when `url` targets the new content editor (`/dotAdmin/#/content/<inode>`). The legacy
+     * editor (`/c/content/`) and the page editor (`/edit-page/`) resolve to different prefixes, so
+     * only the new editor is eligible for the in-page side panel.
+     */
+    #isNewEditorUrl(url: string): boolean {
+        return url.startsWith('/dotAdmin/#/content/');
+    }
+
+    /**
+     * Writes/clears `editContent` (merged with the query-tool params). Pushes when opening the
+     * panel (so browser Back can pop it) but replaces when closing — a push on close would leave a
+     * phantom history entry whose Back puts the removed param back with no panel rendered.
+     */
+    #syncEditContentParam(identifier: string | null): void {
+        const url = this.#router
+            .createUrlTree([], {
+                relativeTo: this.#route,
+                queryParams: { editContent: identifier },
+                queryParamsHandling: 'merge'
+            })
+            .toString();
+
+        if (url !== this.#location.path(true)) {
+            if (identifier === null && this.#editContentUrlWasSet) {
+                this.#location.replaceState(url);
+            } else {
+                this.#location.go(url);
+            }
+        }
+
+        this.#editContentUrlWasSet = identifier !== null;
+    }
+
+    /**
+     * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel.
+     * Gated on the side-panel flag (via `$sidePanelEnabled`, the store's `withFlags` slice, awaited
+     * through `toObservable` + `filter(Boolean)`): with the flag off there is no in-page editor in
+     * Query Tool — editing opens a new tab, which needs a user gesture and can't be triggered on
+     * load — so the deep link is ignored (AC15) and the content search never fires. The param can
+     * outlive the flag being on (shared link / bookmark / staging→prod), hence the gate.
+     *
+     * Waiting on the flag (rather than checking it after firing the search) avoids two problems: a
+     * wasted content search on every deep-link load while the flag is off, and a race between the
+     * flag's config fetch and this search where the search could resolve first and silently drop a
+     * valid deep link. `filter(Boolean)` never emits while the flag is `false`, so `takeUntilDestroyed`
+     * is required to stop waiting if the component is destroyed first.
+     */
+    #resolveAndOpenByIdentifier(identifier: string): void {
+        toObservable(this.$sidePanelEnabled, { injector: this.#injector })
+            .pipe(
+                filter(Boolean),
+                take(1),
+                switchMap(() =>
+                    this.#contentSearch
+                        .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                            query: `+identifier:${identifier} +working:true`,
+                            limit: 1
+                        })
+                        .pipe(catchError(() => EMPTY))
+                ),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((entity) => {
+                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+                if (!contentlet?.inode) {
+                    return;
+                }
+
+                this.$editPanelRequest.set({
+                    mode: 'edit',
+                    contentletInode: contentlet.inode,
+                    identifier,
+                    title: contentlet.title
+                });
             });
     }
 

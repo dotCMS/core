@@ -1168,3 +1168,85 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/** dotCMS path prefixes that stream a binary asset instead of rendering a page. */
+const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];
+
+/**
+ * Extensions that still resolve to an HTMLPage. Only `html`, the shipped
+ * `VELOCITY_PAGE_EXTENSION` (`dotmarketing-config.properties:91`).
+ *
+ * Deliberately excludes two extensions that look like candidates. `htm` is an
+ * ordinary file asset in dotCMS, never a page. `dot` is only the fallback
+ * `Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot")` reaches for when
+ * the property is absent, which it never is in a standard install, and it is a
+ * real upload type (the Word 97-2003 template), so listing it would send those
+ * files to the Page API.
+ *
+ * `VELOCITY_PAGE_EXTENSION` is configurable and its value is not exposed to the
+ * client, so a site that overrides it sees its page links open in a new tab.
+ * That is the mild failure of the two, consistent with the bias documented on
+ * `isAssetPath`.
+ */
+const PAGE_PATH_EXTENSIONS = new Set(['html']);
+
+/**
+ * Matches a plausible file extension: 1-8 alphanumerics containing at least one
+ * letter. The letter requirement is what guards URL-map slugs such as
+ * `/blog/release-v1.2` and `/news/2024.10`, whose all-digit trailing token must
+ * not be mistaken for a file extension. Digit-initial extensions such as `7z`
+ * and `3gp` are real and must still match.
+ */
+const FILE_EXTENSION_PATTERN = /^(?=.*[a-z])[a-z0-9]{1,8}$/;
+
+/**
+ * Checks whether a pathname targets a file asset rather than an HTMLPage.
+ *
+ * No extension (or the page extension) means a page; any other real extension
+ * means a file. This is a client-side approximation: the backend resolves the
+ * two by identifier lookup (`CMSUrlUtil#resolveResourceType`), not by
+ * extension, so an authoritative answer would cost a round-trip per link click.
+ *
+ * Known limitation: a page whose last segment carries a dot followed by a short
+ * alpha token is read as a file, so `/store/product.detail` opens in a new tab
+ * instead of navigating. Reachable through author-controlled slugs, since the
+ * page `url` is a plain text field (`HTMLPageAssetAPIImpl`).
+ *
+ * That direction is deliberate. Reading a page as a file opens it in a new tab,
+ * which is visible and recoverable; reading a file as a page hands it to the
+ * Page API and strands the editor on "Page not found", the defect this guards
+ * against. So the extension test stays permissive rather than matching against
+ * a known-extension allowlist, which would invert the bias and make every
+ * uncommon file type fail the worse way.
+ *
+ * @param {string} pathname - The pathname to check (query and hash excluded)
+ * @returns {boolean} True when the pathname points at a file asset
+ *
+ * @example
+ * isAssetPath('/application/files/doc.pdf')  // true
+ * isAssetPath('/dA/abc123/asset/doc.pdf')    // true
+ * isAssetPath('/backups/archive.7z')         // true
+ * isAssetPath('/about-us/index')             // false
+ * isAssetPath('/about-us/index.html')        // false
+ * isAssetPath('/blog/release-v1.2')          // false
+ */
+export const isAssetPath = (pathname: string): boolean => {
+    if (!pathname) {
+        return false;
+    }
+
+    if (ASSET_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+        return true;
+    }
+
+    const lastSegment = pathname.slice(pathname.lastIndexOf('/') + 1);
+    const dotIndex = lastSegment.lastIndexOf('.');
+
+    if (dotIndex === -1) {
+        return false;
+    }
+
+    const extension = lastSegment.slice(dotIndex + 1).toLowerCase();
+
+    return FILE_EXTENSION_PATTERN.test(extension) && !PAGE_PATH_EXTENSIONS.has(extension);
+};
