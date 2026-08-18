@@ -21,7 +21,9 @@ import {
  */
 export const getSelectedFromContentlet = (
     { variable }: DotCMSContentTypeField,
-    contentlet: DotCMSContentlet
+    // Nullable: the `!contentlet` guard on the next line was already written for it, and a spec
+    // named "should return an empty array if contentlet is null" pins the behaviour.
+    contentlet: DotCMSContentlet | null
 ): DotCategoryFieldKeyValueObj[] => {
     if (!contentlet || !variable) {
         return [];

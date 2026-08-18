@@ -102,7 +102,9 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         });
 
         it('should render no options selected', () => {
-            expect(spectator.query(MultiSelect)!.valuesAsString).toEqual(undefined);
+            // `valuesAsString` is not on PrimeNG 21's `MultiSelect`; `label` is the rendered summary
+            // and reads empty when nothing is selected.
+            expect(spectator.query(MultiSelect)!.label()).toBeFalsy();
         });
 
         it('should render options', () => {

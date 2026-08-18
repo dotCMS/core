@@ -593,7 +593,8 @@ export interface DotCMSContentTypeLayoutColumn {
 
 export interface DotCMSContentTypeFieldCategories {
     categoryName: string;
-    description?: string;
+    /** Null when unset — the content-type endpoint sends null rather than omitting the key. */
+    description?: string | null;
     inode: string;
     key: string;
     keywords?: string;

@@ -2,7 +2,7 @@ import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { Subject } from 'rxjs';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotImageEditorComponent, ImageEditorOpenParams } from '@dotcms/image-editor';
@@ -27,7 +27,10 @@ describe('AngularImageEditorLauncher', () => {
     beforeEach(() => {
         onClose = new Subject<DotCMSTempFile | undefined>();
         spectator = createService();
-        spectator.inject(DialogService).open.mockReturnValue({ onClose });
+        // Only `onClose` is exercised here, so the stub carries just that member.
+        spectator.inject(DialogService).open.mockReturnValue({
+            onClose
+        } as unknown as DynamicDialogRef);
     });
 
     it('should always be available (the new editor is the editor for the new Edit Content)', () => {

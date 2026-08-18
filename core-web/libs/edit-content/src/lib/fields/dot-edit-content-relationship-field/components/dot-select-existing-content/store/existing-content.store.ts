@@ -215,7 +215,13 @@ export const ExistingContentStore = signalStore(
                             initialFilters: buildInitialFilters(contentletContext)
                         });
                     }),
-                    filter(({ contentTypeId }) => !!contentTypeId),
+                    // A type predicate, so the narrowing survives into the `switchMap` below —
+                    // `getColumnsAndContent` needs a real id, and a plain boolean filter would
+                    // have left `contentTypeId` nullable there.
+                    filter(
+                        (params): params is InitLoadParams & { contentTypeId: string } =>
+                            !!params.contentTypeId
+                    ),
                     switchMap((params) => {
                         const {
                             contentTypeId,

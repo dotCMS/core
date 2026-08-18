@@ -96,7 +96,9 @@ export class MockFormComponent {
     // Host Props
     formGroup!: FormGroup;
     field!: DotCMSContentTypeField;
-    contentlet!: DotCMSContentlet;
+    // `| null`: one case drives the component with no contentlet, which the field supports
+    // (manual translation has none yet).
+    contentlet!: DotCMSContentlet | null;
 }
 
 describe('DotEditContentRelationshipFieldComponent', () => {

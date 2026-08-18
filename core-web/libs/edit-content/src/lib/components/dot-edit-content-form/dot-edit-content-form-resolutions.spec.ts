@@ -291,7 +291,10 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         it('should return defaultValue when contentlet is undefined', () => {
-            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField);
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](
+                undefined as unknown as null,
+                mockField
+            );
             expect(result).toBe('default value');
         });
 
@@ -318,9 +321,13 @@ describe('DotEditContentFormResolutions', () => {
             });
 
             it('should return folderPath from queryParams when contentlet is undefined', () => {
-                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField, {
-                    folderPath: 'default/level1/'
-                });
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](
+                    undefined as unknown as null,
+                    mockField,
+                    {
+                        folderPath: 'default/level1/'
+                    }
+                );
                 expect(result).toBe('default/level1/');
             });
 
