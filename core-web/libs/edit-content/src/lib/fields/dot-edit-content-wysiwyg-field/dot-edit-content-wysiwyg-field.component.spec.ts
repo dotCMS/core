@@ -49,9 +49,9 @@ const mockSystemWideConfig = { systemWideOption: 'value' };
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentWYSIWYGFieldComponent', () => {
@@ -128,7 +128,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         it('should render editor selection dropdown', () => {
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select).toBeTruthy();
             expect(spectator.query(byTestId('editor-selector'))).toBeTruthy();
             expect(select.options).toEqual(EditorOptions);
@@ -177,7 +177,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
 
             // Trigger onSelectLanguageVariable event
             const testVariable = '${languageVariable}';

@@ -92,7 +92,7 @@ describe('FooterComponent', () => {
         it('should show apply button as disabled when no items are selected', () => {
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button');
+            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button')!;
             expect(applyButton.disabled).toBe(true);
         });
 
@@ -100,7 +100,7 @@ describe('FooterComponent', () => {
             store.setSelectionItems([createFakeContentlet()]);
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button');
+            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button')!;
             expect(applyButton.disabled).toBe(false);
         });
 
@@ -125,7 +125,7 @@ describe('FooterComponent', () => {
 
     describe('Dialog actions', () => {
         it('should close dialog with null when cancel button is clicked', () => {
-            const cancelButton = spectator.query(byTestId('cancel-button'));
+            const cancelButton = spectator.query(byTestId('cancel-button'))!;
             spectator.click(cancelButton.querySelector('button'));
             expect(dialogRef.close).toHaveBeenCalled();
         });
@@ -135,7 +135,7 @@ describe('FooterComponent', () => {
             store.setSelectionItems(mockItems);
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button'));
+            const applyButton = spectator.query(byTestId('apply-button'))!;
             spectator.click(applyButton.querySelector('button'));
             expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
         });

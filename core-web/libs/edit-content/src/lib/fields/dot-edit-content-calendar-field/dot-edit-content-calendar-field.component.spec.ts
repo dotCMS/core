@@ -30,11 +30,11 @@ import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-    utcTimezone: DotSystemTimezone;
-    contentType: DotCMSContentType;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
+    utcTimezone!: DotSystemTimezone;
+    contentType!: DotCMSContentType;
 }
 
 describe('DotEditContentCalendarFieldComponent', () => {
@@ -259,7 +259,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showClear).toBe(true);
 
             expect(calendar.placeholder).toBe('Never expires');
@@ -286,7 +286,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showClear).toBe(false);
             expect(calendar.placeholder).toBe('');
         });
@@ -379,7 +379,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -407,7 +407,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showTime).toBe(false);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -435,7 +435,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(true);
             expect(calendar.icon).toBe('pi pi-clock');
@@ -477,7 +477,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             (_label, fieldType) => {
                 buildHost(fieldType);
 
-                const calendar = spectator.query(DatePicker);
+                const calendar = spectator.query(DatePicker)!;
                 expect(calendar.hideOnDateTimeSelect).toBe(false);
             }
         );
@@ -488,7 +488,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 buildHost(fieldType);
 
                 // No full-width override is applied; PrimeNG default sizing is used.
-                const calendar = spectator.query(DatePicker);
+                const calendar = spectator.query(DatePicker)!;
                 expect(calendar.inputStyleClass).toBeFalsy();
 
                 const datepickerEl = spectator.query('p-datepicker');

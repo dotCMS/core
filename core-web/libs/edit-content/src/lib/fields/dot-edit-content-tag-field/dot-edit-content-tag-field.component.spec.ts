@@ -44,9 +44,9 @@ const TAG_FIELD_MOCK = createFakeTagField({
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    contentlet: DotCMSContentlet;
-    field: DotCMSContentTypeField;
+    formGroup!: FormGroup;
+    contentlet!: DotCMSContentlet;
+    field!: DotCMSContentTypeField;
 }
 
 describe('DotEditContentTagFieldComponent', () => {
@@ -116,7 +116,7 @@ describe('DotEditContentTagFieldComponent', () => {
             const control = spectator.hostComponent.formGroup.get(TAG_FIELD_MOCK.variable);
             control.setValue([]);
 
-            const autocomplete = spectator.query(AutoComplete);
+            const autocomplete = spectator.query(AutoComplete)!;
             expect(autocomplete.value).toEqual([]);
         });
     });
@@ -172,7 +172,7 @@ describe('DotEditContentTagFieldComponent', () => {
                 const newTag = 'newTag';
                 autocompleteInput.value = newTag;
 
-                const tagField = spectator.query(DotTagFieldComponent);
+                const tagField = spectator.query(DotTagFieldComponent)!;
                 tagField.onEnterKey({
                     preventDefault: () => {},
                     target: autocompleteInput
@@ -186,7 +186,7 @@ describe('DotEditContentTagFieldComponent', () => {
             it('should not add empty tag when Enter is pressed with empty value', () => {
                 autocompleteInput.value = '   ';
 
-                const tagField = spectator.query(DotTagFieldComponent);
+                const tagField = spectator.query(DotTagFieldComponent)!;
                 tagField.onEnterKey({
                     preventDefault: () => {},
                     target: autocompleteInput
@@ -199,7 +199,7 @@ describe('DotEditContentTagFieldComponent', () => {
             it('should append new tag to existing tags', () => {
                 const existingTags = ['tag1', 'tag2'];
 
-                const tagField = spectator.query(DotTagFieldComponent);
+                const tagField = spectator.query(DotTagFieldComponent)!;
                 tagField.writeValue(existingTags);
                 spectator.detectChanges();
 
@@ -218,7 +218,7 @@ describe('DotEditContentTagFieldComponent', () => {
 
             it('should not add duplicate tag due to AutoComplete unique property', () => {
                 const existingTag = 'existingTag';
-                const tagField = spectator.query(DotTagFieldComponent);
+                const tagField = spectator.query(DotTagFieldComponent)!;
                 tagField.writeValue([existingTag]);
                 spectator.detectChanges();
                 autocompleteInput.value = existingTag;
@@ -263,7 +263,7 @@ describe('DotEditContentTagFieldComponent', () => {
             service.getTags.mockReturnValue(of([selectedTag]));
 
             // Simulate user selecting a tag
-            const tagField = spectator.query(DotTagFieldComponent);
+            const tagField = spectator.query(DotTagFieldComponent)!;
             tagField.onTagsChange([selectedTag]);
             spectator.detectChanges();
 
@@ -275,7 +275,7 @@ describe('DotEditContentTagFieldComponent', () => {
             const tags = ['angular', 'typescript'];
             service.getTags.mockReturnValue(of(tags));
 
-            const tagField = spectator.query(DotTagFieldComponent);
+            const tagField = spectator.query(DotTagFieldComponent)!;
             tagField.onTagsChange(tags);
 
             spectator.detectChanges();

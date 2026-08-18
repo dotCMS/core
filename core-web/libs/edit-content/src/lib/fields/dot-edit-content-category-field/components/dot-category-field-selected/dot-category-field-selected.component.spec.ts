@@ -55,7 +55,7 @@ describe('DotCategoryFieldSelectedComponent', () => {
 
     it('should emit an event when remove button is clicked', () => {
         const removeSpy = jest.spyOn(spectator.component.removeItem, 'emit');
-        const button = spectator.query(byTestId('category-remove-btn'));
+        const button = spectator.query(byTestId('category-remove-btn'))!;
         spectator.click(button);
         expect(removeSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED[0].key);
     });

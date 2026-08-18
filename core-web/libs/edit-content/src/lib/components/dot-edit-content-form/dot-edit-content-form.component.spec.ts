@@ -216,18 +216,18 @@ describe('DotFormComponent', () => {
         });
 
         it('should initialize form with existing content values', () => {
-            expect(component.form.get('text1').value).toBe('content text 1');
-            expect(component.form.get('text2').value).toBe('content text 2');
-            expect(component.form.get('text3').value).toBe('default value modified');
+            expect(component.form.get('text1')!.value).toBe('content text 1');
+            expect(component.form.get('text2')!.value).toBe('content text 2');
+            expect(component.form.get('text3')!.value).toBe('default value modified');
         });
 
         it('should override default values with content values', () => {
             // text3 had a default value, but it should be overridden
-            expect(component.form.get('text3').value).toBe('default value modified');
+            expect(component.form.get('text3')!.value).toBe('default value modified');
         });
 
         it('should maintain required validators for existing content', () => {
-            expect(component.form.get('text1').hasValidator(Validators.required)).toBe(true);
+            expect(component.form.get('text1')!.hasValidator(Validators.required)).toBe(true);
         });
 
         it('should not create form controls for non-field properties', () => {
@@ -264,20 +264,20 @@ describe('DotFormComponent', () => {
             spectator.detectChanges();
         });
         it('should initialize text3 with its default value', () => {
-            expect(component.form.get('text3').value).toBe('default value');
+            expect(component.form.get('text3')!.value).toBe('default value');
         });
 
         it('should initialize the form with empty values', () => {
-            expect(component.form.get('text1').value).toBeNull();
-            expect(component.form.get('text2').value).toBeNull();
-            expect(component.form.get('text3').value).not.toBeNull(); // has default value
+            expect(component.form.get('text1')!.value).toBeNull();
+            expect(component.form.get('text2')!.value).toBeNull();
+            expect(component.form.get('text3')!.value).not.toBeNull(); // has default value
             expect(component.form.get('nonexistentField')).toBeFalsy();
         });
 
         it('should apply validators correctly', () => {
-            expect(component.form.get('text1').hasValidator(Validators.required)).toBe(true);
-            expect(component.form.get('text2').hasValidator(Validators.required)).toBe(false);
-            expect(component.form.get('text3').hasValidator(Validators.required)).toBe(false);
+            expect(component.form.get('text1')!.hasValidator(Validators.required)).toBe(true);
+            expect(component.form.get('text2')!.hasValidator(Validators.required)).toBe(false);
+            expect(component.form.get('text3')!.hasValidator(Validators.required)).toBe(false);
         });
 
         it('should create disabledWYSIWYG form control with empty array for new content', () => {
@@ -755,13 +755,13 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
             });
             it('should render the preview button when $showPreviewLink is true', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeTruthy();
             });
 
             it('should call showPreview when the preview button is clicked', () => {
                 const showPreviewSpy = jest.spyOn(component, 'showPreview');
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
 
                 spectator.click(previewButton);
 
@@ -808,7 +808,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should not render the preview button when $showPreviewLink is false', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeFalsy();
             });
         });
@@ -845,7 +845,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should render the preview button for an HTML page', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeTruthy();
             });
 
@@ -881,7 +881,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should not render the preview button for new content', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeFalsy();
             });
         });

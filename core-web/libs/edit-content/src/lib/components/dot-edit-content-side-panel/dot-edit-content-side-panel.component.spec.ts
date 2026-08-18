@@ -326,7 +326,7 @@ describe('DotEditContentSidePanelComponent', () => {
 
         // Asserted before dispatching on purpose: with an optional chain, a markup rename would
         // silently skip the click and leave the two negative assertions below passing anyway.
-        const inside = spectator.query(byTestId('side-panel-title'), { root: true });
+        const inside = spectator.query(byTestId('side-panel-title'), { root: true })!;
         expect(inside).toBeTruthy();
 
         // Bubbles up to the same document listener, but its target is not the mask.

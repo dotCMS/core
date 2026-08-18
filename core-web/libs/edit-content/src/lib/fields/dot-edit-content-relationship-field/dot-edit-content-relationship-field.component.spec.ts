@@ -92,9 +92,9 @@ const mockContentType: DotCMSContentType = {
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentRelationshipFieldComponent', () => {
@@ -180,7 +180,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 }
             );
 
-            const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+            const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
             store = fieldComponent.store;
             dialogService = spectator.inject(DialogService);
         });
@@ -213,7 +213,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 control.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 expect(fieldComponent.$isDisabled()).toBe(true);
             });
@@ -223,7 +223,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.deleteItem('1');
                 expect(deleteSpy).not.toHaveBeenCalled();
@@ -234,7 +234,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
                 expect(reorderDataSpy).not.toHaveBeenCalled();
@@ -245,7 +245,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showExistingContentDialog();
                 expect(openSpy).not.toHaveBeenCalled();
@@ -256,7 +256,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showCreateNewContentDialog();
                 expect(openSpy).not.toHaveBeenCalled();
@@ -270,7 +270,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should delete item when not disabled', () => {
                 const deleteSpy = jest.spyOn(store, 'deleteItem');
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.deleteItem('1');
                 expect(deleteSpy).toHaveBeenCalledWith('1');
@@ -278,7 +278,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should reorder items when not disabled', () => {
                 const reorderDataSpy = jest.spyOn(store, 'reorderData');
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
                 expect(reorderDataSpy).toHaveBeenCalledWith(store.data());
             });
@@ -286,7 +286,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             it('should not reorder items with invalid indices', () => {
                 const reorderDataSpy = jest.spyOn(store, 'reorderData');
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
                 expect(reorderDataSpy).not.toHaveBeenCalled();
 
@@ -321,7 +321,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                     close: jest.fn()
                 };
                 openSpy.mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 expect(() => {
                     fieldComponent.showExistingContentDialog();
@@ -338,7 +338,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 jest.spyOn(dialogService, 'open').mockReturnValue(
                     mockDialogRef as unknown as DynamicDialogRef
                 );
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 expect(() => {
                     fieldComponent.showExistingContentDialog();
@@ -357,7 +357,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 );
                 const setDataSpy = jest.spyOn(store, 'setData');
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showExistingContentDialog();
                 spectator.flushEffects();
@@ -409,7 +409,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should open the new content dialog when the feature flag is enabled', async () => {
                 // Check initial state
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 expect(fieldComponent.$isDisabled()).toBe(false);
                 expect(store.contentType()).toEqual(mockContentType);
 
@@ -438,7 +438,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
@@ -450,7 +450,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 // Mock the store's contentType method to return null
                 jest.spyOn(store, 'contentType').mockReturnValue(null);
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
@@ -462,7 +462,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
                 const setDataSpy = jest.spyOn(store, 'setData');
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 await fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
@@ -481,7 +481,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
         describe('Form Control Integration', () => {
             it('should implement ControlValueAccessor methods', () => {
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 expect(fieldComponent.writeValue).toBeDefined();
                 expect(fieldComponent.registerOnChange).toBeDefined();
                 expect(fieldComponent.registerOnTouched).toBeDefined();
@@ -490,7 +490,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should handle writeValue with empty value', () => {
                 expect(() => {
-                    const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                    const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                     fieldComponent.writeValue('');
                 }).not.toThrow();
             });
@@ -502,7 +502,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should compute menu items correctly', () => {
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 const menuItems = fieldComponent.$menuItems();
 
                 expect(menuItems).toHaveLength(2);
@@ -516,7 +516,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 const menuItems = fieldComponent.$menuItems();
 
                 expect(menuItems[0].disabled).toBe(true);

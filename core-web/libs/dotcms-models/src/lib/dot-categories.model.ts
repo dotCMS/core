@@ -13,7 +13,8 @@ export interface DotCategory {
     categoryVelocityVarName: string;
     friendlyName?: string;
     path?: string;
-    identifier: string;
+    /** Null for categories the API returns without one; several endpoints do. */
+    identifier: string | null;
     inode: string;
     name?: string;
     type: string;
@@ -21,9 +22,11 @@ export interface DotCategory {
     live?: boolean;
     working?: boolean;
     childrenCount: number;
-    description: string;
+    /** Optional metadata; the API returns null when unset. */
+    description: string | null;
     iDate: number;
-    keywords: string;
+    /** Optional metadata; the API returns null when unset — consumers already use `|| ''`. */
+    keywords: string | null;
     owner: string;
     modDate?: number;
     parentPermissionable?: {
