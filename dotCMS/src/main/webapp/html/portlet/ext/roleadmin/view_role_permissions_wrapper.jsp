@@ -37,15 +37,44 @@
 <%@ include file="/html/portlet/ext/roleadmin/view_roles_js_inc.jsp" %>
 <%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
 
+<%-- Hidden DOM stubs to satisfy the shared JS's unconditional
+     `dojo.addOnLoad` initializers (roles tree, users grid, portlet
+     select) — see the include file's header for the full rationale. --%>
+<%@ include file="/html/portlet/ext/roleadmin/view_role_iframe_stubs_inc.jsp" %>
+
+<%--
+    Match the CSS load-set of the canonical `view_roles.jsp` portlet:
+    ONLY `view_roles.css`, NOT `view_role_permissions.css`. The latter
+    file carries a legacy `.dotcms .dijitAccordionTitle{height:23px}`
+    rule that clips the accordion title and hides the
+    `hostFolderAccordionPermissionsTitleWrapper` template. The modern
+    `.permission__list .dijitAccordionTitle{height:auto}` override lives
+    in `dotcms.css` (already pulled in by `top_inc.jsp`) — leaving
+    `view_role_permissions.css` OUT lets that override win.
+--%>
 <style type="text/css">
-    <%@ include file="/html/portlet/ext/roleadmin/view_role_permissions.css" %>
     <%@ include file="/html/portlet/ext/roleadmin/view_roles.css" %>
 
-    /* Iframe presentation tweaks: the parent Angular tab already scrolls,
-       so drop the outer margins/backgrounds that make sense in the full
-       Dojo portlet but leave dead space inside the iframe. */
-    body { background: #fff; margin: 0; padding: 8px; }
-    #rolePermissionsWrapper { padding: 0; }
+    /* Iframe presentation tweaks — apply ONLY here (they never reach
+       `view_roles.jsp`) so the current Dojo portlet is unaffected.
+       Goal: the accordion fills the full iframe viewport instead of the
+       hard-coded 400px that `view_role_permissions_js_inc.jsp` sets
+       inline on `#permissionsAccordionContainer`. Chain height:100%
+       from html → body → wrapper → accordion, and beat the inline
+       height:400px with `!important`. */
+    html, body { height: 100%; margin: 0; padding: 0; background: #fff; }
+    body { padding: 8px; box-sizing: border-box; }
+    #rolePermissionsWrapper {
+        padding: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    #permissionsAccordionContainer {
+        flex: 1 1 auto;
+        height: auto !important;
+        min-height: 0;
+    }
 </style>
 
 <%-- Renders the `rolePermissionsWrapper` div + `permissionsAccordionContainer`
@@ -64,3 +93,12 @@
         <% } %>
     });
 </script>
+
+<%--
+    `bottom_inc.jsp` registers `dotMakeBodVisible` on `dojo.addOnLoad` —
+    without it the `<body style="visibility:hidden">` set by `top_inc.jsp`
+    is never toggled and nothing renders. It also anti-frame-busts
+    correctly (only redirects to `/dotAdmin/` when the page is NOT inside
+    an iframe, which is exactly our embed scenario).
+--%>
+<%@ include file="/html/common/bottom_inc.jsp" %>
