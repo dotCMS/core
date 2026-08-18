@@ -223,6 +223,8 @@
 
         @if ($hasWeightWarning()) {
             <div
+                animate.enter="weights-warning-enter"
+                animate.leave="weights-warning-leave"
                 [attr.data-error]="$showWeightsError() ? '1' : null"
                 class="flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm"
                 [class.border-red-200]="$showWeightsError()"
