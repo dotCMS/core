@@ -17,7 +17,7 @@
 
 ## Table of contents
 
-**[Before you begin](#before-you-begin)** — read this page first
+**[Start here](#start-here)** — the ten-minute orientation: why we migrate, the four phases, and when to restart
 
 **Part 1 — The procedure**
 
@@ -67,29 +67,233 @@
 
 ---
 
-# Before you begin
+# Start here
 
-## What you are about to do
+**New to this?** Read this chapter end to end — about ten minutes. It explains why the migration
+exists, what the four phases are, and the one mechanic people get wrong (when to restart). After that
+the guide is a procedure you follow: [Stage 0](#stage-0--assess-the-customer) onward.
 
-dotCMS keeps a searchable copy of every piece of content in a search engine. Today that is
-Elasticsearch. You are going to move it to OpenSearch 3.x without the customer noticing.
+---
 
-You do it by moving a single setting — **the migration phase** — from `0` to `3`, one step at a time.
-Each step changes exactly one thing, and each step leaves you an engine to fall back to:
+## 1. Why this migration exists
+
+dotCMS is standardising its search infrastructure on **OpenSearch 3.x**. Every install currently
+running Elasticsearch has to move.
+
+**The obvious question first: why can't we just change the URL?**
+
+Because dotCMS's existing Elasticsearch client **cannot write content to an OpenSearch 3.x
+cluster**. Repointing `ES_ENDPOINTS` at OpenSearch does not work — the connection may look fine while
+content indexing fails. Talking to OpenSearch 3.x needs a different client, which dotCMS ships
+alongside the old one.
+
+**So dotCMS temporarily runs two clients at once**, one per engine, and the migration is the
+controlled handover between them:
+
+- The two engines start out completely unrelated: Elasticsearch has all the customer's content,
+  OpenSearch has nothing.
+- You need OpenSearch to end up holding the same content, kept current, before anything starts
+  depending on it.
+- And you need a way back at every point, because a search index is not something a customer can be
+  without.
+
+That is the whole shape of the problem. The four phases are how we solve it.
+
+---
+
+## 2. What the search engine actually does for dotCMS
+
+Worth knowing, because it explains why so many things are affected.
+
+dotCMS does not only use the index for "the search box". It keeps a copy of essentially all content
+there, and reads it constantly:
+
+| What uses the index | Examples |
+|---|---|
+| **Content pulls in templates** | `$dotcontent.pull(...)` — most pages on most sites |
+| **Search pages** | Anything the visitor types into |
+| **The admin content search** | What editors use all day |
+| **Site Search** | Built by a separate crawl, its own index |
+| **URL maps** | Detail pages resolved by pattern |
+| **The REST and GraphQL content APIs** | Headless integrations |
+| **Workflow and permission filtering** | Which content a user is allowed to see |
+
+The index holds published content **and** drafts, plus content types, permissions, and workflow
+state — split across two indices: `working` (everything) and `live` (published only).
+
+**The practical consequence:** if the index the customer is reading from is incomplete, pages do not
+error — they come back **empty or short**. Nothing crashes. That silence is what makes this migration
+worth doing carefully.
+
+---
+
+## 3. The four phases, one at a time
+
+One setting, `FEATURE_FLAG_OPEN_SEARCH_PHASE`, holds a number from 0 to 3. It decides two things:
+**which engines get written to**, and **which one answers searches**.
+
+The phases move those two independently — writes first, then reads — so that no step ever removes
+your way back.
 
 ```
-Phase 0            Phase 1              Phase 2                Phase 3
-ES only     →      ES + OS writes  →    ES + OS writes    →    OS only
-reads: ES          reads: ES            reads: OS              reads: OS
-                                        (ES = fallback)        (no fallback)
-
-                   ↑ prove writes       ↑ prove reads          ↑ cut over
+             WRITES              READS           Fall back to
+  Phase 0    ES                  ES              —            you start here
+  Phase 1    ES + OpenSearch     ES              —            OpenSearch is filling up
+  Phase 2    ES + OpenSearch     OpenSearch      ES           the real test
+  Phase 3    OpenSearch          OpenSearch      nothing      done
 ```
 
-Everything else in this guide is either *what to check before you move it* or *what to do when the
-move goes wrong*.
+---
 
-## The three rules that prevent almost every incident
+### Phase 0 — where every customer starts
+
+**What it is:** the state every dotCMS is in today. Only Elasticsearch exists. dotCMS never contacts
+OpenSearch, even if you have configured it.
+
+**What the customer sees:** normal operation.
+
+**What you do here:** everything in [Stage 0](#stage-0--assess-the-customer) and
+[Stage 1](#stage-1--prepare-the-opensearch-server) — assess the customer, and prepare the OpenSearch
+server. Both are safe: you can configure OpenSearch completely and dotCMS will still ignore it until
+you change the phase.
+
+---
+
+### Phase 1 — dual-write: OpenSearch starts receiving copies
+
+**What changes:** every content change is now written to **both** engines. Publish an article and it
+lands in Elasticsearch *and* in OpenSearch.
+
+**What the customer sees:** nothing. Searches are still answered entirely by Elasticsearch. If
+OpenSearch fails a write, dotCMS logs it and carries on — the customer's publish still succeeds.
+
+**What this phase proves:** that dotCMS can reach OpenSearch, authenticate, create indices, and write
+to them. All the plumbing, with zero customer exposure.
+
+**⚠ The thing everyone gets wrong here:** turning on Phase 1 does **not** copy the content that
+already exists. Dual-write only handles changes from this moment forward. A customer with 500,000
+contentlets publishing 50 a day would take decades to catch up.
+
+**So Phase 1 is two actions, not one:**
+
+1. Switch to Phase 1 **and restart** — this creates the OpenSearch indices (empty).
+2. **Run a full reindex** — this is what actually copies the existing content across.
+
+Then you let it run for a while (a "soak") so real traffic exercises the write path.
+
+---
+
+### Phase 2 — reads move to OpenSearch
+
+**What changes:** searches are now answered by **OpenSearch**. Elasticsearch keeps receiving every
+write and stays completely current.
+
+**What the customer sees:** ideally nothing. This is the first time OpenSearch data reaches them.
+
+**The safety net:** if OpenSearch throws an error on a read, dotCMS catches it, logs an `ERROR`, and
+**re-runs the search against Elasticsearch**. The customer gets a correct result; you get the error in
+the log. That is your early-warning system.
+
+> **But the net only catches errors.** If OpenSearch answers *successfully* with incomplete data —
+> because the reindex was never run, or a write silently failed — there is no error to catch. The
+> customer just gets fewer results. That is why you verify with the readiness report rather than
+> waiting for something to break.
+
+**What this phase proves:** that OpenSearch can serve the customer's real query load correctly.
+
+**⚠ This is where customisations break.** Templates and plugins written against Elasticsearch keep
+working perfectly in Phase 1 — because Phase 1 still reads from Elasticsearch. They fail here. A clean
+Phase 1 tells you nothing about whether Phase 2 will be clean.
+
+**Your escape hatch:** set the phase back to `1`. It takes effect immediately, needs no restart, and
+Elasticsearch is completely current. Use it freely.
+
+---
+
+### Phase 3 — cutover: OpenSearch only
+
+**What changes:** Elasticsearch stops being written and stops being a fallback. OpenSearch is the only
+engine.
+
+**What the customer sees:** nothing, if you got here properly.
+
+**What is different now:** an OpenSearch failure reaches the customer instead of being absorbed. And
+Elasticsearch starts going stale from this moment — it is no longer receiving anything, so it is a
+snapshot, not a live copy.
+
+**Coming back is no longer free.** From Phase 3 you go back to Phase 2 (which resumes dual-write) and
+then run a full reindex to refill Elasticsearch with what it missed. Nothing is ever lost — the
+database is always the real source of truth — but the recovery costs a window.
+
+---
+
+## 4. Changing the phase: the switch, and when you must restart
+
+This is the mechanic people get wrong, so it gets its own section.
+
+### Where the switch is
+
+The setting is `FEATURE_FLAG_OPEN_SEARCH_PHASE` (as an environment variable,
+`DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE`). Values `0`, `1`, `2`, `3`. Anything else, or unset, means
+Phase 0.
+
+You can set it in two places, and **they are not equivalent**:
+
+| Where | Reaches | Notes |
+|---|---|---|
+| Config file / environment variable | **One node.** You must set it on every node yourself. | The usual way. |
+| The dotCMS system table (`POST /api/v1/system-table`) | **The whole cluster**, in one call. | Stored in the database. **It wins over the environment variable** — so if you ever set it here, remember that clearing it is part of your rollback. |
+
+Pick one mechanism per customer and stick to it. Mixing them is how you end up with nodes disagreeing
+about what phase they are in.
+
+### The restart rule
+
+> **Routing changes instantly. Setup does not.**
+
+Two different things happen when you change the phase:
+
+**Immediately, no restart needed** — dotCMS re-reads the phase on *every single* index operation, so
+which engine gets writes and which one answers reads changes on the very next request.
+
+**Only at startup** — three things, and they are the ones that matter:
+
+1. **The OpenSearch indices are created.** This is the big one.
+2. The connectivity, version and endpoint checks run.
+3. The automatic safety shutdown (fall back to Phase 0) can fire.
+
+So:
+
+| Going | Restart? | Because |
+|---|:---:|---|
+| **0 → 1** | ✅ **Mandatory** | The OpenSearch indices **do not exist yet**. They are created at boot. |
+| **1 → 2** | ✅ **Strongly recommended** | So the startup checks actually run for the phase you are now in. |
+| **2 → 3** | ✅ **Strongly recommended** | Same — and Phase 3's check refuses to start on failure, which you want to discover during a controlled restart. |
+| **Any downgrade** (2→1, 1→0, 3→2) | ⛔ **Not needed** | Routing reverts on the next request. This is what makes downgrading your emergency lever. |
+| After an automatic shutdown | ✅ **Mandatory** | The fallback to Phase 0 lives only in memory. |
+
+### What actually goes wrong if you skip the 0 → 1 restart
+
+It is worth spelling out, because the failure is silent:
+
+1. You set the phase to `1`. Routing switches immediately — dotCMS now sends every write to both
+   engines.
+2. But nothing created the OpenSearch indices, because that only happens at boot.
+3. So every write to OpenSearch targets an index that does not exist.
+4. And in Phase 1, OpenSearch write failures are **logged and ignored** by design, so the customer's
+   publishes all succeed and nothing surfaces.
+5. Meanwhile the startup validation never ran, so you also have no confirmation that OpenSearch is
+   even reachable.
+
+The result is a migration that looks switched on and is doing absolutely nothing. Hours later you
+notice OpenSearch is empty.
+
+**One line to remember: going up a phase, change the value *and then restart*. Coming down, just
+change the value.**
+
+---
+
+## 5. The three rules to keep in your head
 
 > ### Rule 1 — A phase change never copies data. Only a reindex does.
 > Setting Phase 1 does **not** put the customer's existing content into OpenSearch. It only starts
@@ -98,15 +302,18 @@ move goes wrong*.
 
 > ### Rule 2 — Going up a phase needs a restart. Coming down does not.
 > Routing changes the instant you change the value. But the OpenSearch index creation and the
-> connectivity validation only happen at **startup**. Turn on Phase 1 without restarting and you get
-> a migration that looks enabled and is silently doing nothing.
+> connectivity validation only happen at **startup**. Turn on Phase 1 without restarting and you get a
+> migration that looks enabled and is silently doing nothing.
 
 > ### Rule 3 — The readiness endpoint is the truth. Nothing else is.
-> `GET /api/v1/index/migration/readiness` compares both engines from live data. The admin UI hides
-> the OpenSearch indices before Phase 3; document counts lie in ways explained in
+> `GET /api/v1/index/migration/readiness` compares both engines from live data and tells you whether
+> it is safe to move. The admin UI deliberately **hides** the OpenSearch indices before Phase 3, and
+> raw document counts mislead in ways explained in
 > [R9](#r9-the-readiness-report-field-by-field). The endpoint does not.
 
-## Choose your path
+---
+
+## 6. Choose your path
 
 Answer one question: **how long does a full reindex take on this customer?**
 
@@ -116,7 +323,7 @@ Answer one question: **how long does a full reindex take on this customer?**
 | Rough size | up to ~50k contentlets | above that |
 | What you do | Set Phase 3, restart, let it rebuild | 0 → 1 → 2 → 3, days or weeks apart |
 | Search during the change | **Degraded** — empty until the reindex finishes | Never degraded |
-| Rollback | Costs a second window (ES has to be reindexed too) | Instant, at every step |
+| Rollback | Costs a second window (Elasticsearch has to be reindexed too) | Instant, at every step |
 | Go to | [Fast path](#fast-path--small-customers-one-window) | [Stage 0](#stage-0--assess-the-customer) |
 
 **If you do not know the reindex duration yet, you are on the standard path** — Stage 0 and Stage 2
@@ -128,7 +335,9 @@ measure it, and you can switch to the fast path afterwards if it turns out to be
 - Site Search is business-critical and its crawls cannot be run on demand.
 - There is no window in which degraded search is acceptable.
 
-## What you need before Stage 1
+---
+
+## 7. What you need before Stage 1
 
 - [ ] Admin access to the customer's dotCMS (CMS Administrator).
 - [ ] Access to the customer's database (read is enough for the guide; you will run `SELECT`s).
@@ -136,6 +345,29 @@ measure it, and you can switch to the fast path afterwards if it turns out to be
 - [ ] Admin credentials on the OpenSearch cluster, to create the service account and role.
 - [ ] The ability to change the customer's dotCMS configuration and restart their nodes.
 - [ ] Somewhere to build a clone (Stage 2).
+
+---
+
+## 8. How this guide is organised
+
+**Part 1 is the procedure** — six stages, in order. Each stage says what you are doing, what to type,
+what you should see, and what to do when you see something else. Each ends with a **gate**: a short
+list you must be able to tick before moving on. Do not skip gates.
+
+| Stage | You are | Phase after |
+|---|---|:---:|
+| [0](#stage-0--assess-the-customer) | Assessing the customer | 0 |
+| [1](#stage-1--prepare-the-opensearch-server) | Preparing the OpenSearch server | 0 |
+| [2](#stage-2--rehearse-on-a-clone) | Rehearsing on a clone | — |
+| [3](#stage-3--turn-on-dual-write-phase-0--1) | Turning on dual-write | 1 |
+| [4](#stage-4--move-reads-to-opensearch-phase-1--2) | Moving reads to OpenSearch | 2 |
+| [5](#stage-5--cut-over-phase-2--3) | Cutting over | 3 |
+
+**Part 2 is what to do when something goes wrong** — how to go back from wherever you are, the
+emergency stop, and a table that turns a symptom into the step that fixes it.
+
+**Part 3 is reference (R1–R15).** You do not have to read it. The stages link into it when you want
+the reasoning behind an instruction.
 
 ---
 
@@ -251,7 +483,7 @@ Every stage from 3 onward requires a crawl.
 ### Step 0.5 — Decide the path
 
 **You now have** the content volume, the template list, the plugin grades, and the Site Search
-inventory. Use the table in [Choose your path](#choose-your-path).
+inventory. Use the table in [Choose your path](#6-choose-your-path).
 
 If you are still unsure, stay on the standard path. Stage 2 measures the reindex on real data and you
 can switch then.
@@ -525,7 +757,7 @@ procedure.
 
 - The reindex duration, and therefore the length of the window each stage needs.
 - Which path you are taking (standard or fast) — revisit
-  [Choose your path](#choose-your-path) now that you have the real number.
+  [Choose your path](#6-choose-your-path) now that you have the real number.
 - The rolling-restart sequence for their node count.
 - Who is fixing which template and which plugin, and by when.
 
@@ -1099,7 +1331,7 @@ back if you need one.
 
 # Fast path — small customers, one window
 
-**Use this only if** [Choose your path](#choose-your-path) sent you here: the reindex fits comfortably
+**Use this only if** [Choose your path](#6-choose-your-path) sent you here: the reindex fits comfortably
 in one maintenance window, degraded search during that window is acceptable, and the Stage 0 audits
 came back clean.
 
@@ -1337,6 +1569,9 @@ anything is restarted — a restart can clear the evidence you need.
 ---
 
 ## R2. Why there are four phases
+
+> The narrative version, written for someone meeting this for the first time, is
+> [Start here §3](#3-the-four-phases-one-at-a-time). This is the compact statement.
 
 A one-step cutover has no way back. Once you stop writing to Elasticsearch it starts going stale
 within seconds — and if OpenSearch then turns out to be misconfigured, slow, or missing content, your
