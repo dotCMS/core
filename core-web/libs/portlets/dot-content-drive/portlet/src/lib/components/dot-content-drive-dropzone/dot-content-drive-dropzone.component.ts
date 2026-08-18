@@ -155,7 +155,12 @@ export class DotContentDriveDropzoneComponent {
         this.state.set(DROPZONE_STATE.INACTIVE);
 
         if (files?.length) {
-            this.uploadFiles.emit({ files, targetFolder: this.#store.selectedNode()?.data });
+            // Emitted without `targetFolder` when nothing is selected, rather than with an
+            // explicit `undefined`: the property is optional on the payload, and the shell reads
+            // `'targetFolder' in event` in one branch.
+            const targetFolder = this.#store.selectedNode()?.data;
+
+            this.uploadFiles.emit(targetFolder ? { files, targetFolder } : { files });
         }
     }
 }

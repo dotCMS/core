@@ -16,6 +16,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotContentDriveService, DotCurrentUserService } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
@@ -58,6 +59,7 @@ import {
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
+    contextMenu: undefined,
     filters: {},
     items: [],
     selectedItems: [],
@@ -121,9 +123,17 @@ export const DotContentDriveStore = signalStore(
                             },
                             language: filters()?.languageId,
                             contentTypes: filters()?.contentType,
-                            baseTypes: filters()?.baseType?.map(
-                                (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                            ),
+                            // Unmapped numbers are dropped rather than sent as undefined: the map
+                            // is keyed by the nine known base types and the value comes from a URL
+                            // filter, so anything else is not a base type at all.
+                            baseTypes: filters()
+                                ?.baseType?.map(
+                                    (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                                )
+                                .filter(
+                                    (baseType): baseType is DotCMSBaseTypesContentTypes =>
+                                        !!baseType
+                                ),
                             workflow: filters()?.workflow?.length
                                 ? parseWorkflowFilter(filters()?.workflow)
                                 : undefined,

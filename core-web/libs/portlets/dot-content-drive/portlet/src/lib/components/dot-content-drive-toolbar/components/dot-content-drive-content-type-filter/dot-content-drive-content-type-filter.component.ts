@@ -166,7 +166,11 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     /** Selected base types (variable names like 'CONTENT', 'FILEASSET'). */
     readonly $selectedBaseTypes = linkedSignal<string[]>(() => {
         const keys = (this.#store.getFilterValue('baseType') as string[]) ?? [];
-        return keys.map((k) => MAP_NUMBERS_TO_BASE_TYPES[Number(k)]).filter(Boolean);
+        // A type predicate rather than `filter(Boolean)`: the latter drops the undefined at
+        // runtime but does not narrow the array's type.
+        return keys
+            .map((k) => MAP_NUMBERS_TO_BASE_TYPES[Number(k)])
+            .filter((baseType): baseType is DotCMSBaseTypesContentTypes => !!baseType);
     });
 
     /**

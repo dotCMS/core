@@ -66,7 +66,11 @@ export interface DotFolderListViewColumn {
  */
 export interface DotContentDriveUploadFiles {
     files: FileList;
-    targetFolder: DotFolderTreeNodeData;
+    /**
+     * Absent when nothing is selected — a drop can happen before any folder has been chosen, and
+     * `onRequestUpload` in the shell already branches on it (`targetFolder && ...`).
+     */
+    targetFolder?: DotFolderTreeNodeData;
 }
 
 /**
@@ -74,7 +78,9 @@ export interface DotContentDriveUploadFiles {
  * @interface DotContentDriveMoveItems
  * @description Move items
  */
-export type DotContentDriveMoveItems = Omit<DotContentDriveUploadFiles, 'files'>;
+// Declared directly rather than as `Omit<DotContentDriveUploadFiles, 'files'>`: a move always has
+// a destination, whereas the upload payload it used to derive from allows one to be absent.
+export type DotContentDriveMoveItems = { targetFolder: DotFolderTreeNodeData };
 
 /**
  * Content Drive site/folder node data — shared content fields plus drive-specific extras.
