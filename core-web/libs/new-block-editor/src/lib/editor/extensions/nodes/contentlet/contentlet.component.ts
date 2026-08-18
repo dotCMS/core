@@ -19,7 +19,8 @@ import { EditorStore } from '../../../store/editor.store';
         '[attr.data-identifier]': 'identifierAttr()',
         '[attr.data-language-id]': 'languageIdAttr()',
         '[attr.data-inode]': 'inodeAttr()',
-        '[attr.data-content-type]': 'contentTypeAttr()'
+        '[attr.data-content-type]': 'contentTypeAttr()',
+        '(mousedown)': 'selectNode($event)'
     },
     template: `
         @if (data(); as d) {
@@ -103,4 +104,27 @@ export class DotContentletNodeViewComponent extends AngularNodeViewComponent {
         const ct = this.data()?.contentType;
         return ct ? String(ct) : null;
     });
+
+    /**
+     * Select the embedded contentlet card on mousedown.
+     *
+     * The card is an `atom` rendered through this Angular node view. When text or another block
+     * precedes it, the browser's default mousedown drops a text caret into that preceding block
+     * before the `click` fires — so ProseMirror resolves the click to a text position, never to
+     * the atom, and the card gets no NodeSelection (no selection ring; the toolbar contentlet
+     * actions, gated on a `dotContent` NodeSelection, stay unreachable) — #36985.
+     *
+     * Selecting the node by its own position (`getPos()`, always accurate regardless of what
+     * surrounds it) and suppressing the default mousedown fixes click-to-select in every layout.
+     * Reordering is unaffected: it runs off the block-gutter drag handle, a separate element.
+     */
+    protected selectNode(event: MouseEvent): void {
+        const pos = this.getPos()();
+        if (pos == null) {
+            return;
+        }
+
+        event.preventDefault();
+        this.editor().chain().focus().setNodeSelection(pos).run();
+    }
 }
