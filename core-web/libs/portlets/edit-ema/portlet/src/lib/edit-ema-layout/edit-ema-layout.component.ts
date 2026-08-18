@@ -65,7 +65,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         });
     });
 
-    private lastTemplate: DotTemplateDesigner;
+    /** The last edited template, or `undefined` if the user never changed the layout. */
+    private lastTemplate?: DotTemplateDesigner;
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
@@ -203,7 +204,12 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         this.dotRouterService.pageLeaveRequest$
             .pipe(takeUntil(this.destroy$), distinctUntilChanged()) // To prevent an spam of toasts when clicking on some route
             .subscribe(() => {
-                this.saveTemplate(this.lastTemplate);
+                // Guarded: leaving the page without having touched the layout used to call
+                // `saveTemplate(undefined)`, which the signature never allowed. There is nothing
+                // to force-save in that case.
+                if (this.lastTemplate) {
+                    this.saveTemplate(this.lastTemplate);
+                }
             });
     }
 }

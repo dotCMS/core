@@ -58,7 +58,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
     providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
 })
 export class DotEmaDialogComponent {
-    @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
+    @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     @Output() action = new EventEmitter<DialogAction>();
     @Output() reloadFromDialog = new EventEmitter<void>();
@@ -75,7 +75,13 @@ export class DotEmaDialogComponent {
     private readonly messageService = inject(MessageService);
     private readonly dotUiColorsService = inject(DotUiColorsService);
 
-    protected readonly dialogState = toSignal(this.store.dialogState$);
+    /**
+     * `requireSync` rather than the `| undefined` the two-argument form would give: `dialogState$`
+     * is a ComponentStore selector, which emits synchronously on subscribe. That was already the
+     * assumption at every read site; this states it, and throws at construction if it stops being
+     * true instead of surfacing as an undefined property somewhere downstream.
+     */
+    protected readonly dialogState = toSignal(this.store.dialogState$, { requireSync: true });
     protected readonly dialogStatus = DialogStatus;
 
     protected get ds() {

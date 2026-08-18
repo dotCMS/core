@@ -194,10 +194,10 @@ const MESSAGE_KEY = {
     ]
 })
 export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
-    @ViewChild('dialog') dialog: DotEmaDialogComponent;
+    @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
-    @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
-    @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
+    @ViewChild('blockSidebar') blockSidebar!: DotBlockEditorSidebarComponent;
+    @ViewChild('customDragImage') customDragImage!: ElementRef<HTMLDivElement>;
     @ViewChild('zoomContainer') zoomContainer!: ElementRef<HTMLDivElement>;
     @ViewChild('canvasViewport') canvasViewport!: ElementRef<HTMLDivElement>;
     @ViewChild('editorContent') editorContent!: ElementRef<HTMLDivElement>;

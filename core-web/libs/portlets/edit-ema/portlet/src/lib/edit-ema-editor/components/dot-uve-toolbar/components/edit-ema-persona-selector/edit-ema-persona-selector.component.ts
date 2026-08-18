@@ -55,7 +55,7 @@ interface PersonaSelector {
     templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
-    @ViewChild('listbox') listbox: Listbox;
+    @ViewChild('listbox') listbox!: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
 
@@ -73,8 +73,8 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         itemsPerPage: 0
     });
 
-    @Input() pageId: string;
-    @Input() value: DotCMSViewAsPersona;
+    @Input() pageId!: string;
+    @Input() value!: DotCMSViewAsPersona;
 
     @Output() selected: EventEmitter<DotCMSViewAsPersona & { pageId: string }> = new EventEmitter();
     @Output() despersonalize: EventEmitter<

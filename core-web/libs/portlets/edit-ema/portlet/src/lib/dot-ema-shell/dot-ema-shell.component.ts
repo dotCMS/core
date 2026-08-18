@@ -507,7 +507,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Gets lock options from $lockOptions signal and calls store method to handle the lock/unlock
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$lockOptions();
+        // The template only renders this button inside `@if ($lockOptions()?.canLock)`, so the
+        // guard is a formality — but it is the honest way to say the options may be absent.
+        const lockOptions = this.$lockOptions();
+        if (!lockOptions) {
+            return;
+        }
+
+        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = lockOptions;
         this.uveStore.workflowToggleLock(inode, isLocked, isLockedByCurrentUser, lockedBy);
     }
 

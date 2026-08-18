@@ -252,17 +252,23 @@ export function withPage() {
             });
 
             const $requestWithParams = computed(() => {
-                if (!store.requestMetadata()) {
+                const requestMetadata = store.requestMetadata();
+                const params = store.pageParams();
+
+                // Read once into locals: both are nullable, and the old body re-read
+                // `requestMetadata()` twice after the guard, which narrowing does not survive.
+                // `params` had no guard at all — a request can be in flight before the params
+                // land, and there are no variables to send without them.
+                if (!requestMetadata || !params) {
                     return null;
                 }
 
-                const params = store.pageParams();
                 const { mode, language_id, url, variantName } = params;
 
                 return {
-                    ...store.requestMetadata(),
+                    ...requestMetadata,
                     variables: {
-                        ...store.requestMetadata().variables,
+                        ...requestMetadata.variables,
                         url,
                         mode,
                         languageId: language_id,
