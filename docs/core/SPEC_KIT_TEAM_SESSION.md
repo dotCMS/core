@@ -11,19 +11,22 @@ The flow only clicks once you've hit the gates yourself. Two of them stop a run 
 human — the spec review on PR 1, and the TDD approval gate inside `/speckit-implement` — and
 reading about them lands very differently from watching a run halt.
 
+The other thing worth saying out loud in the room: the spec gate is **approval, not merge.**
+Nobody waits on the merge queue to start building.
+
 ---
 
 ## Run of show
 
 ~60 minutes, everyone at their own machine, one screen shared. Pick **one small real bug**
-beforehand — a bug over a feature, because the spec stays legible on screen. You can't wait
-for a real merge inside the hour, so also prepare a branch with an **already-merged spec**
-that's through `/speckit-tasks`, and switch to it at step 3.
+beforehand — a bug over a feature, because the spec stays legible on screen. Also prepare a
+branch that's already through `/speckit-tasks`, and switch to it at step 4 so the room sees
+the gates without waiting on a real planning run.
 
 1. **(5 min)** Why spec-first: review happens on the contract, not the diff — [quick start §3](SPEC_KIT_QUICK_START.md). This is the
    part that changes how the team works — spend the time.
 2. **(10 min)** `/speckit-specify-fix` on the real bug, live. Open PR 1 with just the spec
-   and let the room review it — that review *is* the lesson.
+   and let the room review and approve it — that review *is* the lesson.
 3. **(15 min)** `/speckit-plan`. Stop and narrate when the ADR hook fires — this is the
    moment "binding architectural input" becomes concrete.
 4. **(15 min)** `/speckit-tasks`, then walk the generated `[GATE]` tasks.
