@@ -11,10 +11,12 @@ name: Claude Security Review
 #
 # Required configuration (Settings → Secrets and variables → Actions):
 #   secrets:
-#     ANTHROPIC_API_KEY    - Anthropic API key for Claude
 #     SLACK_BOT_TOKEN      - Slack bot token with chat:write scope, invited to the channel
 #     SLACK_USER_MAP       - JSON: {"github-login": "Uxxxxxxxx", ...}
 #   variables:
+#     BEDROCK_ROLE_ARN       - IAM role (OIDC-assumable) with bedrock:InvokeModel; Claude runs on AWS Bedrock
+#     BEDROCK_MODEL_ID       - Bedrock model ID, e.g. anthropic.claude-opus-4-8 (shared with the other AI workflows)
+#     BEDROCK_AWS_REGION     - AWS region for Bedrock (defaults to us-east-1)
 #     SLACK_SECURITY_CHANNEL - Slack channel ID (e.g. C0XXXXXXX) for private security comms
 #
 # To make this block merges:
@@ -41,6 +43,7 @@ permissions:
   pull-requests: write
   issues: write
   checks: write
+  id-token: write   # OIDC — assume the Bedrock role (no long-lived AWS keys)
 
 concurrency:
   group: claude-security-review-${{ github.event.pull_request.number || inputs.pr_number }}
@@ -128,17 +131,28 @@ jobs:
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code@latest --quiet
 
+      - name: Configure AWS credentials (Bedrock)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.BEDROCK_ROLE_ARN }}
+          aws-region: ${{ vars.BEDROCK_AWS_REGION || 'us-east-1' }}
+
       - name: Run Claude security review
         id: review
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Route Claude through AWS Bedrock (OIDC-assumed role above) rather than the
+          # Anthropic API, so model usage runs inside dotCMS's own AWS controls/billing.
+          # Matches the pattern in issue_autodoc / the other ai_claude-* workflows.
+          CLAUDE_CODE_USE_BEDROCK: '1'
+          AWS_REGION: ${{ vars.BEDROCK_AWS_REGION || 'us-east-1' }}
+          BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID }}
         run: |
           # Run Claude headlessly. The prompt instructs Claude to write
           # security-findings.json to the workspace.
           claude \
             --dangerously-skip-permissions \
             --allowedTools "Bash,Read,Grep,Glob,Agent" \
-            --model claude-opus-4-8 \
+            --model "$BEDROCK_MODEL_ID" \
             -p "$(cat /tmp/claude-prompt.md)"
 
       - name: Parse findings
