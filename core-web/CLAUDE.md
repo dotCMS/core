@@ -144,6 +144,12 @@ Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the
 >
 > **The general rule:** any error whose code starts `TS5` or `TS6`, or `TS2688`, is a *configuration* error. `tsc` never reached your code, so the count that follows means nothing. Read the first error before trusting the last number.
 >
+> **A silent fake zero: `include: []`.** All the aborts above at least *report* something. This one does not. Many project tsconfigs hold only `references` and delegate the real work to `tsconfig.lib.json` / `tsconfig.app.json` — `apps/dotcms-binary-field-builder/tsconfig.json` is one. Pointing `tsc -p` at that file compiles **nothing** and prints nothing, which reads exactly like a clean project. That app had *none* of the six flags while appearing to be at zero. **Measure `tsconfig.lib.json` for libraries and `tsconfig.app.json` for apps — never the project tsconfig that only holds `references`.**
+>
+> **A project with no `build` target has never had its templates checked.** `libs/edit-content` and `libs/block-editor` have only a `test` target. Both declare `strictTemplates` in `angularCompilerOptions`, and in both it is inert: nothing ever compiles their templates. Since `tsc -p` does not check templates either (see above), a library like this can be at 0 errors on both its configs and still have template type errors — a manual `nx run <app>:build` of a consuming app found a real one in `block-editor`. Treat "0 errors" on a build-less library as covering its TypeScript only.
+>
+> **Flags interact across projects.** `libs/portlets/dot-query-tool` has `noImplicitReturns` *without* `strict`, and that combination caught a `TS7030` that `libs/edit-content` — which has `noImplicitReturns` too — did not, because its `strict` changes how a mixed `void`/teardown return is inferred. A clean `tsc -p` on the project you changed is not sufficient: re-measure the strict consumers as well.
+>
 > **`nx run <project>:test` does not type-check — anywhere.** `jest-preset-angular` runs on ts-jest, and ts-jest copies TypeScript's `isolatedModules` into its own transpile-only switch (`config-set.js:229`), which stops it from building the language-service host it needs for diagnostics (`ts-compiler.js:74`). Since the Jest guidance below requires `isolatedModules: true` in every `tsconfig.spec.json`, **passing tests are never evidence that specs type-check.** `libs/data-access` proved it: 84 `tsc` errors alongside 754 green tests. Always verify specs with `tsc -p <projectRoot>/tsconfig.spec.json --noEmit`.
 
 ## Portlet Development
