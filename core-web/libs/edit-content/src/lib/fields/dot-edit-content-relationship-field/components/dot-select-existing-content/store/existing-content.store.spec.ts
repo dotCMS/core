@@ -468,7 +468,7 @@ describe('ExistingContentStore', () => {
 
         it('should handle null from getColumnsAndContent gracefully', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of(null));
-            service.getConstrainedIdentifiers.mockReturnValue(of(new Set()));
+            service.getConstrainedIdentifiers.mockReturnValue(of(new Set<string>()));
 
             store.initLoad({
                 contentTypeId: '123',
