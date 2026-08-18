@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    ViewChild,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SharedModule } from 'primeng/api';
@@ -30,6 +39,7 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
  * @implements {OnInit}
  */
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-persona-selector',
     styleUrls: ['./dot-persona-selector.component.scss'],
     templateUrl: 'dot-persona-selector.component.html',

@@ -7,6 +7,13 @@ export * from './lib/components/add-to-bundle/dot-add-to-bundle.component';
 export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
 export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
+// Moved out of `apps/dotcms-ui` so libs can embed it without reaching back into the app
+// (`dotcms-ui` -> portlet -> `@components/*` -> `dotcms-ui` is a project cycle).
+export * from './lib/components/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
+// Workflow action input steps: embeddable, dialog-free forms that collect what an action declares in
+// its `actionInputs[]`. Consumers own the step frame and gate on `validChange`.
+export * from './lib/components/dot-workflow-assign-comment/dot-workflow-assign-comment.component';
+export * from './lib/components/dot-workflow-push-publish/dot-workflow-push-publish.component';
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
@@ -36,6 +43,7 @@ export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
 export * from './lib/components/dot-browser-selector/dot-browser-selector.component';
+export * from './lib/components/dot-folder-tree/dot-folder-tree.component';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
@@ -72,7 +80,6 @@ export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
-export * from './lib/pipes/dot-truncate-path/dot-truncate-path.pipe';
 // Resolvers
 export * from './lib/resolvers/dot-analytics-health-check.resolver.service';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';

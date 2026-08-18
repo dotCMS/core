@@ -1,7 +1,15 @@
 import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 
 import { trigger, transition, style, animate } from '@angular/animations';
-import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnChanges,
+    OnInit,
+    SimpleChanges,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
@@ -47,6 +55,7 @@ interface DotContainerContent extends DotCMSContentType {
         SkeletonModule,
         DotFieldRequiredDirective
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DialogService]
 })
 export class DotContentEditorComponent implements OnInit, OnChanges {

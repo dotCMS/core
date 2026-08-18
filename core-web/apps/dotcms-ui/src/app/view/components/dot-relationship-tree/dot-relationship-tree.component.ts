@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconComponent } from '@dotcms/ui';
@@ -7,6 +7,7 @@ import { DotIconComponent } from '@dotcms/ui';
     selector: 'dot-relationship-tree',
     templateUrl: './dot-relationship-tree.component.html',
     styleUrls: ['./dot-relationship-tree.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotIconComponent]
 })
 export class DotRelationshipTreeComponent implements OnChanges {

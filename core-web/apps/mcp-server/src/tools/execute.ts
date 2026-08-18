@@ -1,7 +1,9 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createRuntime } from '@dotcms/ai/runtime';
+import { formatSandboxResult } from '@dotcms/ai/runtime';
+
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 export const schema = {
     code: z
@@ -27,15 +29,30 @@ Use api.request(options) where options is:
 
 Auth is handled automatically — tokens are never exposed to your code.
 
+This is a **JavaScript sandbox, NOT Velocity/VTL**:
+- Velocity variables like \`$dotcontent\`, \`$dotcontent.pull(...)\`, \`$date\`, \`#foreach\` do NOT exist here — referencing \`$dotcontent\` throws \`ReferenceError\`. To query content, call \`api.request({ method: 'POST', path: '/api/content/_search', body: { query, ... } })\`. Run VTL only via \`POST /api/vtl/dynamic\`.
+- **\`await\` every \`api.request\`** and return only JSON-serializable values (objects, arrays, strings, numbers). Returning an un-awaited Promise (or a function/class instance) throws \`DataCloneError\` — the result is structured-cloned out of the worker.
+- Watch string literals: a raw apostrophe inside a single-quoted JS string (e.g. \`'grandchild's'\`) is a \`SyntaxError\`. Use double quotes or escape it.
+
 Pre-loaded instance context (available as globals — no API calls needed to read these):
   - contentTypes: Array<{ id, name, variable, baseType, host?, folder? }>
-  - sites: Array<{ identifier, hostname, isDefault, archived }>
+  - sites: Array<{ identifier, hostname, isDefault, archived, live }> — all accessible non-system
+           sites, including stopped and archived states
   - languages: Array<{ id, languageCode, countryCode, language, country, isoCode }>
   - currentUser: { userId, email, givenName?, surname?, admin, roles? } | null
   Examples:
     const blog = contentTypes.find(c => c.variable === 'Blog');
     const defaultSite = sites.find(s => s.isDefault);
     const en = languages.find(l => l.languageCode === 'en');
+
+The pre-loaded globals are a snapshot taken at the start of one tool invocation and do not mutate
+halfway through the current script. Each MCP invocation constructs fresh runtime context, so a
+subsequent call sees successful changes to sites, content types, or languages without maintaining
+resource-specific invalidation rules.
+
+Do not use \`PUT /api/v1/site/switch/{id}\` as a targeting mechanism. MCP API requests are
+independent and session-scoped site selection is not guaranteed to carry to the next request.
+Pass explicit site/host identifiers (for example \`host_id\` or \`contentHost\`) instead.
 
 Always use the \`search\` tool first to discover the correct endpoint path and request/response schema before calling \`execute\`.
 
@@ -47,7 +64,7 @@ context. The \`formData\`/base64 path below exists only for small, programmatic 
 for transferring real files, themes, or directories.
 
 Tips:
-- Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
+- Output is hard-capped (~25k chars). Use \`pick(arr, fields)\` / \`first(arr, n)\` to return only the fields you need — responses can be very large and are truncated past the cap.
 - For a small programmatic upload (NOT real files — use \`upload_assets\` for those) use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
 Binary responses (small/programmatic reads only — for real files use \`download_assets\`):
@@ -55,9 +72,24 @@ Binary responses (small/programmatic reads only — for real files use \`downloa
 - The \`base64\` field IS the raw file bytes — base64-decode it to recover the exact file. Do NOT treat it as text; the bytes are intact (not UTF-8-mangled).
 - JSON and textual responses (\`text/*\`, xml, js, \`+json\`/\`+xml\`) are returned as parsed objects / strings as before — only binary bodies use the envelope.
 
+Content field variables (the \`contentlet\` fire body):
+- The fire body's \`contentlet\` is keyed by each field's exact **field variable** (from the content type's \`fields[].variable\`) — casing is significant and a wrong-case key is silently ignored (its value is dropped, and a required field then 400s as "required").
+- Page (htmlpageasset) system fields are lowercase/camel exactly: \`contentHost\` (the SITE — NOT \`host\`), \`hostFolder\` (the folder id), \`cachettl\` (all lowercase — NOT \`cacheTTL\`/\`cacheTtl\`), \`template\`, \`url\`, \`title\`, \`friendlyName\`, \`pageTitle\`. \`contentHost\` must be a site **identifier UUID**, not a hostname. Prefer the \`page_create\` tool, which sets all of these correctly.
+- For any content type, read the real field variables first: \`GET /api/v1/contenttype/id/{idOrVar}\` → \`entity.fields[].variable\`. Don't guess.
+
 Block Editor (Story Block) fields:
-- A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. dotCMS stores it as-is and converts it to the Block Editor structure when the contentlet is opened in the editor.
+- A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. The server converts it to the Block Editor structure **on save**, so the field immediately reads back as structured content.
 - Example: \`{ "contentType": "Blog", "title": "My Post", "body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>" }\` — where \`body\` is the Story Block field.
+- Rich blocks are expressed in Markdown as fenced code blocks: the info string is a \`dotcms-*\` label, the body is one JSON object. All keys are lowercase; **bold** keys are required (a payload missing them, or with a wrong-typed required key, silently degrades to a plain code block):
+    - \`dotcms-content\` — embedded contentlet: \`{"identifier": "<contentlet-id>", "languageId": 1}\`. Required: **\`identifier\`**; optional \`languageId\` (default 1). The server rehydrates the full embed data from the identifier on read.
+    - \`dotcms-image\` — dotCMS-bound/decorated image. Required: one of **\`identifier\`** or **\`src\`**; optional \`alt\`, \`title\`, \`href\`, \`target\`, \`textWrap\`, \`textAlign\`, \`languageId\`. Plain external images need no fence — \`![alt](url "title")\` works.
+    - \`dotcms-video\` — Required: one of **\`identifier\`** or **\`src\`**; optional \`mimeType\`, \`width\`, \`height\`, \`languageId\`.
+    - \`dotcms-youtube\` — Required: **\`src\`**; optional \`start\` (seconds), \`width\`, \`height\`.
+    - \`dotcms-grid\` — verbatim \`gridBlock\` node JSON: \`{"type":"gridBlock","attrs":{"columns":[n,n]},"content":[<exactly two gridColumn nodes>]}\`.
+    - \`dotcms-node\` — any other node type verbatim: \`{"type": "<nodeType>", ...}\` (fallback for custom blocks).
+- In HTML, the same labels are custom elements. Scalar payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, so \`languageId\` is spelled \`language-id\`, \`mimeType\` is \`mime-type\`, etc.): \`<dotcms-content identifier="<contentlet-id>" language-id="1"></dotcms-content>\`. \`dotcms-grid\` and \`dotcms-node\` take the same JSON object as the element's **text body** instead: \`<dotcms-grid>{"type":"gridBlock",...}</dotcms-grid>\` (HTML-escape \`<\` and \`&\` inside JSON string values). Always write an explicit closing tag — HTML parsing ignores the \`/\` in \`<dotcms-video ... />\` and would swallow the content after it.
+- Block styling (e.g. alignment) is an HTML comment on its own line immediately before the block, in Markdown and HTML alike: \`<!-- dotcms:attrs {"textAlign":"center"} -->\`.
+- A Markdown/HTML write **fully replaces** the stored document. If the stored document has rich blocks your value does not carry, the save still succeeds (200) and the response \`messages\` field lists the replaced blocks — read \`messages\` after every fire and carry rich blocks over as \`dotcms-*\` fences (Markdown) or \`<dotcms-*>\` elements (HTML) to preserve them. Invalid payloads degrade to plain code blocks (or are dropped when there is no body to keep), never errors.
 - Identify Story Block fields from the content type (\`fields[].clazz\` is \`...ImmutableStoryBlockField\`).
 
 Workflow fires and Elasticsearch (indexPolicy):
@@ -74,6 +106,12 @@ Workflow fires and Elasticsearch (indexPolicy):
 
 - Use \`DEFER\` for isolated, one-off fires where nothing depends on immediate index visibility.
 - Reserve \`FORCE\` for debugging and testing only — it is heavy on the cluster.
+
+Velocity \`$dotcontent.pull\` sorting:
+- Pass content field variables in canonical unsuffixed form, e.g. \`Book.title asc\`. The search
+  layer selects the keyword mapping by appending \`_dotraw\` internally.
+- Already-suffixed input such as \`Book.title_dotraw asc\` is accepted for compatibility and is
+  normalized without producing \`_dotraw_dotraw\`.
 
 Workflow action discovery (when you need a workflow action ID):
 - The 'fire' endpoints that take \`{actionId}\` in the path (e.g. PUT /api/v1/workflow/actions/{actionId}/fire and bulk fire) require a workflow action **UUID**, not the system action enum (NEW, EDIT, PUBLISH, …).
@@ -96,35 +134,23 @@ export default async function handler(
     { code }: InferSchema<typeof schema>,
     extra?: ToolExtraArguments
 ) {
-    const timeout = Number(process.env.SANDBOX_TIMEOUT) || 15000;
+    const timeout = Number(process.env.SANDBOX_TIMEOUT) || 45000;
 
-    // The front door absorbs the executor + adapter + context-cache wiring and injects
-    // dotCMS instance context automatically. Auth tokens never enter the sandbox.
-    const dotcms = createRuntime({
-        url: process.env.DOTCMS_URL ?? '',
-        token: process.env.AUTH_TOKEN ?? '',
-        sessionId: extra?.sessionId ?? '__default__',
-        timeout,
-        onContextError: (label, error) => {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error(`[context] failed to load ${label}: ${msg}`);
-        }
-    });
+    // Guarded: `runtimeFromEnv` throws on a misconfigured server, and an unguarded throw
+    // here escapes as an MCP PROTOCOL error rather than a tool result — the model sees a
+    // transport failure with none of the explanation the error itself carries.
+    try {
+        // The front door absorbs the executor + adapter + context-cache wiring and injects
+        // dotCMS instance context automatically. Auth tokens never enter the sandbox.
+        const dotcms = runtimeFromEnv(extra?.sessionId, { timeout });
 
-    const result = await dotcms.run(code); // code === the model's output
+        const result = await dotcms.run(code); // code === the model's output
 
-    if (!result.success) {
-        const errorMsg = result.error
-            ? `${result.error.name}: ${result.error.message}`
-            : 'Unknown error';
-        const logs = result.logs.length > 0 ? `\nLogs:\n${result.logs.join('\n')}` : '';
-        return `Error: ${errorMsg}${logs}`;
+        return formatSandboxResult(result, {
+            truncationHint:
+                'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
+        });
+    } catch (error) {
+        return toolFailure('execute', error);
     }
-
-    const output =
-        typeof result.value === 'string' ? result.value : JSON.stringify(result.value, null, 2);
-
-    const logs = result.logs.length > 0 ? `\n\n--- Logs ---\n${result.logs.join('\n')}` : '';
-
-    return `${output}${logs}`;
 }

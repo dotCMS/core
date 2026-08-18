@@ -1,10 +1,12 @@
 import { signalMethod } from '@ngrx/signals';
 
 import {
+    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     effect,
     inject,
+    Injector,
     output,
     untracked,
     viewChild
@@ -16,18 +18,20 @@ import type {
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
+import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
     ALL_FOLDER,
     DotContentDriveMoveItems,
+    DotContentDriveTreeRightClick,
     DotContentDriveUploadFiles,
+    DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { buildLoadMoreNode } from '../../utils/functions';
-import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolbar/components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
+import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
  *
@@ -38,7 +42,7 @@ import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolba
     selector: 'dot-content-drive-sidebar',
     templateUrl: './dot-content-drive-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent],
+    imports: [DotTreeFolderComponent],
     host: { class: 'w-full h-full grid grid-rows-[min-content_1fr]' },
     styles: `
         :host ::ng-deep .p-tree {
@@ -48,6 +52,7 @@ import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolba
 })
 export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);
+    readonly #injector = inject(Injector);
 
     readonly $loading = this.#store.sidebarLoading;
     readonly $folders = this.#store.folders;
@@ -79,22 +84,74 @@ export class DotContentDriveSidebarComponent {
      * @param {DotFolderTreeNodeItem} selectedNode - The selected node with fromTable flag
      */
     readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem>((selectedNode) => {
-        if (!selectedNode?.data?.fromTable) {
+        const data = selectedNode?.data;
+        if (!data || data.type === LOAD_MORE_NODE_TYPE || !data.fromTable) {
             return;
         }
 
-        const segments = selectedNode.data.path.split('/').filter(Boolean).slice(0, -1);
+        const segments = data.path.split('/').filter(Boolean).slice(0, -1);
 
         this.recursiveExpandOneNode(segments);
 
-        this.treeFolder()
-            ?.elementRef.nativeElement.querySelector(`[data-id="${selectedNode.data.id}"]`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        this.#revealNode(selectedNode, 'smooth');
+    });
+
+    /**
+     * Brings the folder the drive is open on into view once a cold load has rendered.
+     *
+     * The hierarchy load already expands the tree down to that folder, but a level can be hundreds
+     * of folders deep, so on a deep link it was drawn far below the fold with the viewport still at
+     * the top. Selecting a node in the tree must not scroll — it is under the cursor already — so
+     * this hangs off the load finishing rather than off the selection changing.
+     *
+     * Keyed off the load finishing rather than off the selection changing, because at the moment
+     * the store publishes a cold-loaded selection the tree is not on screen yet — the loading
+     * placeholder still is. Both reveals share {@link #revealSelectedNode}.
+     *
+     * @param {boolean} loading - The sidebar's loading state
+     */
+    readonly revealSelectedNodeOnLoad = signalMethod<boolean>((loading) => {
+        if (loading) {
+            return;
+        }
+
+        // Instant, not smooth: this is where the tree should have opened, not a place to animate to.
+        this.#revealNode(this.$selectedNode(), 'instant');
     });
 
     constructor() {
         // Call signalMethod with the signal - it will automatically subscribe to changes
         this.handleSelectedNodeFromTable(this.$selectedNode);
+        this.revealSelectedNodeOnLoad(this.$loading);
+    }
+
+    /**
+     * Scrolls a node's row into the middle of the tree's viewport, once the tree has actually
+     * rendered it.
+     *
+     * The wait matters for both callers. A cold load publishes its selection while the loading
+     * placeholder is still mounted, and the table's reveal runs straight after
+     * `recursiveExpandOneNode`, which only marks ancestors expanded — a branch whose children are
+     * still being fetched has no row to scroll to yet either.
+     *
+     * @param {DotFolderTreeNodeItem | undefined} node - The node to bring into view
+     * @param {ScrollBehavior} behavior - How to travel there
+     */
+    #revealNode(node: DotFolderTreeNodeItem | undefined, behavior: ScrollBehavior): void {
+        const data = node?.data;
+
+        if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+            return;
+        }
+
+        afterNextRender(
+            () => {
+                this.treeFolder()
+                    ?.elementRef.nativeElement.querySelector(`[data-id="${data.id}"]`)
+                    ?.scrollIntoView({ behavior, block: 'center' });
+            },
+            { injector: this.#injector }
+        );
     }
     /**
      * Handles node selection events
@@ -114,9 +171,15 @@ export class DotContentDriveSidebarComponent {
      */
     protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const { node } = event;
-        const { hostname, path } = node.data;
+        const data = node.data;
 
-        if (node.children?.length > 0 || node.leaf) {
+        if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+            return;
+        }
+
+        const { hostname, path } = data;
+
+        if ((node.children?.length ?? 0) > 0 || node.leaf) {
             node.expanded = true;
             return;
         }
@@ -127,7 +190,7 @@ export class DotContentDriveSidebarComponent {
             node.expanded = true;
             node.leaf = folders.length === 0;
             // First page; append a "Load more" node if the level has more children than this page.
-            node.children = this.#appendLoadMore(folders, totalEntries, path, hostname, 2);
+            node.children = appendLoadMoreNodes(folders, totalEntries, path, hostname, 2);
             this.#store.updateFolders([...this.$folders()]);
         });
     }
@@ -136,64 +199,72 @@ export class DotContentDriveSidebarComponent {
      * Loads the next page of children for a folder level when its "Load more" node is clicked,
      * appending them and refreshing (or removing) the "Load more" node.
      *
+     * Root-level sentinels are siblings of root folders (not children of ALL_FOLDER), so they
+     * update the top-level folders array. Nested sentinels update `parent.children`.
+     *
      * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
      */
     protected onLoadMore(node: DotFolderTreeNodeItem): void {
-        const { path, hostname, nextPage } = node.data;
+        const { path, hostname, nextPage } = node.data as TreeNodeLoadMoreData;
+        const parentPath = path ?? '/';
 
         node.loading = true;
         this.#store.updateFolders([...this.$folders()]);
 
         this.#store
-            .loadChildFolders(path, hostname, nextPage)
+            .loadChildFolders(parentPath, hostname, nextPage)
             .subscribe(({ folders, totalEntries }) => {
-                const parent = this.#findNodeByPath(path, this.$folders());
+                const isRootLevel = parentPath === '/' || parentPath === '';
+
+                if (isRootLevel) {
+                    const current = this.$folders();
+                    const allFolder =
+                        current.find((folder) => folder.key === ALL_FOLDER.key) ?? ALL_FOLDER;
+                    const loaded = current.filter(
+                        (folder) =>
+                            folder.key !== ALL_FOLDER.key &&
+                            folder.data?.type !== LOAD_MORE_NODE_TYPE
+                    );
+                    // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
+                    // the top of a level out of sort order, and paging far enough returns it again.
+                    const combined = mergeFolderNodePage(loaded, folders);
+
+                    this.#store.updateFolders([
+                        allFolder,
+                        ...appendLoadMoreNodes(
+                            combined,
+                            totalEntries,
+                            parentPath || '/',
+                            hostname ?? '',
+                            (nextPage ?? 1) + 1
+                        )
+                    ]);
+
+                    return;
+                }
+
+                const parent = this.#findNodeByPath(parentPath, this.$folders());
                 if (!parent) {
                     return;
                 }
 
                 // Keep the already-loaded folders, drop the old "Load more", append the new page.
                 const loaded = (parent.children ?? []).filter(
-                    (child) => child.data.type !== LOAD_MORE_NODE_TYPE
+                    (child) => child.data?.type !== LOAD_MORE_NODE_TYPE
                 );
-                const combined = [...loaded, ...folders];
+                // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
+                // the top of a level out of sort order, and paging far enough returns it again.
+                const combined = mergeFolderNodePage(loaded, folders);
 
-                parent.children = this.#appendLoadMore(
+                parent.children = appendLoadMoreNodes(
                     combined,
                     totalEntries,
-                    path,
-                    hostname,
+                    parentPath,
+                    hostname ?? '',
                     (nextPage ?? 1) + 1
                 );
                 this.#store.updateFolders([...this.$folders()]);
             });
-    }
-
-    /**
-     * Appends a "Load more" node to a level's children when more folders remain to be loaded.
-     *
-     * @param {DotFolderTreeNodeItem[]} children - The child folder nodes loaded so far
-     * @param {number} totalEntries - Total number of folders in the level
-     * @param {string} path - Full path of the parent folder
-     * @param {string} hostname - Hostname of the site
-     * @param {number} nextPage - The next 1-based page to request
-     * @returns {DotFolderTreeNodeItem[]} children, plus a "Load more" node when more remain
-     */
-    #appendLoadMore(
-        children: DotFolderTreeNodeItem[],
-        totalEntries: number,
-        path: string,
-        hostname: string,
-        nextPage: number
-    ): DotFolderTreeNodeItem[] {
-        if (children.length >= totalEntries) {
-            return [...children];
-        }
-
-        return [
-            ...children,
-            buildLoadMoreNode(path, hostname, nextPage, totalEntries - children.length)
-        ];
     }
 
     /**
@@ -208,7 +279,7 @@ export class DotContentDriveSidebarComponent {
         nodes: DotFolderTreeNodeItem[]
     ): DotFolderTreeNodeItem | undefined {
         for (const node of nodes) {
-            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data?.path === path) {
+            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data.path === path) {
                 return node;
             }
 
@@ -219,6 +290,47 @@ export class DotContentDriveSidebarComponent {
         }
 
         return undefined;
+    }
+
+    /**
+     * Opens the shared folder context menu for a right-clicked tree node, giving the sidebar the
+     * same folder actions the table offers.
+     *
+     * Every folder node carries its permissions, whichever way it reached the tree: expand,
+     * load-more and the deep-link hierarchy load all request them. So this stays synchronous, and a
+     * right-click opens the menu immediately.
+     *
+     * @param {DotContentDriveTreeRightClick} rightClick - The originating event and clicked folder
+     */
+    protected onNodeRightClick({ event, data }: DotContentDriveTreeRightClick): void {
+        this.#openContextMenu(event, data);
+    }
+
+    /**
+     * Publishes the clicked folder to the store in the shape the shared context menu and the
+     * "Edit folder" dialog consume.
+     *
+     * @param {MouseEvent} event - The originating right-click, used to anchor the menu
+     * @param {DotFolderTreeNodeContentData} data - The clicked node's folder data
+     */
+    #openContextMenu(event: MouseEvent, data: DotFolderTreeNodeContentData): void {
+        this.#store.patchContextMenu({
+            triggeredEvent: event,
+            contentlet: {
+                type: 'folder',
+                identifier: data.id,
+                // The tree labels nodes by full path; `name` comes from the folder-search view.
+                name: data.name ?? '',
+                path: data.path,
+                title: data.title ?? '',
+                sortOrder: data.sortOrder ?? 0,
+                showOnMenu: data.showOnMenu ?? false,
+                filesMasks: data.filesMasks ?? '',
+                defaultFileType: data.defaultFileType ?? '',
+                defaultBaseType: data.defaultBaseType,
+                permissions: data.permissions ?? []
+            } satisfies DotContentDriveActionableFolder
+        });
     }
 
     /**
@@ -251,7 +363,11 @@ export class DotContentDriveSidebarComponent {
             return;
         }
 
-        const node = nodes.find((node) => node.data.path.includes(segments[0]));
+        const node = nodes.find(
+            (candidate) =>
+                candidate.data.type !== LOAD_MORE_NODE_TYPE &&
+                candidate.data.path.includes(segments[0])
+        );
 
         if (!node) {
             return;

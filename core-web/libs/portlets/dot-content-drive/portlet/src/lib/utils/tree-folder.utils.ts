@@ -41,7 +41,17 @@ export const createTreeNode = (
             hostname: folder.hostName,
             path: folder.path,
             type: 'folder',
-            defaultBaseType: folder.defaultBaseType
+            defaultBaseType: folder.defaultBaseType,
+            // Carried so a right-click can gate the shared context menu and pre-populate the
+            // "Edit folder" dialog without refetching. Every folder-search call behind this one
+            // asks for `permissions`, so a node arrives ready to gate however it reached the tree.
+            name: folder.name,
+            title: folder.title,
+            sortOrder: folder.sortOrder,
+            filesMasks: folder.filesMasks,
+            defaultFileType: folder.defaultFileType,
+            showOnMenu: folder.showOnMenu,
+            permissions: folder.permissions
         },
         // Hide the expand toggle for folders the search endpoint reports as having no visible
         // children. When `hasChildren` is undefined (legacy source) the folder stays expandable.
@@ -82,8 +92,10 @@ export const buildTreeFolderNodes = ({
     /**
      * Checks if a folder node belongs to the active target path
      */
-    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) =>
-        expectedPaths[levelIndex] === node.data.path;
+    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) => {
+        const data = node.data;
+        return !!data && data.type !== 'load-more' && expectedPaths[levelIndex] === data.path;
+    };
 
     /**
      * Checks if a folder node is a leaf

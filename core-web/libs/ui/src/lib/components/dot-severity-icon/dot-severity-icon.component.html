@@ -1,14 +1,14 @@
 @switch ($severity()) {
     @case ('success') {
-        <CheckIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+        <i class="pi pi-check" aria-hidden="true" data-pc-section="icon"></i>
     }
     @case ('info') {
-        <InfoCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+        <i class="pi pi-info-circle" aria-hidden="true" data-pc-section="icon"></i>
     }
     @case ('error') {
-        <TimesCircleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+        <i class="pi pi-times-circle" aria-hidden="true" data-pc-section="icon"></i>
     }
     @case ('warn') {
-        <ExclamationTriangleIcon [attr.aria-hidden]="true" [attr.data-pc-section]="'icon'" />
+        <i class="pi pi-exclamation-triangle" aria-hidden="true" data-pc-section="icon"></i>
     }
 }

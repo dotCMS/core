@@ -9,6 +9,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 /* eslint-disable @nx/enforce-module-boundaries */
 
 import {
+    DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -55,7 +56,13 @@ describe('DotPublishingQueueShellComponent', () => {
                 getBundleAssets: jest.fn().mockReturnValue(of([])),
                 getPublishingJobDetails: jest.fn().mockReturnValue(of({})),
                 probeBundleDownload: jest.fn().mockReturnValue(of(true)),
-                probeBundleManifest: jest.fn().mockReturnValue(of(true))
+                probeBundleManifest: jest.fn().mockReturnValue(of(true)),
+                getUnsendBundles: jest
+                    .fn()
+                    .mockReturnValue(of({ identifier: 'id', label: 'name', items: [], numRows: 0 }))
+            }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'user-1' }))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),

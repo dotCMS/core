@@ -53,10 +53,6 @@ describe('DotEditContentSidebarSectionComponent', () => {
             expect(title).toHaveText('Test Section');
         });
 
-        it('should render the chevron icon', () => {
-            expect(spectator.query(byTestId('dot-section-chevron'))).toBeTruthy();
-        });
-
         it('should render action section', fakeAsync(() => {
             tick();
 
@@ -157,7 +153,10 @@ describe('DotEditContentSidebarSectionComponent', () => {
             spectator.detectChanges();
 
             const header = spectator.query(byTestId('dot-section-toggle')) as HTMLElement;
-            header.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            // PrimeNG's accordion header switches on `event.code`, not `event.key`.
+            header.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true })
+            );
             spectator.detectChanges();
 
             expect(spectator.component.$collapsed()).toBe(true);
@@ -180,20 +179,20 @@ describe('DotEditContentSidebarSectionComponent', () => {
             expect(spectator.component.$collapsed()).toBe(true);
         });
 
-        it('should rotate the chevron up when expanded (collapsed has it pointing down)', () => {
+        it('should mark the header aria-expanded when expanded', () => {
             localStorageService.getItem.mockReturnValue(false);
             spectator.detectChanges();
 
-            const chevron = spectator.query(byTestId('dot-section-chevron'));
-            expect(chevron).toHaveClass('rotate-180');
+            const header = spectator.query(byTestId('dot-section-toggle'));
+            expect(header).toHaveAttribute('aria-expanded', 'true');
         });
 
-        it('should not rotate the chevron when collapsed', () => {
+        it('should mark the header aria-expanded false when collapsed', () => {
             localStorageService.getItem.mockReturnValue(true);
             spectator.detectChanges();
 
-            const chevron = spectator.query(byTestId('dot-section-chevron'));
-            expect(chevron).not.toHaveClass('rotate-180');
+            const header = spectator.query(byTestId('dot-section-toggle'));
+            expect(header).toHaveAttribute('aria-expanded', 'false');
         });
 
         it('should not collapse when clicking the action slot', () => {

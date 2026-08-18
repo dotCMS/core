@@ -6,6 +6,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     ElementRef,
     inject,
@@ -13,17 +14,20 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
 
 import {
+    AddToBundleService,
+    DotCurrentUserService,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -36,21 +40,25 @@ import {
     DotCMSContentTypeField,
     DotCMSDataTypes,
     DotCMSFieldTypes,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
     DotFolderListViewComponent,
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotContentDriveUploadFiles,
     DotFolderListViewColumn,
     DotFolderTreeNodeData,
-    DotContentDriveMoveItems
+    DotFolderTreeNodeContentData,
+    DotContentDriveMoveItems,
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
+import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
@@ -59,12 +67,15 @@ import { DotContentDriveSidebarComponent } from '../components/dot-content-drive
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_STYLE,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    NEW_CONTENT_MARKER
 } from '../shared/constants';
 import {
     DotContentDriveContentTypeSelectorPayload,
@@ -77,6 +88,7 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { excludeFolders } from '../utils/action-center';
 import { encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
@@ -97,9 +109,25 @@ import { encodeFilters, isFolder } from '../utils/functions';
         MessageModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
-        DotSeverityIconComponent
+        DotSeverityIconComponent,
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule,
+        DotContentDriveActionCenterComponent
     ],
-    providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
+    providers: [
+        DotContentDriveStore,
+        // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
+        // the side-panel feature flag; shared with the child components in this shell's subtree.
+        DotContentDriveNavigationService,
+        DotWorkflowsActionsService,
+        MessageService,
+        DotFolderService,
+        // Injected by the store's `withActionExecution` to fire Add to Bundle. Neither is
+        // `providedIn: 'root'`, and the bundle service resolves the current user to reach their
+        // bundles. `DotAddToBundleComponent` (single item, from the context menu) provides its own pair.
+        AddToBundleService,
+        DotCurrentUserService
+    ],
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -110,18 +138,64 @@ export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
+    readonly #route = inject(ActivatedRoute);
 
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+    readonly #destroyRef = inject(DestroyRef);
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #sidePanelNav = inject(DotSidePanelNavController);
+
+    /** Edit Content side panel request, driven by the navigation service; read by the template. */
+    protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
+
+    /**
+     * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
+     * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
+     * phantom entry whose Back puts the just-removed param back with no panel rendered.
+     */
+    #editPanelUrlWasSet = false;
+
+    /**
+     * The rendered side panel, so browser Back can route its close through the panel's guard.
+     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
+     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
+     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
+     * erased at compile time — it leaves no runtime reference).
+     */
+    protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
 
     readonly $items = this.#store.items;
     readonly $status = this.#store.status;
-    readonly $treeExpanded = this.#store.isTreeExpanded;
+
+    /**
+     * The tree's VISUAL expanded state (drives width/animation). Combines the user's real
+     * preference with any transient collapse the side panel is forcing — see
+     * `isTreeVisuallyExpanded` on the store for why these are kept separate.
+     */
+    readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
+     * narrow viewport, and clears the override on close. Purely derived from the panel's open
+     * state each time it runs — no bookkeeping needed (unlike a real preference, "should the panel
+     * currently be forcing a collapse" has no history to restore: it is always correctly
+     * recomputed from the CURRENT panel/viewport state, including right after a refresh with the
+     * panel already open from a deep link). `untracked` guards the store read/write so the effect
+     * only re-runs when the panel open/close state changes.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #forceCollapseTreeWithPanelEffect = effect(() => {
+        const panelOpen = !!this.$editPanelRequest();
+
+        untracked(() => {
+            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
+        });
+    });
 
     readonly $contextMenuData = this.#store.contextMenu;
 
@@ -142,7 +216,7 @@ export class DotContentDriveShellComponent {
         const dialog = this.$activeDialog();
 
         return dialog?.type === DIALOG_TYPE.FOLDER
-            ? (dialog.payload as DotContentDriveFolder)
+            ? (dialog.payload as DotContentDriveActionableFolder)
             : undefined;
     });
 
@@ -183,10 +257,63 @@ export class DotContentDriveShellComponent {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
                 return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
+            // Action Center sizes itself through `$dialogStyle` / `$dialogContentStyle` instead.
+            case DIALOG_TYPE.ACTION_CENTER:
+                return '';
             default:
                 return 'w-175 pt-0 p-4';
         }
     });
+
+    /**
+     * @see ACTION_CENTER_DIALOG_STYLE
+     */
+    readonly $dialogStyle = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? ACTION_CENTER_DIALOG_STYLE
+            : undefined
+    );
+
+    /**
+     * @see ACTION_CENTER_DIALOG_CONTENT_STYLE
+     */
+    readonly $dialogContentStyle = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
+            ? ACTION_CENTER_DIALOG_CONTENT_STYLE
+            : undefined
+    );
+
+    /**
+     * Drops the header's bottom rule and locks horizontal padding to `px-6` so the title lines up
+     * with the Action Center body/footer (PrimeNG's dialog header padding token may not match).
+     */
+    readonly $dialogHeaderClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? 'border-b-0 px-6! pb-2' : ''
+    );
+
+    /**
+     * Contentlets in the current selection, for the Action Center's header sub-line. Folders are
+     * excluded because every bulk endpoint ignores them.
+     */
+    readonly $actionCenterSelectionCount = computed(
+        () => excludeFolders(this.#store.selectedItems()).length
+    );
+
+    /**
+     * Action Center title. Swaps to the drilled-into screen's title (the selected workflow action)
+     * when its body publishes one, so there is one header rather than the dialog's and the body's.
+     */
+    readonly $actionCenterHeader = computed(
+        () => this.#store.dialogDrillDown()?.header ?? this.$activeDialog()?.header
+    );
+
+    /**
+     * Item count for the Action Center's header sub-line: the items the drilled-into action will run
+     * on, falling back to the whole contentlet selection at the top level.
+     */
+    readonly $actionCenterCount = computed(
+        () => this.#store.dialogDrillDown()?.itemCount ?? this.$actionCenterSelectionCount()
+    );
 
     /**
      * Syncs the dialog open/close state from the store. Opening sets the body and visibility
@@ -205,6 +332,50 @@ export class DotContentDriveShellComponent {
 
     constructor() {
         this.#syncDialog(this.#store.dialog);
+
+        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
+        // once from the snapshot (the portlet is not re-created on in-session query-param changes).
+        // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
+        // are resolved.
+        const editContent = this.#route.snapshot.queryParams['editContent'];
+        if (editContent && editContent !== NEW_CONTENT_MARKER) {
+            this.#navigationService.openEditByIdentifier(editContent);
+        }
+
+        // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
+        // (no router navigation), so nothing else reacts to popstate. When Back removes or changes
+        // that param while a panel is open (edit OR new), route the close through the panel's
+        // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
+        // unsaved edits silently.
+        const locationSubscription = this.#location.subscribe((event) => {
+            const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+            const editContentParam = params.get('editContent');
+            const request = this.#navigationService.$editPanelRequest();
+            if (!request) {
+                return;
+            }
+
+            // The param the URL should carry for the currently-open panel: the identifier for edit,
+            // the marker for new. If Back changed it away from that, the panel should close.
+            const expected =
+                request.mode === 'edit' ? (request.identifier ?? null) : NEW_CONTENT_MARKER;
+
+            if (expected !== editContentParam) {
+                // Restore the param so the URL matches the still-open panel while the guard decides.
+                // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
+                // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
+                // → the panel stays open and the URL is already back in sync.
+                const restoredUrl = this.#router
+                    .createUrlTree([], {
+                        queryParams: { editContent: expected },
+                        queryParamsHandling: 'merge'
+                    })
+                    .toString();
+                this.#location.replaceState(restoredUrl);
+                this.$sidePanel()?.requestClose();
+            }
+        });
+        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
     }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
@@ -285,12 +456,86 @@ export class DotContentDriveShellComponent {
             : limit * (currentPage - 1) + items.length;
     });
 
+    /**
+     * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
+     * is still open.
+     *
+     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
+     * user may close it mid-flight and the result still has to be reported. The shell owns
+     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
+     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
+     *
+     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
+     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
+     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
+     * whole post-run refresh.
+     *
+     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
+     * unqualified success would be the one thing the user cannot recover from — the grid has already
+     * reloaded and the selection is gone.
+     */
+    readonly actionExecutionResultEffect = effect(() => {
+        const result = this.#store.actionExecutionResult();
+
+        if (!result) {
+            return;
+        }
+
+        const { actionName, successCount, skippedCount, failCount } = result;
+
+        // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
+        // can skip items whose scheme does not own the action *and* be refused on items that are
+        // locked. The ladder this replaces reported whichever it checked first, so a mixed result
+        // showed the failure copy alone and blamed permissions or locks for the entire shortfall —
+        // sending the user off to unlock content that was never the problem.
+        //
+        // So anything short of a clean run reports all three numbers, each next to its own cause.
+        // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
+        // cause and its number is what keeps the message honest.
+        const isPartial = failCount > 0 || skippedCount > 0;
+
+        const detail = isPartial
+            ? this.#dotMessageService.get(
+                  'content-drive.action-center.toast.executed-partial',
+                  actionName,
+                  String(successCount),
+                  String(failCount),
+                  String(skippedCount)
+              )
+            : this.#dotMessageService.get(
+                  'content-drive.action-center.toast.executed-detail',
+                  actionName,
+                  String(successCount)
+              );
+
+        this.#messageService.add({
+            // A skip is a shortfall too — those items did not get the action — so it warns rather
+            // than reporting green, which is what it used to do.
+            severity: isPartial ? 'warn' : 'success',
+            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
+            detail,
+            life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+        });
+
+        untracked(() => {
+            // Contentlets have moved step, so the grid is stale; `loadItems` also drops the selection
+            // the run consumed.
+            this.#store.loadItems();
+            // A no-op when the user already closed the dialog, which is the common path now that
+            // firing hands off to the toolbar.
+            this.#store.closeDialog();
+            this.#store.clearActionExecutionResult();
+        });
+    });
+
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
         const path = this.#store.path();
         const filters = this.#store.filters();
 
-        const queryParams: Record<string, string> = {};
+        // `null` removes the param when queryParamsHandling is 'merge'
+        const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
 
@@ -306,11 +551,34 @@ export class DotContentDriveShellComponent {
             queryParams['filters'] = null;
         }
 
+        // Reflect the open panel in the `editContent` param: the shareable identifier for edit, or
+        // a non-shareable marker for new (so browser Back has an entry to pop). Cleared when the
+        // panel is closed. Written via Location.go/replaceState so it triggers no navigation/reload.
+        const editRequest = this.$editPanelRequest();
+        const editContent = editRequest
+            ? editRequest.mode === 'edit'
+                ? (editRequest.identifier ?? null)
+                : NEW_CONTENT_MARKER
+            : null;
+        queryParams['editContent'] = editContent;
+
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
             queryParamsHandling: 'merge'
         });
-        this.#location.go(urlTree.toString());
+
+        // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
+        // moved the URL). Push when opening the panel so Back can pop it (AC8); replace when closing
+        // it, so no phantom history entry is left whose Back would resurrect the removed param.
+        const newUrl = urlTree.toString();
+        if (newUrl !== this.#location.path(true)) {
+            if (editContent === null && this.#editPanelUrlWasSet) {
+                this.#location.replaceState(newUrl);
+            } else {
+                this.#location.go(newUrl);
+            }
+        }
+        this.#editPanelUrlWasSet = editContent !== null;
     });
 
     /**
@@ -328,15 +596,21 @@ export class DotContentDriveShellComponent {
         // syncing from it would clear the restored path back to root and the deep-linked folder
         // would never open. Once `loadFolders` resolves, it sets `selectedNode` to the matching
         // node (and flips `sidebarLoading` off), so this effect re-runs and stays in sync.
-        if (sidebarLoading || !selectedNode) {
+        // TreeNode.data is optional in PrimeNG's type, so guard it before reading path.
+        if (sidebarLoading || !selectedNode?.data) {
             return;
         }
 
         // Read current path without tracking it to avoid circular dependencies
         const currentPath = untracked(() => this.#store.path()) ?? '';
+        const data = selectedNode.data;
 
-        if (selectedNode.data.path != currentPath) {
-            this.#store.setPath(selectedNode.data.path);
+        if (!data || data.type === 'load-more') {
+            return;
+        }
+
+        if (data.path != currentPath) {
+            this.#store.setPath(data.path);
         }
     });
 
@@ -427,6 +701,16 @@ export class DotContentDriveShellComponent {
         this.$activeDialog.set(undefined);
     }
 
+    /** Closes the Edit Content side panel. */
+    protected onEditPanelClosed() {
+        this.#navigationService.closeEditPanel();
+    }
+
+    /** A save in the side panel can create or change an item, so refresh the list. */
+    protected onEditPanelSaved() {
+        this.#store.reloadContentDrive();
+    }
+
     /**
      * Upload-button flow. When the current folder pins a base type (`defaultBaseType`), skip the
      * menu and open the OS file picker straight away; otherwise open the type menu anchored to the
@@ -434,7 +718,11 @@ export class DotContentDriveShellComponent {
      */
     protected onUpload(event: MouseEvent) {
         const targetFolder = this.#store.selectedNode()?.data;
-        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+        const contentData =
+            targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
+                ? (targetFolder as DotFolderTreeNodeContentData)
+                : undefined;
+        const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
             this.$activeSelection.set({ targetFolder, baseType });
@@ -452,7 +740,11 @@ export class DotContentDriveShellComponent {
      * and carry the files into the payload to upload right after the user picks.
      */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
-        const baseType = this.#resolvePreferredBaseType(targetFolder?.defaultBaseType);
+        const contentData =
+            targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
+                ? (targetFolder as DotFolderTreeNodeContentData)
+                : undefined;
+        const baseType = this.#resolvePreferredBaseType(contentData?.defaultBaseType);
 
         if (baseType) {
             this.resolveFilesUpload({ files, targetFolder, baseType });
@@ -790,7 +1082,8 @@ export class DotContentDriveShellComponent {
                 fails.forEach(({ errorMessage, inode }) => {
                     const item = dragItems.contentlets.find((item) => item.inode === inode);
 
-                    const title = item?.title ?? inode;
+                    // DotBulkFailItem.inode is optional; fall back so message args stay strings
+                    const title = item?.title ?? inode ?? '';
 
                     this.#messageService.add({
                         severity: 'error',
@@ -831,7 +1124,7 @@ export class DotContentDriveShellComponent {
 
         const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
 
-        const folderName = cleanPath?.length > 0 ? cleanPath : pathToMove;
+        const folderName = cleanPath && cleanPath.length > 0 ? cleanPath : pathToMove;
 
         return {
             pathToMove: pathToMove,

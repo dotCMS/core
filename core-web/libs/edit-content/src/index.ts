@@ -5,6 +5,8 @@ export * from './lib/fields/dot-edit-content-file-field/components/dot-file-fiel
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
 export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
+export * from './lib/components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
+export { DotSidePanelNavController } from './lib/services/dot-side-panel-nav.service';
 export * from './lib/utils/functions.util';
 export * from './lib/models/dot-edit-content-field.constant';
 
@@ -20,3 +22,8 @@ export type {
     InitLoadParams,
     SelectionMode
 } from './lib/fields/dot-edit-content-relationship-field/models/relationship.models';
+
+// Site/folder picker — reused by Content Drive's Action Center to collect a bulk move target.
+// Exported as the inner control rather than the `dot-edit-content-host-folder-field` wrapper: the
+// wrapper is card chrome bound to a `DotCMSContentTypeField`, which a bulk move has no equivalent of.
+export { DotHostFolderFieldComponent } from './lib/fields/dot-edit-content-host-folder-field/components/host-folder-field/host-folder-field.component';

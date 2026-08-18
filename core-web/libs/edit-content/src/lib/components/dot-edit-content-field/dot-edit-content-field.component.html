@@ -5,8 +5,11 @@
 
 @switch (field.fieldType) {
     @case (fieldTypes.LINE_DIVIDER) {
-        <h3 class="m-0 text-gray-700">{{ field.name }}</h3>
-        <p-divider />
+        @defer (on immediate) {
+            <dot-edit-content-line-divider-field
+                [field]="field"
+                [attr.data-testId]="'field-' + field.variable" />
+        }
     }
     @case (fieldTypes.SELECT) {
         @defer (on immediate) {

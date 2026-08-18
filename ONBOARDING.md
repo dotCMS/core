@@ -21,7 +21,7 @@ canonical reference for build commands, project structure, and coding patterns.
 
 ```bash
 sdk env install   # Java 25 via SDKMAN, pinned in .sdkmanrc
-nvm use           # Node 22.15+ via nvm, pinned in .nvmrc
+nvm use           # Node 22.22.3+ via nvm, pinned in .nvmrc
 ```
 
 - **Java:** core modules compile to and run on Java 25. A wrong JDK gives cryptic
@@ -308,7 +308,8 @@ Ask Claude *"what skills can help with X?"* if you're unsure.
 - Backend (Java/Maven): [`docs/backend/`](docs/backend/) — start with
   [`JAVA_STANDARDS.md`](docs/backend/JAVA_STANDARDS.md) and [`MAVEN_BUILD_SYSTEM.md`](docs/backend/MAVEN_BUILD_SYSTEM.md)
 - Frontend (Angular/TS): [`core-web/CLAUDE.md`](core-web/CLAUDE.md) and
-  [`docs/frontend/`](docs/frontend/) — start with [`ANGULAR_STANDARDS.md`](docs/frontend/ANGULAR_STANDARDS.md)
+  [`docs/frontend/README.md`](docs/frontend/README.md) — the index of all frontend docs; start with
+  [`ANGULAR_STANDARDS.md`](docs/frontend/ANGULAR_STANDARDS.md), the single source of truth
 - Testing: [`docs/testing/`](docs/testing/)
 - The `justfile` at the repo root — the source of truth for `just` commands.
 

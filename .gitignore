@@ -150,6 +150,9 @@ dist-docs/
 
 #env
 /core-web/**/.env
+.env
+.env.*
+!.env.example
 
 /**/**/*.css.map
 
@@ -217,3 +220,14 @@ __pycache__/
 dist/
 *.egg
 .venv/
+
+# Local scratch space
+/core-web/scratch/
+
+# Spec-Kit working artifacts — process-only, kept local (see .specify/CUSTOMIZATIONS.md).
+# spec.md (and data-model.md / contracts/ when they carry verified contracts) stay tracked.
+specs/*/plan.md
+specs/*/research.md
+specs/*/tasks.md
+specs/*/quickstart.md
+specs/*/checklists/

@@ -601,3 +601,148 @@ def test_promote_tracks_unknown_returns_2(mock_list_tags, mock_point_tag):
     rc = cmd_promote(args)
     assert rc == 2
     mock_point_tag.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Narrow (filtered) registry reads — see cli._promote_state
+# ---------------------------------------------------------------------------
+
+def _fake_registry(tags):
+    """Stand-in for registry.list_tags that honours Hub's `name=` SUBSTRING filter.
+
+    An empty filter returns everything, which is exactly what the real full listing
+    does — so `"" in calls` is the assertion for "fell back to the 79-page scan".
+    """
+    calls: list[str] = []
+
+    def fake(repo, *, name_filter=""):
+        calls.append(name_filter)
+        return [t for t in tags if name_filter in t.name]
+
+    return fake, calls
+
+
+def _registry_tags(standard_digest="sha256:r0705", trailing_digest="sha256:r0602"):
+    """Four GA releases plus two floating track tags pointing into that history."""
+    return [
+        Tag("26.06.02-01", "sha256:r0602"),
+        Tag("26.07.05-01", "sha256:r0705"),
+        Tag("26.07.28-01", "sha256:r0728"),
+        Tag("26.08.10-01", "sha256:r0810"),
+        Tag("standard", standard_digest),
+        Tag("trailing", trailing_digest),
+    ]
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_uses_filtered_reads_not_the_full_listing(mock_list_tags, mock_point_tag):
+    """The daily promote must plan from a handful of filtered calls, never the full scan.
+
+    This is the whole point of the narrow path: the full listing is 79 calls against a
+    180-req/60s per-IP Hub budget.
+    """
+    fake, calls = _fake_registry(_registry_tags())
+    mock_list_tags.side_effect = fake
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--tracks", "standard,trailing",
+         "--standard-days", "14", "--trailing-days", "28"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 8, 11)
+        rc = cmd_promote(args)
+
+    assert rc == 0
+    assert "" not in calls, f"fell back to the unfiltered full listing: {calls}"
+    assert len(calls) <= 6, f"expected a handful of filtered calls, got {calls}"
+    # Newest release ≥14d is 26.07.28-01; newest ≥28d is 26.07.05-01.
+    moved = {c.args[1]: c.args[2] for c in mock_point_tag.call_args_list}
+    assert moved == {"standard": "sha256:r0728", "trailing": "sha256:r0705"}
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_walks_back_months_for_an_eligible_release(mock_list_tags, mock_point_tag):
+    """The threshold cutoff can sit in an earlier month than today's, so walk 1 must
+    keep fetching months until a candidate actually clears the bar."""
+    fake, calls = _fake_registry(_registry_tags())
+    mock_list_tags.side_effect = fake
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--tracks", "trailing",
+         "--trailing-days", "28"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 8, 11)
+        cmd_promote(args)
+
+    # 26.08 holds nothing ≥28 days old, so it must have walked back to 26.07.
+    assert "26.08" in calls and "26.07" in calls
+    assert "" not in calls
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_narrow_reads_still_refuse_to_move_a_track_backwards(
+    mock_list_tags, mock_point_tag
+):
+    """Forward-only must survive the narrowed pool.
+
+    `standard` sits on 26.08.10-01, newer than anything 14 days old. If the filtered
+    reads failed to name the current version, `plan` would skip its forward-only guard
+    and demote the track to 26.07.28-01. Nothing may move here.
+    """
+    fake, calls = _fake_registry(_registry_tags(standard_digest="sha256:r0810"))
+    mock_list_tags.side_effect = fake
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--tracks", "standard",
+         "--standard-days", "14"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 8, 11)
+        rc = cmd_promote(args)
+
+    assert rc == 0
+    assert "" not in calls
+    mock_point_tag.assert_not_called()
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_falls_back_to_full_listing_when_the_window_is_empty(
+    mock_list_tags, mock_point_tag
+):
+    """Nothing promotable in the walked months must fall back to the full listing.
+
+    "No moves" is indistinguishable from a broken read path, and a quiet stall is how
+    tracks would silently stop advancing — so the expensive answer is worth having here.
+    """
+    fake, calls = _fake_registry(_registry_tags())
+    mock_list_tags.side_effect = fake
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--tracks", "standard",
+         "--standard-days", "14"]
+    )
+    # Far enough ahead that the 6-month walk window holds no release at all.
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2027, 6, 11)
+        rc = cmd_promote(args)
+
+    assert rc == 0
+    assert "" in calls, f"expected the terminal full-listing fallback, got {calls}"
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_scoped_to_latest_never_reads_other_tracks(mock_list_tags, mock_point_tag):
+    """--tracks latest (the release pipeline's path) must not spend calls on the
+    tracks it was told to leave alone."""
+    fake, calls = _fake_registry(_registry_tags())
+    mock_list_tags.side_effect = fake
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--tracks", "latest", "--latest-days", "0"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 8, 11)
+        cmd_promote(args)
+
+    assert "standard" not in calls and "trailing" not in calls, calls

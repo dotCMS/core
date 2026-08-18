@@ -1,3 +1,5 @@
+import { PermissionType } from './dot-content-drive.model';
+
 /**
  * Represents a folder in the DotCMS system
  *
@@ -23,6 +25,25 @@ export interface DotFolder {
      * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
      */
     defaultBaseType?: string | null;
+    /**
+     * The folder's own name (last path segment). Populated by the folder-search adapter; other
+     * producers leave it unset and callers fall back to deriving it from `path`.
+     */
+    name?: string;
+    /**
+     * Fields below back the shared folder actions (context menu gating + "Edit folder" dialog) and
+     * are populated only by {@link FolderSearchView} sources.
+     *
+     * `permissions` stays `undefined` when the search did not request them — distinct from `[]`
+     * ("resolved: the user holds none"), so a consumer can resolve them on demand instead of
+     * silently rendering an empty menu.
+     */
+    title?: string;
+    sortOrder?: number;
+    filesMasks?: string;
+    defaultFileType?: string;
+    showOnMenu?: boolean;
+    permissions?: PermissionType[];
 }
 
 /**
@@ -74,9 +95,24 @@ export interface FolderSearchView {
     hasChildren: boolean;
     /**
      * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
-     * Pending backend support on `/api/v1/folder/search` — see #36649.
      */
     defaultBaseType?: string | null;
+    title: string;
+    sortOrder: number;
+    /** Comma-separated file-name masks allowed in this folder, e.g. `*.jpg,*.png`. */
+    filesMasks: string;
+    /** Velocity variable name of the Content Type used by default for new files in this folder. */
+    defaultFileType: string;
+    showOnMenu: boolean;
+    /**
+     * Permission types the requesting user holds on this folder, drawn from the same set the table
+     * exposes (`READ`, `EDIT`, `PUBLISH`, `EDIT_PERMISSIONS`, `CAN_ADD_CHILDREN`).
+     *
+     * `null` when the request did not pass `includePermissions=true` — deliberately distinct from
+     * `[]` ("requested, but the user holds none"), so callers can tell "not fetched" from "no
+     * grants". Consumers must normalize before gating; see `folderSearchViewToDotFolder`.
+     */
+    permissions: PermissionType[] | null;
 }
 
 /**
@@ -101,4 +137,14 @@ export interface FolderSearchParams {
     direction?: 'ASC' | 'DESC';
     page?: number;
     per_page?: number;
+    /**
+     * Request per-folder `permissions` on each result. Off by default: resolving them costs extra
+     * batch permission queries per page, so only callers that are about to gate a folder action
+     * (e.g. opening the sidebar context menu) should opt in.
+     *
+     * The backend caps `per_page` when this is `true`
+     * (`content.drive.folder.search.permissions.max.per.page`, default 200) and rejects larger
+     * pages with a 400 — so never combine it with a bulk load such as the deep-link tree hydration.
+     */
+    includePermissions?: boolean;
 }
