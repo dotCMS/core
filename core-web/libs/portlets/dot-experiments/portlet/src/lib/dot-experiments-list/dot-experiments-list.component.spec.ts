@@ -28,6 +28,7 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS
 } from '../shared/constants';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
@@ -940,6 +941,30 @@ describe('DotExperimentsListComponent', () => {
             expect(dispatchedEvents()).toContainEqual(
                 dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.ENDED])
             );
+        });
+    });
+
+    describe('pagination', () => {
+        const renderWith = (totalRecords: number) => {
+            storeMock.pagedExperiments.mockReturnValue([experimentWith(DotExperimentStatus.DRAFT)]);
+            storeMock.totalRecords.mockReturnValue(totalRecords);
+            spectator.detectChanges();
+        };
+
+        const rowsPerPageSelect = () =>
+            spectator.query('.p-paginator .p-select, .p-paginator p-select');
+
+        it('should offer no page size while everything fits in the smallest one', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS));
+
+            // Every option would render the same single page, and the arrows are already disabled.
+            expect(rowsPerPageSelect()).toBeNull();
+        });
+
+        it('should offer the page sizes once there is more than one page to reach', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            expect(rowsPerPageSelect()).not.toBeNull();
         });
     });
 
