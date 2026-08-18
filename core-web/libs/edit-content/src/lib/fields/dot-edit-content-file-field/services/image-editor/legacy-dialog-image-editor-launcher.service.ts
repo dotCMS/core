@@ -64,7 +64,12 @@ export class LegacyDialogImageEditorLauncher implements ImageEditorLauncher {
             if (!dialogRef) {
                 subscriber.complete();
 
-                return;
+                // An explicit no-op teardown, not a bare `return`: the other path returns a real
+                // teardown function, and under `noImplicitReturns` a mix of the two is `TS7030`.
+                // `portlets-dot-query-tool-portlet` has that flag without `strict` and caught it.
+                return () => {
+                    /* nothing was wired up */
+                };
             }
 
             const onMessage = (event: MessageEvent<ImageEditorMessage>) => {
