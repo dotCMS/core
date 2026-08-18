@@ -60,7 +60,7 @@ describe('DotCategoryFieldSearchComponent', () => {
 
         spectator.detectChanges();
 
-        spectator.click(spectator.query(byTestId('search-icon-clear')));
+        spectator.click(spectator.query(byTestId('search-icon-clear'))!);
 
         expect(input.value).toBe('');
         expect(changeModeSpy).toHaveBeenCalledWith('list');

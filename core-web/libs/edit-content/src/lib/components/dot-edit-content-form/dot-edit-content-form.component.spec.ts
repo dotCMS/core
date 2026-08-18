@@ -461,7 +461,7 @@ describe('DotFormComponent', () => {
 
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
 
-                spectator.click(sidebarButton);
+                spectator.click(sidebarButton!);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
             });
@@ -1765,22 +1765,22 @@ describe('DotFormComponent', () => {
             patchState(store, { initialContentletState: 'copy', isManualTranslation: true });
             spectator.detectChanges();
 
-            expect(component.$shouldRenderFields()).toBe(false);
+            expect(component['$shouldRenderFields']()).toBe(false);
 
             tick(); // advance past the setTimeout(0)
 
-            expect(component.$shouldRenderFields()).toBe(true);
+            expect(component['$shouldRenderFields']()).toBe(true);
         }));
 
         it('should toggle $shouldRenderFields false then back to true when isManualTranslation is false (populate)', fakeAsync(() => {
             patchState(store, { initialContentletState: 'copy', isManualTranslation: false });
             spectator.detectChanges();
 
-            expect(component.$shouldRenderFields()).toBe(false);
+            expect(component['$shouldRenderFields']()).toBe(false);
 
             tick();
 
-            expect(component.$shouldRenderFields()).toBe(true);
+            expect(component['$shouldRenderFields']()).toBe(true);
         }));
     });
 });

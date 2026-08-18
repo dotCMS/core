@@ -378,7 +378,7 @@ describe('DotEditContentService', () => {
 
     describe('getContentByFolder', () => {
         it('should call dotBrowsingService with correct params when only hostFolderId is provided', () => {
-            const mockContentlets = [];
+            const mockContentlets: DotCMSContentlet[] = [];
             dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
 
             const params = { hostFolderId: '123' };
@@ -388,7 +388,7 @@ describe('DotEditContentService', () => {
         });
 
         it('should call dotBrowsingService with all provided params', () => {
-            const mockContentlets = [];
+            const mockContentlets: DotCMSContentlet[] = [];
             const params = {
                 hostFolderId: '123',
                 mimeTypes: ['image/jpeg', 'image/png'],

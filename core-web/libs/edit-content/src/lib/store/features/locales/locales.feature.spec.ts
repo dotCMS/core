@@ -46,10 +46,10 @@ const withTest = () =>
             formValues: {}
         }),
         withMethods((store) => ({
-            updateContent: (content) => {
+            updateContent: (content: DotCMSContentlet) => {
                 patchState(store, { contentlet: content });
             },
-            updateContentType: (contentType) => {
+            updateContentType: (contentType: DotCMSContentType) => {
                 patchState(store, { contentType });
             }
         }))

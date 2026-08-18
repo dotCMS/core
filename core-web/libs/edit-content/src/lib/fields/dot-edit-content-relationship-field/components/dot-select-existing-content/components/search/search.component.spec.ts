@@ -29,6 +29,8 @@ import { SearchComponent, DEBOUNCE_TIME } from './search.component';
 import { ContentletFilterContext } from '../../../../models/relationship.models';
 import { SearchParams } from '../../../../models/search.model';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 // Mock components for testing
 @Component({
     selector: 'dot-language-field',
@@ -87,7 +89,7 @@ describe('SearchComponent', () => {
         return {
             languageControl: { value: { isoCode, id } },
             $selectedLanguageLabel: signal(isoCode)
-        } as unknown as LanguageFieldComponent;
+        } as unknown as InferInputSignals<SearchComponent> as LanguageFieldComponent;
     }
 
     function makeMockSiteField(
@@ -98,7 +100,7 @@ describe('SearchComponent', () => {
         return {
             siteControl: { value: { label, data: { id, type } } },
             $selectedNodeLabel: signal(label)
-        } as unknown as SiteFieldComponent;
+        } as unknown as InferInputSignals<SearchComponent> as SiteFieldComponent;
     }
 
     const messageServiceMock = new MockDotMessageService({
@@ -174,7 +176,7 @@ describe('SearchComponent', () => {
         spectator = createComponent({
             props: {
                 isLoading: false
-            } as unknown
+            } as unknown as InferInputSignals<SearchComponent>
         });
         component = spectator.component;
     });
@@ -611,7 +613,7 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
             spectator.setInput('isLoading', true);
             spectator.detectChanges();
@@ -707,7 +709,7 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
             const searchButton = spectator.query('p-button[data-testid="search-button"] button')!;
             spectator.click(searchButton);
@@ -735,7 +737,7 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
             const searchButton = spectator.query('p-button[data-testid="search-button"] button')!;
             spectator.click(searchButton);
@@ -761,7 +763,7 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
             const clearButton = spectator.query('p-button[data-testid="clear-button"] button')!;
             spectator.click(clearButton);

@@ -70,8 +70,11 @@ import {
     TREE_SELECT_MOCK
 } from '../../utils/mocks';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 interface DotEditFieldTestBed {
-    component: Type<unknown>;
+    // Null for field types that are deliberately not rendered yet (CONSTANT, HIDDEN).
+    component: Type<unknown> | null;
     imports?: Type<unknown>[];
     providers?: Provider[];
     declarations?: Type<unknown>[];
@@ -283,7 +286,15 @@ const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
 );
 
 describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
-    const fieldTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType];
+    // `fieldType` is a plain string on the mock; `FIELDS_TO_BE_RENDER` is filtered from the
+    // field mocks, so every entry is a real `FIELD_TYPES` key of the record above.
+    const rawTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType as FIELD_TYPES];
+
+    // Entries are either a bare component class or a full test bed. Normalising here means the
+    // rest of this suite reads `imports`/`providers`/`props` off one shape instead of
+    // re-checking which of the two it got — `Type<unknown>` is a constructor, hence `function`.
+    const fieldTestBed: DotEditFieldTestBed =
+        typeof rawTestBed === 'function' ? { component: rawTestBed } : rawTestBed;
     let spectator: Spectator<DotEditContentFieldComponent>;
 
     const createComponent = createComponentFactory({
@@ -389,7 +400,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
 
         it('should render the correct field type', () => {
             spectator.detectChanges();
-            const FIELD_TYPE = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
+            const FIELD_TYPE = fieldTestBed.component!;
             const component = spectator.query(FIELD_TYPE);
 
             expect(component).toBeTruthy();
@@ -426,9 +437,13 @@ describe('DotEditContentFieldComponent - Line Divider Field', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            // Keyed by the public aliases, which is what Spectator applies at runtime.
+            // `InferInputSignals<C>` maps over `keyof C` — the declared member names
+            // (`$field`) — so it cannot see an `alias`; renaming the keys type-checks and
+            // then fails at runtime.
             props: {
                 field: LINE_DIVIDER_MOCK
-            }
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>
         });
     });
 
@@ -504,7 +519,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
                 contentType: {
                     baseType: DotCMSBaseTypesContentTypes.FILEASSET
                 } as DotCMSContentType
-            } as unknown,
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>,
             providers: [
                 {
                     provide: ControlContainer,
@@ -664,7 +679,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
                     baseType: 'CONTENT',
                     variable: 'BlogPost'
                 } as DotCMSContentType
-            } as unknown,
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>,
             providers: [
                 {
                     provide: ControlContainer,
@@ -737,7 +752,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
             props: {
                 field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
                 contentType: null
-            } as unknown,
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>,
             providers: [
                 {
                     provide: ControlContainer,
@@ -813,7 +828,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
                 contentType: {
                     baseType: DotCMSBaseTypesContentTypes.FILEASSET
                 } as DotCMSContentType
-            } as unknown,
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>,
             providers: [
                 {
                     provide: ControlContainer,
@@ -886,7 +901,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
                 contentType: {
                     baseType: DotCMSBaseTypesContentTypes.FILEASSET
                 } as DotCMSContentType
-            } as unknown,
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>,
             providers: [
                 {
                     provide: ControlContainer,

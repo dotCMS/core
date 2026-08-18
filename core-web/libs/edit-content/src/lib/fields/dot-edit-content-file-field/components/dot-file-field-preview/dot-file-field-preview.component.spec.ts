@@ -1,9 +1,9 @@
 import {
-    Spectator,
+    byTestId,
     createComponentFactory,
     mockProvider,
-    SpyObject,
-    byTestId
+    Spectator,
+    SpyObject
 } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -18,6 +18,8 @@ import { DotCopyButtonComponent } from '@dotcms/ui';
 import { DotFileFieldPreviewComponent } from './dot-file-field-preview.component';
 
 import { NEW_FILE_MOCK, TEMP_FILE_MOCK, NEW_FILE_EDITABLE_MOCK } from '../../../../utils/mocks';
+
+import type { InferInputSignals } from '@openng/spectator';
 
 describe('DotFileFieldPreviewComponent', () => {
     let spectator: Spectator<DotFileFieldPreviewComponent>;
@@ -51,7 +53,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         source: 'temp',
                         file: TEMP_FILE_MOCK
                     }
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
         });
@@ -85,7 +87,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             spectator.detectChanges();
 
-            spectator.click(spectator.query(byTestId('download-btn')));
+            spectator.click(spectator.query(byTestId('download-btn'))!);
             expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
         });
 
@@ -93,7 +95,7 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
                 file: { ...TEMP_FILE_MOCK, metadata: undefined }
-            } as unknown);
+            } as unknown as InferInputSignals<DotFileFieldPreviewComponent>);
             spectator.detectChanges();
 
             expect(spectator.component).toBeTruthy();
@@ -104,7 +106,7 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
                 file: { ...TEMP_FILE_MOCK, referenceUrl: '' }
-            } as unknown);
+            } as unknown as InferInputSignals<DotFileFieldPreviewComponent>);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('download-btn'))).toBeFalsy();
@@ -117,7 +119,7 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
                 file: { ...TEMP_FILE_MOCK, image: false, mimeType: 'unknown', metadata: null }
-            } as unknown);
+            } as unknown as InferInputSignals<DotFileFieldPreviewComponent>);
 
             expect(() => spectator.detectChanges()).not.toThrow();
             expect(spectator.component).toBeTruthy();
@@ -132,7 +134,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         source: 'contentlet',
                         file: NEW_FILE_MOCK.entity
                     }
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
         });
@@ -237,7 +239,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         source: 'contentlet',
                         file: NEW_FILE_EDITABLE_MOCK.entity
                     }
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
         });
@@ -257,7 +259,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         file: NEW_FILE_MOCK.entity
                     },
                     disabled: true
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
             spectator.detectChanges();
@@ -283,8 +285,12 @@ describe('DotFileFieldPreviewComponent', () => {
                 byTestId('download-btn-responsive')
             );
 
-            expect(infoResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
-            expect(downloadResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
+            expect(
+                infoResponsiveBtnComponent?.querySelector<HTMLButtonElement>('button')!.disabled
+            ).toBe(true);
+            expect(
+                downloadResponsiveBtnComponent?.querySelector<HTMLButtonElement>('button')!.disabled
+            ).toBe(true);
         });
 
         it('should prevent download action when disabled', () => {
@@ -296,7 +302,7 @@ describe('DotFileFieldPreviewComponent', () => {
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
 
             // Since button is disabled, clicking should not trigger download
-            spectator.click(actualDownloadBtn);
+            spectator.click(actualDownloadBtn!);
 
             expect(downloadSpy).not.toHaveBeenCalled();
         });
@@ -311,7 +317,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             expect(actualDownloadBtn!.disabled).toBe(true);
 
-            spectator.click(actualDownloadBtn);
+            spectator.click(actualDownloadBtn!);
 
             expect(downloadSpy).not.toHaveBeenCalled();
         });
@@ -362,7 +368,7 @@ describe('DotFileFieldPreviewComponent', () => {
                             file: TEMP_FILE_MOCK
                         },
                         disabled: true
-                    } as unknown
+                    } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
                 });
                 tempFileSpectator.detectChanges();
             });

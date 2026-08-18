@@ -151,7 +151,7 @@ describe('DotHostFolderFieldComponent', () => {
 
     it('should stage a folder selection through the store', () => {
         jest.spyOn(store, 'setPendingNode');
-        const node = TREE_SELECT_MOCK[0]!.children[0];
+        const node = TREE_SELECT_MOCK[0]!.children![0];
         const event = { originalEvent: new Event('click'), node };
 
         spectator.component.onFolderSelect(event);
@@ -161,7 +161,7 @@ describe('DotHostFolderFieldComponent', () => {
 
     it('should lazily expand a folder through the store', () => {
         jest.spyOn(store, 'expandNode');
-        const node = TREE_SELECT_MOCK[0]!.children[0];
+        const node = TREE_SELECT_MOCK[0]!.children![0];
         const event = { originalEvent: new Event('click'), node };
 
         spectator.component.onFolderExpand(event);
@@ -397,7 +397,7 @@ describe('DotHostFolderFieldComponent', () => {
                 }
 
                 return of({
-                    folders: [TREE_SELECT_MOCK[0]!.children[0]],
+                    folders: [TREE_SELECT_MOCK[0]!.children![0]],
                     pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
                 });
             });
@@ -641,7 +641,7 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should schedule a scroll to the selected folder once the overlay renders', async () => {
-            const node = TREE_SELECT_MOCK[0]!.children[0];
+            const node = TREE_SELECT_MOCK[0]!.children![0];
             store.setPendingNode(node);
             jest.spyOn(store, 'treeSelection').mockReturnValue(node);
             jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
@@ -663,7 +663,7 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should not scroll when the overlay is not open', async () => {
-            const node = TREE_SELECT_MOCK[0]!.children[0];
+            const node = TREE_SELECT_MOCK[0]!.children![0];
             store.setPendingNode(node);
             jest.spyOn(store, 'treeSelection').mockReturnValue(node);
             jest.spyOn(store, 'overlayOpen').mockReturnValue(false);
@@ -689,7 +689,7 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should retry on the next animation frame while folders are still loading', async () => {
-            const node = TREE_SELECT_MOCK[0]!.children[0];
+            const node = TREE_SELECT_MOCK[0]!.children![0];
             store.setPendingNode(node);
             jest.spyOn(store, 'treeSelection').mockReturnValue(node);
             jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
@@ -989,7 +989,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should show the full display path in the trigger label', () => {
-        const node = TREE_SELECT_MOCK[0]!.children[0]!.children[0];
+        const node = TREE_SELECT_MOCK[0]!.children![0]!.children![0];
         store.setPendingNode(node);
         store.commit();
         spectator.detectChanges();
