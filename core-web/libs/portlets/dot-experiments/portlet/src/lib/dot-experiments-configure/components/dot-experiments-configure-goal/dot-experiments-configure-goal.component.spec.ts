@@ -50,7 +50,7 @@ const messageServiceMock = new MockDotMessageService({
 
 /** Only what the card still reads: the goal itself now arrives through its `field` input. */
 const createStoreMock = () => ({
-    validationErrors: signal<ConfigureValidationRule[]>([])
+    $validationErrors: signal<ConfigureValidationRule[]>([])
 });
 
 describe('DotExperimentsConfigureGoalComponent', () => {
@@ -371,7 +371,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should reveal the missing type once the store reports it', () => {
-            storeMock.validationErrors.set(['goalType']);
+            storeMock.$validationErrors.set(['goalType']);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('goal-type-error'))?.textContent).toContain(
@@ -380,7 +380,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should hide the type error again once a type is picked', () => {
-            storeMock.validationErrors.set(['goalType']);
+            storeMock.$validationErrors.set(['goalType']);
             spectator.detectChanges();
 
             selectGoalType(GOAL_TYPES.BOUNCE_RATE);
@@ -389,7 +389,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should reveal the missing name once the store reports it', () => {
-            storeMock.validationErrors.set(['goalName']);
+            storeMock.$validationErrors.set(['goalName']);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('goal-name-error'))?.textContent).toContain(
@@ -398,7 +398,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should reveal the missing condition value once the store reports it', () => {
-            storeMock.validationErrors.set(['goalConditionValue']);
+            storeMock.$validationErrors.set(['goalConditionValue']);
             selectGoalType(GOAL_TYPES.REACH_PAGE);
 
             expect(spectator.query(byTestId('goal-condition-value-error'))?.textContent).toContain(
@@ -407,7 +407,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should keep the condition value error out of sight for the exists operator', () => {
-            storeMock.validationErrors.set(['goalConditionValue']);
+            storeMock.$validationErrors.set(['goalConditionValue']);
             selectGoalType(GOAL_TYPES.URL_PARAMETER);
 
             setOperator(GOAL_OPERATORS.EXISTS);
@@ -416,7 +416,7 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
 
         it('should reveal the missing parameter name once the store reports it', () => {
-            storeMock.validationErrors.set(['goalParameterName']);
+            storeMock.$validationErrors.set(['goalParameterName']);
             selectGoalType(GOAL_TYPES.URL_PARAMETER);
 
             expect(spectator.query(byTestId('goal-parameter-name-error'))?.textContent).toContain(

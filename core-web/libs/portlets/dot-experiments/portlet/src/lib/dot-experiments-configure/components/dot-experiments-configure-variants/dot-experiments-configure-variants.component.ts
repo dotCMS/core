@@ -208,11 +208,11 @@ export class DotExperimentsConfigureVariantsComponent {
 
     /** Both of these turn a message into a scroll target, which only a Start press may do (AC28). */
     readonly $showMinVariantsError = computed<boolean>(() =>
-        this.store.validationErrors().includes('minVariants')
+        this.store.$validationErrors().includes('minVariants')
     );
 
     readonly $showWeightsError = computed<boolean>(() =>
-        this.store.validationErrors().includes(WEIGHTS_TOTAL_ERROR_KIND)
+        this.store.$validationErrors().includes(WEIGHTS_TOTAL_ERROR_KIND)
     );
 
     /** The hint gives way to the error, exactly as the design has it. */
@@ -348,16 +348,6 @@ export class DotExperimentsConfigureVariantsComponent {
             );
     }
 
-    /**
-     * Writes an even split into the slice, and reports it as the SPLIT_EVENLY proportion it is.
-     *
-     * The rows are the edit — they are what the inputs redraw from, and what the shell's binding
-     * persists. The dispatch is here for the one thing the form cannot carry: the proportion's
-     * *type*. A weight says what a share is, not whether the user asked for an even split, and the
-     * backend redistributes a later variant only while the type is SPLIT_EVENLY
-     * (`ExperimentsAPIImpl.addVariant`). Naming it here leaves the shell's binding with nothing to
-     * report — it compares against what the store already holds — so the edit still travels once.
-     */
     /** Row ids the user has committed a weight to, oldest first. Reset by an even split. */
     #committedRowIds: string[] = [];
 
@@ -427,6 +417,16 @@ export class DotExperimentsConfigureVariantsComponent {
         return new Map(absorbers.map(({ id }, position) => [id, shares[position]]));
     }
 
+    /**
+     * Writes an even split into the slice, and reports it as the SPLIT_EVENLY proportion it is.
+     *
+     * The rows are the edit — they are what the inputs redraw from, and what the shell's binding
+     * persists. The dispatch is here for the one thing the form cannot carry: the proportion's
+     * *type*. A weight says what a share is, not whether the user asked for an even split, and the
+     * backend redistributes a later variant only while the type is SPLIT_EVENLY
+     * (`ExperimentsAPIImpl.addVariant`). Naming it here leaves the shell's binding with nothing to
+     * report — it compares against what the store already holds — so the edit still travels once.
+     */
     #splitWeightsEvenly(variants: Variant[]): void {
         if (!variants.length) {
             return;

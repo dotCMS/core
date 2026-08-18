@@ -35,7 +35,7 @@ const EXPERIMENT_DETAILS: DetailsModel = {
 
 /** Only what the card still reads: the rest of its state now arrives through its two inputs. */
 const createStoreMock = () => ({
-    validationErrors: signal<ConfigureValidationRule[]>([]),
+    $validationErrors: signal<ConfigureValidationRule[]>([]),
     $isLocked: signal(false)
 });
 
@@ -175,7 +175,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         it('should appear once the store reports the name rule as failing', () => {
             mountWith();
 
-            storeMock.validationErrors.set(['name']);
+            storeMock.$validationErrors.set(['name']);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('details-name-required-error'))?.textContent).toContain(
@@ -183,12 +183,17 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
             );
         });
 
-        it('should disappear as soon as a name is typed', () => {
+        /**
+         * The card renders what the store reports and nothing more: the store re-runs the rules
+         * on every edit, so a typed name drops `name` there rather than being re-checked here.
+         */
+        it('should disappear once the store stops reporting the rule', () => {
             mountWith();
-            storeMock.validationErrors.set(['name']);
+            storeMock.$validationErrors.set(['name']);
             spectator.detectChanges();
+            expect(spectator.query(byTestId('details-name-required-error'))).not.toBeNull();
 
-            spectator.typeInElement('Summer landing test', nameInput());
+            storeMock.$validationErrors.set([]);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('details-name-required-error'))).toBeNull();
@@ -197,7 +202,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         it('should not appear for a rule that belongs to another card', () => {
             mountWith();
 
-            storeMock.validationErrors.set(['goalType']);
+            storeMock.$validationErrors.set(['goalType']);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('details-name-required-error'))).toBeNull();
@@ -230,9 +235,11 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         it('should replace the required error rather than stack with it', () => {
             // The two messages share one slot: a name that is too long is not a missing name.
             mountWith(EXPERIMENT_DETAILS);
-            storeMock.validationErrors.set(['name']);
+            storeMock.$validationErrors.set(['name']);
 
             spectator.typeInElement(overlongName, nameInput());
+            // What the store would report for a name that is now filled in, only too long.
+            storeMock.$validationErrors.set([]);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('details-name-required-error'))).toBeNull();

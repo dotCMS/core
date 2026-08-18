@@ -108,9 +108,9 @@ export class DotExperimentsConfigurePageComponent {
         return this.$isPageImmutable() ? PAGE_IMMUTABLE_TOOLTIP_KEY : null;
     });
 
-    /** Revealed by a Start press only — never while the user is still filling the screen in. */
+    /** Revealed by a Start press, and gone as soon as a page is picked. */
     protected readonly $hasPageError = computed<boolean>(() =>
-        this.store.validationErrors().includes('page')
+        this.store.$validationErrors().includes('page')
     );
 
     /** Arguments of the traffic helper copy: the share, and the page it is a share of. */

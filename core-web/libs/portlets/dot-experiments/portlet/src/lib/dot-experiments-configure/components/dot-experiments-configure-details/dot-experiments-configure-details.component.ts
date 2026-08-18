@@ -36,7 +36,11 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
     templateUrl: './dot-experiments-configure-details.component.html'
 })
 export class DotExperimentsConfigureDetailsComponent {
-    /** Name leaf of the root form, carrying its required and max-length rules. */
+    /**
+     * Name leaf of the root form, carrying its max-length rule. Required-ness is not declared on
+     * the field: the store names it on Start, which is what keeps the error off an untouched form
+     * (AC28).
+     */
     readonly $nameField = input.required<FieldTree<string>>({ alias: 'nameField' });
 
     /** Description leaf of the root form, carrying its max-length rule. */
@@ -51,7 +55,7 @@ export class DotExperimentsConfigureDetailsComponent {
      * The name error is revealed by a Start press and cleared by typing, so a user who fixes the
      * field is not left staring at an error for something they have already corrected.
      */
-    protected readonly $showNameRequiredError = computed<boolean>(
-        () => this.#store.validationErrors().includes('name') && !this.$nameField()().value().trim()
+    protected readonly $showNameRequiredError = computed<boolean>(() =>
+        this.#store.$validationErrors().includes('name')
     );
 }

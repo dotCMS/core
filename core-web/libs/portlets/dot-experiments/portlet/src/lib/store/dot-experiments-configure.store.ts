@@ -47,10 +47,15 @@ import {
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
     PAGE_PREFILL_ERROR_KEY,
+    PAGE_PREFILL_LOOKUP_ERROR_KEY,
     START_ERROR_HEADER_KEY,
     TOTAL_WEIGHT
 } from '../shared/constants';
-import { DotExperimentsConfigureViewState, ExperimentListAction } from '../shared/models';
+import {
+    ConfigureValidationRule,
+    DotExperimentsConfigureViewState,
+    ExperimentListAction
+} from '../shared/models';
 import {
     applyPatchToExperiment,
     fromBrowserPage,
@@ -78,7 +83,7 @@ const initialState: DotExperimentsConfigureViewState = {
     selectedPage: null,
     pagePrefillError: null,
     pageLockInfo: null,
-    validationErrors: [],
+    validationRevealed: false,
     pendingPatch: null,
     lastSaveFailed: false
 };
@@ -104,8 +109,9 @@ interface PageLookupEntity {
  * selected page is only ever *resolved* from the experiment, never sent back.
  *
  * Validation is deliberately absent until Start/Schedule is pressed (AC28): the reducer for
- * `startRequested` is what materialises `validationErrors`, and the handler only calls the API
- * when that came back empty.
+ * `startRequested` sets `validationRevealed`, and the handler only calls the API while
+ * `$validationErrors` is empty. The reveal is what latches — the errors themselves are derived
+ * from the form, so a field the user fixes stops showing one straight away.
  *
  * State only ever changes through dispatched events (`withReducer`); the store exposes no
  * mutating methods and never opens UI — confirmations and toasts belong to the shell.
@@ -159,6 +165,20 @@ export const DotExperimentsConfigureStore = signalStore(
 
             return experiment ? toOutgoingPatch(store.pendingPatch(), experiment) : null;
         });
+
+        /**
+         * Nothing to show until Start/Schedule has been pressed (AC28); after that the rules are
+         * re-run against the current form, so an error disappears as soon as its field is fixed.
+         */
+        const $validationErrors = computed<ConfigureValidationRule[]>(() =>
+            store.validationRevealed()
+                ? validateConfigure({
+                      draftName: store.draftName(),
+                      selectedPage: store.selectedPage(),
+                      experiment: store.experiment()
+                  })
+                : []
+        );
 
         return {
             $status,
@@ -220,7 +240,13 @@ export const DotExperimentsConfigureStore = signalStore(
 
                 return !!startDate && startDate > Date.now();
             }),
-            $validationErrorCount: computed<number>(() => store.validationErrors().length),
+            /**
+             * The failing rules, or empty while they are still hidden. Derived rather than
+             * latched: a Start press reveals them, and every later edit re-runs them, so a field
+             * the user fixes stops showing an error without pressing Start again (#37003).
+             */
+            $validationErrors,
+            $validationErrorCount: computed<number>(() => $validationErrors().length),
             $isSaving: computed<boolean>(
                 () => store.status() === ComponentStatus.SAVING || store.creating()
             ),
@@ -242,11 +268,17 @@ export const DotExperimentsConfigureStore = signalStore(
     }),
     withReducer<DotExperimentsConfigureViewState>(
         on(pageEvents.enterNew, () => ({ ...initialState, status: ComponentStatus.LOADED })),
+        /**
+         * Everything is dropped, not just the pending diff: one route serves `/experiments/new`
+         * and `/:experimentId/configuration` and the component is reused across them, so a URL
+         * arriving while the screen is up must leave nothing of the experiment being left behind
+         * — a validation error revealed by a Start on the previous one would otherwise show
+         * against this one before Start is ever pressed (AC28).
+         */
         on(pageEvents.enterExisting, () => ({
+            ...initialState,
             isNew: false,
-            status: ComponentStatus.LOADING,
-            // Whatever was pending belonged to the experiment being left behind.
-            pendingPatch: {}
+            status: ComponentStatus.LOADING
         })),
         on(apiEvents.loadSucceeded, ({ payload }) => ({
             experiment: payload,
@@ -284,6 +316,13 @@ export const DotExperimentsConfigureStore = signalStore(
             selectedPage: null,
             pagePrefillError: PAGE_PREFILL_ERROR_KEY
         })),
+        // A rejected lookup says nothing about whether the page is there, so it gets its own copy
+        // rather than reading as "not found". The error itself was already reported by
+        // `DotHttpErrorManagerService`.
+        on(apiEvents.pagePrefillLookupFailed, () => ({
+            selectedPage: null,
+            pagePrefillError: PAGE_PREFILL_LOOKUP_ERROR_KEY
+        })),
         on(apiEvents.pageLockResolved, ({ payload }) => ({ pageLockInfo: payload })),
 
         /**
@@ -303,20 +342,20 @@ export const DotExperimentsConfigureStore = signalStore(
         })),
 
         /**
-         * Only what was written settles: the keys the body carried leave the diff, and what
-         * `toOutgoingPatch` held back stays pending — see `withoutSentKeys` for why the remainder
-         * can be read as "held back".
-         *
-         * The response is the source of truth for what was written, so the experiment is replaced
-         * by it — but with the held-back keys re-applied on top, or the weights the user is still
-         * fixing would snap back to the older ones the server answered with (#37003).
-         */
-        /**
          * A PATCH is on the wire. `SAVING` drives the flight-only progress indicator; the
          * debounce window before it deliberately does not reach this state, or the bar would run
          * from the first keystroke for as long as the user keeps typing.
          */
         on(apiEvents.saveRequested, () => ({ status: ComponentStatus.SAVING })),
+        /**
+         * Only what was written settles: a key whose pending value is still the one the body
+         * carried leaves the diff, and what `toOutgoingPatch` held back — or what was re-edited
+         * while the request travelled — stays pending. See `withoutSentKeys`.
+         *
+         * The response is the source of truth for what was written, so the experiment is replaced
+         * by it — but with the held-back keys re-applied on top, or the weights the user is still
+         * fixing would snap back to the older ones the server answered with (#37003).
+         */
         on(apiEvents.saveSucceeded, ({ payload }, state) => {
             const heldBack = withoutSentKeys(state.pendingPatch, payload.sent);
 
@@ -369,17 +408,14 @@ export const DotExperimentsConfigureStore = signalStore(
         ),
 
         /**
-         * The only place validation errors are ever produced (AC28/AC29). Pressing Start with a
-         * complete form leaves them empty, which is what lets the handler through to the API.
+         * Pressing Start is what *reveals* the rules (AC28/AC29) — it does not freeze them. The
+         * errors are derived from the form (`$validationErrors`), so fixing a field clears its
+         * own error straight away instead of staying red until Start is pressed again.
          */
-        on(pageEvents.startRequested, (_event, state) => {
-            const validationErrors = validateConfigure(state);
-
-            return {
-                validationErrors,
-                status: validationErrors.length ? state.status : ComponentStatus.SAVING
-            };
-        }),
+        on(pageEvents.startRequested, (_event, state) => ({
+            validationRevealed: true,
+            status: validateConfigure(state).length ? state.status : ComponentStatus.SAVING
+        })),
         // Same contract as creation: the flag closes the door on a second start as the first
         // call leaves, so an impatient double press cannot run the experiment twice.
         on(apiEvents.startRequested, () => ({ starting: true })),
@@ -396,7 +432,7 @@ export const DotExperimentsConfigureStore = signalStore(
             apiEvents.abortSucceeded,
             ({ payload }) => ({
                 experiment: payload,
-                validationErrors: [],
+                validationRevealed: false,
                 starting: false,
                 status: ComponentStatus.LOADED
             })
@@ -447,7 +483,9 @@ export const DotExperimentsConfigureStore = signalStore(
                                     ? apiEvents.pagePrefillResolved(toConfigurePage(contentlet))
                                     : apiEvents.pagePrefillFailed(pageId)
                             ),
-                            catchError((error) => of(apiEvents.pagePrefillFailed(error)))
+                            catchError((error: HttpErrorResponse) =>
+                                of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
+                            )
                         );
                 }
 
@@ -475,7 +513,9 @@ export const DotExperimentsConfigureStore = signalStore(
                                 ? apiEvents.pagePrefillResolved(fromBrowserPage(page))
                                 : apiEvents.pagePrefillFailed(url)
                         ),
-                        catchError((error) => of(apiEvents.pagePrefillFailed(error)))
+                        catchError((error: HttpErrorResponse) =>
+                            of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
+                        )
                     );
             };
 
@@ -679,7 +719,7 @@ export const DotExperimentsConfigureStore = signalStore(
                 start$: events.on(pageEvents.startRequested).pipe(
                     filter(
                         () =>
-                            !store.validationErrors().length &&
+                            !store.$validationErrors().length &&
                             !!store.experiment() &&
                             !store.starting()
                     ),

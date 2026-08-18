@@ -93,7 +93,7 @@ const createStoreMock = () => ({
     experiment: jest.fn().mockReturnValue(EXPERIMENT),
     $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
     $disabledTooltipKey: jest.fn().mockReturnValue(null),
-    validationErrors: jest.fn().mockReturnValue([]),
+    $validationErrors: jest.fn().mockReturnValue([]),
     selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE)
 });
 
@@ -790,8 +790,8 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
      * whether the total is wrong. Only its *colour* waits for a Start press (AC25/AC28).
      */
     describe('weights warning', () => {
-        const renderWith = (weightOfSecondRow: number, validationErrors: string[] = []) => {
-            storeMock.validationErrors.mockReturnValue(validationErrors);
+        const renderWith = (weightOfSecondRow: number, $validationErrors: string[] = []) => {
+            storeMock.$validationErrors.mockReturnValue($validationErrors);
             render([
                 { id: CONTROL_VARIANT.id, weight: 50 },
                 { id: SECOND_VARIANT.id, weight: weightOfSecondRow }
@@ -845,7 +845,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
         it('should mark itself as a scroll target once minVariants failed validation', () => {
             storeMock.$variants.mockReturnValue([CONTROL_VARIANT]);
-            storeMock.validationErrors.mockReturnValue(['minVariants']);
+            storeMock.$validationErrors.mockReturnValue(['minVariants']);
             render();
 
             const error = spectator.query(byTestId('variants-min-error'));

@@ -174,7 +174,7 @@ export class DotExperimentsConfigureGoalComponent {
     #hasValidationError(
         rule: 'goalType' | 'goalName' | 'goalConditionValue' | 'goalParameterName'
     ) {
-        return this.#store.validationErrors().includes(rule);
+        return this.#store.$validationErrors().includes(rule);
     }
 
     /**
