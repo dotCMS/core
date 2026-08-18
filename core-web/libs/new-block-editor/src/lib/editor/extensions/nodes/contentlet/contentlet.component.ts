@@ -120,6 +120,9 @@ export class DotContentletNodeViewComponent extends AngularNodeViewComponent {
      */
     protected selectNode(event: MouseEvent): void {
         const pos = this.getPos()();
+        // Nullish-only guard on purpose: `getPos()` returns `number | undefined`, and a contentlet
+        // that is the first block resolves to position 0. `!pos` would treat that 0 as "no position"
+        // and skip selecting the first-block card — the exact only-contentlets case from #36985.
         if (pos == null) {
             return;
         }
