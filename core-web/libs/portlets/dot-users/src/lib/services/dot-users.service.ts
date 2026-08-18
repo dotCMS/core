@@ -219,9 +219,7 @@ export class DotUsersService {
      */
     getUserRoles(userIdOrEmail: string): Observable<DotRoleView[]> {
         return this.#http
-            .get<DotRolesResponse>(
-                `/api/v1/roles/users/${encodeURIComponent(userIdOrEmail)}`
-            )
+            .get<DotRolesResponse>(`/api/v1/roles/users/${encodeURIComponent(userIdOrEmail)}`)
             .pipe(map((response) => response.entity ?? []));
     }
 
@@ -233,10 +231,9 @@ export class DotUsersService {
      */
     getGettingStartedState(userId: string): Observable<boolean> {
         return this.#http
-            .get<DotToolgroupStateResponse>(
-                '/api/v1/toolgroups/gettingstarted/_userHasLayout',
-                { params: new HttpParams().set('userid', userId) }
-            )
+            .get<DotToolgroupStateResponse>('/api/v1/toolgroups/gettingstarted/_userHasLayout', {
+                params: new HttpParams().set('userid', userId)
+            })
             .pipe(map((response) => !!response.entity?.message));
     }
 

@@ -238,10 +238,7 @@ describe('DotUsersCreateComponent', () => {
                         // Personal role (roleKey === userId) is filtered
                         // out to avoid the backend `Cannot alter users
                         // on this role` guard on editUsers=false roles.
-                        roles: expect.arrayContaining([
-                            'DOTCMS_BACK_END_USER',
-                            'CMS Administrator'
-                        ])
+                        roles: expect.arrayContaining(['DOTCMS_BACK_END_USER', 'CMS Administrator'])
                     })
                 })
             );
