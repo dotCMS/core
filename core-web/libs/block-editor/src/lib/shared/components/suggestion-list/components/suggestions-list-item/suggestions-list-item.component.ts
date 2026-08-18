@@ -11,6 +11,8 @@ import {
 } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 @Component({
     selector: 'dot-suggestions-list-item',
     templateUrl: './suggestions-list-item.component.html',
@@ -32,7 +34,10 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @Input() label = '';
     @Input() url = '';
     @Input() page = false;
-    @Input() data = null;
+    // Typed rather than left as `= null`: under `strict` that infers the type `null`, so the
+    // template's `data?.contentlet` narrowed to `never` and the Angular compiler rejected it.
+    // `SuggestionsComponent` only ever passes `{ contentlet }` for contentlet suggestions.
+    @Input() data: { contentlet?: DotCMSContentlet } | null = null;
 
     icon = false;
 

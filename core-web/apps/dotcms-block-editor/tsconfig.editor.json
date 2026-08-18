@@ -2,6 +2,8 @@
     "extends": "./tsconfig.json",
     "include": ["**/*.ts"],
     "compilerOptions": {
-        "types": ["jasmine", "node"]
+        // See tsconfig.spec.json: @types/jasmine is not installed, so listing it here aborted
+        // this config with TS2688 before any semantic checking.
+        "types": ["node"]
     }
 }
