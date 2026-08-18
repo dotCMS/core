@@ -88,6 +88,12 @@ export class DotWysiwygPluginService {
                 }
             });
 
+            // `DialogService.open` returns null when it refuses to open a duplicate — the asset
+            // search is already up and will insert through that dialog instead.
+            if (!ref) {
+                return;
+            }
+
             ref.onClose.subscribe((asset: DotCMSContentlet) => {
                 if (asset) {
                     editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset));

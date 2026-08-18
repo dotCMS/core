@@ -44,7 +44,9 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * It is used to update the field.
      */
     updateField(value: DotKeyValue[]): void {
-        const keyValue = value.reduce((acc, item) => {
+        // The accumulator's type has to be given explicitly: from the `{}` seed alone TS infers
+        // `{}`, which has no index signature to write to.
+        const keyValue = value.reduce<Record<string, string>>((acc, item) => {
             acc[item.key] = item.value;
 
             return acc;

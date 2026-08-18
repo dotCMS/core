@@ -432,12 +432,17 @@ export class DotFileFieldComponent
             return;
         }
 
+        // Read through `uploaded` rather than the destructured `file`: destructuring a
+        // discriminated union drops the correlation between `source` and `file`, so `file`
+        // stays the full `DotCMSContentlet | DotCMSTempFile` union in both branches — the
+        // version fields below exist only on the contentlet side. Narrowing `uploaded` first
+        // gives each branch its concrete member.
         const textUrl =
             uploaded.source === 'temp'
-                ? file.referenceUrl
-                : file['assetVersion'] ||
-                  file['fileAssetVersion'] ||
-                  file[`${fieldVariable}Version`];
+                ? uploaded.file.referenceUrl
+                : uploaded.file['assetVersion'] ||
+                  uploaded.file['fileAssetVersion'] ||
+                  uploaded.file[`${fieldVariable}Version`];
 
         if (!textUrl) {
             this.store.setUIMessage(getUiMessage('SERVER_ERROR'));

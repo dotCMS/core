@@ -431,7 +431,9 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * A signal that handles the path to save change of the field.
      * It is used to save the path to the field.
      */
-    readonly handlePathToSaveChange = signalMethod<string>((pathToSave) => {
+    // `string | null` because the store's `pathToSave` is nullable and this is called with that
+    // signal directly — which the body was already written for, hence the null check below.
+    readonly handlePathToSaveChange = signalMethod<string | null>((pathToSave) => {
         if (pathToSave === null || pathToSave === undefined || !this.onChange || !this.onTouched) {
             return;
         }

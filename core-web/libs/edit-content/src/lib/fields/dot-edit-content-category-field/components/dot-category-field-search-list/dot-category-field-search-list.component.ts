@@ -93,7 +93,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * Model of the items selected
      */
-    itemsSelected: DotCategoryFieldKeyValueObj[];
+    itemsSelected: DotCategoryFieldKeyValueObj[] = [];
 
     /**
      * Represents an array of temporary selected items.
