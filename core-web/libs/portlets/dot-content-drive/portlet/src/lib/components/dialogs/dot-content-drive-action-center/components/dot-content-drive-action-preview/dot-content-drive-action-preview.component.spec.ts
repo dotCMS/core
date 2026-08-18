@@ -65,7 +65,8 @@ describe('DotContentDriveActionPreviewComponent', () => {
 
     /** The row checkbox input, which is what a user actually clicks. */
     const rowCheckbox = (index: number): HTMLInputElement =>
-        spectator.queryAll(byTestId('item-row'))[index].querySelector('input');
+        // Every rendered row has a checkbox; a missing one is a failure, not a case to handle.
+        spectator.queryAll(byTestId('item-row'))[index].querySelector('input')!;
 
     beforeEach(() => {
         spectator = createComponent({

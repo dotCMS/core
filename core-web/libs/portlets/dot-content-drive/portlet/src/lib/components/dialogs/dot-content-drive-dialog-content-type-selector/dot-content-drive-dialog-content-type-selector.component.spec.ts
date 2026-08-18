@@ -150,7 +150,11 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         it('should fall back to the current site (no folder) when browsing the root', () => {
             // Root: no path selected and the root node carries an empty inode.
             store.path.mockReturnValue(undefined);
-            store.selectedNode.mockReturnValue({ data: { inode: '' } });
+            // `DotFolderTreeNodeContentData` requires `type`/`path`/`hostname`/`id`; only the empty
+            // inode is what this test is about, so the rest describes the "All folders" root node.
+            store.selectedNode.mockReturnValue({
+                data: { type: 'folder', id: '', inode: '', path: '', hostname: 'demo.dotcms.com' }
+            });
 
             const createButton = spectator
                 .query(byTestId('content-type-selector-create'))

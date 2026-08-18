@@ -49,14 +49,33 @@ const NO_INPUTS = {
 /** Builds a bare action carrying only the input flags under test. */
 const actionWithInputs = (
     inputs: Partial<DotActionCenterWorkflowAction['inputs']>
-): DotActionCenterWorkflowAction =>
-    ({
-        id: 'a1',
-        name: 'Action',
-        count: 1,
-        inputs: { ...NO_INPUTS, ...inputs },
-        contentTypes: []
-    }) as DotActionCenterWorkflowAction;
+): DotActionCenterWorkflowAction => ({
+    id: 'a1',
+    name: 'Action',
+    count: 1,
+    inputs: { ...NO_INPUTS, ...inputs },
+    // Required by the model and irrelevant to these tests, which only exercise `inputs`. Spelled
+    // out rather than cast: `strict` narrows what an `as` assertion accepts, and the assertion was
+    // only ever hiding the omission.
+    nextAssign: '',
+    roleHierarchyForAssign: false,
+    approximateCount: false,
+    contentTypes: []
+});
+
+/**
+ * The five per-action booleans the `BulkActionView` fixture below distributes: three sit on the
+ * action entry (`pushPublish`, `moveable`, `conditionPresent`) and two on its nested
+ * `workflowAction`. Named rather than a `Record<string, boolean>` so a typo in a test's `flags`
+ * literal is a compile error, and so reading them does not need bracket access.
+ */
+type BulkActionFlags = Partial<{
+    pushPublish: boolean;
+    moveable: boolean;
+    conditionPresent: boolean;
+    assignable: boolean;
+    commentable: boolean;
+}>;
 
 /**
  * Builds a `BulkActionView` fixture. `steps` is a list of `[stepCount, actions]` pairs so tests can
@@ -64,10 +83,7 @@ const actionWithInputs = (
  */
 const bulkActionView = (
     schemeName: string,
-    steps: [
-        number,
-        { id: string; name: string; count: number; flags?: Record<string, boolean> }[]
-    ][]
+    steps: [number, { id: string; name: string; count: number; flags?: BulkActionFlags }[]][]
 ): DotBulkActionView =>
     ({
         schemes: [
@@ -734,6 +750,8 @@ describe('action-center utils', () => {
             name: 'Copy',
             count: 1,
             inputs: NO_INPUTS,
+            nextAssign: '',
+            roleHierarchyForAssign: false,
             approximateCount: false,
             contentTypes
         });

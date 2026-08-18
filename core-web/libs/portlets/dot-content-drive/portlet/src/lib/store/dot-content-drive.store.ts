@@ -56,7 +56,14 @@ import {
     parseWorkflowFilter
 } from '../utils/functions';
 
-const initialState: DotContentDriveState = {
+/**
+ * The store's starting state.
+ *
+ * Exported so the per-feature test stores can seed from it instead of each keeping a hand-written
+ * partial copy: four of them had drifted, missing eight keys and still carrying a `totalItems`
+ * that stopped being state some time ago.
+ */
+export const DOT_CONTENT_DRIVE_INITIAL_STATE: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
     contextMenu: undefined,
@@ -79,7 +86,7 @@ const initialState: DotContentDriveState = {
 };
 
 export const DotContentDriveStore = signalStore(
-    withState<DotContentDriveState>(initialState),
+    withState<DotContentDriveState>(DOT_CONTENT_DRIVE_INITIAL_STATE),
     // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
     // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
     // vs full-screen editor.
@@ -287,7 +294,14 @@ export const DotContentDriveStore = signalStore(
             setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
                 patchState(store, { isTreeForceCollapsed });
             },
-            getFilterValue(filter: string) {
+            /**
+             * The value of a single filter, or `undefined` when it is not set.
+             *
+             * The return type has to say `undefined` explicitly: `DotContentDriveFilters` declares its
+             * index signature as `string | string[]`, so an unset key reads as present. Every consumer
+             * already compensates (`?? []`, `|| ''`), which is the tell that absence is the normal case.
+             */
+            getFilterValue(filter: string): string | string[] | undefined {
                 return store.filters()[filter];
             },
             /**

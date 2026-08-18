@@ -5,22 +5,14 @@ import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { withDialog } from './withDialog';
 
 import { DIALOG_TYPE } from '../../../shared/constants';
-import {
-    DotContentDriveSortOrder,
-    DotContentDriveState,
-    DotContentDriveStatus
-} from '../../../shared/models';
+import { DotContentDriveState } from '../../../shared/models';
+import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const initialState: DotContentDriveState = {
-    currentSite: null,
+    // Seeded from the store's own initial state so this fixture cannot drift from it; only the
+    // keys this feature's tests care about are overridden.
+    ...DOT_CONTENT_DRIVE_INITIAL_STATE,
     path: '',
-    filters: {},
-    items: [],
-    selectedItems: [],
-    status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
-    pagination: { limit: 40, page: 1, offset: 0 },
-    sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
 

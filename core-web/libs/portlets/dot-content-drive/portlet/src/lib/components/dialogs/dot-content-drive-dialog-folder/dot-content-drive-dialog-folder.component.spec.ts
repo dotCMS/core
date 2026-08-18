@@ -14,6 +14,8 @@ import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog
 import { DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const mockSite = createFakeSite({
     hostname: 'demo.dotcms.com'
 });
@@ -196,7 +198,11 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
 
         it('should preview the current folder (not root) when name is null', () => {
-            component.folderForm.patchValue({ name: null });
+            // `name` is a `FormControl<string>` created `nonNullable`, so `null` is outside its
+            // declared type — but `patchValue` does not coerce, and `$finalPath` carries a `?? ''`
+            // for exactly this. Cast rather than substituted with `''` so the test keeps covering
+            // the nullish branch it was written for.
+            component.folderForm.patchValue({ name: null as unknown as string });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
@@ -459,7 +465,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
             // neither see nor remove it and it was sent straight back on save. The folder is bound
             // at creation time here because that is how the shell opens this dialog.
             const editSpectator = createComponent({
-                props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+                props: {
+                    folder: editableFolder({ filesMasks: '*.jpg,*.svg' })
+                } as unknown as InferInputSignals<DotContentDriveDialogFolderComponent>
             });
             editSpectator.detectChanges();
 
@@ -486,7 +494,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
 
                 const loading = createComponent({
-                    props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+                    props: {
+                        folder: editableFolder({ filesMasks: '*.jpg,*.svg' })
+                    } as unknown as InferInputSignals<DotContentDriveDialogFolderComponent>
                 });
                 loading.detectChanges();
 

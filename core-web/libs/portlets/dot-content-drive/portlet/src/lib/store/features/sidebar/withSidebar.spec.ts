@@ -11,11 +11,8 @@ import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testin
 import { withSidebar } from './withSidebar';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
-import {
-    DotContentDriveSortOrder,
-    DotContentDriveState,
-    DotContentDriveStatus
-} from '../../../shared/models';
+import { DotContentDriveState } from '../../../shared/models';
+import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const mockSite = createFakeSite();
 
@@ -65,15 +62,11 @@ const mockTreeNodes: DotFolderTreeNodeItem[] = [
 ];
 
 const initialState: DotContentDriveState = {
+    // Seeded from the store's own initial state so this fixture cannot drift from it; only the
+    // keys this feature's tests care about are overridden.
+    ...DOT_CONTENT_DRIVE_INITIAL_STATE,
     currentSite: mockSite,
     path: '/test/path',
-    filters: {},
-    items: [],
-    selectedItems: [],
-    status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
-    pagination: { limit: 40, page: 1, offset: 0 },
-    sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
 
@@ -242,7 +235,7 @@ describe('withSidebar', () => {
                     expect(folderService.searchFolders).not.toHaveBeenCalled();
                 } else {
                     // Only call loadChildFolders if node doesn't have children
-                    store.loadChildFolders(nodeWithChildren.data!.path);
+                    store.loadChildFolders(nodeWithChildren.data!.path!);
                 }
 
                 // Verify the service was not called since node has children
@@ -298,17 +291,19 @@ describe('withSidebar', () => {
             folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
             const parentPath = '/documents/';
-            let loadedResult: { folders: DotFolderTreeNodeItem[] } | null = null;
+            // Collected into an array rather than a nullable `let`: TypeScript's control-flow
+            // analysis does not track assignments made inside a callback, so after the `null`
+            // initializer it still read the variable as `null` and the guard below narrowed it
+            // to `never`. This also pins that exactly one value was emitted.
+            const emitted: { folders: DotFolderTreeNodeItem[] }[] = [];
 
             // Load child folders synchronously since of() emits synchronously
             store.loadChildFolders(parentPath).subscribe((result) => {
-                loadedResult = result;
+                emitted.push(result);
             });
 
-            expect(loadedResult).not.toBeNull();
-            if (!loadedResult) {
-                throw new Error('Expected child folders to be loaded.');
-            }
+            expect(emitted).toHaveLength(1);
+            const loadedResult = emitted[0];
 
             expect(loadedResult.folders.length).toBeGreaterThan(0);
 
@@ -322,7 +317,7 @@ describe('withSidebar', () => {
     });
 });
 
-describe('withSidebar - null site scenarios', () => {
+describe('withSidebar - unset site scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
     let folderService: jest.Mocked<DotFolderService>;
@@ -330,7 +325,9 @@ describe('withSidebar - null site scenarios', () => {
     const nullSiteStoreMock = signalStore(
         withState<DotContentDriveState>({
             ...initialState,
-            currentSite: null
+            // `undefined`, not `null`: that is what the state holds before init, and every guard
+            // downstream is a falsy check, so the branch under test is the same one.
+            currentSite: undefined
         }),
 
         withSidebar()
@@ -351,7 +348,7 @@ describe('withSidebar - null site scenarios', () => {
         folderService = spectator.inject(DotFolderService);
     });
 
-    describe('loadFolders with null site', () => {
+    describe('loadFolders with an unset site', () => {
         it('should not load folders when currentSite is null', () => {
             store.loadFolders();
 
@@ -388,7 +385,7 @@ describe('withSidebar - system host scenarios', () => {
         folderService = spectator.inject(DotFolderService);
     });
 
-    describe('loadFolders with null site', () => {
+    describe('loadFolders with an unset site', () => {
         it('should not load folders when currentSite is null', () => {
             store.loadFolders();
 
