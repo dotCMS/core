@@ -450,8 +450,14 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     @Test
     public void testBooleanRadioWithDbStyleOptionValuesFilter()
             throws DotDataException, DotSecurityException {
+        // A STRING, not a boolean. `ContentDriveFieldFilterResolver.inferKind` reads a JSON boolean as
+        // `FilterKind.BOOLEAN`, and `supportsKind` only allows that kind for a CheckboxField, so a
+        // boolean here is rejected with HTTP 400 before any query is built. A Radio arrives as a scalar
+        // string -- which is what the UI sends -- and the data-type-first routing is what then turns it
+        // into an exact boolean term. The single-option checkbox case below is the one that legitimately
+        // passes a boolean.
         final Set<String> matchesTrue = driveInodes(baseRequest()
-                .userSearchable(Map.of(BOOL_RADIO_VAR, true))
+                .userSearchable(Map.of(BOOL_RADIO_VAR, "true"))
                 .build());
         assertTrue("the item saved with option value 1 must match true",
                 matchesTrue.contains(angularWithTags.getInode()));
@@ -459,7 +465,7 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 matchesTrue.contains(reactWithVue.getInode()));
 
         final Set<String> matchesFalse = driveInodes(baseRequest()
-                .userSearchable(Map.of(BOOL_RADIO_VAR, false))
+                .userSearchable(Map.of(BOOL_RADIO_VAR, "false"))
                 .build());
         assertTrue("the item saved with option value 0 must match false",
                 matchesFalse.contains(reactWithVue.getInode()));
