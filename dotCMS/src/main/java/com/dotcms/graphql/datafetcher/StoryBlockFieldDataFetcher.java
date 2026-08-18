@@ -1,5 +1,6 @@
 package com.dotcms.graphql.datafetcher;
 
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
@@ -18,8 +19,11 @@ import java.util.Map;
  * are resolved through the canonical {@link com.dotcms.contenttype.business.StoryBlockAPI#toMap(Object)}
  * conversion so every consumer of a Block Editor value behaves the same.
  * <p>
- * A value that cannot be resolved into JSON degrades gracefully: the field resolves to
- * {@code null} and a WARN is logged, instead of failing the whole GraphQL query.
+ * The read path never reshapes stored data: a String value that is not a Block Editor JSON
+ * document (e.g. HTML from a converted WYSIWYG field) is returned unchanged, matching {@code _map}
+ * and the Page REST API. A missing/blank value resolves to an empty json object. If resolution
+ * still fails, the field degrades gracefully to {@code null} with a WARN instead of failing the
+ * whole GraphQL query.
  */
 public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Object>> {
 
@@ -41,6 +45,14 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
             return storyBlockMap;
         }
 
+        if (fieldValue instanceof String && !isJsonObject((String) fieldValue)) {
+            // A stored value that is not a Block Editor JSON document -- e.g. HTML from a WYSIWYG
+            // field later converted to Block Editor -- is returned unchanged. The read path never
+            // reshapes stored data, matching what _map and the Page REST API return.
+            storyBlockMap.put("json", fieldValue);
+            return storyBlockMap;
+        }
+
         try {
             storyBlockMap.put("json", APILocator.getStoryBlockAPI().toMap(fieldValue));
         } catch (final Exception e) {
@@ -51,5 +63,15 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
         }
 
         return storyBlockMap;
+    }
+
+    /**
+     * Mirrors {@code StoryBlockAPIImpl.isJsonObject}: Story Block documents are always JSON
+     * objects, so only a value whose root token is an object is parsed; everything else is a
+     * legacy value passed through as-is.
+     */
+    private static boolean isJsonObject(final String value) {
+        final String trimmed = value.trim();
+        return trimmed.startsWith("{") && JsonUtil.isValidJSON(trimmed);
     }
 }

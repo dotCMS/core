@@ -2,7 +2,6 @@ package com.dotcms.graphql.datafetcher;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.Field;
@@ -191,16 +190,48 @@ public class StoryBlockFieldDataFetcherIntegrationTest {
 
     /**
      * MethodToTest {@link StoryBlockFieldDataFetcher#get(DataFetchingEnvironment)}
-     * Given Scenario: the field holds a value that cannot be resolved into JSON.
-     * ExpectedResult: the field resolves to null and no exception is thrown, so a single bad
-     * field cannot fail the whole GraphQL query (see #36297).
+     * Given Scenario: a contentlet whose Block Editor field holds a legacy non-JSON value — HTML
+     * from a WYSIWYG field later converted to Block Editor, persisted before the save-path
+     * conversion introduced in #36473.
+     * ExpectedResult: the stored value is returned unchanged on both read paths — the read path
+     * never reshapes stored data, matching what _map and the Page REST API return.
      */
     @Test
-    public void malformedValue_resolvesToNullWithoutFailing() throws Exception {
-        final Contentlet contentlet = persistContentlet(STORY_BLOCK_JSON);
-        contentlet.getMap().put(storyBlockField.variable(),
-                "{type=doc, content=[{type=paragraph, text=securely, visually}]}");
+    public void legacyHtmlValue_isPassedThroughUnchangedOnBothPaths() throws Exception {
+        final String legacyHtml = "<p>Save 20% today, <a href=\"https://dotcms.com/offer\">see details</a></p>";
+        final Contentlet persisted = persistContentlet(STORY_BLOCK_JSON);
+        // Simulate the legacy row: bypass the save-path HTML→JSON conversion (#36473)
+        persisted.getMap().put(storyBlockField.variable(), legacyHtml);
 
-        assertNull(new StoryBlockFieldDataFetcher().get(environmentFor(contentlet)));
+        final Map<String, Object> rawResult =
+                new StoryBlockFieldDataFetcher().get(environmentFor(persisted));
+        assertNotNull(rawResult);
+        assertEquals(legacyHtml, rawResult.get("json"));
+
+        final Contentlet hydrated = new DotTransformerBuilder()
+                .defaultOptions().content(persisted).build().hydrate().get(0);
+        final Map<String, Object> hydratedResult =
+                new StoryBlockFieldDataFetcher().get(environmentFor(hydrated));
+        assertNotNull(hydratedResult);
+        assertEquals(legacyHtml, hydratedResult.get("json"));
+    }
+
+    /**
+     * MethodToTest {@link StoryBlockFieldDataFetcher#get(DataFetchingEnvironment)}
+     * Given Scenario: the field holds a value that merely looks like JSON but is not (Java
+     * Map.toString() notation, which used to crash the legacy parser).
+     * ExpectedResult: passed through unchanged — never an exception, never a dropped field
+     * (see #36297).
+     */
+    @Test
+    public void malformedValue_isPassedThroughWithoutFailing() throws Exception {
+        final String javaMapNotation = "{type=doc, content=[{type=paragraph, text=securely, visually}]}";
+        final Contentlet contentlet = persistContentlet(STORY_BLOCK_JSON);
+        contentlet.getMap().put(storyBlockField.variable(), javaMapNotation);
+
+        final Map<String, Object> result =
+                new StoryBlockFieldDataFetcher().get(environmentFor(contentlet));
+        assertNotNull(result);
+        assertEquals(javaMapNotation, result.get("json"));
     }
 }

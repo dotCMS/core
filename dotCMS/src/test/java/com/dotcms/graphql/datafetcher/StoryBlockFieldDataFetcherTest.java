@@ -3,7 +3,6 @@ package com.dotcms.graphql.datafetcher;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -79,14 +78,33 @@ public class StoryBlockFieldDataFetcherTest extends UnitTestBase {
     }
 
     /**
-     * A malformed value (e.g. the Java {@code Map.toString()} notation that used to reach the
-     * legacy parser) must degrade gracefully: the field resolves to null, no exception thrown.
+     * The read path never reshapes stored data: a String value that is not a Block Editor JSON
+     * document — e.g. HTML from a WYSIWYG field later converted to Block Editor — is returned
+     * unchanged, matching what {@code _map} and the Page REST API return for the same contentlet.
      */
     @Test
-    public void malformedValue_resolvesToNull() throws Exception {
+    public void nonJsonStringValue_isPassedThroughUnchanged() throws Exception {
+        final String legacyHtml = "<p>Save 20% today, <a href=\"https://dotcms.com/offer\">see details</a></p>";
+
+        final Map<String, Object> result = fetcher.get(environmentWith(legacyHtml));
+
+        assertNotNull(result);
+        assertEquals(legacyHtml, result.get("json"));
+    }
+
+    /**
+     * A value that merely looks like JSON but is not (e.g. the Java {@code Map.toString()}
+     * notation that used to crash the legacy parser) is also passed through unchanged — never an
+     * exception, never a dropped field.
+     */
+    @Test
+    public void malformedValue_isPassedThroughUnchanged() throws Exception {
         final String javaMapNotation = "{type=doc, content=[{type=paragraph, text=Run your entire digital ecosystem - securely, visually}]}";
 
-        assertNull(fetcher.get(environmentWith(javaMapNotation)));
+        final Map<String, Object> result = fetcher.get(environmentWith(javaMapNotation));
+
+        assertNotNull(result);
+        assertEquals(javaMapNotation, result.get("json"));
     }
 
     /**
