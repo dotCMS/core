@@ -111,7 +111,7 @@ export class DotMultiSelectComponent {
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotMultiSelectComponent, string>(this, 'options');
-        this._options = getDotOptionsFromFieldValue(validOptions);
+        this._options = getDotOptionsFromFieldValue(validOptions ?? '');
     }
 
     /**
@@ -145,7 +145,7 @@ export class DotMultiSelectComponent {
                         {this._options.map((item: DotOption) => {
                             return (
                                 <option
-                                    selected={this.value === item.value ? true : null}
+                                    selected={this.value === item.value ? true : undefined}
                                     value={item.value}>
                                     {item.label}
                                 </option>
@@ -163,8 +163,8 @@ export class DotMultiSelectComponent {
         this.optionsWatch();
     }
 
-    private shouldBeDisabled(): boolean {
-        return this.disabled ? true : null;
+    private shouldBeDisabled(): boolean | undefined {
+        return this.disabled ? true : undefined;
     }
 
     // Todo: find how to set proper TYPE in TS

@@ -149,12 +149,12 @@ export class DotTextareaComponent {
         this.regexCheckWatch();
     }
 
-    private getDisabledAtt(): boolean {
-        return this.disabled || null;
+    private getDisabledAtt(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
-    private getRequiredAttr(): boolean {
-        return this.required ? true : null;
+    private getRequiredAttr(): boolean | undefined {
+        return this.required ? true : undefined;
     }
 
     private isValid(): boolean {
@@ -174,7 +174,7 @@ export class DotTextareaComponent {
     }
 
     private shouldShowErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {

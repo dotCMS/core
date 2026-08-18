@@ -113,7 +113,7 @@ export class DotTagsComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <div
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         class="dot-tags__container">
                         <dot-autocomplete
                             class={getErrorClass(this.status.dotValid)}
@@ -192,8 +192,8 @@ export class DotTagsComponent {
         return isStringType(this.value) ? this.value.split(',') : [];
     }
 
-    private isDisabled(): boolean {
-        return this.disabled || null;
+    private isDisabled(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
     private isValid(): boolean {
@@ -220,7 +220,7 @@ export class DotTagsComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private updateStatus(): void {

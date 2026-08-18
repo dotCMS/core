@@ -183,7 +183,7 @@ export class DotDateRangeComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <div
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         class="dot-range__body">
                         <input
                             class={getErrorClass(this.status.dotValid)}
@@ -221,8 +221,8 @@ export class DotDateRangeComponent {
         this.valueWatch();
     }
 
-    private isDisabled(): boolean {
-        return this.disabled || null;
+    private isDisabled(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
     private setPreset(event) {
@@ -265,7 +265,7 @@ export class DotDateRangeComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {

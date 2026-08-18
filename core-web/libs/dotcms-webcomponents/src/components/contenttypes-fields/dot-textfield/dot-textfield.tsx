@@ -172,7 +172,7 @@ export class DotTextfieldComponent {
     }
 
     private shouldShowErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {

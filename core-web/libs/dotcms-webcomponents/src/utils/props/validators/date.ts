@@ -9,7 +9,7 @@ const TIME_REGEX = new RegExp('^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$');
  * @param string date
  * @returns string
  */
-export function dotValidateDate(date: string): string {
+export function dotValidateDate(date: string): string | null {
     return DATE_REGEX.test(date) ? date : null;
 }
 
@@ -19,7 +19,7 @@ export function dotValidateDate(date: string): string {
  * @param string time
  * @returns string
  */
-export function dotValidateTime(time: string): string {
+export function dotValidateTime(time: string): string | null {
     return TIME_REGEX.test(time) ? time : null;
 }
 

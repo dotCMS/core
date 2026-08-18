@@ -275,7 +275,7 @@ export class DotKeyValueComponent {
             <Host class={{ ...classes }}>
                 <dot-label
                     aria-describedby={getHintId(this.hint)}
-                    tabIndex={this.hint ? 0 : null}
+                    tabIndex={this.hint ? 0 : undefined}
                     label={this.label}
                     required={this.required}
                     name={this.name}>
@@ -311,8 +311,8 @@ export class DotKeyValueComponent {
         );
     }
 
-    private isDisabled(): boolean {
-        return this.disabled || null;
+    private isDisabled(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
     private blurHandler(): void {
@@ -337,7 +337,7 @@ export class DotKeyValueComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {
