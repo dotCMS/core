@@ -130,9 +130,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
 
     @ViewChild('addBox')
-    addBox: AddWidgetComponent;
+    addBox!: AddWidgetComponent;
 
-    @ViewChildren(AddWidgetComponent) addWidget: QueryList<AddWidgetComponent>;
+    @ViewChildren(AddWidgetComponent) addWidget!: QueryList<AddWidgetComponent>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     public rows$: Observable<DotLayoutBody>;
@@ -140,7 +140,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
 
     private themeId$ = this.store.themeId$;
 
-    private dotLayout: DotLayout;
+    private dotLayout!: DotLayout;
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
@@ -152,7 +152,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         opacity: '0'
     };
 
-    public draggingElement: HTMLElement | null;
+    public draggingElement!: HTMLElement | null;
     public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
     grid!: GridStack;
@@ -247,12 +247,15 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             .pipe(takeUntil(this.destroy$))
             .subscribe((defaultContainer) => {
                 this.store.setState({
-                    rows: parseFromDotObjectToGridStack(this.layout.body, defaultContainer),
+                    rows: parseFromDotObjectToGridStack(
+                        this.layout.body,
+                        defaultContainer ?? undefined
+                    ),
                     layoutProperties: this.layoutProperties,
                     resizingRowID: '',
                     containerMap: this.getContainerMap(defaultContainer),
-                    themeId: this.template.themeId,
-                    templateIdentifier: this.template.identifier,
+                    themeId: this.template.themeId ?? '',
+                    templateIdentifier: this.template.identifier ?? '',
                     shouldEmit: true,
                     defaultContainer
                 });
@@ -262,9 +265,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (!changes.layout?.firstChange && changes.layout?.currentValue) {
-            const parsedRows = parseFromDotObjectToGridStack(changes.layout.currentValue.body);
-            const currentTemplate = changes.template?.currentValue;
+        if (!changes['layout']?.firstChange && changes['layout']?.currentValue) {
+            const parsedRows = parseFromDotObjectToGridStack(changes['layout'].currentValue.body);
+            const currentTemplate = changes['template']?.currentValue;
             this.store.updateOldRows({
                 newRows: parsedRows,
                 templateIdentifier: currentTemplate?.identifier || this.template.identifier,
@@ -310,7 +313,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                     y: newNode.y
                 });
             })
-            .on('dragstart', ({ target }) => {
+            .on('dragstart', (event: unknown) => {
+                const { target } = event as { target: unknown };
                 this.draggingElement = target as HTMLElement;
             })
             .on('dragstop', () => this.onDragStop());
@@ -366,8 +370,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             }
 
             ddElement
-                .on('dragstart', ({ target }) => {
-                    const helper = (target as DDElementHost).ddElement.ddDraggable?.helper;
+                .on('dragstart', (event: unknown) => {
+                    const { target } = event as { target: unknown };
+                    const helper = (target as DDElementHost).ddElement?.ddDraggable?.helper;
                     this.draggingElement = (helper || target) as HTMLElement;
                     this.setAddBoxIsDragging(true);
                 })
@@ -452,6 +457,11 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             resizable: false
         });
 
+        // `open()` can return null when the dialog cannot be created.
+        if (!ref) {
+            return;
+        }
+
         ref.onClose
             .pipe(
                 take(1),
@@ -515,12 +525,21 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
             })
             .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                this.store.setResizingRowID(String(el.gridstackNode.grid.parentGridItem.id));
+                // Every link in this chain is optional in GridStack's types; without a parent
+                // grid item there is no row to mark as resizing.
+                const rowId = el.gridstackNode?.grid?.parentGridItem?.id;
+
+                if (rowId === undefined) {
+                    return;
+                }
+
+                this.store.setResizingRowID(String(rowId));
             })
             .on('resizestop', () => {
                 this.store.setResizingRowID(null);
             })
-            .on('dragstart', ({ target }) => {
+            .on('dragstart', (event: unknown) => {
+                const { target } = event as { target: unknown };
                 this.draggingElement = target as HTMLElement;
             })
             .on('dragstop', () => this.onDragStop());
@@ -560,7 +579,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             return this.containerMap;
         }
 
-        const key = defaultContainer.path ?? defaultContainer.identifier;
+        const key = defaultContainer.path ?? defaultContainer.identifier ?? '';
 
         return {
             ...this.containerMap,

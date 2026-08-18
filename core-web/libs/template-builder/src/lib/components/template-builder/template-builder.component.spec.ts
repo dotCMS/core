@@ -220,7 +220,7 @@ describe('TemplateBuilderComponent', () => {
         let rowId: string;
 
         store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-            widgetToAddContainer = items[0].subGridOpts.children[0];
+            widgetToAddContainer = items[0].subGridOpts!.children[0];
             rowId = items[0].id as string;
 
             spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
@@ -237,7 +237,7 @@ describe('TemplateBuilderComponent', () => {
         let rowId: string;
 
         store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-            widgetToDeleteContainer = items[0].subGridOpts.children[0];
+            widgetToDeleteContainer = items[0].subGridOpts!.children[0];
             rowId = items[0].id as string;
 
             spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
@@ -248,7 +248,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a dialog when clicking on row-style-class-button ', () => {
-        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
+        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'))!;
 
         spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
 
@@ -256,7 +256,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a dialog when clicking on box-style-class-button', () => {
-        const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'));
+        const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'))!;
 
         spectator.dispatchFakeEvent(editBoxStyleClassesButton, 'onClick');
 
@@ -264,7 +264,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a panel when clicking on Layout button', () => {
-        const actionsButton = spectator.query(byTestId('btn-select-layout'));
+        const actionsButton = spectator.query(byTestId('btn-select-layout'))!;
 
         spectator.click(actionsButton);
 
@@ -291,7 +291,7 @@ describe('TemplateBuilderComponent', () => {
         );
         const mainDiv = spectator.query(byTestId('template-builder-main'));
 
-        mainDiv.dispatchEvent(new MouseEvent('mousemove'));
+        mainDiv!.dispatchEvent(new MouseEvent('mousemove'));
 
         expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
     });
@@ -307,12 +307,12 @@ describe('TemplateBuilderComponent', () => {
     it("should trigger deleteSection on header when clicking on 'Delete Section' button", () => {
         const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
         const headerComponent = spectator.query(byTestId('template-builder-header'));
-        const deleteSectionButton = headerComponent.querySelector(
+        const deleteSectionButton = headerComponent!.querySelector(
             '[data-testId="delete-section-button"]'
         );
 
         // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
-        spectator.click(deleteSectionButton.querySelector('button'));
+        spectator.click(deleteSectionButton!.querySelector('button')!);
 
         expect(deleteSectionMock).toHaveBeenCalledWith('header');
     });
@@ -320,12 +320,12 @@ describe('TemplateBuilderComponent', () => {
     it("should trigger deleteSection on footer when clicking on 'Delete Section' button", () => {
         const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
         const footerComponent = spectator.query(byTestId('template-builder-footer'));
-        const deleteSectionButton = footerComponent.querySelector(
+        const deleteSectionButton = footerComponent!.querySelector(
             '[data-testId="delete-section-button"]'
         );
 
         // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
-        spectator.click(deleteSectionButton.querySelector('button'));
+        spectator.click(deleteSectionButton!.querySelector('button')!);
 
         expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });
@@ -369,29 +369,24 @@ describe('TemplateBuilderComponent', () => {
                 }
             });
 
-            store.vm$
-                .pipe(
-                    map((x) => x?.items),
-                    take(1)
-                )
-                .subscribe(() => {
-                    expect(layoutChangeMock).toHaveBeenCalledWith({
-                        layout: {
-                            body: FULL_DATA_MOCK,
-                            header: true,
-                            footer: true,
-                            sidebar: {
-                                containers: [],
-                                location: 'left',
-                                width: 'small'
-                            },
-                            width: 'Mobile',
-                            title: 'Test Title'
+            store.vm$.pipe(take(1)).subscribe(() => {
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    layout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            containers: [],
+                            location: 'left',
+                            width: 'small'
                         },
-                        themeId: '123'
-                    });
-                    done();
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123'
                 });
+                done();
+            });
         });
     });
 

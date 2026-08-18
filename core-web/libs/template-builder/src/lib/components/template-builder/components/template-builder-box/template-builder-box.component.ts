@@ -58,9 +58,9 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
-    @Input() items: DotTemplateBuilderContainer[];
+    @Input() items: DotTemplateBuilderContainer[] = [];
     @Input() width = 1;
-    @Input() containerMap: DotContainerMap;
+    @Input() containerMap!: DotContainerMap;
     @Input() actions = ['add', 'delete', 'edit'];
     dialogVisible = false;
     boxVariant = TemplateBuilderBoxSize.small;
@@ -71,7 +71,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     get dropdownLabel(): string {
         return this.boxVariant === this.templateBuilderSizes.large || this.dialogVisible
-            ? this._dropdownLabel
+            ? (this._dropdownLabel ?? '')
             : '';
     }
 
@@ -102,8 +102,11 @@ export class TemplateBuilderBoxComponent implements OnChanges {
      * @memberof TemplateBuilderBoxComponent
      */
     private getContainerReference(dotContainer: DotContainer): string {
-        return dotContainer.source === CONTAINER_SOURCE.FILE
-            ? dotContainer.path
-            : dotContainer.identifier;
+        // Both are optional on DotContainer; a container always has one of them.
+        return (
+            (dotContainer.source === CONTAINER_SOURCE.FILE
+                ? dotContainer.path
+                : dotContainer.identifier) ?? ''
+        );
     }
 }

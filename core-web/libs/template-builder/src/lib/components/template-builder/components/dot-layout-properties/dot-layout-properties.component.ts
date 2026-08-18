@@ -26,5 +26,5 @@ import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar/dot-lay
     ]
 })
 export class DotLayoutPropertiesComponent {
-    @Input() group: UntypedFormGroup;
+    @Input() group!: UntypedFormGroup;
 }
