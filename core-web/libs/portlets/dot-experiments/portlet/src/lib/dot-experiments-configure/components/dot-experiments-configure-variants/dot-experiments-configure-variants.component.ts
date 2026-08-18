@@ -117,6 +117,7 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-configure-variants.component.html',
+    styleUrl: './dot-experiments-configure-variants.component.scss',
     // Opened from this card only, so the dialog's lifetime is the card's.
     providers: [DialogService]
 })
