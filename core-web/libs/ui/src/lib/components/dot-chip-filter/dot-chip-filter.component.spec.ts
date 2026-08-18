@@ -81,6 +81,34 @@ describe('DotChipFilterComponent', () => {
         });
     });
 
+    describe('toggle mode with an empty label', () => {
+        it('should not show the empty label while the toggle is on', () => {
+            // The two features met in the same @if chain during a merge: a toggle never matches the
+            // values branch, so an unguarded @else would render the "nothing selected" label on an
+            // ACTIVE toggle.
+            spectator.setInput('mode', 'toggle');
+            spectator.setInput('emptyLabel', 'All');
+            spectator.setInput('toggled', true);
+
+            expect(spectator.query(byTestId('chip-empty-label'))).toBeFalsy();
+        });
+
+        it('should not show the empty label while the toggle is off either', () => {
+            spectator.setInput('mode', 'toggle');
+            spectator.setInput('emptyLabel', 'All');
+            spectator.setInput('toggled', false);
+
+            expect(spectator.query(byTestId('chip-empty-label'))).toBeFalsy();
+        });
+
+        it('should still show the empty label on a dropdown chip with no selection', () => {
+            spectator.setInput('emptyLabel', 'All');
+            spectator.setInput('selections', []);
+
+            expect(spectator.query(byTestId('chip-empty-label'))?.textContent).toContain('All');
+        });
+    });
+
     describe('removable', () => {
         it('should hide the remove button when not removable, keeping the selection visible', () => {
             // A filter that always holds a value (the Locale chip on its environment default) has

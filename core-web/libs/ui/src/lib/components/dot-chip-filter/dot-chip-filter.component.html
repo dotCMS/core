@@ -2,7 +2,10 @@
     <span class="font-semibold" data-testid="chip-title">{{ title() }}</span>
     @if (active() && !isToggle()) {
         <span data-testid="chip-values">: {{ valuesLabel() }}</span>
-    } @else if (emptyLabel()) {
+    } @else if (!isToggle() && emptyLabel()) {
+        <!-- `!isToggle()` guards the fall-through, not the label itself. A toggle never satisfies the
+             branch above, so without it an ON toggle would drop into this one and render the
+             "nothing selected" label — the opposite of what it means. -->
         <span data-testid="chip-empty-label">: {{ emptyLabel() }}</span>
     }
 </span>
