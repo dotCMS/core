@@ -30,10 +30,26 @@
                         <dot-role-users-tab data-testid="users-tab" />
                     </p-tabpanel>
                     <p-tabpanel value="permissions" [pt]="tabPanelPt">
-                        <dot-role-permissions-iframe data-testid="permissions-tab" />
+                        <!--
+                            Only mount the iframe when its tab is active. PrimeNG
+                            hides inactive `p-tabpanel`s with `display:none`, and
+                            the wrapped Dojo widgets inside the JSP snapshot the
+                            container width at boot via `dojo.contentBox(...)`
+                            (see `buildLayoutsGrid` for tools, and the accordion
+                            for permissions). If the iframe loads while hidden
+                            those measurements return 0 and the widget renders
+                            forever at that width. Mounting on activation
+                            guarantees the JSP boots with the real viewport
+                            width.
+                        -->
+                        @if (store.activeTab() === 'permissions') {
+                            <dot-role-permissions-iframe data-testid="permissions-tab" />
+                        }
                     </p-tabpanel>
                     <p-tabpanel value="tools" [pt]="tabPanelPt">
-                        <dot-role-tools-iframe data-testid="tools-tab" />
+                        @if (store.activeTab() === 'tools') {
+                            <dot-role-tools-iframe data-testid="tools-tab" />
+                        }
                     </p-tabpanel>
                 </p-tabpanels>
             </p-tabs>

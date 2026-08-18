@@ -1,0 +1,30 @@
+/*
+ * Force a full-height flex chain down from `<p-tabs>` to the tabpanel
+ * content. Without this, PrimeNG's default tab layout leaves the panels
+ * at `height: auto` — the permissions/tools iframes then collapse to
+ * their own fallback `min-height`, which crops the embedded Dojo
+ * widgets. We can't rely on Tailwind's `!` suffix utilities through
+ * PrimeNG's `pt` API because newly-added `foo!` class names don't
+ * always get generated on a running dev server (JIT can miss them).
+ *
+ * Plain CSS with `!important` sidesteps that entirely.
+ */
+
+:host ::ng-deep p-tabs.p-tabs {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+:host ::ng-deep p-tabpanels.p-tabpanels {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+:host ::ng-deep p-tabpanel.p-tabpanel {
+    display: block !important;
+    height: 100% !important;
+}

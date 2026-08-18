@@ -28,6 +28,7 @@ import { DotRolesPortletService } from '../services/dot-roles-portlet.service';
     ],
     providers: [DotRolesPortletService, DotRolesStore],
     templateUrl: './dot-roles-page.component.html',
+    styleUrl: './dot-roles-page.component.scss',
     host: { class: 'flex flex-1 min-h-0 block' }
 })
 export class DotRolesPageComponent implements OnInit {
@@ -35,10 +36,10 @@ export class DotRolesPageComponent implements OnInit {
 
     /**
      * PassThrough to strip PrimeNG's default padding off the tab panel
-     * wrappers — the Users tab renders a `p-table` that must reach the
-     * section edges to align with the panel divider. Tailwind's `!`
-     * suffix wins the specificity war against PrimeNG's `.p-tabpanels`
-     * selector.
+     * wrappers so the Users tab's `p-table` reaches the section edges
+     * to align with the panel divider. The full-height flex chain is
+     * enforced in `dot-roles-page.component.scss` — see that file for
+     * why we don't do it here via `pt`.
      */
     protected readonly tabPanelsPt = { root: { class: 'p-0!' } };
     protected readonly tabPanelPt = { root: { class: 'p-0!' } };

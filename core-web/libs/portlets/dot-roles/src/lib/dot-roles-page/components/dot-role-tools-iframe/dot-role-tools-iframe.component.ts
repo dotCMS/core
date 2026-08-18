@@ -18,7 +18,7 @@ import { DotRolesStore } from '../../store/dot-roles.store';
     standalone: true,
     imports: [DotMessagePipe],
     templateUrl: './dot-role-tools-iframe.component.html',
-    host: { class: 'block h-full min-h-[500px]' }
+    host: { class: 'block h-full' }
 })
 export class DotRoleToolsIframeComponent {
     protected readonly store = inject(DotRolesStore);

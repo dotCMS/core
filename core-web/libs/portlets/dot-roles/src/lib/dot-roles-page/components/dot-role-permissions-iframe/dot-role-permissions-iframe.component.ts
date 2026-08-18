@@ -28,7 +28,7 @@ const PERMISSIONS_WRAPPER_JSP = '/html/portlet/ext/roleadmin/view_role_permissio
     standalone: true,
     imports: [DotMessagePipe],
     templateUrl: './dot-role-permissions-iframe.component.html',
-    host: { class: 'block h-full min-h-[500px]' }
+    host: { class: 'block h-full' }
 })
 export class DotRolePermissionsIframeComponent {
     protected readonly store = inject(DotRolesStore);
