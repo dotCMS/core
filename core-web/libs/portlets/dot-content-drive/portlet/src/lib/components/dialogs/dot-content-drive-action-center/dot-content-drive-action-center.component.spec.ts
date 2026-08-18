@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';

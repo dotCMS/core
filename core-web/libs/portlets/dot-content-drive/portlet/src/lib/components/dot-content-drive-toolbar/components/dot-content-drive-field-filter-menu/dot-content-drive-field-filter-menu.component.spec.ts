@@ -48,18 +48,36 @@ const CONTENT_TYPE: DotCMSContentType = {
     ]
 } as DotCMSContentType;
 
+/**
+ * The `getFilterValue` spy, addressed through a single mock signature.
+ *
+ * `SpyObject<T>` maps every member through `T[P] extends (...args: any[]) => infer R ? ... : ...`.
+ * When `R` is a union — here `string | string[] | undefined` — that conditional distributes, so the
+ * member's type becomes an *intersection* of `jest.Mock`s whose `mockImplementation` overloads
+ * demand `=> undefined`, `=> string` and `=> string[]` simultaneously. No implementation satisfies
+ * all three, so re-implementing a union-returning method needs this narrowing.
+ */
+const filterValueSpy = (store: SpyObject<InstanceType<typeof DotContentDriveStore>>) =>
+    store.getFilterValue as unknown as jest.Mock<string | string[] | undefined, [string]>;
+
 describe('DotContentDriveFieldFilterMenuComponent', () => {
     let spectator: Spectator<DotContentDriveFieldFilterMenuComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let contentTypeService: SpyObject<DotContentTypeService>;
+
+    // Real signals so the component's computeds re-run when they change, held locally because
+    // `SpyObject<T>` types these members from the store — which exposes state as readonly
+    // `Signal` — so `.set` is not reachable through `store`.
+    const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
+    const userSearchableActiveSignal = signal<string[]>([]);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveFieldFilterMenuComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
                 getFilterValue: jest.fn().mockReturnValue(undefined),
-                userSearchableFields: signal<DotCMSContentTypeField[]>([]),
-                userSearchableActive: signal<string[]>([]),
+                userSearchableFields: userSearchableFieldsSignal,
+                userSearchableActive: userSearchableActiveSignal,
                 addUserSearchableField: jest.fn(),
                 setUserSearchableFields: jest.fn(),
                 setShowInListFields: jest.fn(),
@@ -85,7 +103,11 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
         contentTypeService = spectator.inject(DotContentTypeService, true);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => {
+        jest.clearAllMocks();
+        userSearchableFieldsSignal.set([]);
+        userSearchableActiveSignal.set([]);
+    });
 
     const moreButton = () =>
         spectator.query(byTestId('field-filter-more-button'))?.querySelector('button');
@@ -128,7 +150,7 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
 
     it('should add a field as a chip when its option is clicked', () => {
         store.getFilterValue.mockReturnValue(['blog']);
-        store.userSearchableFields.set([field({ variable: 'body', name: 'Body' })]);
+        userSearchableFieldsSignal.set([field({ variable: 'body', name: 'Body' })]);
         spectator.detectChanges();
 
         spectator.click(moreButton() as HTMLElement);
@@ -143,8 +165,8 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
 
     it('should not list a field that is already active', () => {
         store.getFilterValue.mockReturnValue(['blog']);
-        store.userSearchableFields.set([field({ variable: 'body', name: 'Body' })]);
-        store.userSearchableActive.set(['body']);
+        userSearchableFieldsSignal.set([field({ variable: 'body', name: 'Body' })]);
+        userSearchableActiveSignal.set(['body']);
         spectator.detectChanges();
 
         spectator.click(moreButton() as HTMLElement);
@@ -158,7 +180,7 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
 
     it('should clear field filters when the active content type changes, but not on first load', () => {
         const contentType = signal<string[] | undefined>(['blog']);
-        store.getFilterValue.mockImplementation((key: string) =>
+        filterValueSpy(store).mockImplementation((key: string) =>
             key === 'contentType' ? contentType() : undefined
         );
 
@@ -206,7 +228,7 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
 
     it('should clear the Show In List fields when the single content-type selection is removed', () => {
         const contentType = signal<string[] | undefined>(['blog']);
-        store.getFilterValue.mockImplementation((key: string) =>
+        filterValueSpy(store).mockImplementation((key: string) =>
             key === 'contentType' ? contentType() : undefined
         );
 

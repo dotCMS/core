@@ -7,7 +7,7 @@ import { signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentDriveItem } from '@dotcms/dotcms-models';
 
 import { DotContentDriveWorkflowActionsComponent } from './dot-content-drive-workflow-actions.component';
 
@@ -172,7 +172,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 baseType: 'CONTENT',
                 inode: 'test-inode-1',
                 identifier: 'test-id'
-            } as DotContentDriveItem;
+            } as DotCMSContentlet;
 
             mockSelectedItems.set([mockItem]);
             spectator.detectChanges();
@@ -194,7 +194,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 baseType: 'HTMLPAGE',
                 inode: 'test-inode-1',
                 identifier: 'test-id'
-            } as DotContentDriveItem;
+            } as DotCMSContentlet;
 
             mockSelectedItems.set([mockItem]);
             spectator.detectChanges();
@@ -284,7 +284,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 inode: 'test-asset-inode',
                 title: 'test-document.pdf',
                 fileAsset: '/dA/test-asset-id/fileAsset/test-document.pdf'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -318,7 +318,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 inode: 'test-asset-inode',
                 title: 'test-image.jpg',
                 asset: '/dA/test-asset-id/asset/test-image.jpg'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -362,7 +362,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 title: 'test-asset.png',
                 assetVersion: '/dA/version/test-asset.png',
                 asset: '/dA/test-asset.png'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -393,7 +393,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 title: 'document.pdf',
                 fileAssetVersion: '/dA/version/document.pdf',
                 fileAsset: '/dA/document.pdf'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();

@@ -8,11 +8,18 @@ import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 
 import { delay } from 'rxjs/operators';
 
 import { DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotFolder, PermissionType, PERMISSIONS_TYPE } from '@dotcms/dotcms-models';
+import {
+    DotFolder,
+    isTreeNodeLoadMoreData,
+    PermissionType,
+    PERMISSIONS_TYPE,
+    TreeNodeLoadMoreData
+} from '@dotcms/dotcms-models';
 import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
     DotFolderTreeNodeContentData,
+    DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
     ALL_FOLDER,
@@ -23,6 +30,19 @@ import { GlobalStore } from '@dotcms/store';
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+
+/**
+ * Asserts a node carries load-more data and narrows to that arm of the union.
+ *
+ * `DotFolderTreeNodeData` is discriminated on `type`, so `nextPage`/`remaining` are only reachable
+ * once the content arm is ruled out. The guard subsumes the `data.type` assertion these blocks
+ * used to make by hand, and `data` itself is optional on PrimeNG's `TreeNode`.
+ */
+const expectLoadMoreData = (data: DotFolderTreeNodeData | undefined): TreeNodeLoadMoreData => {
+    expect(data && isTreeNodeLoadMoreData(data)).toBe(true);
+
+    return data as TreeNodeLoadMoreData;
+};
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
@@ -457,9 +477,9 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 expect(node.children).toHaveLength(2);
                 const loadMore = node.children?.[1];
-                expect(loadMore?.data.type).toBe('load-more');
-                expect(loadMore?.data.nextPage).toBe(2);
-                expect(loadMore?.data.remaining).toBe(119);
+                const loadMoreData = expectLoadMoreData(loadMore?.data);
+                expect(loadMoreData.nextPage).toBe(2);
+                expect(loadMoreData.remaining).toBe(119);
                 expect(loadMore?.selectable).toBe(false);
             });
 
@@ -772,8 +792,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 const refreshed = parent.children?.find(
                     (child) => child.data!.type === 'load-more'
                 );
-                expect(refreshed?.data.nextPage).toBe(3);
-                expect(refreshed?.data.remaining).toBe(148);
+                const refreshedData = expectLoadMoreData(refreshed?.data);
+                expect(refreshedData.nextPage).toBe(3);
+                expect(refreshedData.remaining).toBe(148);
             });
         });
 
@@ -855,7 +876,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 expect(emittedValue).toBeDefined();
                 expect(emittedValue?.files).toBe(mockFileList);
-                expect(emittedValue?.targetFolder.id).toBe('folder-1');
+                expect(emittedValue?.targetFolder?.id).toBe('folder-1');
             });
         });
 
@@ -937,8 +958,8 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(currentSiteHostname?.textContent).toContain(mockSiteDetails.hostname);
         });
 
-        it('should handle null current site gracefully', () => {
-            contentDriveStore.currentSite.mockReturnValue(null);
+        it('should handle an unset current site gracefully', () => {
+            contentDriveStore.currentSite.mockReturnValue(undefined);
             spectator.detectComponentChanges();
 
             const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
@@ -958,22 +979,23 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(contentDriveStore.loadFolders).toHaveBeenCalled();
         });
 
-        it('should not load folders when currentSite is null', () => {
+        it('should not load folders when currentSite is unset', () => {
             // Clear any previous calls
             jest.clearAllMocks();
 
-            // Set currentSite to null - the effect should return early
-            contentDriveStore.currentSite.mockReturnValue(null);
+            // Unset currentSite - the effect should return early. `undefined`, not `null`: that is
+            // what the state holds before init, and the effect's guard is a falsy check either way.
+            contentDriveStore.currentSite.mockReturnValue(undefined);
 
-            // The effect checks currentSite at the start, so if it's null, loadFolders won't be called
-            // We verify this by checking that after setting null, loadFolders is not called
+            // The effect checks currentSite at the start, so if it is unset loadFolders won't be
+            // called. We verify this by checking that after unsetting it, loadFolders is not called
             spectator.detectComponentChanges();
             spectator.flushEffects();
 
-            // Since currentSite is null, the effect should return early and not call loadFolders
-            // Note: This test verifies the effect logic, not the actual effect execution
-            // The effect code checks: if (!currentSite) return;
-            expect(contentDriveStore.currentSite()).toBeNull();
+            // Asserts the effect's behaviour rather than the mock: this line used to read back
+            // `currentSite()`, which only restated the `mockReturnValue` above. The effect's guard
+            // is `if (!currentSite) return;`, so what it owes us is that loadFolders stays unused.
+            expect(contentDriveStore.loadFolders).not.toHaveBeenCalled();
         });
     });
 

@@ -1,5 +1,9 @@
 import { DotFolder } from '@dotcms/dotcms-models';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import {
+    ALL_FOLDER,
+    DotFolderTreeNodeContentData,
+    DotFolderTreeNodeItem
+} from '@dotcms/portlets/content-drive/ui';
 
 import { buildTreeFolderNodes, createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
@@ -164,7 +168,9 @@ describe('Sidebar Utils', () => {
 
         it('should carry the folder defaultBaseType onto the node data', () => {
             const result = createTreeNode({ ...mockFolder, defaultBaseType: 'FILEASSET' });
-            expect(result.data!.defaultBaseType).toBe('FILEASSET');
+            // `data` is the discriminated node-data union; `defaultBaseType` lives only on the
+            // content arm, which is what `createTreeNode` builds for a folder.
+            expect((result.data as DotFolderTreeNodeContentData).defaultBaseType).toBe('FILEASSET');
         });
 
         it('should use folder path as label', () => {
@@ -381,7 +387,7 @@ describe('Sidebar Utils', () => {
 
             // Selected node should be the application folder
             expect(result.selectedNode?.key).toBe('83bb5752-4264-43c4-84c8-28176603431a');
-            expect(result.selectedNode?.data.path).toBe('/application/');
+            expect(result.selectedNode?.data!.path).toBe('/application/');
         });
 
         it('should handle deeper nested path selection', () => {

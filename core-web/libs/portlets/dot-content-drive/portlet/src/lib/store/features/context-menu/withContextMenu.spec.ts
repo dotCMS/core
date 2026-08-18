@@ -2,28 +2,19 @@ import { describe, it, expect } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentDriveActionableItem } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { withContextMenu } from './withContextMenu';
 
-import {
-    DotContentDriveContextMenu,
-    DotContentDriveSortOrder,
-    DotContentDriveState,
-    DotContentDriveStatus
-} from '../../../shared/models';
+import { DotContentDriveContextMenu, DotContentDriveState } from '../../../shared/models';
+import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const initialState: DotContentDriveState = {
-    currentSite: null,
+    // Seeded from the store's own initial state so this fixture cannot drift from it; only the
+    // keys this feature's tests care about are overridden.
+    ...DOT_CONTENT_DRIVE_INITIAL_STATE,
     path: '',
-    filters: {},
-    items: [],
-    selectedItems: [],
-    status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
-    pagination: { limit: 40, page: 1, offset: 0 },
-    sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
 
@@ -280,8 +271,13 @@ describe('withContextMenu', () => {
             const mockEvent1 = new MouseEvent('contextmenu');
             const mockEvent2 = new MouseEvent('contextmenu');
 
-            const contentlet1 = { ...mockContentlet, inode: 'contentlet-1' } as DotContentDriveItem;
-            const contentlet2 = { ...mockContentlet, inode: 'contentlet-2' } as DotContentDriveItem;
+            const contentlet1: DotCMSContentlet = { ...mockContentlet, inode: 'contentlet-1' };
+            const contentlet2: DotCMSContentlet = { ...mockContentlet, inode: 'contentlet-2' };
+
+            // `contextMenu().contentlet` is the actionable union, and only its contentlet arm has
+            // an `inode` — a folder is identified by `identifier`. These fixtures are contentlets.
+            const inodeOf = (item: DotContentDriveActionableItem | null) =>
+                (item as DotCMSContentlet | null)?.inode;
 
             // Set context menu for first contentlet
             store.setContextMenu({
@@ -290,7 +286,7 @@ describe('withContextMenu', () => {
                 showAddToBundle: false
             });
 
-            expect(store.contextMenu().contentlet?.inode).toBe('contentlet-1');
+            expect(inodeOf(store.contextMenu().contentlet)).toBe('contentlet-1');
 
             // Switch to second contentlet
             store.setContextMenu({
@@ -299,7 +295,7 @@ describe('withContextMenu', () => {
                 showAddToBundle: false
             });
 
-            expect(store.contextMenu().contentlet?.inode).toBe('contentlet-2');
+            expect(inodeOf(store.contextMenu().contentlet)).toBe('contentlet-2');
             expect(store.contextMenu().triggeredEvent).toBe(mockEvent2);
         });
     });
