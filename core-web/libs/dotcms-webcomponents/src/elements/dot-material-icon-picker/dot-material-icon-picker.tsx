@@ -21,7 +21,8 @@ export class DotMaterialIcon {
 
     @State() showSuggestions!: boolean;
     @State() suggestionArr: string[] = [];
-    @State() selectedSuggestionIndex!: number;
+    /** Undefined when no suggestion is highlighted, which is what the three clears below set. */
+    @State() selectedSuggestionIndex?: number;
 
     /** Value for input placeholder */
     @Prop({ reflect: true }) placeholder: string = '';
@@ -91,8 +92,8 @@ export class DotMaterialIcon {
         this.suggestionArr = this.findMatch(match);
 
         if (resetSearch) {
-            const input: HTMLInputElement = this.element.querySelector('.dot-material-icon__input');
-            input.focus();
+            // Absent before the first render; there is nothing to focus then.
+            this.element.querySelector<HTMLInputElement>('.dot-material-icon__input')?.focus();
         }
     };
 
@@ -244,7 +245,7 @@ export class DotMaterialIcon {
         });
     }
 
-    private getColorPicker(show: string) {
+    private getColorPicker(show: string | undefined) {
         return show === 'true' ? (
             <div>
                 <label htmlFor="iconColor" class="dot-material-icon__color-label">

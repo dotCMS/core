@@ -82,7 +82,8 @@ export class DotAssetDropZone {
     @State() progressIndicator = 0;
     @State() progressBarText = '';
 
-    private dropEventTarget = null;
+    /** The element the drag entered, so `dragOutHandler` can tell a real leave from a bubble. */
+    private dropEventTarget: EventTarget | null = null;
     private errorMessage = '';
     private dialogHeader = '';
 
@@ -148,11 +149,24 @@ export class DotAssetDropZone {
         const uploadService = new DotUploadService();
         let files: File[] = [];
         this.updateProgressBar(0, this.uploadFileText);
-        if (event.dataTransfer.items) {
-            for (let item of Array.from(event.dataTransfer.items)) {
+
+        // Null when the drop carried no transfer at all, in which case there is nothing to upload.
+        const dataTransfer = event.dataTransfer;
+
+        if (!dataTransfer) {
+            return;
+        }
+
+        if (dataTransfer.items) {
+            for (const item of Array.from(dataTransfer.items)) {
                 try {
-                    if (item.webkitGetAsEntry().isFile) {
-                        files.push(item.getAsFile());
+                    // `webkitGetAsEntry` is null for a non-filesystem item (a dragged selection, a
+                    // URL) and `getAsFile` for anything that is not a file — both are the
+                    // "not a file" case the else branch below already reports.
+                    const file = item.webkitGetAsEntry()?.isFile ? item.getAsFile() : null;
+
+                    if (file) {
+                        files.push(file);
                     } else {
                         this.showDialog(this.dialogLabels.errorHeader, this.uploadErrorLabel);
                         files = [];
@@ -164,7 +178,7 @@ export class DotAssetDropZone {
                 }
             }
         } else {
-            Array.from(event.dataTransfer.files).map((file: File) => {
+            Array.from(dataTransfer.files).map((file: File) => {
                 files.push(file);
             });
         }
@@ -228,7 +242,6 @@ export class DotAssetDropZone {
             })
             .then((response: DotCMSContentlet[]) => {
                 this.hideOverlay();
-                debugger;
                 this.uploadComplete.emit(response);
             })
             .catch((errors: DotHttpErrorResponse[]) => {

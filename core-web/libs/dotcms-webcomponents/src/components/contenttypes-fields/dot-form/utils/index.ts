@@ -36,7 +36,7 @@ export function setAttributesToTag(
  * Given a string formatted value "key|value,llave|valor" return an object.
  * @param values
  */
-const pipedValuesToObject = (values: string): { [key: string]: string } => {
+const pipedValuesToObject = (values: string): { [key: string]: string } | null => {
     return isStringType(values)
         ? values.split(',').reduce((acc, item) => {
               const [key, value] = item.split('|');
@@ -103,7 +103,7 @@ export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: str
 export const getFieldVariableValue = (
     fieldVariables: DotCMSContentTypeFieldVariable[],
     key: string
-): string => {
+): string | null => {
     if (fieldVariables && fieldVariables.length) {
         const [variable] = fieldVariables.filter(
             (item: DotCMSContentTypeFieldVariable) => item.key.toUpperCase() === key.toUpperCase()
@@ -140,7 +140,9 @@ export const getFieldsFromLayout = (
 ): DotCMSContentTypeField[] => {
     return layout.reduce(
         (acc: DotCMSContentTypeField[], { columns }: DotCMSContentTypeLayoutRow) =>
-            acc.concat(...columns.map((col: DotCMSContentTypeLayoutColumn) => col.fields)),
+            // `?? []` for a row with no columns: the layout goes momentarily empty while a field is
+            // being dragged in the edit page, which `dot-form-row` documents.
+            acc.concat(...(columns ?? []).map((col: DotCMSContentTypeLayoutColumn) => col.fields)),
         []
     );
 };
@@ -148,8 +150,11 @@ export const getFieldsFromLayout = (
 const fieldParamsConversionFromBE = {
     'Key-Value': (field: DotCMSContentTypeField) => {
         if (field.defaultValue && typeof field.defaultValue !== 'string') {
-            const valuesArray = Object.keys(field.defaultValue).map((key: string) => {
-                return { key: key, value: field.defaultValue[key] };
+            // Bound to a local so the `typeof` narrowing survives into the callback — TypeScript
+            // discards it for a property read inside a closure.
+            const defaultValue = field.defaultValue as Record<string, string>;
+            const valuesArray = Object.keys(defaultValue).map((key: string) => {
+                return { key: key, value: defaultValue[key] };
             });
             field.defaultValue = getJsonStringFromDotKeyArray(valuesArray);
         }
