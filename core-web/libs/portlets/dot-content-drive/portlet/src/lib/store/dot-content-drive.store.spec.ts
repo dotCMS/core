@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
+    PushPublishService,
     DotContentDriveService,
     DotCurrentUserService,
     DotFolderService,
@@ -21,11 +22,13 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DotAjaxActionResponseView,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
     DotFireDefaultActionResult,
-    DotSite
+    DotSite,
+    DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
@@ -73,6 +76,7 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -796,6 +800,7 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -854,6 +859,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -952,6 +958,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1239,6 +1246,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             }),
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
             mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
+            mockProvider(PushPublishService, { pushPublishAssets: jest.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
@@ -1274,19 +1282,21 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
     describe('executeQuickAction', () => {
         it('should publish the running action so the toolbar can report it', () => {
+            // Lock, not Publish: Publish is no longer a quick action — it belongs to the
+            // Workflow Actions section, where it resolves through the scheme's mapping.
             // Never settles, so the in-flight state is observable.
             fireService.fireDefaultAction.mockReturnValue(NEVER);
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Publish', total: 2 });
+            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 2 });
         });
 
         it('should fire the default action with the given inodes', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: 'PUBLISH',
+                action: 'LOCK',
                 inodes: ['inode-1']
             });
         });
@@ -1301,10 +1311,10 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 })
             );
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Publish',
+                actionName: 'Lock',
                 successCount: 1,
                 skippedCount: 0,
                 failCount: 1
@@ -1312,14 +1322,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
         });
 
         it('should clear the running action once settled', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(store.actionExecution()).toBeUndefined();
             expect(store.actionExecutionResult()).toBeDefined();
         });
 
         it('should not fire when there are no inodes', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', []);
+            store.executeQuickAction('LOCK', 'Lock', []);
 
             expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
             expect(store.actionExecution()).toBeUndefined();
@@ -1330,8 +1340,8 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // dialog used to reset it, letting the same rows be fired twice.
             fireService.fireDefaultAction.mockReturnValue(NEVER);
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(fireService.fireDefaultAction).toHaveBeenCalledTimes(1);
         });
@@ -1340,7 +1350,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             const error = new HttpErrorResponse({ status: 403 });
             fireService.fireDefaultAction.mockReturnValue(throwError(() => error));
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.actionExecution()).toBeUndefined();
@@ -1356,7 +1366,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 of({ results: [] } as unknown as DotFireDefaultActionResult)
             );
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecutionResult()).toBeUndefined();
             expect(store.actionExecution()).toBeUndefined();
@@ -1372,10 +1382,10 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 })
             );
 
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1', 'inode-2']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Publish',
+                actionName: 'Lock',
                 successCount: 0,
                 skippedCount: 0,
                 failCount: 2
@@ -1530,9 +1540,145 @@ describe('DotContentDriveStore - withActionExecution', () => {
         });
     });
 
+    describe('executePushPublish', () => {
+        /** In the shape `DotWorkflowPushPublishComponent` emits — already split for the servlet. */
+        const SETTINGS: DotWorkflowPushPublishValue = {
+            whereToSend: 'env-1,env-2',
+            iWantTo: 'publish',
+            publishDate: '2026-09-01',
+            publishTime: '10-00',
+            expireDate: '2026-10-01',
+            expireTime: '23-59',
+            filterKey: 'default',
+            timezoneId: 'America/Costa_Rica'
+        };
+        let pushPublishService: SpyObject<PushPublishService>;
+
+        beforeEach(() => {
+            pushPublishService = spectator.inject(PushPublishService);
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+        });
+
+        it('should post the identifiers comma-joined', () => {
+            // `RemotePublishAjaxAction` splits `assetIdentifier` on "," — bulk needs no new endpoint.
+            store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
+
+            expect(pushPublishService.pushPublishAssets).toHaveBeenCalledWith(
+                'id-1,id-2',
+                SETTINGS
+            );
+        });
+
+        it('should report the server count, not the number sent', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Push Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0
+            });
+        });
+
+        it('should split failures out of the total', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Push Publish',
+                successCount: 2,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        it('should never report a negative success count', () => {
+            // Defends the subtraction: `errors` exceeding `total` would read as "-2 pushed".
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(store.actionExecutionResult()?.successCount).toBe(0);
+        });
+
+        it('should treat a string `errors` as a failure, not a success', () => {
+            // The servlet answers 200 for its own failures, writing `{"errors": "<message>"}` with no
+            // `total`. Reported as a result it would produce `NaN` successes on a push that never
+            // happened. This guard is the reason the push cannot reuse `bulkFire`.
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ errors: 'Publisher unreachable' } as unknown as DotAjaxActionResponseView)
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should treat a missing `errors` as a failure, not a success', () => {
+            // The other shape the servlet can produce: no body at all when the publisher returns
+            // nothing. Zero of everything on a push that may well have worked is not a result.
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of(undefined as unknown as DotAjaxActionResponseView)
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should mark the run in progress while it is in flight', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
+
+            store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
+
+            expect(store.actionExecution()).toEqual({ actionName: 'Push Publish', total: 2 });
+        });
+
+        it('should refuse a second run while one is in flight', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            store.executePushPublish('Push Publish', ['id-2'], SETTINGS);
+
+            expect(pushPublishService.pushPublishAssets).toHaveBeenCalledTimes(1);
+        });
+
+        it('should do nothing without identifiers', () => {
+            store.executePushPublish('Push Publish', [], SETTINGS);
+
+            expect(pushPublishService.pushPublishAssets).not.toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should hand transport errors to the error manager and clear the running action', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
     describe('clearActionExecutionResult', () => {
         it('should drop the result once it has been presented', () => {
-            store.executeQuickAction('PUBLISH', 'Publish', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
             expect(store.actionExecutionResult()).toBeDefined();
 
             store.clearActionExecutionResult();

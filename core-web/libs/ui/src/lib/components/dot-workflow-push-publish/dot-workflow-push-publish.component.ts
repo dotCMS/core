@@ -15,31 +15,14 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
+import { DotWorkflowPushPublishAction, DotWorkflowPushPublishValue } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { PushPublishEnvSelectorComponent } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 
-/** What the user can ask a push publish for. Values are the backend's `iWantTo` vocabulary. */
-export type DotWorkflowPushPublishAction = 'publish' | 'expire' | 'publishexpire';
-
-/**
- * The push publish payload, in the shape the backend's `PushPublishBean` expects.
- *
- * Emitted already converted — dates split into `yyyy-MM-dd` + `HH-mm` pairs, environments comma-joined
- * into `whereToSend` — so a consumer can hand it straight to a fire request without repeating the
- * transformation that `DotWorkflowEventHandlerService.processWorkflowPayload` does today.
- */
-export interface DotWorkflowPushPublishValue {
-    /** Comma-joined environment ids. */
-    whereToSend: string;
-    iWantTo: DotWorkflowPushPublishAction;
-    publishDate: string;
-    publishTime: string;
-    expireDate: string;
-    expireTime: string;
-    filterKey: string;
-    timezoneId: string;
-}
+// Defined in `@dotcms/dotcms-models` so `@dotcms/data-access` can post this payload without
+// depending on `@dotcms/ui`. Re-exported here, where consumers have always imported it from.
+export type { DotWorkflowPushPublishAction, DotWorkflowPushPublishValue };
 
 /**
  * Collects a workflow action's `pushPublish` input: where to send it, when, and under which filter.
