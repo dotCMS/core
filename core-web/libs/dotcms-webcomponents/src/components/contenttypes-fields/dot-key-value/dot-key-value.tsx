@@ -215,13 +215,16 @@ export class DotKeyValueComponent {
 
         let keyValueRawData = '';
 
+        // `?? ''` on both reads. `Node.textContent` is `string | null`, which the *Stencil* compiler
+        // enforces and the repo's does not: TypeScript 6 re-declared it as an asymmetric accessor
+        // (`get(): string`, `set(value: string | null)`) while Stencil bundles 5.8.3, where it is
+        // still nullable. An empty cell is the case this covers.
+        const escape = (text: string | null): string =>
+            (text ?? '').replace(/,/gi, '&#44;').replace(/[|]/gi, '&#124;');
+
         for (let i = 0, total = keys.length; i < total; i++) {
             // Escaping "Comma" and "Pipe" symbols are needed due to format structure designed to separate values
-            keyValueRawData += `${keys[i].textContent
-                .replace(/,/gi, '&#44;')
-                .replace(/[|]/gi, '&#124;')}|${values[i].textContent
-                .replace(/,/gi, '&#44;')
-                .replace(/[|]/gi, '&#124;')},`;
+            keyValueRawData += `${escape(keys[i].textContent)}|${escape(values[i].textContent)},`;
         }
 
         // Timeout to let the DOM get cleaned and then repopulate with list of keyValues

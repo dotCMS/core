@@ -51,8 +51,16 @@ export class DotAutocompleteComponent {
     @Prop()
     data: (() => Promise<string[]> | string[]) | null = null;
 
+    /**
+     * Emitted when a suggestion is chosen.
+     *
+     * Typed `SelectionFeedback`, not `string`: nothing in this component calls `.emit()` — the event
+     * is dispatched by autocomplete.js on the inner input and bubbles to the host — and its payload
+     * is the library's own feedback object, which is what `dot-tags.onSelectHandler` reads
+     * (`detail.selection.value`). The declaration exists to type the `onSelection` prop.
+     */
     @Event()
-    selection!: EventEmitter<string>;
+    selection!: EventEmitter<SelectionFeedback>;
     @Event()
     enter!: EventEmitter<string>;
     @Event()
@@ -104,7 +112,7 @@ export class DotAutocompleteComponent {
     }
 
     private handleKeyDown(event: KeyboardEvent): void {
-        const { value } = this.getInputElement();
+        const value = this.getInputElement()?.value;
 
         const handler = this.keyEvent[event.key];
 
@@ -126,7 +134,11 @@ export class DotAutocompleteComponent {
     }
 
     private clean(): void {
-        this.getInputElement().value = '';
+        const input = this.getInputElement();
+
+        if (input) {
+            input.value = '';
+        }
         this.cleanOptions();
         this.enteredSuggestionList = false;
     }
@@ -211,9 +223,10 @@ export class DotAutocompleteComponent {
 
     private async getData(): Promise<string[]> {
         const autocomplete = this.getInputElement();
-        autocomplete.setAttribute('placeholder', 'Loading...');
+        autocomplete?.setAttribute('placeholder', 'Loading...');
         const data = typeof this.data === 'function' ? await this.data() : [];
-        autocomplete.setAttribute('placeholder', this.placeholder || '');
+        autocomplete?.setAttribute('placeholder', this.placeholder || '');
+
         return data;
     }
 }

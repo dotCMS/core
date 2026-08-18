@@ -87,7 +87,7 @@ export class DotBinaryUploadButtonComponent {
         }
     }
 
-    private emitFile(file: File, errorType?: DotBinaryMessageError): void {
+    private emitFile(file: File | null, errorType: DotBinaryMessageError | null = null): void {
         this.fileChange.emit({
             file: file,
             errorType: errorType

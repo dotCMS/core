@@ -83,7 +83,7 @@ export class DotFormComponent {
         const { name, value } = event.detail;
         const process = fieldCustomProcess[tagName];
         if (tagName === 'DOT-BINARY-FILE' && value) {
-            this.uploadFile(event).then((tempFile: DotCMSTempFile) => {
+            this.uploadFile(event).then((tempFile: DotCMSTempFile | null) => {
                 this.value[name] = tempFile && tempFile.id;
             });
         } else {
@@ -222,21 +222,25 @@ export class DotFormComponent {
      * Values are nullable: a non-TEXT field with no `defaultValue` contributes null, which is what
      * the expression below has always produced.
      */
-    private getUpdateValue(): { [key: string]: string | null } {
-        return getFieldsFromLayout(this.layout)
-            .filter((field: DotCMSContentTypeField) => field.fixed === false)
-            .reduce(
-                (
-                    acc: { [key: string]: string | null },
-                    { variable, defaultValue, dataType, values }: DotCMSContentTypeField
-                ) => {
-                    return {
-                        ...acc,
-                        [variable]: defaultValue || (dataType !== 'TEXT' ? values : null)
-                    };
-                },
-                {}
-            );
+    private getUpdateValue(): { [key: string]: string | null | undefined } {
+        return (
+            getFieldsFromLayout(this.layout)
+                .filter((field: DotCMSContentTypeField) => field.fixed === false)
+                // Explicit type argument: from the `{}` seed alone TypeScript picks the array's own
+                // element type for the accumulator, and a `DotCMSContentTypeField` is not a string map.
+                .reduce<{ [key: string]: string | null | undefined }>(
+                    (
+                        acc: { [key: string]: string | null | undefined },
+                        { variable, defaultValue, dataType, values }: DotCMSContentTypeField
+                    ) => {
+                        return {
+                            ...acc,
+                            [variable]: defaultValue || (dataType !== 'TEXT' ? values : null)
+                        };
+                    },
+                    {}
+                )
+        );
     }
 
     private getMaxSize(event: any): string | undefined {

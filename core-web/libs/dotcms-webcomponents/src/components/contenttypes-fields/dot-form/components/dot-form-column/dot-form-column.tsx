@@ -28,6 +28,9 @@ export class DotFormColumnComponent {
     }
 
     private getFieldTag(field: DotCMSContentTypeField) {
-        return fieldMap[field.fieldType] ? fieldMap[field.fieldType](field) : '';
+        // Hoisted: a second lookup discards the narrowing the ternary just established.
+        const render = fieldMap[field.fieldType];
+
+        return render ? render(field) : '';
     }
 }
