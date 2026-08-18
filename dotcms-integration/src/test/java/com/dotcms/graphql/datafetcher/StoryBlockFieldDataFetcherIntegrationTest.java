@@ -163,14 +163,17 @@ public class StoryBlockFieldDataFetcherIntegrationTest {
 
     /**
      * MethodToTest {@link StoryBlockFieldDataFetcher#get(DataFetchingEnvironment)}
-     * Given Scenario: a contentlet whose Block Editor field is empty (stored as an empty String).
+     * Given Scenario: a contentlet whose Block Editor field has no value (never set, so it reads
+     * as null — the shape GraphQL collection queries see for empty content).
      * ExpectedResult: the field resolves to an empty json object — the existing contract pinned
      * by the GraphQLTests postman collection ("Get Content With Empty StoryBlock via GraphQL") —
      * on both the raw and the hydrated read paths.
      */
     @Test
     public void emptyValue_resolvesToEmptyJsonObject() throws Exception {
-        final Contentlet persisted = persistContentlet("");
+        final Contentlet persisted = new ContentletDataGen(storyBlockType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersisted();
 
         final Map<String, Object> rawResult =
                 new StoryBlockFieldDataFetcher().get(environmentFor(persisted));
