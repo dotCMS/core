@@ -61,11 +61,16 @@ export class DotContentletThumbnail {
         if (typeof hasTitleImage === 'boolean' && hasTitleImage) {
             this.renderImage = hasTitleImage;
         } else {
-            this.renderImage =
+            // `!!` around the whole chain: `image` is a `string | undefined` on the model, so the
+            // `||` yields `string | boolean` while `renderImage` is declared `boolean` and is only
+            // ever read as a condition (line 85). It used to type-check because reading `image`
+            // through a bracket index gave `any`.
+            this.renderImage = !!(
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
                 this.contentlet.image ||
-                this.shouldShowVideoThumbnail();
+                this.shouldShowVideoThumbnail()
+            );
         }
     }
 
