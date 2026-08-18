@@ -12,13 +12,21 @@ export const DOT_ATTR_PREFIX = 'dot';
 /**
  * Sets attributes to the HtmlElement from fieldVariables array
  *
+ * `element` is optional because Stencil invokes a `ref` callback a second time with `undefined`
+ * when the element is torn down — that is what its generated `(elm?: HTMLDotXElement) => void`
+ * prop type says. There is nothing to set attributes on at that point, so it is a no-op.
+ *
  * @param HTMLElement element
  * @param DotCMSContentTypeFieldVariable fieldVariables
  */
 export function setAttributesToTag(
-    element: HTMLElement,
+    element: HTMLElement | undefined,
     fieldVariables: DotCMSContentTypeFieldVariable[]
 ): void {
+    if (!element) {
+        return;
+    }
+
     fieldVariables.forEach(({ key, value }) => {
         element.setAttribute(key, value);
     });
@@ -50,7 +58,13 @@ function isDotAttribute(name: string): boolean {
  * @param Element element
  * @param Attr[] attributes
  */
-export function setDotAttributesToElement(element: Element, attributes: Attr[]): void {
+export function setDotAttributesToElement(element: Element | null, attributes: Attr[]): void {
+    // Nullable because every caller passes a `querySelector` result straight in, and these run
+    // inside a `setTimeout` — by then the element may be gone. Nothing to set attributes on.
+    if (!element) {
+        return;
+    }
+
     attributes.forEach(({ name, value }) => {
         element.setAttribute(name.replace(DOT_ATTR_PREFIX, ''), value);
     });

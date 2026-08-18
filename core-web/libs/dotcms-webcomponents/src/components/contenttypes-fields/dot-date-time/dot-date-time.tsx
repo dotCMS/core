@@ -103,14 +103,24 @@ export class DotDateTimeComponent {
     @Event()
     dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
-    private _minDateTime: DotDateSlot;
-    private _maxDateTime: DotDateSlot;
-    private _value: DotDateSlot;
-    private _step = {
+    // Definite-assignment: all three are populated by `validateProps()` from `componentWillLoad`,
+    // which Stencil runs before the first render — the same reason `dotStatusChange` above uses `!`.
+    private _minDateTime!: DotDateSlot;
+    private _maxDateTime!: DotDateSlot;
+    private _value!: DotDateSlot;
+    /**
+     * The `step` prop split into its date and time halves, null until `stepWatch` has parsed it.
+     *
+     * Annotated rather than inferred: from `{ date: null, time: null }` alone TypeScript infers
+     * `{ date: null; time: null }`, so every write of a real value was an error and every read
+     * was "possibly null" — that one initializer accounted for fifteen of this file's errors.
+     */
+    private _step: { date: string | null; time: string | null } = {
         date: null,
         time: null
     };
-    private _status = {
+    /** Each half's last reported status, null until that input has reported one. */
+    private _status: { date: DotFieldStatus | null; time: DotFieldStatus | null } = {
         date: null,
         time: null
     };
@@ -193,7 +203,7 @@ export class DotDateTimeComponent {
                     <div
                         class="dot-date-time__body"
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}>
+                        tabIndex={this.hint ? 0 : undefined}>
                         <label>
                             {this.dateLabel}
                             <dot-input-calendar
@@ -204,7 +214,7 @@ export class DotDateTimeComponent {
                                 required={this.required}
                                 min={this._minDateTime.date}
                                 max={this._maxDateTime.date}
-                                step={this._step.date}
+                                step={this._step.date ?? undefined}
                             />
                         </label>
                         <label>
@@ -217,7 +227,7 @@ export class DotDateTimeComponent {
                                 required={this.required}
                                 min={this._minDateTime.time}
                                 max={this._maxDateTime.time}
-                                step={this._step.time}
+                                step={this._step.time ?? undefined}
                             />
                         </label>
                     </div>
@@ -235,10 +245,14 @@ export class DotDateTimeComponent {
 
         setTimeout(() => {
             let attrs: Attr[] = Array.from(this.el.attributes);
+            // Indexed through a `Record` view: `attr` is derived from a DOM attribute name at
+            // runtime, so it cannot be a `keyof this`. The guard means only props that already
+            // hold a value are overwritten, which is the existing behaviour.
+            const self = this as unknown as Record<string, unknown>;
             attrs.forEach(({ name, value }) => {
                 const attr = name.replace(DOT_ATTR_PREFIX, '');
-                if (this[attr]) {
-                    this[attr] = value;
+                if (self[attr]) {
+                    self[attr] = value;
                 }
             });
 
@@ -258,10 +272,15 @@ export class DotDateTimeComponent {
 
     // tslint:disable-next-line:cyclomatic-complexity
     private statusHandler(): DotFieldStatus {
+        // Both halves have reported by the time this runs: every caller gates on
+        // `isStatusComplete()`. Cast so that proof survives the method boundary — a boolean
+        // cannot carry it — while leaving the reads themselves exactly as they were.
+        const { date, time } = this._status as { date: DotFieldStatus; time: DotFieldStatus };
+
         return {
-            dotTouched: this._status.date.dotTouched || this._status.time.dotTouched,
-            dotValid: this._status.date.dotValid && this._status.time.dotValid,
-            dotPristine: this._status.date.dotPristine && this._status.time.dotPristine
+            dotTouched: date.dotTouched || time.dotTouched,
+            dotValid: date.dotValid && time.dotValid,
+            dotPristine: date.dotPristine && time.dotPristine
         };
     }
 
@@ -291,15 +310,29 @@ export class DotDateTimeComponent {
     }
 
     private isStatusComplete(): boolean {
-        return this._status.date && this._status.time;
+        return !!(this._status.date && this._status.time);
     }
 
     private isValid(): boolean {
         return this.isStatusComplete() ? (this.isStatusInRange() ? true : false) : true;
     }
 
+    /**
+     * ⚠️ Always false in practice, and left that way deliberately.
+     *
+     * `dot-input-calendar` emits `isValidRange` as a **sibling** of `status`, not inside it (see
+     * its `emitStatusChange`), and `setStatus` below stores only `event.status` — a
+     * `DotFieldStatus`, which has no `isValidRange`. So both reads have been `undefined` at
+     * runtime since this was written, making `isValid()` return false whenever both halves have
+     * reported. Enabling `strict` is what surfaced it.
+     *
+     * Storing the range flag would repair the validation, but that is a behaviour change in a
+     * legacy field component with no runnable tests (`dotcms-webcomponents:test` cannot start —
+     * Stencil supports Jest 27 and the workspace is on 29), so it belongs in its own issue rather
+     * than in a strict-mode pass. The expression below preserves the current result exactly.
+     */
     private isStatusInRange(): boolean {
-        return this._status.time.isValidRange && this._status.date.isValidRange;
+        return false;
     }
 
     private setErrorMessageElement(statusEvent: DotInputCalendarStatusEvent): void {
