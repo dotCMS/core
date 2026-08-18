@@ -103,9 +103,13 @@ export class DotCategoryFieldCategoryListComponent {
     stateList = ComponentStatus;
 
     $showMainSkeleton = computed(() => {
-        const isInitialLoadingState = [ComponentStatus.INIT, ComponentStatus.LOADING].includes(
-            this.$state()
-        );
+        // Annotated: with `as const` the literal array would infer as `('INIT' | 'LOADING')[]`,
+        // which cannot take the wider ComponentStatus that `$state()` returns.
+        const initialLoadingStates: ComponentStatus[] = [
+            ComponentStatus.INIT,
+            ComponentStatus.LOADING
+        ];
+        const isInitialLoadingState = initialLoadingStates.includes(this.$state());
         const categoriesEmpty = this.$categories().length === 0;
 
         return isInitialLoadingState && categoriesEmpty;
