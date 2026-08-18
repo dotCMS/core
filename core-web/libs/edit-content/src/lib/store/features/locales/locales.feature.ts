@@ -317,11 +317,12 @@ export function withLocales() {
                                             initialContentletState: 'copy',
                                             isManualTranslation: copyType === 'manual',
                                             error: null,
-                                            // `{}` rather than `null`, matching the initial
-                                            // state. The only reader spreads it
-                                            // (`...$formValues()` in the sidebar), where the
-                                            // two are indistinguishable.
-                                            formValues: {},
+                                            // Null, not `{}`: `should open dialog and update state
+                                            // for untranslated locale doing populate copy` asserts
+                                            // `formValues()` is null after the copy. The state type
+                                            // admits it; the one reader spreads it, and `...null`
+                                            // is legal.
+                                            formValues: null,
                                             translationSourceInode,
                                             // `sourceContentlet` is part of the condition: with
                                             // nothing loaded to copy from, populating and starting

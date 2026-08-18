@@ -98,7 +98,9 @@ export interface EditContentState {
     lockSwitchLabel: string;
 
     // Form state
-    formValues: FormValues;
+    // Null after a locale copy clears it — `locales.feature` patches null and a spec asserts it.
+    // The only reader spreads the value, where null and `{}` are indistinguishable.
+    formValues: FormValues | null;
     formStatus: 'init' | 'valid' | 'invalid';
 
     // Locales state
