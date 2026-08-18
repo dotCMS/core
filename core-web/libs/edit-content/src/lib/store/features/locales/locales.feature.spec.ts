@@ -14,7 +14,12 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { withLocales } from './locales.feature';
@@ -43,6 +48,9 @@ const withTest = () =>
         withMethods((store) => ({
             updateContent: (content) => {
                 patchState(store, { contentlet: content });
+            },
+            updateContentType: (contentType) => {
+                patchState(store, { contentType });
             }
         }))
     );
@@ -135,6 +143,12 @@ describe('LocalesFeature', () => {
             dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
             dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[0]));
             store.updateContent({ identifier: '123', languageId: 1 } as DotCMSContentlet);
+            // Loaded content always has a content type, and the untranslated-locale flow reads its
+            // `variable` to fetch the default workflow actions.
+            store.updateContentType({
+                variable: 'Blog',
+                fields: []
+            } as unknown as DotCMSContentType);
         });
 
         it('should delegate a translated-locale switch to the host', fakeAsync(() => {

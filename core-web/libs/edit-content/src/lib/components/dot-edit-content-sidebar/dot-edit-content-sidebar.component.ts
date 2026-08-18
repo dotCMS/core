@@ -217,13 +217,11 @@ export class DotEditContentSidebarComponent {
      * @param $event - The event object containing the comment.
      */
     onCommentSubmitted($event: string) {
+        // Deliberately NOT guarded on `identifier`, unlike the three history handlers below.
+        // `should still call addComment when onCommentSubmitted is called even if identifier is
+        // undefined` asserts this exact call, and the suite guards the history handlers in the
+        // adjacent tests — the asymmetry is intentional. `addComment` takes an optional identifier.
         const identifier = this.$identifier();
-
-        // Guarded like the three sibling handlers below: no identifier means no saved content to
-        // attach a comment to.
-        if (!identifier) {
-            return;
-        }
 
         this.$store.addComment({
             comment: $event,
