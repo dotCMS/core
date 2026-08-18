@@ -849,7 +849,7 @@ export const BINARY_FIELD_CONTENTLET: DotCMSContentlet = {
 
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
-    return fields.reduce((acc, field) => {
+    return fields.reduce<Record<string, FormControl>>((acc, field) => {
         acc[field.variable] = new FormControl(null);
 
         return acc;
@@ -870,7 +870,7 @@ export const createFormGroupDirectiveMock = (
 };
 
 function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
-    let fields = [];
+    let fields: DotCMSContentTypeField[] = [];
 
     data.forEach((row) => {
         row.columns!.forEach((column) => {
@@ -1118,7 +1118,7 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     date: '2023-11-14 19:27:53'
 };
 
-const metadata = {};
+const metadata: Record<string, boolean> = {};
 metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 
 export const CONTENT_FORM_DATA_MOCK: DotFormData = {
@@ -1457,10 +1457,10 @@ export const TREE_SELECT_MOCK: MockTreeNodeItem[] = [
 ];
 
 export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
-    node: { ...TREE_SELECT_MOCK[0]!.children[0] },
+    node: { ...TREE_SELECT_MOCK[0]!.children![0] },
     tree: {
         path: 'demo.dotcms.com',
-        folders: [...TREE_SELECT_MOCK[0].children]
+        folders: [...(TREE_SELECT_MOCK[0]!.children ?? [])]
     }
 };
 

@@ -36,7 +36,8 @@ export type DotActivityViewState = 'idle' | 'create';
 
 export interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: DotContentletState;
-    resetAction?: DotCMSWorkflowAction;
+    /** Null when the scheme has no reset action; the API sends null rather than omitting it. */
+    resetAction?: DotCMSWorkflowAction | null;
 }
 
 /**

@@ -19,7 +19,8 @@ export interface DotCMSWorkflowAction {
     nextStep: string;
     nextStepCurrentStep: boolean;
     order: number;
-    owner?: string;
+    /** Null for system actions, which have no owning user. */
+    owner?: string | null;
     roleHierarchyForAssign: boolean;
     schemeId: string;
     showOn: string[];

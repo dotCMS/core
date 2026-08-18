@@ -70,7 +70,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
 
         it('should display workflow step', () => {
             const workflowStep = spectator.query(byTestId('workflow-step'))!;
-            expect(workflowStep.textContent.trim()).toBe(WORKFLOW_MOCKS.EXISTING.step.name);
+            expect(workflowStep.textContent.trim()).toBe(WORKFLOW_MOCKS.EXISTING.step!.name);
         });
 
         it('should display assignee when task exists', () => {
