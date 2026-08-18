@@ -1,7 +1,7 @@
 # Spec-Kit Quick Start
 
 Get from an issue to merged code using spec-driven development in this repo — two PRs: the
-spec first, the implementation second. Sections 1-4 are the ones to actually read (~5 min);
+spec is approved first, the implementation follows. Sections 1-4 are the ones to actually read (~5 min);
 the rest is reference you consult when you hit it.
 
 > **See also:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)
@@ -74,39 +74,45 @@ process to the work. **When in doubt, size up** — and ask a teammate rather th
 
 ---
 
-## 3. Two PRs: the spec is reviewed and merged first
+## 3. Two PRs: the spec is approved before you build
 
-**Spec-Kit work ships as two pull requests, not one.**
+**Spec-Kit work ships as two pull requests, not one.** The gate is **approval, not merge** —
+once a reviewer approves the spec, start planning. Don't wait on the merge queue.
 
 | | What's in it | Reviewed for | Then |
 |---|---|---|---|
-| **PR 1 — the spec** | `spec.md`, nothing else | Is this the right problem, scoped right, with measurable criteria? | Approved and **merged** before any planning starts |
-| **PR 2 — the implementation** | Code, tests, and any durable design artifacts | Does it do what the merged spec said? | Merged as usual |
+| **PR 1 — the spec** | `spec.md`, nothing else | Is this the right problem, scoped right, with measurable criteria? | **Approved** → you start planning. It merges whenever the queue gets to it. |
+| **PR 2 — the implementation** | Code, tests, and any durable design artifacts | Does it do what the approved spec said? | Merged as usual |
 
 The sequence:
 
 1. `/speckit-specify` (or `/speckit-specify-fix`) writes the spec on your feature branch.
 2. Push it and open **PR 1 with the spec alone.** Ask for feedback, iterate on the wording,
-   get it approved, and **merge it.**
-3. Branch again from `main`. The approved spec now lives there, so you, your reviewer, and
-   the agent all read the same contract.
+   get it **approved.** Leave it in the queue — you're not blocked on it merging.
+3. Branch off **your spec branch** (not `main` — the spec isn't there yet) and keep working.
 4. `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
 5. Open **PR 2** with the implementation, linking back to PR 1.
+
+> Until PR 1 merges, PR 2's diff also shows the spec commit — it's the shared ancestor, not a
+> duplicate. Once PR 1 lands, PR 2 collapses to just the implementation on its own.
 
 Why we work this way: reviewing a large diff means reconstructing intent from code — slow, and
 it catches the wrong class of problem. Reviewing a spec means reading intent directly, in
 natural language, while changing course is still cheap. We're deliberately moving the effort
 upstream. **Planning is our bottleneck now, not PR review. Better input produces better
-output.**
+output** — and gating on approval rather than merge keeps the queue from becoming the new
+bottleneck.
 
 In practice:
 
-- **Don't run `/speckit-plan` until PR 1 is merged.** The approval is a real gate — it's just
-  a human one, enforced on the PR rather than by a script.
+- **Don't run `/speckit-plan` until PR 1 is approved.** The approval is a real gate — it's
+  just a human one, enforced on the PR rather than by a script.
 - **A spec that's hard to review isn't ready.** If a reviewer can't tell what "done" looks
   like from the acceptance criteria, that's the finding — fix the spec, not the review.
 - **Review it like a spec, not like code.** Is the problem stated? Are the success criteria
   measurable? What's explicitly *out* of scope? Reviewers: push back on vagueness, not style.
+- **If the spec changes after approval**, say so on PR 1 and get a re-approval. The whole
+  point is that the contract everyone read is the contract you built.
 
 > Branching again doesn't lose your place. Spec-Kit locates the spec through the local
 > `.specify/feature.json` pointer (or `SPECIFY_FEATURE_DIRECTORY`), **not** the branch name,
@@ -117,7 +123,7 @@ Three different approvals happen in a Spec-Kit run — don't confuse them:
 
 | Approval | Who gives it | Where |
 |----------|--------------|-------|
-| **The spec** | Another dev | On PR 1, before it merges |
+| **The spec** | Another dev | On PR 1, before you start planning |
 | **The tests** | You | In-session, at the TDD gate (§7) |
 | **ADR alignment** | Automated consult, you resolve conflicts | Inside `/speckit-plan` |
 
@@ -161,8 +167,8 @@ Real example to read before your first run:
 zero-padded `001-`. Working from an issue? Use its number, so the branch matches what
 everyone else is reading (`create-new-feature.sh --help` for `--number` / `--short-name`).
 
-**Stop here.** Open PR 1 with the spec alone and get it merged (§3). Everything below
-happens after that.
+**Stop here.** Open PR 1 with the spec alone and get it **approved** (§3). Everything below
+happens after that — you don't need to wait for it to merge.
 
 ### `/speckit-plan` — decide the approach
 
@@ -207,8 +213,8 @@ second publish — repro in dotCMS/core#12345
 
 1. **Reproduce it**, then run `/speckit-specify-fix` to write the defect spec: observed vs.
    expected behavior, and the repro.
-2. **Open PR 1 with that spec alone**, get it approved, and merge it (§3).
-3. **Branch from `main`, then write a failing regression test** that captures the expected
+2. **Open PR 1 with that spec alone** and get it approved (§3) — no need to wait for the merge.
+3. **Branch off your spec branch, then write a failing regression test** that captures the expected
    behavior — it's your first acceptance criterion, and it's the Red gate from §7.
 4. **Let the agent fix the code** until that test and the suite pass.
 5. **Open PR 2 with the fix**, linking PR 1 (and any ADR, if the root cause touches a prior
