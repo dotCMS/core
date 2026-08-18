@@ -62,7 +62,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
 
         it('should have the correct title in  DotExperimentsUiHeaderComponent', () => {
             const headerComponent = spectator.query(DotExperimentsUiHeaderComponent);
-            expect(headerComponent.$title()).toEqual('not configured title');
+            expect(headerComponent.$title()!).toEqual('not configured title');
         });
     });
 
@@ -87,7 +87,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
 
         it('should have the correct title in  DotExperimentsUiHeaderComponent and navigation', () => {
             const headerComponent = spectator.query(DotExperimentsUiHeaderComponent);
-            expect(headerComponent.$title()).toEqual('misconfiguration title');
+            expect(headerComponent.$title()!).toEqual('misconfiguration title');
 
             spectator.triggerEventHandler(DotExperimentsUiHeaderComponent, 'goBack', true);
 

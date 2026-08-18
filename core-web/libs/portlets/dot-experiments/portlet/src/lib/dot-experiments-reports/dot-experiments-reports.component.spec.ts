@@ -282,7 +282,7 @@ describe('DotExperimentsReportsComponent', () => {
         const mockEvent = new MouseEvent('click');
         spectator.component.promoteVariant(
             mockEvent,
-            defaultVmMock.experiment.id,
+            defaultVmMock.experiment.id!,
             EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         );
 
@@ -294,7 +294,7 @@ describe('DotExperimentsReportsComponent', () => {
         confirmOptions.accept();
 
         expect(store.promoteVariant).toHaveBeenCalledWith({
-            experimentId: defaultVmMock.experiment.id,
+            experimentId: defaultVmMock.experiment.id!,
             variant: EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         });
     });

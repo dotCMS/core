@@ -91,9 +91,9 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     it('should save form when is valid ', () => {
         jest.spyOn(store, 'setSelectedAllocation');
         const submitButtonWrapper = spectator.query(byTestId('add-trafficAllocation-button'));
-        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
+        const submitButton = submitButtonWrapper.querySelector('button')! || submitButtonWrapper;
 
-        expect(submitButton.hasAttribute('disabled')).toBe(false);
+        expect(submitButton.hasAttribute('disabled')!).toBe(false);
         expect(submitButtonWrapper).toContainText('Done');
         expect(spectator.component.form.valid).toEqual(true);
 
