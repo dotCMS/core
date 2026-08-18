@@ -184,7 +184,8 @@ describe('LocalesFeature', () => {
                 inode: undefined,
                 locked: false,
                 lockedBy: undefined
-            } as DotCMSContentlet;
+                // Partial on purpose: this is the expected value for a `toEqual`, not a contentlet.
+            } as unknown as DotCMSContentlet;
 
             expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
             expect(store.initialContentletState()).toEqual('copy');

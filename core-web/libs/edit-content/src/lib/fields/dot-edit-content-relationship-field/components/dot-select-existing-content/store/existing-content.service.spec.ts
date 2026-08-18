@@ -239,10 +239,14 @@ describe('ExistingContentService', () => {
         it('should handle contentlets without title by using identifier', (done) => {
             const contentletsWithoutTitle = [
                 createFakeContentlet({
-                    identifier: '789',
+                    // `title` is declared non-nullable on `DotCMSContentlet`, but the API does
+                    // return contentlets without one — that is what this test covers, and the
+                    // service falls back to the identifier. Widening the model reaches into
+                    // block-editor and edit-ema-ui, so it is left for its own change.
                     title: null,
+                    identifier: '789',
                     languageId: 1
-                })
+                } as unknown as Partial<DotCMSContentlet>)
             ];
 
             const responseWithoutTitle = {
@@ -553,13 +557,14 @@ describe('ExistingContentService', () => {
         it('should handle content without title', () => {
             const contentWithoutTitle = [
                 createFakeContentlet({
-                    identifier: '789',
+                    // See the note on the other "without title" test above.
                     title: null,
+                    identifier: '789',
                     description: 'Description 3',
                     field: 'Field 3',
                     languageId: mockLocales[0].id,
                     modDate: '2024-01-03T00:00:00Z'
-                })
+                } as unknown as Partial<DotCMSContentlet>)
             ];
 
             const responseWithoutTitle = {

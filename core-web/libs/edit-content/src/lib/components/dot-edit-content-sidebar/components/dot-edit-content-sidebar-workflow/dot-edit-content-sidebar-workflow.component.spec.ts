@@ -65,7 +65,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
 
         it('should display workflow scheme name', () => {
             const workflowName = spectator.query(byTestId('workflow-name'))!;
-            expect(workflowName.textContent.trim()).toBe(WORKFLOW_MOCKS.EXISTING.scheme.name);
+            expect(workflowName.textContent!.trim()).toBe(WORKFLOW_MOCKS.EXISTING.scheme!.name);
         });
 
         it('should display workflow step', () => {
@@ -162,7 +162,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                 } as any);
 
                 const workflowName = spectator.query(byTestId('workflow-name'))!;
-                expect(workflowName).toHaveText(WORKFLOW_MOCKS.NEW.scheme.name);
+                expect(workflowName).toHaveText(WORKFLOW_MOCKS.NEW.scheme!.name);
             });
 
             it('should show edit button when workflow selection is available', () => {

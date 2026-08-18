@@ -53,7 +53,9 @@ export interface DotProcessedWorkflowPayload {
 }
 
 export interface DotCMSWorkflowStatus {
-    scheme: DotCMSWorkflow;
+    /** Null for content that has not entered a workflow — like `step` and `task` below, the
+     *  endpoint sends null rather than omitting the key. */
+    scheme: DotCMSWorkflow | null;
     /** Null for content that has not entered the workflow yet — no current step or task. */
     step: WorkflowStep | null;
     task: WorkflowTask | null;

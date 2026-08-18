@@ -7,6 +7,7 @@ import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { TableRowReorderEvent } from 'primeng/table';
 
 import {
     DotContentTypeService,
@@ -287,10 +288,18 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const reorderDataSpy = jest.spyOn(store, 'reorderData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
-                fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
+                // PrimeNG types these as `number | undefined`; the component guards with `== null`,
+                // which this test drives.
+                fieldComponent.onRowReorder({
+                    dragIndex: null,
+                    dropIndex: 1
+                } as unknown as TableRowReorderEvent);
                 expect(reorderDataSpy).not.toHaveBeenCalled();
 
-                fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: null });
+                fieldComponent.onRowReorder({
+                    dragIndex: 0,
+                    dropIndex: null
+                } as unknown as TableRowReorderEvent);
                 expect(reorderDataSpy).not.toHaveBeenCalled();
             });
         });

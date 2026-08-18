@@ -132,7 +132,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             expect(select).toBeTruthy();
             expect(spectator.query(byTestId('editor-selector'))).toBeTruthy();
             expect(select.options).toEqual(EditorOptions);
-            expect(select.options.length).toBe(EditorOptions.length);
+            expect(select.options!.length).toBe(EditorOptions.length);
         });
 
         it('should render editor selection dropdown and switch to Monaco editor when selected', () => {
