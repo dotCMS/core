@@ -95,8 +95,8 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
         const detailsTableComponent = spectator.query(DotExperimentsDetailsTableComponent);
 
         expect(detailsTableComponent).toExist();
-        expect(detailsTableComponent.$data()!).toEqual(DETAIL_DATA_MOCK);
-        expect(detailsTableComponent.$isEmpty()!).toBe(false);
+        expect(detailsTableComponent!.$data()!).toEqual(DETAIL_DATA_MOCK);
+        expect(detailsTableComponent!.$isEmpty()!).toBe(false);
     });
 
     it('should show promote variant', () => {

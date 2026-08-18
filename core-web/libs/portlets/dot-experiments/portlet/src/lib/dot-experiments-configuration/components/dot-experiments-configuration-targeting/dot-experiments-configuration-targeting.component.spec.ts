@@ -90,7 +90,7 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         spectator.detectChanges();
 
         const addButton = spectator.query(byTestId('targeting-add-button'));
-        const button = addButton.querySelector('button')! || addButton;
+        const button = addButton!.querySelector('button')! || addButton;
         expect(button.hasAttribute('disabled')!).toBe(true);
         expect(spectator.query(Tooltip).disabled!).toEqual(false);
     });

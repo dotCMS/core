@@ -137,7 +137,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button'));
-            const button = addButton.querySelector('button')! || addButton;
+            const button = addButton!.querySelector('button')! || addButton;
             // Check the disabled attribute directly
             expect(button.hasAttribute('disabled')!).toBe(true);
             expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
@@ -148,7 +148,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button'));
-            const button = addButton.querySelector('button')! || addButton;
+            const button = addButton!.querySelector('button')! || addButton;
             // Check the disabled attribute directly
             expect(button.hasAttribute('disabled')!).toBe(true);
 
@@ -163,7 +163,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
             const addButton = spectator.query(byTestId('goals-add-button'));
             // Find the actual button element inside the p-button component
-            const button = addButton.querySelector('button')! || addButton;
+            const button = addButton!.querySelector('button')! || addButton;
             spectator.click(button);
 
             expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.GOAL);
@@ -223,7 +223,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             expect(deleteButton).toExist();
 
             // Find the actual button element inside the p-button component
-            const button = deleteButton.querySelector('button')! || deleteButton;
+            const button = deleteButton!.querySelector('button')! || deleteButton;
             spectator.click(button);
             spectator.detectComponentChanges();
 

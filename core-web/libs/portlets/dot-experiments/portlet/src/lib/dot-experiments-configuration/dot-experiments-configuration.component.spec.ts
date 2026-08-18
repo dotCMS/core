@@ -185,7 +185,7 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
         const inlineEditComponent = spectator.query(DotExperimentsInlineEditTextComponent);
-        expect(inlineEditComponent.$disabled()!).toEqual(true);
+        expect(inlineEditComponent!.$disabled()!).toEqual(true);
     });
 
     it('should show End Experiment after confirmation', () => {
@@ -222,9 +222,9 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         const addToBundle = spectator.query(DotAddToBundleComponent);
 
-        expect(addToBundle.assetIdentifier!).toEqual(EXPERIMENT_MOCK.id);
+        expect(addToBundle!.assetIdentifier!).toEqual(EXPERIMENT_MOCK.id);
 
-        addToBundle.cancel.emit(true)!;
+        addToBundle!.cancel.emit(true)!;
 
         spectator.detectComponentChanges();
 

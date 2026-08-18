@@ -113,7 +113,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     it('should save form when is valid', () => {
         jest.spyOn(store, 'setSelectedScheduling');
         const submitButtonWrapper = spectator.query(byTestId('add-scheduling-button'));
-        const submitButton = submitButtonWrapper.querySelector('button')! || submitButtonWrapper;
+        const submitButton = submitButtonWrapper!.querySelector('button')! || submitButtonWrapper;
 
         expect(submitButton.hasAttribute('disabled')!).toBe(false);
         expect(submitButtonWrapper).toContainText('Done');
@@ -138,8 +138,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         spectator.detectChanges();
 
-        expect(endDateCalendar.minDate.getTime()!).toEqual(mockMinEndDate);
-        expect(endDateCalendar.defaultDate.getTime()!).toEqual(mockMinEndDate);
+        expect(endDateCalendar.minDate!.getTime()!).toEqual(mockMinEndDate);
+        expect(endDateCalendar.defaultDate!.getTime()!).toEqual(mockMinEndDate);
     });
 
     it('should clear end date if start date is equal or more', () => {
