@@ -59,7 +59,7 @@ export class DotExperimentsCreateComponent implements OnInit {
 
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
-    form: FormGroup<CreateForm>;
+    form!: FormGroup<CreateForm>;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     ngOnInit(): void {

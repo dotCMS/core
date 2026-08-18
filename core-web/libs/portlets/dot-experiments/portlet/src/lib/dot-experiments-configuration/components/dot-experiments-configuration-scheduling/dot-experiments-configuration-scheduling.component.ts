@@ -50,7 +50,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
     );
 
     sidebarHost = viewChild.required(DotDynamicDirective);
-    private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
+    private componentRef!: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
 
     /**
      * Open the sidebar to set the Scheduling
@@ -61,7 +61,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.SCHEDULING);
     }
 
-    private handleSidebar(status: StepStatus) {
+    private handleSidebar(status: StepStatus | null) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {

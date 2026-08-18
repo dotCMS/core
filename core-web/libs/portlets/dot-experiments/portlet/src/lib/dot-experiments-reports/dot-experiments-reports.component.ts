@@ -96,7 +96,7 @@ export class DotExperimentsReportsComponent implements OnInit {
      */
     promoteVariant($event: MouseEvent, experimentId: string, variant: DotExperimentVariantDetail) {
         this.confirmationService.confirm({
-            target: $event.target,
+            target: $event.target ?? undefined,
             message: this.dotMessageService.get('experiment.reports.promote.warning'),
             icon: 'pi pi-info-circle',
             acceptLabel: this.dotMessageService.get('Yes'),

@@ -62,7 +62,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 })
 export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, OnDestroy {
     sidebarSizes = SIDEBAR_SIZES;
-    form: FormGroup;
+    form!: FormGroup;
     goals = GOALS_METADATA_MAP;
     goalsTypes = GOAL_TYPES;
     statusList = ComponentStatus;

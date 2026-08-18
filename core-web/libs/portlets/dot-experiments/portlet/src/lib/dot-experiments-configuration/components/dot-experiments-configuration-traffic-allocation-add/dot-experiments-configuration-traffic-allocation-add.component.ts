@@ -50,8 +50,8 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
     private readonly cd = inject(ChangeDetectorRef);
 
-    form: FormGroup;
-    trafficAllocation: string;
+    form!: FormGroup;
+    trafficAllocation!: string;
     stepStatus = ComponentStatus;
     sidebarSizes = SIDEBAR_SIZES;
 

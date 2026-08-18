@@ -21,7 +21,7 @@ export class DotExperimentOptionsItemDirective {
     $icon = input<string>('', { alias: 'icon' });
 
     @ContentChild(DotExperimentOptionContentDirective)
-    content: DotExperimentOptionContentDirective;
+    content!: DotExperimentOptionContentDirective;
 
     /**
      * Select and Open content of the option

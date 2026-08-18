@@ -32,10 +32,10 @@ const SELECT_VALUE_ACCESSOR: Provider = {
     standalone: true
 })
 export class DotExperimentOptionsComponent implements ControlValueAccessor {
-    value: string;
+    value!: string;
     expanded = new Set<number>();
     @ContentChildren(forwardRef(() => DotExperimentOptionsItemDirective))
-    itemList: QueryList<DotExperimentOptionsItemDirective>;
+    itemList!: QueryList<DotExperimentOptionsItemDirective>;
     private cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     onChange = (_: unknown) => {

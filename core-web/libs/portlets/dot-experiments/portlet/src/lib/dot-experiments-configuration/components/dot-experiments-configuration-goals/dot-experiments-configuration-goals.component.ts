@@ -67,7 +67,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     protected readonly GOALS_METADATA_MAP = GOALS_METADATA_MAP;
     protected readonly GOAL_TYPES = GOAL_TYPES;
 
-    private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
+    private componentRef!: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
 
     /**
      * Open the sidebar to select the principal goal
@@ -88,7 +88,7 @@ export class DotExperimentsConfigurationGoalsComponent {
      */
     deleteGoal(event: Event, goalLevel: GoalsLevels, experimentId: string) {
         this.confirmationService.confirm({
-            target: event.target,
+            target: event.target ?? undefined,
             message: this.dotMessagePipe.transform(
                 'experiments.configure.action.delete.confirm-question'
             ),
@@ -100,7 +100,7 @@ export class DotExperimentsConfigurationGoalsComponent {
         });
     }
 
-    private handleSidebar(status: StepStatus) {
+    private handleSidebar(status: StepStatus | null) {
         if (status && status.isOpen) {
             this.loadSidebarComponent(status);
         } else {
