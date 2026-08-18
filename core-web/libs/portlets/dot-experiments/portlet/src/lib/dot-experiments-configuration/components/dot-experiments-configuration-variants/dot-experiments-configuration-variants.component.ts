@@ -205,8 +205,6 @@ export class DotExperimentsConfigurationVariantsComponent {
             .replace(/%3A/g, ':')
             .replace(/%2F/g, '/');
 
-        let finalUrl: string;
-
         let url: URL;
 
         try {
@@ -226,10 +224,12 @@ export class DotExperimentsConfigurationVariantsComponent {
                     processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );
-        } finally {
-            finalUrl = url.toString();
         }
 
-        return finalUrl;
+        // Was a `finally` reading `url`, which is unassigned if the catch block's own `new URL` also
+        // throws — that would have masked the real failure with "url is undefined". Both branches
+        // assign it, so returning after the try/catch says the same thing and lets a genuine
+        // failure propagate.
+        return url.toString();
     }
 }

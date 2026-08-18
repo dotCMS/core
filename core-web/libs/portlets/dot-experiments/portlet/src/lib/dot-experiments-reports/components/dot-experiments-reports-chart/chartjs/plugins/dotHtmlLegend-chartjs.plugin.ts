@@ -11,8 +11,9 @@ const getOrCreateLegendList = (chart: Chart) => {
 
     // Start from the canvas and traverse up to find the parent container
     // The legend-wrapper is a sibling of the p-chart component
-    let current = chart.canvas;
-    let legendContainer = null;
+    // `HTMLElement`, not the canvas's own type: the loop below walks up through plain elements.
+    let current: HTMLElement | null = chart.canvas;
+    let legendContainer: Element | null = null;
 
     // Traverse up the DOM tree to find a parent that contains the legend-wrapper
     while (current && current.parentElement && !legendContainer) {
@@ -95,9 +96,12 @@ export const htmlLegendPlugin = {
             const li = document.createElement('li');
             li.style.cursor = 'pointer';
             li.style.padding = '.5rem';
-            li.style.background = item.fillStyle;
+            // chart.js types these `Color | undefined`; only a string means anything as CSS.
+            li.style.background = String(item.fillStyle ?? '');
             li.style.borderRadius = '8px';
-            li.style.backgroundColor = item.hidden ? COLOR_PALETTE_GRAY_100 : item.fillStyle;
+            li.style.backgroundColor = item.hidden
+                ? COLOR_PALETTE_GRAY_100
+                : String(item.fillStyle ?? '');
 
             li.onclick = () => {
                 // `datasetIndex` is optional on a `LegendItem` — it is absent for a legend entry that
@@ -114,7 +118,7 @@ export const htmlLegendPlugin = {
             };
 
             const textContainer = document.createElement('p');
-            textContainer.style.color = item.fontColor;
+            textContainer.style.color = String(item.fontColor ?? '');
             textContainer.style.margin = '0';
             textContainer.style.padding = '0';
 

@@ -41,8 +41,9 @@ export class DotExperimentsConfigurationSchedulingComponent {
 
     vm$: Observable<{
         experimentId: string;
-        scheduling: RangeOfDateAndTime;
-        status: StepStatus;
+        scheduling: RangeOfDateAndTime | null;
+        status: StepStatus | null;
+        schedulingBoundaries: Record<string, number>;
         isExperimentADraft: boolean;
         disabledTooltipLabel: string | null;
     }> = this.dotExperimentsConfigurationStore.schedulingStepVm$.pipe(

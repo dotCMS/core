@@ -100,12 +100,16 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
 
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
+            // `?? 100`: `nonNullable` rules out a null seed, and the allocation is null until the
+            // experiment resolves. 100% is the allocation an experiment starts with.
+            const trafficAllocation = data.trafficAllocation ?? 100;
+
             this.form = new FormGroup({
-                trafficAllocation: new FormControl<number>(data.trafficAllocation, {
+                trafficAllocation: new FormControl<number>(trafficAllocation, {
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
-                trafficAllocationInput: new FormControl<number>(data.trafficAllocation, {
+                trafficAllocationInput: new FormControl<number>(trafficAllocation, {
                     nonNullable: true,
                     validators: [Validators.required]
                 })
