@@ -37,7 +37,11 @@ export class DotEmaBookmarksComponent implements OnInit {
     private readonly destroyRef = inject(DestroyRef);
     protected readonly store = inject(UVEStore);
 
-    favoritePage: DotCMSContentlet;
+    /**
+     * The bookmark for the current page, or `undefined` when there is none — the fetch reads
+     * `contentlets[0]` of a possibly-empty list, which is exactly what `bookmarked` reflects.
+     */
+    favoritePage?: DotCMSContentlet;
 
     bookmarked = signal(false);
     loading = signal(false);
