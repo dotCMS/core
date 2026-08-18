@@ -21,6 +21,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
+    FormControl,
     FormGroup,
     ReactiveFormsModule,
     ValidatorFn,
@@ -232,7 +233,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     #lastContentletRevisionKey: string | null = null;
 
-    #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    #flushTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     /**
      * Computed property that determines if the content type has only one tab.
@@ -595,13 +596,19 @@ export class DotEditContentFormComponent implements OnInit {
         inode: string,
         contentlet: { [key: string]: string | object }
     ): void {
+        const wizardInput = this.#dotWorkflowEventHandlerService.setWizardInput(
+            workflow,
+            this.#dotMessageService.get('Workflow-Action')
+        );
+
+        // `setWizardInput` returns null when the action has no wizard steps.
+        // DotWorkflowEventHandlerService.openWizard guards the same way.
+        if (!wizardInput) {
+            return;
+        }
+
         this.#dotWizardService
-            .open<DotWorkflowPayload>(
-                this.#dotWorkflowEventHandlerService.setWizardInput(
-                    workflow,
-                    this.#dotMessageService.get('Workflow-Action')
-                )
-            )
+            .open<DotWorkflowPayload>(wizardInput)
             .pipe(take(1))
             .subscribe((data: DotWorkflowPayload) => {
                 this.$store.fireWorkflowAction({
@@ -644,7 +651,9 @@ export class DotEditContentFormComponent implements OnInit {
                 const field = this.$formFields().find((f) => f.variable === key);
 
                 if (!field) {
-                    return [key, fieldValue];
+                    // `?? ''` to match this method's documented contract above: null and
+                    // undefined become an empty string. This branch was the one leak.
+                    return [key, fieldValue ?? ''];
                 }
 
                 if (field.fieldType === FIELD_TYPES.CATEGORY) {
@@ -674,7 +683,7 @@ export class DotEditContentFormComponent implements OnInit {
         // programmatic CVA noise, not edits.
         this.#userTouched = false;
 
-        const controls = this.$formFields().reduce(
+        const controls = this.$formFields().reduce<Record<string, FormControl>>(
             (acc, field) => ({
                 ...acc,
                 [field.variable]: this.createFormControl(field)
@@ -797,7 +806,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     goBack(): void {
-        const contentTypeVariable = this.$store.contentType().variable;
+        const contentTypeVariable = this.$store.contentType()?.variable;
 
         this.#router.navigate([CONTENT_SEARCH_ROUTE], {
             queryParams: { filter: contentTypeVariable }

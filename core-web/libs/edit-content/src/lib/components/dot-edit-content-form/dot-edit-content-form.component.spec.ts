@@ -105,7 +105,15 @@ describe('DotFormComponent', () => {
             mockProvider(MessageService),
             ConfirmationService,
             mockProvider(DialogService),
-            mockProvider(DotWorkflowEventHandlerService),
+            mockProvider(DotWorkflowEventHandlerService, {
+                // `mockProvider` alone returns undefined, which the component now correctly
+                // reads as "this action has no wizard steps" and skips the dialog. These
+                // specs are about actions that DO have inputs, so the mock must say so.
+                setWizardInput: jest.fn().mockReturnValue({
+                    title: 'Workflow-Action',
+                    steps: [{ component: 'commentAndAssign', data: {} }]
+                })
+            }),
             mockProvider(DotWizardService, {
                 open: jest.fn().mockReturnValue(of({}))
             }),

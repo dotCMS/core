@@ -45,5 +45,5 @@ export class DotCardFieldLabelComponent {
      *
      * @optional
      */
-    $hint = input<string>(null, { alias: 'hint' });
+    $hint = input<string | null>(null, { alias: 'hint' });
 }

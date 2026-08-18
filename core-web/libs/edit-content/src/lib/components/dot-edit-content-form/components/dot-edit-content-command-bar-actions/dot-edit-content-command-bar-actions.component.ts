@@ -125,7 +125,7 @@ export class DotEditContentCommandBarActionsComponent {
         const langId = this.languageId();
         if (!id || !langId) return;
 
-        this.#permissionsDialogRef = this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+        const permissionsRef = this.#dialogService.open(DotPermissionsIframeDialogComponent, {
             header: this.#dotMessageService.get('edit.content.sidebar.permissions.title'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
@@ -141,11 +141,12 @@ export class DotEditContentCommandBarActionsComponent {
             position: 'center'
         });
 
-        this.#permissionsDialogRef.onClose
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => {
-                this.#permissionsDialogRef = undefined;
-            });
+        // `open()` can return null; the field tracks "no dialog" as undefined.
+        this.#permissionsDialogRef = permissionsRef ?? undefined;
+
+        permissionsRef?.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+            this.#permissionsDialogRef = undefined;
+        });
     }
 
     /**
@@ -159,7 +160,7 @@ export class DotEditContentCommandBarActionsComponent {
         if (!id) return;
 
         const header = this.#dotMessageService.get('edit.content.sidebar.rules.title');
-        this.#rulesDialogRef = this.#dialogService.open(DotRulesDialogComponent, {
+        const rulesRef = this.#dialogService.open(DotRulesDialogComponent, {
             header,
             width: 'min(92vw, 75rem)',
             data: { identifier: id },
@@ -173,7 +174,10 @@ export class DotEditContentCommandBarActionsComponent {
             position: 'center'
         });
 
-        this.#rulesDialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+        // `open()` can return null; the field tracks "no dialog" as undefined.
+        this.#rulesDialogRef = rulesRef ?? undefined;
+
+        rulesRef?.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
             this.#rulesDialogRef = undefined;
         });
     }
@@ -189,7 +193,7 @@ export class DotEditContentCommandBarActionsComponent {
         const identifier = this.identifier();
         if (!identifier) return;
 
-        this.#referencesDialogRef = this.#dialogService.open(
+        const referencesRef = this.#dialogService.open(
             DotEditContentSidebarReferencesDialogComponent,
             {
                 header: this.#dotMessageService.get(
@@ -209,11 +213,12 @@ export class DotEditContentCommandBarActionsComponent {
             }
         );
 
-        this.#referencesDialogRef.onClose
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => {
-                this.#referencesDialogRef = undefined;
-            });
+        // `open()` can return null; the field tracks "no dialog" as undefined.
+        this.#referencesDialogRef = referencesRef ?? undefined;
+
+        referencesRef?.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+            this.#referencesDialogRef = undefined;
+        });
     }
 
     #buildPermissionsUrl(identifier: string, languageId: number): string {
