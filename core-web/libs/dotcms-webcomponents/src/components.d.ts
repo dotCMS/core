@@ -1966,8 +1966,10 @@ declare global {
     };
     interface HTMLDotHtmlToImageElementEventMap {
         "pageThumbnail": {
-        file: File;
-        error?: string;
+        /** Null on every failure path — a document that would not open, a script that would not load. */
+        file: File | null;
+        /** A message, or the caught value itself when the failure came from a `try`/`catch`. */
+        error?: unknown;
     };
     }
     interface HTMLDotHtmlToImageElement extends Components.DotHtmlToImage, HTMLStencilElement {
@@ -3076,8 +3078,10 @@ declare namespace LocalJSX {
          */
         "height"?: string;
         "onPageThumbnail"?: (event: DotHtmlToImageCustomEvent<{
-        file: File;
-        error?: string;
+        /** Null on every failure path — a document that would not open, a script that would not load. */
+        file: File | null;
+        /** A message, or the caught value itself when the failure came from a `try`/`catch`. */
+        error?: unknown;
     }>) => void;
         /**
           * @default ''
