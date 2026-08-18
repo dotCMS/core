@@ -38,7 +38,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 add: jest.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn(),
@@ -181,7 +181,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET}"]`
             );
 
-            spectator.click(editContentButton);
+            spectator.click(editContentButton!);
 
             expect(navigationService.editContent).toHaveBeenCalledWith(mockItem);
         });
@@ -203,7 +203,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE}"]`
             );
 
-            spectator.click(editPageButton);
+            spectator.click(editPageButton!);
 
             expect(navigationService.editPage).toHaveBeenCalledWith(mockItem);
         });
@@ -295,7 +295,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining('force_download=true'),
@@ -329,7 +329,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
@@ -373,7 +373,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining(mockAsset['assetVersion'] as string),
@@ -404,7 +404,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining(mockAsset['fileAssetVersion'] as string),

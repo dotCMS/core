@@ -184,7 +184,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockStore.getFilterValue.mockReturnValue('test value');
             spectator.detectChanges();
 
-            spectator.click(spectator.query(byTestId('search-icon-clear')));
+            spectator.click(spectator.query(byTestId('search-icon-clear'))!);
 
             expect(spectator.component.searchControl.value).toBe(null);
         });

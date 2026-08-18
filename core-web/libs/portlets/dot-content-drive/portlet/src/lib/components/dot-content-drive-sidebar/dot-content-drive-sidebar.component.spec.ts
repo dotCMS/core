@@ -131,7 +131,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 setSelectedNode: jest.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             })
         ]
     });
@@ -501,7 +501,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 });
 
                 expect(node.children).toHaveLength(1);
-                expect(node.children?.some((child) => child.data.type === 'load-more')).toBe(false);
+                expect(node.children?.some((child) => child.data!.type === 'load-more')).toBe(
+                    false
+                );
             });
         });
 
@@ -567,7 +569,7 @@ describe('DotContentDriveSidebarComponent', () => {
                     2
                 );
                 expect(parent.children?.map((child) => child.key)).toEqual(['a', 'b']);
-                expect(parent.children?.some((child) => child.data.type === 'load-more')).toBe(
+                expect(parent.children?.some((child) => child.data!.type === 'load-more')).toBe(
                     false
                 );
                 expect(contentDriveStore.updateFolders).toHaveBeenCalled();
@@ -767,7 +769,9 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
 
-                const refreshed = parent.children?.find((child) => child.data.type === 'load-more');
+                const refreshed = parent.children?.find(
+                    (child) => child.data!.type === 'load-more'
+                );
                 expect(refreshed?.data.nextPage).toBe(3);
                 expect(refreshed?.data.remaining).toBe(148);
             });
@@ -991,7 +995,7 @@ describe('DotContentDriveSidebarComponent', () => {
         beforeEach(() => {
             scrollIntoView = jest.fn();
             const treeFolder = spectator.query(DotTreeFolderComponent);
-            jest.spyOn(treeFolder.elementRef.nativeElement, 'querySelector').mockReturnValue({
+            jest.spyOn(treeFolder!.elementRef.nativeElement, 'querySelector').mockReturnValue({
                 scrollIntoView
             } as unknown as Element);
         });

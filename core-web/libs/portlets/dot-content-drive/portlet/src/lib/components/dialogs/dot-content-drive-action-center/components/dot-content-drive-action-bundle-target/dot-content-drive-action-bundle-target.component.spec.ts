@@ -30,7 +30,7 @@ describe('DotContentDriveActionBundleTargetComponent', () => {
         providers: [
             provideHttpClient(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotCurrentUserService)
         ],
