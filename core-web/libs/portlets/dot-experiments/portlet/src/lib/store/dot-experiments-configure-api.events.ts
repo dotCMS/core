@@ -85,7 +85,12 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
 
         // Page prefill and lock state
         pagePrefillResolved: type<DotExperimentConfigurePage>(),
+        // The link named a page that is not there: an answer, not a failure of the call.
         pagePrefillFailed: type<unknown>(),
+        // The lookup itself was rejected, so whether the page exists is unknown. Kept apart from
+        // `pagePrefillFailed` because the two need different copy, and only this one is an error
+        // to report.
+        pagePrefillLookupFailed: type<unknown>(),
         pageLockResolved: type<DotPageLockInfo>()
     }
 });

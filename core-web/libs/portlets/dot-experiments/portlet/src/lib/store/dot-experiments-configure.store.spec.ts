@@ -44,7 +44,8 @@ import {
     AUTOSAVE_DEBOUNCE_MS,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
-    PAGE_PREFILL_ERROR_KEY
+    PAGE_PREFILL_ERROR_KEY,
+    PAGE_PREFILL_LOOKUP_ERROR_KEY
 } from '../shared/constants';
 import {
     ConfigureValidationRule,
@@ -356,11 +357,25 @@ describe('DotExperimentsConfigureStore', () => {
         it('should not carry a pending diff over to it', () => {
             initExisting();
             dispatcher.dispatch(pageEvents.formEdited({ name: 'Typed but not yet sent' }));
-            expect(store.pendingPatch()).not.toEqual({});
+            expect(store.pendingPatch()).not.toBeNull();
 
             laterUrls$.next(convertToParamMap({ experimentId: OTHER_ID }));
 
-            expect(store.pendingPatch()).toEqual({});
+            expect(store.pendingPatch()).toBeNull();
+        });
+
+        /**
+         * The reveal-on-Start guarantee is per experiment (AC28): errors named by a Start on the
+         * one being left behind must not greet the one arriving.
+         */
+        it('should not carry validation errors over to it', () => {
+            initExisting({ ...VALID_DRAFT, name: '' });
+            dispatcher.dispatch(pageEvents.startRequested());
+            expect(store.$validationErrors().length).toBeGreaterThan(0);
+
+            laterUrls$.next(convertToParamMap({ experimentId: OTHER_ID }));
+
+            expect(store.$validationErrors()).toEqual([]);
         });
 
         it('should ignore the swap to the experiment it just created', () => {
@@ -557,6 +572,52 @@ describe('DotExperimentsConfigureStore', () => {
             flushAutosave();
 
             expect(store.$isSaving()).toBe(false);
+        });
+
+        /**
+         * The response only settles the value it actually carried. `switchMap` cancels a flight
+         * when the *next* debounce emits, so an edit made while the response is travelling reaches
+         * the diff before it lands: settling by key name would drop it, leaving the form showing a
+         * value the server never got and nothing pending to resend it (#37003).
+         */
+        it('should resend a field re-edited while its own PATCH was still travelling', () => {
+            const inFlight = new Subject<DotExperiment>();
+            patchExperiment.mockReturnValueOnce(inFlight);
+            initExisting();
+
+            edit({ name: 'Alpha' });
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, { name: 'Alpha' });
+
+            // The user resumes typing before the answer to 'Alpha' comes back.
+            edit({ name: 'Alpha campaign' });
+
+            inFlight.next({ ...VALID_DRAFT, name: 'Alpha' });
+            inFlight.complete();
+
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(2);
+            expect(patchExperiment).toHaveBeenLastCalledWith(EXPERIMENT_ID, {
+                name: 'Alpha campaign'
+            });
+        });
+
+        it('should settle a field left untouched while its PATCH was travelling', () => {
+            const inFlight = new Subject<DotExperiment>();
+            patchExperiment.mockReturnValueOnce(inFlight);
+            initExisting();
+
+            edit({ name: 'Alpha' });
+            flushAutosave();
+
+            inFlight.next({ ...VALID_DRAFT, name: 'Alpha' });
+            inFlight.complete();
+
+            flushAutosave();
+
+            expect(patchExperiment).toHaveBeenCalledTimes(1);
         });
 
         /**
@@ -922,14 +983,20 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.pagePrefillError()).toBe(PAGE_PREFILL_ERROR_KEY);
         });
 
-        it('should show an inline error rather than crash when the lookup fails', () => {
-            contentSearchGet.mockReturnValue(throwError(() => httpError(403)));
+        /**
+         * A rejected lookup is not an answer about the page: saying "not found" would blame the
+         * link for what is a failed call, and would leave a backend outage with no signal at all.
+         */
+        it('should tell a failed lookup apart from a page that is not there, and report it', () => {
+            const error = httpError(403);
+            contentSearchGet.mockReturnValue(throwError(() => error));
 
             initNew({ pageId: PAGE.pageId });
 
             expect(store.selectedPage()).toBeNull();
-            expect(store.pagePrefillError()).toBe(PAGE_PREFILL_ERROR_KEY);
+            expect(store.pagePrefillError()).toBe(PAGE_PREFILL_LOOKUP_ERROR_KEY);
             expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
         });
 
         it('should look nothing up without ?pageId= or ?url=', () => {
@@ -1090,7 +1157,7 @@ describe('DotExperimentsConfigureStore', () => {
         it('should reveal nothing until Start is pressed', () => {
             initExisting(buildExperiment({ name: '', goals: null }));
 
-            expect(store.validationErrors()).toEqual([]);
+            expect(store.$validationErrors()).toEqual([]);
             expect(store.$validationErrorCount()).toBe(0);
         });
 
@@ -1101,11 +1168,41 @@ describe('DotExperimentsConfigureStore', () => {
 
                 dispatcher.dispatch(pageEvents.startRequested());
 
-                expect(store.validationErrors()).toEqual(expected);
+                expect(store.$validationErrors()).toEqual(expected);
                 expect(store.$validationErrorCount()).toBe(expected.length);
                 expect(start).not.toHaveBeenCalled();
             }
         );
+
+        /**
+         * Revealing is what Start latches, not the errors themselves: a user who presses Start,
+         * reads what is missing and fills it in must see each error go as they fix it, rather
+         * than a form that stays red until Start is pressed again (#37003).
+         */
+        it('should drop the page rule as soon as a page is picked', () => {
+            initNew();
+            dispatcher.dispatch(pageEvents.formEdited({ name: 'Alpha campaign' }));
+
+            dispatcher.dispatch(pageEvents.startRequested());
+            expect(store.$validationErrors()).toContain('page');
+
+            dispatcher.dispatch(pageEvents.pageSelected(PAGE));
+
+            expect(store.$validationErrors()).not.toContain('page');
+        });
+
+        it('should keep the rules revealed for the fields still missing', () => {
+            initExisting(buildExperiment({ name: '', goals: null }));
+
+            dispatcher.dispatch(pageEvents.startRequested());
+            expect(store.$validationErrors()).toContain('name');
+            expect(store.$validationErrors()).toContain('goalType');
+
+            dispatcher.dispatch(pageEvents.formEdited({ name: 'Alpha campaign' }));
+
+            expect(store.$validationErrors()).not.toContain('name');
+            expect(store.$validationErrors()).toContain('goalType');
+        });
 
         it('should start a complete draft and clear the errors', () => {
             const running = buildExperiment({ status: DotExperimentStatus.RUNNING });
@@ -1114,7 +1211,7 @@ describe('DotExperimentsConfigureStore', () => {
 
             dispatcher.dispatch(pageEvents.startRequested());
 
-            expect(store.validationErrors()).toEqual([]);
+            expect(store.$validationErrors()).toEqual([]);
             expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
             expect(store.experiment()).toEqual(running);
             expect(store.status()).toBe(ComponentStatus.LOADED);
@@ -1775,7 +1872,7 @@ describe('DotExperimentsConfigureStore', () => {
 
             dispatcher.dispatch(pageEvents.startRequested());
 
-            expect(store.validationErrors()).toEqual(['name']);
+            expect(store.$validationErrors()).toEqual(['name']);
             expect(start).not.toHaveBeenCalled();
 
             edit({ name: 'Alpha campaign' });

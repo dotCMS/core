@@ -161,7 +161,7 @@ class FooterStubComponent {}
  */
 const createStoreMock = () => ({
     status: signal<ComponentStatus>(ComponentStatus.LOADED),
-    validationErrors: signal<ConfigureValidationRule[]>([]),
+    $validationErrors: signal<ConfigureValidationRule[]>([]),
     $lockedBannerKey: signal<string | null>(null),
     $isLocked: signal(false),
     $isAutosaving: signal(false),
@@ -943,11 +943,19 @@ describe('DotExperimentsConfigureComponent', () => {
                 expect(scrollIntoView).not.toHaveBeenCalled();
             });
 
+            /** A Start press the store rejected: the errors are revealed and nothing was sent. */
+            const pressStartWith = (errors: ConfigureValidationRule[]) => {
+                storeMock.$validationErrors.set(errors);
+                spectator
+                    .inject(Dispatcher)
+                    .dispatch(dotExperimentsConfigurePageEvents.startRequested());
+                flush();
+            };
+
             it('should bring the first failing field into view once Start reveals the errors', () => {
                 flush();
 
-                storeMock.validationErrors.set(['name', 'goalType']);
-                flush();
+                pressStartWith(['name', 'goalType']);
 
                 expect(scrollIntoView).toHaveBeenCalledWith({
                     behavior: 'smooth',
@@ -958,20 +966,24 @@ describe('DotExperimentsConfigureComponent', () => {
             it('should scroll to the first marker on the screen, not to any later one', () => {
                 flush();
 
-                storeMock.validationErrors.set(['goalType']);
-                flush();
+                pressStartWith(['goalType']);
 
                 expect(scrollIntoView.mock.instances[0]).toBe(
                     spectator.query(byTestId('details-error-marker'))
                 );
             });
 
+            it('should not scroll when a Start press got through', () => {
+                flush();
+
+                pressStartWith([]);
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+
             it('should scroll again when the footer re-runs it on a second press', () => {
-                // The errors do not change on a re-press, so the effect alone would never fire
-                // twice.
                 flush();
-                storeMock.validationErrors.set(['name']);
-                flush();
+                pressStartWith(['name']);
                 scrollIntoView.mockClear();
 
                 spectator.component.scrollToFirstValidationError();

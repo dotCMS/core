@@ -68,7 +68,7 @@ const createStoreMock = () => ({
     experiment: signal<DotExperiment | null>(null),
     selectedPage: signal<DotExperimentConfigurePage | null>(null),
     pagePrefillError: signal<string | null>(null),
-    validationErrors: signal<ConfigureValidationRule[]>([]),
+    $validationErrors: signal<ConfigureValidationRule[]>([]),
     $isLocked: signal(false),
     $disabledTooltipKey: signal<string | null>(null)
 });
@@ -276,7 +276,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
         });
 
         it('should show the required-page error once the store reports it', () => {
-            storeMock.validationErrors.set(['page']);
+            storeMock.$validationErrors.set(['page']);
             spectator.detectChanges();
 
             expect(

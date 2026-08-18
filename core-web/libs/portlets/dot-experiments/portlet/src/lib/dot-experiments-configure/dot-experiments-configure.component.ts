@@ -456,28 +456,9 @@ export class DotExperimentsConfigureComponent {
         toPatch: (model) => this.#toOutgoingPatch(model)
     });
 
-    /**
-     * Reveals the first field that failed validation.
-     *
-     * `validationErrors` is only ever filled by a Start/Schedule press, so this fires exactly when
-     * an invalid start was attempted. The scroll waits for the next render because the cards
-     * reveal their `[data-error]` markers from the same signal — searching before they are in the
-     * DOM would find nothing.
-     */
-    protected readonly scrollToFirstErrorEffect = effect(() => {
-        const hasErrors = this.store.validationErrors().length > 0;
-
-        if (!hasErrors) {
-            return;
-        }
-
-        untracked(() =>
-            afterNextRender(() => this.scrollToFirstValidationError(), { injector: this.#injector })
-        );
-    });
-
     constructor() {
         this.#listenForActionSuccess();
+        this.#scrollToFirstErrorOnFailedStart();
 
         // The form created this draft, so it already holds it: claiming it here is what stops
         // `hydrateFormEffect` from reading the POST's answer back over what is still being typed.
@@ -485,6 +466,29 @@ export class DotExperimentsConfigureComponent {
             .on(dotExperimentsConfigureApiEvents.createSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(({ payload }) => this.#hydratedExperimentId.set(payload.id));
+    }
+
+    /**
+     * Brings the first failing field into view when a Start/Schedule press did not get through.
+     *
+     * Keyed on the press, not on the error list: the errors are derived from the form, so an
+     * effect over them would scroll again on every keystroke that changed one. The scroll waits
+     * for the next render because the cards reveal their `[data-error]` markers from the same
+     * press — searching before they are in the DOM would find nothing.
+     */
+    #scrollToFirstErrorOnFailedStart(): void {
+        this.#events
+            .on(dotExperimentsConfigurePageEvents.startRequested)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                if (!this.store.$validationErrors().length) {
+                    return;
+                }
+
+                afterNextRender(() => this.scrollToFirstValidationError(), {
+                    injector: this.#injector
+                });
+            });
     }
 
     /** Brings the first failing field into view. Public so the footer can re-run it on a re-press. */

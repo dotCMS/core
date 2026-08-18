@@ -12,7 +12,10 @@
 
             <span
                 class="text-sm font-bold text-surface-700"
-                [attr.aria-label]="'experiments.configure.variants.count' | dm"
+                [attr.aria-label]="
+                    'experiments.configure.variants.count'
+                        | dm: [$rows().length + '', MAX_VARIANTS_ALLOWED + '']
+                "
                 data-testid="variants-count">
                 {{ $rows().length }}/{{ MAX_VARIANTS_ALLOWED }}
             </span>

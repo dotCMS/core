@@ -136,8 +136,15 @@ export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 /** Read-only banner copy for every other non-DRAFT status. */
 export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
 
-/** Page card's inline error when `?pageId=`/`?url=` named a page that could not be resolved. */
+/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
 export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
+
+/**
+ * Page card's inline error when the lookup itself failed. A rejected request says nothing about
+ * whether the page exists, so it must not read as "not found" — the error behind it is reported
+ * by `DotHttpErrorManagerService` like every other failed call on this screen.
+ */
+export const PAGE_PREFILL_LOOKUP_ERROR_KEY = 'experiments.configure.page.prefill.lookup-failed';
 
 /** Fallback header the old screen supplies when the backend rejects a start with no header of its own. */
 export const START_ERROR_HEADER_KEY =

@@ -225,16 +225,18 @@ function hasUnsendableWeights(variants: Variant[] | undefined): boolean {
 }
 
 /**
- * What is left of a pending diff once the keys a PATCH carried are taken out of it — `null` when
- * the body carried them all.
+ * What is left of a pending diff once the values a PATCH actually carried are taken out of it —
+ * `null` when the body carried them all.
  *
  * What remains is what `toOutgoingPatch` held back, and it is still unsaved: a `trafficProportion`
  * whose weights are mid-edit has to survive the response of the call that went out beside it, or
  * the rows would snap back to the older weights the server answered with (#37003).
  *
- * Reading the remainder as "held back" is sound *because* the flush is `switchMap`ped over the
- * edits (see the store): a response that gets processed proves nothing was edited since its body
- * was snapshotted, so nothing new can be in there.
+ * A key only settles while its pending value is still the one that was sent. The flush is
+ * `switchMap`ped over the edits, but that only cancels a request once the *next* debounce emits —
+ * an edit made while the response is travelling lands in the diff before it arrives. Settling by
+ * key name would drop that edit: the field would read as saved, the form would keep showing it,
+ * and the server would keep the older value with nothing left to resend it (#37003).
  */
 export function withoutSentKeys(
     patch: DotExperimentPatchBody | null,
@@ -246,9 +248,22 @@ export function withoutSentKeys(
 
     const remaining = { ...patch };
 
-    (Object.keys(sent) as (keyof DotExperimentPatchBody)[]).forEach((key) => delete remaining[key]);
+    (Object.keys(sent) as (keyof DotExperimentPatchBody)[]).forEach((key) => {
+        if (isSameValue(remaining[key], sent[key])) {
+            delete remaining[key];
+        }
+    });
 
     return hasPendingChanges(remaining) ? remaining : null;
+}
+
+/**
+ * Whether a pending value is still the one that went out. The patch keys hold primitives and the
+ * plain objects the reducers rebuild on every edit, so a structural comparison is what tells an
+ * untouched key from one re-edited to an equal value — reference identity would not.
+ */
+function isSameValue(pending: unknown, sent: unknown): boolean {
+    return JSON.stringify(pending) === JSON.stringify(sent);
 }
 
 /** The page a content-search contentlet stands for, as the Page card shows it. */

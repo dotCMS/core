@@ -125,8 +125,14 @@ export interface DotExperimentsConfigureViewState {
     pagePrefillError: string | null;
     /** `null` until the page's lock state has been resolved, or while no page is selected. */
     pageLockInfo: DotPageLockInfo | null;
-    /** Empty until Start/Schedule is pressed, so no field can show an error before then. */
-    validationErrors: ConfigureValidationRule[];
+    /**
+     * Whether the validation rules are allowed to show. `false` until Start/Schedule is pressed,
+     * so no field can show an error before then (AC28).
+     *
+     * Only the *reveal* is latched: the errors themselves are derived live from the form, so
+     * fixing a field clears its error without pressing Start again.
+     */
+    validationRevealed: boolean;
     /**
      * The keys edited since the last successful save, merged into one PATCH body.
      *
