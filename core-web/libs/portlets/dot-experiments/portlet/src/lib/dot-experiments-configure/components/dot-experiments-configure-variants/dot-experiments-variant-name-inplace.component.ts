@@ -1,7 +1,8 @@
-import { Component, computed, input, linkedSignal, output, signal } from '@angular/core';
+import { Component, computed, input, linkedSignal, output, viewChild } from '@angular/core';
 import { form, FormField, maxLength, required } from '@angular/forms/signals';
 
 import { ButtonModule } from 'primeng/button';
+import { Inplace, InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
@@ -16,9 +17,10 @@ interface VariantNameFormModel {
  * Inplace rename control for a variant name.
  *
  * Reads as plain text until the pencil is pressed, then swaps in a single validated input with
- * Save and Cancel. Written for the Variants card rather than reusing the old screen's
- * `dot-experiments-inplace-edit-text`, which is ReactiveForms-based: this one is signal forms
- * throughout, matching the rest of the Configure screen.
+ * Save and Cancel. `p-inplace` owns the display/edit swap, as it does on the old screen — it also
+ * gives the read state its keyboard affordance, which a bare `@if` would have to reimplement. What
+ * is *not* reused is the old screen's `dot-experiments-inplace-edit-text` wrapper, which is
+ * ReactiveForms-based; the editor here is signal forms, matching the rest of Configure.
  *
  * The editor closes as soon as Save is pressed instead of waiting for the rename round-trip — the
  * name shown afterwards is whatever the store holds, so a rejected rename simply reverts the row
@@ -26,7 +28,14 @@ interface VariantNameFormModel {
  */
 @Component({
     selector: 'dot-experiments-variant-name-inplace',
-    imports: [FormField, ButtonModule, InputTextModule, DotAutofocusDirective, DotMessagePipe],
+    imports: [
+        FormField,
+        ButtonModule,
+        InplaceModule,
+        InputTextModule,
+        DotAutofocusDirective,
+        DotMessagePipe
+    ],
     templateUrl: './dot-experiments-variant-name-inplace.component.html'
 })
 export class DotExperimentsVariantNameInplaceComponent {
@@ -42,7 +51,12 @@ export class DotExperimentsVariantNameInplaceComponent {
     /** Emits the trimmed new name; never emits the unchanged one. */
     readonly $nameChanged = output<string>({ alias: 'nameChanged' });
 
-    protected readonly $isEditing = signal(false);
+    /**
+     * The swap itself is `p-inplace`'s; this is only how Save and Cancel close it.
+     *
+     * `protected` rather than `#`-private: Angular rejects `viewChild` on ES private fields.
+     */
+    protected readonly inplace = viewChild.required(Inplace);
 
     /**
      * Resets to the persisted name whenever it changes, which is what discards the draft after a
@@ -62,13 +76,12 @@ export class DotExperimentsVariantNameInplaceComponent {
         return this.formTree().invalid() || !name || name === this.$name();
     });
 
-    protected startEditing(): void {
-        if (this.$disabled()) {
-            return;
-        }
-
+    /**
+     * Editing always starts from the persisted name, whichever affordance opened the editor —
+     * the pencil, or the read state's own click and keyboard handling.
+     */
+    protected onActivate(): void {
         this.$model.set({ name: this.$name() });
-        this.$isEditing.set(true);
     }
 
     protected save(): void {
@@ -77,11 +90,11 @@ export class DotExperimentsVariantNameInplaceComponent {
         }
 
         this.$nameChanged.emit(this.$model().name.trim());
-        this.$isEditing.set(false);
+        this.inplace().deactivate();
     }
 
     protected cancel(): void {
         this.$model.set({ name: this.$name() });
-        this.$isEditing.set(false);
+        this.inplace().deactivate();
     }
 }
