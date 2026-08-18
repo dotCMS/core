@@ -128,16 +128,18 @@
                                 {{ isFolder ? item.name : item.title }}
                             </span>
                             @if (isSharedAsset(item)) {
-                                <!-- Said in words rather than with a glyph. An icon small enough to sit
-                                 in the row's hint slot could not carry this: the detail did not survive
-                                 at 14px, and sizing it up unbalanced it against the padlock. The cell
-                                 is already as tall as the thumbnail, so a second line costs no width
-                                 and no column. Only shared rows render it. -->
+                                <!-- Said in words rather than with a glyph: an icon small enough for the
+                                 row's hint slot could not carry this, since the detail did not survive
+                                 at 14px and sizing it up unbalanced it against the padlock. The cell is
+                                 already as tall as the thumbnail, so a second line costs no width and no
+                                 column, and only shared rows render it.
+                                 One word, not a sentence — the full phrase repeated down the column read
+                                 as noise, so it moved to the tooltip where it is read once, on demand. -->
                                 <span
                                     data-testId="shared-asset-hint"
                                     class="block truncate text-xs text-gray-500"
                                     [title]="'content-drive.list-view.shared-asset' | dm">
-                                    {{ 'content-drive.list-view.shared-asset' | dm }}
+                                    {{ 'content-drive.list-view.shared-asset.label' | dm }}
                                 </span>
                             }
                         </div>

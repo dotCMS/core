@@ -1147,6 +1147,22 @@ describe('DotFolderListViewComponent', () => {
                     ).toBe('content-drive.list-view.shared-asset');
                 });
 
+                it('should show a one-word label and keep the full phrase on hover', () => {
+                    // Deliberately two different keys: the visible marker is terse because the full
+                    // sentence repeated on every shared row read as noise, and the explanation lives in
+                    // the tooltip where it is read once, on demand.
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    const hint = spectator.query(byTestId('shared-asset-hint'));
+
+                    expect(hint.textContent.trim()).toBe(
+                        'content-drive.list-view.shared-asset.label'
+                    );
+                    expect(hint.getAttribute('title')).toBe('content-drive.list-view.shared-asset');
+                });
+
                 it('should not flag a row that lives on a real site', () => {
                     spectator.setInput('items', [{ ...mockItems[0], host: 'demo.dotcms.com' }]);
                     spectator.setInput('loading', false);
