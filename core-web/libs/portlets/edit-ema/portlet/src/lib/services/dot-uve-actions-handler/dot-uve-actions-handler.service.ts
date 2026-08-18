@@ -50,6 +50,57 @@ export interface ActionsHandlerDependencies {
     onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
 
+/**
+ * The payload each UVE action carries over the postMessage channel.
+ *
+ * `PostMessage.payload` is `unknown`, because one channel carries all of them; this is where the
+ * pairing is written down. The map below used to be
+ * `Record<DotCMSUVEAction, (payload: unknown) => void>`, which claimed every handler accepts
+ * anything — `strictFunctionTypes` rejects assigning `(p: SetUrlPayload) => void` to that, and it
+ * is right to. Handlers that take no payload still satisfy their entry: a function may ignore
+ * arguments it is passed.
+ */
+interface UveActionPayloads {
+    [DotCMSUVEAction.NAVIGATION_UPDATE]: SetUrlPayload;
+    [DotCMSUVEAction.SET_BOUNDS]: Container[];
+    [DotCMSUVEAction.SET_CONTENTLET]: ClientContentletArea | null;
+    [DotCMSUVEAction.SET_SELECTED_CONTENTLET]: ClientContentletArea;
+    [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: {
+        dataset: InlineEditingContentletDataset;
+    };
+    [DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING]: UpdatedContentlet;
+    [DotCMSUVEAction.CLIENT_READY]: {
+        graphql: {
+            query: string;
+            variables: Record<string, unknown>;
+        };
+        params: Record<string, unknown>;
+        query: string;
+    };
+    [DotCMSUVEAction.EDIT_CONTENTLET]: DotCMSContentlet;
+    [DotCMSUVEAction.CREATE_CONTENTLET]: { contentType: string };
+    [DotCMSUVEAction.REORDER_MENU]: ReorderMenuPayload;
+    [DotCMSUVEAction.INIT_INLINE_EDITING]: {
+        type: DotCMSInlineEditingType;
+        data?: DotCMSInlineEditingPayload;
+    };
+    [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: { schemas: StyleEditorFormSchema[] };
+    [DotCMSUVEAction.SECTION_OFFSET]: { sectionIndex: number; offsetTop: number };
+
+    // Signals with no payload.
+    [DotCMSUVEAction.IFRAME_SCROLL]: unknown;
+    [DotCMSUVEAction.IFRAME_SCROLL_END]: unknown;
+    [DotCMSUVEAction.IFRAME_HEIGHT]: unknown;
+    [DotCMSUVEAction.GET_PAGE_DATA]: unknown;
+    [DotCMSUVEAction.PING_EDITOR]: unknown;
+    [DotCMSUVEAction.NOOP]: unknown;
+}
+
+/** One handler per action, each taking that action's own payload. */
+type UveActionHandlers = {
+    [A in DotCMSUVEAction]: (payload: UveActionPayloads[A]) => void;
+};
+
 @Injectable()
 export class DotUveActionsHandlerService {
     private readonly dotMessageService = inject(DotMessageService);
@@ -68,7 +119,7 @@ export class DotUveActionsHandlerService {
             onSectionOffset
         } = deps;
 
-        const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
+        const CLIENT_ACTIONS_FUNC_MAP: UveActionHandlers = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
                 const currentPageUrl = uveStore.pageParams()?.url;
                 const incomingUrl = payload.url;
@@ -394,7 +445,11 @@ export class DotUveActionsHandlerService {
             }
         };
 
-        const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
+        // The one cast in this file, and the only place it belongs: `action` and `payload` arrive
+        // as an unrelated pair from the SDK, so nothing here can prove they match. Indexing the
+        // map yields the union of every handler, which accepts only the intersection of their
+        // payloads — i.e. nothing. `UveActionPayloads` above is the contract this leans on.
+        const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action] as (payload: unknown) => void;
         actionToExecute?.(payload);
     }
 

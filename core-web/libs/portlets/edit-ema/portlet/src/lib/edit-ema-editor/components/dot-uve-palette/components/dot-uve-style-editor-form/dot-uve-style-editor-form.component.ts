@@ -196,7 +196,9 @@ export class DotUveStyleEditorFormComponent {
         const extracted = activeContentlet
             ? this.#optimisticSave.extractFromRollback(activeContentlet, ['dotStyleProperties'])
             : null;
-        const initialValues = extracted?.dotStyleProperties as StyleEditorProperties | undefined;
+        const initialValues = extracted?.['dotStyleProperties'] as
+            | StyleEditorProperties
+            | undefined;
 
         // Clear form first so the template destroys the form block and unbinds old controls.
         // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName
@@ -230,7 +232,7 @@ export class DotUveStyleEditorFormComponent {
             const extracted = this.#optimisticSave.extractFromRollback(activeContentlet, [
                 'dotStyleProperties'
             ]);
-            const styleProperties = extracted?.dotStyleProperties as StyleEditorProperties;
+            const styleProperties = extracted?.['dotStyleProperties'] as StyleEditorProperties;
             const restoredForm = this.#formBuilder.buildForm(schema, styleProperties);
             this.#form.set(restoredForm);
         } catch (error) {

@@ -232,7 +232,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         const { data } = this.#activatedRoute.snapshot;
 
-        const baseClientHost = data?.uveConfig?.url;
+        const baseClientHost = data?.['uveConfig']?.url;
 
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
 
@@ -251,7 +251,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         if (!page || !this.uveStore.pageParams()) return;
 
         const params = this.uveStore.pageFriendlyParams();
-        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const baseClientHost = this.#activatedRoute.snapshot.data?.['uveConfig']?.url;
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
         const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
         const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
@@ -286,7 +286,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             currentPageParams.language_id === params.language_id &&
             currentPageParams.mode === params.mode &&
             currentPageParams.variantName === params.variantName &&
-            currentPageParams[PERSONA_KEY] === params.personaId;
+            currentPageParams[PERSONA_KEY] === params['personaId'];
 
         if (!hasPageData || !paramsMatch) {
             this.uveStore.pageLoad(params);
@@ -519,32 +519,32 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #getPageParams(): DotPageAssetParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
-        const uveConfig = data?.uveConfig;
+        const uveConfig = data?.['uveConfig'];
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
         const params = { ...queryParams };
-        const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
+        const validHost = checkClientHostAccess(params['clientHost'], allowedDevURLs);
 
         //Sanitize the url
-        params.url = sanitizeURL(params.url);
+        params['url'] = sanitizeURL(params['url']);
 
         if (!validHost) {
-            delete params.clientHost;
+            delete params['clientHost'];
         }
 
         if (uveConfig?.url && !validHost) {
-            params.clientHost = uveConfig.url;
+            params['clientHost'] = uveConfig.url;
         }
 
         // If the editor mode is not valid, set it to edit mode
         const UVE_MODES = Object.values(UVE_MODE);
 
-        if (!params.mode || !UVE_MODES.includes(params.mode)) {
-            params.mode = UVE_MODE.EDIT;
+        if (!params['mode'] || !UVE_MODES.includes(params['mode'])) {
+            params['mode'] = UVE_MODE.EDIT;
         }
 
-        if (params.mode !== UVE_MODE.LIVE && params.publishDate) {
+        if (params['mode'] !== UVE_MODE.LIVE && params['publishDate']) {
             delete params?.['publishDate'];
         }
 
@@ -562,9 +562,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const isPreviewMode = uveMode === UVE_MODE.PREVIEW || uveMode === UVE_MODE.LIVE;
 
         const viewParams: DotUveViewParams = {
-            device: queryParams.device,
-            orientation: queryParams.orientation,
-            seo: queryParams.seo
+            device: queryParams['device'],
+            orientation: queryParams['orientation'],
+            seo: queryParams['seo']
         };
 
         return isPreviewMode

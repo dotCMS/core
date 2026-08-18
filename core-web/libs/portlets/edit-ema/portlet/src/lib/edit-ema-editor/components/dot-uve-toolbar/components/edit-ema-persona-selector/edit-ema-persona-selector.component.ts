@@ -83,7 +83,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
 
     protected photo = '';
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.pageId) {
+        if (changes['pageId']) {
             this.fetchPersonas();
         }
 
