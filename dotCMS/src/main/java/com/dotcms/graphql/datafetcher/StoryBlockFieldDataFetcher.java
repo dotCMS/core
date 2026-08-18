@@ -57,8 +57,9 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
             storyBlockMap.put("json", APILocator.getStoryBlockAPI().toMap(fieldValue));
         } catch (final Exception e) {
             Logger.warnAndDebug(this.getClass(), String.format(
-                    "Unable to resolve Story Block field '%s' of contentlet '%s' as JSON: %s",
-                    variableName, contentlet.getIdentifier(), e.getMessage()), e);
+                    "Unable to resolve Story Block field '%s' as JSON (identifier: %s, inode: %s, languageId: %d): %s",
+                    variableName, contentlet.getIdentifier(), contentlet.getInode(),
+                    contentlet.getLanguageId(), e.getMessage()), e);
             return null;
         }
 
