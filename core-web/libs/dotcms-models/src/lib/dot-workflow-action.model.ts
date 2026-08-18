@@ -25,7 +25,9 @@ export interface DotCMSWorkflowAction {
     schemeId: string;
     showOn: string[];
     actionInputs: DotCMSWorkflowInput[];
-    metadata?: Record<string, string>;
+    /** Null when the action carries no metadata — the workflow endpoints send null rather than
+     *  omitting the key. */
+    metadata?: Record<string, string> | null;
     hasArchiveActionlet?: boolean;
     hasCommentActionlet?: boolean;
     hasDeleteActionlet?: boolean;

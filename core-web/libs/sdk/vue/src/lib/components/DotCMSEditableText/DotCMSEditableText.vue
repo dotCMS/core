@@ -145,17 +145,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <!-- eslint-disable-next-line vue/no-v-html -- renders the contentlet field's
+  <!-- eslint-disable-next-line vue/no-v-html -- renders the contentlet field's
        stored HTML, matching the React SDK's dangerouslySetInnerHTML behavior. -->
-    <span v-if="!initEditor" v-html="content" />
-    <div v-else :style="{ outline: '2px solid #006ce7', borderRadius: '4px' }">
-        <Editor
-            :tinymce-script-src="scriptSrc"
-            :inline="true"
-            :init="editorConfig"
-            :initial-value="content"
-            @init="onEditorInit"
-            @mousedown="onMouseDown"
-            @focusout="onFocusOut" />
-    </div>
+  <span
+    v-if="!initEditor"
+    v-html="content"
+  />
+  <div
+    v-else
+    :style="{ outline: '2px solid #006ce7', borderRadius: '4px' }"
+  >
+    <Editor
+      :tinymce-script-src="scriptSrc"
+      :inline="true"
+      :init="editorConfig"
+      :initial-value="content"
+      @init="onEditorInit"
+      @mousedown="onMouseDown"
+      @focusout="onFocusOut"
+    />
+  </div>
 </template>

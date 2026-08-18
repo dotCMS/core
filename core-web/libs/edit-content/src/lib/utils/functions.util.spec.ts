@@ -801,17 +801,14 @@ describe('Utils Functions', () => {
                 const result = transformFormDataFn(contentType);
 
                 // Find the field in the result
-                let foundField = null;
-                result.forEach((tab) => {
-                    tab.layout.forEach((row) => {
-                        row.columns.forEach((column) => {
-                            const field = column.fields.find((f) => f.id === fieldId);
-                            if (field) {
-                                foundField = field;
-                            }
-                        });
-                    });
-                });
+                // Flattened rather than accumulated through nested `forEach` callbacks: TS does
+                // not track assignments made inside a callback, so the old `foundField` stayed
+                // narrowed to `null` and `foundField?.rendered` resolved against `never`.
+                const foundField = result
+                    .flatMap((tab) => tab.layout)
+                    .flatMap((row) => row.columns)
+                    .flatMap((column) => column.fields)
+                    .find((f) => f.id === fieldId);
 
                 expect(foundField).toBeDefined();
                 expect(foundField?.rendered).toBe(renderedValue);
@@ -905,17 +902,14 @@ describe('Utils Functions', () => {
                 const result = transformFormDataFn(contentType);
 
                 // Find the field in the result
-                let foundField = null;
-                result.forEach((tab) => {
-                    tab.layout.forEach((row) => {
-                        row.columns.forEach((column) => {
-                            const field = column.fields.find((f) => f.id === fieldId);
-                            if (field) {
-                                foundField = field;
-                            }
-                        });
-                    });
-                });
+                // Flattened rather than accumulated through nested `forEach` callbacks: TS does
+                // not track assignments made inside a callback, so the old `foundField` stayed
+                // narrowed to `null` and `foundField?.rendered` resolved against `never`.
+                const foundField = result
+                    .flatMap((tab) => tab.layout)
+                    .flatMap((row) => row.columns)
+                    .flatMap((column) => column.fields)
+                    .find((f) => f.id === fieldId);
 
                 // Field should exist but may or may not have rendered property
                 // The key is that it shouldn't have rendered if it wasn't in the map
@@ -945,17 +939,14 @@ describe('Utils Functions', () => {
 
                 // Empty string is falsy, so it won't be added to the map
                 // Find the field
-                let foundField = null;
-                result.forEach((tab) => {
-                    tab.layout.forEach((row) => {
-                        row.columns.forEach((column) => {
-                            const field = column.fields.find((f) => f.id === fieldId);
-                            if (field) {
-                                foundField = field;
-                            }
-                        });
-                    });
-                });
+                // Flattened rather than accumulated through nested `forEach` callbacks: TS does
+                // not track assignments made inside a callback, so the old `foundField` stayed
+                // narrowed to `null` and `foundField?.rendered` resolved against `never`.
+                const foundField = result
+                    .flatMap((tab) => tab.layout)
+                    .flatMap((row) => row.columns)
+                    .flatMap((column) => column.fields)
+                    .find((f) => f.id === fieldId);
 
                 expect(foundField).toBeDefined();
                 // Empty string is falsy, so it won't be in the map
