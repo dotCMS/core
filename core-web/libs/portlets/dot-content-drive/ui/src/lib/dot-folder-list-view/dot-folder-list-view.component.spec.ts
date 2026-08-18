@@ -1134,7 +1134,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.setInput('loading', false);
                     spectator.detectChanges();
 
-                    expect(spectator.query(byTestId('shared-asset-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('shared-asset-hint'))).toBeTruthy();
                 });
 
                 it('should explain the hint on hover', () => {
@@ -1143,7 +1143,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.detectChanges();
 
                     expect(
-                        spectator.query(byTestId('shared-asset-icon')).getAttribute('title')
+                        spectator.query(byTestId('shared-asset-hint')).getAttribute('title')
                     ).toBe('content-drive.list-view.shared-asset');
                 });
 
@@ -1152,7 +1152,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.setInput('loading', false);
                     spectator.detectChanges();
 
-                    expect(spectator.query(byTestId('shared-asset-icon'))).toBeFalsy();
+                    expect(spectator.query(byTestId('shared-asset-hint'))).toBeFalsy();
                 });
 
                 it('should not flag a folder row', () => {
@@ -1171,7 +1171,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.detectChanges();
 
                     expect(spectator.query(byTestId('folder-icon'))).toBeTruthy();
-                    expect(spectator.query(byTestId('shared-asset-icon'))).toBeFalsy();
+                    expect(spectator.query(byTestId('shared-asset-hint'))).toBeFalsy();
                 });
             });
 

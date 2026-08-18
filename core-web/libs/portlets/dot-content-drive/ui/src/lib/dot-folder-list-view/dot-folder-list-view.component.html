@@ -113,34 +113,35 @@
                                     [attr.data-table-id]="item.identifier"></i>
                             }
                         </div>
-                        <!-- `title` keeps the full text reachable on hover: the column is a fixed width
-                         and `truncate` clips anything longer, so without it the rest is unreadable. -->
-                        <span
-                            data-testId="item-title-text"
-                            class="block cursor-pointer truncate"
-                            [title]="isFolder ? item.name : item.title"
-                            (click)="onDoubleClick(item); $event.stopPropagation()">
-                            {{ isFolder ? item.name : item.title }}
-                        </span>
-                        <!-- The row's trailing hint slot. Both hints live in this one element on
-                         purpose: the cell is a three-column grid, so a fourth child would wrap onto
-                         a second row instead of sitting beside the lock. -->
-                        <span data-testId="lock-hint" class="flex items-center gap-2 text-gray-700">
+                        <!-- `min-w-0` is what keeps `truncate` working on the children: a grid item
+                         defaults to `min-width: auto`, so without it the cell grows to the longest
+                         title instead of clipping it. -->
+                        <div class="min-w-0">
+                            <!-- `title` keeps the full text reachable on hover: the column is a fixed
+                             width and `truncate` clips anything longer, so without it the rest is
+                             unreadable. -->
+                            <span
+                                data-testId="item-title-text"
+                                class="block cursor-pointer truncate"
+                                [title]="isFolder ? item.name : item.title"
+                                (click)="onDoubleClick(item); $event.stopPropagation()">
+                                {{ isFolder ? item.name : item.title }}
+                            </span>
                             @if (isSharedAsset(item)) {
-                                <!-- `folder_match` reads as "this lives somewhere shared" without the
-                                 globe's suggestion of the public internet. Verified present in the
-                                 self-hosted font: Material Symbols renders by ligature, so a name the
-                                 font lacks would show as literal text rather than an icon.
-                                 `text-base!` needs the important modifier because
-                                 `.material-symbols-outlined` sets 24px and is unlayered, so it
-                                 outranks Tailwind utilities; 14px matches the padlock beside it. -->
-                                <i
-                                    class="material-symbols-outlined text-base!"
-                                    data-testid="shared-asset-icon"
+                                <!-- Said in words rather than with a glyph. An icon small enough to sit
+                                 in the row's hint slot could not carry this: the detail did not survive
+                                 at 14px, and sizing it up unbalanced it against the padlock. The cell
+                                 is already as tall as the thumbnail, so a second line costs no width
+                                 and no column. Only shared rows render it. -->
+                                <span
+                                    data-testId="shared-asset-hint"
+                                    class="block truncate text-xs text-gray-500"
                                     [title]="'content-drive.list-view.shared-asset' | dm">
-                                    folder_match
-                                </i>
+                                    {{ 'content-drive.list-view.shared-asset' | dm }}
+                                </span>
                             }
+                        </div>
+                        <span data-testId="lock-hint" class="text-gray-700">
                             @if (!isFolder) {
                                 @if (item.locked) {
                                     <!-- A lock the current user does not hold: only its holder or a CMS
