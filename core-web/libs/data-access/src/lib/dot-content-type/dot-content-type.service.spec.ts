@@ -232,7 +232,7 @@ describe('DotContentletService', () => {
         const idSearched = 'banner';
 
         dotContentTypeService.getUrlById(idSearched).subscribe((action: string) => {
-            expect(action).toBe(mockDotContentlet[0].types[0].action);
+            expect(action).toBe(mockDotContentlet[0].types![0].action);
             done();
         });
 
