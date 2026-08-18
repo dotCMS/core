@@ -126,7 +126,7 @@ describe('FooterComponent', () => {
     describe('Dialog actions', () => {
         it('should close dialog with null when cancel button is clicked', () => {
             const cancelButton = spectator.query(byTestId('cancel-button'))!;
-            spectator.click(cancelButton.querySelector('button'));
+            spectator.click(cancelButton.querySelector('button')!);
             expect(dialogRef.close).toHaveBeenCalled();
         });
 
@@ -136,7 +136,7 @@ describe('FooterComponent', () => {
             spectator.detectChanges();
 
             const applyButton = spectator.query(byTestId('apply-button'))!;
-            spectator.click(applyButton.querySelector('button'));
+            spectator.click(applyButton.querySelector('button')!);
             expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
         });
 

@@ -405,7 +405,7 @@ describe('HostFolderFiledStore', () => {
         });
 
         it('should format a nested folder path correctly, matching copyPath', () => {
-            const node = TREE_SELECT_MOCK[0]!.children[0];
+            const node = TREE_SELECT_MOCK[0]!.children![0];
             store.setPendingNode(node);
             store.commit();
             expect(store.pathToSave()).toBe('demo.dotcms.com:/level1/');
@@ -1369,7 +1369,7 @@ describe('HostFolderFiledStore', () => {
             // shouldn't have been killed by the earlier unhandled error.
             service.buildTreeByPaths.mockReturnValue(
                 of({
-                    node: TREE_SELECT_MOCK[0]!.children[0],
+                    node: TREE_SELECT_MOCK[0]!.children![0],
                     tree: {
                         path: '/',
                         folders: [],
@@ -1434,7 +1434,7 @@ describe('HostFolderFiledStore', () => {
 
     describe('Staged commit: setPendingNode / commit / openOverlay / closeOverlay', () => {
         it('should not update confirmedNode until commit is called', () => {
-            const node = TREE_SELECT_MOCK[0]!.children[0];
+            const node = TREE_SELECT_MOCK[0]!.children![0];
             store.setPendingNode(node);
 
             expect(store.pendingNode()).toBe(node);
@@ -1446,7 +1446,7 @@ describe('HostFolderFiledStore', () => {
 
         it('should discard the pending selection when the overlay is closed without committing', () => {
             const confirmed = TREE_SELECT_MOCK[0];
-            const pending = TREE_SELECT_MOCK[0]!.children[0];
+            const pending = TREE_SELECT_MOCK[0]!.children![0];
 
             store.setPendingNode(confirmed);
             store.commit();

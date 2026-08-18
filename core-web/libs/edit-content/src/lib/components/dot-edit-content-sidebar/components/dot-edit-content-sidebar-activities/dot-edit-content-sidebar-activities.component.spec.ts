@@ -484,7 +484,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             // Now should have required error
             const control = spectator.component.form.get('comment');
             expect(control!.errors).toBeTruthy();
-            expect(control!.errors['required']).toBeTruthy();
+            expect(control!.errors!['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });

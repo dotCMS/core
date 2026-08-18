@@ -71,7 +71,7 @@ describe('WorkflowFeature', () => {
             withContent(),
             withWorkflow(),
             withMethods((store) => ({
-                updateContent: (content) => {
+                updateContent: (content: DotCMSContentlet) => {
                     patchState(store, { contentlet: content });
                 }
             }))

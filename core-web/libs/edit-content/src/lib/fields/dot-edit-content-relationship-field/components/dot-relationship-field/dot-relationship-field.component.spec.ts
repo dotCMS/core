@@ -42,6 +42,8 @@ import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
 import { RelationshipFieldStore } from '../../store/relationship-field.store';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 // Renders as "English (en)" via LanguagePipe, matching the chip-text assertions.
 const ENGLISH_LANGUAGE = createFakeLanguage({
     id: 1,
@@ -152,12 +154,16 @@ describe('DotRelationshipFieldComponent', () => {
         storeMock = createStoreMock(storeOverrides);
         spectator = createComponent({
             providers: [{ provide: RelationshipFieldStore, useValue: storeMock }],
+            // Keyed by the public aliases, which is what Spectator applies at runtime.
+            // `InferInputSignals<C>` maps over `keyof C` — the declared member names
+            // (`$field`) — so it cannot see an `alias`; renaming the keys type-checks and
+            // then fails at runtime.
             props: {
                 field: FIELD_MOCK,
                 contentlet: buildItem(),
                 hasError: false,
                 isRequired: false
-            }
+            } as unknown as InferInputSignals<DotRelationshipFieldComponent>
         });
         spectator.detectChanges();
     };

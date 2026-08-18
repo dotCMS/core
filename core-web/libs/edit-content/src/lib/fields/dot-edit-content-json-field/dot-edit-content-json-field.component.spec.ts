@@ -169,8 +169,8 @@ describe('DotEditContentJsonFieldComponent', () => {
         it('should show error message when field is required and has error', () => {
             // Simulate form validation error
             const formControl = spectator.component.formControl;
-            formControl.setErrors({ required: true });
-            formControl.markAsTouched();
+            formControl!.setErrors({ required: true });
+            formControl!.markAsTouched();
             spectator.detectChanges();
 
             expect(spectator.query('.error-message')).toBeTruthy();
