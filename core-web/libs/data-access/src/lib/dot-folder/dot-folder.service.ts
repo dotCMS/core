@@ -96,6 +96,12 @@ export class DotFolderService {
             httpParams = httpParams.set('direction', params.direction);
         }
 
+        // Only sent when opting in: the backend defaults it to false and caps `per_page` when it is
+        // true, so an always-on `includePermissions=false` would be noise on every tree request.
+        if (params.includePermissions) {
+            httpParams = httpParams.set('includePermissions', 'true');
+        }
+
         httpParams = httpParams.set('page', String(params.page ?? DEFAULT_FOLDER_SEARCH_PAGE));
         httpParams = httpParams.set(
             'per_page',

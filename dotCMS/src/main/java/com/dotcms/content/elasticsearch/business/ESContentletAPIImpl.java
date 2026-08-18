@@ -3119,9 +3119,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Delete all the versions of the contentlets to delete
         this.contentFactory.delete(contentletsVersion);
-        // Remove the contentlets from the Elastic index and cache
+        // Remove the contentlets from the search index and cache
+        final Set<String> removedFromIndex = new HashSet<>();
         for (final Contentlet contentlet : contentletsVersion) {
 
+            // The index document ID is per identifier/language/variant, so removing it once per version
+            // would be pure repetition. Relying on forceUnpublishArchive() alone is not enough either:
+            // it only removes live content, leaving working-only versions behind as stale documents.
+            final String documentKey = contentlet.getIdentifier() + StringPool.UNDERLINE
+                    + contentlet.getLanguageId() + StringPool.UNDERLINE + contentlet.getVariantId();
+            if (removedFromIndex.add(documentKey)) {
+                this.indexAPI.removeContentFromIndex(contentlet);
+            }
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
 
