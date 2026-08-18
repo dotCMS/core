@@ -115,7 +115,7 @@ describe('DotImageBlock', () => {
             expect(spectator.query('figure > img')).toBeTruthy();
         });
 
-        it('should render a bare img when href is an empty string (link unset in the editor)', () => {
+        it('should render a bare img when href is an empty string', () => {
             spectator.setInput('attrs', { src: 'image.png', alt: 'alt', href: '' });
             spectator.detectChanges();
             expect(spectator.query('a')).toBeNull();

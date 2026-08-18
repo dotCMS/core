@@ -14,8 +14,9 @@ interface DotCMSImageProps {
  *
  * When the Block Editor assigns a link to the image, it is stored as `href` /
  * `target` on the `dotImage` node and the image is wrapped in an anchor. `href`
- * is `null` when never set and `''` once the editor unsets it — both mean "no
- * link", so the image renders bare.
+ * is `null` when the image has no link, in which case it renders bare. The
+ * truthiness check also covers the transient `''` the editor writes while
+ * unsetting a link.
  *
  * @param node - The node for the DotCMSImage component.
  * @returns The rendered image component.

@@ -32,8 +32,9 @@ export class DotImageBlock {
 
     /**
      * Link assigned to the image in the Block Editor, stored as `href` on the
-     * `dotImage` node. `null` when never set, `''` after the editor unsets it —
-     * both mean "no link", so the image renders without an anchor.
+     * `dotImage` node. `null` when the image has no link, in which case it
+     * renders without an anchor. The truthiness check also covers the
+     * transient `''` the editor writes while unsetting a link.
      */
     protected readonly $href = computed(() => this.attrs()?.['href'] || null);
 

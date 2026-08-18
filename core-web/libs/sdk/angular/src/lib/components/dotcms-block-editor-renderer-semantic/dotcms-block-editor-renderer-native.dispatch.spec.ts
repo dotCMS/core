@@ -648,7 +648,7 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(spectator.query('figure > img')).toBeTruthy();
         });
 
-        it('should render a bare dotImage when the link was unset in the editor (empty href)', () => {
+        it('should render a bare dotImage when href is an empty string', () => {
             render([
                 {
                     type: BlockEditorDefaultBlocks.DOT_IMAGE,

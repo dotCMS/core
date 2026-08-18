@@ -75,7 +75,7 @@ describe('DotImage', () => {
             expect(wrapper.find('figure > img').exists()).toBe(true);
         });
 
-        it('renders a bare img when href is an empty string (link unset in the editor)', () => {
+        it('renders a bare img when href is an empty string', () => {
             const wrapper = mountImage({ src: 'image.png', alt: 'alt', href: '' });
             expect(wrapper.find('a').exists()).toBe(false);
             expect(wrapper.find('figure > img').exists()).toBe(true);

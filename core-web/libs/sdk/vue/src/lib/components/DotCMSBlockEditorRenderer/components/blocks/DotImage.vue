@@ -41,8 +41,9 @@ const imgStyle = computed<CSSProperties | undefined>(() =>
 
 /**
  * The link assigned to the image in the Block Editor, stored as `href` /
- * `target` on the `dotImage` node. `null` when the image has no link — `href`
- * is `null` when never set and `''` once the editor unsets it.
+ * `target` on the `dotImage` node. `null` when the image has no link, i.e.
+ * when `href` is `null`. The truthiness check also covers the transient `''`
+ * the editor writes while unsetting a link.
  *
  * `rel` guards against reverse tabnabbing when the link opens in a new tab.
  */

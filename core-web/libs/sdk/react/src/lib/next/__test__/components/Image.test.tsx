@@ -136,7 +136,7 @@ describe('DotCMSImage', () => {
             expect(container.querySelector('figure > img')).toBeInTheDocument();
         });
 
-        it('should render a bare img when href is an empty string (link unset in the editor)', () => {
+        it('should render a bare img when href is an empty string', () => {
             const { container } = render(
                 <DotCMSImage node={baseNode({ src: 'img.png', alt: 'alt', href: '' })} />
             );
