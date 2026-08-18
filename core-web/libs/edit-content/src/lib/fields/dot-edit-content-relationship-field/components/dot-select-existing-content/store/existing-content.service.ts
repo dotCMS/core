@@ -133,13 +133,20 @@ export class ExistingContentService {
             this.search({ contentTypeId, systemSearchableFields }),
             this.#getLanguages()
         ]).pipe(
-            map(([columns, searchResponse, languages]) => [
-                columns,
-                {
-                    contentlets: this.#prepareContent(searchResponse.contentlets, languages),
-                    totalResults: searchResponse.totalResults
-                }
-            ]),
+            // The return type is annotated because TS widens an array literal to
+            // `(Column[] | RelationshipFieldSearchResponse)[]`, not the tuple this method declares.
+            map(
+                ([columns, searchResponse, languages]): [
+                    Column[],
+                    RelationshipFieldSearchResponse
+                ] => [
+                    columns,
+                    {
+                        contentlets: this.#prepareContent(searchResponse.contentlets, languages),
+                        totalResults: searchResponse.totalResults
+                    }
+                ]
+            ),
             catchError((error: HttpErrorResponse) => {
                 return this.#httpErrorManagerService.handle(error).pipe(map(() => null));
             })

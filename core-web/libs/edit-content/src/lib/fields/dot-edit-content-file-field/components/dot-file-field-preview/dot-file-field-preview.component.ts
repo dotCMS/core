@@ -149,7 +149,9 @@ export class DotFileFieldPreviewComponent implements OnInit {
             return {
                 source: previewFile.source,
                 file,
-                content: file.content,
+                // `?? null` like the temp-file branch below: `content` is optional on the
+                // contentlet but `FileInfo.content` is `string | null`.
+                content: file.content ?? null,
                 contentType,
                 fieldVariable,
                 downloadLink: `/contentAsset/raw-data/${file.inode}/${fieldVariable}?byInode=true&force_download=true`,

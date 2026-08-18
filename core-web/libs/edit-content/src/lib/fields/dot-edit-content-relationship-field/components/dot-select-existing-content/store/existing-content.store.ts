@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, of, pipe } from 'rxjs';
+import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
@@ -60,7 +60,9 @@ function buildInitialFilters(ctx?: ContentletContext): ContentletFilterContext |
 }
 
 export interface ExistingContentState {
-    contentTypeId: string;
+    // Null until `initLoad` receives one — the initial state seeds null, and the effects
+    // below both guard on it (`if (!contentTypeId)` and a `filter`).
+    contentTypeId: string | null;
     data: DotCMSContentlet[];
     status: ComponentStatus;
     searchData: DotCMSContentlet[];
@@ -152,8 +154,14 @@ export const ExistingContentStore = signalStore(
 
             if (isSelectedView) {
                 const selectionItems = state.selectionItems();
-                const isArray = Array.isArray(selectionItems);
-                const currentItemsIds = isArray
+
+                // Guarded like the sibling computed above: nothing selected means nothing to
+                // filter the selected view down to.
+                if (!selectionItems) {
+                    return [];
+                }
+
+                const currentItemsIds = Array.isArray(selectionItems)
                     ? selectionItems.map((item) => item.inode)
                     : [selectionItems.inode];
 
@@ -386,9 +394,19 @@ export const ExistingContentStore = signalStore(
                         })
                     ),
                     switchMap((searchParams) => {
+                        const contentTypeId = store.contentTypeId();
+
+                        // Null until `initLoad` supplies one; there is nothing to search without
+                        // it. Settle the status so the LOADING patch above does not stick.
+                        if (!contentTypeId) {
+                            patchState(store, { status: ComponentStatus.LOADED });
+
+                            return EMPTY;
+                        }
+
                         // Map SearchParams to RelationshipFieldQueryParams
                         const queryParams: RelationshipFieldQueryParams = {
-                            contentTypeId: store.contentTypeId()
+                            contentTypeId
                         };
 
                         if (searchParams.query) {

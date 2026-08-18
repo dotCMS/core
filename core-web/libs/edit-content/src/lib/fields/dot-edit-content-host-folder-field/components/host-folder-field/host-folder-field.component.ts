@@ -446,7 +446,9 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * A signal that handles the change value of the field.
      * It is used to load the sites based on the current path.
      */
-    readonly handleChangeValue = signalMethod<string>((currentPath) => {
+    // `| null` because this is called with the accessor's `$value`, which is null until the form
+    // writes one. `loadSites` already declares `path: string | null` and normalises it.
+    readonly handleChangeValue = signalMethod<string | null>((currentPath) => {
         this.store.loadSites({
             path: currentPath,
             isRequired: this.$isRequired()

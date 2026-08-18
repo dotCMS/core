@@ -60,7 +60,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * Parses the data to a DotKeyValue array.
      * It is used to parse the data to a DotKeyValue array.
      */
-    private parseToDotKeyValue(data: Record<string, string | null>): DotKeyValue[] {
+    private parseToDotKeyValue(data: Record<string, string | null> | null): DotKeyValue[] {
         if (!data || typeof data !== 'object' || Array.isArray(data)) {
             return [];
         }
@@ -75,7 +75,9 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * Handles the change value of the component.
      * It is used to update the initial value of the component.
      */
-    readonly handleChangeValue = signalMethod<Record<string, string | null>>((value) => {
+    // `| null` because this is called with the accessor's `$value`, which is null until the form
+    // writes one — `parseToDotKeyValue` returns `[]` for it.
+    readonly handleChangeValue = signalMethod<Record<string, string | null> | null>((value) => {
         const initialValue = this.parseToDotKeyValue(value);
         this.$initialValue.set(initialValue);
     });

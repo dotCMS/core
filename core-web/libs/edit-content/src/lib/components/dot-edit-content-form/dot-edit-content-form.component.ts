@@ -593,8 +593,13 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private openWizard(
         workflow: DotCMSWorkflowAction,
-        inode: string,
-        contentlet: { [key: string]: string | object }
+        // Optional for brand-new content, which has no inode yet — `DotFireActionOptions.inode`
+        // that this forwards to is optional for the same reason.
+        inode: string | undefined,
+        // `| undefined` in the value type rather than dropping `identifier` from the payload when
+        // it is absent: new content has no identifier, and omitting the key versus sending it as
+        // undefined are indistinguishable once serialised — but only one of them is a type change.
+        contentlet: { [key: string]: string | object | undefined }
     ): void {
         const wizardInput = this.#dotWorkflowEventHandlerService.setWizardInput(
             workflow,

@@ -103,14 +103,16 @@ export class RelationshipFieldService {
                         data
                     })),
                     switchMap((newState) => {
-                        const hasShowFields = showFields?.length > 0;
-
-                        if (!hasShowFields) {
+                        // Inlined rather than held in a `hasShowFields` boolean: narrowing does
+                        // not survive the round trip through a boolean, and `#buildDynamicColumns`
+                        // below needs `showFields` to be a real array.
+                        if (!showFields?.length) {
                             return of({
                                 ...newState,
                                 columns: DEFAULT_RELATIONSHIP_COLUMNS
                             });
                         }
+
                         return this.#buildDynamicColumns(contentTypeId, showFields).pipe(
                             map((columns) => ({ ...newState, columns }))
                         );
