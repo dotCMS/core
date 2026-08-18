@@ -89,7 +89,8 @@ When editing ANY code, improve incrementally:
 ## Spec-Driven Development (Spec-Kit)
 
 This repo uses [GitHub Spec-Kit](https://github.com/github/spec-kit) for spec-driven work,
-customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
+customized for dotCMS. How to run it: [Spec-Kit Quick Start](docs/core/SPEC_KIT_QUICK_START.md).
+How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
 
 - **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
 - **Constitution**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — legacy-awareness + Critical Rules; loaded by every skill.

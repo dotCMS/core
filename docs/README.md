@@ -10,6 +10,8 @@ Standards that apply to all development:
 - **ARCHITECTURE_OVERVIEW.md** - System architecture and integration points
 - **SECURITY_PRINCIPLES.md** - Security rules and patterns
 - **PROGRESSIVE_ENHANCEMENT.md** - Legacy vs modern pattern guidance
+- **[SPEC_KIT_QUICK_START.md](core/SPEC_KIT_QUICK_START.md)** - Running spec-driven development: sizing the flow, the two-PR review protocol, the TDD and ADR gates
+- **[SPEC_KIT_TEAM_SESSION.md](core/SPEC_KIT_TEAM_SESSION.md)** - Run-of-show for teaching Spec-Kit to a team or new-hire cohort
 
 ### `/docs/backend/` - Java/Maven Development
 Backend-specific patterns and standards:

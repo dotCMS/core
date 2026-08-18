@@ -303,6 +303,8 @@ Ask Claude *"what skills can help with X?"* if you're unsure.
 
 - Architecture: [`docs/core/ARCHITECTURE_OVERVIEW.md`](docs/core/ARCHITECTURE_OVERVIEW.md)
 - Git workflows: [`docs/core/GIT_WORKFLOWS.md`](docs/core/GIT_WORKFLOWS.md)
+- Spec-driven development (Spec-Kit): [`docs/core/SPEC_KIT_QUICK_START.md`](docs/core/SPEC_KIT_QUICK_START.md)
+  — how we take non-trivial features and bugs from issue to PR
 - CI/CD: [`docs/core/CICD_PIPELINE.md`](docs/core/CICD_PIPELINE.md)
 - Security: [`docs/core/SECURITY_PRINCIPLES.md`](docs/core/SECURITY_PRINCIPLES.md)
 - Backend (Java/Maven): [`docs/backend/`](docs/backend/) — start with
