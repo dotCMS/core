@@ -105,7 +105,7 @@ export class DotCheckboxComponent {
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotCheckboxComponent, string>(this, 'options');
-        this._options = getDotOptionsFromFieldValue(validOptions);
+        this._options = getDotOptionsFromFieldValue(validOptions ?? '');
     }
 
     @Watch('value')
@@ -134,7 +134,7 @@ export class DotCheckboxComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <div
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         class="dot-checkbox__items">
                         {this._options.map((item: DotOption) => {
                             const trimmedValue = item.value.trim();

@@ -147,7 +147,7 @@ export class DotDateComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <dot-input-calendar
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         disabled={this.disabled}
                         type="date"
                         name={this.name}

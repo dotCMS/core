@@ -121,7 +121,7 @@ export class DotRadioComponent {
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotRadioComponent, string>(this, 'options');
-        this._options = getDotOptionsFromFieldValue(validOptions);
+        this._options = getDotOptionsFromFieldValue(validOptions ?? '');
     }
 
     @Watch('value')
@@ -138,7 +138,7 @@ export class DotRadioComponent {
                     <div
                         class="dot-radio__items"
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         role="radiogroup">
                         {this._options.map((item: DotOption) => {
                             item.value = item.value.trim();
@@ -174,7 +174,7 @@ export class DotRadioComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {
