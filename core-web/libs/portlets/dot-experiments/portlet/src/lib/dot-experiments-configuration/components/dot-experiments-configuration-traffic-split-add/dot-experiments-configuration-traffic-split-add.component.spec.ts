@@ -116,17 +116,17 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     });
 
     it('should display inputs when is Custom split ', () => {
-        spectator.component.form.get('type').setValue(TrafficProportionTypes.CUSTOM_PERCENTAGES)!;
+        spectator.component.form.get('type')!.setValue(TrafficProportionTypes.CUSTOM_PERCENTAGES)!;
         spectator.detectChanges();
 
         expect(spectator.queryAll(InputNumber).length).toEqual(2);
     });
 
     it('should display error and disable form when custom split is different than 100', () => {
-        spectator.component.form.get('type').setValue(TrafficProportionTypes.CUSTOM_PERCENTAGES)!;
-        const variants = spectator.component.form.get('variants').value!;
+        spectator.component.form.get('type')!.setValue(TrafficProportionTypes.CUSTOM_PERCENTAGES)!;
+        const variants = spectator.component.form.get('variants')!.value!;
         variants[0].weight = 90;
-        spectator.component.form.get('variants').setValue(variants)!;
+        spectator.component.form.get('variants')!.setValue(variants)!;
 
         spectator.detectChanges();
 
@@ -138,7 +138,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
 
     it('should close sidebar ', () => {
         jest.spyOn(store, 'closeSidebar');
-        sidebar = spectator.query(Drawer);
+        sidebar = spectator.query(Drawer)!;
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);

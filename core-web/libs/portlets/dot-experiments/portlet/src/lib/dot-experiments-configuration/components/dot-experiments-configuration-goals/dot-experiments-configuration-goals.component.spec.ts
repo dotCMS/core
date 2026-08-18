@@ -50,12 +50,12 @@ const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
 
 function getVmMock(
-    goals = GoalsMock,
-    disabledTooltipLabel = null
+    goals: Goals | null = GoalsMock,
+    disabledTooltipLabel: string | null = null
 ): {
     experimentId: string;
-    goals: Goals;
-    status: StepStatus;
+    goals: Goals | null;
+    status: StepStatus | null;
     isExperimentADraft: boolean;
     disabledTooltipLabel: null | string;
 } {

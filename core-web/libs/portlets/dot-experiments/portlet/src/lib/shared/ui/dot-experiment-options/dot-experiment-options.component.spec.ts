@@ -67,7 +67,7 @@ describe('DotExperimentOptionsComponent', () => {
     it('should add the class expand to an option clicked that contains content', () => {
         const headerOptionWithContent = spectator.query(byTestId('dot-options-item-header_b'));
 
-        spectator.click(headerOptionWithContent);
+        spectator.click(headerOptionWithContent!);
         spectator.detectComponentChanges();
 
         expect(spectator.query(byTestId('dot-options-item-content_b'))).toHaveClass('pb-4');

@@ -77,9 +77,11 @@ const defaultVmMock: ConfigurationViewModel = {
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
-    experimentStatus: null,
+    // `undefined`, not null: the store reports `experimentStatus` as absent while the experiment
+    // loads, and `getMenuItems` returns an empty array rather than null.
+    experimentStatus: undefined,
     isDescriptionSaving: false,
-    menuItems: null,
+    menuItems: [],
     addToBundleContentId: null,
     disabledTooltipLabel: null
 };
@@ -196,13 +198,13 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
 
-        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu'))!, 'click');
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[1].command({ originalEvent: createFakeEvent('click') })!;
+        spectator.query(Menu)!.model![1].command!({ originalEvent: createFakeEvent('click') })!;
 
-        spectator.query(ConfirmDialog).onAccept()!;
+        spectator.query(ConfirmDialog)!.onAccept()!;
 
         expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
             EXPERIMENT_MOCK
@@ -212,11 +214,11 @@ describe('DotExperimentsConfigurationComponent', () => {
     it('should show and remove add to bundle dialog', () => {
         spectator.detectChanges();
 
-        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu'))!, 'click');
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[5].command({ originalEvent: createFakeEvent('click') })!;
+        spectator.query(Menu)!.model![5].command!({ originalEvent: createFakeEvent('click') })!;
 
         spectator.detectComponentChanges();
 
@@ -238,13 +240,13 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
 
-        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu'))!, 'click');
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[3].command({ originalEvent: createFakeEvent('click') })!;
+        spectator.query(Menu)!.model![3].command!({ originalEvent: createFakeEvent('click') })!;
 
-        spectator.query(ConfirmDialog).onAccept()!;
+        spectator.query(ConfirmDialog)!.onAccept()!;
 
         expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
             EXPERIMENT_MOCK

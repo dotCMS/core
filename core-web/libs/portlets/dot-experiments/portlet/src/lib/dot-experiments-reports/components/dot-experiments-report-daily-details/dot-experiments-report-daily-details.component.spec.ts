@@ -11,6 +11,8 @@ import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-rep
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const messageServiceMock = new MockDotMessageService({
     'experiment.reports.promote.warning': 'Are you sure you want to promote this variant?',
     Yes: 'Yes',
@@ -80,7 +82,7 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
                 hasEnoughSessions: true,
                 experimentId: 'experiment-123',
                 promotedVariantId: null
-            } as unknown
+            } as unknown as InferInputSignals<DotExperimentsReportDailyDetailsComponent>
         });
 
         store = spectator.inject(DotExperimentsReportsStore);

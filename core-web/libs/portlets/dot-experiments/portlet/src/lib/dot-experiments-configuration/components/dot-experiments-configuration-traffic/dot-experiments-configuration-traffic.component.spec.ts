@@ -99,13 +99,15 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...EXPERIMENT_MOCK,
-                trafficAllocation: null
+                // Deliberately absent, which is the gray-indicator case. The model declares a
+                // number, so the cast is what says "the API can omit this".
+                trafficAllocation: null as unknown as number
             })
         );
         store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
 
-        const indicator = spectator.query(byTestId('traffic-card-title')).querySelector('i')!;
+        const indicator = spectator.query(byTestId('traffic-card-title'))!.querySelector('i')!;
         expect(indicator).toHaveClass('text-gray-500');
     });
 
@@ -134,7 +136,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
     });
 
     it('should disable tooltip if is on draft', () => {
-        expect(spectator.query(Tooltip).disabled!).toEqual(true);
+        expect(spectator.query(Tooltip)!.disabled!).toEqual(true);
     });
 
     it('should disable button and show tooltip when experiment has an error label', () => {
@@ -151,6 +153,6 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         const allocationButton = spectator.query(byTestId('traffic-allocation-button'));
         const button = allocationButton!.querySelector('button')! || allocationButton;
         expect(button.hasAttribute('disabled')!).toBe(true);
-        expect(spectator.query(Tooltip).disabled!).toEqual(false);
+        expect(spectator.query(Tooltip)!.disabled!).toEqual(false);
     });
 });

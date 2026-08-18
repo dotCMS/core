@@ -64,7 +64,9 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
             },
             isExperimentADraft: true,
             canLockPage: true,
-            pageSate: null,
+            // `undefined`, not null: the store reports it absent until the page render state
+            // resolves off the parent route.
+            pageSate: undefined,
             disabledTooltipLabel: null
         });
 

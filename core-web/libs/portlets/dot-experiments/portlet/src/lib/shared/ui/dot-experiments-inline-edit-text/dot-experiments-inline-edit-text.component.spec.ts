@@ -120,7 +120,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
                 expect(spectator.query(byTestId('inplace-input'))).toExist();
 
                 spectator.dispatchKeyboardEvent(
-                    spectator.query(byTestId('inplace-input')),
+                    spectator.query(byTestId('inplace-input'))!,
                     'keydown',
                     'Escape'
                 );

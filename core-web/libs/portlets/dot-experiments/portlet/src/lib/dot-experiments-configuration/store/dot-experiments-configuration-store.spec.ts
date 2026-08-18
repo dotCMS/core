@@ -259,13 +259,13 @@ describe('DotExperimentsConfigurationStore', () => {
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
             // Start Experiment
-            menuItems[MENU_ITEMS_START_INDEX].command({
+            menuItems[MENU_ITEMS_START_INDEX].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // Push Publish
-            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command({
+            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
@@ -274,7 +274,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             // Add to Bundle
-            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command({
+            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -584,7 +584,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.goals$.subscribe(({ primary }) => {
+            store.goals$.subscribe((goals) => {
+                const { primary } = goals!;
+
                 expect(primary.conditions.length).toBe(1);
                 expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
                 done();
@@ -612,7 +614,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.goals$.subscribe(({ primary }) => {
+            store.goals$.subscribe((goals) => {
+                const { primary } = goals!;
+
                 expect(primary.conditions.length).toBe(0);
                 done();
             });
@@ -645,7 +649,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.goals$.subscribe(({ primary }) => {
+            store.goals$.subscribe((goals) => {
+                const { primary } = goals!;
+
                 expect(primary.conditions.length).toBe(1);
                 done();
             });
@@ -718,7 +724,9 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.setScheduling.mockReturnValue(throwError('error'));
 
             store.setSelectedScheduling({
-                scheduling: null,
+                // Null is outside the payload type; this test only cares that a failing
+                // request surfaces the error, and the value never reaches the service.
+                scheduling: null as unknown as RangeOfDateAndTime,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
@@ -810,7 +818,9 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.setTrafficProportion.mockReturnValue(throwError('error'));
 
             store.setSelectedTrafficProportion({
-                trafficProportion: null,
+                // Null is outside the payload type; this test only cares that a failing
+                // request surfaces the error, and the value never reaches the service.
+                trafficProportion: null as unknown as TrafficProportion,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
