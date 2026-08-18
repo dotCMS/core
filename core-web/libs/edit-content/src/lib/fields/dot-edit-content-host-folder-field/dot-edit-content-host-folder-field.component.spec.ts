@@ -94,7 +94,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                 }
             }
         );
-        field = spectator.query(DotHostFolderFieldComponent);
+        field = spectator.query(DotHostFolderFieldComponent)!;
         store = field.store;
         service = spectator.inject(DotBrowsingService);
         hostFormControl = spectator.hostComponent.formGroup.get(

@@ -910,7 +910,7 @@ export class DotFileFieldComponent
      */
     #lastOnChangeValue: string | null = null;
 
-    override writeValue(value: string): void {
+    override writeValue(value: string | null): void {
         super.writeValue(value);
         this.#originalValue = value ?? null;
         this.#lastOnChangeValue = value ?? null;

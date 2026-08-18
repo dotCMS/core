@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 
 import {
+    CustomTreeNode,
     DotCMSClazzes,
     DotCMSContentlet,
     DotCMSContentType,
@@ -16,9 +17,8 @@ import {
     DotCMSTempFile,
     DotCMSWorkflowStatus,
     FeaturedFlags,
-    TreeNodeItem,
-    TreeNodeData,
-    CustomTreeNode
+    TreeNodeContentData,
+    TreeNodeItem
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -1348,7 +1348,10 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
  * every node in the fixtures below populates it, and the specs read it directly. `children`
  * stays optional — only some nodes have them.
  */
-type MockTreeNodeItem = TreeNodeItem & { data: TreeNodeData };
+// `data` is pinned to the *content* variant, not the `TreeNodeData` union: every entry in the
+// tree mocks below is a `type: 'site'` or `type: 'folder'` node, never a `loadMore` sentinel.
+// Specs read `data.hostname` and `data.path` off these, which only exist on that variant.
+type MockTreeNodeItem = TreeNodeItem & { data: TreeNodeContentData };
 
 export const TREE_SELECT_SITES_MOCK: MockTreeNodeItem[] = [
     {
