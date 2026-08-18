@@ -68,14 +68,14 @@ describe('DotExperimentsStatusFilterComponent', () => {
         const multiSelect = spectator.query(MultiSelect);
 
         expect(multiSelect).toExist();
-        expect(multiSelect.options).toEqual(OPTIONS_MOCK);
+        expect(multiSelect.options!).toEqual(OPTIONS_MOCK);
     });
 
     it('should get a list of selected options', () => {
         const multiSelect = spectator.query(MultiSelect);
 
         expect(multiSelect).toExist();
-        expect(multiSelect.value).toEqual(SELECTED_ITEMS_MOCK);
+        expect(multiSelect.value!).toEqual(SELECTED_ITEMS_MOCK);
         expect(spectator.component.selectedItems).toEqual(SELECTED_ITEMS_MOCK);
     });
 });

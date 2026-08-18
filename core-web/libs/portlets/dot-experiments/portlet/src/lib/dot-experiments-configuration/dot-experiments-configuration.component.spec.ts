@@ -185,7 +185,7 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
         const inlineEditComponent = spectator.query(DotExperimentsInlineEditTextComponent);
-        expect(inlineEditComponent.$disabled()).toEqual(true);
+        expect(inlineEditComponent.$disabled()!).toEqual(true);
     });
 
     it('should show End Experiment after confirmation', () => {
@@ -200,9 +200,9 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[1].command({ originalEvent: createFakeEvent('click') });
+        spectator.query(Menu).model[1].command({ originalEvent: createFakeEvent('click') })!;
 
-        spectator.query(ConfirmDialog).onAccept();
+        spectator.query(ConfirmDialog).onAccept()!;
 
         expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
             EXPERIMENT_MOCK
@@ -216,15 +216,15 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[5].command({ originalEvent: createFakeEvent('click') });
+        spectator.query(Menu).model[5].command({ originalEvent: createFakeEvent('click') })!;
 
         spectator.detectComponentChanges();
 
         const addToBundle = spectator.query(DotAddToBundleComponent);
 
-        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.id);
+        expect(addToBundle.assetIdentifier!).toEqual(EXPERIMENT_MOCK.id);
 
-        addToBundle.cancel.emit(true);
+        addToBundle.cancel.emit(true)!;
 
         spectator.detectComponentChanges();
 
@@ -242,9 +242,9 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[3].command({ originalEvent: createFakeEvent('click') });
+        spectator.query(Menu).model[3].command({ originalEvent: createFakeEvent('click') })!;
 
-        spectator.query(ConfirmDialog).onAccept();
+        spectator.query(ConfirmDialog).onAccept()!;
 
         expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
             EXPERIMENT_MOCK

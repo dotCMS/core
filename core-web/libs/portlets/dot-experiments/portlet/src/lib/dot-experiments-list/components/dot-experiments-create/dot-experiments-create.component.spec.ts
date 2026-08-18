@@ -114,7 +114,7 @@ describe('DotExperimentsCreateComponent', () => {
         spectator.detectChanges();
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
         expect(submitButton).toExist();
-        expect(submitButton.getAttribute('type')).toBe('button');
+        expect(submitButton.getAttribute('type')!).toBe('button');
     });
 
     describe('Form', () => {

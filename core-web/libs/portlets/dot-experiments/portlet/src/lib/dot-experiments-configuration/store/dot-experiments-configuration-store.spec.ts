@@ -454,7 +454,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion.variants[1].name).toEqual(
+                expect(experiment.trafficProportion.variants[1].name!).toEqual(
                     variantEdited[1].name
                 );
                 done();
@@ -479,7 +479,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.description).toEqual(newDescription);
+                expect(experiment.description!).toEqual(newDescription);
                 done();
             });
         });
@@ -522,7 +522,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion.variants).toEqual(
+                expect(experiment.trafficProportion.variants!).toEqual(
                     expectedResponseRemoveVariant.trafficProportion.variants
                 );
                 done();
@@ -549,7 +549,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.goals).toEqual(expectedGoals);
+                expect(experiment.goals!).toEqual(expectedGoals);
                 done();
             });
         });
@@ -671,7 +671,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.goals).toEqual(null);
+                expect(experiment.goals!).toEqual(null);
                 done();
             });
         });
@@ -695,7 +695,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.scheduling).toEqual(expectedScheduling);
+                expect(experiment.scheduling!).toEqual(expectedScheduling);
                 expect(dotExperimentsService.setScheduling).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK.id,
                     expectedScheduling
@@ -733,7 +733,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.trafficAllocation).toEqual(expectedTrafficAllocation);
+                expect(experiment.trafficAllocation!).toEqual(expectedTrafficAllocation);
                 expect(dotExperimentsService.setTrafficAllocation).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK.id,
                     expectedTrafficAllocation
@@ -777,7 +777,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion).toEqual(expectedTrafficProportion);
+                expect(experiment.trafficProportion!).toEqual(expectedTrafficProportion);
                 expect(dotExperimentsService.setTrafficProportion).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK.id,
                     expectedTrafficProportion
@@ -821,7 +821,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.startExperiment(experimentWithGoalsAndVariant);
 
             store.state$.subscribe(({ experiment, status }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                expect(experiment.status!).toEqual(DotExperimentStatus.RUNNING);
                 expect(status).toEqual(ComponentStatus.IDLE);
                 done();
             });
@@ -842,7 +842,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.stopExperiment(EXPERIMENT_MOCK_2);
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                expect(experiment.status!).toEqual(DotExperimentStatus.ENDED);
                 done();
             });
         });

@@ -89,9 +89,9 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         await spectator.fixture.whenStable();
 
         const submitButtonWrapper = spectator.query(byTestId('add-variant-button'));
-        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
+        const submitButton = submitButtonWrapper.querySelector('button')! || submitButtonWrapper;
 
-        expect(submitButton.hasAttribute('disabled')).toBe(false);
+        expect(submitButton.hasAttribute('disabled')!).toBe(false);
         expect(spectator.component.form.valid).toEqual(true);
 
         spectator.click(submitButton);
@@ -114,7 +114,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         await spectator.fixture.whenStable();
 
         const submitButtonWrapper = spectator.query(byTestId('add-variant-button'));
-        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
-        expect(submitButton.hasAttribute('disabled')).toBe(true);
+        const submitButton = submitButtonWrapper.querySelector('button')! || submitButtonWrapper;
+        expect(submitButton.hasAttribute('disabled')!).toBe(true);
     });
 });
