@@ -40,8 +40,13 @@ export class DotContentletThumbnail {
     @Prop()
     playableVideo = false;
 
+    /**
+     * Required in practice, not optional: `componentWillLoad` destructures it on the first line, so
+     * a missing contentlet has always thrown rather than degraded. Declared with a definite
+     * assignment so the eighteen accesses below read it directly, as they already did.
+     */
     @Prop()
-    contentlet?: DotContentletItem;
+    contentlet!: DotContentletItem;
 
     @Prop({ reflect: true })
     fieldVariable = '';
@@ -59,7 +64,7 @@ export class DotContentletThumbnail {
             this.renderImage =
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
-                this.contentlet['image'] ||
+                this.contentlet.image ||
                 this.shouldShowVideoThumbnail();
         }
     }
@@ -117,7 +122,7 @@ export class DotContentletThumbnail {
 
         if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
 
-        if (this.contentlet['image'])
+        if (this.contentlet.image)
             return `/dA/${this.contentlet.inode}/image/resize_w/250/quality_q/45`;
 
         return `/dA/${this.contentlet.inode}/500w/50q?r=${this.contentlet.modDateMilis || this.contentlet.modDate}`;

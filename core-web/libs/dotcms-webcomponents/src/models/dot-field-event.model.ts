@@ -19,6 +19,8 @@ export interface DotFieldValueEvent extends DotFieldEvent {
 }
 
 export interface DotBinaryFileEvent {
-    file: string | File;
-    errorType: DotBinaryMessageError;
+    /** Null on every failure path — an invalid paste, an over-size file, a cleared field. */
+    file: string | File | null;
+    /** Null when the change was accepted. `dot-binary-file` clears its own copy the same way. */
+    errorType: DotBinaryMessageError | null;
 }
