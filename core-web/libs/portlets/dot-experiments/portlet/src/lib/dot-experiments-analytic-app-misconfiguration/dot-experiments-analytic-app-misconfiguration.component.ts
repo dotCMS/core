@@ -29,8 +29,8 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
     private location = inject(Location);
     private dotMessageService = inject(DotMessageService);
 
-    emptyConfiguration: PrincipalConfiguration;
-    pageTitle: string;
+    emptyConfiguration!: PrincipalConfiguration;
+    pageTitle!: string;
 
     ngOnInit(): void {
         const location = this.location.getState() as {

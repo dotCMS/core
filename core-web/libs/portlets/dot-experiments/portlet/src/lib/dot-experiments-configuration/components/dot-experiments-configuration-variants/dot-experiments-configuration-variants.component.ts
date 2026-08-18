@@ -77,7 +77,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
     protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
     protected readonly DotExperimentStatusList = DotExperimentStatus;
-    private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
+    private componentRef!: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
     protected readonly url = this.getUrl();
 
     /**
@@ -124,7 +124,7 @@ export class DotExperimentsConfigurationVariantsComponent {
      */
     deleteVariant(event: { $event: MouseEvent; variant: Variant }, experimentId: string) {
         this.confirmationService.confirm({
-            target: event.$event.target,
+            target: event.$event.target ?? undefined,
             message: this.dotMessageService.get('experiments.configure.variant.delete.confirm'),
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: this.dotMessageService.get('delete'),
@@ -156,7 +156,7 @@ export class DotExperimentsConfigurationVariantsComponent {
         });
     }
 
-    private handleSidebar(status: StepStatus) {
+    private handleSidebar(status: StepStatus | null) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent();
         } else {

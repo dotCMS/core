@@ -1,3 +1,5 @@
+import { TooltipItem } from 'chart.js';
+
 import { ChartColors } from '@dotcms/dotcms-models';
 
 interface DotExperimentsChartjsOptions {
@@ -32,17 +34,17 @@ export const generateDotExperimentLineChartJsOptions = ({
             },
             tooltip: {
                 callbacks: {
-                    title: function (context) {
+                    title: function (context: TooltipItem<'line'>[]) {
                         const [, title] = context[0].label.split(',');
 
                         return title;
                     },
-                    label: function (context) {
+                    label: function (context: TooltipItem<'line'>) {
                         const label = context.dataset.label || '';
 
                         return `${label}: ${context.parsed.y + '%'}`;
                     },
-                    labelColor: function (context) {
+                    labelColor: function (context: TooltipItem<'line'>) {
                         return {
                             borderColor: context.dataset.borderColor,
                             backgroundColor: context.dataset.borderColor,
@@ -102,8 +104,9 @@ export const generateDotExperimentLineChartJsOptions = ({
                 ticks: {
                     color: ChartColors.ticks.color,
                     precision: 0,
-                    callback: function (value) {
-                        return value.toFixed(0) + '%';
+                    callback: function (value: number | string) {
+                        // Numeric ticks, which the `precision: 0` above already assumes.
+                        return Number(value).toFixed(0) + '%';
                     }
                 },
                 border: {
@@ -134,15 +137,15 @@ export const generateDotExperimentLineChartJsOptions = ({
             },
             tooltip: {
                 callbacks: {
-                    title: function (context) {
+                    title: function (context: TooltipItem<'line'>[]) {
                         return Math.round(context[0].label * 100) + '%';
                     },
-                    label: function (context) {
+                    label: function (context: TooltipItem<'line'>) {
                         const label = context.dataset.label || '';
 
                         return `${label}: ${context.parsed.y}`;
                     },
-                    labelColor: function (context) {
+                    labelColor: function (context: TooltipItem<'line'>) {
                         return {
                             borderColor: context.dataset.borderColor,
                             backgroundColor: context.dataset.borderColor,

@@ -43,15 +43,15 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
 
-    form: FormGroup;
-    scheduling: RangeOfDateAndTime;
+    form!: FormGroup;
+    scheduling!: RangeOfDateAndTime;
     stepStatus = ComponentStatus;
     sidebarSizes = SIDEBAR_SIZES;
 
     today = new Date();
     initialDate = new Date();
-    maxEndDate: Date;
-    minEndDate: Date;
+    maxEndDate!: Date;
+    minEndDate!: Date;
 
     vm$: Observable<{
         experimentId: string;

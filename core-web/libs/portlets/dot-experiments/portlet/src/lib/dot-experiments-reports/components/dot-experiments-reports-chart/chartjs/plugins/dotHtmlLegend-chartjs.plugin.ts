@@ -1,8 +1,10 @@
+import { Chart, LegendItem } from 'chart.js';
+
 const COLOR_PALETTE_GRAY_100 = getComputedStyle(document.body).getPropertyValue(
     '--color-palette-black-op-10'
 );
 
-const getOrCreateLegendList = (chart) => {
+const getOrCreateLegendList = (chart: Chart) => {
     if (!chart || !chart.canvas) {
         return null;
     }
@@ -73,7 +75,7 @@ const getOrCreateLegendList = (chart) => {
  */
 export const htmlLegendPlugin = {
     id: 'dotHtmlLegend',
-    afterUpdate(chart) {
+    afterUpdate(chart: Chart) {
         const ul = getOrCreateLegendList(chart);
 
         // If legend container not found, skip rendering
@@ -85,9 +87,11 @@ export const htmlLegendPlugin = {
             ul.firstChild.remove();
         }
 
-        const items = chart.options.plugins.legend.labels.generateLabels(chart);
+        // Every hop is optional in chart.js's option types; the default legend plugin supplies
+        // `generateLabels`, and with no labels to generate there is no legend to render.
+        const items = chart.options.plugins?.legend?.labels?.generateLabels?.(chart) ?? [];
 
-        items.forEach((item) => {
+        items.forEach((item: LegendItem) => {
             const li = document.createElement('li');
             li.style.cursor = 'pointer';
             li.style.padding = '.5rem';
@@ -96,10 +100,15 @@ export const htmlLegendPlugin = {
             li.style.backgroundColor = item.hidden ? COLOR_PALETTE_GRAY_100 : item.fillStyle;
 
             li.onclick = () => {
-                chart.setDatasetVisibility(
-                    item.datasetIndex,
-                    !chart.isDatasetVisible(item.datasetIndex)
-                );
+                // `datasetIndex` is optional on a `LegendItem` — it is absent for a legend entry that
+                // does not map to a dataset, and there is nothing to toggle for one of those.
+                const { datasetIndex } = item;
+
+                if (datasetIndex === undefined) {
+                    return;
+                }
+
+                chart.setDatasetVisibility(datasetIndex, !chart.isDatasetVisible(datasetIndex));
 
                 chart.update();
             };

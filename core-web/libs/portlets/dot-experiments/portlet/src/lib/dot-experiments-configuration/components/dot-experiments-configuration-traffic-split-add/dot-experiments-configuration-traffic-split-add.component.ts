@@ -56,7 +56,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
     private fb = inject(FormBuilder);
 
-    form: FormGroup;
+    form!: FormGroup;
     stepStatus = ComponentStatus;
     sidebarSizes = SIDEBAR_SIZES;
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
