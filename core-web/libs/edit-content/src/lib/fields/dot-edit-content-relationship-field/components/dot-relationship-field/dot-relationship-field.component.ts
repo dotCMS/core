@@ -394,6 +394,12 @@ export class DotRelationshipFieldComponent
             }
         });
 
+        // `DialogService.open` returns null when it refuses to open a duplicate — the existing
+        // content selector is already up and the user's selection will arrive through it.
+        if (!this.#dialogRef) {
+            return;
+        }
+
         this.#dialogRef.onClose
             .pipe(
                 filter((items) => !!items),

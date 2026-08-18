@@ -978,7 +978,9 @@ export class DotFileFieldComponent
         this.onChange(value);
     });
 
-    readonly handleValueChange = signalMethod<string>((value) => {
+    // `| null` because this is called with the accessor's `$value`, which is null until the form
+    // writes one — the guard below was already there for it.
+    readonly handleValueChange = signalMethod<string | null>((value) => {
         if (!value) {
             return;
         }

@@ -272,12 +272,22 @@ export function withLocales() {
                                         take(1),
                                         filter((value) => value),
                                         switchMap((copyType) => {
+                                            const contentType = store.contentType();
+
+                                            // The content type is null while the editor is still
+                                            // resolving; there are no default actions to fetch
+                                            // for a type we do not know yet.
+                                            if (!contentType) {
+                                                return EMPTY;
+                                            }
+
                                             return workflowActionService
-                                                .getDefaultActions(store.contentType()?.variable)
+                                                .getDefaultActions(contentType.variable)
                                                 .pipe(map((schemes) => ({ copyType, schemes })));
                                         })
                                     )
                                     .subscribe(({ copyType, schemes }) => {
+                                        const sourceContentlet = store.contentlet();
                                         // Convert the schemes to an object with the schemeId as the key
                                         const parsedSchemes = parseWorkflows(schemes);
                                         const schemeIds = Object.keys(parsedSchemes);
@@ -313,10 +323,13 @@ export function withLocales() {
                                             // two are indistinguishable.
                                             formValues: {},
                                             translationSourceInode,
+                                            // `sourceContentlet` is part of the condition: with
+                                            // nothing loaded to copy from, populating and starting
+                                            // manually are the same thing — an empty contentlet.
                                             contentlet:
-                                                copyType === 'populate'
+                                                copyType === 'populate' && sourceContentlet
                                                     ? prepareContentletForCopy(
-                                                          store.contentlet(),
+                                                          sourceContentlet,
                                                           store.contentType()?.fields
                                                       )
                                                     : null

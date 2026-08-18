@@ -115,10 +115,12 @@ export class DotWysiwygPluginService {
      */
     private handleImageDrop(editor: Editor) {
         editor.on('drop', (event) => {
-            const file = event.dataTransfer.files[0];
+            // `dataTransfer` is null for drops that carry no data (and for synthetic events), and
+            // `files` is empty when the drag was text rather than a file.
+            const file = event.dataTransfer?.files[0];
 
             // Check if the file is an image
-            if (!file.type.includes('image')) {
+            if (!file?.type.includes('image')) {
                 return;
             }
 
