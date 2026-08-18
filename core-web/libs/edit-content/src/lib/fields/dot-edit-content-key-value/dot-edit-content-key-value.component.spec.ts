@@ -123,14 +123,14 @@ describe('DotEditContentKeyValueComponent', () => {
         it('should update form value when DotKeyValueComponent emits updatedList', (done) => {
             const control = spectator.hostComponent.formGroup.get(KEY_VALUE_FIELD_MOCK.variable);
 
-            control.valueChanges.subscribe((value) => {
+            control!.valueChanges.subscribe((value) => {
                 expect(value).toEqual({ key14: 'value14' });
                 done();
             });
 
             const dotKeyValue = spectator.query(DotKeyValueComponent)!;
             dotKeyValue.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
-            expect(control.touched).toBeTruthy();
+            expect(control!.touched).toBeTruthy();
         });
 
         it('should call updateField method when DotKeyValueComponent emits updatedList', () => {

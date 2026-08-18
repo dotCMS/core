@@ -620,7 +620,7 @@ describe('SearchComponent', () => {
                 'p-button[data-testid="search-button"] button'
             );
 
-            expect(searchButton.disabled).toBeTruthy();
+            expect(searchButton!.disabled).toBeTruthy();
         });
     });
 

@@ -114,7 +114,7 @@ describe('DotEditContentTagFieldComponent', () => {
 
         it('should be connected to form control', () => {
             const control = spectator.hostComponent.formGroup.get(TAG_FIELD_MOCK.variable);
-            control.setValue([]);
+            control!.setValue([]);
 
             const autocomplete = spectator.query(AutoComplete)!;
             expect(autocomplete.value).toEqual([]);
@@ -268,7 +268,7 @@ describe('DotEditContentTagFieldComponent', () => {
             spectator.detectChanges();
 
             const control = spectator.hostComponent.formGroup.get(TAG_FIELD_MOCK.variable);
-            expect(control.value).toEqual(selectedTag);
+            expect(control!.value).toEqual(selectedTag);
         });
 
         it('should allow multiple tag selection', async () => {
@@ -281,7 +281,7 @@ describe('DotEditContentTagFieldComponent', () => {
             spectator.detectChanges();
 
             const control = spectator.hostComponent.formGroup.get(TAG_FIELD_MOCK.variable);
-            expect(control.value).toEqual('angular,typescript');
+            expect(control!.value).toEqual('angular,typescript');
         });
     });
 });

@@ -66,7 +66,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     const CONTENT_TYPE_WITHOUT_EXPIRE = {
         ...CONTENT_TYPE_MOCK,
-        expireDateVar: null
+        // Absent, not null: `expireDateVar` is optional on DotCMSContentType, and the
+        // component compares it with `===` against a string either way.
+        expireDateVar: undefined
     };
 
     describe('Calendar field timezone information', () => {
@@ -158,7 +160,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -222,7 +224,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [fieldWithoutHint.variable]: new FormControl()
                         }),
                         field: fieldWithoutHint,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [fieldWithoutHint.variable]: null
@@ -249,7 +251,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITH_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -276,7 +278,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -304,7 +306,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -336,7 +338,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -369,7 +371,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [dateTimeField.variable]: new FormControl()
                         }),
                         field: dateTimeField,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [dateTimeField.variable]: null
@@ -397,7 +399,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [dateField.variable]: new FormControl()
                         }),
                         field: dateField,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [dateField.variable]: null
@@ -425,7 +427,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [timeField.variable]: new FormControl()
                         }),
                         field: timeField,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [timeField.variable]: null
@@ -455,7 +457,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [field.variable]: new FormControl()
                         }),
                         field,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [field.variable]: null
@@ -842,7 +844,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [fieldWithName.variable]: new FormControl()
                         }),
                         field: fieldWithName,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [fieldWithName.variable]: null
@@ -871,7 +873,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [fieldWithoutHint.variable]: new FormControl()
                         }),
                         field: fieldWithoutHint,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [fieldWithoutHint.variable]: null

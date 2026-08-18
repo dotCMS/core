@@ -563,7 +563,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 );
                 expect(menuButtonComponent).toBeTruthy();
                 // Access the actual button element inside PrimeNG component
-                const actualButton = menuButtonComponent.querySelector(
+                const actualButton = menuButtonComponent!.querySelector(
                     'button'
                 ) as HTMLButtonElement;
                 expect(actualButton).toBeTruthy();

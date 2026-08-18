@@ -873,7 +873,7 @@ function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
     let fields = [];
 
     data.forEach((row) => {
-        row.columns.forEach((column) => {
+        row.columns!.forEach((column) => {
             fields = [...fields, ...column.fields];
         });
     });
@@ -1457,7 +1457,7 @@ export const TREE_SELECT_MOCK: MockTreeNodeItem[] = [
 ];
 
 export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
-    node: { ...TREE_SELECT_MOCK[0].children[0] },
+    node: { ...TREE_SELECT_MOCK[0]!.children[0] },
     tree: {
         path: 'demo.dotcms.com',
         folders: [...TREE_SELECT_MOCK[0].children]

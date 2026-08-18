@@ -93,14 +93,14 @@ describe('DotCategoryFieldComponent', () => {
             it('should the button be type=button', () => {
                 spectator.detectChanges();
                 const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
-                expect(selectBtn.type).toBe('button');
+                expect(selectBtn!.type).toBe('button');
             });
 
             it('should render the `Select` button as primary', () => {
                 spectator.detectChanges();
                 const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
-                expect(selectBtn.classList).not.toContain('p-button-secondary');
-                expect(selectBtn.classList).not.toContain('p-button-text');
+                expect(selectBtn!.classList).not.toContain('p-button-secondary');
+                expect(selectBtn!.classList).not.toContain('p-button-text');
             });
 
             it('should render a `Clear all` button when there are selected categories', () => {

@@ -252,7 +252,7 @@ export class IframeFieldComponent implements OnDestroy {
 
         // Update iframe height smoothly
         iframeEl.style.height = `${height}px`;
-        iframeEl.dataset.lastHeight = height.toString();
+        iframeEl.dataset['lastHeight'] = height.toString();
 
         // Ensure iframe allows dropdowns to be visible
         iframeEl.style.overflow = 'visible';

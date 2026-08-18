@@ -33,10 +33,10 @@ export const formatDotImageNode = (pattern: string, asset: DotCMSContentlet) => 
  */
 export const replaceURLPattern = (pattern: string, asset: DotCMSContentlet) => {
     const replacements = {
-        '{name}': asset.fileName || asset.name,
-        '{fileName}': asset.fileName || asset.name,
-        '{path}': asset.path,
-        '{extension}': asset.extension,
+        '{name}': asset['fileName'] || asset['name'],
+        '{fileName}': asset['fileName'] || asset['name'],
+        '{path}': asset['path'],
+        '{extension}': asset['extension'],
         '{languageId}': asset.languageId.toString(),
         '{hostname}': asset.hostName,
         '{inode}': asset.inode,

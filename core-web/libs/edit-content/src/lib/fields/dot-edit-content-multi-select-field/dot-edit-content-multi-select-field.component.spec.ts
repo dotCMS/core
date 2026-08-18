@@ -69,7 +69,7 @@ describe('DotEditContentMultiselectFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            spectator.query(MultiSelect).show();
+            spectator.query(MultiSelect)!.show();
             spectator.detectChanges();
 
             const options = spectator.component.$options();
@@ -102,11 +102,11 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         });
 
         it('should render no options selected', () => {
-            expect(spectator.query(MultiSelect).valuesAsString).toEqual(undefined);
+            expect(spectator.query(MultiSelect)!.valuesAsString).toEqual(undefined);
         });
 
         it('should render options', () => {
-            spectator.query(MultiSelect).show();
+            spectator.query(MultiSelect)!.show();
             spectator.detectChanges();
 
             const multiSelectItems = spectator.queryAll(MultiSelectItem);
@@ -145,6 +145,6 @@ describe('DotEditContentMultiselectFieldComponent', () => {
                 value: 'one'
             }
         ];
-        expect(spectator.query(MultiSelect).options).toEqual(expectedList);
+        expect(spectator.query(MultiSelect)!.options).toEqual(expectedList);
     });
 });

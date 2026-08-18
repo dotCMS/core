@@ -361,7 +361,7 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     #initValuesForm({ source, file }: UploadedFile): void {
         this.form.patchValue({
-            name: source === 'temp' ? file.fileName : (file.metaData?.name ?? file.title),
+            name: source === 'temp' ? file.fileName : (file['metaData']?.name ?? file.title),
             content: file.content
         });
     }

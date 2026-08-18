@@ -145,7 +145,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             const monacoOption = EditorOptions.find((opt) => opt.value === AvailableEditor.Monaco);
             expect(monacoOption).toBeTruthy();
 
-            spectator.triggerEventHandler(Select, 'onChange', { value: monacoOption.value });
+            spectator.triggerEventHandler(Select, 'onChange', { value: monacoOption!.value });
             spectator.detectChanges();
 
             const content = spectator.component.$fieldContent();

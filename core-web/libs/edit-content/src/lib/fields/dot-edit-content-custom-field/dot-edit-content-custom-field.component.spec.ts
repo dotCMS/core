@@ -389,8 +389,8 @@ describe('DotEditContentCustomFieldComponent', () => {
             const formGroup = renderRequiredField();
 
             const control = formGroup.get(REQUIRED_FIELD.variable);
-            control.setErrors({ required: true });
-            control.markAsTouched();
+            control!.setErrors({ required: true });
+            control!.markAsTouched();
             spectator.detectChanges();
 
             const errorEl = spectator.query('small.p-field-error')!;
@@ -402,14 +402,14 @@ describe('DotEditContentCustomFieldComponent', () => {
             const formGroup = renderRequiredField();
 
             const control = formGroup.get(REQUIRED_FIELD.variable);
-            control.setErrors({ required: true });
-            control.markAsTouched();
+            control!.setErrors({ required: true });
+            control!.markAsTouched();
             spectator.detectChanges();
 
             expect(spectator.query('small.p-field-error')).toBeTruthy();
 
-            control.setValue('something');
-            control.setErrors(null);
+            control!.setValue('something');
+            control!.setErrors(null);
             spectator.detectChanges();
 
             expect(spectator.query('small.p-field-error')).toBeNull();
