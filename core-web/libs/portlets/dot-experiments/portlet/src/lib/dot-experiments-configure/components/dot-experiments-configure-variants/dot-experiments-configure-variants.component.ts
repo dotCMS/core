@@ -252,18 +252,21 @@ export class DotExperimentsConfigureVariantsComponent {
     }
 
     /**
-     * Completes the split from the row just committed: whatever it leaves over is spread across the
-     * other rows in the proportion they already had, so the total is 100 by construction instead of
-     * something the user has to reach by adding three numbers in their head.
+     * Completes the split from the row just committed: whatever it leaves over goes to the rows the
+     * user has not set, so the total is 100 by construction instead of something to reach by adding
+     * three numbers in their head.
      *
-     * On commit — blur or Enter — rather than on every keystroke: rebalancing per character makes the
-     * other rows jump while a number is still half typed. Typing alone changes nothing but its own
-     * row.
+     * Which rows give way is the whole point. Setting 15 on Original and then 50 on a variant has to
+     * leave the 15 alone — the user said 15 — so the third row takes the 35 that is left. Only when
+     * every other row has been set does one have to move, and then it is the one set longest ago.
      *
-     * Left alone in the three cases where there is nothing to spread from: an empty row (a cleared
-     * input is not a decision yet), a value the range rules already reject, and a total that is
-     * already 100. Rows with no weight between them share the remainder evenly, since there are no
-     * proportions to keep.
+     * On commit — blur or Enter — rather than on every keystroke: rebalancing per character sends the
+     * other rows to 98 and back while a number is still half typed. Typing alone changes nothing but
+     * its own row.
+     *
+     * Left alone where there is nothing to spread from: a cleared row, which is not a decision yet,
+     * and a value the range rules already reject. A total that already adds up is still remembered as
+     * a decision, so a later commit knows to spare it.
      */
     onWeightCommitted(rowId: string): void {
         const rows = this.$field()().value();
@@ -275,19 +278,18 @@ export class DotExperimentsConfigureVariantsComponent {
             committed === null ||
             committed === undefined ||
             committed < 0 ||
-            committed > TOTAL_WEIGHT ||
-            totalWeight(rows) === TOTAL_WEIGHT
+            committed > TOTAL_WEIGHT
         ) {
             return;
         }
 
-        const others = rows.filter((_, position) => position !== index);
+        this.#rememberCommit(rowId);
 
-        if (!others.length) {
+        if (rows.length === 1 || totalWeight(rows) === TOTAL_WEIGHT) {
             return;
         }
 
-        this.$field()().value.set(this.#spreadOver(rows, index, TOTAL_WEIGHT - committed));
+        this.$field()().value.set(this.#completeSplit(rows, index));
     }
 
     /** Opens the Add Variant dialog; a cancelled dialog closes with nothing and changes nothing. */
@@ -355,24 +357,63 @@ export class DotExperimentsConfigureVariantsComponent {
      * (`ExperimentsAPIImpl.addVariant`). Naming it here leaves the shell's binding with nothing to
      * report — it compares against what the store already holds — so the edit still travels once.
      */
+    /** Row ids the user has committed a weight to, oldest first. Reset by an even split. */
+    #committedRowIds: string[] = [];
+
+    #rememberCommit(rowId: string): void {
+        this.#committedRowIds = [...this.#committedRowIds.filter((id) => id !== rowId), rowId];
+    }
+
     /**
-     * Rows with `remaining` shared over every row but `index`, keeping their relative sizes. The
-     * rounding drift lands on the largest of them, so the rows always add up to exactly 100.
+     * `rows` with everything but `index` adding up to the remainder.
+     *
+     * The rows the user has not set absorb it; the ones they have keep what they were given. If that
+     * leaves nothing to absorb — every row set — the oldest decision gives way, and then the next
+     * oldest, only as far as the arithmetic demands.
      */
-    #spreadOver(
-        rows: VariantWeightFormRow[],
-        index: number,
-        remaining: number
-    ): VariantWeightFormRow[] {
+    #completeSplit(rows: VariantWeightFormRow[], index: number): VariantWeightFormRow[] {
+        const committed = rows[index].weight ?? 0;
         const others = rows.filter((_, position) => position !== index);
-        const othersTotal = totalWeight(others);
-        const shares = others.map(({ weight }) =>
-            othersTotal > 0
-                ? Math.round(((weight ?? 0) / othersTotal) * remaining)
-                : Math.floor(remaining / others.length)
+        const untouched = others.filter(({ id }) => !this.#committedRowIds.includes(id));
+        const byAge = (candidates: VariantWeightFormRow[]) =>
+            [...candidates].sort(
+                (a, b) => this.#committedRowIds.indexOf(a.id) - this.#committedRowIds.indexOf(b.id)
+            );
+
+        // Absorbers come off the front of this order, widening only while the numbers do not fit.
+        const pool = untouched.length
+            ? [...untouched, ...byAge(others.filter((row) => !untouched.includes(row)))]
+            : byAge(others);
+
+        const budgetFor = (count: number) =>
+            TOTAL_WEIGHT - committed - totalWeight(pool.slice(count));
+
+        let count = untouched.length || 1;
+
+        while (budgetFor(count) < 0 && count < pool.length) {
+            count++;
+        }
+
+        const shares = this.#share(budgetFor(count), pool.slice(0, count));
+
+        return rows.map((row, position) =>
+            position === index ? row : { ...row, weight: shares.get(row.id) ?? row.weight }
+        );
+    }
+
+    /**
+     * `budget` split across `absorbers` in the proportion they already hold, or evenly when they hold
+     * nothing between them. The rounding drift lands on the largest share, so the rows always add up.
+     */
+    #share(budget: number, absorbers: VariantWeightFormRow[]): Map<string, number> {
+        const absorbersTotal = totalWeight(absorbers);
+        const shares = absorbers.map(({ weight }) =>
+            absorbersTotal > 0
+                ? Math.round(((weight ?? 0) / absorbersTotal) * budget)
+                : Math.floor(budget / absorbers.length)
         );
 
-        const drift = remaining - shares.reduce((sum, share) => sum + share, 0);
+        const drift = budget - shares.reduce((sum, share) => sum + share, 0);
 
         if (drift !== 0) {
             const largest = shares.reduce(
@@ -382,11 +423,7 @@ export class DotExperimentsConfigureVariantsComponent {
             shares[largest] += drift;
         }
 
-        let position = 0;
-
-        return rows.map((row, rowIndex) =>
-            rowIndex === index ? row : { ...row, weight: shares[position++] }
-        );
+        return new Map(absorbers.map(({ id }, position) => [id, shares[position]]));
     }
 
     #splitWeightsEvenly(variants: Variant[]): void {
@@ -396,6 +433,8 @@ export class DotExperimentsConfigureVariantsComponent {
 
         const rows = splitWeightsEvenly(toVariantWeightRows(variants));
 
+        // A reset: it overrides every weight, so no earlier decision is worth sparing afterwards.
+        this.#committedRowIds = [];
         this.$field()().value.set(rows);
 
         this.#dispatch.formEdited({
