@@ -543,6 +543,74 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
                 ]);
             });
 
+            /** Original 15, then a variant 50: the 15 was a decision, so the third row takes the 35. */
+            it('should spare a row the user already set and take the rest from one they did not', () => {
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render([
+                    { id: CONTROL_VARIANT.id, weight: 100 },
+                    { id: SECOND_VARIANT.id, weight: 0 },
+                    { id: THIRD_VARIANT.id, weight: 0 }
+                ]);
+
+                commitWeight(0, '15');
+                commitWeight(1, '50');
+
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 15 },
+                    { id: SECOND_VARIANT.id, weight: 50 },
+                    { id: THIRD_VARIANT.id, weight: 35 }
+                ]);
+            });
+
+            it('should move the row set longest ago once every row has been set', () => {
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render([
+                    { id: CONTROL_VARIANT.id, weight: 100 },
+                    { id: SECOND_VARIANT.id, weight: 0 },
+                    { id: THIRD_VARIANT.id, weight: 0 }
+                ]);
+
+                commitWeight(0, '15');
+                commitWeight(1, '50');
+                // Every row is a decision now, so the oldest of them — Original — gives way.
+                commitWeight(2, '20');
+
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 30 },
+                    { id: SECOND_VARIANT.id, weight: 50 },
+                    { id: THIRD_VARIANT.id, weight: 20 }
+                ]);
+            });
+
+            it('should forget every decision once the weights are split evenly', () => {
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render([
+                    { id: CONTROL_VARIANT.id, weight: 100 },
+                    { id: SECOND_VARIANT.id, weight: 0 },
+                    { id: THIRD_VARIANT.id, weight: 0 }
+                ]);
+
+                commitWeight(0, '15');
+                clickButton('variants-split-evenly-btn');
+                commitWeight(1, '50');
+
+                // With the 15 overridden by the split, the two rows left share the remainder.
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 25 },
+                    { id: SECOND_VARIANT.id, weight: 50 },
+                    { id: THIRD_VARIANT.id, weight: 25 }
+                ]);
+            });
+
             it('should leave the others alone while the total already adds up', () => {
                 render();
 
