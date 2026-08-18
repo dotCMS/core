@@ -14,7 +14,7 @@ export class DotAssetService {
      * @memberof DotAssetService
      */
     create(options: DotAssetCreateOptions): Promise<DotCMSContentlet[] | DotHttpErrorResponse[]> {
-        const promises = [];
+        const promises: Promise<unknown>[] = [];
         let filesCreated = 1;
         options.files.map((file: DotCMSTempFile) => {
             const data = {
@@ -54,7 +54,7 @@ export class DotAssetService {
                     try {
                         message = responseData.message || responseData.errors[0].message;
                     } catch {
-                        message = fallbackErrorMessages[res.status];
+                        message = fallbackErrorMessages[res.status] ?? '';
                     }
                     errors.push({
                         message: message,

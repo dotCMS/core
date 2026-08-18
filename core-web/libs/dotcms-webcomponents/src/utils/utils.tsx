@@ -39,7 +39,7 @@ export function getClassNames(
  * @param string val
  * @returns boolean
  */
-export function isStringType(val: string): boolean {
+export function isStringType(val: unknown): boolean {
     return typeof val === 'string' && !!val;
 }
 
@@ -98,8 +98,11 @@ export function getHintId(name: string): string | undefined {
  * @returns string
  */
 export function getId(name: string): string | undefined {
+    // One `slugify`, not two: the original slugified its own result, which is a no-op on anything
+    // already slugified and was the only reason a nullable reached the second call.
     const value = slugify(name);
-    return name ? `dot-${slugify(value)}` : undefined;
+
+    return name ? `dot-${value}` : undefined;
 }
 
 /**

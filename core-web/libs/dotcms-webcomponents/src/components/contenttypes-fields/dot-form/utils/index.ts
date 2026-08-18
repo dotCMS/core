@@ -157,11 +157,19 @@ const fieldParamsConversionFromBE = {
     }
 };
 
-export const fieldCustomProcess = {
+/**
+ * Per-tag value transforms, keyed by DOM tag name. Only one field needs one, and `dot-form` branches
+ * on the lookup (`process ? process(value) : value`) because every other tag misses.
+ */
+export const fieldCustomProcess: Record<string, ((value: string) => unknown) | undefined> = {
     'DOT-KEY-VALUE': pipedValuesToObject
 };
 
-export const fieldMap = {
+/**
+ * Renderers keyed by content-type field type. A type with no entry is simply not rendered, which
+ * `dot-form-column` already checks for before indexing.
+ */
+export const fieldMap: Record<string, ((field: DotCMSContentTypeField) => unknown) | undefined> = {
     Time: DotFormFields.Time,
     Textarea: DotFormFields.Textarea,
     Text: DotFormFields.Text,

@@ -68,7 +68,8 @@ export class DotFormComponent {
     submit!: EventEmitter<DotCMSContentlet>;
 
     private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
-    private value = {};
+    /** One entry per field, keyed by its `variable` — a name only known at runtime. */
+    private value: Record<string, unknown> = {};
 
     /**
      * Update the form value when valueChange in any of the child fields.
@@ -158,7 +159,7 @@ export class DotFormComponent {
 
     private getTouched(): boolean {
         return Object.values(this.fieldsStatus)
-            .map((field: { [key: string]: boolean }) => field.dotTouched)
+            .map((field: { [key: string]: boolean }) => field['dotTouched'])
             .includes(true);
     }
 

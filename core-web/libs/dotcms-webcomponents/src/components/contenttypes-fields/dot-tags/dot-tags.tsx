@@ -74,7 +74,7 @@ export class DotTagsComponent {
 
     /** Function or array of string to get the data to use for the autocomplete search */
     @Prop()
-    data: () => Promise<string[]> | string[] = null;
+    data: (() => Promise<string[]> | string[]) | null = null;
 
     @State()
     status!: DotFieldStatus;

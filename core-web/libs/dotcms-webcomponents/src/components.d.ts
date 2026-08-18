@@ -94,10 +94,10 @@ export namespace Components {
     }
     interface DotAutocomplete {
         /**
-          * Function or array of string to get the data to use for the autocomplete search
+          * Function or array of string to get the data to use for the autocomplete search.  Null until a consumer supplies one, which `componentDidLoad` checks before initialising.
           * @default null
          */
-        "data": () => Promise<string[]> | string[];
+        "data": (() => Promise<string[]> | string[]) | null;
         /**
           * (optional) Duraction in ms to start search into the autocomplete
           * @default 300
@@ -1155,7 +1155,7 @@ export namespace Components {
           * Function or array of string to get the data to use for the autocomplete search
           * @default null
          */
-        "data": () => Promise<string[]> | string[];
+        "data": (() => Promise<string[]> | string[]) | null;
         /**
           * Duraction in ms to start search into the autocomplete
           * @default 300
@@ -2391,10 +2391,10 @@ declare namespace LocalJSX {
     }
     interface DotAutocomplete {
         /**
-          * Function or array of string to get the data to use for the autocomplete search
+          * Function or array of string to get the data to use for the autocomplete search.  Null until a consumer supplies one, which `componentDidLoad` checks before initialising.
           * @default null
          */
-        "data"?: () => Promise<string[]> | string[];
+        "data"?: (() => Promise<string[]> | string[]) | null;
         /**
           * (optional) Duraction in ms to start search into the autocomplete
           * @default 300
@@ -3446,7 +3446,7 @@ declare namespace LocalJSX {
           * Function or array of string to get the data to use for the autocomplete search
           * @default null
          */
-        "data"?: () => Promise<string[]> | string[];
+        "data"?: (() => Promise<string[]> | string[]) | null;
         /**
           * Duraction in ms to start search into the autocomplete
           * @default 300

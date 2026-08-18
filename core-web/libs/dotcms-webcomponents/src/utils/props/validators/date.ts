@@ -31,9 +31,13 @@ export function dotValidateTime(time: string): string | null {
  */
 export function dotParseDate(data: string): DotDateSlot {
     const [dateOrTime, time] = data ? data.split(' ') : '';
+
+    // `?? ''` on both halves: the validators return null for a string that is not a date/time, and
+    // `DotDateSlot` declares plain strings. Empty is what every reader already treats as unset —
+    // `dot-date-time` gates on `!!this._value.date && !!this._value.time`.
     return {
-        date: dotValidateDate(dateOrTime),
-        time: dotValidateTime(time) || dotValidateTime(dateOrTime)
+        date: dotValidateDate(dateOrTime ?? '') ?? '',
+        time: (dotValidateTime(time ?? '') || dotValidateTime(dateOrTime ?? '')) ?? ''
     };
 }
 

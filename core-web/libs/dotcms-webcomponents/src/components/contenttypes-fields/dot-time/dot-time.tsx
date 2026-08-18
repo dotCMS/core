@@ -88,8 +88,9 @@ export class DotTimeComponent {
      */
     @Method()
     async reset(): Promise<void> {
+        // Absent before the first render, when there is nothing to reset yet.
         const input = this.el.querySelector('dot-input-calendar');
-        input.reset();
+        await input?.reset();
     }
 
     componentWillLoad(): void {
