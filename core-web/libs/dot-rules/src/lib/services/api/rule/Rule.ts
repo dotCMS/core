@@ -208,7 +208,12 @@ export class ConditionGroupModel {
         this.conditions = iGroup.conditions || {};
     }
 
-    isPersisted(): boolean {
+    /**
+     * A `this`-typed predicate rather than a plain boolean: it lets `if (model.isPersisted())`
+     * narrow `model.key` from `string | null` to `string`, which is what every caller inside such
+     * a branch goes on to do when it builds a URL from it.
+     */
+    isPersisted(): this is this & { key: string } {
         return this.key != null;
     }
 
@@ -254,7 +259,12 @@ export class RuleModel {
         });
     }
 
-    isPersisted(): boolean {
+    /**
+     * A `this`-typed predicate rather than a plain boolean: it lets `if (model.isPersisted())`
+     * narrow `model.key` from `string | null` to `string`, which is what every caller inside such
+     * a branch goes on to do when it builds a URL from it.
+     */
+    isPersisted(): this is this & { key: string } {
         return this.key != null;
     }
 
@@ -357,7 +367,7 @@ export class RuleService {
             conditionGroups: Record<string, IConditionGroup>;
             key?: string;
         };
-        sendRule.key = rule.key;
+        sendRule.key = rule.key ?? undefined;
         delete sendRule.id;
         sendRule.conditionGroups = {};
         // `?? []` because `_conditionGroups` is optional on `IRule` and the spread above comes
@@ -571,13 +581,15 @@ export class RuleService {
             mergeMap((types: ServerSideTypeModel[]) => {
                 return observableFrom(types).pipe(
                     mergeMap((type) => {
-                        return this._resources.get(`${type.i18nKey}.name`, type.i18nKey ?? undefined).pipe(
-                            map((label: string) => {
-                                type._opt = { value: type.key, label: label };
+                        return this._resources
+                            .get(`${type.i18nKey}.name`, type.i18nKey ?? undefined)
+                            .pipe(
+                                map((label: string) => {
+                                    type._opt = { value: type.key, label: label };
 
-                                return type;
-                            })
-                        );
+                                    return type;
+                                })
+                            );
                     }),
                     reduce((accTypes: ServerSideTypeModel[], type: ServerSideTypeModel) => {
                         accTypes.push(type);

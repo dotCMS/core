@@ -6,23 +6,35 @@ import { switchMap, take, takeUntil } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
 
-window['mapsApi$'] = new BehaviorSubject({ ready: false });
+/** The two globals this service and the Google Maps callback share on `window`. */
+interface MapsApiWindow extends Window {
+    mapsApi$: BehaviorSubject<MapsApiState>;
+    mapsApiReady: () => void;
+}
 
-window['mapsApiReady'] = () => {
-    window['mapsApi$'].next({ ready: true });
-    window['mapsApi$'].complete();
+interface MapsApiState {
+    ready: boolean;
+    error?: unknown;
+}
+
+const mapsWindow = window as unknown as MapsApiWindow;
+
+mapsWindow.mapsApi$ = new BehaviorSubject<MapsApiState>({ ready: false });
+
+mapsWindow.mapsApiReady = () => {
+    mapsWindow.mapsApi$.next({ ready: true });
+    mapsWindow.mapsApi$.complete();
 };
 
 @Injectable()
 export class GoogleMapService {
     private siteService = inject(SiteService);
 
-    // eslint-disable-next-line
-    mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
+    mapsApi$: BehaviorSubject<MapsApiState>;
     private destroy$ = new Subject<boolean>();
     constructor() {
         this.loadApi(this.siteService.currentSite.identifier).subscribe();
-        this.mapsApi$ = window['mapsApi$'];
+        this.mapsApi$ = mapsWindow.mapsApi$;
         this.mapsApi$.subscribe();
 
         this.siteService.currentSite$
@@ -34,7 +46,7 @@ export class GoogleMapService {
     }
 
     //this method gets the Google key from the current site and loads the Google Maps API
-    loadApi(siteId): Observable<boolean> {
+    loadApi(siteId: string): Observable<boolean> {
         return this.siteService.getSiteById(siteId).pipe(
             take(1),
             switchMap((site) => {
