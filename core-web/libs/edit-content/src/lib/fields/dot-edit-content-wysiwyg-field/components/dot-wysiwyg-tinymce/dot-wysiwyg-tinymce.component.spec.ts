@@ -27,8 +27,8 @@ const mockSystemWideConfig = { systemWideOption: 'value' };
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
     hasError = false;
 }
 

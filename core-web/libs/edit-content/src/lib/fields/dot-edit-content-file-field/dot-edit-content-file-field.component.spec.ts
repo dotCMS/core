@@ -42,8 +42,8 @@ import {
     template: ''
 })
 export class MockFormComponent {
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 const mockLauncher = {

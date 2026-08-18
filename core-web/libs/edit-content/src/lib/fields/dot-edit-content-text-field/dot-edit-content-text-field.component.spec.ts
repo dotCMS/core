@@ -18,9 +18,9 @@ import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 const TEXT_FIELD_MOCK = createFakeTextField({

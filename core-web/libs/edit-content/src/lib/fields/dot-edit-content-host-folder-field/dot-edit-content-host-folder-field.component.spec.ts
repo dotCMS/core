@@ -29,9 +29,9 @@ import { HOST_FOLDER_TEXT_MOCK, TREE_SELECT_SITES_MOCK } from '../../utils/mocks
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentHostFolderFieldComponent', () => {

@@ -17,6 +17,7 @@ import {
     DotCMSWorkflowStatus,
     FeaturedFlags,
     TreeNodeItem,
+    TreeNodeData,
     CustomTreeNode
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -1342,7 +1343,14 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
 };
 
-export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
+/**
+ * Fixture variant of {@link TreeNodeItem}. PrimeNG leaves `data` optional on `TreeNode`, but
+ * every node in the fixtures below populates it, and the specs read it directly. `children`
+ * stays optional — only some nodes have them.
+ */
+type MockTreeNodeItem = TreeNodeItem & { data: TreeNodeData };
+
+export const TREE_SELECT_SITES_MOCK: MockTreeNodeItem[] = [
     {
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
@@ -1381,7 +1389,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
     }
 ];
 
-export const TREE_SELECT_MOCK: TreeNodeItem[] = [
+export const TREE_SELECT_MOCK: MockTreeNodeItem[] = [
     {
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',

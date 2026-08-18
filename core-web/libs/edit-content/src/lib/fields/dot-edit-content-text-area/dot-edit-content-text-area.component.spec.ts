@@ -40,9 +40,9 @@ const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentTextAreaComponent', () => {
@@ -120,7 +120,7 @@ describe('DotEditContentTextAreaComponent', () => {
         });
 
         it('should have language variable selector component', () => {
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
             expect(languageVariableSelector).toBeTruthy();
         });
 
@@ -155,7 +155,7 @@ describe('DotEditContentTextAreaComponent', () => {
             const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
 
             // Trigger onSelectLanguageVariable event
             const testVariable = '${languageVariable}';

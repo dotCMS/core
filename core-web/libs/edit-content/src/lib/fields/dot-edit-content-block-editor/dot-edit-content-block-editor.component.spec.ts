@@ -22,9 +22,9 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {

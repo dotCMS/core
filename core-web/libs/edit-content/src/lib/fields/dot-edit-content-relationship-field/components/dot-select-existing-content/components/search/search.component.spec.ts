@@ -198,8 +198,10 @@ describe('SearchComponent', () => {
         it('should have valid form controls', () => {
             expect(component.form.get('query')).toBeTruthy();
             expect(component.form.get('systemSearchableFields')).toBeTruthy();
-            expect(component.form.get('systemSearchableFields').get('languageId')).toBeTruthy();
-            expect(component.form.get('systemSearchableFields').get('siteOrFolderId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields')!.get('languageId')).toBeTruthy();
+            expect(
+                component.form.get('systemSearchableFields')!.get('siteOrFolderId')
+            ).toBeTruthy();
         });
     });
 
@@ -667,15 +669,15 @@ describe('SearchComponent', () => {
 
     describe('Integration Tests', () => {
         it('should update form values when input changes', () => {
-            const queryInput = spectator.query('input[formControlName="query"]');
+            const queryInput = spectator.query('input[formControlName="query"]')!;
             spectator.typeInElement('test query', queryInput);
 
-            expect(component.form.get('query').value).toBe('test query');
+            expect(component.form.get('query')!.value).toBe('test query');
         });
 
         it('should trigger debounced search when typing in input', fakeAsync(() => {
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
-            const queryInput = spectator.query('input[formControlName="query"]');
+            const queryInput = spectator.query('input[formControlName="query"]')!;
 
             spectator.typeInElement('test search', queryInput);
 
@@ -707,7 +709,7 @@ describe('SearchComponent', () => {
             );
             spectator.click(openFiltersButton);
 
-            const searchButton = spectator.query('p-button[data-testid="search-button"] button');
+            const searchButton = spectator.query('p-button[data-testid="search-button"] button')!;
             spectator.click(searchButton);
 
             expect(searchSpy).toHaveBeenCalledWith({
@@ -735,7 +737,7 @@ describe('SearchComponent', () => {
             );
             spectator.click(openFiltersButton);
 
-            const searchButton = spectator.query('p-button[data-testid="search-button"] button');
+            const searchButton = spectator.query('p-button[data-testid="search-button"] button')!;
             spectator.click(searchButton);
 
             expect(searchSpy).toHaveBeenCalledWith({
@@ -761,7 +763,7 @@ describe('SearchComponent', () => {
             );
             spectator.click(openFiltersButton);
 
-            const clearButton = spectator.query('p-button[data-testid="clear-button"] button');
+            const clearButton = spectator.query('p-button[data-testid="clear-button"] button')!;
             spectator.click(clearButton);
 
             expect(component.form.getRawValue()).toEqual({

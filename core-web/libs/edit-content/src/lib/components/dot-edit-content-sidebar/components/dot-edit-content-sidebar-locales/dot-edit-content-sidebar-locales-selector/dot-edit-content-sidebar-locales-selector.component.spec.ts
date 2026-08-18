@@ -138,7 +138,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should show the DEFAULT badge for the default locale', () => {
-            const badge = spectator.query(byTestId('default-badge'));
+            const badge = spectator.query(byTestId('default-badge'))!;
             expect(badge).toBeTruthy();
             expect(badge.textContent.trim()).toBe('DEFAULT');
         });
@@ -252,7 +252,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should show current locale info in the sticky row', () => {
-            const row = spectator.query(byTestId('selected-locale'));
+            const row = spectator.query(byTestId('selected-locale'))!;
             expect(row.textContent).toContain(CURRENT_LOCALE.language);
         });
 

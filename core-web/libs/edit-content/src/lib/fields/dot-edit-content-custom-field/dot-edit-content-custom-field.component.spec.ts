@@ -393,7 +393,7 @@ describe('DotEditContentCustomFieldComponent', () => {
             control.markAsTouched();
             spectator.detectChanges();
 
-            const errorEl = spectator.query('small.p-field-error');
+            const errorEl = spectator.query('small.p-field-error')!;
             expect(errorEl).toBeTruthy();
             expect(errorEl.textContent.trim()).toBe('dot.edit.content.form.field.required');
         });
