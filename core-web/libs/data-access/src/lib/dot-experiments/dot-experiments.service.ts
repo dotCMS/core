@@ -299,21 +299,6 @@ export class DotExperimentsService {
     }
 
     /**
-     * Set the name to an experiment
-     * @param {string} experimentId
-     * @param {string} name
-     * @returns Observable<DotExperiment>
-     * @memberof DotExperimentsService
-     */
-    setName(experimentId: string, name: string): Observable<DotExperiment> {
-        return this.http
-            .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
-                name
-            })
-            .pipe(map((x) => x?.entity));
-    }
-
-    /**
      * Set the description to an experiment
      * @param {string} experimentId
      * @param description
