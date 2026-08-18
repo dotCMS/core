@@ -8,7 +8,10 @@ import {
 import { of } from 'rxjs';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotContentletDepths } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotContentletDepths
+} from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 

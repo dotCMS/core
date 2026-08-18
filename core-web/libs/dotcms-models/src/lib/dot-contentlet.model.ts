@@ -33,8 +33,10 @@ export interface DotCMSContentlet {
     language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
-    lockedBy?: DotContentletLockUser | string;
-    lockedByName?: string;
+    /** Null once the content is unlocked — the unlock response sends null, not an absent key. */
+    lockedBy?: DotContentletLockUser | string | null;
+    /** Null once the content is unlocked — see {@link DotCMSContentlet.lockedBy}. */
+    lockedByName?: string | null;
     mimeType?: string;
     modDate: string;
     modUser: string;
