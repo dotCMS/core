@@ -290,10 +290,10 @@ export namespace Components {
          */
         "required": boolean;
         /**
-          * Value specifies the value of the <input> element.  TODO(#35943): deliberately left untyped. At runtime this holds a string (pasted URL) but `handleFilePaste` also assigns a `File`, while the template feeds it to an `<input value>` that accepts neither. Annotating it surfaces that contradiction, which needs the render path fixed — that belongs to the strict-mode work, not here.
-          * @default null
+          * Value specifies the value of the <input> element.  `string | File`, because both are assigned: `handleURLPaste` stores the pasted URL and `handleFilePaste` stores the pasted `File` itself. The `<input value>` in `render` accepts neither directly, so it coerces — which is what Stencil's attribute serialization already did, meaning a pasted file renders as `[object File]` rather than its name. That is a display bug, but repairing it changes what the user sees; see the note in `render`.
+          * @default ''
          */
-        "value": any;
+        "value": string | File;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -466,7 +466,10 @@ export namespace Components {
           * @default false
          */
         "backgroundImage": boolean;
-        "contentlet"?: DotContentletItem;
+        /**
+          * Required in practice, not optional: `componentWillLoad` destructures it on the first line, so a missing contentlet has always thrown rather than degraded. Declared with a definite assignment so the eighteen accesses below read it directly, as they already did.
+         */
+        "contentlet": DotContentletItem;
         /**
           * @default ''
          */
@@ -2606,10 +2609,10 @@ declare namespace LocalJSX {
          */
         "required"?: boolean;
         /**
-          * Value specifies the value of the <input> element.  TODO(#35943): deliberately left untyped. At runtime this holds a string (pasted URL) but `handleFilePaste` also assigns a `File`, while the template feeds it to an `<input value>` that accepts neither. Annotating it surfaces that contradiction, which needs the render path fixed — that belongs to the strict-mode work, not here.
-          * @default null
+          * Value specifies the value of the <input> element.  `string | File`, because both are assigned: `handleURLPaste` stores the pasted URL and `handleFilePaste` stores the pasted `File` itself. The `<input value>` in `render` accepts neither directly, so it coerces — which is what Stencil's attribute serialization already did, meaning a pasted file renders as `[object File]` rather than its name. That is a display bug, but repairing it changes what the user sees; see the note in `render`.
+          * @default ''
          */
-        "value"?: any;
+        "value"?: string | File;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -2781,7 +2784,10 @@ declare namespace LocalJSX {
           * @default false
          */
         "backgroundImage"?: boolean;
-        "contentlet"?: DotContentletItem;
+        /**
+          * Required in practice, not optional: `componentWillLoad` destructures it on the first line, so a missing contentlet has always thrown rather than degraded. Declared with a definite assignment so the eighteen accesses below read it directly, as they already did.
+         */
+        "contentlet": DotContentletItem;
         /**
           * @default ''
          */

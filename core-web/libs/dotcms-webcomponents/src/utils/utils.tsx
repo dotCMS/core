@@ -237,8 +237,14 @@ export function isValidURL(url: string): boolean {
  *
  * @returns boolean
  */
-export function isFileAllowed(name: string, type: string, allowedExtensions: string): boolean {
-    if (allowedExtensions === '') {
+export function isFileAllowed(
+    name: string,
+    type: string,
+    allowedExtensions: string | undefined
+): boolean {
+    // Absent and empty mean the same thing — no restriction. Callers pass an optional `accept`
+    // prop, so an undefined used to reach `.split` below and throw instead of allowing the file.
+    if (!allowedExtensions) {
         return true;
     }
 

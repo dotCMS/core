@@ -19,13 +19,14 @@ export class DotBinaryTextFieldComponent {
     /**
      * Value specifies the value of the <input> element.
      *
-     * TODO(#35943): deliberately left untyped. At runtime this holds a string (pasted URL) but
-     * `handleFilePaste` also assigns a `File`, while the template feeds it to an `<input value>`
-     * that accepts neither. Annotating it surfaces that contradiction, which needs the render
-     * path fixed — that belongs to the strict-mode work, not here.
+     * `string | File`, because both are assigned: `handleURLPaste` stores the pasted URL and
+     * `handleFilePaste` stores the pasted `File` itself. The `<input value>` in `render` accepts
+     * neither directly, so it coerces — which is what Stencil's attribute serialization already
+     * did, meaning a pasted file renders as `[object File]` rather than its name. That is a
+     * display bug, but repairing it changes what the user sees; see the note in `render`.
      */
     @Prop({ mutable: true, reflect: true })
-    value = null;
+    value: string | File = '';
 
     /** (optional) Hint text that suggest a clue of the field */
     @Prop({ reflect: true })
@@ -64,7 +65,10 @@ export class DotBinaryTextFieldComponent {
                     class={getErrorClass(this.isValid())}
                     disabled={this.disabled}
                     placeholder={this.placeholder}
-                    value={this.value}
+                    // Explicit coercion, not a change: Stencil already stringified this on its
+                    // way to the attribute. Rendering a pasted `File`'s name instead of
+                    // `[object File]` is the real fix and needs its own issue.
+                    value={String(this.value)}
                     onBlur={() => this.lostFocus.emit()}
                     onKeyDown={(event: KeyboardEvent) => this.keyDownHandler(event)}
                     onPaste={(event: ClipboardEvent) => this.pasteHandler(event)}
@@ -94,8 +98,9 @@ export class DotBinaryTextFieldComponent {
     private pasteHandler(event: ClipboardEvent): void {
         event.preventDefault();
         this.value = '';
-        const clipboardData: DataTransfer = event.clipboardData;
-        if (clipboardData.items.length) {
+        // Null when the paste carried no data at all, which the length check below already covers.
+        const clipboardData: DataTransfer | null = event.clipboardData;
+        if (clipboardData?.items.length) {
             if (this.isPastingFile(clipboardData)) {
                 this.handleFilePaste(clipboardData.items);
             } else {
@@ -106,9 +111,9 @@ export class DotBinaryTextFieldComponent {
     }
 
     private handleFilePaste(items: DataTransferItemList) {
-        const clipBoardFile = items[1].getAsFile();
+        const clipBoardFile = items[1]?.getAsFile();
 
-        if (isFileAllowed(clipBoardFile.name, clipBoardFile.type, this.accept)) {
+        if (clipBoardFile && isFileAllowed(clipBoardFile.name, clipBoardFile.type, this.accept)) {
             this.value = clipBoardFile;
             this.emitFile(clipBoardFile);
         } else {
@@ -135,7 +140,10 @@ export class DotBinaryTextFieldComponent {
         return !(this.required && !!this.value);
     }
 
-    private emitFile(file: File | string, errorType?: DotBinaryMessageError): void {
+    private emitFile(
+        file: File | string | null,
+        errorType: DotBinaryMessageError | null = null
+    ): void {
         this.fileChange.emit({
             file: file,
             errorType: errorType
