@@ -494,7 +494,7 @@ describe('DotExperimentsReportsStore', () => {
                 [0, 15.25, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 90.56]
             ];
             const expectedLabel = [
-                EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants['DEFAULT'].variantDescription,
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription
             ];
 
@@ -514,7 +514,7 @@ describe('DotExperimentsReportsStore', () => {
             const EXPECTED_BAYESIAN_DATA_QTY = 100;
             const expectedLabel = [
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription,
-                EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants['DEFAULT'].variantDescription
             ];
 
             store.getBayesianChartData$.subscribe(({ datasets }) => {

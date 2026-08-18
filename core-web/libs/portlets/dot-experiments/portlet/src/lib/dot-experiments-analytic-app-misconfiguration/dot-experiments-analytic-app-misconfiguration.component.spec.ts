@@ -23,7 +23,11 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsAnalyticAppMisconfigurationComponent>;
     let router: SpyObject<Router>;
 
-    let dynamicState = { healthStatus: HealthStatusTypes.NOT_CONFIGURED };
+    // Annotated, not inferred: from the initializer alone TypeScript pins `healthStatus` to the
+    // `NOT_CONFIGURED` literal, and each describe block below reassigns it to a different status.
+    let dynamicState: { healthStatus: HealthStatusTypes } = {
+        healthStatus: HealthStatusTypes.NOT_CONFIGURED
+    };
 
     const createComponent = createComponentFactory({
         component: DotExperimentsAnalyticAppMisconfigurationComponent,
