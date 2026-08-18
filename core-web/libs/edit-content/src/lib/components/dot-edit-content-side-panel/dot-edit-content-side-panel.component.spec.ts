@@ -255,7 +255,7 @@ describe('DotEditContentSidePanelComponent', () => {
         document.body.appendChild(mask);
 
         if (ownedByPanel) {
-            spectator.query(Drawer).mask = mask;
+            spectator.query(Drawer)!.mask = mask;
         }
 
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));

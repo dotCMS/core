@@ -210,7 +210,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const control = spectator.hostComponent.formGroup.get(
                     RELATIONSHIP_FIELD_MOCK.variable
                 );
-                control.disable();
+                control!.disable();
                 spectator.detectChanges();
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
@@ -559,7 +559,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             emptySpectator.flushEffects();
 
             const fieldComponent = emptySpectator.query(DotRelationshipFieldComponent);
-            expect(fieldComponent.store.data()).toEqual([]);
+            expect(fieldComponent!.store.data()).toEqual([]);
         });
 
         it('should handle invalid field data gracefully', () => {
@@ -591,7 +591,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             invalidSpectator.flushEffects();
 
             const fieldComponent = invalidSpectator.query(DotRelationshipFieldComponent);
-            expect(fieldComponent.store.data()).toBeDefined();
+            expect(fieldComponent!.store.data()).toBeDefined();
         });
 
         it('should handle null contentlet gracefully', () => {
@@ -614,7 +614,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             nullContentletSpectator.flushEffects();
 
             const fieldComponent = nullContentletSpectator.query(DotRelationshipFieldComponent);
-            expect(fieldComponent.store.data()).toBeDefined();
+            expect(fieldComponent!.store.data()).toBeDefined();
         });
     });
 
@@ -706,7 +706,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 byTestId(`hint-${HINTED_FIELD_MOCK.variable}`)
             );
             expect(hintElement).toBeTruthy();
-            expect(hintElement.textContent.trim()).toBe(HINTED_FIELD_MOCK.hint);
+            expect(hintElement!.textContent.trim()).toBe(HINTED_FIELD_MOCK.hint);
         });
 
         it('should not render the hint inside the relationship table', () => {

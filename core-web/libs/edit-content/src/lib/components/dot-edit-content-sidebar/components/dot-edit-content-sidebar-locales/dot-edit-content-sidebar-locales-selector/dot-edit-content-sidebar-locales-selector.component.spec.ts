@@ -66,7 +66,7 @@ function typeInSearch(
     value: string
 ) {
     const input = spectator.query<HTMLInputElement>(byTestId('search-input'));
-    input.value = value;
+    input!.value = value;
     spectator.dispatchFakeEvent(input, 'input');
     spectator.detectChanges();
 }
@@ -214,13 +214,13 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             const translated = ENHANCED_LOCALES.filter((l) => l.translated).length;
             const pending = ENHANCED_LOCALES.filter((l) => !l.translated).length;
 
-            expect(spectator.query(byTestId('tab-all')).textContent).toContain(
+            expect(spectator.query(byTestId('tab-all'))!.textContent).toContain(
                 `${ENHANCED_LOCALES.length}`
             );
-            expect(spectator.query(byTestId('tab-translated')).textContent).toContain(
+            expect(spectator.query(byTestId('tab-translated'))!.textContent).toContain(
                 `${translated}`
             );
-            expect(spectator.query(byTestId('tab-pending')).textContent).toContain(`${pending}`);
+            expect(spectator.query(byTestId('tab-pending'))!.textContent).toContain(`${pending}`);
         });
 
         it('should filter to translated locales when activeTab input is "translated"', () => {
@@ -281,13 +281,13 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             it('should show matching locales when typing in the search input', () => {
                 typeInSearch(spectator, 'english');
                 expect(spectator.queryAll(byTestId('locale-item')).length).toBe(1);
-                expect(spectator.query(byTestId('locale-item')).textContent).toContain('English');
+                expect(spectator.query(byTestId('locale-item'))!.textContent).toContain('English');
             });
 
             it('should filter by isoCode', () => {
                 typeInSearch(spectator, 'de-de');
                 expect(spectator.queryAll(byTestId('locale-item')).length).toBe(1);
-                expect(spectator.query(byTestId('locale-item')).textContent).toContain('German');
+                expect(spectator.query(byTestId('locale-item'))!.textContent).toContain('German');
             });
 
             it('should be case-insensitive', () => {
@@ -298,7 +298,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             it('should show "All caught up" when no locales match', () => {
                 typeInSearch(spectator, 'xyznotfound');
                 expect(spectator.query(byTestId('no-results'))).toBeTruthy();
-                expect(spectator.query(byTestId('no-results')).textContent.trim()).toBe(
+                expect(spectator.query(byTestId('no-results'))!.textContent!.trim()).toBe(
                     'All caught up'
                 );
             });
@@ -307,7 +307,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                 typeInSearch(spectator, 'english');
                 spectator.setInput('activeTab', 'translated');
                 spectator.detectChanges();
-                expect(spectator.query<HTMLInputElement>(byTestId('search-input')).value).toBe(
+                expect(spectator!.query<HTMLInputElement>(byTestId('search-input')).value).toBe(
                     'english'
                 );
             });
@@ -322,7 +322,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                 typeInSearch(spectator, 'english');
                 spectator.click(byTestId('search-clear'));
                 spectator.detectChanges();
-                expect(spectator.query<HTMLInputElement>(byTestId('search-input')).value).toBe('');
+                expect(spectator!.query<HTMLInputElement>(byTestId('search-input')).value).toBe('');
                 expect(spectator.query(byTestId('search-clear'))).toBeNull();
             });
 

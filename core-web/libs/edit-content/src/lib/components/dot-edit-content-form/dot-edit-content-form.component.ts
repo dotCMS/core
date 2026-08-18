@@ -171,7 +171,7 @@ export class DotEditContentFormComponent implements OnInit {
         return (
             !this.$store.isNew() &&
             (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
-                !!contentlet?.URL_MAP_FOR_CONTENT)
+                !!contentlet?.['URL_MAP_FOR_CONTENT'])
         );
     });
 

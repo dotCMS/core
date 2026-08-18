@@ -72,7 +72,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
             expect(
-                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+                spectator.query(byTestId('dot-content-thumbnail-image'))!.getAttribute('src')
             ).toBe(TEMP_FILE_MOCK.thumbnailUrl);
         });
 
@@ -149,14 +149,14 @@ describe('DotFileFieldPreviewComponent', () => {
 
             expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
             expect(
-                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+                spectator.query(byTestId('dot-content-thumbnail-image'))!.getAttribute('src')
             ).toBe(`/dA/${inode}/asset/500w/50q?r=${modDate}`);
         });
 
         it('should show proper metadata', () => {
             spectator.detectChanges();
 
-            const { title, width, height } = NEW_FILE_MOCK.entity.assetMetaData;
+            const { title, width, height } = NEW_FILE_MOCK.entity['assetMetaData'];
 
             const metadataTitleElement = spectator.query(byTestId('metadata-title'));
             const metadataDimensionsElement = spectator.query(byTestId('metadata-dimensions'));
@@ -309,7 +309,7 @@ describe('DotFileFieldPreviewComponent', () => {
             const downloadBtnComponent = spectator.query(byTestId('download-btn'))!;
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
 
-            expect(actualDownloadBtn.disabled).toBe(true);
+            expect(actualDownloadBtn!.disabled).toBe(true);
 
             spectator.click(actualDownloadBtn);
 

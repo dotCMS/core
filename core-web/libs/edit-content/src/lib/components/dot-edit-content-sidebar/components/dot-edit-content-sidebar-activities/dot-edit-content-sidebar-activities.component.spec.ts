@@ -195,7 +195,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
+            expect(control!.errors).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -211,8 +211,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
-            expect(control.errors['required']).toBeTruthy();
+            expect(control!.errors).toBeTruthy();
+            expect(control!.errors!['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -358,7 +358,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         const getValidationErrorMsg = () =>
-            spectator.query(DotFieldValidationMessageComponent).errorMsg;
+            spectator.query(DotFieldValidationMessageComponent)!.errorMsg;
 
         it('should show "A message is required." error when submitting an empty comment', () => {
             const form = spectator.query(byTestId('activities-form'))!;
@@ -465,8 +465,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             // Check that there are no errors shown before submission
             const control = spectator.component.form.get('comment');
-            expect(control.valid).toBe(true);
-            expect(control.errors).toBeFalsy();
+            expect(control!.valid).toBe(true);
+            expect(control!.errors).toBeFalsy();
             expect(commentInput).not.toHaveClass('ng-invalid');
         });
 
@@ -483,8 +483,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             // Now should have required error
             const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
-            expect(control.errors['required']).toBeTruthy();
+            expect(control!.errors).toBeTruthy();
+            expect(control!.errors['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -546,7 +546,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             // Should show: 4/500 characters
-            expect(charCounter().textContent).toContain('4/500');
+            expect(charCounter()!.textContent).toContain('4/500');
         });
     });
 

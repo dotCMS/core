@@ -347,8 +347,8 @@ describe('DotFormComponent', () => {
             const singleColumnContentType: DotCMSContentType = {
                 ...MOCK_CONTENTTYPE_1_TAB,
                 layout: [
-                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns[0]] },
-                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns[1]] }
+                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns![0]] },
+                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns![1]] }
                 ]
             };
 

@@ -92,7 +92,7 @@ describe('FooterComponent', () => {
         it('should show apply button as disabled when no items are selected', () => {
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button')!;
+            const applyButton = spectator.query(byTestId('apply-button'))!.querySelector('button')!;
             expect(applyButton.disabled).toBe(true);
         });
 
@@ -100,7 +100,7 @@ describe('FooterComponent', () => {
             store.setSelectionItems([createFakeContentlet()]);
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button')!;
+            const applyButton = spectator.query(byTestId('apply-button'))!.querySelector('button')!;
             expect(applyButton.disabled).toBe(false);
         });
 

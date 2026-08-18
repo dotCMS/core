@@ -328,7 +328,7 @@ describe('SiteFieldComponent', () => {
                 }
             };
 
-            const expectedValue = `${mockEvent.node.data.type}:${mockEvent.node.data.id}`;
+            const expectedValue = `${mockEvent.node.data!.type}:${mockEvent.node.data!.id}`;
 
             store.chooseNode(mockEvent);
             spectator.detectChanges();

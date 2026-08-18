@@ -140,9 +140,9 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: node.label, isRequired: false });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
-                expect(store.selectedSite().key).toBe(node.key);
-                expect(store.confirmedNode().key).toBe(node.key);
-                expect(store.pendingNode().key).toBe(node.key);
+                expect(store.selectedSite()!.key).toBe(node.key);
+                expect(store.confirmedNode()!.key).toBe(node.key);
+                expect(store.pendingNode()!.key).toBe(node.key);
             });
 
             it('should select the node/site if the path is not empty and is required', () => {
@@ -151,12 +151,12 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: node.label, isRequired: true });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
-                expect(store.selectedSite().key).toBe(node.key);
+                expect(store.selectedSite()!.key).toBe(node.key);
             });
 
             it('should resolve a nested folder path via buildTreeByPaths and set confirmed/pending node', fakeAsync(() => {
                 const [site] = TREE_SELECT_MOCK;
-                const targetNode = site.children[0];
+                const targetNode = site.children![0];
 
                 mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
@@ -186,9 +186,9 @@ describe('HostFolderFiledStore', () => {
                     'demo.dotcms.com',
                     '/level1/'
                 );
-                expect(store.selectedSite().key).toBe(site.key);
-                expect(store.confirmedNode().key).toBe(targetNode.key);
-                expect(store.pendingNode().key).toBe(targetNode.key);
+                expect(store.selectedSite()!.key).toBe(site.key);
+                expect(store.confirmedNode()!.key).toBe(targetNode.key);
+                expect(store.pendingNode()!.key).toBe(targetNode.key);
                 expect(store.folders()).toEqual(site.children);
                 // Level was resolved via buildTreeByPaths, so root pagination is marked as fully loaded
                 expect(store.nodePagination()[ROOT_NODE_KEY]).toEqual({
@@ -201,15 +201,15 @@ describe('HostFolderFiledStore', () => {
             it('should seed nodePagination and inject a Load more sentinel when buildTreeByPaths reports hasMore', fakeAsync(() => {
                 const [site] = TREE_SELECT_MOCK;
                 const targetNode = {
-                    ...site.children[0],
+                    ...site.children![0],
                     key: 'gallery',
                     data: {
-                        ...site.children[0].data,
+                        ...site.children![0].data,
                         path: '/gallery/'
                     },
                     children: undefined
                 };
-                const rootFolders = [{ ...site.children[0], children: undefined }, targetNode];
+                const rootFolders = [{ ...site.children![0], children: undefined }, targetNode];
 
                 mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
@@ -228,7 +228,7 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: 'demo.dotcms.com/gallery', isRequired: false });
                 tick();
 
-                expect(store.confirmedNode().key).toBe('gallery');
+                expect(store.confirmedNode()!.key).toBe('gallery');
                 expect(store.nodePagination()[ROOT_NODE_KEY]).toEqual({
                     page: 2,
                     hasMore: true,
@@ -240,7 +240,7 @@ describe('HostFolderFiledStore', () => {
                 expect(loadMoreNode.type).toBe(LOAD_MORE_NODE_TYPE);
                 expect(loadMoreNode.key).toBe(`load-more:${ROOT_NODE_KEY}`);
                 expect(folders.slice(0, -1).map((folder) => folder.key)).toEqual([
-                    site.children[0].key,
+                    site.children![0].key,
                     'gallery'
                 ]);
             }));
@@ -249,7 +249,7 @@ describe('HostFolderFiledStore', () => {
         describe('path normalization', () => {
             it('should normalize a colon-separated persisted path before calling buildTreeByPaths', fakeAsync(() => {
                 const [site] = TREE_SELECT_MOCK;
-                const targetNode = site.children[0];
+                const targetNode = site.children![0];
 
                 mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
@@ -280,7 +280,7 @@ describe('HostFolderFiledStore', () => {
 
             it('should normalize a leading double-slash persisted path before calling buildTreeByPaths', fakeAsync(() => {
                 const [site] = TREE_SELECT_MOCK;
-                const targetNode = site.children[0];
+                const targetNode = site.children![0];
 
                 mockSitesPage(service, TREE_SELECT_MOCK);
                 service.buildTreeByPaths.mockReturnValue(
@@ -313,8 +313,8 @@ describe('HostFolderFiledStore', () => {
         describe('ancestor expansion', () => {
             it('should mark ancestor folders as expanded so the tree opens to the resolved node, even when buildTreeByPaths does not flag them', fakeAsync(() => {
                 const [site] = TREE_SELECT_MOCK;
-                const level1 = site.children[0];
-                const targetNode = { ...level1.children[0], expanded: false };
+                const level1 = site.children![0];
+                const targetNode = { ...level1.children![0], expanded: false };
                 const unexpandedLevel1 = { ...level1, expanded: false, children: [targetNode] };
 
                 mockSitesPage(service, TREE_SELECT_MOCK);
@@ -351,7 +351,7 @@ describe('HostFolderFiledStore', () => {
                 store.loadSites({ path: null, isRequired: false });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
-                expect(store.selectedSite().label).toBe(SYSTEM_HOST_NAME);
+                expect(store.selectedSite()!.label).toBe(SYSTEM_HOST_NAME);
             });
 
             it('should select current site if required', fakeAsync(() => {
@@ -363,7 +363,7 @@ describe('HostFolderFiledStore', () => {
                 tick();
 
                 expect(service.getCurrentSiteAsTreeNodeItem).toHaveBeenCalled();
-                expect(store.selectedSite().label).toBe(hostNode.label);
+                expect(store.selectedSite()!.label).toBe(hostNode.label);
             }));
         });
 
@@ -405,7 +405,7 @@ describe('HostFolderFiledStore', () => {
         });
 
         it('should format a nested folder path correctly, matching copyPath', () => {
-            const node = TREE_SELECT_MOCK[0].children[0];
+            const node = TREE_SELECT_MOCK[0]!.children[0];
             store.setPendingNode(node);
             store.commit();
             expect(store.pathToSave()).toBe('demo.dotcms.com:/level1/');
@@ -600,7 +600,7 @@ describe('HostFolderFiledStore', () => {
             expect(service.searchFolders).toHaveBeenCalledWith(
                 {
                     siteId: site.data.id,
-                    path: node.data.path,
+                    path: node.data!.path,
                     recursive: false,
                     page: 1,
                     per_page: FOLDER_PAGE_LIMIT
@@ -803,7 +803,7 @@ describe('HostFolderFiledStore', () => {
             }>();
 
             service.searchFolders.mockImplementation((params) => {
-                if (params.path === nodeA.data.path) {
+                if (params.path === nodeA.data!.path) {
                     return pendingA$.asObservable();
                 }
 
@@ -1220,7 +1220,7 @@ describe('HostFolderFiledStore', () => {
 
             const results = store.searchResults();
             expect(results).toHaveLength(2);
-            expect(results[1].type).toBe('load-more');
+            expect(results![1].type).toBe('load-more');
             expect(store.searchPagination()).toEqual({ page: 1, hasMore: true, loading: false });
         }));
 
@@ -1369,7 +1369,7 @@ describe('HostFolderFiledStore', () => {
             // shouldn't have been killed by the earlier unhandled error.
             service.buildTreeByPaths.mockReturnValue(
                 of({
-                    node: TREE_SELECT_MOCK[0].children[0],
+                    node: TREE_SELECT_MOCK[0]!.children[0],
                     tree: {
                         path: '/',
                         folders: [],
@@ -1434,7 +1434,7 @@ describe('HostFolderFiledStore', () => {
 
     describe('Staged commit: setPendingNode / commit / openOverlay / closeOverlay', () => {
         it('should not update confirmedNode until commit is called', () => {
-            const node = TREE_SELECT_MOCK[0].children[0];
+            const node = TREE_SELECT_MOCK[0]!.children[0];
             store.setPendingNode(node);
 
             expect(store.pendingNode()).toBe(node);
@@ -1446,7 +1446,7 @@ describe('HostFolderFiledStore', () => {
 
         it('should discard the pending selection when the overlay is closed without committing', () => {
             const confirmed = TREE_SELECT_MOCK[0];
-            const pending = TREE_SELECT_MOCK[0].children[0];
+            const pending = TREE_SELECT_MOCK[0]!.children[0];
 
             store.setPendingNode(confirmed);
             store.commit();
@@ -1638,7 +1638,7 @@ describe('HostFolderFiledStore', () => {
                 pagination?: Record<string, { page: number; hasMore: boolean }>;
             }>();
             const [mockSite] = TREE_SELECT_MOCK;
-            const targetNode = mockSite.children[0];
+            const targetNode = mockSite.children![0];
 
             mockSitesPage(service, TREE_SELECT_MOCK);
             service.buildTreeByPaths.mockReturnValue(tree$.asObservable());

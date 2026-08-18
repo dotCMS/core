@@ -95,7 +95,7 @@ describe('DotEditContentFormResolutions', () => {
 
         it('should return defaultValue when field value is not in contentlet', () => {
             const contentlet = { ...mockContentlet };
-            delete contentlet.testField;
+            delete contentlet['testField'];
 
             const result = resolutionValue[FIELD_TYPES.TEXTAREA](contentlet, mockField);
             expect(result).toBe('default value');

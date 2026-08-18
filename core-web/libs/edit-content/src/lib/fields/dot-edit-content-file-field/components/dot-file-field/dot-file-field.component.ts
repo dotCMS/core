@@ -213,7 +213,7 @@ export class DotFileFieldComponent
 
         const file = uploaded.file;
 
-        return file.fileName ?? getFileMetadata(file)?.name ?? file.title ?? '';
+        return file['fileName'] ?? getFileMetadata(file)?.name ?? file.title ?? '';
     });
 
     /**
@@ -622,7 +622,7 @@ export class DotFileFieldComponent
 
         const header = this.#dotMessageService.get('dot.file.field.dialog.import.from.url.header');
 
-        this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
+        const dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
             header,
             appendTo: 'body',
             closable: true,
@@ -639,7 +639,9 @@ export class DotFileFieldComponent
             }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef = dialogRef;
+
+        dialogRef?.onClose
             .pipe(
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
@@ -669,7 +671,7 @@ export class DotFileFieldComponent
 
         const header = this.#dotMessageService.get('dot.file.field.action.generate.dialog-title');
 
-        this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
+        const dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header,
             appendTo: 'body',
             closable: true,
@@ -683,7 +685,9 @@ export class DotFileFieldComponent
             style: { 'max-width': '1040px' }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef = dialogRef;
+
+        dialogRef?.onClose
             .pipe(
                 filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
                 map((selectedImage) => this.#mapAIImageToUploadedFile(selectedImage)),
@@ -710,6 +714,11 @@ export class DotFileFieldComponent
      */
     #mapAIImageToUploadedFile(selectedImage: DotGeneratedAIImage): UploadedFile {
         const { response } = selectedImage;
+
+        if (!response) {
+            throw new Error('AI image prompt returned no response');
+        }
+
         const contentlet = response.contentlet;
 
         if (this.store.uploadType() !== 'temp') {
@@ -721,12 +730,12 @@ export class DotFileFieldComponent
         const tempFile: DotCMSTempFile = {
             id: response.response,
             fileName: response.tempFileName,
-            folder: contentlet.folder,
+            folder: contentlet['folder'],
             image: true,
             length: metadata.length,
             mimeType: metadata.contentType,
-            referenceUrl: contentlet.asset,
-            thumbnailUrl: contentlet.asset,
+            referenceUrl: contentlet['asset'],
+            thumbnailUrl: contentlet['asset'],
             metadata
         };
 
@@ -751,7 +760,7 @@ export class DotFileFieldComponent
 
         const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
 
-        this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
+        const dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
             // The editor renders its own header (title + full-screen toggle + close ✕),
             // so hide PrimeNG's chrome header to avoid a duplicate and to host the
             // full-screen control next to the close button.
@@ -777,7 +786,9 @@ export class DotFileFieldComponent
             }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef = dialogRef;
+
+        dialogRef?.onClose
             .pipe(
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
@@ -812,7 +823,7 @@ export class DotFileFieldComponent
 
         const header = this.#dotMessageService.get(title);
 
-        this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
+        const dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
             header,
             appendTo: 'body',
             closeOnEscape: true,
@@ -839,7 +850,9 @@ export class DotFileFieldComponent
             }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef = dialogRef;
+
+        dialogRef?.onClose
             .pipe(
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)

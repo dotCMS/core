@@ -428,7 +428,7 @@ export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[
  */
 export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     if (
-        !contentlet.URL_MAP_FOR_CONTENT ||
+        !contentlet['URL_MAP_FOR_CONTENT'] ||
         !contentlet.host ||
         contentlet.languageId === undefined
     ) {
@@ -440,7 +440,7 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
     const params = new URLSearchParams();
 
-    params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
+    params.set('url', `${contentlet['URL_MAP_FOR_CONTENT']}?host_id=${contentlet.host}`);
     params.set('language_id', contentlet.languageId.toString());
     params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
     params.set('mode', UVE_MODE.EDIT);
@@ -586,16 +586,16 @@ export const createCustomFieldConfig = (
     };
 
     // Override with individual field variables (highest priority)
-    if (individualVars.showAsModal !== undefined) {
-        mergedConfig.showAsModal = individualVars.showAsModal as boolean;
+    if (individualVars['showAsModal'] !== undefined) {
+        mergedConfig.showAsModal = individualVars['showAsModal'] as boolean;
     }
 
-    if (individualVars.width) {
-        mergedConfig.width = individualVars.width as string;
+    if (individualVars['width']) {
+        mergedConfig.width = individualVars['width'] as string;
     }
 
-    if (individualVars.height) {
-        mergedConfig.height = individualVars.height as string;
+    if (individualVars['height']) {
+        mergedConfig.height = individualVars['height'] as string;
     }
 
     return mergedConfig;

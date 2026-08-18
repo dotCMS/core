@@ -21,7 +21,9 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
-    contentlet: DotCMSContentlet,
+    // Nullable: `defaultResolutionFn` and friends branch on the contentlet being absent —
+    // that is the new-content path, and 14 spec call sites exercise it with null.
+    contentlet: DotCMSContentlet | null,
     field: DotCMSContentTypeField,
     queryParams?: EditContentQueryParams,
     isManualTranslation?: boolean
