@@ -3,31 +3,33 @@ import { UntypedFormControl, Validators, ValidatorFn } from '@angular/forms';
 import { LoggerService } from '@dotcms/dotcms-js';
 
 import { BaseModel } from '../../models/base.model';
-import { ParameterDefinition } from '../../models/input.model';
+import { DropdownInputModel, ParameterDefinition } from '../../models/input.model';
 import { ParameterModel } from '../rule/Rule';
 
 export class ServerSideFieldModel extends BaseModel {
     parameterDefs: { [key: string]: ParameterDefinition };
     parameters: { [key: string]: ParameterModel };
-    priority: number;
 
-    private _type: ServerSideTypeModel;
+    /** Set through the `type` accessor below, which every constructor path drives. */
+    private _type!: ServerSideTypeModel;
 
     static createNgControl(model: ServerSideFieldModel, paramName: string): UntypedFormControl {
         const param = model.parameters[paramName];
         const paramDef = model.parameterDefs[paramName];
-        const vFn: ValidatorFn[] = paramDef.inputType.dataType.validators() as ValidatorFn[];
+        // `?? []` rather than an assertion: only `SpacerInputDefinition` has a null `dataType`,
+        // and it never reaches here, but "no data type" honestly means "no validators".
+        const vFn: ValidatorFn[] = paramDef.inputType.dataType?.validators() ?? [];
 
         const control = new UntypedFormControl(
             model.getParameterValue(param.key),
-            Validators.compose(<ValidatorFn[]>vFn)
+            Validators.compose(vFn)
         );
 
         return control;
     }
 
     constructor(
-        key: string,
+        key: string | null,
         _type: ServerSideTypeModel,
         _priority = 1,
         public loggerService?: LoggerService
@@ -53,7 +55,7 @@ export class ServerSideFieldModel extends BaseModel {
                     x as unknown as Record<string, unknown>
                 );
                 const defaultValue =
-                    paramDef.defaultValue || paramDef.inputType.dataType.defaultValue;
+                    paramDef.defaultValue ?? paramDef.inputType.dataType?.defaultValue ?? '';
                 this.parameterDefs[key] = paramDef;
                 this.parameters[key] = {
                     key: key,
@@ -66,7 +68,7 @@ export class ServerSideFieldModel extends BaseModel {
 
     setParameter(key: string, value: string, priority = 1): void {
         if (this.parameterDefs[key] === undefined) {
-            this.loggerService.info(
+            this.loggerService?.info(
                 'Unsupported parameter: ',
                 key,
                 'Valid parameters: ',
@@ -79,58 +81,54 @@ export class ServerSideFieldModel extends BaseModel {
         this.parameters[key] = { key: key, priority: priority, value: value };
     }
 
-    getParameter(key: string): ParameterModel {
-        let v: ParameterModel = null;
-        if (this.parameters[key] !== undefined) {
-            v = this.parameters[key];
-        }
-
-        return v;
+    /** `null` for an unknown key — the three call sites all test the result before using it. */
+    getParameter(key: string): ParameterModel | null {
+        return this.parameters[key] ?? null;
     }
 
-    getParameterValue(key: string): string {
-        let v: string | null = null;
-        if (this.parameters[key] !== undefined) {
-            v = this.parameters[key].value;
-        }
-
-        return v;
+    /** `null` when the parameter is unset; callers read it as `value || fallback`. */
+    getParameterValue(key: string): string | null {
+        return this.parameters[key]?.value ?? null;
     }
 
-    getParameterDef(key: string): ParameterDefinition {
-        let v: ParameterDefinition | null = null;
-        if (this.parameterDefs[key] !== undefined) {
-            v = this.parameterDefs[key];
-        }
-
-        return v;
+    /** `null` for an unknown key. */
+    getParameterDef(key: string): ParameterDefinition | null {
+        return this.parameterDefs[key] ?? null;
     }
 
-    isValid(): boolean {
+    override isValid(): boolean {
         let valid = true;
-        if (this.parameterDefs) {
-            Object.keys(this.parameterDefs).some((key) => {
-                const paramDef = this.getParameterDef(key);
-                const param = this.parameters[key];
-                const value = param.value;
-                try {
-                    valid = valid && paramDef.inputType.verify(value) == null;
-                } catch (e) {
-                    this.loggerService.error(e);
-                }
+        Object.keys(this.parameterDefs).some((key) => {
+            const paramDef = this.parameterDefs[key];
+            const value = this.parameters[key].value;
+            try {
+                valid = valid && paramDef.inputType.verify(value) == null;
+            } catch (e) {
+                this.loggerService?.error(e);
+            }
 
-                if (
-                    paramDef.inputType.name === 'comparison' &&
-                    paramDef.inputType['options'][value].rightHandArgCount === 0
-                ) {
-                    return true;
-                }
-            });
-        }
+            // `instanceof` instead of `inputType['options']`: `options` lives on
+            // `DropdownInputModel`, not on the base, so the old bracket access read `undefined`
+            // and then indexed it for any non-dropdown comparison input — a throw, caught by
+            // nobody. Comparison inputs are dropdowns in practice, which is why it never fired.
+            if (paramDef.inputType.name === 'comparison') {
+                const options =
+                    paramDef.inputType instanceof DropdownInputModel
+                        ? paramDef.inputType.options
+                        : undefined;
+                const option = options?.[value] as { rightHandArgCount?: number } | undefined;
 
-        valid = valid && this._type && this._type.key && this._type.key !== 'NoSelection';
+                // Stop at a comparison that takes no right-hand argument: the parameters after
+                // it are the arguments, and they are legitimately unset.
+                return option?.rightHandArgCount === 0;
+            }
 
-        return valid;
+            return false;
+        });
+
+        // `!!`: this chain is `string | boolean` — `this._type.key` is a string — so the old
+        // `boolean` return type was a lie for every valid field.
+        return !!(valid && this._type && this._type.key && this._type.key !== 'NoSelection');
     }
 }
 
@@ -147,10 +145,15 @@ export interface ServerSideTypeJson {
 
 export class ServerSideTypeModel {
     key: string;
-    priority: number;
-    i18nKey: string;
+    /** `null` when the server sends no i18n key; `isValid()` below treats that as invalid. */
+    i18nKey: string | null;
     parameters: { [key: string]: ParameterDefinition };
-    _opt: ServerSideTypeOption;
+
+    /**
+     * The select option built for this type. Filled by `RuleService`'s type loader as soon as
+     * the i18n label resolves, before the type is published to any component.
+     */
+    _opt!: ServerSideTypeOption;
 
     static fromJson(json: ServerSideTypeJson): ServerSideTypeModel {
         return new ServerSideTypeModel(json.key, json.i18nKey, json.parameterDefinitions);
@@ -158,7 +161,7 @@ export class ServerSideTypeModel {
 
     constructor(
         key = 'NoSelection',
-        i18nKey: string = null,
+        i18nKey: string | null = null,
         parameters: Record<string, unknown> = {}
     ) {
         this.key = key ? key : 'NoSelection';
