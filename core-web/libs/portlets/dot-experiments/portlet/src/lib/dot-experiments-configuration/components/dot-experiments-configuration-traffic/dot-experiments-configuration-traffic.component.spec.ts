@@ -113,7 +113,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         jest.spyOn(store, 'openSidebar');
 
         const allocationButton = spectator.query(byTestId('traffic-allocation-button'));
-        const button = allocationButton.querySelector('button')! || allocationButton;
+        const button = allocationButton!.querySelector('button')! || allocationButton;
         spectator.click(button);
 
         expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.TRAFFIC_LOAD);
@@ -127,7 +127,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         jest.spyOn(store, 'openSidebar');
 
         const allocationButton = spectator.query(byTestId('traffic-allocation-button'));
-        const button = allocationButton.querySelector('button')! || allocationButton;
+        const button = allocationButton!.querySelector('button')! || allocationButton;
         spectator.click(button);
 
         expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.TRAFFIC_LOAD);
@@ -149,7 +149,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         spectator.detectChanges();
 
         const allocationButton = spectator.query(byTestId('traffic-allocation-button'));
-        const button = allocationButton.querySelector('button')! || allocationButton;
+        const button = allocationButton!.querySelector('button')! || allocationButton;
         expect(button.hasAttribute('disabled')!).toBe(true);
         expect(spectator.query(Tooltip).disabled!).toEqual(false);
     });

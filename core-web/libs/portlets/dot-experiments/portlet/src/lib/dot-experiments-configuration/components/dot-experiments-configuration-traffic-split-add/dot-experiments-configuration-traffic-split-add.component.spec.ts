@@ -90,7 +90,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
         const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
         const variantsName = spectator.queryAll(byTestId('variant-name'));
 
-        expect(radioButton.checked!).toEqual(true);
+        expect(radioButton!.checked!).toEqual(true);
         expect(spectator.queryAll(InputNumber).length).toEqual(0);
         expect(variantsWeight[0]).toContainText('50');
         expect(variantsWeight[1]).toContainText('50');
@@ -101,7 +101,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     it('should save form when is valid ', () => {
         jest.spyOn(store, 'setSelectedTrafficProportion');
         const submitButtonWrapper = spectator.query(byTestId('add-traffic-split-button'));
-        const submitButton = submitButtonWrapper.querySelector('button')! || submitButtonWrapper;
+        const submitButton = submitButtonWrapper!.querySelector('button')! || submitButtonWrapper;
 
         expect(submitButton.hasAttribute('disabled')!).toBe(false);
         expect(submitButtonWrapper).toContainText('Done');

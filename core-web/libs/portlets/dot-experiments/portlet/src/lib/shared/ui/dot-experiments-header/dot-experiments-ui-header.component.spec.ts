@@ -70,7 +70,7 @@ describe('ExperimentsHeaderComponent', () => {
         const expectedStatus =
             'Running until ' +
             new DatePipe('en-US').transform(
-                EXPERIMENT_MOCK.scheduling.endDate!,
+                EXPERIMENT_MOCK.scheduling!.endDate!,
                 RUNNING_UNTIL_DATE_FORMAT
             );
 

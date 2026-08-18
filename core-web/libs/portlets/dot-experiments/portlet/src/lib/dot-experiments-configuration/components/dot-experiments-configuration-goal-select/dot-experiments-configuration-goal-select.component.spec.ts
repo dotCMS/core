@@ -261,7 +261,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectComponentChanges();
 
         const applyBtn = spectator.query<HTMLButtonElement>(byTestId('add-goal-button'));
-        expect(applyBtn.disabled!).toEqual(true);
+        expect(applyBtn!.disabled!).toEqual(true);
 
         const invalidFormValues = {
             primary: {
@@ -311,7 +311,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.component.form.valid).toEqual(false);
-        expect(applyBtn.disabled!).toEqual(true);
+        expect(applyBtn!.disabled!).toEqual(true);
 
         // Invalid path
         spectator.component.form.setValue(validFormValuesExistOperator, { emitEvent: false });
@@ -319,7 +319,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.component.form.valid).toEqual(false);
-        expect(applyBtn.disabled!).toEqual(true);
+        expect(applyBtn!.disabled!).toEqual(true);
     });
 
     it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', async () => {
@@ -351,7 +351,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         await spectator.fixture.whenStable();
 
         expect(spectator.component.form.valid).toEqual(true);
-        expect(applyBtn.disabled!).toEqual(false);
+        expect(applyBtn!.disabled!).toEqual(false);
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
     });
 
@@ -402,7 +402,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         spectator.detectChanges();
 
-        expect(sidebar.visible!).toEqual(false);
+        expect(sidebar!.visible!).toEqual(false);
     });
 
     it('should render coming soon placeholder', () => {
