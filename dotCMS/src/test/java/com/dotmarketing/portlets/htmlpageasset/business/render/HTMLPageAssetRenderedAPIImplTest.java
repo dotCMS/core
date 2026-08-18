@@ -27,9 +27,14 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -258,5 +263,84 @@ public class HTMLPageAssetRenderedAPIImplTest {
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
 
         assertEquals(PageMode.ADMIN_MODE, defaultEditPageMode);
+    }
+
+    /**
+     * U+0130 LATIN CAPITAL LETTER I WITH DOT ABOVE — lowercases to two chars ({@code i} + U+0307),
+     * so any index taken from a lowercased copy of the HTML is invalid against the original string.
+     * See #37072.
+     */
+    private static final String DOTTED_CAPITAL_I = "İ";
+
+    private static final String JS_CODE = "<script>console.log('injected');</script>";
+
+    /**
+     * Invokes the private {@code injectJSCode(String, String)} method via reflection.
+     */
+    private String invokeInjectJSCode(final String pageHTML, final String jsCode) throws Exception {
+        final Method method = HTMLPageAssetRenderedAPIImpl.class.getDeclaredMethod(
+                "injectJSCode", String.class, String.class);
+        method.setAccessible(true);
+        return (String) method.invoke(hTMLPageAssetRenderedAPIImpl, pageHTML, jsCode);
+    }
+
+    /**
+     * Builds a page whose doctype prelude carries {@code count} occurrences of {@code İ} ahead of
+     * the opening {@code <head>} tag.
+     */
+    private static String htmlWithDottedCapitalIBeforeHead(final int count) {
+        return "<!DOCTYPE html><!-- " + DOTTED_CAPITAL_I.repeat(count)
+                + " --><html lang=\"tr\"><head><title>Test</title></head><body></body></html>";
+    }
+
+    @Test
+    public void testInjectJSCode_shouldInjectAfterHeadWhenHtmlContainsDottedCapitalI() throws Exception {
+        for (final int count : new int[]{1, 7, 9, 14, 20}) {
+            final String result = invokeInjectJSCode(htmlWithDottedCapitalIBeforeHead(count), JS_CODE);
+
+            assertTrue("JS code should be injected immediately after <head> with " + count
+                            + " dotted capital I chars",
+                    result.contains("<head>" + JS_CODE));
+            assertTrue("The <head> tag should remain intact with " + count + " dotted capital I chars",
+                    result.contains("<head>" + JS_CODE + "<title>Test</title></head>"));
+        }
+    }
+
+    @Test
+    public void testInjectJSCode_shouldInjectAfterUpperCaseHeadTag() throws Exception {
+        final String result = invokeInjectJSCode("<html><HEAD><title>Test</title></HEAD></html>", JS_CODE);
+
+        assertTrue("JS code should be injected immediately after <HEAD>",
+                result.contains("<HEAD>" + JS_CODE + "<title>Test</title>"));
+    }
+
+    @Test
+    public void testInjectJSCode_shouldPrependWhenNoHeadTag() throws Exception {
+        final String pageHTML = "<html><body><p>Hello</p></body></html>";
+
+        final String result = invokeInjectJSCode(pageHTML, JS_CODE);
+
+        assertEquals(JS_CODE + "\n" + pageHTML, result);
+    }
+
+    @Test
+    public void testInjectJSCode_shouldReturnJsCodeWhenPageHtmlIsNull() throws Exception {
+        assertEquals(JS_CODE, invokeInjectJSCode(null, JS_CODE));
+    }
+
+    @Test
+    public void testInjectJSCode_shouldProduceIdenticalOutputAcrossDefaultLocales() throws Exception {
+        final Locale originalLocale = Locale.getDefault();
+        try {
+            final Set<String> outputs = new HashSet<>();
+            for (final String languageTag : new String[]{"en", "tr", "lt"}) {
+                Locale.setDefault(Locale.forLanguageTag(languageTag));
+                outputs.add(invokeInjectJSCode(htmlWithDottedCapitalIBeforeHead(9), JS_CODE));
+            }
+            assertEquals("Injection result should not depend on the JVM default locale",
+                    1, outputs.size());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 }
