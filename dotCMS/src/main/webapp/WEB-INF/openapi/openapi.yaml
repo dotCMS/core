@@ -15275,51 +15275,6 @@ paths:
       summary: Load user roles
       tags:
       - Roles
-  /v1/roles/{roleId}:
-    delete:
-      description: "Deletes a role. The deletion CASCADES and is not reversible: the\
-        \ role is removed from all users that have it, all permissions granted to\
-        \ the role are deleted, and its layout (tool-group) assignments are detached.\
-        \ The response reports how many users were affected. Deletion is rejected\
-        \ when the role has child roles or is referenced by a workflow action's Assign\
-        \ To (409), and for system or locked roles (403)."
-      operationId: deleteRole
-      parameters:
-      - description: Id of the role to delete
-        in: path
-        name: roleId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityRoleDeletionView"
-          description: Role deleted successfully; usersAffected reports the cascade
-            blast radius
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: "Forbidden - admin permissions required, or the role is a system\
-            \ or locked role"
-        "404":
-          content:
-            application/json: {}
-          description: Role not found
-        "409":
-          content:
-            application/json: {}
-          description: "Conflict - the role has child roles, or a workflow action\
-            \ references it"
-      summary: Delete a role
-      tags:
-      - Roles
   /v1/roles/{roleId}/layouts:
     get:
       description: Returns a collection of layouts associated to a role
@@ -15354,6 +15309,50 @@ paths:
       tags:
       - Roles
   /v1/roles/{roleid}:
+    delete:
+      description: "Deletes a role. The deletion CASCADES and is not reversible: the\
+        \ role is removed from all users that have it, all permissions granted to\
+        \ the role are deleted, and its layout (tool-group) assignments are detached.\
+        \ The response reports how many users were affected. Deletion is rejected\
+        \ when the role has child roles or is referenced by a workflow action's Assign\
+        \ To (409), and for system or locked roles (403)."
+      operationId: deleteRole
+      parameters:
+      - description: Id of the role to delete
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDeletionView"
+          description: Role deleted successfully; usersAffected reports the cascade
+            blast radius
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role is a system\
+            \ or locked role"
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - the role has child roles, or a workflow action\
+            \ references it"
+      summary: Delete a role
+      tags:
+      - Roles
     get:
       description: Load role based on the role id with optional children roles
       operationId: loadRoleByRoleId

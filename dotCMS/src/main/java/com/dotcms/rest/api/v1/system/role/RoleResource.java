@@ -461,13 +461,13 @@ public class RoleResource implements Serializable {
 					content = @Content(mediaType = "application/json"))
 	})
 	@DELETE
-	@Path("/{roleId}")
+	@Path("/{roleid}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public ResponseEntityRoleDeletionView deleteRole(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
 			@Parameter(description = "Id of the role to delete", required = true)
-			final @PathParam("roleId") String roleId) throws DotDataException, DotSecurityException {
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
 
 		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
 
