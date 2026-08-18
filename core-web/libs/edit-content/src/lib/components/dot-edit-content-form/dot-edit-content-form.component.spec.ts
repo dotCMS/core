@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
@@ -12,7 +12,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
-import { Validators } from '@angular/forms';
+import { FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -1408,7 +1408,9 @@ describe('DotFormComponent', () => {
 
             it('should not throw error when onDisabledWYSIWYGChange is called and form does not exist', () => {
                 // Set form to null to simulate case where form doesn't exist
-                component.form = null;
+                // Deliberately invalid: `form` is definitely assigned by `buildForm`. This
+                // drives the `if (this.form && ...)` guard in `onDisabledWYSIWYGChange`.
+                component.form = null as unknown as FormGroup;
 
                 expect(() => {
                     component.onDisabledWYSIWYGChange(['test']);
@@ -1426,7 +1428,7 @@ describe('DotFormComponent', () => {
 
             it('should emit event when disabledWYSIWYG form control value changes', () => {
                 const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
-                const spy = jest.spyOn(disabledWYSIWYGControl, 'setValue');
+                const spy = jest.spyOn(disabledWYSIWYGControl!, 'setValue');
 
                 component.onDisabledWYSIWYGChange(['newField']);
 
@@ -1762,7 +1764,10 @@ describe('DotFormComponent', () => {
         });
 
         it('should toggle $shouldRenderFields false then back to true when isManualTranslation is true', fakeAsync(() => {
-            patchState(store, { initialContentletState: 'copy', isManualTranslation: true });
+            patchState(store as unknown as WritableStateSource<object>, {
+                initialContentletState: 'copy',
+                isManualTranslation: true
+            });
             spectator.detectChanges();
 
             expect(component['$shouldRenderFields']()).toBe(false);
@@ -1773,7 +1778,10 @@ describe('DotFormComponent', () => {
         }));
 
         it('should toggle $shouldRenderFields false then back to true when isManualTranslation is false (populate)', fakeAsync(() => {
-            patchState(store, { initialContentletState: 'copy', isManualTranslation: false });
+            patchState(store as unknown as WritableStateSource<object>, {
+                initialContentletState: 'copy',
+                isManualTranslation: false
+            });
             spectator.detectChanges();
 
             expect(component['$shouldRenderFields']()).toBe(false);

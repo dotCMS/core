@@ -474,7 +474,9 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {Record<string, any>} value The raw form value
      * @memberof DotEditContentFormComponent
      */
-    onFormChange(value: Record<string, string>) {
+    // `FormValues`, not `Record<string, string>`: category, multi-select and tag controls hold
+    // arrays, and `processFormValue` below already accepts the wider shape.
+    onFormChange(value: FormValues) {
         const processedValue = this.processFormValue(value);
         this.changeValue.emit(processedValue);
     }

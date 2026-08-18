@@ -89,7 +89,7 @@ describe('DotEditContentTagFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            autocomplete = spectator.query(AutoComplete);
+            autocomplete = spectator.query(AutoComplete)!;
         });
 
         it('should render autocomplete with correct attributes', () => {
@@ -140,7 +140,7 @@ describe('DotEditContentTagFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            autocomplete = spectator.query(AutoComplete);
+            autocomplete = spectator.query(AutoComplete)!;
         });
 
         it('should show suggestions when user types valid search term', async () => {
@@ -165,7 +165,7 @@ describe('DotEditContentTagFieldComponent', () => {
             let autocompleteInput: HTMLInputElement;
 
             beforeEach(() => {
-                autocompleteInput = spectator.query('input[role="combobox"]');
+                autocompleteInput = spectator.query('input[role="combobox"]')!;
             });
 
             it('should add new tag when Enter is pressed with non-empty value', () => {

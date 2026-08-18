@@ -88,7 +88,7 @@ describe('DotEditContentTextAreaComponent', () => {
                 }
             );
             spectator.detectChanges();
-            textArea = spectator.query(byTestId(TEXT_AREA_FIELD_MOCK.variable));
+            textArea = spectator.query(byTestId(TEXT_AREA_FIELD_MOCK.variable))!;
         });
 
         it('should have the variable as id', () => {
