@@ -59,12 +59,14 @@ export const getPropertyColors = (index: number): LineChartColorsProperties => {
  * @private
  */
 export const processExperimentConfigProps = (
-    configProps: Record<string, string | boolean>
+    configProps: Record<string, string | boolean> | null
 ): Record<string, number> => {
     const config: Record<string, number> = {};
 
-    const minDurationRaw = configProps['EXPERIMENTS_MIN_DURATION'];
-    const maxDurationRaw = configProps['EXPERIMENTS_MAX_DURATION'];
+    // Null until the route's `config` resolver has run. The two reads below already fall through
+    // to the defaults for a missing key, so an absent bag behaves the same as an empty one.
+    const minDurationRaw = configProps?.['EXPERIMENTS_MIN_DURATION'];
+    const maxDurationRaw = configProps?.['EXPERIMENTS_MAX_DURATION'];
 
     config['EXPERIMENTS_MIN_DURATION'] =
         typeof minDurationRaw !== 'string' || minDurationRaw === PROP_NOT_FOUND
