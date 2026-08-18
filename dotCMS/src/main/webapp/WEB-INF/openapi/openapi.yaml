@@ -2623,24 +2623,6 @@ paths:
       summary: Retrieves Accessibility Guidelines
       tags:
       - Accessibility Checker
-  /v1/agents/a11y/active-run:
-    get:
-      description: "Returns the run the agent service currently associates with the\
-        \ calling user, so a client that reconnects (a reload, or a second tab) can\
-        \ rejoin a run already in progress instead of starting a duplicate."
-      operationId: getA11yAgentActiveRun
-      responses:
-        "200":
-          content:
-            application/json: {}
-          description: "The active or last run, relayed from the agent service"
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-      summary: Get the caller's active or most recent agent run
-      tags:
-      - Accessibility Agent
   /v1/agents/a11y/fix:
     post:
       description: "Resolves the page identifier to a live URL, URI and host id, mints\
