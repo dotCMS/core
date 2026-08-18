@@ -2,7 +2,11 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
-        "types": ["jasmine", "node"],
+        // `jasmine` was listed here, but @types/jasmine is not installed — nor are
+        // karma-jasmine or jasmine-core — so this config aborted with TS2688 before any
+        // semantic checking and had never actually type-checked anything. The app has no
+        // spec files, so `node` alone is the truthful set.
+        "types": ["node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
         "moduleResolution": "bundler",
