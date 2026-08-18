@@ -4,18 +4,34 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DuplicateRoleException;
+import com.dotmarketing.business.DuplicateRoleKeyException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.RoleNameException;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,6 +40,120 @@ import java.util.stream.Collectors;
  * @author jsanca
  */
 public class RoleHelper {
+
+    private final RoleAPI roleAPI;
+
+    public RoleHelper() {
+        this(APILocator.getRoleAPI());
+    }
+
+    @VisibleForTesting
+    public RoleHelper(final RoleAPI roleAPI) {
+        this.roleAPI = roleAPI;
+    }
+
+    /**
+     * Updates an existing role — name, key, description, can-grant flags, and parent
+     * (reparent). Mirrors the legacy DWR {@code RoleAjax#updateRole} behavior: a null
+     * {@code parentRoleId} turns the role into a root role (parent == own id).
+     *
+     * Guards (see #36936):
+     * <ul>
+     *   <li>missing role or parent → {@link DoesNotExistException} (404)</li>
+     *   <li>system or locked role → {@link DotSecurityException} (403) — same condition
+     *       {@code RoleAPIImpl.save} enforces, surfaced cleanly</li>
+     *   <li>reparent to self or to a descendant (cycle) → {@link BadRequestException} (400);
+     *       net-new guard vs legacy, prevents hierarchy corruption</li>
+     *   <li>invalid name → {@link BadRequestException} (400); duplicate key/name →
+     *       {@link ConflictException} (409)</li>
+     * </ul>
+     *
+     * @param roleId   id of the role to update
+     * @param roleForm new field values (same shape POST /v1/roles consumes)
+     * @param modUser  authenticated user performing the change (audit logging)
+     * @return the updated {@link Role}
+     */
+    @WrapInTransaction
+    public Role updateRole(final String roleId, final RoleForm roleForm, final User modUser)
+            throws DotDataException, DotSecurityException {
+
+        final Role role = this.roleAPI.loadRoleById(roleId);
+        if (null == role || !UtilMethods.isSet(role.getId())) {
+            throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        if (role.isSystem() || role.isLocked()) {
+            throw new DotSecurityException(
+                    String.format("Role '%s' (%s) is a system or locked role and cannot be updated",
+                            role.getName(), role.getId()));
+        }
+
+        // validate the parent BEFORE mutating anything — see the copy note below
+        final String parentRoleId = roleForm.getParentRoleId();
+        Role parentRole = null;
+        if (Objects.nonNull(parentRoleId)) {
+
+            if (parentRoleId.equals(roleId)) {
+                throw new BadRequestException("A role cannot be its own parent: " + roleId);
+            }
+
+            parentRole = this.roleAPI.loadRoleById(parentRoleId);
+            if (null == parentRole || !UtilMethods.isSet(parentRole.getId())) {
+                throw new DoesNotExistException("Parent role not found: " + parentRoleId);
+            }
+
+            // reject the cycle: the edited role must not be an ancestor of the proposed parent
+            if (this.roleAPI.isParentRole(role, parentRole)) {
+                throw new BadRequestException(String.format(
+                        "Cannot move role '%s' under '%s': the target parent is one of its descendants",
+                        roleId, parentRoleId));
+            }
+        }
+
+        // loadRoleById returns the cache-resident instance — apply the update to a detached
+        // copy so a save rejected by RoleAPIImpl (duplicate key/name, invalid name) cannot
+        // leave phantom values in the role cache
+        final Role roleToSave = new Role();
+        try {
+            BeanUtils.copyProperties(roleToSave, role);
+        } catch (final IllegalAccessException | InvocationTargetException e) {
+            throw new DotDataException("Error copying role for update: " + roleId, e);
+        }
+
+        roleToSave.setName(roleForm.getRoleName());
+        roleToSave.setRoleKey(roleForm.getRoleKey());
+        roleToSave.setEditUsers(roleForm.isCanEditUsers());
+        roleToSave.setEditPermissions(roleForm.isCanEditPermissions());
+        roleToSave.setEditLayouts(roleForm.isCanEditLayouts());
+        roleToSave.setDescription(roleForm.getDescription());
+        roleToSave.setParent(null != parentRole ? parentRole.getId() : role.getId());
+
+        final String date = DateUtil.getCurrentDate();
+        ActivityLogger.logInfo(getClass(), "Modifying Role",
+                "Date: " + date + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId());
+        AdminLogger.log(getClass(), "Modifying Role",
+                "Date: " + date + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId());
+
+        final Role updatedRole;
+        try {
+            updatedRole = this.roleAPI.save(roleToSave);
+        } catch (final DuplicateRoleKeyException e) {
+            throw new ConflictException(
+                    "A role with key '" + roleForm.getRoleKey() + "' already exists", e);
+        } catch (final DuplicateRoleException e) {
+            throw new ConflictException(
+                    "A role named '" + roleForm.getRoleName() + "' already exists under the same parent", e);
+        } catch (final RoleNameException e) {
+            throw new BadRequestException("Role name is not valid: " + roleForm.getRoleName());
+        }
+
+        ActivityLogger.logInfo(getClass(), "Role Modified",
+                "Date: " + date + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId());
+        AdminLogger.log(getClass(), "Role Modified",
+                "Date: " + date + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId());
+
+        return updatedRole;
+    }
 
     /**
      * Saves only the existing layouts on layoutIds, any issue previous added not in the list will be removed

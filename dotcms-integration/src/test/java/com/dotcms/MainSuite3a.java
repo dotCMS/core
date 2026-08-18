@@ -14,6 +14,7 @@ import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
+import com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.SecretsStoreConcurrentWriteRaceTest;
 import com.dotcms.security.apps.SecretsStoreWipeRegressionTest;
@@ -106,6 +107,7 @@ import org.junit.runners.Suite;
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
+        RoleResourceIntegrationTest.class,
 })
 
 public class MainSuite3a {

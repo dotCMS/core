@@ -61,6 +61,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -290,60 +291,138 @@ public class RoleResource implements Serializable {
 			)
 			final RoleForm roleForm) throws DotDataException, DotSecurityException {
 
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		Role role = new Role();
+		role.setName(roleForm.getRoleName());
+		role.setRoleKey(roleForm.getRoleKey());
+		role.setEditUsers(roleForm.isCanEditUsers());
+		role.setEditPermissions(roleForm.isCanEditPermissions());
+		role.setEditLayouts(roleForm.isCanEditLayouts());
+		role.setDescription(roleForm.getDescription());
+
+		if(Objects.nonNull(roleForm.getParentRoleId())) {
+
+			final Role parentRole = roleAPI.loadRoleById(roleForm.getParentRoleId());
+			role.setParent(parentRole.getId());
+		}
+
+		final String date = DateUtil.getCurrentDate();
+
+		ActivityLogger.logInfo(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
+		AdminLogger.log(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
+
+		try {
+
+			role = roleAPI.save(role);
+		}  catch(RoleNameException e) {
+
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new DotDataException(
+					Try.of(()->LanguageUtil.get(user,"Role-Save-Name-Failed")).getOrElse("Role Name not valid"),
+					"Role-Save-Name-Failed", e);
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw e;
+		}
+
+		ActivityLogger.logInfo(getClass(), "Role Created", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+		AdminLogger.log(getClass(), "Role Created", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+
+		return Response.ok(new RoleResponseEntityView(role.toMap())).build();
+	}
+
+	/**
+	 * Shared authorization gate for the role-mutation endpoints (#36936–#36939): requires an
+	 * authenticated backend user with access to the Roles portlet AND the CMS Administrator
+	 * role. Rejections are security-logged.
+	 *
+	 * @return the authenticated, authorized user
+	 */
+	private User initRequireRolesPortletAndCmsAdmin(final HttpServletRequest request,
+			final HttpServletResponse response) throws DotDataException, DotSecurityException {
+
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
 				.requiredFrontendUser(false).rejectWhenNoUser(true)
 				.requiredBackendUser(true).requiredPortlet("roles")
 				.requestAndResponse(request, response).init();
 
-		if (this.roleAPI.doesUserHaveRole(initDataObject.getUser(), this.roleAPI.loadCMSAdminRole())) {
+		final User user = initDataObject.getUser();
+		if (!this.roleAPI.doesUserHaveRole(user, this.roleAPI.loadCMSAdminRole())) {
 
-			final User user = initDataObject.getUser();
-			Role role = new Role();
-			role.setName(roleForm.getRoleName());
-			role.setRoleKey(roleForm.getRoleKey());
-			role.setEditUsers(roleForm.isCanEditUsers());
-			role.setEditPermissions(roleForm.isCanEditPermissions());
-			role.setEditLayouts(roleForm.isCanEditLayouts());
-			role.setDescription(roleForm.getDescription());
-
-			if(Objects.nonNull(roleForm.getParentRoleId())) {
-
-				final Role parentRole = roleAPI.loadRoleById(roleForm.getParentRoleId());
-				role.setParent(parentRole.getId());
-			}
-
-			final String date = DateUtil.getCurrentDate();
-
-			ActivityLogger.logInfo(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
-			AdminLogger.log(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
-
-			try {
-
-				role = roleAPI.save(role);
-			}  catch(RoleNameException e) {
-
-				ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
-				AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
-				throw new DotDataException(
-						Try.of(()->LanguageUtil.get(initDataObject.getUser(),"Role-Save-Name-Failed")).getOrElse("Role Name not valid"),
-						"Role-Save-Name-Failed", e);
-
-			} catch(DotDataException | DotStateException e) {
-				ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
-				AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
-				throw e;
-			}
-
-			ActivityLogger.logInfo(getClass(), "Role Created", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-			AdminLogger.log(getClass(), "Role Created", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
-
-			return Response.ok(new RoleResponseEntityView(role.toMap())).build();
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to modify roles by user "
+					+ user.getUserId() + " from " + request.getRemoteHost());
+			throw new DotSecurityException("User: '" + user.getUserId() + "' not authorized");
 		}
 
-		final String remoteIp = request.getRemoteHost();
-		SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call create a role by user "+
-				initDataObject.getUser().getUserId() + " from " + remoteIp);
-		throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
+		return user;
+	}
+
+	/**
+	 * Updates an existing role — name, key, description, can-grant flags and parent
+	 * (reparent). A null {@code parentRoleId} turns the role into a root role, mirroring the
+	 * legacy DWR {@code RoleAjax#updateRole} behavior. System and locked roles are rejected.
+	 * The caller must be a backend user with access to the Roles portlet and the CMS
+	 * Administrator role.
+	 */
+	@Operation(
+		operationId = "updateRole",
+		summary = "Update a role",
+		description = "Updates an existing role's name, key, description, can-grant flags and parent. " +
+				"PUT is a full replace: every field of the role is overwritten from the request body, so " +
+				"clients must send the complete role representation — omitted fields are reset (booleans " +
+				"default to false, omitted roleKey/description are cleared, omitted parentRoleId reparents " +
+				"to root). A null parentRoleId turns the role into a root role. Reparenting under the role's " +
+				"own descendant is rejected. System and locked roles cannot be updated. Note: the role is " +
+				"updated in place — grants and permissions attached to the role are preserved."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role updated successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - invalid role name, or the reparent would create a hierarchy cycle",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required, or the role is a system or locked role",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role or parent role not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "409",
+					description = "Conflict - duplicate role key, or duplicate role name under the same parent",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView updateRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to update", required = true)
+			final @PathParam("roleid") String roleId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Role information — same shape as POST /v1/roles",
+				required = true,
+				content = @Content(schema = @Schema(implementation = RoleForm.class))
+			)
+			final RoleForm roleForm) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		final Role updatedRole = this.roleHelper.updateRole(roleId, roleForm, user);
+
+		// same response shape as GET /v1/roles/{roleid}, counts included
+		return new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(updatedRole), true, this.roleAPI).get(0));
 	}
 
 	/**
