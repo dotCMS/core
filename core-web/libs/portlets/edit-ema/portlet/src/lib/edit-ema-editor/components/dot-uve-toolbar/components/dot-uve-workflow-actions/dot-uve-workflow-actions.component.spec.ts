@@ -81,7 +81,10 @@ const workflowActionMock = {
     actionInputs: [
         {
             id: '1232',
-            body: []
+            // `DotCMSWorkflowInput.body` is a `Record<string, unknown>`. The tests only pass this
+            // straight through and assert it comes out the other side, so an empty object says
+            // the same thing as the empty array did — and matches the model.
+            body: {}
         }
     ]
 };

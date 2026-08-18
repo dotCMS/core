@@ -7,6 +7,16 @@
         "inlineSources": true,
         "types": []
     },
-    "exclude": ["src/test-setup.ts", "src/**/*.spec.ts", "jest.config.ts", "src/**/*.test.ts"],
+    "exclude": [
+        "src/test-setup.ts",
+        "jest.config.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.test.ts",
+        // 1061 lines of test fixtures whose name does not end in `.spec.ts`, so the globs above
+        // never caught it. Only spec files import it — 18 of them, no production file — and it
+        // pulls in `@dotcms/utils-testing`, which under this config's `types: []` has no jest
+        // globals: 29 of the errors reported here came from that, not from this library.
+        "src/lib/shared/mocks.ts"
+    ],
     "include": ["src/**/*.ts"]
 }

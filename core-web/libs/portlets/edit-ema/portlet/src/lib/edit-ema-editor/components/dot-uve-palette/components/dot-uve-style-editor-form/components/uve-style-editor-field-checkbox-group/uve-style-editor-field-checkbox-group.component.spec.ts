@@ -5,7 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Checkbox } from 'primeng/checkbox';
 
-import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
+import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/types/internal';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './uve-style-editor-field-checkbox-group.component';
 

@@ -635,7 +635,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('hoverTopClipOffset', () => {
             it('should be null when the top edge is visible', () => {
-                expect(spectator.component.hoverTopClipOffset()).toBeNull();
+                expect(spectator.component['hoverTopClipOffset']()).toBeNull();
             });
 
             it('should offset the top toolbar row when the top edge is scrolled above the iframe', () => {
@@ -643,7 +643,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverTopClipOffset()).toBe(50);
+                expect(spectator.component['hoverTopClipOffset']()).toBe(50);
 
                 const actions = spectator.query(byTestId('hover-actions')) as HTMLElement;
                 expect(actions.style.top).toBe('50px');
@@ -655,13 +655,13 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverTopClipOffset()).toBe(scrolledArea.height);
+                expect(spectator.component['hoverTopClipOffset']()).toBe(scrolledArea.height);
             });
         });
 
         describe('hoverBottomClipOffset', () => {
             it('should be null when the bottom edge is visible', () => {
-                expect(spectator.component.hoverBottomClipOffset()).toBeNull();
+                expect(spectator.component['hoverBottomClipOffset']()).toBeNull();
             });
 
             it('should offset the bottom add button when the bottom edge overflows the iframe', () => {
@@ -671,7 +671,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverBottomClipOffset()).toBe(100);
+                expect(spectator.component['hoverBottomClipOffset']()).toBe(100);
 
                 const addBottomButton = spectator.query(
                     byTestId('hover-add-bottom-button')
@@ -684,7 +684,7 @@ describe('DotUveContentletToolsComponent', () => {
         describe('hoverDragButtonTopOffset', () => {
             it('should be null when the natural vertical center is visible', () => {
                 // center = y(200) + height(400) / 2 = 400, within the 800px mock iframe.
-                expect(spectator.component.hoverDragButtonTopOffset()).toBeNull();
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBeNull();
             });
 
             it('should clamp the handle to the top of the iframe when the center is scrolled above it', () => {
@@ -694,7 +694,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // clampedCenter(0) - y(-300) = 300
-                expect(spectator.component.hoverDragButtonTopOffset()).toBe(300);
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBe(300);
 
                 const dragButton = spectator.query(byTestId('hover-drag-button'))
                     ?.parentElement as HTMLElement;
@@ -709,7 +709,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // clampedCenter(800) - y(700) = 100
-                expect(spectator.component.hoverDragButtonTopOffset()).toBe(100);
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBe(100);
             });
 
             it('should never exceed the contentlet height', () => {
@@ -717,7 +717,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverDragButtonTopOffset()).toBe(scrolledArea.height);
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBe(scrolledArea.height);
             });
         });
 
