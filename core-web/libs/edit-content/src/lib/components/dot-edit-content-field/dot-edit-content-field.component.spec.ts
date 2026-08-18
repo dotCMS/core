@@ -81,16 +81,6 @@ interface DotEditFieldTestBed {
     outsideFormControl?: boolean; //If the component have [formControlName] hardcoded inside this ContentField component
 }
 
-/* We need this declare to dont have import errors from CommandType of Tiptap */
-declare module '@tiptap/core' {
-    interface Commands {
-        [key: string]: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [key: string]: (...args) => any;
-        };
-    }
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;
 
