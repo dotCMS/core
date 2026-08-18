@@ -98,6 +98,8 @@
                                     step="1"
                                     class="text-right font-semibold"
                                     [formField]="weightField"
+                                    (blur)="onWeightCommitted(row.id)"
+                                    (keydown.enter)="onWeightCommitted(row.id)"
                                     [attr.aria-label]="'experiments.configure.variants.weight' | dm"
                                     data-testid="variant-weight-input" />
                             } @else {

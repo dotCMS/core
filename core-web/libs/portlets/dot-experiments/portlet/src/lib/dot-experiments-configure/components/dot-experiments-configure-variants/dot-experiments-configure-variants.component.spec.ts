@@ -461,6 +461,122 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(weightInput(1).value).toBe(String(SECOND_VARIANT.weight));
         });
 
+        /**
+         * The weights only ever travel as a set that adds up to 100 — the backend rejects anything
+         * else on construction — so the row just committed decides its own share and the rest is
+         * spread over the others, rather than left for the user to work out.
+         */
+        describe('completing the split on commit', () => {
+            const commitWeight = (rowIndex: number, value: string) => {
+                typeWeight(rowIndex, value);
+                spectator.dispatchFakeEvent(weightInput(rowIndex), 'blur');
+                spectator.detectChanges();
+            };
+
+            it('should give the rest to the only other row', () => {
+                render();
+
+                commitWeight(0, '20');
+
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 20 },
+                    { id: SECOND_VARIANT.id, weight: 80 }
+                ]);
+            });
+
+            it('should spread the rest over the others in the proportion they had', () => {
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render([
+                    { id: CONTROL_VARIANT.id, weight: 50 },
+                    { id: SECOND_VARIANT.id, weight: 30 },
+                    { id: THIRD_VARIANT.id, weight: 20 }
+                ]);
+
+                commitWeight(0, '20');
+
+                // The other two held 30 and 20 of 50, so they split the 80 left as 48 and 32.
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 20 },
+                    { id: SECOND_VARIANT.id, weight: 48 },
+                    { id: THIRD_VARIANT.id, weight: 32 }
+                ]);
+            });
+
+            it('should still add up to exactly 100 when the shares do not divide', () => {
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render([
+                    { id: CONTROL_VARIANT.id, weight: 40 },
+                    { id: SECOND_VARIANT.id, weight: 30 },
+                    { id: THIRD_VARIANT.id, weight: 30 }
+                ]);
+
+                commitWeight(0, '33');
+
+                expect(weightRows().reduce((sum, { weight }) => sum + (weight ?? 0), 0)).toBe(
+                    TOTAL_WEIGHT
+                );
+            });
+
+            it('should share the rest evenly when the others hold nothing', () => {
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render([
+                    { id: CONTROL_VARIANT.id, weight: 100 },
+                    { id: SECOND_VARIANT.id, weight: 0 },
+                    { id: THIRD_VARIANT.id, weight: 0 }
+                ]);
+
+                commitWeight(0, '50');
+
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 50 },
+                    { id: SECOND_VARIANT.id, weight: 25 },
+                    { id: THIRD_VARIANT.id, weight: 25 }
+                ]);
+            });
+
+            it('should leave the others alone while the total already adds up', () => {
+                render();
+
+                commitWeight(0, String(CONTROL_VARIANT.weight));
+
+                expect(weightRows()).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: CONTROL_VARIANT.weight },
+                    { id: SECOND_VARIANT.id, weight: SECOND_VARIANT.weight }
+                ]);
+            });
+
+            it('should leave the others alone on a value the range rules reject', () => {
+                render();
+
+                commitWeight(0, '120');
+
+                expect(weightRows()[1]).toEqual({
+                    id: SECOND_VARIANT.id,
+                    weight: SECOND_VARIANT.weight
+                });
+            });
+
+            it('should leave the others alone on a cleared row, which is not a decision yet', () => {
+                render();
+
+                commitWeight(0, '');
+
+                expect(weightRows()[1]).toEqual({
+                    id: SECOND_VARIANT.id,
+                    weight: SECOND_VARIANT.weight
+                });
+            });
+        });
+
         it('should carry the range of a single weight as the input own attributes', () => {
             // The schema's `min`/`max` reach the DOM through `[formField]`, so the template states
             // neither and the two can never disagree.

@@ -251,6 +251,45 @@ export class DotExperimentsConfigureVariantsComponent {
         this.#splitWeightsEvenly(this.store.$variants());
     }
 
+    /**
+     * Completes the split from the row just committed: whatever it leaves over is spread across the
+     * other rows in the proportion they already had, so the total is 100 by construction instead of
+     * something the user has to reach by adding three numbers in their head.
+     *
+     * On commit — blur or Enter — rather than on every keystroke: rebalancing per character makes the
+     * other rows jump while a number is still half typed. Typing alone changes nothing but its own
+     * row.
+     *
+     * Left alone in the three cases where there is nothing to spread from: an empty row (a cleared
+     * input is not a decision yet), a value the range rules already reject, and a total that is
+     * already 100. Rows with no weight between them share the remainder evenly, since there are no
+     * proportions to keep.
+     */
+    onWeightCommitted(rowId: string): void {
+        const rows = this.$field()().value();
+        const index = rows.findIndex(({ id }) => id === rowId);
+        const committed = rows[index]?.weight;
+
+        if (
+            index === -1 ||
+            committed === null ||
+            committed === undefined ||
+            committed < 0 ||
+            committed > TOTAL_WEIGHT ||
+            totalWeight(rows) === TOTAL_WEIGHT
+        ) {
+            return;
+        }
+
+        const others = rows.filter((_, position) => position !== index);
+
+        if (!others.length) {
+            return;
+        }
+
+        this.$field()().value.set(this.#spreadOver(rows, index, TOTAL_WEIGHT - committed));
+    }
+
     /** Opens the Add Variant dialog; a cancelled dialog closes with nothing and changes nothing. */
     onAddVariant(): void {
         const data: DotExperimentsAddVariantDialogData = {
@@ -316,6 +355,40 @@ export class DotExperimentsConfigureVariantsComponent {
      * (`ExperimentsAPIImpl.addVariant`). Naming it here leaves the shell's binding with nothing to
      * report — it compares against what the store already holds — so the edit still travels once.
      */
+    /**
+     * Rows with `remaining` shared over every row but `index`, keeping their relative sizes. The
+     * rounding drift lands on the largest of them, so the rows always add up to exactly 100.
+     */
+    #spreadOver(
+        rows: VariantWeightFormRow[],
+        index: number,
+        remaining: number
+    ): VariantWeightFormRow[] {
+        const others = rows.filter((_, position) => position !== index);
+        const othersTotal = totalWeight(others);
+        const shares = others.map(({ weight }) =>
+            othersTotal > 0
+                ? Math.round(((weight ?? 0) / othersTotal) * remaining)
+                : Math.floor(remaining / others.length)
+        );
+
+        const drift = remaining - shares.reduce((sum, share) => sum + share, 0);
+
+        if (drift !== 0) {
+            const largest = shares.reduce(
+                (best, share, position) => (share > shares[best] ? position : best),
+                0
+            );
+            shares[largest] += drift;
+        }
+
+        let position = 0;
+
+        return rows.map((row, rowIndex) =>
+            rowIndex === index ? row : { ...row, weight: shares[position++] }
+        );
+    }
+
     #splitWeightsEvenly(variants: Variant[]): void {
         if (!variants.length) {
             return;
