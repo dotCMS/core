@@ -184,7 +184,7 @@ export enum GOAL_PARAMETERS {
 /**
  * Allowed condition operators by type of goal
  */
-export const AllowedConditionOperatorsByTypeOfGoal = {
+export const AllowedConditionOperatorsByTypeOfGoal: Partial<Record<GOAL_TYPES, string>> = {
     [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.URL,
     [GOAL_TYPES.URL_PARAMETER]: 'queryParameter'
 };
