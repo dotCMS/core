@@ -154,23 +154,41 @@ describe('PushPublishService', () => {
         req.flush(mockResponse);
     });
 
-    it('should do a post request and push publish an asset with no filter', () => {
-        const formValue: DotPushPublishData = { ...mockFormValue, filterKey: undefined };
-        const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = format(new Date(), 'HH-mm');
+    it('should escape a filter key carrying reserved characters', () => {
+        // The gap the encoding fix left. Every other assertion in this block pins `timezoneId`,
+        // whose only reserved character is a space — raw, that is ugly but harmless. A raw `&` or `=`
+        // is not: it terminates the value, every parameter after it is silently lost, and the push
+        // fires with the wrong filter while nothing errors. Asserted on the parameter rather than
+        // the whole body so the test names what it defends.
+        const formValue: DotPushPublishData = { ...mockFormValue, filterKey: 'a&b=c d' };
 
-        spectator.service.pushPublishContent('1234567890', formValue, false).subscribe((items) => {
-            expect(items).toEqual(mockResponse);
-        });
+        spectator.service.pushPublishContent('1234567890', formValue, false).subscribe();
 
         const req = spectator.expectOne(
             '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
             HttpMethod.POST
         );
-        expect(req.request.body).toBe(
-            `assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=${currentDateStr}&remotePublishExpireTime=${currentTimeStr}&timezoneId=Costa%20Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=`
+
+        expect(req.request.body).toContain('filterKey=a%26b%3Dc%20d');
+        req.flush(mockResponse);
+    });
+
+    it('should comma-join several environments into one escaped parameter', () => {
+        // `whoToSend` is the value whose wire format the encoding fix actually moved, from a literal
+        // `env1,env2` to `env1%2Cenv2`. Every other assertion here uses a single environment, so the
+        // one parameter that materially changed had nothing covering it. Both forms arrive the same:
+        // the container percent-decodes before `getParameter`, and `RemotePublishAjaxAction` splits
+        // on "," afterwards.
+        const formValue: DotPushPublishData = { ...mockFormValue, environment: ['env1', 'env2'] };
+
+        spectator.service.pushPublishContent('1234567890', formValue, false).subscribe();
+
+        const req = spectator.expectOne(
+            '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish',
+            HttpMethod.POST
         );
 
+        expect(req.request.body).toContain('whoToSend=env1%2Cenv2');
         req.flush(mockResponse);
     });
 
