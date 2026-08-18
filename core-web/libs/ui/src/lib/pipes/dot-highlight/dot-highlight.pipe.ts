@@ -18,6 +18,19 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
  * <div [innerHTML]="'Hello World' | dotHighlight:'World'"></div>
  * <!-- Output: Hello <span class="highlight">World</span> -->
  */
+const HTML_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+
+/** `&` first is implicit in the character class: each character is replaced exactly once. */
+function escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
+}
+
 @Pipe({
     name: 'dotHighlight'
 })
@@ -39,14 +52,19 @@ export class DotHighlightPipe implements PipeTransform {
             // Split text into parts that match and don't match the search term
             const parts = textStr.split(new RegExp(`(${searchRegex})`, 'gi'));
 
-            // Wrap matching parts with highlight span
+            // Wrap matching parts with highlight span. Every part is escaped first: the text is
+            // author-supplied (content names, keys, descriptions) and the result below is handed
+            // to `bypassSecurityTrustHtml`, so anything not escaped here would be injected as
+            // live markup. Escaping leaves the `<span>` we add as the only real HTML.
             const highlighted = parts
                 .map((part) => {
+                    const escaped = escapeHtml(part);
+
                     if (part.toLowerCase() === searchStr.toLowerCase()) {
-                        return `<span class="highlight">${part}</span>`;
+                        return `<span class="highlight">${escaped}</span>`;
                     }
 
-                    return part;
+                    return escaped;
                 })
                 .join('');
 

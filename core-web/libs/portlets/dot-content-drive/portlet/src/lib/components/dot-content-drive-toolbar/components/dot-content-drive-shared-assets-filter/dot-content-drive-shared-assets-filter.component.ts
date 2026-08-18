@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotChipFilterComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
     SHARED_ASSETS_DISABLED_VALUE,

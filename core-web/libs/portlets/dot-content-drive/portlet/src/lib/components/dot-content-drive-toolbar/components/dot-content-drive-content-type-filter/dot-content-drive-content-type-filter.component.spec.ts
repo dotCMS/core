@@ -22,7 +22,7 @@ import {
     DotCMSContentType,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotChipFilterComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveContentTypeFilterComponent } from './dot-content-drive-content-type-filter.component';

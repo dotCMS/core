@@ -6,13 +6,7 @@ import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
-    DotChipFilterComponent,
-    DotFilterListItemComponent
-} from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
@@ -81,9 +75,6 @@ interface StatusOption {
 export class DotPublishingQueueStatusFilterComponent {
     readonly #store = inject(DotPublishingQueueStore);
     readonly #dotMessageService = inject(DotMessageService);
-
-    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
-    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly LISTBOX_SCROLL_HEIGHT = '320px';
 
     /** Listbox options, deduplicated by translated label. Order follows

@@ -9,7 +9,7 @@ import {
 import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotChipFilterComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSharedAssetsFilterComponent } from './dot-content-drive-shared-assets-filter.component';
