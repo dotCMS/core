@@ -8,7 +8,7 @@ import {
     withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, of, pipe } from 'rxjs';
+import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
@@ -175,9 +175,17 @@ export function withLocales() {
                              * by its identifier and locale id and reloads the editor for that inode.
                              */
                             if (locale.translated) {
+                                const id = store.currentIdentifier();
+
+                                // No identifier means nothing has been loaded yet, so there is
+                                // no content to fetch in the target locale.
+                                if (!id) {
+                                    return EMPTY;
+                                }
+
                                 return dotEditContentService
                                     .getContentById({
-                                        id: store.currentIdentifier(),
+                                        id,
                                         languageId: locale.id
                                     })
                                     .pipe(
@@ -250,6 +258,15 @@ export function withLocales() {
                                     } satisfies BinaryOptionDialogData
                                 });
 
+                                // `DialogService.open` returns null when it refuses to open a
+                                // duplicate — the selector is already up and the user's answer
+                                // will arrive through that dialog instead. `EMPTY`, not a bare
+                                // `return`: this is a `switchMap` projection and must produce
+                                // an observable.
+                                if (!ref) {
+                                    return EMPTY;
+                                }
+
                                 ref.onClose
                                     .pipe(
                                         take(1),
@@ -268,8 +285,11 @@ export function withLocales() {
                                         const defaultSchemeId =
                                             schemeIds.length === 1 ? schemeIds[0] : null;
                                         // Parse the actions as an object with the schemeId as the key
+                                        const defaultScheme = defaultSchemeId
+                                            ? parsedSchemes[defaultSchemeId]
+                                            : undefined;
                                         const parsedCurrentActions = parseCurrentActions(
-                                            parsedSchemes[defaultSchemeId]?.actions || []
+                                            defaultScheme?.actions || []
                                         );
                                         // Remember the version we came from: the new translation has
                                         // no inode yet, so related-content navigation uses this as
@@ -287,7 +307,11 @@ export function withLocales() {
                                             initialContentletState: 'copy',
                                             isManualTranslation: copyType === 'manual',
                                             error: null,
-                                            formValues: null,
+                                            // `{}` rather than `null`, matching the initial
+                                            // state. The only reader spreads it
+                                            // (`...$formValues()` in the sidebar), where the
+                                            // two are indistinguishable.
+                                            formValues: {},
                                             translationSourceInode,
                                             contentlet:
                                                 copyType === 'populate'

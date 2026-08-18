@@ -374,7 +374,9 @@ export const isSingleColumnLayout = (layout: Tab['layout']): boolean =>
  * @param formData - The original form data to be transformed.
  * @returns The transformed form data with filtered fields and organized tabs.
  */
-export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
+// Nullable: the store's `contentType` is null until it loads, and the guard on the first line was
+// already written for exactly that.
+export const transformFormDataFn = (contentType: DotCMSContentType | null): Tab[] => {
     if (!contentType) {
         return [];
     }

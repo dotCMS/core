@@ -6,7 +6,8 @@
         "noImplicitOverride": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "strict": false,
+        "strict": true,
+        "noPropertyAccessFromIndexSignature": true,
         "module": "preserve",
         "moduleResolution": "bundler",
         "lib": ["dom", "dom.iterable", "es2022"]

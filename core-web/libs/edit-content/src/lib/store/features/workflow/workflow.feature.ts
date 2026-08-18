@@ -77,7 +77,10 @@ export function withWorkflow() {
              */
             showWorkflowActions: computed(() => {
                 const currentSchemeId = store.currentSchemeId();
-                const currentActions = store.currentContentActions()[currentSchemeId] || [];
+                // No scheme selected yet (new content) means no actions to show.
+                const currentActions = currentSchemeId
+                    ? store.currentContentActions()[currentSchemeId] || []
+                    : [];
 
                 return currentActions.length > 0;
             }),
@@ -107,7 +110,11 @@ export function withWorkflow() {
              * @returns {DotCMSWorkflowAction | undefined} First workflow action with reset capability shown on EDITING
              */
             getResetWorkflowAction: computed(() => {
-                const currentActions = store.currentContentActions()[store.currentSchemeId()] || [];
+                const currentSchemeId = store.currentSchemeId();
+                // No scheme selected yet (new content) means there is no action to reset.
+                const currentActions = currentSchemeId
+                    ? store.currentContentActions()[currentSchemeId] || []
+                    : [];
 
                 return (
                     currentActions.find(
@@ -146,7 +153,8 @@ export function withWorkflow() {
              * For new content, returns the first step of the selected scheme.
              * For existing content, returns the current step from the workflow status.
              *
-             * @returns {WorkflowStep} The current workflow step
+             * @returns {WorkflowStep | null} The current workflow step, or null when new content
+             * has no scheme selected yet
              */
             getCurrentStep: computed(() => {
                 const contentlet = store.contentlet();
@@ -156,7 +164,8 @@ export function withWorkflow() {
                     const schemes = store.schemes();
                     const currentSchemeId = store.currentSchemeId();
 
-                    return schemes[currentSchemeId]?.firstStep;
+                    // Until a scheme is picked there is no first step to report.
+                    return currentSchemeId ? schemes[currentSchemeId]?.firstStep : undefined;
                 }
 
                 // Existing content - get current step from workflow status

@@ -235,7 +235,9 @@ export class DotEditContentTextAreaComponent extends BaseWrapperField {
      * Handle editor change
      * @param newEditor - The new editor
      */
-    readonly handleEditorChange = signalMethod<AvailableEditorTextArea>((newEditor) => {
+    // `| null` because `$contentEditorUsed` is nullable until the editor is resolved and this is
+    // called with that signal directly — which the body was already written for.
+    readonly handleEditorChange = signalMethod<AvailableEditorTextArea | null>((newEditor) => {
         if (!newEditor) {
             return;
         }

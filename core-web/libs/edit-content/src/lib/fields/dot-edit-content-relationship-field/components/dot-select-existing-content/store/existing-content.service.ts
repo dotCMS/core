@@ -165,7 +165,9 @@ export class ExistingContentService {
     #getLanguages(): Observable<LanguagesMap> {
         return this.#dotLanguagesService.get().pipe(
             map((languages) =>
-                languages.reduce((acc, lang) => {
+                // The accumulator's type has to be given explicitly: from the `{}` seed alone
+                // TS infers `{}`, which has no index signature to write to.
+                languages.reduce<LanguagesMap>((acc, lang) => {
                     acc[lang.id] = { ...lang };
 
                     return acc;

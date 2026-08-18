@@ -33,7 +33,13 @@ export const getSelectedFromContentlet = (
         return [];
     }
 
-    return selectedCategories.map((obj: DotCategoryFieldKeyValueObj) => {
+    // Annotated as the raw wire shape, not `DotCategoryFieldKeyValueObj`. The contentlet stores
+    // each selected category as a single-entry map — `{ <categoryKey>: '<Category Name>' }` —
+    // which is why the body reads `Object.keys(obj)[0]`. The old annotation claimed the objects
+    // were already `{ key, value }` pairs, and under that reading `Object.keys(obj)[0]` would
+    // be the literal string `'key'`; it type-checked only because the index made it `any`.
+    // Converting to `{ key, value }` is this function's job — see the return type.
+    return selectedCategories.map((obj: Record<string, string>) => {
         const key = Object.keys(obj)[0];
 
         return { key, value: obj[key] };
@@ -54,7 +60,9 @@ export const transformToSelectedObject = (
             key: obj.key,
             value: obj.name,
             inode: obj.inode,
-            path: getParentPath(obj.parentList)
+            // `?? []` for an unset parentList, matching `transformCategory` below — a category
+            // with no parents has an empty path, not an absent one.
+            path: getParentPath(obj.parentList ?? [])
         };
     });
 };
@@ -78,7 +86,11 @@ const transformCategory = (
     return {
         key,
         inode,
-        value: categoryName || category?.name,
+        // `|| ''` closes the chain: `categoryName` is required on `DotCategory` but `name` — the
+        // fallback for an empty one — is optional, so the expression was `string | undefined`
+        // while `value` is declared `string`. Empty string is what Angular already rendered for
+        // the undefined case; `category?.name` dropped its redundant `?.` (the param is required).
+        value: categoryName || category.name || '',
         hasChildren,
         clicked: hasChildren && keyParentPath.includes(key),
         path
@@ -275,7 +287,9 @@ export const getMenuItemsFromKeyParentPath = (
 ): DotCategoryFieldKeyValueObj[] => {
     const flatArray = array.flat();
 
-    return keyParentPath.reduce((array, key) => {
+    // The accumulator's type has to be given explicitly: from the `[]` seed alone TS infers
+    // `never[]`, which nothing can be pushed into.
+    return keyParentPath.reduce<DotCategoryFieldKeyValueObj[]>((array, key) => {
         const category = flatArray.find((item) => item.key === key);
 
         if (category) {

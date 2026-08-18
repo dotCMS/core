@@ -235,7 +235,9 @@ export class DotEditContentWYSIWYGFieldComponent extends BaseWrapperField {
      * Handle editor change
      * @param newEditor - The new editor
      */
-    readonly handleEditorChange = signalMethod<AvailableEditor>((newEditor) => {
+    // `| null` because `$contentEditorUsed` is nullable until the editor is resolved and this is
+    // called with that signal directly — which the body was already written for.
+    readonly handleEditorChange = signalMethod<AvailableEditor | null>((newEditor) => {
         if (!newEditor) {
             return;
         }

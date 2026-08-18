@@ -157,7 +157,15 @@ export class DotCategoryFieldComponent
             return;
         }
 
-        const inodes = this.store.selected().map((category) => category.inode);
+        // `inode` is optional on the model — `getSelectedFromContentlet` builds `{ key, value }`
+        // pairs from the contentlet without one — so the selection can contain items that have no
+        // inode to write. They are dropped rather than passed through: the form value is a list of
+        // inodes, and an `undefined` entry would have travelled into the saved payload.
+        const inodes = this.store
+            .selected()
+            .map((category) => category.inode)
+            .filter((inode): inode is string => !!inode);
+
         if (inodes.length === 0) {
             return;
         }

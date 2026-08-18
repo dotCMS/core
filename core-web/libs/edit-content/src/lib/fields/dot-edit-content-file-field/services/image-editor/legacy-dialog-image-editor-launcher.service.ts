@@ -58,6 +58,15 @@ export class LegacyDialogImageEditorLauncher implements ImageEditorLauncher {
                 data
             });
 
+            // `DialogService.open` returns null when it refuses to open a duplicate — the editor
+            // is already up, so there is no second dialog to listen to. Complete without
+            // emitting rather than wiring a `message` listener that could never be torn down.
+            if (!dialogRef) {
+                subscriber.complete();
+
+                return;
+            }
+
             const onMessage = (event: MessageEvent<ImageEditorMessage>) => {
                 if (event.origin !== window.location.origin) {
                     return;

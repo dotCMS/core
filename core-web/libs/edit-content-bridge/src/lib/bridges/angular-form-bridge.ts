@@ -547,6 +547,13 @@ export class AngularFormBridge implements FormBridge {
                 }
             });
 
+            // `DialogService.open` returns null when it refuses to open a duplicate — the
+            // browser modal is already up. Keep the existing `#dialogRef` in that case so the
+            // controller returned below still closes the dialog the caller can see.
+            if (!dialogRef) {
+                return;
+            }
+
             this.#dialogRef = dialogRef;
 
             dialogRef.onClose.subscribe((content) => {

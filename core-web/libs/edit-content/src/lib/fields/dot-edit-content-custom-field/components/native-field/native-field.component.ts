@@ -23,7 +23,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
+import { createFormBridge, DotCustomFieldApiWindow, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -136,7 +136,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             }
         });
 
-        this.#window['DotCustomFieldApi'] = this.#formBridge;
+        (this.#window as DotCustomFieldApiWindow).DotCustomFieldApi = this.#formBridge;
         this.$isBridgeReady.set(true);
     }
 
