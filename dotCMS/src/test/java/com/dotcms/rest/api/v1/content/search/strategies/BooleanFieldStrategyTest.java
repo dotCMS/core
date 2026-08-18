@@ -17,10 +17,19 @@ import static org.junit.Assert.assertEquals;
  * <p>The coercion has to accept the db-style option values these fields are actually authored with.
  * dotCMS's own Radio help text gives {@code True|1 False|0} as the example and the product ships
  * {@code Host.runDashboard} as {@code Yes|1 / No|0}, so {@code 1} and {@code 0} are first-class
- * inputs here — and commons-lang's {@code BooleanUtils} does not recognise either, which is exactly
- * why {@link com.dotcms.contenttype.model.field.SelectableValuesField#check()} normalises them
- * before it calls that util. Getting this wrong is worse than erroring: it silently returns the
- * OPPOSITE set of rows.</p>
+ * inputs here.</p>
+ *
+ * <p>commons-lang3 handles them: verified against the resolved 3.18.0, {@code toBoolean("1")} is
+ * {@code true} and {@code toBoolean("0")} is {@code false} — its single-character branch matches
+ * {@code '1'}/{@code '0'} alongside {@code y/t/n/f}. That is a property of the library version, not
+ * of this class, which is precisely why it is pinned by a test: a downgrade to a release without
+ * that branch would otherwise invert every BOOL filter silently, and returning the OPPOSITE rows is
+ * worse than erroring.</p>
+ *
+ * <p>{@link com.dotcms.contenttype.model.field.SelectableValuesField#check()} normalises
+ * {@code 1}/{@code 0} before calling the same util. That is belt-and-braces predating the library
+ * support, not evidence the support is missing — a reading that has twice been mistaken for a bug
+ * here.</p>
  */
 public class BooleanFieldStrategyTest {
 
@@ -38,9 +47,9 @@ public class BooleanFieldStrategyTest {
     }
 
     /**
-     * The database representation. {@code BooleanUtils.toBoolean("1")} returns {@code false}, so
-     * without the same normalisation {@code SelectableValuesField.check()} applies, filtering by the
-     * value the field's own options are authored with returns the opposite rows.
+     * The database representation, which is what a field authored {@code Yes|1 / No|0} actually
+     * stores. These two assertions are the ones that would break under a commons-lang3 downgrade, and
+     * breaking them means the filter returns the opposite rows rather than failing.
      */
     @Test
     public void dbStyleOneIsTrueAndZeroIsFalse() {
