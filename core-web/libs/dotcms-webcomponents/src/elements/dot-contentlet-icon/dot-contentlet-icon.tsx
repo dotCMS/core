@@ -167,6 +167,8 @@ export class DotContentletIcon {
     private getIconName(): {
         icon: string;
     } {
-        return map[this.ext] || map['ukn'];
+        // `ext` is parsed out of the icon name and absent when it does not match, which is what
+        // the `ukn` fallback on this line has always been for.
+        return (this.ext ? map[this.ext] : undefined) || map['ukn'];
     }
 }

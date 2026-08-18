@@ -46,8 +46,10 @@ export class DotBinaryFilePreviewComponent {
 
     private clearFile(): void {
         this.delete.emit();
-        this.fileName = null;
-        this.previewUrl = null;
+        // Back to the props' own declared default rather than null: `render` gates on `fileName`
+        // being truthy, so both are equivalent, and `''` is what the component started with.
+        this.fileName = '';
+        this.previewUrl = '';
     }
 
     private getPreviewElement() {

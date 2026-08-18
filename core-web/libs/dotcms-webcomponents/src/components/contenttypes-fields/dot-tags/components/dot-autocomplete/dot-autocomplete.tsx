@@ -43,9 +43,13 @@ export class DotAutocompleteComponent {
     @Prop({ reflect: true })
     debounce = 300;
 
-    /** Function or array of string to get the data to use for the autocomplete search */
+    /**
+     * Function or array of string to get the data to use for the autocomplete search.
+     *
+     * Null until a consumer supplies one, which `componentDidLoad` checks before initialising.
+     */
     @Prop()
-    data: () => Promise<string[]> | string[] = null;
+    data: (() => Promise<string[]> | string[]) | null = null;
 
     @Event()
     selection!: EventEmitter<string>;
@@ -57,7 +61,8 @@ export class DotAutocompleteComponent {
     private readonly id = `autoComplete${new Date().getTime()}`;
     private enteredSuggestionList = false;
 
-    private keyEvent = {
+    /** Keyed by `KeyboardEvent.key`, so most keys miss — `handleKeyDown` checks before invoking. */
+    private keyEvent: Record<string, ((value: string) => void) | undefined> = {
         ArrowDown: this.enteredList.bind(this),
         ArrowUp: this.enteredList.bind(this),
         Enter: this.emitEnter.bind(this),
@@ -101,16 +106,19 @@ export class DotAutocompleteComponent {
     private handleKeyDown(event: KeyboardEvent): void {
         const { value } = this.getInputElement();
 
-        if (value && this.keyEvent[event.key]) {
+        const handler = this.keyEvent[event.key];
+
+        if (value && handler) {
             event.preventDefault();
-            this.keyEvent[event.key](value);
+            handler(value);
         }
     }
 
     private handleBlur(event: FocusEvent): void {
         event.preventDefault();
         setTimeout(() => {
-            if (document.activeElement.parentElement !== this.getResultList()) {
+            // Null when nothing holds focus, in which case focus certainly is not in the list.
+            if (document.activeElement?.parentElement !== this.getResultList()) {
                 this.clean();
                 this.lostFocus.emit(event);
             }
@@ -124,11 +132,17 @@ export class DotAutocompleteComponent {
     }
 
     private cleanOptions(): void {
-        this.getResultList().innerHTML = '';
+        const list = this.getResultList();
+
+        if (list) {
+            list.innerHTML = '';
+        }
     }
 
     private enteredList(): void {
-        this.enteredSuggestionList = !this.getResultList().attributes['hidden'];
+        // `getNamedItem` rather than a string index: `NamedNodeMap` has no index signature, and the
+        // list itself is absent until the autocomplete has rendered its first suggestions.
+        this.enteredSuggestionList = !this.getResultList()?.attributes.getNamedItem('hidden');
     }
 
     private emitEnter(select: string): void {
@@ -138,7 +152,7 @@ export class DotAutocompleteComponent {
         this.clean();
     }
 
-    private getInputElement(): HTMLInputElement {
+    private getInputElement(): HTMLInputElement | null {
         return this.el.querySelector(`#${this.id}`);
     }
 
@@ -165,7 +179,7 @@ export class DotAutocompleteComponent {
             },
             events: {
                 input: {
-                    selection: (event) => {
+                    selection: (event: Event) => {
                         event.preventDefault();
                         this.focusOnInput();
                         this.clean();
@@ -183,10 +197,11 @@ export class DotAutocompleteComponent {
     }
 
     private focusOnInput(): void {
-        this.getInputElement().focus();
+        this.getInputElement()?.focus();
     }
 
-    private getResultList(): HTMLElement {
+    /** Null until the autocomplete has rendered its suggestion list, which `clearList` already checks. */
+    private getResultList(): HTMLElement | null {
         return this.el.querySelector(`#${this.getResultListId()}`);
     }
 
