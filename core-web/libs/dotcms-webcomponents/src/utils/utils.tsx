@@ -194,7 +194,7 @@ export function updateStatus(
  * @param string message
  * @returns JSX.Element
  */
-export function getTagError(show: boolean, message: string) {
+export function getTagError(show: boolean, message: string | undefined) {
     return show && isStringType(message) ? (
         <span class="dot-field__error-message">{message}</span>
     ) : null;
