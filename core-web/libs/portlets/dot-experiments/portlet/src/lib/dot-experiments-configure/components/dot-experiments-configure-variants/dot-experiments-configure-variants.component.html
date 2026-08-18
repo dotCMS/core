@@ -116,11 +116,12 @@
 
                     <!-- Editing content is a UVE round-trip, which this screen does not do yet. -->
                     <div
+                        class="flex justify-end"
                         [pTooltip]="'experiments.configure.variants.edit-content.unavailable' | dm"
                         tooltipPosition="bottom"
                         data-testid="variant-edit-content-tooltip">
                         <p-button
-                            [outlined]="true"
+                            [text]="true"
                             size="small"
                             [disabled]="true"
                             [label]="
@@ -167,7 +168,8 @@
                     {{ $totalWeight() }}%
                 </span>
                 <p-button
-                    [outlined]="true"
+                    class="justify-self-end"
+                    [text]="true"
                     size="small"
                     [disabled]="$isSplitEvenlyDisabled()"
                     (onClick)="onSplitEvenly()"
