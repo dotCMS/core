@@ -2972,7 +2972,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - access denied to site
+          description: "Forbidden - requires CMS admin, or access denied to site"
       summary: Test a dotAI provider connection
       tags:
       - AI

@@ -40,6 +40,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Exposes dotAI provider configuration metadata: which providers are available, which
@@ -99,6 +100,10 @@ public class AiProviderResource {
      * such masked field is resolved against the real value already stored for {@code siteId}
      * before testing — mirroring how {@code PUT /v1/ai/completions/config} preserves unmasked
      * credentials on save — so the real secret never has to round-trip through the browser.
+     * Resolution only happens when the posted {@code provider} and {@code endpoint} match what's
+     * actually stored, so a caller can't pair a masked credential with a different provider or an
+     * attacker-controlled {@code endpoint} to exfiltrate the real secret to it. Requires CMS admin,
+     * matching {@code PUT /v1/ai/completions/config}.
      *
      * @param request     the HttpServletRequest object.
      * @param response    the HttpServletResponse object.
@@ -131,7 +136,7 @@ public class AiProviderResource {
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
-                    description = "Forbidden - access denied to site",
+                    description = "Forbidden - requires CMS admin, or access denied to site",
                     content = @Content(mediaType = "application/json"))
     })
     @POST
@@ -149,6 +154,12 @@ public class AiProviderResource {
                                          final String body) {
 
         final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).init().getUser();
+
+        if (!user.isAdmin()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Only CMS admins can test the AI provider connection"))
+                    .build();
+        }
 
         final Capability parsedCapability;
         try {
@@ -199,24 +210,50 @@ public class AiProviderResource {
     /**
      * Resolves any {@code "*****"} masked credential field in {@code body} against the real value
      * from the currently-stored {@code providerConfig}'s {@code sectionKey} section (e.g. {@code
-     * chat}, {@code embeddings}, {@code image}). Returns {@code body} unchanged when there's
-     * nothing masked, nothing stored yet, or the stored section can't be parsed.
+     * chat}, {@code embeddings}, {@code image}). Returns {@code body} unchanged — masked fields
+     * and all — when there's nothing masked, nothing stored yet, the stored section can't be
+     * parsed, or {@link #targetsStoredDestination} rejects the posted {@code provider}/{@code
+     * endpoint} as not matching what's stored; the caller then surfaces the still-masked
+     * credential as a "re-enter it" failure rather than silently using it.
      */
-    private static String resolveMaskedCredentials(final String body,
-                                                   final String storedProviderConfigJson,
-                                                   final String sectionKey) {
+    static String resolveMaskedCredentials(final String body,
+                                           final String storedProviderConfigJson,
+                                           final String sectionKey) {
         if (StringUtils.isBlank(storedProviderConfigJson) || !ProviderConfigMerger.containsMasked(body)) {
             return body;
         }
         try {
+            final JsonNode incoming = MAPPER.readTree(body);
             final JsonNode storedSection = MAPPER.readTree(storedProviderConfigJson).get(sectionKey);
-            if (storedSection == null || !storedSection.isObject()) {
+            if (storedSection == null || !storedSection.isObject()
+                    || !targetsStoredDestination(incoming, storedSection)) {
                 return body;
             }
             return ProviderConfigMerger.merge(body, storedSection.toString());
         } catch (final Exception e) {
             return body;
         }
+    }
+
+    /**
+     * Guards against pairing a masked credential (obtainable by anyone who can {@code GET} the
+     * redacted config) with a different {@code provider} or a caller-controlled {@code endpoint}
+     * — which would otherwise resolve to the real stored secret and send it to a destination the
+     * caller chose rather than the one it was actually saved for. Only {@code provider} and {@code
+     * endpoint} are checked: every other field (model, temperature, timeout, region, etc.) doesn't
+     * change where the request — and the secret riding along with it — is sent, so those can
+     * differ freely between the posted body and the stored config.
+     */
+    static boolean targetsStoredDestination(final JsonNode incoming, final JsonNode stored) {
+        return textEquals(incoming.get("provider"), stored.get("provider"))
+                && textEquals(incoming.get("endpoint"), stored.get("endpoint"));
+    }
+
+    static boolean textEquals(final JsonNode a, final JsonNode b) {
+        final String left = a != null && !a.isNull() ? a.asText() : null;
+        final String right = b != null && !b.isNull() ? b.asText() : null;
+
+        return Objects.equals(left, right);
     }
 
 }
