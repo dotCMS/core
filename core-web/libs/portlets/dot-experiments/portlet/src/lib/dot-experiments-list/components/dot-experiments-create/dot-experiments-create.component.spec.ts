@@ -136,8 +136,11 @@ describe('DotExperimentsCreateComponent', () => {
             spectator.detectComponentChanges();
 
             const submitButtonHost = spectator.query(byTestId('add-experiment-button'));
-            const submitButton =
-                submitButtonHost?.querySelector<HTMLButtonElement>('button') ?? submitButtonHost;
+            // Cast on the fallback too: `spectator.query` gives an `Element`, which the `??` widens
+            // the narrowed `querySelector<HTMLButtonElement>` back to. PrimeNG renders the real
+            // `<button>` inside its host, and the host itself carries the attribute when it does not.
+            const submitButton = (submitButtonHost?.querySelector<HTMLButtonElement>('button') ??
+                submitButtonHost) as HTMLButtonElement | null;
 
             expect(submitButton?.hasAttribute('disabled') || submitButton?.disabled).toBe(false);
             expect(submitButtonHost).toContainText('Add');
@@ -163,8 +166,11 @@ describe('DotExperimentsCreateComponent', () => {
             spectator.detectComponentChanges();
 
             const submitButtonHost = spectator.query(byTestId('add-experiment-button'));
-            const submitButton =
-                submitButtonHost?.querySelector<HTMLButtonElement>('button') ?? submitButtonHost;
+            // Cast on the fallback too: `spectator.query` gives an `Element`, which the `??` widens
+            // the narrowed `querySelector<HTMLButtonElement>` back to. PrimeNG renders the real
+            // `<button>` inside its host, and the host itself carries the attribute when it does not.
+            const submitButton = (submitButtonHost?.querySelector<HTMLButtonElement>('button') ??
+                submitButtonHost) as HTMLButtonElement | null;
 
             expect(submitButton?.hasAttribute('disabled') || submitButton?.disabled).toBe(true);
             expect(submitButtonHost).toContainText('Add');
