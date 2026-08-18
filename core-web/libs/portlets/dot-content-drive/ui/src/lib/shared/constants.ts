@@ -25,6 +25,15 @@ export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [...FIXED_COLUMNS]
     (a, b) => a.order - b.order
 );
 
+/**
+ * Identifier (and hostname) of the pseudo-site holding assets shared across every site.
+ *
+ * Defined here rather than in the portlet so the table, which flags shared rows, and the portlet's
+ * `SYSTEM_HOST` site object share one definition: the portlet may depend on this lib, not the other
+ * way round.
+ */
+export const SYSTEM_HOST_IDENTIFIER = 'SYSTEM_HOST';
+
 /** i18n key for the "Load more" node label. */
 export const LOAD_MORE_LABEL_KEY = 'content-drive.tree.load-more';
 

@@ -122,7 +122,21 @@
                             (click)="onDoubleClick(item); $event.stopPropagation()">
                             {{ isFolder ? item.name : item.title }}
                         </span>
-                        <span data-testId="lock-hint" class="text-gray-700">
+                        <!-- The row's trailing hint slot. Both hints live in this one element on
+                         purpose: the cell is a three-column grid, so a fourth child would wrap onto
+                         a second row instead of sitting beside the lock. -->
+                        <span data-testId="lock-hint" class="flex items-center gap-2 text-gray-700">
+                            @if (isSharedAsset(item)) {
+                                <!-- A globe, matching the site row in the folder tree, so "lives on
+                                 every site" reads the same in both places. The tooltip carries the
+                                 meaning; the glyph alone would be a guess. -->
+                                <i
+                                    class="material-symbols-outlined text-base!"
+                                    data-testid="shared-asset-icon"
+                                    [title]="'content-drive.list-view.shared-asset' | dm">
+                                    public
+                                </i>
+                            }
                             @if (!isFolder) {
                                 @if (item.locked) {
                                     <!-- A lock the current user does not hold: only its holder or a CMS

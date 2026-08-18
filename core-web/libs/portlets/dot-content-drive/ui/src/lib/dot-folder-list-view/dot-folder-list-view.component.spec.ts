@@ -1078,6 +1078,53 @@ describe('DotFolderListViewComponent', () => {
              * user's admin role, which lives in the portlet. An administrator releases every lock,
              * so their caller passes nothing and no row is marked.
              */
+            describe('shared-asset hint', () => {
+                it('should flag a row that lives on SYSTEM_HOST', () => {
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('shared-asset-icon'))).toBeTruthy();
+                });
+
+                it('should explain the hint on hover', () => {
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(
+                        spectator.query(byTestId('shared-asset-icon')).getAttribute('title')
+                    ).toBe('content-drive.list-view.shared-asset');
+                });
+
+                it('should not flag a row that lives on a real site', () => {
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'demo.dotcms.com' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('shared-asset-icon'))).toBeFalsy();
+                });
+
+                it('should not flag a folder row', () => {
+                    // A folder carries `hostId`, never `host`, so the narrowing guard skips it even when
+                    // the folder itself sits on SYSTEM_HOST.
+                    const folder = {
+                        ...mockItems[0],
+                        type: 'folder',
+                        name: 'shared-folder',
+                        hostId: 'SYSTEM_HOST',
+                        host: undefined
+                    } as unknown as DotContentDriveItem;
+
+                    spectator.setInput('items', [folder]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('folder-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('shared-asset-icon'))).toBeFalsy();
+                });
+            });
+
             describe('locks held by another user', () => {
                 const lockedItem = { ...mockItems[0], locked: true, inode: 'locked-inode' };
 

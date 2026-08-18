@@ -38,7 +38,12 @@ import {
     DotRelativeDatePipe
 } from '@dotcms/ui';
 
-import { DOT_DRAG_ITEM, DotFolderListViewFixedColumn, HEADER_COLUMNS } from '../shared/constants';
+import {
+    DOT_DRAG_ITEM,
+    DotFolderListViewFixedColumn,
+    HEADER_COLUMNS,
+    SYSTEM_HOST_IDENTIFIER
+} from '../shared/constants';
 import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
@@ -328,6 +333,23 @@ export class DotFolderListViewComponent implements OnInit {
     private readonly EXTRA_COL_PAD_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
     protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
+
+    /**
+     * Whether the row is an asset shared across every site, i.e. one living on SYSTEM_HOST.
+     *
+     * The "Show Shared Assets" filter is seeded on, so shared assets are mixed into every folder
+     * listing by default and are otherwise indistinguishable from the site's own content.
+     *
+     * `'host' in item` is the narrowing check, not a stylistic choice: a row is a contentlet or a
+     * folder, and only the contentlet carries `host` (a folder has `hostId`), so the guard both
+     * satisfies the union and excludes folders in one step.
+     *
+     * @param item The row to test.
+     * @return {*} {boolean} `true` when the row lives on SYSTEM_HOST.
+     */
+    protected isSharedAsset(item: DotContentDriveItem): boolean {
+        return 'host' in item && item.host === SYSTEM_HOST_IDENTIFIER;
+    }
 
     /** Fixed widths per non-text column type (predictable, so no measuring needed). */
     private readonly EXTRA_COL_TYPE_WIDTH: Partial<

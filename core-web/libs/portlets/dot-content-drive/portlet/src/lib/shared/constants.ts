@@ -3,6 +3,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotSite
 } from '@dotcms/dotcms-models';
+import { SYSTEM_HOST_IDENTIFIER } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
@@ -10,8 +11,8 @@ import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrde
 export const SYSTEM_HOST: DotSite = {
     aliases: '',
     archived: false,
-    hostname: 'SYSTEM_HOST',
-    identifier: 'SYSTEM_HOST'
+    hostname: SYSTEM_HOST_IDENTIFIER,
+    identifier: SYSTEM_HOST_IDENTIFIER
 };
 
 // Default pagination
