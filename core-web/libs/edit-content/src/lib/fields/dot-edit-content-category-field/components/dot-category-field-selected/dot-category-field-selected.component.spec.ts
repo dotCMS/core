@@ -44,7 +44,7 @@ describe('DotCategoryFieldSelectedComponent', () => {
             const category = CATEGORY_MOCK_TRANSFORMED[index];
 
             expect(title).toContainText(category.value);
-            expect(path).toContainText(category.path);
+            expect(path).toContainText(category.path!);
         });
     });
 

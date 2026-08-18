@@ -757,7 +757,11 @@ describe('DotEditContentCalendarFieldComponent', () => {
         // through handleChangeValue when the control transitions to null.
         const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
 
-        const buildSeededHost = (field: DotCMSContentTypeField) =>
+        // Return type annotated: through a helper, Spectator's `HP` inference loses the host
+        // component and the result widens to `SpectatorHost<C, unknown>`.
+        const buildSeededHost = (
+            field: DotCMSContentTypeField
+        ): SpectatorHost<DotEditContentCalendarFieldComponent, MockFormComponent> =>
             createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />

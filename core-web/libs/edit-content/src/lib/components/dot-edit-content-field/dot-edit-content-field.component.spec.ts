@@ -359,7 +359,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             props: {
                 field: fieldMock,
                 ...propsObject
-            },
+            } as unknown as InferInputSignals<DotEditContentFieldComponent>,
             providers: [
                 ...(fieldTestBed?.providers || []),
                 {

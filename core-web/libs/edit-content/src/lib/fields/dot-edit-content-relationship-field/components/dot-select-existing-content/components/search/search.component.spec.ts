@@ -435,7 +435,11 @@ describe('SearchComponent', () => {
         });
 
         it('should fallback to language ID when no control value', () => {
-            jest.spyOn(component, '$languageField').mockReturnValue(null);
+            // `viewChild.required` cannot resolve to null, but the reader uses `field?.` —
+            // this forces that defensive path.
+            jest.spyOn(component, '$languageField').mockReturnValue(
+                null as unknown as LanguageFieldComponent
+            );
 
             const label = component['getLanguageDisplayLabel'](1);
             expect(label).toBe('Language Id: 1');
@@ -449,7 +453,11 @@ describe('SearchComponent', () => {
         });
 
         it('should fallback to ID when no control value', () => {
-            jest.spyOn(component, '$siteField').mockReturnValue(null);
+            // `viewChild.required` cannot resolve to null, but the reader uses `field?.` —
+            // this forces that defensive path.
+            jest.spyOn(component, '$siteField').mockReturnValue(
+                null as unknown as SiteFieldComponent
+            );
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe('site123');
