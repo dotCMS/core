@@ -127,15 +127,19 @@
                          a second row instead of sitting beside the lock. -->
                         <span data-testId="lock-hint" class="flex items-center gap-2 text-gray-700">
                             @if (isSharedAsset(item)) {
-                                <!-- A PrimeIcon, matching the padlock beside it and the folder icon in
-                                 this same cell. A Material Symbols glyph here read as a mismatched
-                                 pair. The globe is the same one the folder tree uses for a site row,
-                                 so "lives on every site" reads the same in both places, and the
-                                 tooltip carries the meaning — the glyph alone would be a guess. -->
+                                <!-- `folder_match` reads as "this lives somewhere shared" without the
+                                 globe's suggestion of the public internet. Verified present in the
+                                 self-hosted font: Material Symbols renders by ligature, so a name the
+                                 font lacks would show as literal text rather than an icon.
+                                 `text-base!` needs the important modifier because
+                                 `.material-symbols-outlined` sets 24px and is unlayered, so it
+                                 outranks Tailwind utilities; 14px matches the padlock beside it. -->
                                 <i
-                                    class="pi pi-globe"
+                                    class="material-symbols-outlined text-base!"
                                     data-testid="shared-asset-icon"
-                                    [title]="'content-drive.list-view.shared-asset' | dm"></i>
+                                    [title]="'content-drive.list-view.shared-asset' | dm">
+                                    folder_match
+                                </i>
                             }
                             @if (!isFolder) {
                                 @if (item.locked) {
