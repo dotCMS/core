@@ -1,7 +1,7 @@
 /**
- * Data contracts for {@link DotPagesBrowserService}: browsing folders, listing pages and
- * reading a page's lock state. All shapes are UI-agnostic — mapping to PrimeNG `TreeNode`
- * or table rows is the consumer's responsibility.
+ * Data contracts for {@link DotPagesBrowserService}: listing pages and reading a page's lock
+ * state. All shapes are UI-agnostic — mapping to PrimeNG `TreeNode` or table rows is the
+ * consumer's responsibility.
  */
 
 /**
@@ -20,53 +20,6 @@ export const DotPageBrowserState = {
 } as const;
 
 export type DotPageBrowserState = (typeof DotPageBrowserState)[keyof typeof DotPageBrowserState];
-
-/**
- * A folder available for browsing, with its full site-relative path already resolved.
- *
- * `GET /api/v1/folder/search` reports the folder's own `name` and its *parent* `path`
- * separately; this shape exposes the joined path so callers can query pages under it
- * without rebuilding it.
- */
-export interface DotPageBrowserFolder {
-    /** Folder identifier. */
-    id: string;
-    /** Folder inode. */
-    inode: string;
-    /** Folder name, without any path segment. */
-    name: string;
-    /** Full site-relative path of the folder, always leading and trailing slashed (e.g. `/about-us/`). */
-    path: string;
-    /** Hostname of the site the folder belongs to. */
-    hostname: string;
-    /** Whether the folder has at least one child folder visible to the current user. */
-    hasChildren: boolean;
-}
-
-/** A page of folder children plus the pagination metadata needed for "load more" behavior. */
-export interface DotPageBrowserFolderChildren {
-    folders: DotPageBrowserFolder[];
-    /** Total children available for the requested level, so callers can decide whether to page again. */
-    totalFolders: number;
-    /** Page that produced `folders` (1-based). */
-    page: number;
-    /** Page size used for the request. */
-    perPage: number;
-}
-
-/** Scope of a folder-children request. */
-export interface DotPageBrowserFolderParams {
-    /** Site identifier to scope the search. */
-    siteId: string;
-    /** Hostname of `siteId`; the folder-search endpoint does not return it, so callers must supply it. */
-    hostname: string;
-    /** Parent folder path whose direct children are requested. Defaults to the site root. */
-    path?: string;
-    /** Page number (1-based). */
-    page?: number;
-    /** Page size. */
-    perPage?: number;
-}
 
 /** Filters for a page listing request. */
 export interface DotPagesBrowserSearchParams {

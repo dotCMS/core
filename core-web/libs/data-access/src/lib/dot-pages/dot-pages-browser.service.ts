@@ -26,9 +26,24 @@ interface DotESSearchResponse<T> {
 }
 
 /**
- * Page-browsing data access for page pickers that are not nested under a per-page route:
- * folder navigation, page listing and a page's lock state, each resolved from a single
- * request so a picker never needs the full page-render pipeline.
+ * Page-browsing data access for page pickers that are not nested under a per-page route: page
+ * listing and a page's lock state, each resolved from a single request so a picker never needs
+ * the full page-render pipeline.
+ *
+ * ## Why this overlaps `DotPageSelectorService`
+ *
+ * `DotPageSelectorService` already calls `GET /api/v1/page/search` and `POST /api/es/search`, so
+ * `searchPages` genuinely repeats part of what it does. It was not reused for three reasons:
+ *
+ * - It lives in `apps/dotcms-ui`, and a library cannot depend on an app. Reusing it meant moving
+ *   it into `data-access` first, dragging its legacy consumer and spec along with it.
+ * - It answers with `DotPageSelectorItem`, a label/value shape built for an autocomplete, not the
+ *   table row a picker dialog draws — `state`, `templateId` and `modDate` are not on it.
+ * - It has no notion of a page's lock state, which is half of why this service exists.
+ *
+ * The duplication is therefore deliberate and temporary. Consolidating both behind one page-access
+ * layer in `data-access` is worth doing, but it is a refactor of the legacy picker rather than
+ * part of the Experiments Configure screen, so it belongs in its own issue.
  */
 @Injectable()
 export class DotPagesBrowserService {
