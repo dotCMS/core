@@ -36,8 +36,10 @@ export interface DotExperimentsState {
     status: ComponentStatus;
     sidebar: SidebarStatus;
     hasEnterpriseLicense: boolean;
-    addToBundleContentId: string;
-    pushPublishEnvironments: DotEnvironment[];
+    /** Null except while the Add-to-Bundle dialog is open for a specific experiment. */
+    addToBundleContentId: string | null;
+    /** Null until the route snapshot supplies them, and on a non-Enterprise licence. */
+    pushPublishEnvironments: DotEnvironment[] | null;
 }
 
 const initialState: DotExperimentsState = {
@@ -125,7 +127,12 @@ export class DotExperimentsListStore
 
                 if (experimentsWithActions.length) {
                     Object.keys(DotExperimentStatus).forEach((key) =>
-                        grouped.push({ status: DotExperimentStatus[key], experiments: [] })
+                        grouped.push({
+                            // `Object.keys` gives `string[]`, so the lookup needs the enum's own key
+                            // type — every key here comes from that same enum.
+                            status: DotExperimentStatus[key as keyof typeof DotExperimentStatus],
+                            experiments: []
+                        })
                     );
 
                     experimentsWithActions
@@ -466,8 +473,10 @@ export class DotExperimentsListStore
 
     constructor() {
         const route = inject(ActivatedRoute);
-        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
-        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+        // `parent` is null at the root of a routing tree. Both come from an ancestor this portlet is
+        // always mounted under, and the state members above admit the absent case.
+        const hasEnterpriseLicense = route.parent?.snapshot.data['isEnterprise'];
+        const pushPublishEnvironments = route.parent?.snapshot.data['pushPublishEnvironments'];
         super({
             ...initialState,
             hasEnterpriseLicense,
