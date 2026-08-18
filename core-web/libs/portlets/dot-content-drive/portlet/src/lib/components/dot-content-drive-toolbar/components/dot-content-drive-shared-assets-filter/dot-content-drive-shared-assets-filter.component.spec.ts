@@ -43,7 +43,7 @@ describe('DotContentDriveSharedAssetsFilterComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'content-drive.shared-assets-filter.title': 'Show shared assets',
+                    'content-drive.shared-assets-filter.title': 'Show Shared Assets',
                     'dot.common.remove': 'Remove'
                 })
             }
@@ -78,7 +78,7 @@ describe('DotContentDriveSharedAssetsFilterComponent', () => {
     it('should render a toggle chip labelled from the message bundle', () => {
         expect(spectator.query(byTestId('shared-assets-filter-chip'))).toBeTruthy();
         expect(chip()?.mode()).toBe('toggle');
-        expect(chip()?.title()).toBe('Show shared assets');
+        expect(chip()?.title()).toBe('Show Shared Assets');
     });
 
     describe('state', () => {

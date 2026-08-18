@@ -110,7 +110,7 @@ export const DEBOUNCE_TIME = 500;
 export const USER_SEARCHABLE_PREFIX = 'us.';
 
 /**
- * Filter-bag key backing the "Show shared assets" toggle, which drives `includeSystemHost` on the
+ * Filter-bag key backing the "Show Shared Assets" toggle, which drives `includeSystemHost` on the
  * search request. It lives in the bag rather than in its own query param so it inherits the URL
  * encode/decode, the back/forward guard, and the legacy-editor `CD_` round-trip.
  *
