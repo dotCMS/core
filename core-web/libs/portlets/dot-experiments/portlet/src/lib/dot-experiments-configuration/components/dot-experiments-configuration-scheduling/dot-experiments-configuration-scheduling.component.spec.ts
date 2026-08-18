@@ -105,7 +105,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
     });
 
     it('should disable tooltip if is on draft', () => {
-        expect(spectator.query(Tooltip).disabled!).toEqual(true);
+        expect(spectator.query(Tooltip)!.disabled!).toEqual(true);
     });
 
     it('should disable button and show tooltip when there is an error', () => {
@@ -123,7 +123,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         const setupButton = spectator.query(byTestId('scheduling-setup-button'));
         const button = setupButton!.querySelector('button')! || setupButton;
         expect(button.hasAttribute('disabled')!).toBe(true);
-        expect(spectator.query(Tooltip).disabled!).toEqual(false);
+        expect(spectator.query(Tooltip)!.disabled!).toEqual(false);
     });
 
     it('should set indicator in green', () => {

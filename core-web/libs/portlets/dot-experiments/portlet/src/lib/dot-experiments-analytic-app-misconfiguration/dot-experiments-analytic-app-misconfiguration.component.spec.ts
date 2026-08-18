@@ -51,7 +51,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
         it('should DotEmptyContainerComponent exist in the component with not configuration label', () => {
             const dotEmptyContainerComponent: DotEmptyContainerComponent = spectator.query(
                 DotEmptyContainerComponent
-            );
+            )!;
 
             expect(dotEmptyContainerComponent.configuration).toEqual({
                 title: 'not configured title',
@@ -76,7 +76,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
         it('should DotEmptyContainerComponent exist in the component with not configuration label', () => {
             const dotEmptyContainerComponent: DotEmptyContainerComponent = spectator.query(
                 DotEmptyContainerComponent
-            );
+            )!;
 
             expect(dotEmptyContainerComponent.configuration).toEqual({
                 title: 'misconfiguration title',

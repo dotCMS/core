@@ -471,7 +471,10 @@ describe('DotExperimentsReportsStore', () => {
                 'Apr-15'
             ];
 
-            store.getDailyChartData$.subscribe(({ labels }) => {
+            store.getDailyChartData$.subscribe((chart) => {
+                // `labels` is optional on chart.js's `ChartData`; this projector always sets it.
+                const labels = chart!.labels!;
+
                 expect(labels.length).toEqual(expectedXLabels.length);
                 expect(labels).toEqual(expectedXLabels);
                 done();
@@ -479,7 +482,9 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should has 2 datasets', (done) => {
-            store.getDailyChartData$.subscribe(({ datasets }) => {
+            store.getDailyChartData$.subscribe((chart) => {
+                const { datasets } = chart!;
+
                 expect(datasets.length).toEqual(
                     Object.keys(EXPERIMENT_MOCK_RESULTS.goals.primary.variants).length
                 );
@@ -498,7 +503,9 @@ describe('DotExperimentsReportsStore', () => {
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription
             ];
 
-            store.getDailyChartData$.subscribe(({ datasets }) => {
+            store.getDailyChartData$.subscribe((chart) => {
+                const { datasets } = chart!;
+
                 datasets.forEach((dataset, index) => {
                     const { label, data } = dataset;
 
@@ -517,7 +524,9 @@ describe('DotExperimentsReportsStore', () => {
                 EXPERIMENT_MOCK_RESULTS.goals.primary.variants['DEFAULT'].variantDescription
             ];
 
-            store.getBayesianChartData$.subscribe(({ datasets }) => {
+            store.getBayesianChartData$.subscribe((chart) => {
+                const { datasets } = chart!;
+
                 datasets.forEach((dataset, index) => {
                     const { label, data } = dataset;
 

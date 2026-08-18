@@ -23,9 +23,11 @@ import {
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotExperiment,
     DotExperimentStatus,
     DotPageMode,
-    ExperimentSteps
+    ExperimentSteps,
+    Variant
 } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
@@ -379,7 +381,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
     });
 
-    function loadExperiment(mock, variants) {
+    function loadExperiment(mock: DotExperiment, variants: Variant[]) {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...mock,

@@ -177,7 +177,7 @@ describe('DotExperimentsListTableComponent', () => {
                 const actionMenuButton = spectator.query(byTestId('experiment-row__action-button'));
                 expect(actionMenuButton).toExist();
 
-                spectator.click(actionMenuButton);
+                spectator.click(actionMenuButton!);
                 expect(spectator.queryAll(MenuItemContent)).toExist();
                 expect(spectator.queryAll(MenuItemContent).length).toBe(MENU_ITEMS_QTY);
             });
