@@ -6,8 +6,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
+import { StyleEditorFieldSchema } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/utils-testing';
-import { StyleEditorFieldSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldInputComponent } from './uve-style-editor-field-input.component';
 
