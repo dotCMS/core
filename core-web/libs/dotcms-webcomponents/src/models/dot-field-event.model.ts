@@ -15,7 +15,8 @@ export interface DotInputCalendarStatusEvent extends DotFieldStatusEvent {
 
 export interface DotFieldValueEvent extends DotFieldEvent {
     fieldType?: string;
-    value: string | File;
+    /** Null when the field has been cleared — `dot-binary-file` emits it from `setValue()`. */
+    value: string | File | null;
 }
 
 export interface DotBinaryFileEvent {
