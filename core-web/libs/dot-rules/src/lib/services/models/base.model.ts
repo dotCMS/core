@@ -15,7 +15,12 @@ export class BaseModel {
         this.key = key;
     }
 
-    isPersisted(): boolean {
+    /**
+     * A `this`-typed predicate rather than a plain boolean: it lets `if (model.isPersisted())`
+     * narrow `model.key` from `string | null` to `string`, which is what every caller inside such
+     * a branch goes on to do when it builds a URL from it.
+     */
+    isPersisted(): this is this & { key: string } {
         return !!this.key;
     }
 

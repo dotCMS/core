@@ -150,10 +150,12 @@ export class DotRuleComponent {
     readonly openPushPublishDialog = output<string>();
 
     // State
-    formModel: UntypedFormGroup;
+    // The three `!` below are built by `initializeFormModel` and `initializeFireOnOptions`,
+    // which the constructor calls; the compiler does not follow a call into a method.
+    formModel!: UntypedFormGroup;
     readonly fireOnValue = signal('EVERY_PAGE');
-    fireOnOptions$: Observable<{ label: string; value: string }[]>;
-    fireOnPlaceholder$: Observable<string>;
+    fireOnOptions$!: Observable<{ label: string; value: string }[]>;
+    fireOnPlaceholder$!: Observable<string>;
     readonly showAddToBundleDialog = signal(false);
     hideFireOn: boolean;
 
@@ -188,9 +190,10 @@ export class DotRuleComponent {
 
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';
-    ruleActionOptions: MenuItem[];
-    tooltipRuleOnText: string;
-    tooltipRuleOffText: string;
+    // Empty until the i18n labels resolve, which is what the template already renders.
+    ruleActionOptions: MenuItem[] = [];
+    tooltipRuleOnText = '';
+    tooltipRuleOffText = '';
 
     private readonly enabledStateDelayEmitter = signal<RuleActionEvent | null>(null);
     private readonly i18nCache: Record<string, Observable<string>> = {};
@@ -468,7 +471,8 @@ export class DotRuleComponent {
         });
     }
 
-    deleteRuleClicked(event: Event): void {
+    /** `undefined` when PrimeNG fires the menu command without an originating DOM event. */
+    deleteRuleClicked(event: Event | undefined): void {
         const ruleActions = this.$ruleActions();
         const rule = this.$rule();
 

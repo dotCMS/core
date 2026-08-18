@@ -14,6 +14,15 @@
         "target": "ES2022",
         "module": "preserve",
         "moduleResolution": "bundler",
-        "lib": ["dom", "dom.iterable", "es2022"]
+        "lib": ["dom", "dom.iterable", "es2022"],
+        // Strict mode (#35957). This project has no `build` target, so `tsc -p` on
+        // tsconfig.lib.json and tsconfig.spec.json is the only gate — `dot-rules:test` runs
+        // transpile-only, and its templates are checked solely by a consuming app's build.
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
     }
 }

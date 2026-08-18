@@ -52,7 +52,8 @@ export class DotAreaPickerDialogComponent {
     map: google.maps.Map | null = null;
     mapId = 'map_' + mapIdCounter++;
 
-    private prevCircle: GCircle;
+    /** The circle the last render drew, so a repeat of the same one is skipped. */
+    private prevCircle: GCircle | null = null;
     private previousHidden: boolean | null = null;
 
     constructor() {
@@ -109,18 +110,21 @@ export class DotAreaPickerDialogComponent {
         } else {
             const circle = this.currentCircle();
             this.prevCircle = circle;
-            this.map = new google.maps.Map(el, {
+            // Held in a local as well as on the instance: the click handler below panned via
+            // `this.map`, which the compiler cannot narrow inside a callback.
+            const map = new google.maps.Map(el, {
                 center: new google.maps.LatLng(circle.center.lat, circle.center.lng),
                 mapTypeId: google.maps.MapTypeId.TERRAIN,
                 zoom: 7
             });
+            this.map = map;
 
             const mapCircle = new google.maps.Circle({
                 center: new google.maps.LatLng(circle.center.lat, circle.center.lng),
                 editable: true,
                 fillColor: '#1111FF',
                 fillOpacity: 0.35,
-                map: this.map,
+                map,
                 radius: circle.radius,
                 strokeColor: '#1111FF',
                 strokeOpacity: 0.8,
@@ -129,7 +133,7 @@ export class DotAreaPickerDialogComponent {
 
             this.map.addListener('click', (e) => {
                 mapCircle.setCenter(e.latLng);
-                this.map.panTo(e.latLng);
+                map.panTo(e.latLng);
                 const ll = mapCircle.getCenter();
                 const center = { lat: ll.lat(), lng: ll.lng() };
                 this.currentCircle.set({ center, radius: mapCircle.getRadius() });
@@ -159,7 +163,11 @@ export class DotAreaPickerDialogComponent {
     }
 
     onCancelAction(): void {
-        this.currentCircle.set(this.prevCircle);
+        // `prevCircle` is null only before `readyMap` has drawn anything, and there is nothing
+        // to revert to in that window.
+        if (this.prevCircle) {
+            this.currentCircle.set(this.prevCircle);
+        }
         this.cancel.emit(false);
     }
 }

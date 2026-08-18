@@ -107,7 +107,7 @@ export class LazyVerify {
 }
 
 export class Verify extends LazyVerify {
-    static isString(value: unknown): value is string {
+    static override isString(value: unknown): value is string {
         return LazyVerify.isString(value);
     }
 
@@ -115,35 +115,35 @@ export class Verify extends LazyVerify {
         return !LazyVerify.exists(value) ? allowEmpty === true : Verify.isString(value);
     }
 
-    static maxLength(value: unknown, max: number): boolean {
+    static override maxLength(value: unknown, max: number): boolean {
         return Verify.isString(value) && LazyVerify.maxLength(value, max);
     }
 
-    static minLength(value: unknown, min: number): boolean {
+    static override minLength(value: unknown, min: number): boolean {
         return Verify.isString(value) && LazyVerify.minLength(value, min);
     }
 
-    static isNumber(value: unknown): value is number {
+    static override isNumber(value: unknown): value is number {
         return LazyVerify.exists(value) && LazyVerify.isNumber(value);
     }
 
-    static isInteger(value: unknown): boolean {
+    static override isInteger(value: unknown): boolean {
         return Verify.isNumber(value) && LazyVerify.isInteger(value);
     }
 
-    static min(value: unknown, min: number): boolean {
+    static override min(value: unknown, min: number): boolean {
         return Verify.isNumber(value) && LazyVerify.min(value, min);
     }
 
-    static max(value: unknown, max: number): boolean {
+    static override max(value: unknown, max: number): boolean {
         return Verify.isNumber(value) && LazyVerify.max(value, max);
     }
 
-    static isFunction(value: unknown): value is (...args: unknown[]) => unknown {
+    static override isFunction(value: unknown): value is (...args: unknown[]) => unknown {
         return LazyVerify.exists(value) && LazyVerify.isFunction(value);
     }
 
-    static isArray(value: unknown): value is unknown[] {
+    static override isArray(value: unknown): value is unknown[] {
         return LazyVerify.exists(value) && LazyVerify.isArray(value);
     }
 }
@@ -151,10 +151,16 @@ export class Verify extends LazyVerify {
 /**
  * Check utilities that throw errors on validation failure
  */
-const createCheckError = function (validation: string, value: unknown, message: string): Error {
-    const e = new Error('Check.' + validation + " failed: '" + message + "'.");
-    e['validation'] = validation;
-    e['validatedValue'] = value;
+/** An `Error` carrying which check failed and the value that failed it. */
+interface CheckError extends Error {
+    validation: string;
+    validatedValue: unknown;
+}
+
+const createCheckError = function (validation: string, value: unknown, message: string): CheckError {
+    const e = new Error('Check.' + validation + " failed: '" + message + "'.") as CheckError;
+    e.validation = validation;
+    e.validatedValue = value;
 
     return e;
 };
