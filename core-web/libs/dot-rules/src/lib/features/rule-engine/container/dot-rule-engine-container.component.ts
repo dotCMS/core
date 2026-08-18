@@ -22,15 +22,19 @@ import {
 import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
 import {
     ConditionActionEvent,
+    ConditionCreateEvent,
+    ConditionDeleteEvent,
     ConditionGroupActionEvent,
+    ConditionGroupCreateEvent,
     RuleActionActionEvent,
     RuleActionEvent
 } from '../../../services/models/rule-event.model';
 import { RuleViewService } from '../../../services/ui/dot-view-rule-service';
 import { DotRuleEngineComponent } from '../dot-rule-engine.component';
 
-// Re-export for backward compatibility
-export {
+// Re-export for backward compatibility. `export type` because `isolatedModules` is on: the
+// compiler cannot tell a re-exported interface from a re-exported value without it.
+export type {
     ConditionActionEvent,
     ConditionGroupActionEvent,
     RuleActionActionEvent,
@@ -304,7 +308,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         }
     }
 
-    onCreateRuleAction(event: RuleActionActionEvent): void {
+    onCreateRuleAction(event: RuleActionEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onCreateRuleAction', event);
         const rule = event.payload.rule;
         const priority = rule._ruleActions.length
@@ -356,7 +360,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.patchAction(event.payload.rule, ruleAction);
     }
 
-    onCreateConditionGroup(event: ConditionGroupActionEvent): void {
+    onCreateConditionGroup(event: ConditionGroupCreateEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onCreateConditionGroup');
         const rule = event.payload.rule;
         const priority = rule._conditionGroups.length
@@ -397,7 +401,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.refreshRules();
     }
 
-    onCreateCondition(event: ConditionActionEvent): void {
+    onCreateCondition(event: ConditionCreateEvent): void {
         const rule = event.payload.rule;
         this.ruleUpdating(rule, true);
         try {
@@ -456,7 +460,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
     }
 
-    onDeleteCondition(event: ConditionActionEvent): void {
+    onDeleteCondition(event: ConditionDeleteEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onDeleteCondition', event);
         const rule = event.payload.rule;
         const group = event.payload.conditionGroup;
