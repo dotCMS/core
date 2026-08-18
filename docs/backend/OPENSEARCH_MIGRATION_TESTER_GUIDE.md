@@ -11,6 +11,7 @@
 
 **Companion documents** (deeper detail, load when you need it):
 
+- [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) — the operator runbook: how to actually migrate a customer, end to end.
 - [`OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATION.md) — the full architecture and design of the migration.
 - [`OPENSEARCH_CLIENT_CONFIGURATION.md`](OPENSEARCH_CLIENT_CONFIGURATION.md) — every configuration property.
 - [`OPENSEARCH_MIGRATION_TEST_PLAN.md`](OPENSEARCH_MIGRATION_TEST_PLAN.md) — the full, numbered test cases.
@@ -217,7 +218,7 @@ built-in default). Keep them in two mental buckets:
 | Variable | Purpose |
 |---|---|
 | `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE` | `0`/`1`/`2`/`3` — how far the migration runs. The switch most tests toggle. |
-| `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` | Role **key** whose members can see the `.os` indices in the dotCMS UI / `/api/v1/esindex` before Phase 3 (default `os_migration_qa`). See §6 — without it, `.os` indices are hidden from those views in phases 0–2. |
+| `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` | Role **key** required — in addition to CMS Admin — to read the migration-readiness endpoint `GET /api/v1/index/migration/readiness` (default `os_migration_qa`). It no longer controls index visibility in the UI: since #36360 that is purely phase-based (hidden in phases 0–2, shown in Phase 3, for everyone). |
 
 ### Source engine (the "old" one — `DOT_ES_*`)
 
@@ -260,30 +261,36 @@ curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9201/_cat/
 
 Or in the UI: **Admin → System → Index**.
 
-> **⚠️ You may not see the `.os` indices in dotCMS until you grant a visibility role.** In phases 0, 1,
-> and 2 the two dotCMS-side views — the `/api/v1/esindex` response and **Admin → System → Index** —
-> **hide the target-engine (`.os`) indices** by default, because before Phase 3 they are a migration
-> artifact. (In Phase 3 they are always visible.) This filter applies **only** to those two dotCMS
-> views: the direct engine listing (`_cat/indices` on `:9200` / `:9201`) and the database `indicies`
-> table are **never** filtered and always show `.os`, so use those to confirm an index really exists.
+> **⚠️ You will not see the `.os` indices in dotCMS before Phase 3.** In phases 0, 1, and 2 the two
+> dotCMS-side views — the `/api/v1/esindex` response and **Admin → System → Index** — **hide the
+> target-engine (`.os`) indices from everyone**, because before Phase 3 they are a migration artifact.
+> In Phase 3 they are always visible. This is purely phase-based and consults no user or role (#36360).
+> The filter applies **only** to those two dotCMS views: the direct engine listing (`_cat/indices` on
+> `:9200` / `:9201`) and the database `indicies` table are **never** filtered and always show `.os`,
+> so use those to confirm an index really exists.
 >
-> To make the `.os` indices appear in the dotCMS UI / API for your test user:
+> **To see the migration state from inside dotCMS, use the migration-readiness endpoint instead** —
+> `GET /api/v1/index/migration/readiness`. It is the source of truth for ES↔OS mirror state in every
+> phase. It requires a user who is **both** a CMS Administrator **and** a member of the migration
+> support role:
 > 1. Decide the **role key**. The default is `os_migration_qa` — the easiest path, no config change. To
 >    use a different key, set `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` in `docker-compose.yml` and
 >    restart dotCMS.
 > 2. In dotCMS, create a Role whose **Key** matches that value exactly. It is matched on the role *key*
 >    (`Role.getRoleKey()`), **not** the display name — set the Key field, not just the name.
-> 3. Assign that role to the dotCMS user you test with.
+> 3. Assign that role to the dotCMS user you test with (who must also be a CMS Admin).
 >
-> Only then do the `.os` indices show up for that user in the UI and in `/api/v1/esindex`.
+> Anyone missing either condition gets a 403. See
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) §16 for how to read the report.
 
 **Which phase did the system end up in?**
 - **Startup log (most reliable):** find the line stating the migration phase. If the automatic shutdown
   fired, you will also see an error saying the migration was disabled and the phase was reset to 0.
 - **Database (reliable):** run the `indicies` query below — `.os` rows present → the migration is active.
-- **UI / `/api/v1/esindex`:** seeing `.os` indexes confirms the migration is active, but the reverse is
-  **not** reliable — in phases 1/2 these views hide `.os` unless your user holds the visibility role
-  (see the callout above), so *not* seeing `.os` could mean Phase 0 **or** just a missing role.
+- **Readiness endpoint (authoritative):** `GET /api/v1/index/migration/readiness` reports
+  `phase.current` and `phase.name` directly, in every phase.
+- **UI / `/api/v1/esindex`:** these views hide `.os` in phases 0/1/2 for everyone, so they tell you
+  nothing about whether the migration is active — seeing `.os` there only means you are in Phase 3.
 
 **Check the database directly.** Postgres is not published to the host — go through the container:
 
@@ -654,11 +661,10 @@ Don't merge them into one table.
   `-k` (and always `-u <user>:<pass>`, since security is on).
 - **`/api/v1/temp` or workflow endpoints return 400 "Invalid Origin or referer".** Add
   `-H "Origin: http://localhost:8082" -H "Referer: http://localhost:8082/"` to the request.
-- **I can't see the `.os` index in the admin UI or in `/api/v1/esindex`.** In phases 0–2 those two
-  dotCMS views hide `.os` indices unless your user holds the visibility role — grant the
-  `os_migration_qa` role (or whatever `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` is set to) as described
-  in §6. To confirm the index exists regardless, check `_cat/indices` on the engine or the `indicies`
-  DB table.
+- **I can't see the `.os` index in the admin UI or in `/api/v1/esindex`.** Expected: in phases 0–2
+  those two dotCMS views hide `.os` indices from everyone, regardless of role. To confirm the index
+  exists, check `_cat/indices` on the engine or the `indicies` DB table — or call
+  `GET /api/v1/index/migration/readiness`, which reports both engines in every phase (§6).
 - **I set the phase but nothing changed.** The phase is re-read live for routing, but the one-time phase
   setup runs only at startup — see the restart note in §3. Content already indexed is not moved
   retroactively; new writes follow the new phase. For Site Search specifically, see §8.
@@ -670,6 +676,7 @@ Don't merge them into one table.
 
 ## 13. References
 
+- [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) — the operator runbook for a real migration.
 - [`OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATION.md) — architecture and design.
 - [`OPENSEARCH_CLIENT_CONFIGURATION.md`](OPENSEARCH_CLIENT_CONFIGURATION.md) — full configuration reference.
 - [`OPENSEARCH_MIGRATION_TEST_PLAN.md`](OPENSEARCH_MIGRATION_TEST_PLAN.md) — full numbered test cases.
