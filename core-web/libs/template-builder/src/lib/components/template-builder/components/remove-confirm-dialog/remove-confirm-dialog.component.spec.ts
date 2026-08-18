@@ -95,7 +95,7 @@ describe('RemoveConfirmDialogComponent', () => {
         spectator.component.skipConfirmation = true;
         const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
 
-        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        const deleteButton = spectator.query(byTestId('btn-remove-item'))!;
         spectator.dispatchMouseEvent(deleteButton, 'onClick');
 
         expect(confirmEventSpy).toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe('RemoveConfirmDialogComponent', () => {
         spectator.component.skipConfirmation = false;
         const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
 
-        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        const deleteButton = spectator.query(byTestId('btn-remove-item'))!;
         spectator.dispatchMouseEvent(deleteButton, 'onClick');
 
         expect(confirmEventSpy).toHaveBeenCalledTimes(0);

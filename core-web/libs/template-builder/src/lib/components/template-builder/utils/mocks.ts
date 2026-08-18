@@ -179,7 +179,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     styleClass: 'mt-70 booking-form'
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         },
         {
             columns: [
@@ -228,7 +228,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         },
         {
             columns: [
@@ -266,7 +266,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         },
         {
             columns: [
@@ -298,7 +298,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         }
     ]
 };
@@ -335,7 +335,7 @@ export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
                     styleClass: 'mt-70 booking-form'
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         },
         {
             columns: [
@@ -384,7 +384,7 @@ export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         },
         {
             columns: [
@@ -422,7 +422,7 @@ export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         },
         {
             columns: [
@@ -454,7 +454,7 @@ export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: null
+            styleClass: undefined
         }
     ]
 };

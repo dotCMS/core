@@ -5,7 +5,9 @@ export interface DotLayout {
     body: DotLayoutBody;
     footer: boolean;
     header: boolean;
-    sidebar: DotLayoutSideBar;
+    /** Null when the layout has no sidebar; the template builder clears it so an empty
+     *  sidebar is not persisted. */
+    sidebar: DotLayoutSideBar | null;
     title: string;
     themeId?: string;
     width: string;
