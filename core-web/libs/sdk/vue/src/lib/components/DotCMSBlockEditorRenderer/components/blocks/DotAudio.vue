@@ -15,10 +15,16 @@ const attrs = computed(() => (props.node.attrs ?? {}) as unknown as DotCMSAudioA
 </script>
 
 <template>
-    <audio controls preload="metadata">
-        <source :src="attrs.src" :type="attrs.mimeType" />
-        Your browser does not support the
-        <code>audio</code>
-        element.
-    </audio>
+  <audio
+    controls
+    preload="metadata"
+  >
+    <source
+      :src="attrs.src"
+      :type="attrs.mimeType"
+    >
+    Your browser does not support the
+    <code>audio</code>
+    element.
+  </audio>
 </template>
