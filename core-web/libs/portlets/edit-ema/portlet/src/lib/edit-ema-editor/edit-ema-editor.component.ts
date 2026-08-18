@@ -860,9 +860,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     handleInlineEditing(e: MouseEvent): void {
         const target = e.target as HTMLElement;
-        const element: HTMLElement = target.dataset?.mode ? target : target.closest('[data-mode]');
+        const element: HTMLElement = target.dataset?.['mode']
+            ? target
+            : target.closest('[data-mode]');
 
-        if (!element?.dataset.mode) {
+        if (!element?.dataset['mode']) {
             return;
         }
 

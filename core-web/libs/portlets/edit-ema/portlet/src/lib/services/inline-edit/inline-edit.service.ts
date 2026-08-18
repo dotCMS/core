@@ -212,7 +212,7 @@ export class InlineEditService {
 
     #addScript(doc: Document, src: string) {
         const script = doc.createElement('script');
-        script.dataset.inline = 'true';
+        script.dataset['inline'] = 'true';
         script.src = src;
         doc.body?.appendChild(script);
     }
@@ -289,6 +289,6 @@ export class InlineEditService {
 
         const contentlet = targetElement.closest('[data-dot-object="contentlet"]') as HTMLElement;
 
-        return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
+        return Number(contentlet.dataset['dotOnNumberOfPages'] || 0) > 1;
     }
 }

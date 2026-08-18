@@ -40,7 +40,7 @@ export class DotUveDragDropService {
             .subscribe((event: DragEvent) => {
                 const { dataset } = event.target as HTMLDivElement;
                 const data = getDragItemData(dataset);
-                const shouldUseCustomDragImage = dataset.useCustomDragImage === 'true';
+                const shouldUseCustomDragImage = dataset['useCustomDragImage'] === 'true';
 
                 if (shouldUseCustomDragImage && customDragImage?.nativeElement) {
                     event.dataTransfer?.setDragImage(customDragImage.nativeElement, 0, 0);

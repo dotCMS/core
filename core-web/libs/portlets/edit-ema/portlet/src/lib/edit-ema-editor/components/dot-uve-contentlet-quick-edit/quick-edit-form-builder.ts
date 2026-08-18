@@ -65,7 +65,7 @@ export function coerceFieldValue(
         }
         if (value && typeof value === 'object') {
             const binary = value as Record<string, string>;
-            return binary.idPath || binary.versionPath || binary.identifier || '';
+            return binary['idPath'] || binary['versionPath'] || binary['identifier'] || '';
         }
         return '';
     }
