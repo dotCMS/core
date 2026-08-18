@@ -84,9 +84,23 @@ public class BooleanFieldStrategyTest {
         assertEquals("+SSS.flag:false", query(Boolean.FALSE));
     }
 
-    /** Anything unrecognised is not truthy, so it must not be reported as a match for true. */
+    /**
+     * Anything unrecognised coerces to false rather than erroring, so it can never be reported as a
+     * match for true.
+     *
+     * <p>Recorded explicitly because of the blast radius: routing by data type means every BOOL Radio
+     * and Select now reaches this strategy on the generic {@code /api/content/_search} endpoint too,
+     * where values arrive raw. A garbage value used to produce a wildcard against a boolean-mapped
+     * field, which failed the whole query and returned nothing; it now returns the {@code false} set.
+     * That matches how the save path coerces, but it is a behaviour change beyond Content Drive.</p>
+     *
+     * <p>Whitespace-only is included on purpose: {@code checkRequiredValues} only rejects null and an
+     * already-empty string, so {@code "   "} passes the guard and is trimmed to empty here.</p>
+     */
     @Test
     public void unrecognisedValueIsFalse() {
         assertEquals("+SSS.flag:false", query("maybe"));
+        assertEquals("+SSS.flag:false", query("2"));
+        assertEquals("+SSS.flag:false", query("   "));
     }
 }
