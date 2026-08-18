@@ -159,6 +159,12 @@ export class DotContentDriveShellComponent {
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
     #editPanelUrlWasSet = false;
+    /**
+     * The folder path the URL was last written with, so a genuine folder navigation can be told apart
+     * from a filter-only write. `undefined` until the first write, which is what keeps the very first
+     * URL from pushing an entry on top of the one the user arrived on.
+     */
+    #lastWrittenPath: string | undefined = undefined;
 
     /**
      * The rendered side panel, so browser Back can route its close through the panel's guard.
@@ -582,25 +588,29 @@ export class DotContentDriveShellComponent {
 
         // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
         // moved the URL).
-        //
-        // Push for exactly one transition: the panel going from closed to open, which is the only
-        // case that needs its own history entry (AC8 — Back closes the panel). Everything else
-        // replaces.
-        //
-        // Filter and path writes must NOT push, because several of them are not user actions at all:
-        // the default-filter seed lands on a cold load, and the language seed lands again a moment
-        // later when the default language resolves. Pushing those buries the entry the user arrived
-        // on, so Back walks back through seeded URLs instead of leaving the portlet — it took two or
-        // three presses to escape. Replacing also removes the phantom entry that closing the panel
-        // would otherwise leave behind, whose Back would resurrect the param just removed.
         const newUrl = urlTree.toString();
         if (newUrl !== this.#location.path(true)) {
+            // Push only for the two transitions a user would expect Back to undo: opening the panel
+            // (AC8) and navigating to a different folder. Everything else replaces.
+            //
+            // Filter writes must never push, because the default seed is a filter write and is not a
+            // user action at all: it lands on a cold load and again when the default language
+            // resolves. Pushing those buried the entry the user arrived on, so Back took two or three
+            // presses to leave the portlet. Folder navigation still pushes, so Back walks back up the
+            // tree as it did before.
+            //
+            // The first write never pushes: `#lastWrittenPath` is undefined until then, so the URL the
+            // portlet opens with replaces rather than stacking on top of the referring page.
             const isOpeningPanel = editContent !== null && !this.#editPanelUrlWasSet;
-            if (isOpeningPanel) {
+            const isFolderNavigation =
+                this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
+
+            if (isOpeningPanel || isFolderNavigation) {
                 this.#location.go(newUrl);
             } else {
                 this.#location.replaceState(newUrl);
             }
+            this.#lastWrittenPath = path;
         }
         this.#editPanelUrlWasSet = editContent !== null;
     });

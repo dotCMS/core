@@ -479,6 +479,29 @@ describe('DotContentDriveShellComponent', () => {
             expect(location.go).not.toHaveBeenCalled();
         });
 
+        it('pushes a history entry when the user navigates to a different folder', () => {
+            // Folder navigation is a real user action, so Back must step back up the tree. Only the
+            // automatic filter seed is denied an entry.
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/first');
+            // `path` is a plain jest.fn, so it is not a tracked dependency. Each phase re-sets the
+            // real `filters` signal (a fresh object reference) to drive the effect, which then reads
+            // the current path.
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            (location.go as jest.Mock).mockClear();
+            (location.replaceState as jest.Mock).mockClear();
+
+            store.path.mockReturnValue('/second');
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(location.go).toHaveBeenCalledWith(expect.stringContaining('path=%2Fsecond'));
+        });
+
         it('does not push a history entry when the default filters are seeded', () => {
             // The seed is not a user action, and it lands twice on a cold load: once for the
             // sharedAssets default and again when the default language resolves. Pushing either would
