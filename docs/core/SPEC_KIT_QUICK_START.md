@@ -1,11 +1,8 @@
 # Spec-Kit Quick Start
 
 Get from an issue to merged code using spec-driven development in this repo — two PRs: the
-spec first, the implementation second. Sections 1-4 are
-the ones to actually read (~5 min); the rest is reference you consult when you hit it. For
-*how the install is built and maintained*, see
-[`.specify/CUSTOMIZATIONS.md`](../../.specify/CUSTOMIZATIONS.md) — this doc is about running
-it, that one is about owning it.
+spec first, the implementation second. Sections 1-4 are the ones to actually read (~5 min);
+the rest is reference you consult when you hit it.
 
 > **See also:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)
 > — the project law every `/speckit-*` command loads. If a command pushes back on you,
@@ -121,7 +118,7 @@ Three different approvals happen in a Spec-Kit run — don't confuse them:
 | Approval | Who gives it | Where |
 |----------|--------------|-------|
 | **The spec** | Another dev | On PR 1, before it merges |
-| **The tests** | You | In-session, at the TDD gate (§6) |
+| **The tests** | You | In-session, at the TDD gate (§7) |
 | **ADR alignment** | Automated consult, you resolve conflicts | Inside `/speckit-plan` |
 
 ---
@@ -144,7 +141,7 @@ continues anyway — so a missing grant is silent. Check it now, not later.
 ## 5. A worked example — implementing a feature
 
 One feature, all four commands, start to finish. Fixing a bug follows the same shape with a
-different entry command — see §8.
+different entry command — §6, next.
 
 ### `/speckit-specify` — write the contract
 
@@ -175,7 +172,7 @@ happens after that.
 
 Reads your spec and produces `plan.md`: architecture, **Test Strategy**, **Constitution
 Check**, **Legacy Impact**, and **ADR Alignment**. This is where the two automated gates live —
-see §6. Takes optional guidance (`/speckit-plan use the existing WorkflowAPI rather than a new
+see §7. Takes optional guidance (`/speckit-plan use the existing WorkflowAPI rather than a new
 service`).
 
 ### `/speckit-tasks` — break it down
@@ -199,7 +196,36 @@ stops for your approval, stops again to show you they fail, and only then writes
 
 ---
 
-## 6. The two gates that stop the run
+## 6. A worked example — fixing a bug
+
+Most bug fixes are Tier 1 — lean flow, no `clarify`/`checklist`/`analyze`.
+
+```
+/speckit-specify-fix Site publish dialog shows a stale changelog after a
+second publish — repro in dotCMS/core#12345
+```
+
+1. **Reproduce it**, then run `/speckit-specify-fix` to write the defect spec: observed vs.
+   expected behavior, and the repro.
+2. **Open PR 1 with that spec alone**, get it approved, and merge it (§3).
+3. **Branch from `main`, then write a failing regression test** that captures the expected
+   behavior — it's your first acceptance criterion, and it's the Red gate from §7.
+4. **Let the agent fix the code** until that test and the suite pass.
+5. **Open PR 2 with the fix**, linking PR 1 (and any ADR, if the root cause touches a prior
+   decision).
+
+The spec is defect-framed rather than story-framed: **Problem Statement, Reproduction, Scope
+of Investigation, Root-Cause Hypothesis, Fix Scope & Non-Goals, Regression Risk, Acceptance &
+Verification**. *Fix Scope & Non-Goals* is the one that earns its keep — it's what stops a
+bounded fix from becoming a legacy rewrite.
+
+> **Urgent incident?** The order inverts, not the count. Ship the fix first, then send the
+> short defect spec as its own PR right after. The goal is never to leave a behavior change
+> with no record of intent — not to slow down an outage.
+
+---
+
+## 7. The two gates that stop the run
 
 Both are deliberate halts. Neither is a bug.
 
@@ -232,7 +258,7 @@ To search ADRs by hand at any point:
 
 ---
 
-## 7. What gets committed, and to which PR
+## 8. What gets committed, and to which PR
 
 One test: **durable reference vs. process artifact.** Would a reviewer or a future dev want
 this *after* the PR merges, without re-reading the code?
@@ -247,35 +273,6 @@ this *after* the PR merges, without re-reading the code?
 The never-commit set is enforced by [`.gitignore`](../../.gitignore). Those files still live
 on disk and keep working — `/speckit-implement` and `/speckit-converge` read them normally.
 If `git add tasks.md` seems to do nothing, this is why.
-
----
-
-## 8. Fixing a bug
-
-Most bug fixes are Tier 1 — lean flow, no `clarify`/`checklist`/`analyze`.
-
-```
-/speckit-specify-fix Site publish dialog shows a stale changelog after a
-second publish — repro in dotCMS/core#12345
-```
-
-1. **Reproduce it**, then run `/speckit-specify-fix` to write the defect spec: observed vs.
-   expected behavior, and the repro.
-2. **Open PR 1 with that spec alone**, get it approved, and merge it (§3).
-3. **Branch from `main`, then write a failing regression test** that captures the expected
-   behavior — it's your first acceptance criterion, and it's the Red gate from §6.
-4. **Let the agent fix the code** until that test and the suite pass.
-5. **Open PR 2 with the fix**, linking PR 1 (and any ADR, if the root cause touches a prior
-   decision).
-
-The spec is defect-framed rather than story-framed: **Problem Statement, Reproduction, Scope
-of Investigation, Root-Cause Hypothesis, Fix Scope & Non-Goals, Regression Risk, Acceptance &
-Verification**. *Fix Scope & Non-Goals* is the one that earns its keep — it's what stops a
-bounded fix from becoming a legacy rewrite.
-
-> **Urgent incident?** The order inverts, not the count. Ship the fix first, then send the
-> short defect spec as its own PR right after. The goal is never to leave a behavior change
-> with no record of intent — not to slow down an outage.
 
 ---
 
@@ -299,7 +296,7 @@ bounded fix from becoming a legacy rewrite.
 |---------|--------------|-----|
 | Run seems hung after `/speckit-implement` | It's parked at a `[GATE]` waiting on you | Read the last message; approve the tests or say what to change |
 | ADR section says no ADRs found, always | No `gh` access to the private `platform-adrs` | `gh auth status`, then request access in `#eng-adrs` |
-| `git add tasks.md` does nothing | Gitignored by design (§7) | Nothing to fix — it's a process artifact |
+| `git add tasks.md` does nothing | Gitignored by design (§8) | Nothing to fix — it's a process artifact |
 | "Feature directory already exists" | Number collision with an unmerged branch | Rerun with `--number N`, or `--timestamp` for a collision-free name |
 | Implementation ignores the test order | `[GATE]` tasks were edited out of `tasks.md` | Regenerate with `/speckit-tasks`; never delete gate tasks |
 | Plan skipped the ADR step | The `before_plan` hook didn't fire | Run `.specify/scripts/bash/adr-context.sh` yourself and fill in the ADR Alignment section |
