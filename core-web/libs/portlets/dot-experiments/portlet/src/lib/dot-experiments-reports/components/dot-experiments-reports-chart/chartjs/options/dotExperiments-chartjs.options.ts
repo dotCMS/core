@@ -138,7 +138,9 @@ export const generateDotExperimentLineChartJsOptions = ({
             tooltip: {
                 callbacks: {
                     title: function (context: TooltipItem<'line'>[]) {
-                        return Math.round(context[0].label * 100) + '%';
+                        // `TooltipItem.label` is a string; this axis carries numeric labels, which
+                        // the `min: 0` / `max: 1` scale below already assumes.
+                        return Math.round(Number(context[0].label) * 100) + '%';
                     },
                     label: function (context: TooltipItem<'line'>) {
                         const label = context.dataset.label || '';
@@ -169,8 +171,8 @@ export const generateDotExperimentLineChartJsOptions = ({
                 max: 1,
                 ticks: {
                     ...defaultOptions.scales.x.ticks,
-                    callback: function (value) {
-                        return (value * 100).toFixed(0) + '%';
+                    callback: function (value: number | string) {
+                        return (Number(value) * 100).toFixed(0) + '%';
                     }
                 }
             },

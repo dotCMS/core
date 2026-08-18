@@ -29,7 +29,9 @@ export class DotExperimentOptionsItemDirective {
      * @param index
      */
     selectItem(item: DotExperimentOptionsItemDirective, index: number) {
-        this._select.setOptionSelected(item.$value());
-        this._select.toggleOption(index);
+        // `_select` is injected `{ optional: true }`, so it is null when this directive is used
+        // outside a `dot-experiment-options` host — there is no selection to change then.
+        this._select?.setOptionSelected(item.$value());
+        this._select?.toggleOption(index);
     }
 }

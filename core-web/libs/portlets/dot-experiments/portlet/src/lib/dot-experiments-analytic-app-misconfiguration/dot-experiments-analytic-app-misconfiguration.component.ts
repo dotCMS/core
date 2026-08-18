@@ -66,7 +66,7 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
         this.router.navigate(['edit-page/content'], { queryParamsHandling: 'merge' });
     }
 
-    private setConfiguration(title, subtitle): void {
+    private setConfiguration(title: string, subtitle: string): void {
         this.emptyConfiguration = {
             title: this.dotMessageService.get(title),
             subtitle: this.dotMessageService.get(subtitle),

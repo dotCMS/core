@@ -69,7 +69,8 @@ export interface VmListExperiments {
     sidebar: SidebarStatus;
     pageId: string;
     pageTitle: string;
-    addToBundleContentId: string;
+    /** Null except while the Add-to-Bundle dialog is open. */
+    addToBundleContentId: string | null;
 }
 
 export interface VmCreateExperiments {
@@ -492,7 +493,7 @@ export class DotExperimentsListStore
     private getActionMenuItemsByExperiment(
         experiment: DotExperiment,
         hasEnterpriseLicense: boolean,
-        pushPublishEnvironments: DotEnvironment[]
+        pushPublishEnvironments: DotEnvironment[] | null
     ): MenuItem[] {
         return [
             // Go to Configuration Action
@@ -628,7 +629,7 @@ export class DotExperimentsListStore
             // Push Publish Action
             {
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments?.length,
                 command: () =>
                     this.dotPushPublishDialogService.open({
                         assetIdentifier: experiment.id,

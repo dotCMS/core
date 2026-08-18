@@ -19,6 +19,7 @@ import {
     LineChartColorsProperties,
     PROP_NOT_FOUND,
     ReportSummaryLegendByBayesianStatus,
+    StepStatus,
     SummaryLegend,
     TIME_7_DAYS,
     TIME_90_DAYS
@@ -84,15 +85,20 @@ export const daysToMilliseconds = (days: number): number => {
     return days * ONE_DAY;
 };
 
-export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
-    stepStatusSidebar &&
+export const checkIfExperimentDescriptionIsSaving = (
+    stepStatusSidebar: StepStatus | null
+): boolean =>
+    // `!!` on the chain: with no sidebar step the `&&` yields that falsy value itself, not a boolean,
+    // and every consumer declares this an `Observable<boolean>`.
+    !!stepStatusSidebar &&
     stepStatusSidebar.experimentStep === ExperimentSteps.EXPERIMENT_DESCRIPTION &&
     stepStatusSidebar.status === ComponentStatus.SAVING;
 
 /* Start function to extract data from the experiment and results endpoint
  *  To put together the summary table in the experiment results screen  */
 export const getConversionRateRage = (
-    data: DotCreditabilityInterval,
+    /** Absent for a variant the bayesian run did not cover — the `noDataLabel` case. */
+    data: DotCreditabilityInterval | undefined,
     noDataLabel: string,
     separatorLabel: string
 ): string => {
@@ -112,16 +118,23 @@ export const getConversionRate = (uniqueBySession: number, sessions: number): st
 export const getBayesianVariantResult = (
     variantName: string,
     results: DotBayesianVariantResult[]
-): DotBayesianVariantResult => {
+): DotBayesianVariantResult | undefined => {
+    // `find` reports no match, which happens for a variant the bayesian run did not cover.
     return results.find((variant) => variant.variant === variantName);
 };
 
-export const getProbabilityToBeBest = (probability: number, noDataLabel: string): string => {
+export const getProbabilityToBeBest = (
+    probability: number | undefined,
+    noDataLabel: string
+): string => {
     return probability ? getPercentageFormat(probability) : noDataLabel;
 };
 
-export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
-    return !!experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
+export const isPromotedVariant = (
+    experiment: DotExperiment | null,
+    variantName: string
+): boolean => {
+    return !!experiment?.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
 };
 
 export const getPreviousDay = (givenDate: string) => {

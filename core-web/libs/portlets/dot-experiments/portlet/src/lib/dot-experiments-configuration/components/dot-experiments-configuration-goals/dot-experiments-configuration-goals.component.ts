@@ -55,7 +55,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     vm$: Observable<{
         experimentId: string;
         goals: Goals | null;
-        status: StepStatus;
+        status: StepStatus | null;
         isExperimentADraft: boolean;
         disabledTooltipLabel: null | string;
     }> = this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
