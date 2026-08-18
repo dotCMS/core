@@ -453,6 +453,12 @@ export class DotFolderListViewComponent implements OnInit {
         const extras = this.$sizedExtraColumns();
 
         return {
+            // Take the paginator out of play while a search is in flight, so the controls cannot be
+            // clicked into queueing more searches. `pointer-events-none` covers the rows-per-page
+            // dropdown too, which triggers a fetch of its own.
+            paginator: {
+                class: this.$loading() ? 'pointer-events-none opacity-60' : ''
+            },
             table: {
                 style: {
                     'table-layout': 'fixed',
@@ -698,6 +704,15 @@ export class DotFolderListViewComponent implements OnInit {
         // Lazy only. `paginate` means "fetch me this page" — nothing a caller holding every row can
         // act on, and the skeleton rows it primes would never be shown. The table pages itself.
         if (!this.$lazy()) {
+            return;
+        }
+
+        // A search is already in flight. The paginator stays mounted while the rows are replaced by
+        // skeletons, so without this every further click fires another search for a page the user
+        // cannot see yet, and the last response to arrive wins regardless of which page was asked
+        // for last. The controls are also visually disabled via `$ptConfig`, but this is the part
+        // that has to hold: a keyboard activation or a fast double click does not wait for CSS.
+        if (this.$loading()) {
             return;
         }
 

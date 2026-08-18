@@ -495,6 +495,56 @@ describe('DotFolderListViewComponent', () => {
             expect(paginateSpy).toHaveBeenCalled();
         });
 
+        it('should not ask for another page while a search is in flight', () => {
+            // The paginator stays mounted while rows are swapped for skeletons, so an ungated click
+            // fires a second search for a page the user cannot see yet, and whichever response lands
+            // last wins regardless of which page was actually requested.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        it('should ask for the page again once the search settles', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
+        });
+
+        it('should take the paginator out of play while loading', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-paginator-next')).toBeTruthy();
+            expect(spectator.component.$ptConfig().paginator.class).toContain(
+                'pointer-events-none'
+            );
+        });
+
+        it('should leave the paginator usable once loading finishes', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.component.$ptConfig().paginator.class).toBe('');
+        });
+
         it('should not fetch languages when the locale column is hidden', () => {
             // The preview is a second instance of this grid, built and torn down on every drill-in,
             // and it hides the locale column — so the map that request builds is never read.
