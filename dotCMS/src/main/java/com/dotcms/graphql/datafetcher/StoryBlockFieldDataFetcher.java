@@ -1,6 +1,5 @@
 package com.dotcms.graphql.datafetcher;
 
-import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
@@ -16,14 +15,12 @@ import java.util.Map;
  * The field value can arrive in two shapes depending on the read path: an already-hydrated
  * {@link Map} (page queries, where {@code StoryBlockViewStrategy} has transformed the contentlet)
  * or a raw JSON {@link String} (collection queries, which return the raw contentlet). Both shapes
- * are resolved through the canonical {@link com.dotcms.contenttype.business.StoryBlockAPI#toMap(Object)}
- * conversion so every consumer of a Block Editor value behaves the same.
- * <p>
- * The read path never reshapes stored data: a String value that is not a Block Editor JSON
- * document (e.g. HTML from a converted WYSIWYG field) is returned unchanged, matching {@code _map}
- * and the Page REST API. A missing/blank value resolves to an empty json object. If resolution
- * still fails, the field degrades gracefully to {@code null} with a WARN instead of failing the
- * whole GraphQL query.
+ * — plus legacy values that are not Block Editor JSON at all, e.g. HTML from a converted WYSIWYG
+ * field — are resolved through the canonical
+ * {@link com.dotcms.contenttype.business.StoryBlockAPI#toMapOrPassthrough(Object, java.util.function.Supplier)}
+ * conversion, which never reshapes stored data and never throws: unparseable values are returned
+ * unchanged (matching {@code _map} and the Page REST API) with a rate-limited WARN. A
+ * missing/blank value resolves to an empty json object per the existing contract.
  */
 public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Object>> {
 
@@ -45,34 +42,10 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
             return storyBlockMap;
         }
 
-        if (fieldValue instanceof String && !isJsonObject((String) fieldValue)) {
-            // A stored value that is not a Block Editor JSON document -- e.g. HTML from a WYSIWYG
-            // field later converted to Block Editor -- is returned unchanged. The read path never
-            // reshapes stored data, matching what _map and the Page REST API return.
-            storyBlockMap.put("json", fieldValue);
-            return storyBlockMap;
-        }
-
-        try {
-            storyBlockMap.put("json", APILocator.getStoryBlockAPI().toMap(fieldValue));
-        } catch (final Exception e) {
-            Logger.warnAndDebug(this.getClass(), String.format(
-                    "Unable to resolve Story Block field '%s' as JSON (identifier: %s, inode: %s, languageId: %d): %s",
-                    variableName, contentlet.getIdentifier(), contentlet.getInode(),
-                    contentlet.getLanguageId(), e.getMessage()), e);
-            return null;
-        }
-
+        storyBlockMap.put("json", APILocator.getStoryBlockAPI().toMapOrPassthrough(fieldValue,
+                () -> String.format("field: '%s', identifier: %s, inode: %s, languageId: %d",
+                        variableName, contentlet.getIdentifier(), contentlet.getInode(),
+                        contentlet.getLanguageId())));
         return storyBlockMap;
-    }
-
-    /**
-     * Mirrors {@code StoryBlockAPIImpl.isJsonObject}: Story Block documents are always JSON
-     * objects, so only a value whose root token is an object is parsed; everything else is a
-     * legacy value passed through as-is.
-     */
-    private static boolean isJsonObject(final String value) {
-        final String trimmed = value.trim();
-        return trimmed.startsWith("{") && JsonUtil.isValidJSON(trimmed);
     }
 }

@@ -2,6 +2,8 @@ package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 import com.dotcms.UnitTestBase;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,9 +13,10 @@ import java.util.Map;
 import org.junit.Test;
 
 /**
- * Unit tests for {@link StoryBlockAPIImpl#toMap(Object)}, the single canonical conversion for
- * Block Editor values. It must accept both value shapes: a raw JSON String and an
- * already-hydrated Map (e.g. from {@code StoryBlockViewStrategy}).
+ * Unit tests for {@link StoryBlockAPIImpl#toMap(Object)} and its tolerant variant
+ * {@code toMapOrPassthrough}, the single canonical conversion for Block Editor values. It must
+ * accept both value shapes: a raw JSON String and an already-hydrated Map (e.g. from
+ * {@code StoryBlockViewStrategy}).
  */
 public class StoryBlockAPIImplToMapTest extends UnitTestBase {
 
@@ -53,5 +56,39 @@ public class StoryBlockAPIImplToMapTest extends UnitTestBase {
     @Test(expected = JsonProcessingException.class)
     public void toMap_rejectsJavaMapNotationString() throws JsonProcessingException {
         storyBlockAPI.toMap("{type=doc, content=[{type=paragraph, text=securely, visually}]}");
+    }
+
+    /**
+     * The tolerant variant behaves exactly like {@code toMap} for the two valid shapes: a JSON
+     * String parses into a Map, and a hydrated Map yields a defensive copy.
+     */
+    @Test
+    public void toMapOrPassthrough_convertsValidShapesLikeToMap() {
+        final Object parsed = storyBlockAPI.toMapOrPassthrough(
+                "{\"type\":\"doc\",\"content\":[]}", () -> "test");
+        assertEquals("doc", ((Map<?, ?>) parsed).get("type"));
+
+        final Map<String, Object> hydrated = new LinkedHashMap<>();
+        hydrated.put("type", "doc");
+        final Object copied = storyBlockAPI.toMapOrPassthrough(hydrated, () -> "test");
+        assertEquals(hydrated, copied);
+        assertNotSame("must return a defensive copy of a hydrated Map", hydrated, copied);
+    }
+
+    /**
+     * The read path never reshapes stored data and never throws: any value that is not a Story
+     * Block JSON document — legacy WYSIWYG HTML, Java map notation, scalars — is returned
+     * unchanged (same instance).
+     */
+    @Test
+    public void toMapOrPassthrough_returnsUnparseableValuesUnchanged() {
+        for (final Object value : new Object[] {
+                "<p>Save 20% today, <a href=\"https://dotcms.com/offer\">see details</a></p>",
+                "{type=doc, content=[{type=paragraph, text=securely, visually}]}",
+                "plain text", 42L}) {
+            assertSame("value: <" + value + ">", value,
+                    storyBlockAPI.toMapOrPassthrough(value, () -> "test"));
+        }
+        assertNull(storyBlockAPI.toMapOrPassthrough(null, () -> "test"));
     }
 }

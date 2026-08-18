@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -85,6 +86,12 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             ThreadLocal.withInitial(HashSet::new);
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
+    /**
+     * Minimum interval between two {@link #toMapOrPassthrough} WARN entries for the same value
+     * context, so legacy non-JSON values (e.g. converted WYSIWYG fields) stay visible in the logs
+     * without flooding them on every read.
+     */
+    private static final int UNPARSEABLE_VALUE_WARN_INTERVAL_MILLIS = 30_000;
 
     /**
      * This method hydrates all the Story Block -- a.k.a. Block Editor -- fields within the
@@ -609,6 +616,30 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                        .readValue(Try.of(blockEditorValue::toString)
                                           .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Object toMapOrPassthrough(final Object blockEditorValue, final Supplier<String> valueContext) {
+        if (blockEditorValue instanceof Map) {
+            // Same shallow-copy semantics as toMap(Object).
+            return new LinkedHashMap<>((Map<String, Object>) blockEditorValue);
+        }
+        if (null != blockEditorValue) {
+            try {
+                if (isJsonObject(blockEditorValue.toString())) {
+                    return this.toMap(blockEditorValue);
+                }
+            } catch (final Exception e) {
+                Logger.debug(this, () -> String.format("Unable to parse Story Block value (%s): %s",
+                        valueContext.get(), ExceptionUtil.getErrorMessage(e)));
+            }
+            final String context = valueContext.get();
+            Logger.warnEvery(StoryBlockAPIImpl.class, context, String.format(
+                    "Unable to parse Story Block value as JSON (%s); returning the stored value unchanged",
+                    context), UNPARSEABLE_VALUE_WARN_INTERVAL_MILLIS);
+        }
+        return blockEditorValue;
     }
 
     @Override

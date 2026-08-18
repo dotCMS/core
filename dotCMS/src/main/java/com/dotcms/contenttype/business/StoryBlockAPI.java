@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * This API allows you to interact with information related to Story Block fields in a given Contentlet. For example, it
@@ -103,6 +104,23 @@ public interface StoryBlockAPI {
      * @throws JsonProcessingException An error occurred when processing the JSON data.
      */
     LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException;
+
+    /**
+     * Tolerant variant of {@link #toMap(Object)} for read paths that must never fail or reshape
+     * stored data. A Map or JSON-object String converts exactly like {@link #toMap(Object)}; any
+     * other value — e.g. HTML from a WYSIWYG field later converted to Block Editor — is returned
+     * unchanged, with a rate-limited WARN identifying the unparseable value. Use this from
+     * consumers that render stored values (GraphQL, REST); use the strict {@link #toMap(Object)}
+     * from transforms that require a valid Story Block document and must fail otherwise.
+     *
+     * @param blockEditorValue The value of the Story Block field, in any of the shapes described above.
+     * @param valueContext     Describes where the value came from (contentlet identifier, field
+     *                         variable, etc.); only evaluated when the WARN is logged.
+     *
+     * @return The Story Block field as a {@link LinkedHashMap}, or {@code blockEditorValue}
+     * unchanged when it does not hold a Story Block JSON document.
+     */
+    Object toMapOrPassthrough(final Object blockEditorValue, final Supplier<String> valueContext);
 
     /**
      * Takes the Map containing the properties of a specific Story Block field and transforms it into JSON data as a
