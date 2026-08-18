@@ -12,9 +12,9 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSelectSeoToolComponent implements OnChanges {
-    @Input() socialMedia: string;
-    @Input() device: DotDeviceListItem;
-    socialMediaIconClass: string;
+    @Input() socialMedia = '';
+    @Input() device!: DotDeviceListItem;
+    socialMediaIconClass = '';
     SOCIAL_MEDIA_TILES = SEO_TILES;
 
     ngOnChanges() {

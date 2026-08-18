@@ -81,9 +81,9 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);
     private store = inject(DotFavoritePageStore);
 
-    form: FormGroup;
-    isFormValid$: Observable<boolean>;
-    timeStamp: string;
+    form!: FormGroup;
+    isFormValid$!: Observable<boolean>;
+    timeStamp = '';
     protected readonly isThumbnailLoading = signal(true);
 
     vm$: Observable<DotFavoritePageState> = this.store.vm$;
@@ -125,7 +125,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
                 requestAnimationFrame(() => {
                     if (formStateData?.inode) {
-                        this.form.get('thumbnail').setValue(formStateData?.thumbnail);
+                        this.form.controls['thumbnail'].setValue(formStateData?.thumbnail);
                         // img (load) event will clear isThumbnailLoading for this path
                     } else {
                         this.setPreviewThumbnailListener();
@@ -136,7 +136,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         this.store.renderThumbnail$
             .pipe(
                 takeUntil(this.destroy$),
-                filter((renderThumbnail) => renderThumbnail)
+                filter((renderThumbnail) => !!renderThumbnail)
             )
             .subscribe(() => {
                 this.isThumbnailLoading.set(true);
@@ -153,11 +153,11 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
         this.store.actionState$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((actionState: DotFavoritePageActionState) => {
+            .subscribe((actionState: DotFavoritePageActionState | null) => {
                 if (actionState === DotFavoritePageActionState.SAVED) {
-                    this.config.data?.onSave?.(this.form.get('url').value);
+                    this.config.data?.onSave?.(this.form.controls['url'].value);
                 } else if (actionState === DotFavoritePageActionState.DELETED) {
-                    this.config.data?.onDelete?.(this.form.get('url').value);
+                    this.config.data?.onDelete?.(this.form.controls['url'].value);
                 }
             });
     }
@@ -206,13 +206,13 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     private setPreviewThumbnailListener() {
         const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
         if (dotHtmlToImageElement) {
-            dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+            dotHtmlToImageElement.addEventListener('pageThumbnail', ((event: CustomEvent) => {
                 this.isThumbnailLoading.set(false);
                 const file = event.detail?.file;
                 if (file) {
-                    this.form.get('thumbnail').setValue(file);
+                    this.form.controls['thumbnail'].setValue(file);
                 } else {
-                    this.form.get('thumbnail').setValue('');
+                    this.form.controls['thumbnail'].setValue('');
                     this.store.setShowFavoriteEmptySkeleton(true);
                     const errorMsg =
                         event.detail?.error ||
@@ -222,7 +222,8 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                         errorMsg
                     );
                 }
-            });
+                // `pageThumbnail` is a custom event; DOM typings only know `Event`.
+            }) as EventListener);
         }
     }
 }
