@@ -92,13 +92,13 @@ describe('DotCategoryFieldComponent', () => {
 
             it('should the button be type=button', () => {
                 spectator.detectChanges();
-                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'))!;
                 expect(selectBtn!.type).toBe('button');
             });
 
             it('should render the `Select` button as primary', () => {
                 spectator.detectChanges();
-                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'))!;
                 expect(selectBtn!.classList).not.toContain('p-button-secondary');
                 expect(selectBtn!.classList).not.toContain('p-button-text');
             });
@@ -281,7 +281,7 @@ describe('DotCategoryFieldComponent', () => {
 
         it('should create a DotCategoryFieldDialogComponent instance when the `Select` button is clicked', async () => {
             spectator.detectChanges();
-            const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
+            const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'))!;
             expect(selectBtn).not.toBeNull();
 
             expect(spectator.query(DotCategoryFieldDialogComponent)).toBeNull();

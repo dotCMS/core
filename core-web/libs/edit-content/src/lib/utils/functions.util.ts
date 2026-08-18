@@ -165,7 +165,9 @@ export const getSingleSelectableFieldOptions = (
  * @returns
  */
 export const getFinalCastedValue = (
-    value: object | string | number | undefined,
+    // Nullable: the resolution functions return null for absent values, and the guard
+    // below already treats undefined as "leave as-is".
+    value: object | string | number | null | undefined,
     field: DotCMSContentTypeField
 ) => {
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
@@ -390,7 +392,7 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
         ...tab,
         layout: tab.layout.map((row) => ({
             ...row,
-            columns: row.columns.map((column) => ({
+            columns: (row.columns ?? []).map((column) => ({
                 ...column,
                 fields: column.fields
                     .filter((field) => !isFilteredType(field))
@@ -526,7 +528,9 @@ export const prepareContentletForCopy = (
 
     return {
         ...contentlet,
-        inode: undefined,
+        // Cleared on purpose — the copy is a new contentlet, so it must not carry an inode.
+        // `DotCMSContentlet` types it as a required string, hence the cast.
+        inode: undefined as unknown as string,
         locked: false,
         lockedBy: undefined,
         ...clearedBinaryFields

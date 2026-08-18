@@ -18,9 +18,12 @@ import { formatDotImageNode } from './utils/editor.utils';
  * No need to mock all the methods and properties of the Editor
  * Some methods are customized to check the configuration
  */
+type MockButtonConfig = { text?: string; onAction?: () => void; [key: string]: unknown };
+type MockEventHandler = (event: unknown) => void;
+
 class MockEditor {
-    private customButtons = {};
-    private events = {};
+    private customButtons: Record<string, MockButtonConfig> = {};
+    private events: Record<string, MockEventHandler[]> = {};
 
     ui = {
         registry: {
@@ -29,13 +32,13 @@ class MockEditor {
                     buttons: this.customButtons
                 };
             },
-            addButton: (name, config) => {
+            addButton: (name: string, config: MockButtonConfig) => {
                 this.customButtons[name] = config;
             }
         }
     };
 
-    on = (name, fn) => {
+    on = (name: string, fn: MockEventHandler) => {
         if (!this.events[name]) {
             this.events[name] = [fn];
 
@@ -45,7 +48,7 @@ class MockEditor {
         this.events[name].push(fn);
     };
 
-    fakeOnCall = (name, event) => {
+    fakeOnCall = (name: string, event: unknown) => {
         this.events[name].forEach((fn) => fn(event));
     };
 

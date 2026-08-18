@@ -80,7 +80,7 @@ export class DotEditContentFieldComponent {
     /**
      * The field.
      */
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input<DotCMSContentTypeField | null>(null, { alias: 'field' });
 
     /**
      * The contentlet.

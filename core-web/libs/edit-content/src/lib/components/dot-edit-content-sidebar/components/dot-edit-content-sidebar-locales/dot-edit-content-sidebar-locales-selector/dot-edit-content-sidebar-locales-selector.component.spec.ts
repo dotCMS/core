@@ -65,7 +65,7 @@ function typeInSearch(
     spectator: Spectator<DotEditContentSidebarLocalesSelectorComponent>,
     value: string
 ) {
-    const input = spectator.query<HTMLInputElement>(byTestId('search-input'));
+    const input = spectator.query<HTMLInputElement>(byTestId('search-input'))!;
     input!.value = value;
     spectator.dispatchFakeEvent(input, 'input');
     spectator.detectChanges();
