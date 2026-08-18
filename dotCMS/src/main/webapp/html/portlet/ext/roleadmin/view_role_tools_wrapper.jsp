@@ -34,6 +34,11 @@
 <%-- Dojo widgets + DWR RoleAjax bootstrap used by the Tools JS. --%>
 <%@ include file="/html/portlet/ext/roleadmin/view_roles_js_inc.jsp" %>
 
+<%-- Hidden DOM stubs to satisfy the shared JS's unconditional
+     `dojo.addOnLoad` initializers (roles tree, users grid) — see the
+     include file's header for the full rationale. --%>
+<%@ include file="/html/portlet/ext/roleadmin/view_role_iframe_stubs_inc.jsp" %>
+
 <style type="text/css">
     <%@ include file="/html/portlet/ext/roleadmin/view_roles.css" %>
 
@@ -54,9 +59,38 @@
     // (roleId query param) which reloads the whole page — that is fine at
     // this level; no incremental state is preserved intentionally so the
     // JSP stays a thin, replaceable wrapper.
+    //
+    // `loadRoleLayouts` reads `currentRole.editLayouts` DIRECTLY (see
+    // `view_roles_js_inc.jsp` @ line ~992), so we MUST populate
+    // `currentRole` before calling it — in the full portlet that
+    // assignment happens inside `roleClicked()` when the user picks a
+    // tree node. Here we fetch the role JSON via the same endpoint the
+    // legacy `findRole()` uses and seed `currentRole` / `currentRoleId`
+    // manually before kicking off the layouts load.
     dojo.addOnLoad(function () {
         <% if (UtilMethods.isSet(roleId)) { %>
-        loadRoleLayouts('<%= UtilMethods.escapeSingleQuotes(roleId) %>');
+        var _roleId = '<%= UtilMethods.escapeSingleQuotes(roleId) %>';
+        dojo.xhrGet({
+            url: '/api/role/loadbyid/id/' + encodeURIComponent(_roleId),
+            handleAs: 'json',
+            load: function (role) {
+                currentRoleId = _roleId;
+                currentRole = role;
+                loadRoleLayouts(_roleId);
+            },
+            error: function (err) {
+                console.error('Failed to load role for iframe wrapper', err);
+            }
+        });
         <% } %>
     });
 </script>
+
+<%--
+    `bottom_inc.jsp` registers `dotMakeBodVisible` on `dojo.addOnLoad` —
+    without it the `<body style="visibility:hidden">` set by `top_inc.jsp`
+    is never toggled and nothing renders. It also anti-frame-busts
+    correctly (only redirects to `/dotAdmin/` when the page is NOT inside
+    an iframe, which is exactly our embed scenario).
+--%>
+<%@ include file="/html/common/bottom_inc.jsp" %>
