@@ -16,6 +16,7 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import {
+    ContentTypeRelationshipField,
     DotCMSClazzes,
     DotCMSContentlet,
     DotCMSContentType,
@@ -141,7 +142,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 contentType: jest.fn().mockReturnValue(null),
                 currentLocale: jest.fn().mockReturnValue(null),
                 isCopyingLocale: jest.fn().mockReturnValue(false),
-                isDialogMode: jest.fn().mockReturnValue(false),
                 contentlet: jest.fn().mockReturnValue(null)
             }),
             mockProvider(DotEditContentService, {
@@ -564,9 +564,11 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
         it('should handle invalid field data gracefully', () => {
             const invalidField = createFakeRelationshipField({
+                // Deliberately invalid: `relationships` is required on a relationship field.
+                // This exercises the guards that handle a field without one.
                 relationships: null,
                 variable: 'invalidField'
-            });
+            } as unknown as Partial<ContentTypeRelationshipField>);
 
             const invalidContentlet = createFakeContentlet({
                 [invalidField.variable]: null
@@ -646,7 +648,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             contentType: jest.fn().mockReturnValue(null),
             currentLocale: jest.fn().mockReturnValue(null),
             isCopyingLocale: jest.fn().mockReturnValue(false),
-            isDialogMode: jest.fn().mockReturnValue(false),
             contentlet: jest.fn().mockReturnValue(null)
         }),
         mockProvider(DotEditContentService, {

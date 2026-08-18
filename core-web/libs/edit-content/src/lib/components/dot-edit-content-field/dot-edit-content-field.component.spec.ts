@@ -100,7 +100,6 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                 contentType: signal(null),
                 isCopyingLocale: signal(false),
                 currentLocale: signal(undefined),
-                isDialogMode: signal(false),
                 contentlet: signal(null)
             }),
             mockProvider(DotEditContentService, {

@@ -10,13 +10,19 @@ import {
     DotHttpErrorManagerService,
     DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotLanguage, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentType,
+    DotLanguage,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { RelationshipFieldService } from './relationship-field.service';
 import { RelationshipFieldStore } from './relationship-field.store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { SelectionMode } from '../models/relationship.models';
 
 describe('RelationshipFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof RelationshipFieldStore>>;
@@ -46,13 +52,15 @@ describe('RelationshipFieldStore', () => {
         variable: 'relationship_field'
     });
 
+    // Typed once here rather than cast at each use: `prepareField`'s resolved shape needs a
+    // `DotCMSContentType`, and this fixture only carries the three members the store reads.
     const mockContentType = {
         id: 'test-content-type',
         name: 'Test Content Type',
         metadata: {
             [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
         }
-    };
+    } as unknown as DotCMSContentType;
 
     const createStoreService = createServiceFactory({
         service: RelationshipFieldStore,
@@ -624,9 +632,14 @@ describe('RelationshipFieldStore', () => {
                         data: [],
                         contentType: mockContentType,
                         columns: [],
-                        selectionMode: 'multiple',
-                        isNewEditorEnabled: false
-                    } as never)
+                        selectionMode: 'multiple' as SelectionMode,
+                        isNewEditorEnabled: false,
+                        // `field` and `contentTypeId` complete `prepareField`'s resolved shape. The
+                        // fixture used to omit them and reach for `as never`, which typed the whole
+                        // mock as `never` — so it described nothing about the service at all.
+                        field: mockField,
+                        contentTypeId: mockContentType.id
+                    })
                 );
 
                 store.initialize({ field: mockField, contentlet: null });
@@ -640,9 +653,14 @@ describe('RelationshipFieldStore', () => {
                         data: [],
                         contentType: mockContentType,
                         columns: [],
-                        selectionMode: 'multiple',
-                        isNewEditorEnabled: false
-                    } as never)
+                        selectionMode: 'multiple' as SelectionMode,
+                        isNewEditorEnabled: false,
+                        // `field` and `contentTypeId` complete `prepareField`'s resolved shape. The
+                        // fixture used to omit them and reach for `as never`, which typed the whole
+                        // mock as `never` — so it described nothing about the service at all.
+                        field: mockField,
+                        contentTypeId: mockContentType.id
+                    })
                 );
 
                 store.initialize({
@@ -667,9 +685,14 @@ describe('RelationshipFieldStore', () => {
                         data: [],
                         contentType: mockContentType,
                         columns: [],
-                        selectionMode: 'multiple',
-                        isNewEditorEnabled: false
-                    } as never)
+                        selectionMode: 'multiple' as SelectionMode,
+                        isNewEditorEnabled: false,
+                        // `field` and `contentTypeId` complete `prepareField`'s resolved shape. The
+                        // fixture used to omit them and reach for `as never`, which typed the whole
+                        // mock as `never` — so it described nothing about the service at all.
+                        field: mockField,
+                        contentTypeId: mockContentType.id
+                    })
                 );
 
                 store.initialize({
@@ -700,9 +723,14 @@ describe('RelationshipFieldStore', () => {
                         data: [],
                         contentType: mockContentType,
                         columns: [],
-                        selectionMode: 'multiple',
-                        isNewEditorEnabled: false
-                    } as never)
+                        selectionMode: 'multiple' as SelectionMode,
+                        isNewEditorEnabled: false,
+                        // `field` and `contentTypeId` complete `prepareField`'s resolved shape. The
+                        // fixture used to omit them and reach for `as never`, which typed the whole
+                        // mock as `never` — so it described nothing about the service at all.
+                        field: mockField,
+                        contentTypeId: mockContentType.id
+                    })
                 );
 
                 store.initialize({
@@ -729,9 +757,14 @@ describe('RelationshipFieldStore', () => {
                         data: [],
                         contentType: mockContentType,
                         columns: [],
-                        selectionMode: 'multiple',
-                        isNewEditorEnabled: false
-                    } as never)
+                        selectionMode: 'multiple' as SelectionMode,
+                        isNewEditorEnabled: false,
+                        // `field` and `contentTypeId` complete `prepareField`'s resolved shape. The
+                        // fixture used to omit them and reach for `as never`, which typed the whole
+                        // mock as `never` — so it described nothing about the service at all.
+                        field: mockField,
+                        contentTypeId: mockContentType.id
+                    })
                 );
 
                 store.initialize({
@@ -755,9 +788,14 @@ describe('RelationshipFieldStore', () => {
                         data: [],
                         contentType: mockContentType,
                         columns: [],
-                        selectionMode: 'multiple',
-                        isNewEditorEnabled: false
-                    } as never)
+                        selectionMode: 'multiple' as SelectionMode,
+                        isNewEditorEnabled: false,
+                        // `field` and `contentTypeId` complete `prepareField`'s resolved shape. The
+                        // fixture used to omit them and reach for `as never`, which typed the whole
+                        // mock as `never` — so it described nothing about the service at all.
+                        field: mockField,
+                        contentTypeId: mockContentType.id
+                    })
                 );
 
                 store.initialize({
@@ -821,13 +859,15 @@ describe('RelationshipFieldStore', () => {
 describe('RelationshipFieldStore - Instance Isolation', () => {
     afterEach(() => TestBed.resetTestingModule());
 
+    // Typed once here rather than cast at each use: `prepareField`'s resolved shape needs a
+    // `DotCMSContentType`, and this fixture only carries the three members the store reads.
     const mockContentType = {
         id: 'test-content-type',
         name: 'Test Content Type',
         metadata: {
             [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
         }
-    };
+    } as unknown as DotCMSContentType;
 
     const storeProviders = [
         RelationshipFieldStore,
