@@ -148,7 +148,7 @@ describe('DotContentDriveShellComponent', () => {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn(),
@@ -1064,7 +1064,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(selector!.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
@@ -1080,8 +1080,8 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$files()).toBe(files);
-            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(selector!.$files()).toBe(files);
+            expect(selector!.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
@@ -1097,7 +1097,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$files()).toBe(files);
+            expect(selector!.$files()).toBe(files);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
@@ -2780,7 +2780,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn(),

@@ -19,7 +19,7 @@ const initialState: DotContentDriveState = {
     selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
-    pagination: { limit: 40, offset: 0 },
+    pagination: { limit: 40, page: 1, offset: 0 },
     sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };

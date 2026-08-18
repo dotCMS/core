@@ -87,7 +87,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 add: jest.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(Router, {
                 navigate: jest.fn().mockReturnValue(Promise.resolve(true)),

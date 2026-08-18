@@ -24,7 +24,7 @@ describe('Sidebar Utils', () => {
         });
 
         it('should be a folder type', () => {
-            expect(ALL_FOLDER.data.type).toBe('folder');
+            expect(ALL_FOLDER.data!.type).toBe('folder');
         });
 
         it('should be expanded by default', () => {
@@ -164,7 +164,7 @@ describe('Sidebar Utils', () => {
 
         it('should carry the folder defaultBaseType onto the node data', () => {
             const result = createTreeNode({ ...mockFolder, defaultBaseType: 'FILEASSET' });
-            expect(result.data.defaultBaseType).toBe('FILEASSET');
+            expect(result.data!.defaultBaseType).toBe('FILEASSET');
         });
 
         it('should use folder path as label', () => {
@@ -192,7 +192,7 @@ describe('Sidebar Utils', () => {
 
             const result = createTreeNode(folderWithDifferentHost);
 
-            expect(result.data.hostname).toBe('other.dotcms.com');
+            expect(result.data!.hostname).toBe('other.dotcms.com');
         });
 
         it('should handle folder with empty path', () => {
@@ -204,7 +204,7 @@ describe('Sidebar Utils', () => {
             const result = createTreeNode(folderWithEmptyPath);
 
             expect(result.label).toBe('');
-            expect(result.data.path).toBe('');
+            expect(result.data!.path).toBe('');
         });
 
         it('should maintain parent reference correctly', () => {

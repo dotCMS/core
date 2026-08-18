@@ -137,7 +137,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             // folderPath = hostname + current path (new editor); folderInode = current folder (legacy editor)
             expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
@@ -156,7 +156,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
                 folderPath: 'demo.dotcms.com',
@@ -171,7 +171,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 .query(byTestId('content-type-selector-cancel'))
                 ?.querySelector('button');
 
-            spectator.click(cancelButton);
+            spectator.click(cancelButton!);
 
             expect(store.closeDialog).toHaveBeenCalled();
             expect(navigationService.createContent).not.toHaveBeenCalled();

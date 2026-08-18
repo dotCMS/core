@@ -72,7 +72,7 @@ const initialState: DotContentDriveState = {
     selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
-    pagination: { limit: 40, offset: 0 },
+    pagination: { limit: 40, page: 1, offset: 0 },
     sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
@@ -197,7 +197,7 @@ describe('withSidebar', () => {
                     expect(result.folders[0]).toHaveProperty('key');
                     expect(result.folders[0]).toHaveProperty('label');
                     expect(result.folders[0]).toHaveProperty('data');
-                    expect(result.folders[0].data.type).toBe('folder');
+                    expect(result.folders[0].data!.type).toBe('folder');
                     done();
                 });
             });
@@ -238,11 +238,11 @@ describe('withSidebar', () => {
 
                 if (!shouldLoadChildren) {
                     // Don't call loadChildFolders if node already has children
-                    expect(nodeWithChildren.children.length).toBeGreaterThan(0);
+                    expect(nodeWithChildren.children!.length).toBeGreaterThan(0);
                     expect(folderService.searchFolders).not.toHaveBeenCalled();
                 } else {
                     // Only call loadChildFolders if node doesn't have children
-                    store.loadChildFolders(nodeWithChildren.data.path);
+                    store.loadChildFolders(nodeWithChildren.data!.path);
                 }
 
                 // Verify the service was not called since node has children
