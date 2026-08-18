@@ -137,7 +137,7 @@ describe('HostFolderFiledStore', () => {
             it('should select the node/site if the path is not empty and not required', () => {
                 const node = TREE_SELECT_SITES_MOCK[0];
                 mockSitesPage(service, TREE_SELECT_SITES_MOCK);
-                store.loadSites({ path: node.label, isRequired: false });
+                store.loadSites({ path: node.label ?? null, isRequired: false });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
                 expect(store.selectedSite()!.key).toBe(node.key);
@@ -148,7 +148,7 @@ describe('HostFolderFiledStore', () => {
             it('should select the node/site if the path is not empty and is required', () => {
                 const node = TREE_SELECT_SITES_MOCK[0];
                 mockSitesPage(service, TREE_SELECT_SITES_MOCK);
-                store.loadSites({ path: node.label, isRequired: true });
+                store.loadSites({ path: node.label ?? null, isRequired: true });
 
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
                 expect(store.selectedSite()!.key).toBe(node.key);
@@ -164,7 +164,7 @@ describe('HostFolderFiledStore', () => {
                         node: targetNode,
                         tree: {
                             path: '/',
-                            folders: site.children,
+                            folders: site.children!,
                             parent: {
                                 hostName: site.data.hostname,
                                 id: site.data.id,
@@ -204,7 +204,9 @@ describe('HostFolderFiledStore', () => {
                     ...site.children![0],
                     key: 'gallery',
                     data: {
-                        ...site.children![0].data,
+                        // `TreeNode.data` is optional; spreading it unasserted widens the result to
+                        // `{ path: string }`, which matches no `TreeNodeData` variant.
+                        ...site.children![0].data!,
                         path: '/gallery/'
                     },
                     children: undefined
@@ -257,7 +259,7 @@ describe('HostFolderFiledStore', () => {
                         node: targetNode,
                         tree: {
                             path: '/',
-                            folders: site.children,
+                            folders: site.children!,
                             parent: {
                                 hostName: site.data.hostname,
                                 id: site.data.id,
@@ -288,7 +290,7 @@ describe('HostFolderFiledStore', () => {
                         node: targetNode,
                         tree: {
                             path: '/',
-                            folders: site.children,
+                            folders: site.children!,
                             parent: {
                                 hostName: site.data.hostname,
                                 id: site.data.id,
@@ -1655,7 +1657,7 @@ describe('HostFolderFiledStore', () => {
                 node: targetNode,
                 tree: {
                     path: '/',
-                    folders: mockSite.children
+                    folders: mockSite.children!
                 }
             });
             tree$.complete();
@@ -2000,7 +2002,7 @@ describe('HostFolderFiledStore', () => {
             mockResolveSiteByHostname(service, () => pinnedSite);
             mockSitesPage(service, pageSites, 100);
 
-            store.loadSites({ path: pinnedSite.label, isRequired: false });
+            store.loadSites({ path: pinnedSite.label ?? null, isRequired: false });
             tick();
 
             expect(service.resolveSiteByHostname).toHaveBeenCalledWith(

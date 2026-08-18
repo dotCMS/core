@@ -150,7 +150,7 @@ export class DotCategoryFieldComponent
         this.onTouched();
     }
 
-    override writeValue(value: string[]): void {
+    override writeValue(value: string[] | null): void {
         super.writeValue(value);
 
         if (this.store.state() !== ComponentStatus.LOADED) {

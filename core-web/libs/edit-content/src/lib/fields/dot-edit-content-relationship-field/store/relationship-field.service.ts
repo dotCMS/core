@@ -64,7 +64,9 @@ export class RelationshipFieldService {
      * });
      * ```
      */
-    prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet }) {
+    // `contentlet` is nullable: manual translation has no contentlet yet, and
+    // `getRelationshipFromContentlet` below already returns `[]` for that case.
+    prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet | null }) {
         const { field, contentlet } = params;
 
         return of({ field, contentlet }).pipe(

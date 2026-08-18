@@ -500,7 +500,7 @@ describe('DotHostFolderFieldComponent', () => {
             spectator.detectChanges();
 
             expect(document.querySelector('.p-tree-node-leaf')).toBeTruthy();
-            expect(store!.searchResults()[0]?.leaf).toBe(true);
+            expect(store.searchResults()![0]?.leaf).toBe(true);
         }));
     });
 

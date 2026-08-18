@@ -44,7 +44,10 @@ export abstract class BaseControlValueAccessor<T> implements ControlValueAccesso
         this.onTouched = fn;
     }
 
-    writeValue(value: T): void {
+    // `T | null`: Angular calls `writeValue(null)` to clear a control, and `$value` already
+    // holds `T | null`. `ControlValueAccessor` declares the parameter as `any`, so this is
+    // the narrowest honest signature rather than a widening of the interface.
+    writeValue(value: T | null): void {
         this.$value.set(value);
     }
 
