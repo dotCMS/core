@@ -279,7 +279,9 @@ export class DotContentDriveSidebarComponent {
         nodes: DotFolderTreeNodeItem[]
     ): DotFolderTreeNodeItem | undefined {
         for (const node of nodes) {
-            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data.path === path) {
+            // `data` is optional on the tree node, so it is checked once up front rather than
+            // optional-chained on the first read and dereferenced plainly on the second.
+            if (node.data && node.data.type !== LOAD_MORE_NODE_TYPE && node.data.path === path) {
                 return node;
             }
 
@@ -365,6 +367,7 @@ export class DotContentDriveSidebarComponent {
 
         const node = nodes.find(
             (candidate) =>
+                !!candidate.data &&
                 candidate.data.type !== LOAD_MORE_NODE_TYPE &&
                 candidate.data.path.includes(segments[0])
         );

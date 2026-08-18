@@ -30,6 +30,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotContentDriveFolder,
     DotContentDriveItem,
+    DotWizardInput,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { DotPermissionsIframeDialogComponent } from '@dotcms/ui';
@@ -101,7 +102,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
             mockProvider(DotWorkflowEventHandlerService, {
-                open: jest.fn()
+                open: jest.fn(),
+                // Returns a real input, not the auto-mock's `undefined`. `#openWizard` skips the
+                // dialog when `setWizardInput` yields null (the action has no wizard steps), so an
+                // auto-mocked return made "should open the wizard" assert the opposite of its name.
+                setWizardInput: jest.fn().mockReturnValue({
+                    title: 'Workflow-Action',
+                    steps: []
+                } as DotWizardInput)
             }),
             mockProvider(ActivatedRoute, {
                 snapshot: {

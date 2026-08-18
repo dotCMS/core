@@ -42,7 +42,8 @@ import {
     DotCMSFieldTypes,
     DotContentDriveActionableFolder,
     DotContentDriveItem,
-    DotContentDrivePaginateEvent
+    DotContentDrivePaginateEvent,
+    isTreeNodeContentData
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
@@ -659,7 +660,9 @@ export class DotContentDriveShellComponent {
                 data: {
                     type: 'folder',
                     path: contentlet.path,
-                    hostname: this.#store.currentSite()?.hostname,
+                    // Empty string, not undefined: `hostname` is required on the node
+                    // data and the site may not have resolved yet.
+                    hostname: this.#store.currentSite()?.hostname ?? '',
                     id: contentlet.identifier,
                     inode: contentlet.inode,
                     // Carry the folder's upload preference so the Upload button reflects it right
@@ -1109,7 +1112,7 @@ export class DotContentDriveShellComponent {
             targetFolder: {
                 type: 'folder',
                 path: event.path,
-                hostname: this.#store.currentSite()?.hostname,
+                hostname: this.#store.currentSite()?.hostname ?? '',
                 id: event.identifier
             }
         });
@@ -1118,9 +1121,14 @@ export class DotContentDriveShellComponent {
     protected getMoveMetadata(event: DotContentDriveMoveItems) {
         const dragItems = this.#store.dragItems();
 
-        const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
+        // Narrowed through the model's own discriminant: `targetFolder` is a union and a load-more
+        // sentinel carries neither a path nor a hostname, which the two template strings below need.
+        const targetFolder = isTreeNodeContentData(event.targetFolder)
+            ? event.targetFolder
+            : undefined;
+        const path = targetFolder?.path?.length ? targetFolder.path : '/';
 
-        const pathToMove = `//${event.targetFolder.hostname}${path}`;
+        const pathToMove = `//${targetFolder?.hostname ?? ''}${path}`;
 
         const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
 
