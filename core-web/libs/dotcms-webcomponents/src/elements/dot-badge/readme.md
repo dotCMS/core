@@ -7,12 +7,12 @@
 
 ## Properties
 
-| Property   | Attribute  | Description | Type      | Default     |
-| ---------- | ---------- | ----------- | --------- | ----------- |
-| `bgColor`  | `bg-color` |             | `string`  | `undefined` |
-| `bordered` | `bordered` |             | `boolean` | `false`     |
-| `color`    | `color`    |             | `string`  | `undefined` |
-| `size`     | `size`     |             | `string`  | `undefined` |
+| Property   | Attribute  | Description | Type                  | Default     |
+| ---------- | ---------- | ----------- | --------------------- | ----------- |
+| `bgColor`  | `bg-color` |             | `string \| undefined` | `undefined` |
+| `bordered` | `bordered` |             | `boolean`             | `false`     |
+| `color`    | `color`    |             | `string \| undefined` | `undefined` |
+| `size`     | `size`     |             | `string \| undefined` | `undefined` |
 
 
 ## Dependencies

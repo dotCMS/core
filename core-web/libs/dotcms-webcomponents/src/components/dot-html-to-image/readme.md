@@ -16,9 +16,9 @@
 
 ## Events
 
-| Event           | Description | Type                                            |
-| --------------- | ----------- | ----------------------------------------------- |
-| `pageThumbnail` |             | `CustomEvent<{ file: File; error?: unknown; }>` |
+| Event           | Description | Type                                                    |
+| --------------- | ----------- | ------------------------------------------------------- |
+| `pageThumbnail` |             | `CustomEvent<{ file: File \| null; error?: unknown; }>` |
 
 
 ----------------------------------------------

@@ -6,6 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
+import { SelectionFeedback } from "./components/contenttypes-fields/dot-tags/components/dot-autocomplete/dot-autocomplete";
 import { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 import { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
 import { DotContentletItem } from "./models/dot-contentlet-item.model";
@@ -13,6 +14,7 @@ import { DotContextMenuOption } from "./models/dot-context-menu.model";
 import { DotContextMenuAction } from "./models/dot-context-menu-action.model";
 import { DotSelectButtonOption } from "./models/dotSelectButtonOption";
 export { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
+export { SelectionFeedback } from "./components/contenttypes-fields/dot-tags/components/dot-autocomplete/dot-autocomplete";
 export { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 export { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
 export { DotContentletItem } from "./models/dot-contentlet-item.model";
@@ -331,7 +333,10 @@ export namespace Components {
           * @default '96px'
          */
         "iconSize": string;
-        "item"?: DotCardContentletItem;
+        /**
+          * Required in practice, not optional: `render` reads `contentlet.language` and `contentlet.locked` with no guard, so a missing item has always thrown. Third component with this shape, after `dot-contentlet-thumbnail` and `dot-video-thumbnail`.
+         */
+        "item": DotCardContentletItem;
         "showMenu": (x: number, y: number) => Promise<void>;
         /**
           * @default false
@@ -1624,7 +1629,7 @@ declare global {
         new (): HTMLDotAssetDropZoneElement;
     };
     interface HTMLDotAutocompleteElementEventMap {
-        "selection": string;
+        "selection": SelectionFeedback;
         "enter": string;
         "lostFocus": FocusEvent;
     }
@@ -2412,7 +2417,10 @@ declare namespace LocalJSX {
         "maxResults"?: number;
         "onEnter"?: (event: DotAutocompleteCustomEvent<string>) => void;
         "onLostFocus"?: (event: DotAutocompleteCustomEvent<FocusEvent>) => void;
-        "onSelection"?: (event: DotAutocompleteCustomEvent<string>) => void;
+        /**
+          * Emitted when a suggestion is chosen.  Typed `SelectionFeedback`, not `string`: nothing in this component calls `.emit()` — the event is dispatched by autocomplete.js on the inner input and bubbles to the host — and its payload is the library's own feedback object, which is what `dot-tags.onSelectHandler` reads (`detail.selection.value`). The declaration exists to type the `onSelection` prop.
+         */
+        "onSelection"?: (event: DotAutocompleteCustomEvent<SelectionFeedback>) => void;
         /**
           * (optional) text to show when no value is set
           * @default ''
@@ -2631,7 +2639,10 @@ declare namespace LocalJSX {
           * @default '96px'
          */
         "iconSize"?: string;
-        "item"?: DotCardContentletItem;
+        /**
+          * Required in practice, not optional: `render` reads `contentlet.language` and `contentlet.locked` with no guard, so a missing item has always thrown. Third component with this shape, after `dot-contentlet-thumbnail` and `dot-video-thumbnail`.
+         */
+        "item": DotCardContentletItem;
         "onCheckboxChange"?: (event: DotCardContentletCustomEvent<DotCardContentletEvent>) => void;
         "onContextMenuClick"?: (event: DotCardContentletCustomEvent<MouseEvent>) => void;
         /**

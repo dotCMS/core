@@ -89,7 +89,10 @@ export function getDotAttributesFromElement(attributes: Attr[], attrException: s
  * @param DotCMSContentTypeField field
  * @returns boolean
  */
-export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: string): boolean => {
+export const shouldShowField = (
+    field: DotCMSContentTypeField,
+    fieldsToShow: string | undefined
+): boolean => {
     const fields2Show = fieldsToShow ? fieldsToShow.split(',') : [];
     return !fields2Show.length || fields2Show.includes(field.variable);
 };
