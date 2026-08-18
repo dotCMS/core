@@ -35,10 +35,10 @@ export class DotMaterialIcon {
     value = '';
 
     /** Size value set for font-size */
-    @Prop({ mutable: true, reflect: true }) size: string = null;
+    @Prop({ mutable: true, reflect: true }) size?: string;
 
     /** Show/Hide color picker */
-    @Prop({ mutable: true, reflect: true }) showColor: string = null;
+    @Prop({ mutable: true, reflect: true }) showColor?: string;
 
     /** Color value set from the input */
     @Prop({ mutable: true, reflect: true })

@@ -119,7 +119,7 @@ export class DotBinaryFileComponent {
     @Event()
     dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
-    private file: string | File = null;
+    private file: string | File | null = null;
     private allowedFileTypes = [];
     private errorType: DotBinaryMessageError;
     private binaryTextField: DotBinaryTextField;

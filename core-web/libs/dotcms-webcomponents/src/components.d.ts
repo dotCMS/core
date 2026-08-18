@@ -125,22 +125,13 @@ export namespace Components {
         "threshold": number;
     }
     interface DotBadge {
-        /**
-          * @default null
-         */
-        "bgColor": string;
+        "bgColor"?: string;
         /**
           * @default false
          */
         "bordered": boolean;
-        /**
-          * @default null
-         */
-        "color": string;
-        /**
-          * @default null
-         */
-        "size": string;
+        "color"?: string;
+        "size"?: string;
     }
     /**
      * Represent a dotcms binary file control.
@@ -944,14 +935,12 @@ export namespace Components {
         "placeholder": string;
         /**
           * Show/Hide color picker
-          * @default null
          */
-        "showColor": string;
+        "showColor"?: string;
         /**
           * Size value set for font-size
-          * @default null
          */
-        "size": string;
+        "size"?: string;
         /**
           * Values that the auto-complete textbox should search for
           * @default MaterialIconClasses
@@ -1150,22 +1139,16 @@ export namespace Components {
          */
         "value": string;
     }
-    /**
-     * @deprecated Use dot-contentlet-status-badge instead
-     */
     interface DotStateIcon {
         /**
           * @default {         archived: 'Archived',         published: 'Published',         revision: 'Revision',         draft: 'Draft'     }
          */
-        "labels": { archived: string; published: string; revision: string; draft: string; };
+        "labels": Record<DotStateIconType, string>;
         /**
           * @default '16px'
          */
         "size": string;
-        /**
-          * @default null
-         */
-        "state": DotContentState;
+        "state"?: DotContentState;
     }
     interface DotTags {
         /**
@@ -1423,10 +1406,9 @@ export namespace Components {
     }
     interface DotVideoThumbnail {
         /**
-          * @type {DotContentletItem}
-          * @memberof DotVideoThumbnail
+          * Required in practice, not optional: `render` destructures it and the video URL interpolates its inode, so a missing contentlet has always thrown rather than degraded — the same reason `dot-contentlet-thumbnail` declares it this way.
          */
-        "contentlet"?: DotContentletItem;
+        "contentlet": DotContentletItem;
         /**
           * @type {boolean}
           * @memberof DotVideoThumbnail
@@ -2147,9 +2129,6 @@ declare global {
         prototype: HTMLDotSelectButtonElement;
         new (): HTMLDotSelectButtonElement;
     };
-    /**
-     * @deprecated Use dot-contentlet-status-badge instead
-     */
     interface HTMLDotStateIconElement extends Components.DotStateIcon, HTMLStencilElement {
     }
     var HTMLDotStateIconElement: {
@@ -2446,21 +2425,12 @@ declare namespace LocalJSX {
         "threshold"?: number;
     }
     interface DotBadge {
-        /**
-          * @default null
-         */
         "bgColor"?: string;
         /**
           * @default false
          */
         "bordered"?: boolean;
-        /**
-          * @default null
-         */
         "color"?: string;
-        /**
-          * @default null
-         */
         "size"?: string;
     }
     /**
@@ -3263,12 +3233,10 @@ declare namespace LocalJSX {
         "placeholder"?: string;
         /**
           * Show/Hide color picker
-          * @default null
          */
         "showColor"?: string;
         /**
           * Size value set for font-size
-          * @default null
          */
         "size"?: string;
         /**
@@ -3462,21 +3430,15 @@ declare namespace LocalJSX {
          */
         "value"?: string;
     }
-    /**
-     * @deprecated Use dot-contentlet-status-badge instead
-     */
     interface DotStateIcon {
         /**
           * @default {         archived: 'Archived',         published: 'Published',         revision: 'Revision',         draft: 'Draft'     }
          */
-        "labels"?: { archived: string; published: string; revision: string; draft: string; };
+        "labels"?: Record<DotStateIconType, string>;
         /**
           * @default '16px'
          */
         "size"?: string;
-        /**
-          * @default null
-         */
         "state"?: DotContentState;
     }
     interface DotTags {
@@ -3726,10 +3688,9 @@ declare namespace LocalJSX {
     }
     interface DotVideoThumbnail {
         /**
-          * @type {DotContentletItem}
-          * @memberof DotVideoThumbnail
+          * Required in practice, not optional: `render` destructures it and the video URL interpolates its inode, so a missing contentlet has always thrown rather than degraded — the same reason `dot-contentlet-thumbnail` declares it this way.
          */
-        "contentlet"?: DotContentletItem;
+        "contentlet": DotContentletItem;
         /**
           * @type {boolean}
           * @memberof DotVideoThumbnail
@@ -3974,9 +3935,6 @@ declare module "@stencil/core" {
              */
             "dot-select": LocalJSX.DotSelect & JSXBase.HTMLAttributes<HTMLDotSelectElement>;
             "dot-select-button": LocalJSX.DotSelectButton & JSXBase.HTMLAttributes<HTMLDotSelectButtonElement>;
-            /**
-             * @deprecated Use dot-contentlet-status-badge instead
-             */
             "dot-state-icon": LocalJSX.DotStateIcon & JSXBase.HTMLAttributes<HTMLDotStateIconElement>;
             "dot-tags": LocalJSX.DotTags & JSXBase.HTMLAttributes<HTMLDotTagsElement>;
             /**
