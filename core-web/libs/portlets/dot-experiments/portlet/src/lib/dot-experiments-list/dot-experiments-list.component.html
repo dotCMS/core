@@ -105,7 +105,7 @@
                 [totalRecords]="store.totalRecords()"
                 [first]="(store.page() - 1) * store.perPage()"
                 dataKey="experiment.id"
-                [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
+                [rowsPerPageOptions]="$rowsPerPageOptions()"
                 [rowHover]="true"
                 [scrollable]="true"
                 scrollHeight="flex"
