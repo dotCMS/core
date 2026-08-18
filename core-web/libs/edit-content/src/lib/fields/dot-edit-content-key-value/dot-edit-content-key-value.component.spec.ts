@@ -186,7 +186,9 @@ describe('DotEditContentKeyValueComponent', () => {
 
         it('should parse undefined value correctly', () => {
             const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
-            keyValueField.writeValue(undefined);
+            // `undefined` is not part of the declared contract — Angular clears a control with
+            // `null` — but this test deliberately checks the accessor tolerates it.
+            keyValueField.writeValue(undefined as unknown as Record<string, string | null>);
             spectator.detectChanges();
             expect(keyValueField.$initialValue()).toEqual([]);
         });
