@@ -37,12 +37,34 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageComputed } from '../page/withPage';
+import { PageSnapshot } from '../page/withPage';
 
-import type { WorkflowLockComputed } from '../workflow/withWorkflow';
 
 export interface ViewComputed {
     viewMode: Signal<UVE_MODE>;
+}
+
+/**
+ * Exactly what this feature reads from the features composed before it.
+ *
+ * This used to be `props: type<PageComputed & WorkflowLockComputed & ViewComputed>()`, naming
+ * three whole interfaces where only these four signals are ever read. That over-wide constraint
+ * silently degraded the *host* store's type: `signalStore` resolved `UVEStore` with
+ * `{ [x: string]: Function; ... }`, collapsing every method into a string index signature while
+ * leaving the signals named. Consumers saw the effect as 43 `TS4111` errors on ordinary calls
+ * like `uveStore.pageReload()`, and it is why `withWorkflow` reaches `pageReload()` through a
+ * type assertion.
+ *
+ * Bisected to `WorkflowLockComputed` specifically — `PageComputed` and `ViewComputed` are used
+ * the same way by `withWorkflow` and `withView` and neither triggers it. Narrowing the constraint
+ * to what is actually consumed restores the store's type, with no runtime change: the same 1397
+ * tests pass either way, because none of this exists after compilation.
+ */
+export interface EditorDeps {
+    pageAsset: Signal<PageSnapshot>;
+    pageVariantId: Signal<string>;
+    viewMode: Signal<UVE_MODE>;
+    $lockIsPageLocked: Signal<boolean>;
 }
 
 export interface EditorComputed {
@@ -88,7 +110,7 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageComputed & WorkflowLockComputed & ViewComputed>()
+            props: type<EditorDeps>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
