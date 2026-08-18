@@ -2,7 +2,7 @@ import { h } from '@stencil/core';
 
 import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotKeyValueField } from '../models';
 
-export function nextTick(fn) {
+export function nextTick(fn: (() => void) | undefined | null) {
     const id = window.requestAnimationFrame(function () {
         fn && fn();
         window.cancelAnimationFrame(id);
@@ -76,7 +76,7 @@ export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
  * @param boolean valid
  * @returns string
  */
-export function getErrorClass(valid: boolean): string {
+export function getErrorClass(valid: boolean): string | undefined {
     return valid ? undefined : 'dot-field__error';
 }
 
@@ -86,7 +86,7 @@ export function getErrorClass(valid: boolean): string {
  * @param string name
  * @returns string
  */
-export function getHintId(name: string): string {
+export function getHintId(name: string): string | undefined {
     const value = slugify(name);
     return value ? `hint-${value}` : undefined;
 }
@@ -97,7 +97,7 @@ export function getHintId(name: string): string {
  * @param string name
  * @returns string
  */
-export function getId(name: string): string {
+export function getId(name: string): string | undefined {
     const value = slugify(name);
     return name ? `dot-${slugify(value)}` : undefined;
 }
@@ -108,7 +108,7 @@ export function getId(name: string): string {
  * @param string name
  * @returns string
  */
-export function getLabelId(name: string): string {
+export function getLabelId(name: string): string | undefined {
     const value = slugify(name);
     return value ? `label-${value}` : undefined;
 }
@@ -261,10 +261,12 @@ export function isFileAllowed(name: string, type: string, allowedExtensions: str
 }
 
 function getFileExtension(filename: string): string {
-    return /(?:\.([^.]+))?$/.exec(filename)[1];
+    // The optional group makes this regex match any string, so `exec` never returns null here —
+    // but the group itself is undefined for a name with no dot, which is the real empty case.
+    return /(?:\.([^.]+))?$/.exec(filename)?.[1] ?? '';
 }
 
-function slugify(text: string): string {
+function slugify(text: string): string | null {
     return text
         ? text
               .toString()

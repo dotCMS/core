@@ -189,7 +189,7 @@ export class DotDateRangeComponent {
                             class={getErrorClass(this.status.dotValid)}
                             disabled={this.isDisabled()}
                             id={getId(this.name)}
-                            required={this.required || null}
+                            required={this.required || undefined}
                             type="text"
                             value={this.value}
                         />

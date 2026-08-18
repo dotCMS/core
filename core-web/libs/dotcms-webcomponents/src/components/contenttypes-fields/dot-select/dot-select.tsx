@@ -162,8 +162,8 @@ export class DotSelectComponent {
     }
 
     // Todo: find how to set proper TYPE in TS
-    private setValue(event): void {
-        this.value = event.target.value;
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLSelectElement).value;
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

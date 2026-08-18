@@ -113,7 +113,7 @@ export class DotTextareaComponent {
 
     @Watch('regexCheck')
     regexCheckWatch(): void {
-        this.regexCheck = checkProp<DotTextareaComponent, string>(this, 'regexCheck');
+        this.regexCheck = checkProp<DotTextareaComponent, string>(this, 'regexCheck') ?? '';
     }
 
     @Watch('value')
@@ -194,8 +194,8 @@ export class DotTextareaComponent {
         }
     }
 
-    private setValue(event): void {
-        this.value = event.target.value.toString();
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLTextAreaElement).value.toString();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

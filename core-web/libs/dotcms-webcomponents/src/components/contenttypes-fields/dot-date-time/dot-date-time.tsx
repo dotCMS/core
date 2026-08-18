@@ -145,19 +145,19 @@ export class DotDateTimeComponent {
 
     @Watch('value')
     valueWatch(): void {
-        this.value = checkProp(this, 'value', 'dateTime');
+        this.value = checkProp(this, 'value', 'dateTime') ?? '';
         this._value = dotParseDate(this.value);
     }
 
     @Watch('min')
     minWatch(): void {
-        this.min = checkProp(this, 'min', 'dateTime');
+        this.min = checkProp(this, 'min', 'dateTime') ?? '';
         this._minDateTime = dotParseDate(this.min);
     }
 
     @Watch('max')
     maxWatch(): void {
-        this.max = checkProp(this, 'max', 'dateTime');
+        this.max = checkProp(this, 'max', 'dateTime') ?? '';
         this._maxDateTime = dotParseDate(this.max);
     }
 

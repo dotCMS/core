@@ -144,8 +144,8 @@ export class DotCheckboxComponent {
                                         class={getErrorClass(this.isValid())}
                                         name={getId(this.name)}
                                         type="checkbox"
-                                        disabled={this.disabled || null}
-                                        checked={this.value.indexOf(trimmedValue) >= 0 || null}
+                                        disabled={this.disabled || undefined}
+                                        checked={this.value.indexOf(trimmedValue) >= 0 || undefined}
                                         onInput={(event: Event) => this.setValue(event)}
                                         value={trimmedValue}
                                     />
@@ -166,8 +166,9 @@ export class DotCheckboxComponent {
     }
 
     // Todo: find how to set proper TYPE in TS
-    private setValue(event): void {
-        this.value = this.getValueFromCheckInputs(event.target.value.trim(), event.target.checked);
+    private setValue(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        this.value = this.getValueFromCheckInputs(input.value.trim(), input.checked);
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

@@ -109,12 +109,12 @@ export class DotDateComponent {
 
     @Watch('min')
     minWatch(): void {
-        this.min = checkProp<DotDateComponent, string>(this, 'min', 'date');
+        this.min = checkProp<DotDateComponent, string>(this, 'min', 'date') ?? '';
     }
 
     @Watch('max')
     maxWatch(): void {
-        this.max = checkProp<DotDateComponent, string>(this, 'max', 'date');
+        this.max = checkProp<DotDateComponent, string>(this, 'max', 'date') ?? '';
     }
 
     @Listen('_dotValueChange')

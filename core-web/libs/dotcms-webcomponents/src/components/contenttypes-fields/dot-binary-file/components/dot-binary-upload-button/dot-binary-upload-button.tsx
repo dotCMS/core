@@ -51,7 +51,7 @@ export class DotBinaryUploadButtonComponent {
                     disabled={this.disabled}
                     id={getId(this.name)}
                     onChange={(event: Event) => this.fileChangeHandler(event)}
-                    required={this.required || null}
+                    required={this.required || undefined}
                     type="file"
                 />
                 <button
