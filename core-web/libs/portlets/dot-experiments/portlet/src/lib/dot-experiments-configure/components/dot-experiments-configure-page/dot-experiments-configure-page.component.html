@@ -47,8 +47,11 @@
                     }
                 </div>
 
+                <!-- `h-full` because the row stretches its children but PrimeNG's own button, one
+                     element in, keeps its natural height and reads as floating above the field. -->
                 <p-button
                     type="button"
+                    styleClass="h-full"
                     severity="secondary"
                     [outlined]="true"
                     [label]="'experiments.configure.page.action.select' | dm"
