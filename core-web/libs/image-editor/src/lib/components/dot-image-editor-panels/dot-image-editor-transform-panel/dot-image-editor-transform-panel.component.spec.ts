@@ -70,19 +70,27 @@ describe('DotImageEditorTransformPanelComponent', () => {
     });
 
     it('should dispatch flipHToggled when toggling horizontal flip', () => {
-        spectator.triggerEventHandler(byTestId('image-editor-flip-horizontal-btn'), 'onChange', {
-            checked: true,
-            originalEvent: new Event('click')
-        });
+        spectator.triggerEventHandler(
+            `[data-testid="image-editor-flip-horizontal-btn"]`,
+            'onChange',
+            {
+                checked: true,
+                originalEvent: new Event('click')
+            }
+        );
 
         expect(dispatchedEvent(imageEditorTransformEvents.flipHToggled.type)).toBeDefined();
     });
 
     it('should dispatch flipVToggled when toggling vertical flip', () => {
-        spectator.triggerEventHandler(byTestId('image-editor-flip-vertical-btn'), 'onChange', {
-            checked: true,
-            originalEvent: new Event('click')
-        });
+        spectator.triggerEventHandler(
+            `[data-testid="image-editor-flip-vertical-btn"]`,
+            'onChange',
+            {
+                checked: true,
+                originalEvent: new Event('click')
+            }
+        );
 
         expect(dispatchedEvent(imageEditorTransformEvents.flipVToggled.type)).toBeDefined();
     });
