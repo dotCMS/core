@@ -128,6 +128,7 @@ public class BrowserQuery {
                 + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties
                 + ", luceneQuery:" + luceneQuery
                 + ", languageIds:" + StringUtils.join(languageIds)
+                + ", mimeTypes:" + StringUtils.join(mimeTypes)
                 + ", baseTypes:" + StringUtils.join(baseTypes)
                 + ", contentTypes:" + StringUtils.join(contentTypeIds)
                 + ", fieldCriteria:" + StringUtils.join(fieldCriteria)

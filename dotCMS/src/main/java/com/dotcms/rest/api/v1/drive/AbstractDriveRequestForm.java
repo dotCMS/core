@@ -379,8 +379,9 @@ public interface AbstractDriveRequestForm {
      *       <i>only</i> — an empty {@code baseTypes} array disables the content query.</li>
      * </ul>
      * <p>
-     * Links are ignored when {@code mimeTypes} or {@code workflow} filters are present, since a
-     * Link carries neither a file MIME type nor workflow state and so could never satisfy them.
+     * Links are ignored when {@code mimeTypes}, {@code workflow} or {@code userSearchable}
+     * filters are present: a Link carries no file MIME type, no workflow state and no fields, so
+     * it could never satisfy any of them.
      * Links are also always the <i>direct</i> children of the resolved path — they are never
      * gathered recursively across subfolders, matching the legacy {@code /api/v1/browser}
      * endpoint.

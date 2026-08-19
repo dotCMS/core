@@ -1708,6 +1708,10 @@ public class BrowserAPIImpl implements BrowserAPI {
      *       {@code showFolders=false} / {@code showLinks=false} on subsequent requests to skip
      *       that query entirely.</li>
      *   <li>Keep {@code offset} at 0 on every request — only the cursors change between pages.</li>
+     *   <li>A {@code next*Cursor} is only meaningful while its matching {@code hasMore*} is
+     *       {@code true}. Once a source reports {@code hasMore* == false} it is exhausted and its
+     *       cursor should not be interpreted further — a cursor sent past the end of a source is
+     *       echoed back unchanged rather than clamped.</li>
      * </ul>
      *
      * <p>Folders, links and contentlets are paged independently: each source has its own
@@ -1732,14 +1736,16 @@ public class BrowserAPIImpl implements BrowserAPI {
         public final boolean hasMoreFolders;
         /**
          * Folder list index to pass as {@code folderCursor} on the next page request.
-         * Equals the index of the first folder not yet returned.
+         * While {@code hasMoreFolders} is {@code true} this is the index of the first folder not
+         * yet returned; once folders are exhausted it carries the request's cursor unchanged.
          */
         public final int nextFolderCursor;
         /** True when there are more menu Links to show beyond this page. */
         public final boolean hasMoreLinks;
         /**
          * Link list index to pass as {@code linkCursor} on the next page request.
-         * Equals the index of the first link not yet returned.
+         * While {@code hasMoreLinks} is {@code true} this is the index of the first link not yet
+         * returned; once links are exhausted it carries the request's cursor unchanged.
          */
         public final int nextLinkCursor;
 

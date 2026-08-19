@@ -223,13 +223,16 @@ public class ContentDriveHelper {
             }
         }
 
-        Logger.debug(this, String.format(
-                "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s, MIME Types: %s, "
-                        + "ShowLinks: %s, LinkCursor: %s",
-                user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters(),
-                requestForm.mimeTypes(), showLinks, requestForm.linkCursor()));
+        // Build once and log the query itself: flags such as showLinks and showFolders can be
+        // overridden by the workflow and userSearchable branches above, so logging the locals
+        // would misreport what actually ran. BrowserQuery.toString() carries the effective flags,
+        // all three cursors and the filters.
+        final BrowserQuery browserQuery = builder.build();
 
-        return browserAPI.getPaginatedContents(builder.build());
+        Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
+                user.getUserId(), assetPath, browserQuery));
+
+        return browserAPI.getPaginatedContents(browserQuery);
     }
 
     /**
