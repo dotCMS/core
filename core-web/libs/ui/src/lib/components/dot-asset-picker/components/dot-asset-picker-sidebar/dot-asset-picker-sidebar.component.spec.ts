@@ -37,7 +37,7 @@ const LOAD_MORE_NODE: TreeNodeItem = {
 const createMockStore = () => ({
     folders: signal<TreeNodeItem[]>([SITE_ROOT, OTHER_SITE_ROOT, LOAD_MORE_NODE]),
     selectedNode: signal<TreeNodeItem | null>(SITE_ROOT),
-    foldersStatus: signal(ComponentStatus.LOADED),
+    foldersStatus: signal<ComponentStatus>(ComponentStatus.LOADED),
     treeSearch: signal(''),
     selectNode: jest.fn(),
     expandNode: jest.fn(),

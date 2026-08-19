@@ -1131,9 +1131,11 @@ export class DotContentDriveShellComponent {
 
         // Narrowed through the model's own discriminant: `targetFolder` is a union and a load-more
         // sentinel carries neither a path nor a hostname, which the two template strings below need.
-        const targetFolder = isTreeNodeContentData(event.targetFolder)
-            ? event.targetFolder
-            : undefined;
+        // `targetFolder` is optional on the shared `DotUploadFiles`: a drop can land before any
+        // folder has been chosen.
+        const dropTarget = event.targetFolder;
+        const targetFolder =
+            dropTarget && isTreeNodeContentData(dropTarget) ? dropTarget : undefined;
         const path = targetFolder?.path?.length ? targetFolder.path : '/';
 
         const pathToMove = `//${targetFolder?.hostname ?? ''}${path}`;

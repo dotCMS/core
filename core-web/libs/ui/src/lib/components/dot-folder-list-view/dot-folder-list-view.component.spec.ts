@@ -2264,7 +2264,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
-            spectator.click(spectator.query(byTestId('item-title-text')));
+            spectator.click(spectator.query(byTestId('item-title-text'))!);
 
             expect(emitSpy).not.toHaveBeenCalled();
         });
@@ -2289,7 +2289,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             const selectionSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
-            spectator.click(spectator.query(byTestId('item-title-text')));
+            spectator.click(spectator.query(byTestId('item-title-text'))!);
 
             expect(selectionSpy).toHaveBeenCalledWith([mockItems[0]]);
         });
