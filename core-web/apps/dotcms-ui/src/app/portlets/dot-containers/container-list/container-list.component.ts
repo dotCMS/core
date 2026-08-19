@@ -250,11 +250,11 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     private notifyResult(
-        response: DotActionBulkResult | DotContainer,
-        failsInfo: DotBulkFailItem[],
+        response: DotActionBulkResult | DotContainer | undefined,
+        failsInfo: DotBulkFailItem[] | undefined,
         message: string
     ): void {
-        if ('fails' in response && failsInfo?.length) {
+        if (response && 'fails' in response && failsInfo?.length) {
             this.showErrorDialog({
                 ...response,
                 fails: failsInfo,
