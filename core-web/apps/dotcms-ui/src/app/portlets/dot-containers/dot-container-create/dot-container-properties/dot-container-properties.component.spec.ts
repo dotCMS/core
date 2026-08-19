@@ -107,13 +107,13 @@ export class DotLoopEditorComponent {
     ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input() code;
-    @Input() height;
-    @Input() show;
-    @Input() value;
-    @Input() width;
+    @Input() code!: { mode: string; options: Record<string, unknown> };
+    @Input() height!: string;
+    @Input() show!: string[];
+    @Input() value!: string;
+    @Input() width!: string;
     @Output() monacoInit = new EventEmitter();
-    @Input() language;
+    @Input() language!: string;
     writeValue(): void {
         /* mock ControlValueAccessor */
     }

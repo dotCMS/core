@@ -17,6 +17,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
+import { DotPortletToolbarActions } from '../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+
 @Component({
     selector: 'dot-portlet-base',
     template: '<ng-content></ng-content>',
@@ -30,7 +32,7 @@ export class DotPortletBaseMockComponent {}
     standalone: false
 })
 export class DotPortletToolbarMockComponent {
-    @Input() actions;
+    @Input() actions!: DotPortletToolbarActions;
 }
 
 @Component({
@@ -63,25 +65,25 @@ export class DotContainerSelectorMockComponent {
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
-    code;
+    code!: { mode: string; options: Record<string, unknown> };
 
     @Input()
-    height;
+    height!: string;
 
     @Input()
-    show;
+    show!: string[];
 
     @Input()
-    value;
+    value!: string;
 
     @Input()
-    width;
+    width!: string;
 
     @Output()
     monacoInit = new EventEmitter<any>();
 
     @Input()
-    language;
+    language!: string;
 
     writeValue() {
         //

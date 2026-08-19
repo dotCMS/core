@@ -17,6 +17,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
+    DotCMSContentType,
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
     FeaturedFlags
@@ -683,7 +684,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     describe('send data with valid form', () => {
-        let data;
+        let data: DotCMSContentType | null;
 
         beforeEach(() => {
             jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));

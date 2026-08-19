@@ -124,7 +124,7 @@ class MockDotPortletBaseComponent {
     template: ''
 })
 class MockDotAddToMenuComponent {
-    @Input() contentType;
+    @Input() contentType!: DotCMSContentType;
     @Output() cancel = new EventEmitter<boolean>();
 }
 

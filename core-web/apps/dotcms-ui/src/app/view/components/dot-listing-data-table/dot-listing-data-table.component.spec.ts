@@ -108,15 +108,28 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
+/** The rows this spec feeds the table; `identifier` marks the ones the table disables. */
+type ListingRow = {
+    field1: string;
+    field2: string;
+    /** A number when the column is rendered with the `date` format. */
+    field3: string | number;
+    nEntries: string;
+    variable: string;
+    identifier?: string;
+    /** Added by the host's `mapItems`, not present in the seeded rows. */
+    disableInteraction?: boolean;
+};
+
 describe('DotListingDataTableComponent', () => {
     let comp: DotListingDataTableComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostComponent: TestHostComponent;
     let de: DebugElement;
     let el: HTMLElement;
-    let items;
-    let enabledItems;
-    let disabledItems;
+    let items: ListingRow[];
+    let enabledItems: ListingRow[];
+    let disabledItems: ListingRow[];
     let httpMock: HttpTestingController;
     const favoritePagesItem = {
         field1: 'item7-value1',
@@ -557,7 +570,7 @@ describe('DotListingDataTableComponent', () => {
 
         // The SYSTEM_TEMPLATE row should have disableInteraction (disabled)
         const disabledRowData = items.find((item) => item.identifier === 'SYSTEM_TEMPLATE');
-        expect(disabledRowData.disableInteraction).toBe(true);
+        expect(disabledRowData?.disableInteraction).toBe(true);
     }));
 
     describe('with checkBox', () => {

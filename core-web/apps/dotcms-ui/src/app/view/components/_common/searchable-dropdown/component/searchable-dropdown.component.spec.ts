@@ -13,6 +13,14 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
+/** The rows this spec feeds the dropdown — the shape the host's `[data]` binding receives. */
+type SiteRow = {
+    id: number;
+    label: string;
+    name: string;
+    hostName: string;
+};
+
 @Component({
     selector: 'dot-host-component',
     template: `
@@ -84,7 +92,7 @@ describe('SearchableDropdownComponent', () => {
     let hostComp: HostTestComponent;
     let de: DebugElement;
     let comp: SearchableDropdownComponent;
-    const data = [];
+    const data: SiteRow[] = [];
     let rows: number;
     let pageLinkSize: number;
     let mainButton: DebugElement;
@@ -266,7 +274,7 @@ describe('SearchableDropdownComponent', () => {
         const pageCount = 4;
         rows = 2;
         const filter = 'filter';
-        let event;
+        let event: { first: number; rows: number; filter: string };
 
         comp.pageChange.subscribe((e) => {
             event = e;
@@ -293,8 +301,8 @@ describe('SearchableDropdownComponent', () => {
     });
 
     describe('emit the change event', () => {
-        let items;
-        let dataExpected;
+        let items: DebugElement[];
+        let dataExpected: SiteRow;
 
         beforeEach(() => {
             hostComp.data = data;
@@ -465,7 +473,7 @@ describe('SearchableDropdownComponent', () => {
     let hostComp: HostTestExternalTemplateComponent;
     let de: DebugElement;
     let comp: SearchableDropdownComponent;
-    const data = [];
+    const data: SiteRow[] = [];
     let rows: number;
     let pageLinkSize: number;
     let mainButton: DebugElement;

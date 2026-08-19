@@ -132,7 +132,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     readonly DATE_FORMAT = 'date';
     items: unknown[] = [];
     selected: Record<string, unknown>[] = [];
-    filter;
+    filter = '';
     isContentFiltered = false;
     dateColumns: DataTableColumn[] = [];
     loading = true;
