@@ -252,7 +252,7 @@ describe('DotUveContentletToolsComponent', () => {
                 payload: {
                     ...MOCK_CONTENTLET_AREA.payload,
                     contentlet: {
-                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                        ...MOCK_CONTENTLET_AREA.payload.contentlet!,
                         identifier: 'different-contentlet-id'
                     },
                     vtlFiles: undefined
@@ -489,7 +489,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
-                expect(spectator.component.contentContext().position).toBe('before');
+                expect(spectator.component.contentContext()!.position).toBe('before');
             });
 
             it('should update position to "after" when clicking bottom add button', () => {
@@ -498,7 +498,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
-                expect(spectator.component.contentContext().position).toBe('after');
+                expect(spectator.component.contentContext()!.position).toBe('after');
             });
         });
 
@@ -594,7 +594,7 @@ describe('DotUveContentletToolsComponent', () => {
                     payload: {
                         ...MOCK_CONTENTLET_AREA.payload,
                         contentlet: {
-                            ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                            ...MOCK_CONTENTLET_AREA.payload.contentlet!,
                             identifier: 'different-contentlet-id-2'
                         },
                         vtlFiles: undefined
@@ -885,7 +885,7 @@ describe('DotUveContentletToolsComponent', () => {
             const dataItem = dragButton?.getAttribute('data-item');
 
             expect(dataItem).toBeTruthy();
-            const parsedItem = JSON.parse(dataItem);
+            const parsedItem = JSON.parse(dataItem!);
             expect(parsedItem.contentlet).toEqual(MOCK_CONTENTLET_AREA.payload.contentlet);
             expect(parsedItem.container).toEqual(MOCK_CONTENTLET_AREA.payload.container);
             expect(parsedItem.showLabelImage).toBe(true);
@@ -942,7 +942,7 @@ describe('DotUveContentletToolsComponent', () => {
                 payload: {
                     ...MOCK_CONTENTLET_AREA.payload,
                     contentlet: {
-                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                        ...MOCK_CONTENTLET_AREA.payload.contentlet!,
                         identifier: 'other-id'
                     }
                 }

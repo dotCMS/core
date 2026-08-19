@@ -1,6 +1,7 @@
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
+    DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
@@ -10,6 +11,17 @@ import {
     isQuickEditSupportedField,
     QUICK_EDIT_SUPPORTED_FIELDS
 } from './contentlet-form.utils';
+
+/**
+ * `divider` and `columnDivider` are required `DotCMSContentTypeField`s on the layout model, and none
+ * of the tests below reads either — they all exercise `fields`. One stand-in beats `null` at sixteen
+ * sites, which the model has never permitted.
+ */
+const MOCK_DIVIDER = {
+    clazz: DotCMSClazzes.ROW,
+    name: 'divider',
+    variable: 'divider'
+} as DotCMSContentTypeField;
 
 describe('ContentletFormUtils', () => {
     describe('parseFieldValues', () => {
@@ -117,10 +129,10 @@ describe('ContentletFormUtils', () => {
         it('should extract supported text field', () => {
             const layout: DotCMSContentTypeLayoutRow[] = [
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: [
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.TEXT,
@@ -156,10 +168,10 @@ describe('ContentletFormUtils', () => {
         it('should extract all supported field types', () => {
             const layout: DotCMSContentTypeLayoutRow[] = [
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: [
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.TEXT,
@@ -254,10 +266,10 @@ describe('ContentletFormUtils', () => {
         it('should filter out unsupported field types', () => {
             const layout: DotCMSContentTypeLayoutRow[] = [
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: [
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.TEXT,
@@ -309,10 +321,10 @@ describe('ContentletFormUtils', () => {
         it('should flatten nested structure correctly', () => {
             const layout: DotCMSContentTypeLayoutRow[] = [
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: [
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.TEXT,
@@ -327,7 +339,7 @@ describe('ContentletFormUtils', () => {
                             ]
                         },
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.TEXTAREA,
@@ -344,10 +356,10 @@ describe('ContentletFormUtils', () => {
                     ]
                 },
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: [
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.SELECT,
@@ -374,18 +386,21 @@ describe('ContentletFormUtils', () => {
         it('should handle rows with null or undefined columns', () => {
             const layout: DotCMSContentTypeLayoutRow[] = [
                 {
-                    divider: null,
-                    columns: null
+                    divider: MOCK_DIVIDER,
+                    // The model says `columns?: DotCMSContentTypeLayoutColumn[]`, so `undefined` is
+                    // legal and `null` is not — but the API does send null, which is the whole point
+                    // of this test. The cast keeps the input the test is about.
+                    columns: null as unknown as DotCMSContentTypeLayoutColumn[]
                 },
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: undefined
                 },
                 {
-                    divider: null,
+                    divider: MOCK_DIVIDER,
                     columns: [
                         {
-                            columnDivider: null,
+                            columnDivider: MOCK_DIVIDER,
                             fields: [
                                 {
                                     clazz: DotCMSClazzes.TEXT,

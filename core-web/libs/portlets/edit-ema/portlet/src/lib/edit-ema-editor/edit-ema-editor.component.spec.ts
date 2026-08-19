@@ -96,7 +96,7 @@ import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_HEADLESS,
@@ -374,8 +374,8 @@ const createRouting = () =>
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get(data) {
-                        const { language_id = 1 } = data;
+                    get(data: DotPageApiParams) {
+                        const { language_id = '1' } = data;
 
                         return UVE_PAGE_RESPONSE_MAP[language_id].pipe(
                             map((page = {}) => ({
@@ -384,7 +384,7 @@ const createRouting = () =>
                             }))
                         );
                     },
-                    getGraphQLPage({ language_id = 1 }) {
+                    getGraphQLPage({ language_id = '1' }: DotPageApiParams) {
                         return of({
                             page: UVE_PAGE_RESPONSE_MAP[language_id],
                             content: {}
@@ -625,7 +625,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
+                spectator.activatedRouteStub!.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
                 store.pageLoad({
@@ -646,7 +646,7 @@ describe('EditEmaEditorComponent', () => {
             it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
                 const componentsToShow = ['palette', 'dialog', 'confirm-dialog'];
 
-                spectator.activatedRouteStub.setQueryParam('variantName', DEFAULT_VARIANT_ID);
+                spectator.activatedRouteStub!.setQueryParam('variantName', DEFAULT_VARIANT_ID);
 
                 spectator.detectChanges();
 
@@ -786,7 +786,9 @@ describe('EditEmaEditorComponent', () => {
                 it('should default to root path when url is undefined', () => {
                     patchState(store, {
                         pageParams: {
-                            url: undefined,
+                            // `url` is required on `DotPageApiParams` and the route guard always
+                            // fills it, so this is the defensive path the test is named for.
+                            url: undefined as unknown as string,
                             clientHost: 'https://example.com',
                             language_id: '1',
                             [PERSONA_KEY]: 'dot:persona'
@@ -836,7 +838,9 @@ describe('EditEmaEditorComponent', () => {
                 it('should return root URL when url is undefined', () => {
                     patchState(store, {
                         pageParams: {
-                            url: undefined,
+                            // `url` is required on `DotPageApiParams` and the route guard always
+                            // fills it, so this is the defensive path the test is named for.
+                            url: undefined as unknown as string,
                             clientHost: 'https://example.com',
                             language_id: '1',
                             [PERSONA_KEY]: 'dot:persona'
@@ -1050,7 +1054,7 @@ describe('EditEmaEditorComponent', () => {
 
                     // Call the accept callback directly from the confirmation service spy
                     const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
-                    confirmCall.accept();
+                    confirmCall.accept?.();
 
                     expect(saveMock).toHaveBeenCalledWith([
                         { contentletsId: [], identifier: '123', personaTag: undefined, uuid: '123' }
@@ -1147,7 +1151,7 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectComponentChanges();
 
                         const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
-                        confirmCall.accept();
+                        confirmCall.accept?.();
 
                         expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
                     });
@@ -1229,7 +1233,7 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectComponentChanges();
 
                         const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
-                        confirmCall.accept();
+                        confirmCall.accept?.();
 
                         expect(resetActiveContentletSpy).not.toHaveBeenCalled();
                     });
@@ -1595,7 +1599,7 @@ describe('EditEmaEditorComponent', () => {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                                 payload: {
-                                    contentletIdentifier: PAYLOAD_MOCK.container.contentletsId[0] // An already added contentlet
+                                    contentletIdentifier: PAYLOAD_MOCK.container.contentletsId![0] // An already added contentlet
                                 }
                             }
                         }),
@@ -2001,10 +2005,10 @@ describe('EditEmaEditorComponent', () => {
                         );
                         const scrollSpy = jest
                             .spyOn(
-                                spectator.component.iframe.nativeElement.contentWindow,
+                                spectator.component.iframe!.nativeElement.contentWindow!,
                                 'scrollTo'
                             )
-                            .mockImplementation(() => jest.fn);
+                            .mockImplementation(() => undefined);
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
@@ -2072,7 +2076,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
+                    spectator.activatedRouteStub!.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
                     store.pageLoad({
@@ -2586,7 +2590,8 @@ describe('EditEmaEditorComponent', () => {
                 const MULTI_PAGE_PAYLOAD: ActionPayload = {
                     ...EDIT_ACTION_PAYLOAD_MOCK,
                     contentlet: {
-                        ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                        // `contentlet` is optional on `ActionPayload`; this fixture has one.
+                        ...EDIT_ACTION_PAYLOAD_MOCK.contentlet!,
                         onNumberOfPages: 2
                     }
                 };
@@ -3018,7 +3023,7 @@ describe('EditEmaEditorComponent', () => {
                         event: createContentletEvent,
                         actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
                         clientAction: DotCMSUVEAction.NOOP,
-                        form: null
+                        form: { status: FormStatus.PRISTINE, isTranslation: false }
                     })?.();
                     spectator.detectChanges();
 
@@ -3061,7 +3066,7 @@ describe('EditEmaEditorComponent', () => {
                         event: createContentletEvent,
                         actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
                         clientAction: DotCMSUVEAction.NOOP,
-                        form: null
+                        form: { status: FormStatus.PRISTINE, isTranslation: false }
                     })?.();
                     spectator.detectChanges();
 
@@ -3095,7 +3100,7 @@ describe('EditEmaEditorComponent', () => {
                         event: createContentletEvent,
                         actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
                         clientAction: DotCMSUVEAction.NOOP,
-                        form: null
+                        form: { status: FormStatus.PRISTINE, isTranslation: false }
                     })?.();
                     spectator.detectChanges();
 

@@ -24,7 +24,11 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotProcessedWorkflowPayload, DotWorkflowPayload } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotProcessedWorkflowPayload,
+    DotWorkflowPayload
+} from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     LoginServiceMock,
@@ -113,7 +117,7 @@ const pageSnapshotSignal = signal({
 
 const uveStoreMock = {
     pageAsset: pageSnapshotSignal,
-    workflowActions: signal([]),
+    workflowActions: signal<DotCMSWorkflowAction[]>([]),
     workflowIsLoading: signal(false),
     editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),

@@ -116,7 +116,7 @@ const baseUVEToolbarState = {
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
-    currentLanguage: pageAssetResponse?.viewAs.language,
+    currentLanguage: pageAssetResponse?.viewAs?.language,
     urlContentMap: null,
     runningExperiment: null,
     workflowActionsInode: pageAssetResponse?.page.inode,
@@ -215,7 +215,7 @@ const baseUVEState = {
     $showWorkflowsActions: showWorkflowsActionsSignal, // Mutable for tests
     $personaSelector: () => ({
         pageId: pageAssetResponse?.page.identifier,
-        value: pageAssetResponse?.viewAs.persona ?? DEFAULT_PERSONA
+        value: pageAssetResponse?.viewAs?.persona ?? DEFAULT_PERSONA
     }),
     $infoDisplayProps: infoDisplayPropsSignal, // Mutable for tests
     $urlContentMap: urlContentMapSignal, // Mutable for tests
@@ -480,7 +480,7 @@ describe('DotUveToolbarComponent', () => {
 
                 const button = spectator.query(byTestId('edit-url-content-map'));
 
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith(contentlet);
             });
@@ -919,7 +919,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-unlock', false, false, undefined);
             });
@@ -938,7 +938,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-lock', true, true, undefined);
             });
@@ -975,7 +975,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-other', true, false, undefined);
             });
@@ -1189,7 +1189,7 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(todayButton).toBeTruthy();
 
-                spectator.click(todayButton);
+                spectator.click(todayButton!);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
                     publishDate: expect.any(String)
@@ -1210,7 +1210,7 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(todayButton).toBeTruthy();
 
-                spectator.click(todayButton);
+                spectator.click(todayButton!);
 
                 expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
                     selectedDate: expect.any(String)
@@ -1484,7 +1484,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.workflowLockIsLoading.set(true);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$lockOptions();
+                        const options = spectator.component.$lockOptions()!;
 
                         expect(options).toEqual({
                             inode: 'test-inode',
@@ -1511,7 +1511,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.workflowLockIsLoading.set(false);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$lockOptions();
+                        const options = spectator.component.$lockOptions()!;
 
                         expect(options.disabled).toBe(true);
                         expect(options.message).toBe('editpage.locked-by');
@@ -1528,7 +1528,7 @@ describe('DotUveToolbarComponent', () => {
                         );
                         spectator.detectChanges();
 
-                        const options = spectator.component.$lockOptions();
+                        const options = spectator.component.$lockOptions()!;
 
                         expect(options.args).toEqual(['john.doe@example.com']);
                     });

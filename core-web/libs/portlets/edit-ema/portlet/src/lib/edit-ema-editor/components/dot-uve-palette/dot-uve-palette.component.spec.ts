@@ -11,6 +11,7 @@ import { DotUvePaletteComponent } from './dot-uve-palette.component';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
+import { PageSnapshot } from '../../../store/features/page/withPage';
 
 /**
  * Helper function to trigger tab change event
@@ -59,7 +60,7 @@ const mockUVEStore = {
     // Expose activeContentlet for test control
     editorActiveContentlet: mockActiveContentlet,
     // Single source of truth in current store API
-    pageAsset: signal(null)
+    pageAsset: signal<PageSnapshot>(null)
 };
 
 describe('DotUvePaletteComponent', () => {
@@ -193,7 +194,10 @@ describe('DotUvePaletteComponent', () => {
         // (drawed=false → render an empty-state explaining why layers
         // are not available). See $isStandardTemplate.
         it('renders dot-row-reorder when the template is standard (drawed=true)', () => {
-            mockUVEStore.pageAsset.set({ template: { drawed: true } });
+            // Only `template.drawed` is read by `$isStandardTemplate`, which is what these two tests drive.
+            mockUVEStore.pageAsset.set({
+                template: { drawed: true }
+            } as unknown as PageSnapshot);
             spectator.detectChanges();
 
             triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
@@ -203,7 +207,9 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('renders the advanced-template empty-state when drawed=false', () => {
-            mockUVEStore.pageAsset.set({ template: { drawed: false } });
+            mockUVEStore.pageAsset.set({
+                template: { drawed: false }
+            } as unknown as PageSnapshot);
             spectator.detectChanges();
 
             triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);

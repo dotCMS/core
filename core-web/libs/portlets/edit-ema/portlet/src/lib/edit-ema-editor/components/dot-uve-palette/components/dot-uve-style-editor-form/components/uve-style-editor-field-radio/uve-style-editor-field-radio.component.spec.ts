@@ -15,9 +15,10 @@ import { UveStyleEditorFieldRadioComponent } from './uve-style-editor-field-radi
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: StyleEditorFieldSchema;
+    // Host Props — `!` because Spectator sets them through `hostProps`, not the constructor, which
+    // is exactly what `strictPropertyInitialization` cannot see.
+    formGroup!: FormGroup;
+    field!: StyleEditorFieldSchema;
 }
 
 const createMockField = (
@@ -461,7 +462,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             const radioButtons = spectator.queryAll(RadioButton);
             const checkedRadio = radioButtons.find((radio) => radio.checked);
             expect(checkedRadio).toBeTruthy();
-            expect(checkedRadio.value).toBe('left');
+            expect(checkedRadio!.value).toBe('left');
             expect(formControl.value).toBe('left');
         });
 
@@ -495,7 +496,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
 
             const radioButtons = spectator.queryAll(RadioButton);
             const checkedRadio = radioButtons.find((radio) => radio.checked);
-            expect(checkedRadio.value).toBe('right');
+            expect(checkedRadio!.value).toBe('right');
             expect(formControl.value).toBe('right');
         });
 

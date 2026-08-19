@@ -17,9 +17,10 @@ import { UveStyleEditorFieldInputComponent } from './uve-style-editor-field-inpu
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: StyleEditorFieldSchema;
+    // Host Props — `!` because Spectator sets them through `hostProps`, not the constructor, which
+    // is exactly what `strictPropertyInitialization` cannot see.
+    formGroup!: FormGroup;
+    field!: StyleEditorFieldSchema;
 }
 
 const createMockField = (

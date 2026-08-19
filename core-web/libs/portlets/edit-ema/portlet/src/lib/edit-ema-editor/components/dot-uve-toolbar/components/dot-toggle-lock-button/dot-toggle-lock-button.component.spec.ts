@@ -90,7 +90,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
         it('should emit toggleLockClick event with correct params when clicked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
-            spectator.click(button);
+            spectator.click(button!);
 
             expect(emittedEvents).toHaveLength(1);
             expect(emittedEvents[0]).toEqual({
@@ -135,7 +135,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
         it('should emit toggleLockClick event with correct params when clicked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
-            spectator.click(button);
+            spectator.click(button!);
 
             expect(emittedEvents).toHaveLength(1);
             expect(emittedEvents[0]).toEqual({
@@ -169,7 +169,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
         it('should emit toggleLockClick event with isLockedByCurrentUser=false when clicked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
-            spectator.click(button);
+            spectator.click(button!);
 
             expect(emittedEvents).toHaveLength(1);
             expect(emittedEvents[0]).toEqual({
@@ -204,7 +204,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
         it('should not emit event when button is clicked during loading', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
-            spectator.click(button);
+            spectator.click(button!);
 
             // Button is disabled, so click won't trigger the handler
             expect(emittedEvents).toHaveLength(0);
