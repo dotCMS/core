@@ -55,7 +55,7 @@ export class DotWizardComponent implements AfterViewInit {
     readonly #dotWizardService = inject(DotWizardService);
     readonly #destroyRef = inject(DestroyRef);
 
-    readonly $data = signal<DotWizardInput>(null);
+    readonly $data = signal<DotWizardInput | null>(null);
     readonly $dialogActions = signal<DotDialogActions | null>(null);
     readonly $stepsVisible = signal<boolean>(false);
 
@@ -118,9 +118,9 @@ export class DotWizardComponent implements AfterViewInit {
      * @memberof DotWizardComponent
      */
     handleTab(event: KeyboardEvent): void {
-        const [form]: HTMLFieldSetElement[] = event
+        const [form] = event
             .composedPath()
-            .filter((x: Node) => x.nodeName === 'FORM') as HTMLFieldSetElement[];
+            .filter((target) => (target as Node).nodeName === 'FORM') as HTMLFieldSetElement[];
 
         if (form) {
             if (form.elements.item(form.elements.length - 1) === event.target) {
@@ -135,13 +135,24 @@ export class DotWizardComponent implements AfterViewInit {
     }
 
     getWizardComponent(type: DotWizardComponentEnum | string): Type<unknown> {
-        return this.#wizardComponentMap[type];
+        // The map is keyed by the enum, and this signature also accepts a plain `string` because the
+        // step's `component` field is one. An unknown component type has nothing to render.
+        return this.#wizardComponentMap[type as DotWizardComponentEnum];
     }
 
     private loadComponents(): void {
         this.#componentsHost = this.formHosts.toArray();
         this.#stepsValidation = [];
-        this.$data().steps.forEach((step: DotWizardStep, index: number) => {
+
+        // `loadComponents` runs from the subscription that has just set `$data`, so this is the
+        // no-wizard-open interval — there are no steps to build hosts for.
+        const data = this.$data();
+
+        if (!data) {
+            return;
+        }
+
+        data.steps.forEach((step: DotWizardStep, index: number) => {
             const componentClass = this.getWizardComponent(step.component);
             const viewContainerRef = this.#componentsHost[index].viewContainerRef;
             viewContainerRef.clear();
@@ -152,8 +163,8 @@ export class DotWizardComponent implements AfterViewInit {
             componentRef.instance.data = step.data;
             componentRef.instance.value
                 .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((data: { [key: string]: string }) =>
-                    this.consolidateValues(data, index)
+                .subscribe((data) =>
+                    this.consolidateValues(data as { [key: string]: string }, index)
                 );
             componentRef.instance.valid
                 .pipe(takeUntilDestroyed(this.#destroyRef))
@@ -188,18 +199,28 @@ export class DotWizardComponent implements AfterViewInit {
         this.#currentStep += next;
         this.updateTransform();
         this.focusFistFormElement();
-        if (this.isLastStep()) {
-            this.$dialogActions().accept.label = this.#dotMessageService.get('send');
-            this.$dialogActions().cancel.disabled = false;
-        } else if (this.isFirstStep()) {
-            this.$dialogActions().cancel.disabled = true;
-            this.$dialogActions().accept.label = this.#dotMessageService.get('next');
-        } else {
-            this.$dialogActions().cancel.disabled = false;
-            this.$dialogActions().accept.label = this.#dotMessageService.get('next');
+
+        const actions = this.$dialogActions();
+
+        // `setDialogActions` runs when the wizard opens and always sets both buttons, so a null
+        // signal here is the interval before that — when there is no dialog to relabel either.
+        // Read once rather than per line: the calls below mutate the same object.
+        if (!actions?.accept || !actions.cancel) {
+            return;
         }
 
-        this.$dialogActions().accept.disabled = !this.#stepsValidation[this.#currentStep];
+        if (this.isLastStep()) {
+            actions.accept.label = this.#dotMessageService.get('send');
+            actions.cancel.disabled = false;
+        } else if (this.isFirstStep()) {
+            actions.cancel.disabled = true;
+            actions.accept.label = this.#dotMessageService.get('next');
+        } else {
+            actions.cancel.disabled = false;
+            actions.accept.label = this.#dotMessageService.get('next');
+        }
+
+        actions.accept.disabled = !this.#stepsValidation[this.#currentStep];
     }
 
     private getAcceptAction(): void {
@@ -216,10 +237,15 @@ export class DotWizardComponent implements AfterViewInit {
 
     private setValid(valid: boolean, step: number): void {
         this.#stepsValidation[step] = valid;
-        if (this.#currentStep === step && this.$dialogActions()) {
+
+        const actions = this.$dialogActions();
+
+        // The `accept` check is the one that matters: it is what the spread below rebuilds, and
+        // `DialogButton` has required members that spreading `undefined` would not supply.
+        if (this.#currentStep === step && actions?.accept) {
             this.$dialogActions.set({
-                ...this.$dialogActions(),
-                accept: { ...this.$dialogActions().accept, disabled: !valid }
+                ...actions,
+                accept: { ...actions.accept, disabled: !valid }
             });
         }
     }

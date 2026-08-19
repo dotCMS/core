@@ -133,11 +133,16 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                 value.downloadOptionSelected === DownloadType.PUBLISH ? '0' : '1';
             bundleForm['filterKey'] = value.filterKey;
 
-            this.dialogActions.accept.disabled = true;
-            this.dialogActions.accept.label = this.dotMessageService.get(
-                'download.bundle.downloading'
-            );
-            this.dialogActions.cancel.disabled = true;
+            // `accept` and `cancel` are optional on `DotDialogActions`; this component sets both in
+            // `setDialogActions`, so the guard only covers the interval before the dialog is built.
+            if (this.dialogActions.accept && this.dialogActions.cancel) {
+                this.dialogActions.accept.disabled = true;
+                this.dialogActions.accept.label = this.dotMessageService.get(
+                    'download.bundle.downloading'
+                );
+                this.dialogActions.cancel.disabled = true;
+            }
+
             this.downloadFile(bundleForm);
         }
     }
@@ -185,11 +190,17 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                         };
                     })
                     .sort((a: SelectItem, b: SelectItem) => {
-                        if (a.label > b.label) {
+                        // `SelectItem.label` is optional; these are built with `filter.title` just
+                        // above, so `''` only ever affects an item that never had one — which sorts
+                        // first, as an unnamed entry should.
+                        const aLabel = a.label ?? '';
+                        const bLabel = b.label ?? '';
+
+                        if (aLabel > bLabel) {
                             return 1;
                         }
 
-                        if (a.label < b.label) {
+                        if (aLabel < bLabel) {
                             return -1;
                         }
 
@@ -221,9 +232,8 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     }
 
     private listenForChanges(): void {
-        this.form
-            .get('downloadOptionSelected')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.controls['downloadOptionSelected'].valueChanges
+            .pipe(takeUntil(this.destroy$))
             .subscribe((state: string) => {
                 this.handleDropDownState(state);
             });
