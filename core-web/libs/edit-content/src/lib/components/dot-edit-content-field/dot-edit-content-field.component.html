@@ -3,7 +3,7 @@
 @let contentType = $contentType();
 @let contentTypeVariable = contentType?.variable;
 
-@switch (field.fieldType) {
+@switch (field?.fieldType) {
     @case (fieldTypes.LINE_DIVIDER) {
         @defer (on immediate) {
             <dot-edit-content-line-divider-field

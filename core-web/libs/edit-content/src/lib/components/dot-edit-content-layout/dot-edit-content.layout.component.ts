@@ -205,7 +205,7 @@ export class DotEditContentLayoutComponent {
 
     constructor() {
         if (this.#dialogRef) {
-            this.#interceptDirtyClose();
+            this.#interceptDirtyClose(this.#dialogRef);
         }
 
         // In-place hosts (dialog) request related-content navigation without a
@@ -301,8 +301,7 @@ export class DotEditContentLayoutComponent {
      * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
      *    called directly from code, e.g. DotEditContentDialogComponent.closeDialog()).
      */
-    #interceptDirtyClose(): void {
-        const dialogRef = this.#dialogRef!;
+    #interceptDirtyClose(dialogRef: DynamicDialogRef): void {
         const originalClose = dialogRef.close.bind(dialogRef);
 
         // --- Programmatic close path ---
