@@ -130,6 +130,16 @@ export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;
  */
 export const AUTOSAVE_DEBOUNCE_MS = 500;
 
+/**
+ * Shortest time the saving bar stays on screen once it has appeared, in ms.
+ *
+ * A PATCH against a local backend can answer in a handful of milliseconds, and a bar that appears
+ * and vanishes inside a frame or two reads as a glitch rather than as feedback — the eye catches
+ * that something blue flickered without ever resolving it into "saved". Holding it for a beat makes
+ * the affordance legible; a save still running past the window keeps it up for as long as it takes.
+ */
+export const MIN_PROGRESS_BAR_VISIBLE_MS = 400;
+
 /** Read-only banner copy while an experiment is running, which is not the generic one (AC35). */
 export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 
