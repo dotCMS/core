@@ -21,7 +21,7 @@ export interface DotContainer {
     locked?: boolean;
     friendlyName?: string;
     path?: string;
-    identifier?: string;
+    identifier: string;
     name?: string;
     type?: string;
     title?: string;

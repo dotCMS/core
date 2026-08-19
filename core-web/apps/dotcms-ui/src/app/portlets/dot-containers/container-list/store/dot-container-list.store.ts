@@ -45,7 +45,8 @@ export interface DotContainerListState {
 }
 
 export interface DotNotifyMessages {
-    payload: DotActionBulkResult | DotContainer;
+    /** Absent in the seeded state — see the comment on `notifyMessages` in `loadContainers`. */
+    payload?: DotActionBulkResult | DotContainer;
     message: string;
     failsInfo?: DotBulkFailItem[];
 }
@@ -66,7 +67,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private dotSiteService = inject(SiteService);
 
     constructor() {
-        super(null);
+        super();
         this.paginatorService.url = CONTAINERS_URL;
         this.paginatorService.paginationPerPage = 40;
 
@@ -99,11 +100,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     selectedContainers: [],
                     actionHeaderOptions: this.getActionHeaderOptions(),
                     listing: {} as DotListingDataTableComponent,
+                    // Seeded rather than left empty: the component's `notify$` subscriber is what
+                    // triggers the first page load, so this emission has to happen. `payload` is
+                    // absent and `message` empty, which is what "nothing has been done yet" means.
                     notifyMessages: {
-                        payload: {},
-                        message: null,
+                        message: '',
                         failsInfo: []
-                    } as DotNotifyMessages,
+                    },
                     containers: [],
                     maxPageLinks: DEFAULT_MAX_PAGE_LINKS,
                     totalRecords: 0
@@ -179,7 +182,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         (state: DotContainerListState, notifyMessages: DotNotifyMessages) => {
             const { payload } = notifyMessages;
 
-            if ('fails' in payload && payload.fails.length) {
+            if (payload && 'fails' in payload && payload.fails.length) {
                 notifyMessages.failsInfo = this.getFailsInfo(payload.fails);
             }
 
@@ -195,7 +198,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             switchMap((identifier) => {
                 this.paginatorService.setExtraParams('host', identifier);
 
-                return this.paginatorService.getFirstPage();
+                return this.paginatorService.getFirstPage<DotContainer[]>();
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);
@@ -210,7 +213,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     ? this.paginatorService.setExtraParams('content_type', contentType)
                     : this.paginatorService.deleteExtraParams('content_type');
 
-                return this.paginatorService.get();
+                return this.paginatorService.get<DotContainer[]>();
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);
@@ -225,7 +228,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     ? this.paginatorService.setExtraParams('archive', archive)
                     : this.paginatorService.deleteExtraParams('archive');
 
-                return this.paginatorService.get();
+                return this.paginatorService.get<DotContainer[]>();
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);
@@ -240,7 +243,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     ? this.paginatorService.setExtraParams('filter', query)
                     : this.paginatorService.deleteExtraParams('filter');
 
-                return this.paginatorService.get();
+                return this.paginatorService.get<DotContainer[]>();
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);
@@ -251,7 +254,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     readonly getContainersWithOffset = this.effect<number>((offset$) => {
         return offset$.pipe(
             switchMap((offset) => {
-                return this.paginatorService.getWithOffset(offset);
+                return this.paginatorService.getWithOffset<DotContainer[]>(offset);
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);
@@ -262,7 +265,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     readonly loadCurrentContainersPage = this.effect((origin$) => {
         return origin$.pipe(
             switchMap(() => {
-                return this.paginatorService.getCurrentPage();
+                return this.paginatorService.getCurrentPage<DotContainer[]>();
             }),
             tap((containers: DotContainer[]) => {
                 this.patchContainers(containers);
@@ -570,7 +573,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     editContainer(container: DotContainer): void {
         this.isContainerAsFile(container)
             ? this.dotSiteBrowserService
-                  .setSelectedFolder(container.pathName)
+                  .setSelectedFolder(container.pathName ?? '')
                   .pipe(take(1))
                   .subscribe(() => {
                       this.dotRouterService.goToSiteBrowser();
@@ -584,7 +587,12 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 this.dotContainersService
                     .delete(identifiers)
                     .pipe(take(1))
-                    .subscribe((payload: DotActionBulkResult) => {
+                    .subscribe((payload: DotActionBulkResult | null) => {
+                        // `null` arrives when the request failed — see the other bulk handlers.
+                        if (!payload) {
+                            return;
+                        }
+
                         this.updateNotifyMessages({
                             payload,
                             message: this.dotMessageService.get('message.containers.full_delete')
@@ -603,7 +611,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .publish(identifiers)
             .pipe(take(1))
-            .subscribe((payload: DotActionBulkResult) => {
+            .subscribe((payload: DotActionBulkResult | null) => {
+                // `null` arrives when the request failed — `DotContainersService.handleError`
+                // sends it down the stream — and the updater reads `'fails' in payload`.
+                if (!payload) {
+                    return;
+                }
+
                 this.updateNotifyMessages({
                     payload,
                     message: this.dotMessageService.get('message.container_list.published')
@@ -615,7 +629,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .copy(identifier)
             .pipe(take(1))
-            .subscribe((payload: DotContainer) => {
+            .subscribe((payload: DotContainer | null) => {
+                // `null` arrives when the request failed — `DotContainersService.handleError`
+                // sends it down the stream — and the updater reads `'fails' in payload`.
+                if (!payload) {
+                    return;
+                }
+
                 this.updateNotifyMessages({
                     payload,
                     message: this.dotMessageService.get('message.container_list.published')
@@ -627,7 +647,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .unPublish(identifiers)
             .pipe(take(1))
-            .subscribe((payload: DotActionBulkResult) => {
+            .subscribe((payload: DotActionBulkResult | null) => {
+                // `null` arrives when the request failed — `DotContainersService.handleError`
+                // sends it down the stream — and the updater reads `'fails' in payload`.
+                if (!payload) {
+                    return;
+                }
+
                 this.updateNotifyMessages({
                     payload,
                     message: this.dotMessageService.get('message.containers.unpublished')
@@ -639,7 +665,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .unArchive(identifiers)
             .pipe(take(1))
-            .subscribe((payload: DotActionBulkResult) => {
+            .subscribe((payload: DotActionBulkResult | null) => {
+                // `null` arrives when the request failed — `DotContainersService.handleError`
+                // sends it down the stream — and the updater reads `'fails' in payload`.
+                if (!payload) {
+                    return;
+                }
+
                 this.updateNotifyMessages({
                     payload,
                     message: this.dotMessageService.get('message.containers.undelete')
@@ -651,7 +683,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         this.dotContainersService
             .archive(identifiers)
             .pipe(take(1))
-            .subscribe((payload: DotActionBulkResult) => {
+            .subscribe((payload: DotActionBulkResult | null) => {
+                // `null` arrives when the request failed — `DotContainersService.handleError`
+                // sends it down the stream — and the updater reads `'fails' in payload`.
+                if (!payload) {
+                    return;
+                }
+
                 this.updateNotifyMessages({
                     payload,
                     message: this.dotMessageService.get('message.containers.delete')
@@ -661,7 +699,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
     private getFailsInfo(items: DotBulkFailItem[]): DotBulkFailItem[] {
         return items.map((item: DotBulkFailItem) => {
-            return { ...item, description: this.getContainerName(item.element) };
+            return { ...item, description: this.getContainerName(item.element ?? '') };
         });
     }
 
