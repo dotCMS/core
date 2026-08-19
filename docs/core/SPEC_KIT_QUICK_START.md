@@ -69,8 +69,20 @@ process to the work. **When in doubt, size up** — and ask a teammate rather th
 | Tier | Typical change | Flow |
 |------|----------------|------|
 | **0 — Trivial** | Typos, copy, config, true no-op refactors | No spec. Keep tests green. |
-| **1 — Standard** | Most bug fixes; small changes inside an existing interface | Lean: `specify` → `plan` → `tasks` → `implement` |
-| **2 — Significant** | New features, new or changed interfaces, data-model changes, cross-team or security-sensitive work | Full: add `clarify` + `checklist` before planning, `analyze` before implementing |
+| **1 — Standard** | Most bug fixes; small changes inside an existing interface | **Lean** — `specify` → `plan` → `tasks` → `implement` |
+| **2 — Significant** | New features, new or changed interfaces, data-model changes, cross-team or security-sensitive work | **Full** — `specify` → (`clarify`) → (`checklist`) → `plan` → `tasks` → (`analyze`) → `implement` |
+
+**Steps in parentheses are optional.** They are judgment calls, not required stages — nothing
+blocks or complains if you skip them. The four unparenthesized commands are the flow; the rest
+are tools you pick up when they help:
+
+- `clarify` — the spec still has open questions you'd rather resolve before planning
+- `checklist` — the change is security-, privacy-, or accessibility-sensitive and deserves a
+  domain review pass
+- `analyze` — spec, plan, and tasks may have drifted apart, and you want that checked before
+  writing code
+
+§9 covers what each of them actually does.
 
 ---
 
