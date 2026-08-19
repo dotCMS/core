@@ -40,7 +40,8 @@ export class DotNewRelationshipsComponent implements OnChanges {
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentType!: DotCMSContentType;
+    /** Null while no content type is selected, which is the state `onContentTypeChange` sets. */
+    contentType: DotCMSContentType | null = null;
     currentCardinalityIndex!: number;
 
     ngOnChanges(changes: SimpleChanges): void {

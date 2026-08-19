@@ -198,12 +198,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private init(): void {
         this.updateFormFieldData();
 
-        const properties: string[] = this.fieldPropertyService.getProperties(
-            this.formFieldData.clazz
-        );
+        const properties = this.fieldPropertyService.getProperties(this.formFieldData.clazz);
 
         this.initFormGroup(properties);
-        this.sortProperties(properties);
+        this.sortProperties(properties ?? []);
     }
 
     /**

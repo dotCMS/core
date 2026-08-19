@@ -107,7 +107,9 @@ describe('FieldPropertyService', () => {
         expect(1).toEqual(fieldPropertiesService.getOrder('dataType'));
         expect(4).toEqual(fieldPropertiesService.getOrder('defaultValue'));
 
-        expect(fieldPropertiesService.getOrder('property')).toBeNull();
+        // `0`, not `null`: the declared return type is `number`, and an unknown property sorts
+        // first rather than producing `NaN` from `null - n`.
+        expect(fieldPropertiesService.getOrder('property')).toBe(0);
     });
 
     it('shoukd return the right set of validations', () => {
@@ -125,11 +127,14 @@ describe('FieldPropertyService', () => {
     });
 
     it('should return if the property is editable in EditMode', () => {
-        expect(fieldPropertiesService.isDisabledInEditMode('categories')).toBeUndefined();
+        // `false`, not `undefined`/`null`: the declared return type is `boolean`, and a property
+        // that does not carry the flag is simply not disabled — which is how the one caller,
+        // `initFormGroup`, already read it.
+        expect(fieldPropertiesService.isDisabledInEditMode('categories')).toBe(false);
         expect(true).toEqual(fieldPropertiesService.isDisabledInEditMode('dataType'));
-        expect(fieldPropertiesService.isDisabledInEditMode('defaultValue')).toBeUndefined();
+        expect(fieldPropertiesService.isDisabledInEditMode('defaultValue')).toBe(false);
 
-        expect(fieldPropertiesService.isDisabledInEditMode('property')).toBeNull();
+        expect(fieldPropertiesService.isDisabledInEditMode('property')).toBe(false);
     });
 
     it('should return the right proeprties for a Field Class', () => {

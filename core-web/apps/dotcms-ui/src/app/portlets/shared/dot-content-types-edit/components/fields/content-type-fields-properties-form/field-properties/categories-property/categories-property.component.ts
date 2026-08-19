@@ -59,7 +59,7 @@ export class CategoriesPropertyComponent implements OnInit {
      * @param any event
      * @memberof CategoriesPropertyComponent
      */
-    handlePageChange(event): void {
+    handlePageChange(event: { filter: string; first: number }): void {
         this.getCategoriesList(event.filter, event.first);
     }
 

@@ -105,7 +105,9 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should initialize with default values', () => {
-            expect(spectator.component.contentType).toBeUndefined();
+            // `null`, not `undefined`: `contentType` is now seeded with the same value
+            // `onContentTypeChange(null)` and `loadContentType('')` set it back to.
+            expect(spectator.component.contentType).toBeNull();
             expect(spectator.component.currentCardinalityIndex).toBeUndefined();
         });
     });
