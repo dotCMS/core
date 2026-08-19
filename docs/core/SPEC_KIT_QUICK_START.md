@@ -146,26 +146,31 @@ continues anyway — so a missing grant is silent. Check it now, not later.
 
 ## 5. A worked example — implementing a feature
 
-One feature, all four commands, start to finish. Fixing a bug follows the same shape with a
-different entry command — §6, next.
+Running example: [**#37070**](https://github.com/dotCMS/core/issues/37070) — a new Roles API
+endpoint returning the users directly granted a role. It adds a public REST contract, so by the
+ladder in §2 it's **Tier 2**. Fixing a bug follows the same shape with a different entry
+command — §6, next.
 
 ### `/speckit-specify` — write the contract
 
 ```
-/speckit-specify Add a changelog panel to the site publish dialog so editors
-can see what changed before pushing
+/speckit-specify Add GET /v1/roles/{roleid}/users returning the users directly
+granted a role — paginated, filterable, and carrying emailAddress. Reuse the
+User shape that /v1/users/filter already returns. Inheritance is out of scope:
+clients walk the ancestor chain themselves. Details in dotCMS/core#37070
 ```
 
 Creates a branch and `specs/<n>-<short-name>/spec.md`, then interviews you about anything
-ambiguous. The spec is **what and why** — user stories with priorities, acceptance
-scenarios, success criteria, and a **Legacy Considerations** section. No implementation
-detail.
+ambiguous. The spec is **what and why** — user stories with priorities, acceptance scenarios,
+success criteria, and a **Legacy Considerations** section.
 
-Real example to read before your first run:
-[`specs/36605-changelog-site-publish/spec.md`](../../specs/36605-changelog-site-publish/spec.md)
-— note the directory is named for the **GitHub issue number**, not Spec-Kit's default
-zero-padded `001-`. Working from an issue? Use its number, so the branch matches what
-everyone else is reading (`create-new-feature.sh --help` for `--number` / `--short-name`).
+Keep implementation out of it. *"Returns the users granted this role, with their email"* belongs
+in the spec; *`RoleResource#loadUsersByRoleId`* does not. The bar: a reviewer should be able to
+disagree with the spec without reading any code.
+
+Name the directory for the **GitHub issue number** — `37070-roles-users-endpoint`, not Spec-Kit's
+default zero-padded `001-` — so the branch matches the issue everyone else is reading
+(`create-new-feature.sh --help` for `--number` / `--short-name`).
 
 **Stop here.** Open PR 1 with the spec alone and get it **approved** (§3). Everything below
 happens after that — you don't need to wait for it to merge.
@@ -178,8 +183,13 @@ happens after that — you don't need to wait for it to merge.
 
 Reads your spec and produces `plan.md`: architecture, **Test Strategy**, **Constitution
 Check**, **Legacy Impact**, and **ADR Alignment**. This is where the two automated gates live —
-see §7. Takes optional guidance (`/speckit-plan use the existing WorkflowAPI rather than a new
-service`).
+see §7. Takes optional steering:
+
+```
+/speckit-plan reuse the paginator behind /v1/users/filter rather than adding
+a second one, and gate the endpoint on requiredPortlet("roles") — the payload
+carries user PII
+```
 
 ### `/speckit-tasks` — break it down
 
@@ -204,11 +214,20 @@ stops for your approval, stops again to show you they fail, and only then writes
 
 ## 6. A worked example — fixing a bug
 
-Most bug fixes are Tier 1 — lean flow, no `clarify`/`checklist`/`analyze`.
+Running example: [**#36958**](https://github.com/dotCMS/core/issues/36958) — the
+`Languagevariable` content type is created with `system = false`, so nothing stops anyone
+deleting it, and losing it breaks i18n site-wide.
+
+Most bug fixes are Tier 1. **This one isn't.** The fix ships a startup task that writes to the
+database, which is rollback-unsafe — so by the ladder in §2 it sizes up to Tier 2. *"It's a bug"
+doesn't decide the tier; what the fix touches does.*
 
 ```
-/speckit-specify-fix Site publish dialog shows a stale changelog after a
-second publish — repro in dotCMS/core#12345
+/speckit-specify-fix The Languagevariable content type is created with
+system=false, so the delete guard in ContentTypeFactoryImpl never fires and
+the type can be removed. Losing it breaks i18n site-wide and degrades
+quietly — language variables fall back to emitting the raw key. Full
+analysis, repro and proposed fix in dotCMS/core#36958
 ```
 
 1. **Reproduce it**, then run `/speckit-specify-fix` to write the defect spec: observed vs.
@@ -224,6 +243,12 @@ The spec is defect-framed rather than story-framed: **Problem Statement, Reprodu
 of Investigation, Root-Cause Hypothesis, Fix Scope & Non-Goals, Regression Risk, Acceptance &
 Verification**. *Fix Scope & Non-Goals* is the one that earns its keep — it's what stops a
 bounded fix from becoming a legacy rewrite.
+
+*Regression Risk* is where #36958 gets interesting:
+`Task240306MigrateLegacyLanguageVariablesTest` **deliberately deletes this content type** to
+prove the upgrade task recreates it. Protect the type and that test starts failing. Surfacing
+that in the spec is what keeps it from being a surprise in PR 2 — and it's exactly the kind of
+thing a reviewer catches in natural language but misses in a diff.
 
 > **Urgent incident?** The order inverts, not the count. Ship the fix first, then send the
 > short defect spec as its own PR right after. The goal is never to leave a behavior change
@@ -294,6 +319,34 @@ If `git add tasks.md` seems to do nothing, this is why.
 | `/speckit-adr-context` | You want an ADR lookup outside the plan phase |
 | `/speckit-constitution` | You're amending project law — rare, and it's a team decision |
 
+Continuing the Roles API example from §5. They all take plain English; `/speckit-analyze` and
+`/speckit-converge` read the current feature and need no arguments:
+
+```
+# Before planning — pin down what the spec left open
+/speckit-clarify pagination defaults, whether filter searches email as well as
+name, and what happens when roleId doesn't exist
+
+# Before planning — the response carries user PII, so review it as such
+/speckit-checklist security: PII exposure, authorization gates, and what an
+unauthenticated or under-privileged caller sees
+
+# Before implementing — did spec, plan and tasks drift apart?
+/speckit-analyze
+
+# After building ahead of the tasks — append whatever is still missing
+/speckit-converge
+
+# Split the work across the team
+/speckit-taskstoissues label them Team : Modernization and link back to #37070
+
+# ADR lookup outside the plan phase
+/speckit-adr-context rest pagination user PII
+```
+
+`/speckit-constitution` is deliberately absent from that list — amending project law is a team
+decision, not something to try mid-feature.
+
 ---
 
 ## 10. Troubleshooting
@@ -315,7 +368,7 @@ If `git add tasks.md` seems to do nothing, this is why.
 
 - Install, customizations, upgrade notes: [`.specify/CUSTOMIZATIONS.md`](../../.specify/CUSTOMIZATIONS.md)
 - Project law: [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)
-- Example spec: [`specs/36605-changelog-site-publish/spec.md`](../../specs/36605-changelog-site-publish/spec.md)
+- Worked examples: [#37070](https://github.com/dotCMS/core/issues/37070) (feature, §5) and [#36958](https://github.com/dotCMS/core/issues/36958) (bug, §6)
 - Branching & PRs: [`GIT_WORKFLOWS.md`](GIT_WORKFLOWS.md)
 - Testing: [`docs/testing/`](../testing/) — [`INTEGRATION_TESTS.md`](../testing/INTEGRATION_TESTS.md)
 - Legacy vs modern: [`PROGRESSIVE_ENHANCEMENT.md`](PROGRESSIVE_ENHANCEMENT.md)
