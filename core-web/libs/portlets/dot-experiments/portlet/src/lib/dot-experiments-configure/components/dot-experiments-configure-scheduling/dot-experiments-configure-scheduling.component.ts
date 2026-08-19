@@ -49,10 +49,18 @@ export class DotExperimentsConfigureSchedulingComponent {
     /** Read off the field: the schema disables the slice, so the card need not ask the store. */
     protected readonly $isLocked = computed<boolean>(() => this.$field()().disabled());
 
-    /** Nothing to clear before a date is set, and nothing may be cleared once locked. */
-    protected readonly $canClearSchedule = computed<boolean>(
-        () => !this.$isLocked() && !!this.$startDate()
-    );
+    /**
+     * Nothing to clear before a date is set, and nothing may be cleared once locked.
+     *
+     * Either date counts. An end date on its own is a schedule the backend keeps — `toRange` sends
+     * `{ startDate: null, endDate }`, which reads as "start when Start is pressed, stop then" — so
+     * keying this on the start date alone hid the control for a schedule that was really there.
+     */
+    protected readonly $canClearSchedule = computed<boolean>(() => {
+        const { startDate, endDate } = this.$field()().value();
+
+        return !this.$isLocked() && (!!startDate || !!endDate);
+    });
 
     /**
      * Whatever the form says is wrong with each date, message included — the bounds copy quotes the

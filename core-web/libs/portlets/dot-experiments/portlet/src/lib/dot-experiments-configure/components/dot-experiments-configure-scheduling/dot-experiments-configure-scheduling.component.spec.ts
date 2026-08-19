@@ -232,6 +232,26 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
             expect(clearButton()?.textContent).toContain(CLEAR_COPY);
         });
 
+        /**
+         * An end date on its own is a schedule the backend keeps — `toRange` sends
+         * `{ startDate: null, endDate }`, read as "start when Start is pressed, stop then". The
+         * control used to key off the start date, so it stayed hidden for a real schedule.
+         */
+        it('should offer it for an end date on its own', () => {
+            setDates({ endDate: daysFromNow(MIN_END_DAYS + 2) });
+
+            expect(clearButton()?.textContent).toContain(CLEAR_COPY);
+        });
+
+        it('should empty an end-only schedule when pressed', () => {
+            setDates({ endDate: daysFromNow(MIN_END_DAYS + 2) });
+
+            spectator.click(clearButton()?.querySelector('button') as HTMLElement);
+            spectator.detectChanges();
+
+            expect(scheduling()).toEqual(EMPTY_SCHEDULE);
+        });
+
         it('should empty both dates when pressed', () => {
             // Emptying the slice is what the shell turns into `scheduling: null`.
             setDates({ startDate: daysFromNow(1), endDate: daysFromNow(MIN_END_DAYS + 2) });
