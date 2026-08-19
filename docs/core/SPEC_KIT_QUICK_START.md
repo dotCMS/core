@@ -313,39 +313,89 @@ If `git add tasks.md` seems to do nothing, this is why.
 |---------|-------------------|
 | `/speckit-clarify` | Tier 2 work — resolve open questions in the spec before planning |
 | `/speckit-checklist` | Tier 2 work — a domain-specific review checklist (security, a11y, performance) |
-| `/speckit-analyze` | Tier 2 work — spec, plan, and tasks have drifted apart; cross-checks them, changes nothing |
-| `/speckit-converge` | You've built ahead of the tasks (or by hand) and want the gap appended to `tasks.md` |
-| `/speckit-taskstoissues` | The work needs to be split across people as GitHub issues |
-| `/speckit-adr-context` | You want an ADR lookup outside the plan phase |
-| `/speckit-constitution` | You're amending project law — rare, and it's a team decision |
+| `/speckit-analyze` | After `/speckit-tasks` — audit spec, plan and tasks against each other |
+| `/speckit-converge` | Code has run ahead of `tasks.md` and you want to know what's left |
+| `/speckit-taskstoissues` | The work needs splitting across people as GitHub issues |
+| `/speckit-adr-context` | An ADR lookup outside the plan phase — usually automatic |
+| `/speckit-constitution` | You're amending project law — rare, and a team decision |
 
-Continuing the Roles API example from §5. They all take plain English; `/speckit-analyze` and
-`/speckit-converge` read the current feature and need no arguments:
+The two spec helpers take plain English. Continuing the Roles API example from §5:
 
 ```
-# Before planning — pin down what the spec left open
-/speckit-clarify pagination defaults, whether filter searches email as well as
-name, and what happens when roleId doesn't exist
+/speckit-clarify pagination defaults, whether filter searches email as well
+as name, and what happens when roleId doesn't exist
 
-# Before planning — the response carries user PII, so review it as such
 /speckit-checklist security: PII exposure, authorization gates, and what an
 unauthenticated or under-privileged caller sees
-
-# Before implementing — did spec, plan and tasks drift apart?
-/speckit-analyze
-
-# After building ahead of the tasks — append whatever is still missing
-/speckit-converge
-
-# Split the work across the team
-/speckit-taskstoissues label them Team : Modernization and link back to #37070
-
-# ADR lookup outside the plan phase
-/speckit-adr-context rest pagination user PII
 ```
 
-`/speckit-constitution` is deliberately absent from that list — amending project law is a team
-decision, not something to try mid-feature.
+The other four are worth explaining properly.
+
+### `/speckit-analyze` — audit the artifacts against each other
+
+Reads `spec.md`, `plan.md`, `tasks.md` and the constitution, then runs six detection passes:
+duplication, ambiguity, underspecification, constitution alignment, **coverage gaps**, and
+inconsistency. Coverage is the one that earns its keep — it maps every task back to a
+requirement and tells you which `FR-###` has no task covering it at all.
+
+Output is a severity-graded findings list (CRITICAL / HIGH / MEDIUM / LOW, capped at 50).
+**Strictly read-only** — it never edits a file. It will offer a remediation plan, but you have
+to approve that before anything acts on it.
+
+Needs `tasks.md` to exist, so it slots between `/speckit-tasks` and `/speckit-implement`.
+
+```
+/speckit-analyze
+```
+
+### `/speckit-converge` — find what the code still doesn't do
+
+Reads the same three artifacts *and the actual codebase*, then classifies every gap it finds:
+
+| Class | Meaning |
+|-------|---------|
+| `missing` | the required work is absent from the code entirely |
+| `partial` | it exists but doesn't yet satisfy the requirement |
+| `contradicts` | the code conflicts with stated intent or a constitution MUST |
+| `unrequested` | code that nothing in the spec, plan, or tasks asked for |
+
+It shows you the graded findings first and writes nothing. Then it **appends** a new
+`## Phase N: Convergence` section to the end of `tasks.md`, numbering from the highest existing
+task ID and putting constitution violations first. Append-only: it never rewrites or deletes
+existing tasks, and it never deletes code — even `unrequested` findings are just surfaced.
+
+Reach for it when the code and the task list have drifted apart: you hand-wrote a chunk, or
+picked up someone else's half-finished branch, and want the gap turned back into tasks
+`/speckit-implement` can finish.
+
+```
+/speckit-converge
+```
+
+### `/speckit-taskstoissues` — one GitHub issue per task
+
+Reads `tasks.md`, checks `git remote`, and refuses outright if the remote isn't GitHub. For each
+task it opens an issue titled `T001: <description>`. Re-running is safe — it scans existing issue
+titles for `T###` and skips any already filed.
+
+> ⚠️ **This needs the GitHub MCP server, which is not configured in this repo.** It calls the MCP
+> `list_issues` / `create_issue` tools, not the `gh` CLI, so today it will not run. Weigh the
+> output before wiring it up, too: *one issue per task* can mean dozens of issues for a single
+> Tier 2 feature. It suits work genuinely being split across people, not routine features.
+
+### `/speckit-adr-context` — look up the binding decisions
+
+You rarely run this yourself: `/speckit-plan` fires it automatically as a `before_plan` hook
+(§7). Run it manually when you want the decisions in hand *before* committing to an approach.
+
+With no arguments it derives keywords from the current spec; with arguments it uses yours. It
+queries `dotCMS/platform-adrs` through `gh`, treats **accepted** ADRs as binding and *proposed*
+ones as directional, and hands `/speckit-plan` a summary for the ADR Alignment gate. Read-only,
+and it never creates, edits, or commits an ADR.
+
+```
+/speckit-adr-context rest pagination user PII
+```
 
 ---
 
