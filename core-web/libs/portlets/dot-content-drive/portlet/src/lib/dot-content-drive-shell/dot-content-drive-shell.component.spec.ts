@@ -50,16 +50,15 @@ import {
     EditContentDialogData
 } from '@dotcms/edit-content';
 import {
-    DotFolderListViewComponent,
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { DotFolderListViewComponent, DotUploadTypeSelectorComponent } from '@dotcms/ui';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_STYLE,
@@ -1068,7 +1067,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should open the upload menu with the selected folder when the upload button is clicked', () => {
             openViaButton(TARGET_FOLDER_DATA);
 
-            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
@@ -1084,7 +1083,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
 
-            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$files()).toBe(files);
             expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
@@ -1101,7 +1100,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
 
-            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$files()).toBe(files);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
@@ -1121,7 +1120,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should clear the selector payload when the popover is dismissed without a selection', () => {
             openViaButton(TARGET_FOLDER_DATA);
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
 
             const popover = spectator.debugElement.query(
                 By.css('[data-testId="upload-selector-popover"]')
@@ -1129,7 +1128,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(popover, 'onHide', {});
             spectator.detectChanges();
 
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
 
         const dropFiles = () =>
@@ -1175,7 +1174,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
         });
     });
 
@@ -1456,7 +1455,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(clickSpy).toHaveBeenCalled();
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
 
         it('should upload with the folder base type after the picker returns (button flow)', () => {
@@ -1499,7 +1498,7 @@ describe('DotContentDriveShellComponent', () => {
                 hostFolder: TARGET_FOLDER_DATA.id,
                 indexPolicy: 'WAIT_FOR'
             });
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
     });
 
@@ -2449,7 +2448,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
 
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
             expect(clickSpy).not.toHaveBeenCalled();
         });
     });

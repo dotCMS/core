@@ -18,10 +18,8 @@ import { DotUploadFileService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
-    createLoadMoreTreeNode,
     DotCMSContentlet,
     DOT_FOLDER_TREE_PAGE_SIZE,
-    DotPagination,
     LOAD_MORE_NODE_TYPE,
     TreeNodeItem,
     TreeNodeLoadMoreData,
@@ -32,11 +30,19 @@ import {
     DotBrowsingService,
     SITE_PAGE_LIMIT
 } from '../../../services/dot-browsing/dot-browsing.service';
+import { SYSTEM_HOST_ID } from '../../dot-folder-tree/constants';
+import {
+    findFolderParent,
+    findSiteIdByHostname,
+    hasMorePages,
+    SITES_LOAD_MORE_KEY,
+    stripLoadMore,
+    withLoadMore
+} from '../../dot-folder-tree/site-tree.utils';
 
-export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
-
-/** Re-export so consumers/tests share Host Folder's site page size. */
+/** Re-exports so consumers/tests keep a single import site for these. */
 export { SITE_PAGE_LIMIT };
+export { SYSTEM_HOST_ID };
 
 export interface Content {
     id: string;
@@ -75,82 +81,6 @@ const initialState: BrowserSelectorState = {
     searchQuery: '',
     viewMode: 'list'
 };
-
-const SITES_LOAD_MORE_KEY = 'sites';
-
-function hasMorePages(pagination: DotPagination): boolean {
-    return pagination.currentPage * pagination.perPage < pagination.totalEntries;
-}
-
-function stripLoadMore(nodes: TreeNodeItem[] | undefined): TreeNodeItem[] {
-    return (nodes ?? []).filter((node) => node.type !== LOAD_MORE_NODE_TYPE);
-}
-
-function withLoadMore(
-    children: TreeNodeItem[],
-    hasMore: boolean,
-    levelKey: string,
-    nextPage: number,
-    path: string,
-    hostname: string
-): TreeNodeItem[] {
-    if (!hasMore) {
-        return children;
-    }
-
-    return [
-        ...children,
-        createLoadMoreTreeNode({
-            levelKey,
-            nextPage,
-            path,
-            hostname
-        })
-    ];
-}
-
-function findSiteIdByHostname(hostname: string, roots: TreeNodeItem[]): string | undefined {
-    return roots.find((node) => node.data?.type === 'site' && node.data.hostname === hostname)?.data
-        ?.id;
-}
-
-function findFolderParent(
-    roots: TreeNodeItem[],
-    path: string,
-    hostname: string
-): TreeNodeItem | undefined {
-    for (const node of roots) {
-        if (node.data?.type === LOAD_MORE_NODE_TYPE) {
-            continue;
-        }
-
-        if (
-            node.data?.type === 'site' &&
-            node.data.hostname === hostname &&
-            (path === '/' || path === '')
-        ) {
-            return node;
-        }
-
-        if (
-            node.data?.type === 'folder' &&
-            node.data.hostname === hostname &&
-            node.data.path === path
-        ) {
-            return node;
-        }
-
-        const found = node.children
-            ? findFolderParent(node.children as TreeNodeItem[], path, hostname)
-            : undefined;
-
-        if (found) {
-            return found;
-        }
-    }
-
-    return undefined;
-}
 
 function refreshFolders(store: { folders: () => BrowserSelectorState['folders'] }) {
     return {

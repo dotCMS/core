@@ -81,18 +81,7 @@ export const IMAGE_EDITOR_PANEL_STATE_KEY = 'DOT_IMAGE_EDITOR_PANEL_STATE';
 export const LIBVIPS_CONFIG_KEY = 'IMAGE_API_USE_LIBVIPS';
 
 /**
- * Inline `.p-dialog` style props applied when the editor goes full-screen and
- * restored on exit. Overrides PrimeNG's `DynamicDialog` size (set inline via
- * `[ngStyle]`), so it must be applied as inline styles to win.
+ * Full-screen dialog styling now lives in `@dotcms/ui`, shared with the AssetPicker.
+ * Re-exported here so existing imports keep resolving from this module.
  */
-export const FULLSCREEN_DIALOG_STYLE: Record<string, string> = {
-    width: '100vw',
-    height: '100vh',
-    maxWidth: '100vw',
-    maxHeight: '100vh',
-    borderRadius: '0'
-};
-
-/** Eased transition so the dialog grows/shrinks smoothly instead of snapping. */
-export const DIALOG_SIZE_TRANSITION =
-    'width 250ms ease, height 250ms ease, border-radius 250ms ease';
+export { DIALOG_SIZE_TRANSITION, FULLSCREEN_DIALOG_STYLE } from '@dotcms/ui';
