@@ -78,8 +78,8 @@ export class DotPushPublishFormComponent
     dateFieldMinDate = new Date();
     form!: UntypedFormGroup;
     pushActions: SelectItem[] = [];
-    filterOptions: SelectItem[] = null;
-    timeZoneOptions: SelectItem[] = null;
+    filterOptions: SelectItem[] = [];
+    timeZoneOptions: SelectItem[] = [];
     eventData: DotPushPublishDialogData = { assetIdentifier: '', title: '' };
     assetIdentifier!: string;
     localTimezone!: string;
@@ -94,7 +94,7 @@ export class DotPushPublishFormComponent
     @ViewChild('customCode', { static: true }) customCodeContainer!: ElementRef;
 
     private defaultFilterKey!: string;
-    private _filterOptions: SelectItem[] = null;
+    private _filterOptions: SelectItem[] = [];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
@@ -179,7 +179,7 @@ export class DotPushPublishFormComponent
 
     private loadCustomCode(): void {
         this.dotParseHtmlService.parse(
-            this.eventData.customCode,
+            this.eventData.customCode ?? '',
             this.customCodeContainer.nativeElement,
             true
         );
@@ -198,7 +198,7 @@ export class DotPushPublishFormComponent
         }
 
         ppTimezone.setValue(localTZItem.value);
-        this.localTimezone = localTZItem.label;
+        this.localTimezone = localTZItem.label ?? '';
     }
 
     private loadTimezones(): void {

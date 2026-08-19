@@ -60,9 +60,9 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
                 }
 
                 this.site = site;
-                this.formFields = this.getSecrets(site.secrets);
+                this.formFields = this.getSecrets(site.secrets ?? []);
                 this.dynamicVariables = this.transformSecretsToKeyValue(
-                    this.getSecrets(site.secrets, true)
+                    this.getSecrets(site.secrets ?? [], true)
                 );
             });
     }
@@ -102,7 +102,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     }
 
     private getTransformedFormData(): DotAppsSaveData {
-        const params = {};
+        const params: DotAppsSaveData = {};
         for (const key of Object.keys(this.formData)) {
             params[key] = {
                 hidden: this.formFields.filter((item) => item.name === key)[0].hidden,

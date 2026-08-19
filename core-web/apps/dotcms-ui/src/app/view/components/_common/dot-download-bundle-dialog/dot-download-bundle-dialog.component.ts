@@ -75,7 +75,11 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
 
     private currentFilterKey!: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private filters: SelectItem[] = null;
+    /**
+     * Null until the filter list has been fetched. `ngOnInit` branches on exactly that, so an
+     * empty array here would read as "already loaded" and skip the fetch.
+     */
+    private filters: SelectItem[] | null = null;
 
     ngOnInit() {
         this.dotDownloadBundleDialogService.showDialog$
@@ -127,7 +131,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         if (this.form.valid) {
             this.errorMessage = '';
             const value = this.form.value;
-            const bundleForm = {};
+            const bundleForm: Record<string, string> = {};
             bundleForm['bundleId'] = value.bundleId;
             bundleForm['operation'] =
                 value.downloadOptionSelected === DownloadType.PUBLISH ? '0' : '1';
@@ -163,7 +167,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private initDialog(bundleId: string): void {
         this.setDialogActions();
         this.errorMessage = '';
-        this.filterOptions = this.filters;
+        this.filterOptions = this.filters ?? [];
         this.form = this.fb.group({
             downloadOptionSelected: [this.downloadOptions[0].value, [Validators.required]],
             filterKey: this.currentFilterKey,
@@ -246,7 +250,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
             filterKey.setValue('');
             this.filterOptions = [];
         } else {
-            this.filterOptions = this.filters;
+            this.filterOptions = this.filters ?? [];
             filterKey.enable();
             filterKey.setValue(this.currentFilterKey);
         }
@@ -267,7 +271,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         })
             .then((res: Response) => {
                 const contentDisposition = res.headers.get('content-disposition');
-                fileName = this.getFilenameFromContentDisposition(contentDisposition);
+                fileName = this.getFilenameFromContentDisposition(contentDisposition ?? '');
 
                 return res.blob();
             })
