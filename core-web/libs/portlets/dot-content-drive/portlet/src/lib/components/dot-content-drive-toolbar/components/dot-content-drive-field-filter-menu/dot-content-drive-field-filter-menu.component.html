@@ -14,7 +14,7 @@
         data-testid="field-filter-more-button" />
 </span>
 
-<p-popover #popover [pt]="popoverPt">
+<p-popover #popover>
     <div class="flex w-72 flex-col" data-testid="field-filter-menu-panel">
         <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
             {{ 'content-drive.field-filter.more.header' | dm }}
@@ -38,7 +38,6 @@
                 [options]="$availableFields()"
                 optionLabel="name"
                 [scrollHeight]="'18rem'"
-                [pt]="listboxPt"
                 data-testid="field-filter-menu-listbox">
                 <ng-template let-field pTemplate="item">
                     <div

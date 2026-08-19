@@ -162,11 +162,23 @@
 
             @case (BLOCKS.DOT_IMAGE) {
                 <figure [style]="imageStyle(node.attrs)">
+                    @if (imageLink(node.attrs); as link) {
+                        <!-- target/rel are attribute bindings so a null value omits the
+                             attribute instead of rendering the string "null". -->
+                        <a [href]="link.href" [attr.target]="link.target" [attr.rel]="link.rel">
+                            <ng-container *ngTemplateOutlet="dotImageEl" />
+                        </a>
+                    } @else {
+                        <ng-container *ngTemplateOutlet="dotImageEl" />
+                    }
+                </figure>
+
+                <ng-template #dotImageEl>
                     <img
                         [alt]="node.attrs?.['alt']"
                         [src]="node.attrs?.['src']"
                         style="max-width: 100%; height: auto" />
-                </figure>
+                </ng-template>
             }
 
             @case (BLOCKS.DOT_VIDEO) {

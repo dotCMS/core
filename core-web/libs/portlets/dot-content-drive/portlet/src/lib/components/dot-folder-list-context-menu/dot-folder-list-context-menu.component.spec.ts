@@ -24,7 +24,8 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    AddToBundleService
+    AddToBundleService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
@@ -101,6 +102,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
+            mockProvider(PushPublishService, {
+                getEnvironments: jest.fn().mockReturnValue(of([]))
+            }),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn(),
                 // Returns a real input, not the auto-mock's `undefined`. `#openWizard` skips the

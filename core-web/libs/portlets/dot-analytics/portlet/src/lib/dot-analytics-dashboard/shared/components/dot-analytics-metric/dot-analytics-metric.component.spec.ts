@@ -444,7 +444,9 @@ describe('DotAnalyticsMetricComponent', () => {
     `
 })
 class TestHostComponent {
-    status = ComponentStatus.LOADED;
+    // Annotated: `ComponentStatus` is an `as const` object, so the initialiser alone infers the
+    // literal `'LOADED'` and the tests below that set LOADING and ERROR would not type-check.
+    status: ComponentStatus = ComponentStatus.LOADED;
 }
 
 describe('DotAnalyticsMetricComponent - Content Projection', () => {
