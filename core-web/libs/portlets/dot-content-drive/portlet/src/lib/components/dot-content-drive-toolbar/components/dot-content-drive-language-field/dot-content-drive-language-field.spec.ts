@@ -14,7 +14,7 @@ import { Popover } from 'primeng/popover';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
+import { DotChipFilterComponent } from '@dotcms/ui';
 import { createFakeLanguage, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveLanguageFieldComponent } from './dot-content-drive-language-field.component';

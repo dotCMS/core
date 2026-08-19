@@ -5,8 +5,6 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
-
 import {
     AddToBundleService,
     DotCurrentUserService,
@@ -19,7 +17,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotBulkActionView, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotBulkActionView, DotContentDriveItem, DotEnvironment } from '@dotcms/dotcms-models';
 import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
@@ -157,7 +155,10 @@ describe('DotContentDriveActionCenterComponent', () => {
     let spectator: Spectator<DotContentDriveActionCenterComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
-    let confirmationService: SpyObject<ConfirmationService>;
+    /** What the push publish environments lookup answers; see the `mockProvider` below. */
+    let pushPublishEnvironments: DotEnvironment[] = [];
+    /** When true the lookup errors instead, for the fails-closed case. */
+    let pushPublishEnvironmentsFail = false;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
@@ -190,7 +191,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 clearDialogDrillDown: jest.fn(),
                 executeQuickAction: jest.fn(),
                 executeWorkflowAction: jest.fn(),
-                executeAddToBundle: jest.fn()
+                executeAddToBundle: jest.fn(),
+                executePushPublish: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
@@ -205,7 +207,15 @@ describe('DotContentDriveActionCenterComponent', () => {
             }),
             // Backs the env selector embedded in the push publish step.
             mockProvider(PushPublishService, {
-                getEnvironments: jest.fn(() => of([])),
+                // Reads `pushPublishEnvironments` on every call rather than being re-programmed per
+                // test: `mockProvider` builds this `jest.fn` once for the whole file, and the
+                // `afterEach` `clearAllMocks` drops any `mockReturnValue` set on it, so only the
+                // first test in a block would see one. A closure over a mutable answer is immune.
+                getEnvironments: jest.fn(() =>
+                    pushPublishEnvironmentsFail
+                        ? throwError(() => new Error('environments lookup failed'))
+                        : of(pushPublishEnvironments)
+                ),
                 lastEnvironmentPushed: null
             }),
             mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
@@ -249,6 +259,8 @@ describe('DotContentDriveActionCenterComponent', () => {
         ]);
         mockActionExecution.set(undefined);
         mockCurrentUserIsAdmin.set(false);
+        pushPublishEnvironments = [];
+        pushPublishEnvironmentsFail = false;
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
 
@@ -256,15 +268,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
         store = spectator.inject(DotContentDriveStore, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
-        confirmationService = spectator.inject(ConfirmationService, true);
 
         jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
         );
         jest.spyOn(store, 'closeDialog');
         jest.spyOn(store, 'loadItems');
-        // Records the call without accepting, so tests opt in to the accept path explicitly.
-        jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
     });
 
     afterEach(() => {
@@ -335,12 +344,18 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should mark foreign locks on any action’s preview, not just Unlock', () => {
-            // A lock held by somebody else fails a Publish or an Archive just as readily, so the
-            // marker is not scoped to Unlock. Both rows here are unpublished, so Publish applies to
-            // each of them and only the foreign lock is marked.
+            // A lock held by somebody else can fail any action, so the marker is not scoped to
+            // Unlock. Driven through Add to Bundle — the only other quick action that lists every
+            // selected row — which reaches its preview via the bundle step.
             mockSelectedItems.set(lockedSelection);
 
-            openQuickActionPreview('PUBLISH');
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+            spectator.component['onBundleChange']({ id: 'bundle-1', name: 'Release 1' });
+            spectator.detectChanges();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
 
             expect(previewRows().length).toBe(2);
             expect(spectator.queryAll('[data-testid="lock-foreign-icon"]').length).toBe(1);
@@ -477,32 +492,94 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     describe('quick actions', () => {
         it('should render a quick action for the eligible subset', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
             spectator.detectChanges();
 
-            // inode-1 is not live, so Publish applies to exactly one item.
-            expect(spectator.query('[data-testid="quick-action-PUBLISH"]')).toBeTruthy();
+            // Only inode-1 is unlocked, so Lock applies to exactly one item.
+            const lock = spectator.query('[data-testid="quick-action-LOCK"]');
+
+            expect(lock).toBeTruthy();
+            expect(lock?.textContent).toContain('(1)');
         });
 
         it('should render actions that apply to nothing as non-selectable', () => {
-            // Nothing archived, so Delete applies to no item — the row stays, disabled.
+            // Nothing locked, so Unlock applies to no item — the row stays, disabled.
             spectator.detectChanges();
 
-            const remove = spectator.query(
-                '[data-testid="quick-action-DELETE"]'
+            const unlock = spectator.query(
+                '[data-testid="quick-action-UNLOCK"]'
             ) as HTMLButtonElement;
 
-            expect(remove).toBeTruthy();
-            expect(remove.disabled).toBe(true);
+            expect(unlock).toBeTruthy();
+            expect(unlock.disabled).toBe(true);
         });
 
         it('should keep applicable actions selectable', () => {
             spectator.detectChanges();
 
-            const publish = spectator.query(
-                '[data-testid="quick-action-PUBLISH"]'
+            const lock = spectator.query('[data-testid="quick-action-LOCK"]') as HTMLButtonElement;
+
+            expect(lock.disabled).toBe(false);
+        });
+
+        it('should not offer the workflow state actions', () => {
+            // Publish, Unpublish, Archive, Unarchive and Delete belong to the Workflow Actions
+            // section, where they resolve to the scheme's own action rather than a system action.
+            spectator.detectChanges();
+
+            for (const id of ['PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'UNARCHIVE', 'DELETE']) {
+                expect(spectator.query(`[data-testid="quick-action-${id}"]`)).toBeNull();
+            }
+        });
+
+        it('should render Refresh as a disabled placeholder', () => {
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-REFRESH"]'
             ) as HTMLButtonElement;
 
-            expect(publish.disabled).toBe(false);
+            expect(row).toBeTruthy();
+            expect(row.disabled).toBe(true);
+            expect(
+                spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')
+            ).toBeTruthy();
+        });
+
+        it('should disable Push Publish without the coming-soon badge when no environment exists', () => {
+            // The default mock answers with no environments. Not a placeholder: the feature is
+            // built, the instance is not configured, and those read differently.
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-PUSH_PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(row.disabled).toBe(true);
+            expect(
+                spectator.query('[data-testid="quick-action-coming-soon-PUSH_PUBLISH"]')
+            ).toBeNull();
+        });
+
+        it('should not open a preview for a blocked row', () => {
+            spectator.detectChanges();
+
+            // Disabled, so a real click cannot land — called directly to prove the guard holds if
+            // one ever does. Both blocked states are covered: Refresh is a placeholder, Push
+            // Publish has nowhere to send to.
+            for (const id of ['REFRESH', 'PUSH_PUBLISH']) {
+                spectator.component['onSelectQuickAction'](
+                    spectator.component['$quickActions']().find((action) => action.id === id)!
+                );
+            }
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
         it('should keep Add to Bundle selectable', () => {
@@ -529,43 +606,11 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
-        it('should confirm before firing Delete, then fire on accept', () => {
-            // Delete only applies to archived items, and only it carries a confirmMessage.
-            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
-            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
-                config.accept?.();
-
-                return confirmationService;
-            });
-
-            executeQuickAction('DELETE');
-
-            expect(confirmationService.confirm).toHaveBeenCalled();
-            expect(store.executeQuickAction).toHaveBeenCalledWith('DELETE', expect.any(String), [
-                'inode-1'
-            ]);
-        });
-
-        it('should not fire Delete when the confirmation is dismissed', () => {
-            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
-            // Default mock records the call without invoking `accept`.
-            executeQuickAction('DELETE');
-
-            expect(confirmationService.confirm).toHaveBeenCalled();
-            expect(store.executeQuickAction).not.toHaveBeenCalled();
-        });
-
-        it('should fire non-destructive actions without confirming', () => {
-            executeQuickAction('PUBLISH');
-
-            expect(confirmationService.confirm).not.toHaveBeenCalled();
-            expect(store.executeQuickAction).toHaveBeenCalled();
-        });
-
         it('should not fire an action that applies to nothing', () => {
+            // Nothing in the default selection is locked, so Unlock has no eligible rows.
             spectator.detectChanges();
 
-            spectator.click('[data-testid="quick-action-DELETE"]');
+            spectator.click('[data-testid="quick-action-UNLOCK"]');
             spectator.detectChanges();
 
             // Never even reaches the preview.
@@ -574,10 +619,14 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should fire only the inodes the action applies to, not the whole selection', () => {
-            // Selection is inode-1 (not live) and inode-2 (live). Publish applies to inode-1 only.
-            executeQuickAction('PUBLISH');
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
 
-            expect(store.executeQuickAction).toHaveBeenCalledWith('PUBLISH', expect.any(String), [
+            executeQuickAction('LOCK');
+
+            expect(store.executeQuickAction).toHaveBeenCalledWith('LOCK', expect.any(String), [
                 'inode-1'
             ]);
         });
@@ -585,12 +634,16 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should fire exactly as many inodes as the row advertises', () => {
             // Guards the count/payload pair against drifting apart again: whatever number the row
             // shows must equal the number of inodes sent.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
             spectator.detectChanges();
 
-            const row = spectator.query('[data-testid="quick-action-PUBLISH"]');
+            const row = spectator.query('[data-testid="quick-action-LOCK"]');
             const advertised = Number(row?.textContent?.match(/\((\d+)\)/)?.[1]);
 
-            executeQuickAction('PUBLISH');
+            executeQuickAction('LOCK');
 
             const [, , inodes] = (store.executeQuickAction as unknown as jest.Mock).mock
                 .calls[0] as [string, string, string[]];
@@ -599,28 +652,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(inodes).toHaveLength(advertised);
         });
 
-        it('should fire only archived items for Delete', () => {
-            mockSelectedItems.set([
-                contentlet({ inode: 'archived-1', archived: true }),
-                contentlet({ inode: 'live-1', live: true })
-            ]);
-            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
-                config.accept?.();
-
-                return confirmationService;
-            });
-
-            executeQuickAction('DELETE');
-
-            expect(store.executeQuickAction).toHaveBeenCalledWith('DELETE', expect.any(String), [
-                'archived-1'
-            ]);
-        });
-
         it('should close the dialog as soon as the run is handed to the store', () => {
             // The dialog is modal, so leaving it open would dim the toolbar that reports the run —
             // and the counts it shows are stale the moment contentlets start moving step.
-            executeQuickAction('PUBLISH');
+            executeQuickAction('LOCK');
 
             expect(store.executeQuickAction).toHaveBeenCalled();
             expect(store.closeDialog).toHaveBeenCalled();
@@ -783,19 +818,11 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'locked-1'
             ]);
         });
-
-        it('should not confirm before locking or unlocking', () => {
-            mockSelectedItems.set([contentlet({ inode: 'locked-1', locked: true })]);
-
-            executeQuickAction('UNLOCK');
-
-            expect(confirmationService.confirm).not.toHaveBeenCalled();
-        });
     });
 
     describe('quick action preview', () => {
         it('should open the preview instead of firing when a quick action is clicked', () => {
-            openQuickActionPreview('PUBLISH');
+            openQuickActionPreview('LOCK');
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
             expect(spectator.query('[data-testid="action-center"]')).toBeNull();
@@ -803,9 +830,14 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should list only the contentlets the quick action applies to', () => {
-            // inode-1 is not live, inode-2 is. Publish applies to inode-1 only, so the preview must
-            // not offer inode-2 as something the user could include.
-            openQuickActionPreview('PUBLISH');
+            // inode-2 is already locked, so Lock applies to inode-1 only and the preview must not
+            // offer inode-2 as something the user could include.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
+
+            openQuickActionPreview('LOCK');
 
             const rows = previewRows();
 
@@ -814,10 +846,15 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should retitle the dialog header with the quick action and its count', () => {
-            openQuickActionPreview('PUBLISH');
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1' }),
+                contentlet({ inode: 'inode-2', locked: true })
+            ]);
+
+            openQuickActionPreview('LOCK');
 
             expect(store.setDialogDrillDown).toHaveBeenCalledWith({
-                header: 'Default-Action-Publish',
+                header: 'content-drive.context-menu.lock',
                 itemCount: 1
             });
         });
@@ -828,12 +865,12 @@ describe('DotContentDriveActionCenterComponent', () => {
                 contentlet({ inode: 'drop-me' })
             ]);
 
-            openQuickActionPreview('PUBLISH');
+            openQuickActionPreview('LOCK');
             uncheckFirstRow();
             spectator.click('[data-testid="action-preview-execute"]');
             spectator.detectChanges();
 
-            expect(store.executeQuickAction).toHaveBeenCalledWith('PUBLISH', expect.any(String), [
+            expect(store.executeQuickAction).toHaveBeenCalledWith('LOCK', expect.any(String), [
                 'drop-me'
             ]);
         });
@@ -841,7 +878,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should keep Execute disabled once every row is unchecked', () => {
             mockSelectedItems.set([contentlet({ inode: 'only-one' })]);
 
-            openQuickActionPreview('PUBLISH');
+            openQuickActionPreview('LOCK');
             uncheckFirstRow();
 
             const execute = spectator.query(
@@ -852,7 +889,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should return to the action list without firing when Back is clicked', () => {
-            openQuickActionPreview('PUBLISH');
+            openQuickActionPreview('LOCK');
             spectator.click('[data-testid="action-preview-back"]');
             spectator.detectChanges();
 
@@ -861,25 +898,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.clearDialogDrillDown).toHaveBeenCalled();
         });
 
-        it('should confirm at Execute rather than when the destructive row is clicked', () => {
-            // The commit point moved: opening a preview changes nothing, so prompting there would
-            // ask the user to confirm something that has not been decided yet.
-            mockSelectedItems.set([contentlet({ inode: 'inode-1', archived: true })]);
-
-            openQuickActionPreview('DELETE');
-
-            expect(confirmationService.confirm).not.toHaveBeenCalled();
-
-            spectator.click('[data-testid="action-preview-execute"]');
-            spectator.detectChanges();
-
-            expect(confirmationService.confirm).toHaveBeenCalled();
-        });
-
         it('should not show the workflow partial-match warning on a quick action', () => {
             // That warning explains a backend count falling short of the rows shown. A quick
             // action's count is derived from the rows themselves, so it can never fall short.
-            openQuickActionPreview('PUBLISH');
+            openQuickActionPreview('LOCK');
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeNull();
         });
@@ -1582,6 +1604,156 @@ describe('DotContentDriveActionCenterComponent', () => {
             goToPreview();
 
             expect(spectator.query('[data-testid="action-preview-partial-match"]')).toBeTruthy();
+        });
+    });
+
+    describe('push publish', () => {
+        const ENVIRONMENTS = [{ id: 'env-1', name: 'Production' }];
+
+        /**
+         * Renders as if an environment were reachable.
+         *
+         * Sets the resolved signal rather than the service answer. The lookup fires once from
+         * `ngOnInit`, and re-programming a `mockProvider` method per test proved unreliable here —
+         * the value only took for the first test in the block. The service-to-signal wiring is
+         * covered on its own by the two tests that exercise the real lookup (no environments, and
+         * the failing lookup); everything below is about what the dialog does *given* an answer.
+         */
+        const withEnvironments = (): void => {
+            spectator.detectChanges();
+            spectator.component['$hasPushPublishEnvironments'].set(true);
+            spectator.detectChanges();
+        };
+
+        /** Stands in for the push publish step emitting a complete payload. */
+        const fillPushPublishForm = (): void => {
+            spectator.component['onPushPublishChange'](PUSH_PUBLISH_SETTINGS);
+            spectator.component['$pushPublishValid'].set(true);
+            spectator.detectChanges();
+        };
+
+        it('should enable the row once an environment is reachable', () => {
+            // Through the real lookup, so the service-to-signal wiring is covered.
+            pushPublishEnvironments = ENVIRONMENTS;
+
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-PUSH_PUBLISH"]'
+            ) as HTMLButtonElement;
+
+            expect(row.disabled).toBe(false);
+        });
+
+        it('should open the push publish form rather than the preview', () => {
+            // The same step the workflow-action path renders, so a push publish is collected the
+            // same way in both dialogs.
+            withEnvironments();
+
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+
+            // The configure bar is gated on the view; the step body itself is always rendered and
+            // merely hidden, so asserting on it alone would pass from the action list too.
+            expect(spectator.query('[data-testid="action-configure-bar"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-configure-push-publish"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+        });
+
+        it('should keep Continue disabled until the form is complete', () => {
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+
+            const continueButton = spectator.query(
+                '[data-testid="action-configure-continue"] button'
+            ) as HTMLButtonElement;
+
+            expect(continueButton.disabled).toBe(true);
+        });
+
+        it('should reach the preview once the form is complete', () => {
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should push identifiers, deduped, with the collected settings', () => {
+            // Identifiers rather than inodes: a push sends the asset, so language versions of one
+            // contentlet are a single entry — the same collapse Add to Bundle makes.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-2', identifier: 'id-1' }),
+                contentlet({ inode: 'inode-3', identifier: 'id-2' })
+            ]);
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executePushPublish).toHaveBeenCalledWith(
+                expect.any(String),
+                ['id-1', 'id-2'],
+                PUSH_PUBLISH_SETTINGS
+            );
+            expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should honour rows unchecked in the preview', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'keep-me', identifier: 'id-keep' }),
+                contentlet({ inode: 'drop-me', identifier: 'id-drop' })
+            ]);
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+            uncheckFirstRow();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executePushPublish).toHaveBeenCalledWith(
+                expect.any(String),
+                ['id-drop'],
+                PUSH_PUBLISH_SETTINGS
+            );
+        });
+
+        it('should not push without settings', () => {
+            // Refused here as well as by the disabled Continue: the servlet answers 200 having sent
+            // nothing anywhere, which would read as a success.
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+
+            spectator.component['onExecutePreview']();
+
+            expect(store.executePushPublish).not.toHaveBeenCalled();
+        });
+
+        it('should disable the row when the environments lookup fails', () => {
+            // Fails closed: offering a push with nowhere to go fails at the servlet with a message
+            // the user cannot act on.
+            pushPublishEnvironmentsFail = true;
+
+            spectator.detectChanges();
+
+            expect(
+                (spectator.query('[data-testid="quick-action-PUSH_PUBLISH"]') as HTMLButtonElement)
+                    .disabled
+            ).toBe(true);
         });
     });
 
