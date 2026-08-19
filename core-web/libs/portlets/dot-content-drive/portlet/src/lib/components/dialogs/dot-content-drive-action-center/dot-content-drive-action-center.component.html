@@ -63,17 +63,17 @@
                                 <button
                                     type="button"
                                     class="group flex w-full items-center gap-4 px-4 py-3.5 text-left transition-all enabled:hover:cursor-pointer enabled:hover:bg-surface-0 disabled:cursor-not-allowed disabled:opacity-50"
-                                    [disabled]="$executing() || quickAction.count === 0"
+                                    [disabled]="
+                                        $executing() ||
+                                        quickAction.comingSoon ||
+                                        quickAction.missingEnvironments ||
+                                        quickAction.count === 0
+                                    "
                                     [pTooltip]="quickActionHint(quickAction) | dm"
                                     [attr.data-testid]="'quick-action-' + quickAction.id"
                                     (click)="onSelectQuickAction(quickAction)">
                                     <span
-                                        class="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
-                                        [class]="
-                                            quickAction.danger
-                                                ? 'bg-red-50 text-red-500 group-hover:bg-red-100'
-                                                : 'bg-surface-0 text-surface-400 shadow-sm group-hover:text-primary'
-                                        ">
+                                        class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-0 text-surface-400 shadow-sm transition-colors group-hover:text-primary">
                                         <i
                                             class="material-symbols-outlined text-[20px]!"
                                             aria-hidden="true">
@@ -81,11 +81,7 @@
                                         </i>
                                     </span>
 
-                                    <span
-                                        class="flex-1 text-sm font-semibold"
-                                        [class]="
-                                            quickAction.danger ? 'text-red-600' : 'text-surface-700'
-                                        ">
+                                    <span class="flex-1 text-sm font-semibold text-surface-700">
                                         {{ quickAction.name | dm }}
                                     </span>
 
@@ -106,14 +102,27 @@
                                             aria-hidden="true"></i>
                                     }
 
-                                    <span class="text-xs font-medium text-surface-400">
-                                        ({{ quickAction.count }})
-                                    </span>
-                                    <i
-                                        class="material-symbols-outlined text-[20px]! text-surface-300"
-                                        aria-hidden="true">
-                                        chevron_right
-                                    </i>
+                                    <!-- A placeholder gets a badge instead of a count-and-chevron: the
+                                     chevron promises a screen to drill into, and neither the count
+                                     nor the arrow means anything for a row that cannot be opened. -->
+                                    @if (quickAction.comingSoon) {
+                                        <span
+                                            class="rounded-full bg-surface-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-surface-500 uppercase"
+                                            [attr.data-testid]="
+                                                'quick-action-coming-soon-' + quickAction.id
+                                            ">
+                                            {{ 'content-drive.work-in-progress' | dm }}
+                                        </span>
+                                    } @else {
+                                        <span class="text-xs font-medium text-surface-400">
+                                            ({{ quickAction.count }})
+                                        </span>
+                                        <i
+                                            class="material-symbols-outlined text-[20px]! text-surface-300"
+                                            aria-hidden="true">
+                                            chevron_right
+                                        </i>
+                                    }
                                 </button>
                             }
                         </div>
@@ -471,7 +480,4 @@
             }
         }
     }
-
-    <!-- Guards the destructive quick actions. Appended to body so it layers above the dialog. -->
-    <p-confirmDialog appendTo="body" [draggable]="false" [style]="{ width: '500px' }" />
 </div>

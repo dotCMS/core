@@ -592,6 +592,75 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(img.style.height).toBe('auto');
         });
 
+        it('should wrap a linked dotImage in an anchor inside the figure', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', alt: 'a picture', href: '/about-us' },
+                    content: []
+                }
+            ]);
+
+            const anchor = spectator.query('figure > a') as HTMLAnchorElement;
+            expect(anchor).toBeTruthy();
+            expect(anchor.getAttribute('href')).toBe('/about-us');
+            expect(anchor.querySelector('img')?.getAttribute('src')).toBe('i.jpg');
+        });
+
+        it('should set target and rel on a linked dotImage that opens in a new tab', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: 'https://dotcms.com', target: '_blank' },
+                    content: []
+                }
+            ]);
+
+            const anchor = spectator.query('figure > a') as HTMLAnchorElement;
+            expect(anchor.getAttribute('target')).toBe('_blank');
+            expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
+        });
+
+        it('should keep the float wrapper style when the dotImage is linked', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: '/about-us', textWrap: 'right' },
+                    content: []
+                }
+            ]);
+
+            const figure = spectator.query('figure') as HTMLElement;
+            expect(figure.style.float).toBe('right');
+            expect(spectator.query('figure > a > img')).toBeTruthy();
+        });
+
+        it('should render a bare dotImage when the link was never set', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: null },
+                    content: []
+                }
+            ]);
+
+            expect(spectator.query('a')).toBeNull();
+            expect(spectator.query('figure > img')).toBeTruthy();
+        });
+
+        it('should render a bare dotImage when href is an empty string', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: '' },
+                    content: []
+                }
+            ]);
+
+            expect(spectator.query('a')).toBeNull();
+            expect(spectator.query('figure > img')).toBeTruthy();
+        });
+
         it('should render a real <video> for dotVideo, with no wrapper element', () => {
             render([
                 {
