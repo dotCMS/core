@@ -583,7 +583,7 @@ describe('DotTemplateListComponent', () => {
                 links.every(
                     (link, i) =>
                         link.nativeElement.textContent.trim() ===
-                        templatesWithoutSystem[i].themeInfo.title
+                        templatesWithoutSystem[i].themeInfo!.title
                 )
             ).toBe(true);
         }));
@@ -785,7 +785,7 @@ describe('DotTemplateListComponent', () => {
                 jest.spyOn(comp, 'loadCurrentPage');
             }));
 
-            const getActionIndex = (labels: string[], label: string) =>
+            const getActionIndex = (labels: (string | undefined)[], label: string) =>
                 labels.findIndex((l) => l === label);
 
             it('should open add to bundle dialog', () => {
