@@ -53,7 +53,6 @@ import {
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentlet,
-    DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
     FeaturedFlags,
@@ -281,7 +280,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly iframeMessenger = inject(UveIframeMessengerService);
 
     readonly host = '*';
-    readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+    /** Undefined until the SDK reports the page's OG tags. */
+    readonly $ogTags: WritableSignal<SeoMetaTags | undefined> = signal(undefined);
 
     /**
      * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
@@ -371,7 +371,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         };
     });
 
-    readonly ogTagsResults$ = toObservable<SeoMetaTagsResult[]>(this.uveStore.viewOgTagsResults);
+    readonly ogTagsResults$ = toObservable<SeoMetaTagsResult[] | null>(
+        this.uveStore.viewOgTagsResults
+    );
 
     get $paletteOpen() {
         return this.uveStore.editorPaletteOpen();
@@ -861,9 +863,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     handleInlineEditing(e: MouseEvent): void {
         const target = e.target as HTMLElement;
-        const element: HTMLElement = target.dataset?.['mode']
+        // `closest` can find nothing — the guard on the next line is what handles that.
+        const element = target.dataset?.['mode']
             ? target
-            : target.closest('[data-mode]');
+            : target.closest<HTMLElement>('[data-mode]');
 
         if (!element?.dataset['mode']) {
             return;
@@ -942,12 +945,17 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const pivotContentlet = payload.contentlet;
         const positionToInsert = positionPayload.position;
 
+
         if (dragItem.draggedPayload.type === 'contentlet') {
             const draggedPayload = dragItem.draggedPayload;
             const originContainer = draggedPayload.item.container;
             const contentletToMove = draggedPayload.item.contentlet;
 
-            if (draggedPayload.move) {
+            // A move re-inserts relative to what the user dropped onto and removes from where it
+            // came from, so all three are required for that path. `container` is optional on the
+            // drag payload and `contentlet` / `position` on the drop payload, because a drop onto an
+            // empty container has none of them — and that is not a move.
+            if (draggedPayload.move && originContainer && pivotContentlet && positionToInsert) {
                 const deletePayload = this.createDeletePayload({
                     payload,
                     originContainer,
@@ -1014,7 +1022,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                 ...payload,
-                newContentletId: payload.newContentlet.identifier
+                newContentletId: payload.newContentlet?.identifier ?? ''
             });
 
             if (!didInsert) {
@@ -1086,6 +1094,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
+                // `actionPayload` is absent when the dialog was opened outside a page asset (see
+                // `EditEmaDialogState`), and there is no container to insert into in that case.
+                if (!actionPayload) {
+                    return;
+                }
+
                 const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                     ...actionPayload,
                     newContentletId: detail.data.identifier
@@ -1156,6 +1170,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
              * @memberof EditEmaEditorComponent
              */
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
+                if (!actionPayload) {
+                    return;
+                }
+
                 this.#openNewContentDialogOrFallback(
                     detail.data.contentType,
                     (contentType) =>
@@ -1175,6 +1193,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 );
             },
             [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
+                if (!actionPayload) {
+                    return;
+                }
+
                 const formId = detail.data.identifier;
 
                 this.dotPageApiService
@@ -1254,9 +1276,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     url.pathname,
                     this.uveStore.pageAsset()?.urlContentMap
                 );
-                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+                // `?? undefined`: `searchParams.get` returns null for an absent param, and
+                // `DotPageApiParams` treats a missing language as "keep the current one".
+                const language_id =
+                    url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
+                const currentUrl = this.uveStore.pageParams()?.url;
 
-                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+                if (currentUrl && shouldNavigate(targetUrl, currentUrl)) {
                     // Navigate to the new URL if it's different from the current one
                     this.uveStore['pageLoad']({ url: targetUrl, language_id });
 
@@ -1267,7 +1293,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     language_id
                 });
             }
-        })[detail.name];
+        })[detail.name as NG_CUSTOM_EVENTS];
     }
 
     /**
@@ -1647,7 +1673,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 filter((contentlet) => !!contentlet)
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
-                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
+                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams()?.url) {
                     // If the URL is different, we need to navigate to the new URL
                     this.uveStore['pageLoad']({ url: URL_MAP_FOR_CONTENT });
 
@@ -1744,7 +1770,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         data: ClientData;
         position?: string;
         file: File;
-        dragItem: EmaDragItem;
+        /** Null when the drop did not start from a palette drag — a file dropped straight in. */
+        dragItem: EmaDragItem | null;
     }): void {
         this.uveStore.resetEditorProperties();
 
@@ -1770,7 +1797,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         life: 3000
                     });
                 }),
-                switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                switchMap((uploaded) => {
+                    // `DotTempFileUploadService.upload` reports failure by emitting the HTTP
+                    // status as a *string* on the success channel (see its `handleError`), so
+                    // anything that is not an array means the upload failed. The old code
+                    // destructured the emission as `DotCMSTempFile[]` regardless: on the string
+                    // arm that took its first character, read `image` off it as undefined, and
+                    // fell into the branch below — the right message, by accident.
+                    const [tempFile] = Array.isArray(uploaded) ? uploaded : [];
+                    const { id, image } = tempFile ?? { id: '', image: false };
+
                     if (!image) {
                         this.messageService.add({
                             severity: 'error',
@@ -1819,6 +1855,17 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         baseType: contentlet.baseType
                     }
                 } as ActionPayload;
+
+                // Without a drag item there is nowhere to place the uploaded asset:
+                // `placeItem` reads `dragItem.draggedPayload`. `editorDragItem()` is only set by a
+                // palette drag, so a file dropped straight from the desktop reaches here with
+                // null and used to throw. The asset is still uploaded and published; only the
+                // placement is skipped. Worth its own issue — see the commit message.
+                if (!dragItem) {
+                    this.uveStore.resetEditorProperties();
+
+                    return;
+                }
 
                 this.placeItem(payload, dragItem);
             });
@@ -1960,7 +2007,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             },
             {
                 label: 'uve.toolbar.page.current.view.url',
-                value: createFullURL(params, siteId)
+                // `?? ''`: this list is built for the toolbar's copy-URL menu, and there is no
+                // current view to describe before a page has loaded.
+                value: params ? createFullURL(params, siteId) : ''
             }
         ];
 

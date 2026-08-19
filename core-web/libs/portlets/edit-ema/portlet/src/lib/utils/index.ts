@@ -1025,7 +1025,8 @@ export const checkClientHostAccess = (
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    // Optional: a page with no URL-map content has none, which the `?.` below already reads.
+    urlContentMap?: DotCMSURLContentMap
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
@@ -1217,7 +1218,11 @@ export const convertClientParamsToPageParams = (
  * isSamePageNavigation('/home#section', '/home?tab=1') // true - same path, hash and/or query differ
  * isSamePageNavigation('/other-page', '/home') // false - different path
  */
-export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): boolean => {
+export const isSamePageNavigation = (
+    // Both optional: the first line of the body is the "either is missing" case.
+    incomingUrl?: string,
+    currentUrl?: string
+): boolean => {
     if (!incomingUrl || !currentUrl) return false;
 
     const current = new URL(currentUrl, window.origin);
