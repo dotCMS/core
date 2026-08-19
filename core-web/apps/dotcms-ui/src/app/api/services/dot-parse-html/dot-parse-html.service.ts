@@ -31,7 +31,10 @@ export class DotParseHtmlService {
 
         const placeholder = document.createElement('div');
         placeholder.innerHTML = code;
-        Array.from(placeholder.childNodes).forEach((el: HTMLElement) => {
+        Array.from(placeholder.childNodes).forEach((node) => {
+            // `childNodes` yields `ChildNode`, which covers the text nodes between tags — those
+            // have neither `tagName` nor `innerHTML`, and fall through to being appended as-is.
+            const el = node as HTMLElement;
             const parsedEl = this.isScriptElement(el.tagName)
                 ? this.createScriptEl(el.innerHTML)
                 : el;
@@ -53,7 +56,7 @@ export class DotParseHtmlService {
     }
 
     private clearElement(element: HTMLElement): void {
-        Array.from(element.childNodes).forEach((child: HTMLElement) => {
+        Array.from(element.childNodes).forEach((child) => {
             this.renderer.removeChild(element, child);
         });
     }
