@@ -1,0 +1,78 @@
+@if (!$isLoading()) {
+    @if (!$isEmpty()) {
+        <div class="flex flex-col gap-2">
+            @if ($title()) {
+                <div
+                    class="m-0 flex flex-row flex-wrap items-center text-base font-bold text-black"
+                    data-testId="header-title">
+                    <ng-container *dotStringTemplateOutlet="$title()">
+                        {{ $title() }}
+                    </ng-container>
+                </div>
+            }
+            <div class="flex flex-col gap-4">
+                <div
+                    class="grid min-h-[35px] grid-cols-12 gap-4 rounded-md bg-gray-100 px-3 py-1 text-base font-bold text-gray-800">
+                    <ng-container
+                        *ngTemplateOutlet="
+                            headers || defaultHeaders;
+                            context: { $implicit: $data() }
+                        " />
+                </div>
+                <div class="flex flex-col gap-2 rounded-md bg-gray-100 px-3 py-1">
+                    @for (row of $data(); track row) {
+                        <div class="grid min-h-[35px] grid-cols-12 gap-4" data-testId="detail-row">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    rows || defaultRowsTemplate;
+                                    context: { $implicit: row }
+                                " />
+                        </div>
+                    }
+                </div>
+            </div>
+            <ng-template #defaultHeaders let-data>
+                @if (data) {
+                    @for (header of data[0] | keyvalue; track header; let last = $last) {
+                        <div
+                            [class.justify-end]="last"
+                            class="flex flex-col flex-wrap items-center capitalize"
+                            data-testId="default-header-columns">
+                            {{ header.key }}
+                        </div>
+                    }
+                }
+            </ng-template>
+            <ng-template #defaultRowsTemplate let-row>
+                @for (r of row | keyvalue; track r) {
+                    <div
+                        class="flex flex-col flex-wrap items-center capitalize"
+                        data-testId="default-row">
+                        {{ r.value }}
+                    </div>
+                }
+            </ng-template>
+        </div>
+    } @else {
+        <div
+            class="flex h-[200px] flex-col items-center justify-center"
+            data-testId="empty-template">
+            <i class="material-symbols-outlined mb-2 text-red-500">table_chart</i>
+            <p class="m-0 text-lg" data-testId="empty-title">
+                {{ 'experiments.reports.summary.empty.title' | dm }}
+            </p>
+            <p class="m-0 text-base text-gray-600" data-testId="empty-description">
+                {{ 'experiments.reports.summary.empty.description' | dm }}
+            </p>
+        </div>
+    }
+} @else {
+    <div class="grid grid-cols-12 gap-4" data-testId="loading-skeleton">
+        <div class="col-span-2 mt-6">
+            <p-skeleton height="1rem" width="100%" />
+        </div>
+        <div class="col-span-12">
+            <p-skeleton height="33rem" width="100%" />
+        </div>
+    </div>
+}

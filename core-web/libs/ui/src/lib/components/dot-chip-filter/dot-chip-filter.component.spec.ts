@@ -89,17 +89,23 @@ describe('DotChipFilterComponent', () => {
             expect(handler).toHaveBeenCalled();
         });
 
+        // `spectator.dispatchKeyboardEvent` builds the event with the legacy
+        // `initKeyboardEvent`, which happy-dom (this lib's test environment) does not
+        // implement. A real KeyboardEvent works under both happy-dom and jsdom.
+        const pressKey = (key: string) =>
+            spectator.element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
         it('should emit clicked on Enter keydown', () => {
             const handler = jest.fn();
             spectator.output('clicked').subscribe(handler);
-            spectator.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            pressKey('Enter');
             expect(handler).toHaveBeenCalled();
         });
 
         it('should emit clicked on Space keydown', () => {
             const handler = jest.fn();
             spectator.output('clicked').subscribe(handler);
-            spectator.element.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+            pressKey(' ');
             expect(handler).toHaveBeenCalled();
         });
 

@@ -32,7 +32,6 @@ import org.glassfish.jersey.media.sse.SseFeature;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -66,7 +65,6 @@ import java.util.Optional;
  *   <li>{@code POST /fix/stream}  — streaming SSE relay ({@link EventOutput}); relays
  *       agent SSE frames as they arrive via {@code BodyHandlers.ofInputStream()}</li>
  *   <li>{@code POST /stop}        — forwards to agent /stop, passes the minted JWT</li>
- *   <li>{@code GET  /active-run}  — forwards to agent /active-run, passes the minted JWT</li>
  * </ul>
  *
  * <p>GZIPFilter is not registered in {@code web.xml} so no buffering risk for the SSE path.
@@ -259,45 +257,6 @@ public class A11yAgentResource {
     }
 
     // -------------------------------------------------------------------------
-    // GET /active-run — retrieve the caller's active or last run
-    // -------------------------------------------------------------------------
-
-    /**
-     * Forwards an active-run query to the agent service using the caller's minted JWT.
-     */
-    @GET
-    @Path("/active-run")
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(
-            operationId = "getA11yAgentActiveRun",
-            summary = "Get the caller's active or most recent agent run",
-            description = "Returns the run the agent service currently associates with the "
-                    + "calling user, so a client that reconnects (a reload, or a second tab) can "
-                    + "rejoin a run already in progress instead of starting a duplicate."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "The active or last run, relayed from the agent service",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401",
-                    description = "Authentication required",
-                    content = @Content(mediaType = "application/json"))
-    })
-    public Response activeRun(
-            @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
-
-        final TokenContext ctx = buildTokenContext(request, response);
-        if (ctx.errorResponse != null) {
-            return ctx.errorResponse;
-        }
-
-        return forwardJson(ctx.agentUrl + "/active-run", null,
-                ctx.serviceAuthToken, ctx.shortLivedToken, "GET");
-    }
-
-    // -------------------------------------------------------------------------
     // Private helpers — context building
     // -------------------------------------------------------------------------
 
@@ -364,7 +323,7 @@ public class A11yAgentResource {
         return new AgentContext(agentUrl, authToken, shortLivedToken, payload, null);
     }
 
-    /** Builds context for /stop and /active-run (no page needed, only auth + token). */
+    /** Builds context for /stop (no page needed, only auth + token). */
     private TokenContext buildTokenContext(
             final HttpServletRequest request,
             final HttpServletResponse response) {
