@@ -65,7 +65,7 @@ describe('DotContainersService', () => {
     });
 
     it('should get a list of containers', () => {
-        service.get().subscribe((container: DotContainerEntity[]) => {
+        service.get().subscribe((container) => {
             expect(container).toEqual([mockContainer]);
         });
 
@@ -79,7 +79,7 @@ describe('DotContainersService', () => {
     });
 
     it('should get a container by id', () => {
-        service.getById('123').subscribe((containerEntity: DotContainerEntity) => {
+        service.getById('123').subscribe((containerEntity) => {
             expect(containerEntity).toEqual(mockContainer);
         });
 
@@ -95,7 +95,7 @@ describe('DotContainersService', () => {
     });
 
     it('should get a containers by filter', () => {
-        service.getFiltered('123').subscribe((container: DotContainerEntity[]) => {
+        service.getFiltered('123').subscribe((container) => {
             expect(container).toEqual([mockContainer]);
         });
 
@@ -114,7 +114,7 @@ describe('DotContainersService', () => {
                 title: '',
                 friendlyName: ''
             } as DotContainerPayload)
-            .subscribe((container: DotContainerEntity) => {
+            .subscribe((container) => {
                 expect(container).toEqual(mockContainer);
             });
 
@@ -154,8 +154,9 @@ describe('DotContainersService', () => {
             .saveAndPublish({
                 container: { name: '', friendlyName: '' },
                 contentTypes: []
-            } as DotContainerEntity)
-            .subscribe((container: DotContainerEntity) => {
+                // Deliberately partial: this test asserts the request body, not the payload shape.
+            } as unknown as DotContainerEntity)
+            .subscribe((container) => {
                 expect(container).toEqual(mockContainer);
             });
 

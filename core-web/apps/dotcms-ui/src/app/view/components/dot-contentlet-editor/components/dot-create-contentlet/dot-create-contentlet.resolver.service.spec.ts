@@ -51,7 +51,7 @@ describe('DotCreateContentletResolver', () => {
     it('should get and return the action url', () => {
         jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest');
         });
     });
@@ -60,7 +60,7 @@ describe('DotCreateContentletResolver', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
         jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?folder=inode-1');
         });
     });
@@ -71,7 +71,7 @@ describe('DotCreateContentletResolver', () => {
             of('urlTest?foo=bar')
         );
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?foo=bar&folder=inode-1');
         });
     });
@@ -80,7 +80,7 @@ describe('DotCreateContentletResolver', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'a b/c';
         jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?folder=a%20b%2Fc');
         });
     });
@@ -88,7 +88,7 @@ describe('DotCreateContentletResolver', () => {
     it('should not append anything when there is no folder query param', () => {
         jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest');
         });
     });

@@ -324,8 +324,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         comp.cancelLastDragAndDrop();
 
         expect(comp.fieldRows.length).toEqual(1);
-        expect(comp.fieldRows[0].columns.length).toEqual(1);
-        expect(comp.fieldRows[0].columns[0].fields).toEqual([field]);
+        expect(comp.fieldRows[0].columns!.length).toEqual(1);
+        expect(comp.fieldRows[0].columns![0].fields).toEqual([field]);
     });
 
     it('should cancel last tab field drag and drop operation fields', () => {
@@ -740,7 +740,7 @@ describe('Load fields and drag and drop', () => {
     it('should save all updated fields', fakeAsync(() => {
         jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(false);
 
-        const updatedField = fakeFields[2].columns[0].fields[0];
+        const updatedField = fakeFields[2].columns![0].fields[0];
 
         fixture.detectChanges();
 
@@ -769,7 +769,7 @@ describe('Load fields and drag and drop', () => {
         comp.currentField = null;
         jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(true);
 
-        const updatedField = fakeFields[2].columns[0].fields[0];
+        const updatedField = fakeFields[2].columns![0].fields[0];
 
         fixture.detectChanges();
 
@@ -787,7 +787,7 @@ describe('Load fields and drag and drop', () => {
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.$selectColums.emit(2);
         expect(comp.addRow).toHaveBeenCalled();
-        expect(comp.fieldRows[0].columns.length).toBe(2);
+        expect(comp.fieldRows[0].columns!.length).toBe(2);
     });
 
     it('should emit and create tab divider', () => {
@@ -820,7 +820,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should set dropped field if a drop event happen from source', () => {
         return fixture.whenStable().then(() => {
-            const dropField = fakeFields[2].columns[0].fields[0];
+            const dropField = fakeFields[2].columns![0].fields[0];
             becomeNewField(dropField);
             fixture.detectChanges();
 
@@ -896,10 +896,14 @@ describe('Load fields and drag and drop', () => {
 
     it('should save all the new fields and at the end DraggedStarted event should be false', () => {
         becomeNewField(fakeFields[2].divider);
-        becomeNewField(fakeFields[2].columns[0].columnDivider);
-        becomeNewField(fakeFields[2].columns[0].fields[0]);
+        becomeNewField(fakeFields[2].columns![0].columnDivider);
+        becomeNewField(fakeFields[2].columns![0].fields[0]);
 
-        const newlyField = fakeFields[2].columns[0].fields[0];
+        // A copy, so the shared fixture keeps its id: this stands in for a field the user has
+        // just dropped and not yet saved.
+        const newlyField: Partial<DotCMSContentTypeField> = {
+            ...fakeFields[2].columns![0].fields[0]
+        };
         delete newlyField.id;
         fixture.detectChanges();
         // select the fields[8] as the current field
@@ -935,7 +939,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should open the dialog when a drop event happens from source', () => {
         fixture.detectChanges();
-        const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
+        const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns![0].fields[0];
         testFieldDragDropService._fieldDropFromSource.next({
             item: fieldToEdit,
             target: {
