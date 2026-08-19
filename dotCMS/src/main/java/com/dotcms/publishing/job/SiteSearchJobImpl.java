@@ -2,6 +2,10 @@ package com.dotcms.publishing.job;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler;
+import com.dotcms.content.index.migration.MirrorStatus;
+import com.dotcms.content.index.migration.SiteSearchMirrorReconciler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
@@ -24,6 +28,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -35,6 +40,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +50,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,6 +91,7 @@ public class SiteSearchJobImpl {
     private final UserAPI userAPI;
     private final SiteSearchAuditAPI siteSearchAuditAPI;
     private final PublisherAPI publisherAPI;
+    private final Supplier<List<MirrorStatus>> contentMirrorStatuses;
 
     private String bundleId;
 
@@ -95,12 +104,27 @@ public class SiteSearchJobImpl {
             final SiteSearchAuditAPI siteSearchAuditAPI,
             final PublisherAPI publisherAPI
             ) {
+        this(indicesAPI, siteSearchAPI, hostAPI, userAPI, siteSearchAuditAPI, publisherAPI,
+                () -> new ContentIndexMirrorReconciler().statuses());
+    }
+
+    @VisibleForTesting
+    SiteSearchJobImpl(
+            final IndiciesAPI indicesAPI,
+            final SiteSearchAPI siteSearchAPI,
+            final HostAPI hostAPI,
+            final UserAPI userAPI,
+            final SiteSearchAuditAPI siteSearchAuditAPI,
+            final PublisherAPI publisherAPI,
+            final Supplier<List<MirrorStatus>> contentMirrorStatuses
+            ) {
         this.indicesAPI = indicesAPI;
         this.siteSearchAPI = siteSearchAPI;
         this.hostAPI = hostAPI;
         this.userAPI = userAPI;
         this.siteSearchAuditAPI = siteSearchAuditAPI;
         this.publisherAPI = publisherAPI;
+        this.contentMirrorStatuses = contentMirrorStatuses;
     }
 
     public SiteSearchJobImpl() {
@@ -140,6 +164,19 @@ public class SiteSearchJobImpl {
         HibernateUtil.startTransaction();
         try {
             final PreparedJobContext preparedJobContext = prepareJob(jobContext);
+
+            // Advisory, never a gate: the crawl reads the content index, so an incomplete one silently
+            // yields a partial Site Search index (issue #36983).
+            //
+            // Deliberately here and not inside prepareJob: measuring costs a sequential scan of
+            // contentlet_version_info plus a stats call and a count query per engine, and prepareJob
+            // holds a monitor on SiteSearchJobImpl.class — a JVM-wide lock every concurrent crawl on
+            // this node contends for. Nothing in the measurement depends on what prepareJob computes
+            // (it reads the content indices, not this job's), so it has no reason to hold that lock.
+            // Still before the publish loop, which is what the warning is about.
+            incompleteContentIndexWarning()
+                    .ifPresent(warning -> Logger.warn(SiteSearchJobImpl.class, warning));
+
             synchronized (preparedJobContext.lockKey()) {
                 for (final SiteSearchConfig config : preparedJobContext.getConfigs()) {
                     publisherAPI.publish(config, status);
@@ -198,7 +235,8 @@ public class SiteSearchJobImpl {
                         + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
     }
 
-    private PreparedJobContext prepareJob(final JobExecutionContext jobContext)
+    @VisibleForTesting
+    PreparedJobContext prepareJob(final JobExecutionContext jobContext)
             throws DotDataException, IOException, DotSecurityException {
         synchronized (SiteSearchJobImpl.class) {
             final JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
@@ -239,6 +277,16 @@ public class SiteSearchJobImpl {
             // Run now jobs can not get the incremental treatment.
             final String indexAlias = getAliasName(dataMap.getString(INDEX_ALIAS));
             final IndexMetaData indexMetaData = getIndexMetaData(indexAlias);
+            // The alias the crawl must end up with. It is NOT necessarily the string stored in the
+            // job detail: that one can be a raw index name, in which case getIndexMetaData resolves
+            // the index's real alias (or null when it has none). Everything downstream — the config
+            // handed to the publisher, which re-applies it after the index switch — must use this
+            // resolved value, never the raw stored string (issue #36983).
+            final String resolvedAlias = indexMetaData.getAlias();
+            // A repair that is not written down is not a repair: it happens again on the next run, and
+            // by then the index whose alias we just recovered has been replaced, so the stored raw name
+            // resolves to nothing at all (issue #36983).
+            persistResolvedAlias(dataMap, indexAlias, resolvedAlias);
             final String newIndexName;
             final String indexName;
 
@@ -298,8 +346,7 @@ public class SiteSearchJobImpl {
                         uniqueFolderName();
                 // We use a new index name only on non-incremental
                 newIndexName = newIndexName();
-                final String newAlias =
-                        indexMetaData.isNewIndex() ? indexMetaData.getAlias() : null;
+                final String newAlias = aliasForNewIndex(indexMetaData, resolvedAlias);
                 siteSearchAPI.createSiteSearchIndex(newIndexName, newAlias, 1);
                 // This is the old index we will swap from.
                 // if it doesnt exist. It doesnt matter here since we will end up with the new one.
@@ -310,7 +357,7 @@ public class SiteSearchJobImpl {
                     .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
                             BooleanUtils.toStringYesNo(incremental), indexName,
                             UtilMethods.isSet(newIndexName) ? newIndexName : "N/A",
-                            indexAlias,
+                            UtilMethods.isSet(resolvedAlias) ? resolvedAlias : "N/A",
                             bundleId)
             );
 
@@ -342,7 +389,7 @@ public class SiteSearchJobImpl {
                 config.setHosts(hosts);
                 config.setNewIndexName(newIndexName);
                 config.setIndexName(indexName);
-                config.setIndexAlias(indexAlias);
+                config.setIndexAlias(resolvedAlias);
                 config.setId(bundleId);
                 config.setStartDate(startDate);
                 config.setEndDate(endDate);
@@ -376,6 +423,92 @@ public class SiteSearchJobImpl {
     }
 
     /**
+     * Config key that turns the incomplete-content-index check on: the indexed percentage below which a
+     * crawl is warned about. {@code 0} — the default — leaves the check off entirely.
+     *
+     * <p>Opt-in on purpose. Measuring costs a sequential scan of {@code contentlet_version_info} plus a
+     * stats call and a count query per engine, on every crawl, and it buys a diagnostic rather than
+     * correct behaviour — nothing downstream reads the result, the crawl runs identically either way.
+     * A cost every install pays on a schedule is the wrong trade for a message only someone
+     * investigating a migration is looking for; that person can turn it on, read it, and turn it back
+     * off. {@code 95} is the value to set — warn when the index serving the crawl is missing more than
+     * 5% of the content.</p>
+     */
+    static final String MIN_CONTENT_INDEXED_KEY = "SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT";
+
+    /** Off. The check does nothing until an operator sets {@link #MIN_CONTENT_INDEXED_KEY}. */
+    static final double DEFAULT_MIN_CONTENT_INDEXED = 0;
+
+    /**
+     * The warning to emit before crawling when the content index this crawl will read from is
+     * materially incomplete, or {@link Optional#empty()} when there is nothing to say.
+     *
+     * <p><strong>Why a crawl cares about the CONTENT index.</strong> A crawl does not read the
+     * database: the bundlers build the bundle from {@code ContentletAPI#searchIndex}, a phase-routed
+     * search over the content index. So the crawl can only find what that index holds — if the
+     * OpenSearch content mirror was never rebuilt, a Phase-3 crawl silently produces a Site Search
+     * index containing a fraction of the site, reports success, and that truncated index survives even
+     * after the content store is reindexed (issue #36983).</p>
+     *
+     * <p>Measured against the <em>database</em>, not against the other engine: in Phase 3 there is no
+     * other engine to compare with, which is exactly when this is most needed. Advisory only — it never
+     * stops the crawl, and any failure to compute it is swallowed, because a diagnostic must not be
+     * able to break indexing.</p>
+     *
+     * <p><strong>Measures nothing unless asked to.</strong> Two guards, both plain config reads, before
+     * anything touches the database or an engine:</p>
+     * <ol>
+     *   <li>{@link #MIN_CONTENT_INDEXED_KEY} is off by default, so no install pays for this on a
+     *       schedule — see that constant for why it is opt-in.</li>
+     *   <li>Even when switched on, Phase 0 is skipped: there is no second engine whose copy could have
+     *       been silently left behind, which is the failure this exists to catch, so it could only ever
+     *       report the single Elasticsearch index the whole product already depends on.</li>
+     * </ol>
+     */
+    @VisibleForTesting
+    Optional<String> incompleteContentIndexWarning() {
+        final double threshold = Config.getFloatProperty(
+                MIN_CONTENT_INDEXED_KEY, (float) DEFAULT_MIN_CONTENT_INDEXED);
+        if (threshold <= 0) {
+            return Optional.empty();
+        }
+        final MigrationPhase phase = MigrationPhase.current();
+        if (phase.isMigrationNotStarted()) {
+            return Optional.empty();
+        }
+        final boolean readsOpenSearch = phase.isReadEnabled();
+        return Try.of(() -> contentMirrorStatuses.get().stream()
+                        .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
+                        .flatMap(Optional::stream)
+                        .findFirst())
+                // Swallowed so a diagnostic can never break indexing, but never in silence: whoever
+                // switched this check on did it to learn something, and "no warning" would otherwise be
+                // indistinguishable from "the measurement blew up".
+                .onFailure(e -> Logger.warn(SiteSearchJobImpl.class,
+                        "Could not measure how complete the content index is before this Site Search "
+                                + "crawl; continuing without the check: " + e.getMessage()))
+                .getOrElse(Optional.empty());
+    }
+
+    /** The shortfall message for one content row, or empty when that row is fine or unmeasured. */
+    private static Optional<String> indexedShortfall(final MirrorStatus status,
+            final boolean readsOpenSearch, final double threshold) {
+        final Double indexedPercent = readsOpenSearch
+                ? status.osIndexedPercent() : status.esIndexedPercent();
+        if (indexedPercent == null || indexedPercent >= threshold) {
+            return Optional.empty();
+        }
+        return Optional.of(String.format(
+                "Site Search crawl starting against an INCOMPLETE content index: '%s' on %s holds "
+                        + "%.2f%% of the %d contentlets the database has. A crawl builds its corpus by "
+                        + "querying that index, so it can only index what it finds there — this crawl "
+                        + "will produce a partial Site Search index, and reindexing the content later "
+                        + "will NOT repair it (it must be crawled again). Run a full reindex first.",
+                status.indexName(), readsOpenSearch ? "OpenSearch" : "Elasticsearch", indexedPercent,
+                status.databaseDocCount()));
+    }
+
+    /**
      * Unique thread safe site-search index name
      * @return
      */
@@ -401,7 +534,8 @@ public class SiteSearchJobImpl {
      * @return @see IndexMetaData
      * @throws DotDataException
      */
-    private IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
+    @VisibleForTesting
+    IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
         String indexName = null;
         boolean defaultIndex = false;
         long recordCount = 0;
@@ -410,7 +544,12 @@ public class SiteSearchJobImpl {
             // Resolve via the site-search API so aliases are looked up with .os-aware physical names
             // in Phases 2/3; the content-index router misses site-search aliases there
             // and would force every crawl into full mode (issue #36360).
-            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            // AllEngines: over the same provider set as `indices` above. A crawl can legitimately
+            // target an index that lives only on the engine the phase does not read from (e.g. an
+            // OpenSearch-only index created in Phase 3, seen again after a downgrade to Phase 1) —
+            // with a read-provider-only map its alias is invisible, so the crawl would treat it as a
+            // brand-new index and drop the alias instead of carrying it over (issue #36983).
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMapAllEngines();
             indexName = aliasMap.get(indexAlias);
             if (UtilMethods.isSet(indexName)) {
                 if (siteSearchAPI.isDefaultIndex(indexAlias)) {
@@ -421,7 +560,13 @@ public class SiteSearchJobImpl {
                 // the alias comes with an index name that is already in use.
                 if(indices.contains(indexAlias)){
                    indexName = indexAlias;
-                   indexAlias = null;
+                   // The job was saved with a raw index name where an alias was expected (the job
+                   // scheduler used to fall back to raw names when alias resolution missed on
+                   // OpenSearch — issue #36983). Recover the index's REAL alias so a full crawl
+                   // re-applies it to the new index. Carrying the raw name forward instead would
+                   // make `switchIndex` set the DEAD index's name as the new index's alias,
+                   // destroying the alias the user created (issue #36983, Bug 1).
+                   indexAlias = aliasOf(indexName, aliasMap);
                 }
             }
             if(UtilMethods.isSet(indexName)){
@@ -430,6 +575,90 @@ public class SiteSearchJobImpl {
             }
         }//if indexName is null. Then the result is interpreted as a new index.
         return new IndexMetaData(indexName, defaultIndex, indexAlias, recordCount == 0);
+    }
+
+    /**
+     * Reverse lookup of the alias attached to {@code indexName}, given an alias&rarr;index map.
+     *
+     * @param indexName the (logical) index name to find an alias for
+     * @param aliasToIndex alias &rarr; index map as returned by {@link SiteSearchAPI#getAliasToIndexMap()}
+     * @return the alias pointing at {@code indexName}, or {@code null} when the index has none
+     */
+    private static String aliasOf(final String indexName, final Map<String, String> aliasToIndex) {
+        return aliasToIndex.entrySet().stream()
+                .filter(entry -> indexName.equals(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Writes the alias resolved by {@link #getIndexMetaData(String)} back into the Quartz job detail,
+     * when it differs from the string that was stored there.
+     *
+     * <p><strong>Why this has to happen.</strong> The job detail is the job's only memory between
+     * runs. When it holds a raw index name — the damage the old scheduler did, see
+     * {@link #getIndexMetaData(String)} — the resolution recovers the index's real alias, and the
+     * crawl then completes correctly: the new index is built, the old one deleted, the alias
+     * re-applied. But the *stored* string is still the name of the index that crawl just deleted. On
+     * the next run it resolves to neither an alias nor an existing index, so the job treats itself as
+     * brand new: it stops tracking the index it has been maintaining (which keeps the real alias and
+     * silently goes stale, since nothing crawls it any more) and starts a fresh one. Persisting the
+     * resolved alias makes the repair permanent — the next run looks up a real alias and finds the
+     * index the previous crawl built.</p>
+     *
+     * <p>Persistence is Quartz's: {@code SiteSearchJobProxy} is a {@link org.quartz.StatefulJob}, and
+     * the JDBC job store re-persists the job detail's data map after every execution, including one
+     * that ended in an exception. That last part is fine here — an alias is a stable handle whether or
+     * not the crawl got as far as switching indices: if it failed early the original index still
+     * exists and still carries the alias we just stored.</p>
+     *
+     * <p>Only a resolved, non-empty alias is written. An index with no alias at all leaves nothing
+     * stable to store — its name changes on every full crawl — so that case is left alone; what stops
+     * it from resurrecting a dead index name is {@link #aliasForNewIndex(IndexMetaData, String)}.</p>
+     */
+    @VisibleForTesting
+    static void persistResolvedAlias(final JobDataMap dataMap, final String storedAlias,
+            final String resolvedAlias) {
+        if (!UtilMethods.isSet(resolvedAlias) || resolvedAlias.equals(storedAlias)) {
+            return;
+        }
+        dataMap.put(INDEX_ALIAS, resolvedAlias);
+        Logger.info(SiteSearchJobImpl.class, String.format(
+                "Site-search job stored `%s` where an alias was expected; recovered the index's real "
+                        + "alias `%s` and saved it to the job so the repair survives this run.",
+                storedAlias, resolvedAlias));
+    }
+
+    /**
+     * The alias to attach to a brand-new index at creation time, or {@code null} for none.
+     *
+     * <p>An existing index keeps its alias through the switch instead (the publisher re-applies it
+     * after deleting the old index), so this only ever applies when the job found nothing to track.</p>
+     *
+     * <p><strong>Never a generated index name.</strong> A job whose stored alias is a stale
+     * {@code sitesearch_<timestamp>_<uuid>} — left behind by the defect in issue #36983, or simply
+     * pointing at an index someone deleted by hand — would otherwise stamp the name of a dead index
+     * onto a live one as its alias, recreating exactly the damage this issue is about. A real alias a
+     * person chose is kept as before; only the machine-generated shape is refused, using the same
+     * definition the readiness report uses to flag these, so the detector and the preventer cannot
+     * drift apart.</p>
+     */
+    @VisibleForTesting
+    static String aliasForNewIndex(final IndexMetaData indexMetaData, final String resolvedAlias) {
+        if (!indexMetaData.isNewIndex()) {
+            return null;
+        }
+        if (SiteSearchMirrorReconciler.isIndexNameShaped(resolvedAlias)) {
+            Logger.warn(SiteSearchJobImpl.class, String.format(
+                    "Site-search job is scheduled against `%s`, which is an index name and no longer "
+                            + "exists — most likely the alias was overwritten by an earlier crawl "
+                            + "(issue #36983). Building a new index WITHOUT that alias rather than "
+                            + "stamping a dead index's name onto a live one. Re-save the job with the "
+                            + "intended alias.", resolvedAlias));
+            return null;
+        }
+        return resolvedAlias;
     }
 
     private static final Pattern invalidAliasNamePattern = Pattern.compile("[^a-zA-Z0-9-_]");

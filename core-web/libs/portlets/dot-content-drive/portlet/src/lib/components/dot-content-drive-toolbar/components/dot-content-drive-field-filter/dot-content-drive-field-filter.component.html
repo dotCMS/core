@@ -5,11 +5,7 @@
     (removed)="onRemove()"
     [attr.data-testid]="'field-filter-chip-' + $field().variable" />
 
-<p-popover
-    #popover
-    [pt]="popoverPt"
-    (onShow)="$popoverOpen.set(true)"
-    (onHide)="$popoverOpen.set(false)">
+<p-popover #popover (onShow)="$popoverOpen.set(true)" (onHide)="$popoverOpen.set(false)">
     @if ($popoverOpen()) {
         @switch ($control()) {
             @case ('text') {
@@ -57,7 +53,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     data-testid="field-filter-select">
@@ -79,7 +74,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     (onChange)="onMultiChange()"
@@ -109,7 +103,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     (onChange)="onMultiChange()"
@@ -129,7 +122,6 @@
                     [ngModelOptions]="{ standalone: true }"
                     [options]="$binaryOptions()"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     data-testid="field-filter-binary">
@@ -156,7 +148,6 @@
                     [filter]="true"
                     [filterPlaceHolder]="'search' | dm"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     optionLabel="label"
                     optionValue="value"
                     data-testid="field-filter-radio">

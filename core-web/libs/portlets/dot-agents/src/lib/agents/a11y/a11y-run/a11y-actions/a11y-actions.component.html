@@ -1,0 +1,104 @@
+<!-- Footer copy — hidden in the ready + scanning states. -->
+@if (phase() !== 'ready' && phase() !== 'scanning') {
+    <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
+        @if ($footerIcon(); as fi) {
+            <!-- dot-color-icon's own sizes (48/56px) are too big for a footer line,
+                 so the box and radius are overridden — it's kept for the
+                 color-driven bg/fg derivation, which is the part worth sharing. -->
+            <dot-color-icon
+                class="size-9! rounded-lg!"
+                size="sm"
+                [color]="fi.color"
+                aria-hidden="true"
+                data-testid="studio-footer-icon">
+                <!-- text-base!: material-symbols-outlined sets its own
+                     font-size on the class, which a plain size utility
+                     loses to at equal specificity. -->
+                <span class="material-symbols-outlined text-base!">{{ fi.icon }}</span>
+            </dot-color-icon>
+        }
+        <div class="min-w-0">
+            <div class="leading-snug font-bold text-color">
+                {{ $footerKeys().titleKey | dm: $footerArgs() }}
+            </div>
+            <div class="mt-px leading-snug text-muted-color">
+                {{ $footerKeys().subKey | dm: [pagePath()] }}
+            </div>
+        </div>
+    </div>
+}
+
+@switch (phase()) {
+    @case ('ready') {
+        <p-button
+            [label]="'accessibility.studio.action.scan' | dm"
+            styleClass="w-full"
+            (onClick)="scan.emit()"
+            data-testid="studio-scan-btn" />
+    }
+    @case ('scanning') {
+        <p-button
+            [label]="'accessibility.studio.action.stopscan' | dm"
+            severity="secondary"
+            [outlined]="true"
+            styleClass="w-full"
+            (onClick)="stopScan.emit()"
+            data-testid="studio-stopscan-btn" />
+    }
+    @case ('scanned') {
+        <!-- Skip-CSS is a fix option (the agent reports CSS contrast instead
+                     of fixing it), so it sits with the Fix action, not the scan. -->
+        <div class="mb-4 flex items-center justify-between">
+            <label for="studio-skip-css" class="text-muted-color">
+                {{ 'accessibility.studio.skipcss.label' | dm }}
+            </label>
+            <p-toggleswitch
+                inputId="studio-skip-css"
+                [ngModel]="skipCss()"
+                (ngModelChange)="skipCssChange.emit($event)"
+                data-testid="studio-skipcss-toggle" />
+        </div>
+        <div class="flex gap-2.5">
+            <p-button
+                [label]="'accessibility.studio.action.rescan' | dm"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="scan.emit()"
+                data-testid="studio-rescan-btn" />
+            <p-button
+                [label]="'accessibility.studio.action.fix' | dm"
+                styleClass="flex-1"
+                (onClick)="fix.emit()"
+                data-testid="studio-fix-btn" />
+        </div>
+    }
+    @case ('fixing') {
+        <p-button
+            [label]="'accessibility.studio.action.stopagent' | dm"
+            severity="danger"
+            [outlined]="true"
+            styleClass="w-full"
+            (onClick)="stopAgent.emit()"
+            data-testid="studio-stopagent-btn" />
+    }
+    @case ('done') {
+        <!-- Discard + Publish live in the Files panel, with the files they
+                     act on. Here we just send the user there. -->
+        <p-button
+            [label]="'accessibility.studio.action.reviewfiles' | dm"
+            styleClass="w-full"
+            (onClick)="reviewFiles.emit()"
+            data-testid="studio-reviewfiles-btn" />
+    }
+    @case ('published') {
+        <div class="flex gap-2.5">
+            <p-button
+                [label]="'accessibility.studio.action.allpages' | dm"
+                severity="secondary"
+                [outlined]="true"
+                styleClass="flex-1"
+                (onClick)="allPages.emit()"
+                data-testid="studio-allpages-btn" />
+        </div>
+    }
+}
