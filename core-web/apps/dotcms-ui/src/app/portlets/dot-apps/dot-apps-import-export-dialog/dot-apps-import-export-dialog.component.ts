@@ -50,7 +50,11 @@ export class DotAppsImportExportDialogComponent {
     readonly isLoading = this.#store.isLoading;
 
     form: UntypedFormGroup = this.#fb.group({});
-    dialogActions!: DotDialogActions;
+    /**
+     * `accept` is required here even though `DotDialogActions` declares it optional: this component
+     * always builds one with a label, and updates its `disabled` flag by spreading it.
+     */
+    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
     #selectedFile: File | null = null;
 
     // Effect to react to action changes to setup the form

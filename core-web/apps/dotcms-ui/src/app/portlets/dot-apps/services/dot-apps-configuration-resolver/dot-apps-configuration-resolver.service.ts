@@ -17,16 +17,20 @@ import { GlobalStore } from '@dotcms/store';
  * @implements {Resolve<Observable<DotApp>>}
  */
 @Injectable()
-export class DotAppsConfigurationResolver implements Resolve<Observable<DotApp>> {
+export class DotAppsConfigurationResolver implements Resolve<DotApp | null> {
     private dotAppsService = inject(DotAppsService);
     readonly #globalStore = inject(GlobalStore);
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotApp> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotApp | null> {
         const appsKey = route.paramMap.get('appKey');
 
-        return this.dotAppsService.getConfigurationList(appsKey).pipe(
+        return this.dotAppsService.getConfigurationList(appsKey ?? '').pipe(
             take(1),
             tap((apps) => {
+                if (!apps) {
+                    return;
+                }
+
                 this.#globalStore.addNewBreadcrumb({
                     label: apps.name,
                     target: '_self',
