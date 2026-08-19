@@ -10,7 +10,11 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
+import {
+    TreeNodeCollapseEvent,
+    TreeNodeExpandEvent,
+    TreeNodeSelectEvent
+} from 'primeng/types/tree';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -51,11 +55,21 @@ export class DotRolesTreeComponent {
     readonly #filterInput$ = new Subject<string>();
 
     /**
-     * Nodes whose children have already been lazy-loaded from the backend.
-     * We use this to hide the chevron on nodes we've confirmed are leaves
-     * so users don't get to click into empty branches after expanding.
+     * Nodes that have been opened at least once — used for lazy-load
+     * dedup (skip refetch on re-open) and leaf detection (a node that
+     * has been opened but has zero children is a confirmed leaf).
+     * Add-only: never removed on collapse, so a re-open of a
+     * previously-loaded branch does NOT hit the backend again.
      */
-    readonly #expandedRoles = signal(new Set<string>());
+    readonly #fetchedRoleIds = signal(new Set<string>());
+
+    /**
+     * Nodes currently open in the UI. Reflects live expand / collapse
+     * events. Separate from `#fetchedRoleIds` so collapsing a node
+     * doesn't invalidate the "we've already loaded these children"
+     * signal. Empty on first load → tree renders fully collapsed.
+     */
+    readonly #openNodeIds = signal(new Set<string>());
 
     /**
      * PassThrough config for the shared `DotFolderTreeComponent` — matches
@@ -104,17 +118,30 @@ export class DotRolesTreeComponent {
     protected onNodeExpand(event: TreeNodeExpandEvent): void {
         const node = event.node as DotRolePrimeTreeNode;
         const id = node.data.id;
-        if (this.#expandedRoles().has(id)) {
+
+        this.#openNodeIds.update((set) => new Set(set).add(id));
+
+        if (this.#fetchedRoleIds().has(id)) {
             return;
         }
 
-        this.#expandedRoles.update((set) => new Set(set).add(id));
+        this.#fetchedRoleIds.update((set) => new Set(set).add(id));
 
         // Only fetch when we don't already have children populated.
         const hasLoadedChildren = (node.data.roleChildren?.length ?? 0) > 0;
         if (!hasLoadedChildren && !node.data.user) {
             this.store.loadRoleChildren(id);
         }
+    }
+
+    protected onNodeCollapse(event: TreeNodeCollapseEvent): void {
+        const node = event.node as DotRolePrimeTreeNode;
+        this.#openNodeIds.update((set) => {
+            const next = new Set(set);
+            next.delete(node.data.id);
+
+            return next;
+        });
     }
 
     protected onAddRole(parentRoleId?: string): void {
@@ -135,7 +162,7 @@ export class DotRolesTreeComponent {
             // fetched its children and got none back. Otherwise we keep
             // the chevron so admins can drill into deeper levels.
             const confirmedLeaf =
-                node.user === true || (this.#expandedRoles().has(node.id) && !hasChildren);
+                node.user === true || (this.#fetchedRoleIds().has(node.id) && !hasChildren);
 
             return {
                 key: node.id,
@@ -143,7 +170,7 @@ export class DotRolesTreeComponent {
                 data: node,
                 children,
                 leaf: confirmedLeaf,
-                expanded: hasChildren
+                expanded: this.#openNodeIds().has(node.id)
             };
         });
     }
