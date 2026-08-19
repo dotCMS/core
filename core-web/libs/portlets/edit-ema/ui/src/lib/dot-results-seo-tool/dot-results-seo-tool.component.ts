@@ -49,7 +49,11 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
     @Input() hostName = '';
-    @Input() seoMedia = '';
+    /**
+     * `SEO_MEDIA_TYPES` rather than `string`: it keys `readMoreValues`, and `''` is the
+     * "nothing selected yet" value the template's `@for` reads as an empty list.
+     */
+    @Input() seoMedia: SEO_MEDIA_TYPES | '' = '';
     @Input() seoOGTags?: SeoMetaTags;
     @Input() seoOGTagsResults?: Observable<SeoMetaTagsResult[]>;
     currentResults$!: Observable<SeoMetaTagsResult[]>;
