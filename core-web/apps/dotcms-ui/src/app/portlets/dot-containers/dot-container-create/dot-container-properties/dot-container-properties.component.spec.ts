@@ -427,7 +427,7 @@ describe('DotContainerPropertiesComponent', () => {
             expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
             expect(
                 (comp.form.get('containerStructures') as FormArray).controls[0]
-                    .get('code')
+                    .get('code')!
                     .hasValidator(Validators.required)
             ).toBe(false);
         }));

@@ -31,10 +31,7 @@ import {
     DotMessagePipe
 } from '@dotcms/ui';
 
-import {
-    DotContainerPropertiesState,
-    DotContainerPropertiesStore
-} from './store/dot-container-properties.store';
+import { DotContainerPropertiesStore } from './store/dot-container-properties.store';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
@@ -87,8 +84,9 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     ngOnInit(): void {
         this.#store.containerAndStructure$
             .pipe(take(1))
-            .subscribe((state: DotContainerPropertiesState) => {
-                const { container, containerStructures } = state;
+            // Not annotated with the whole state: `containerAndStructure$` selects two fields, and
+            // a wider parameter than the selector emits is what strictFunctionTypes rejects.
+            .subscribe(({ container, containerStructures }) => {
                 this.form = this.fb.group({
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),

@@ -10,7 +10,7 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
 import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
@@ -48,7 +48,7 @@ const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-} as unknown;
+};
 
 const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
     ...MOCK_FIELD,
@@ -71,8 +71,8 @@ const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
                 ]
             })
         }
-    ]
-} as unknown;
+    ] as DotCMSContentTypeFieldVariable[]
+};
 
 const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
     ...MOCK_FIELD,
@@ -112,13 +112,15 @@ const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
                 ]
             })
         }
-    ]
-} as unknown;
+    ] as DotCMSContentTypeFieldVariable[]
+};
 
 const MALFORMED_CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
     ...MOCK_FIELD,
-    fieldVariables: [{ key: 'customBlocks', value: '{ not json' }]
-} as unknown;
+    fieldVariables: [
+        { key: 'customBlocks', value: '{ not json' }
+    ] as DotCMSContentTypeFieldVariable[]
+};
 
 describe('DotBlockEditorSettingsComponent', () => {
     describe('with existing variables', () => {
@@ -354,8 +356,8 @@ describe('DotBlockEditorSettingsComponent', () => {
             const options = component.settingsMap.allowedBlocks.options;
             const paragraphOption = options.find(
                 ({ label, code }) =>
-                    code.trim().toLowerCase() === 'paragraph' ||
-                    label.trim().toLowerCase() === 'paragraph'
+                    code?.trim().toLowerCase() === 'paragraph' ||
+                    label?.trim().toLowerCase() === 'paragraph'
             );
 
             expect(paragraphOption).not.toBeDefined();

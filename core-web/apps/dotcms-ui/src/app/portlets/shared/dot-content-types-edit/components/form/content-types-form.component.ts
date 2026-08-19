@@ -152,7 +152,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      * @param any field
      * @memberof ContentTypesFormComponent
      */
-    handleDateVarChange($event, field): void {
+    handleDateVarChange($event: { value: string }, field: string): void {
         if (field === 'publishDateVar') {
             this.updateExpireDateVar($event.value);
         } else {
@@ -277,7 +277,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         return item && typeof item !== 'string' ? item.workflowAction.id : '';
     }
 
-    private getProp(item: string): string {
+    private getProp(item?: string): string {
         return item || '';
     }
 
