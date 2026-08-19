@@ -27,8 +27,10 @@ export class DotTemplateContainersCacheService {
      * @memberof DotTemplateContainersCacheService
      */
     getContainerReference(dotContainer: DotContainer): string {
-        return dotContainer.source === CONTAINER_SOURCE.FILE
-            ? dotContainer.path
-            : dotContainer.identifier;
+        return (
+            (dotContainer.source === CONTAINER_SOURCE.FILE
+                ? dotContainer.path
+                : dotContainer.identifier) ?? ''
+        );
     }
 }

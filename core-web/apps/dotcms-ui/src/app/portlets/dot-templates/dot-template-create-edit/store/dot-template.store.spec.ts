@@ -223,6 +223,7 @@ describe('DotTemplateStore', () => {
         describe('effects', () => {
             it('should create template', () => {
                 service.createTemplate({
+                    type: 'advanced',
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',
@@ -464,6 +465,7 @@ describe('DotTemplateStore', () => {
         describe('effects', () => {
             it('should update template and update the state', () => {
                 service.saveTemplate({
+                    type: 'advanced',
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',
@@ -511,7 +513,8 @@ describe('DotTemplateStore', () => {
             });
 
             it('should update template and update the state after 10 seconds if template has changed', fakeAsync(() => {
-                const newTemplate = {
+                const newTemplate: DotTemplateItem = {
+                    type: 'advanced',
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',
@@ -565,6 +568,7 @@ describe('DotTemplateStore', () => {
 
             it('should save and publish template and update the state', () => {
                 service.saveAndPublishTemplate({
+                    type: 'advanced',
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',
@@ -652,6 +656,7 @@ describe('DotTemplateStore', () => {
                 const error = throwError(() => new HttpErrorResponse(mockResponseView(400)));
                 dotTemplatesService.update = jest.fn().mockReturnValue(error);
                 service.saveTemplate({
+                    type: 'advanced',
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',
@@ -668,6 +673,7 @@ describe('DotTemplateStore', () => {
 
             it('should not update template body when updates props', () => {
                 service.saveProperties({
+                    type: 'advanced',
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',

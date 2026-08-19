@@ -10,7 +10,8 @@ export interface DotLayout {
     sidebar: DotLayoutSideBar | null;
     title: string;
     themeId?: string;
-    width: string;
+    /** Null before a width is chosen — the template builder already reads it as `width ?? ''`. */
+    width: string | null;
 }
 
 export interface DotTemplateDesigner {

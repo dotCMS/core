@@ -49,7 +49,8 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
     private dotCrudService = inject(DotCrudService);
     private dotMessageService = inject(DotMessageService);
 
-    asset!: DotCMSTemplateThumbnail;
+    /** Null with no thumbnail set, which is what `writeValue('')` and clearing both do. */
+    asset: DotCMSTemplateThumbnail | null = null;
     error = '';
     loading = false;
 
@@ -69,7 +70,21 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
             this.dotTempFileUploadService
                 .upload(value)
                 .pipe(
-                    switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                    switchMap((uploaded: DotCMSTempFile[] | string) => {
+                        // A failed upload arrives as the HTTP status *string* —
+                        // `DotTempFileUploadService.handleError` maps the error to
+                        // `err.status.toString()` — so destructuring it as a temp-file list took
+                        // the string's first character and carried on with nothing.
+                        if (typeof uploaded === 'string' || !uploaded.length) {
+                            return throwError(() =>
+                                this.dotMessageService.get(
+                                    'templates.properties.form.thumbnail.error'
+                                )
+                            );
+                        }
+
+                        const [{ id, image }] = uploaded;
+
                         if (!image) {
                             return throwError(() =>
                                 this.dotMessageService.get(
@@ -151,7 +166,7 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
             });
     }
 
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 

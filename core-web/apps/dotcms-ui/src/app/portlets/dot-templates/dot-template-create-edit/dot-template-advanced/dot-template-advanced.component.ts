@@ -125,9 +125,13 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     }
 
     private setContainerId({ identifier, hostName }: DotContainer): string {
+        if (!hostName) {
+            return identifier;
+        }
+
         const regex = new RegExp('//' + hostName);
 
-        return identifier?.includes(hostName) ? identifier.replace(regex, '') : identifier;
+        return identifier.includes(hostName) ? identifier.replace(regex, '') : identifier;
     }
 
     private getActions(disabled = true): DotPortletToolbarActions {

@@ -221,7 +221,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         });
     }
 
-    private getFormValue(template: DotTemplateItem): { [key: string]: string | DotLayout } {
+    private getFormValue(template: DotTemplateItem): {
+        [key: string]: string | DotLayout | undefined | null;
+    } {
         if (template.type === 'design') {
             return {
                 type: template.type,
