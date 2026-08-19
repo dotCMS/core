@@ -58,7 +58,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     /** The field the dialog is editing. Null between dialogs, and when a lookup misses. */
     currentField: DotCMSContentTypeField | null = null;
-    currentFieldType!: FieldType;
+    /** Undefined for a clazz the field-types endpoint does not know. */
+    currentFieldType?: FieldType;
     fieldRows: DotCMSContentTypeLayoutRow[] = [];
 
     /** Layout rows used to render the drop-zone. Changes trigger a structural clone. */

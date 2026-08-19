@@ -60,7 +60,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * Per-field-type map of variable keys that must be hidden from the table.
      * These keys are owned by dedicated settings sections and should not be edited here.
      */
-    blackList = {
+    /** Variable keys hidden per field clazz — most clazzes have no entry. */
+    blackList: Record<string, Record<string, boolean>> = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
             // contentAssets: true

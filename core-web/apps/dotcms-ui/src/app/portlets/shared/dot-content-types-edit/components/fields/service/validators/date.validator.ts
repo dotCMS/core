@@ -2,7 +2,8 @@ import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 import { _isValid } from '@dotcms/data-access';
 
-const format = {
+/** Date formats by field clazz, which is whatever the sibling control holds. */
+const format: Record<string, string> = {
     'com.dotcms.contenttype.model.field.ImmutableDateField': 'yyyy-MM-dd',
     'com.dotcms.contenttype.model.field.ImmutableDateTimeField': 'yyyy-MM-dd HH:mm:ss',
     'com.dotcms.contenttype.model.field.ImmutableTimeField': 'HH:mm:ss'

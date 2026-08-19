@@ -50,7 +50,8 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
 
     fieldAttributesArray: string[] = [];
 
-    fieldTypeLabel!: string;
+    /** Empty when the field carries no type label. */
+    fieldTypeLabel = '';
     fieldAttributesString!: string;
     icon!: string;
 
@@ -61,7 +62,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
 
     ngOnInit(): void {
         this.field = this.$field();
-        this.fieldTypeLabel = this.field.fieldTypeLabel ? this.field.fieldTypeLabel : null;
+        this.fieldTypeLabel = this.field.fieldTypeLabel ?? '';
 
         this.fieldAttributesArray = [
             {
