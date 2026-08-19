@@ -77,7 +77,12 @@ export const DotAppsImportExportDialogStore = signalStore(
             /**
              * Open the export dialog
              */
-            openExport: (app: DotApp, site?: DotAppsSite) => {
+            /**
+             * `app` is nullable because "export all" is expressed by passing none — the export
+             * effect below reads it as `exportAll: app ? false : true`. Declaring it non-null is
+             * what forced the export-all caller into a `null as unknown as DotApp` cast.
+             */
+            openExport: (app: DotApp | null, site?: DotAppsSite) => {
                 patchState(store, {
                     visible: true,
                     action: dialogAction.EXPORT,

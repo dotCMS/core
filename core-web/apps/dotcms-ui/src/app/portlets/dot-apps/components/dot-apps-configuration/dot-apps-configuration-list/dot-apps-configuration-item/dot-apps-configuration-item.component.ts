@@ -16,8 +16,8 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
     imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule],
     changeDetection: ChangeDetectionStrategy.Eager,
     host: {
-        '[class.bg-gray-100]': '!site()?.configured',
-        '[class.text-gray-500]': '!site()?.configured',
+        '[class.bg-gray-100]': '!site().configured',
+        '[class.text-gray-500]': '!site().configured',
         '(click)': 'onClick($event)'
     }
 })
@@ -25,11 +25,11 @@ export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);
     private dotAlertConfirmService = inject(DotAlertConfirmService);
 
-    site = input<DotAppsSite>();
+    site = input.required<DotAppsSite>();
 
-    edit = output<DotAppsSite | undefined>();
+    edit = output<DotAppsSite>();
     export = output<DotAppsSite>();
-    delete = output<DotAppsSite | undefined>();
+    delete = output<DotAppsSite>();
 
     onClick(event: MouseEvent): void {
         event.stopPropagation();
@@ -43,7 +43,7 @@ export class DotAppsConfigurationItemComponent {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationItemComponent
      */
-    editConfigurationSite($event: MouseEvent, site?: DotAppsSite): void {
+    editConfigurationSite($event: MouseEvent, site: DotAppsSite): void {
         $event.stopPropagation();
         this.edit.emit(site);
     }
@@ -77,7 +77,7 @@ export class DotAppsConfigurationItemComponent {
             },
             header: this.dotMessageService.get('apps.confirmation.title'),
             message: `${this.dotMessageService.get('apps.confirmation.delete.message')} <b>${
-                this.site()?.name
+                this.site().name
             }</b> ?`,
             footerLabel: {
                 accept: this.dotMessageService.get('apps.confirmation.accept')

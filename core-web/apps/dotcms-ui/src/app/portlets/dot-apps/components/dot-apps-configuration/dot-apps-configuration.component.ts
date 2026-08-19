@@ -128,7 +128,7 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
      */
     loadData(event?: LazyLoadEvent): void {
         this.paginationService
-            .getWithOffset((event && event.first) || 0)
+            .getWithOffset<DotApp>((event && event.first) || 0)
             .pipe(take(1))
             .subscribe((app: DotApp) => {
                 patchState(this.$state, {
@@ -213,7 +213,7 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
                     .subscribe(() => {
                         patchState(this.$state, {
                             app: {
-                                ...this.$app(),
+                                ...app,
                                 sites: []
                             }
                         });
