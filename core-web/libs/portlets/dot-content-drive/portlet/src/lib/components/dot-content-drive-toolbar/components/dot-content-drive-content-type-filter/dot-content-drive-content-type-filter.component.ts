@@ -32,12 +32,11 @@ import {
     StructureTypeView
 } from '@dotcms/dotcms-models';
 import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
     DotChipFilterComponent,
-    DotFilterListItemComponent
-} from '@dotcms/portlets/content-drive/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+    DotFilterListItemComponent,
+    DotMessagePipe,
+    LISTBOX_OPTION_HEIGHT
+} from '@dotcms/ui';
 
 import {
     DEBOUNCE_TIME,
@@ -50,14 +49,11 @@ const ALL_CONTENT = '__ALL_CONTENT__';
 const ITEMS_PER_PAGE = 10;
 
 /**
- * Row height (px) used by the right column's virtual scroller.
- * Empirically measured against PrimeNG v21 listbox option default styling
- * (`--p-listbox-option-padding: 0 1rem` from CHIP_FILTER_LISTBOX_PT, plus the
- * `dot-filter-list-item` `py-3` host class). If a future PrimeNG / theme
- * upgrade changes the option padding or font, this number needs to be
- * re-measured or the scroller will misalign.
+ * Row height (px) used by the right column's virtual scroller. Taken from the theme, which
+ * fixes every listbox option to the same height — previously an empirically measured 40.6 that
+ * silently misaligned the scroller whenever the option padding or font changed.
  */
-const LISTBOX_ITEM_HEIGHT = 40.6;
+const LISTBOX_ITEM_HEIGHT = LISTBOX_OPTION_HEIGHT;
 /** Left listbox viewport height — fits all 9 base-type rows (incl. ALL_CONTENT). */
 const LISTBOX_SCROLL_HEIGHT = `${9 * LISTBOX_ITEM_HEIGHT + 14}px`;
 /** Approximate column header height (px-4 py-3 with text-xs uppercase). */
@@ -112,9 +108,6 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
      * overwrite the current state.
      */
     readonly #cancelFetch$ = new Subject<void>();
-
-    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
-    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     /**
      * PT applied to the base-type checkbox when it's in the indeterminate
      * (partial) state — paints the box with the checked-state tokens so the
