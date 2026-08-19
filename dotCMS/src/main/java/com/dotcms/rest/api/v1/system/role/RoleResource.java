@@ -5,6 +5,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
@@ -420,6 +421,191 @@ public class RoleResource implements Serializable {
 		}
 
 		return new ResponseEntityRoleDetailView(new RoleView(updatedRole, childrenRoles));
+	}
+
+	/**
+	 * Deletes an existing role. The deletion CASCADES, matching the legacy behavior the old
+	 * Roles &amp; Tools portlet has always had: the role is removed from every user that has it,
+	 * all its permissions are deleted, and its layout (tool-group) assignments are detached.
+	 * Deletion is blocked only where legacy blocks it: roles with children (409), roles
+	 * referenced by a workflow action's Assign To (409), and system or locked roles (403).
+	 * The caller must be a backend user with access to the Roles portlet and the CMS
+	 * Administrator role.
+	 */
+	@Operation(
+		operationId = "deleteRole",
+		summary = "Delete a role",
+		description = "Deletes a role. The deletion CASCADES and is not reversible: the role is " +
+				"removed from all users that have it, all permissions granted to the role are " +
+				"deleted, and its layout (tool-group) assignments are detached. The response " +
+				"reports how many users were affected. Deletion is rejected when the role has " +
+				"child roles or is referenced by a workflow action's Assign To (409), and for " +
+				"system or locked roles (403)."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role deleted successfully; usersAffected reports the cascade blast radius",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDeletionView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required, or the role is a system or locked role",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "409",
+					description = "Conflict - the role has child roles, or a workflow action references it",
+					content = @Content(mediaType = "application/json"))
+	})
+	@DELETE
+	@Path("/{roleid}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDeletionView deleteRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to delete", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		final int usersAffected = this.roleHelper.deleteRole(roleId, user);
+
+		return new ResponseEntityRoleDeletionView(RoleDeletionView.builder()
+				.deleted(true)
+				.roleId(roleId)
+				.usersAffected(usersAffected)
+				.build());
+	}
+
+	/**
+	 * Grants a role to a user. Idempotent, mirroring the legacy DWR
+	 * {@code RoleAjax#addUserToRole} path: granting a role the user already holds — directly
+	 * or inherited through the role hierarchy — returns 200 and changes nothing. The only
+	 * grant gate is the role's {@code editUsers} flag (403). The caller must be a backend
+	 * user with access to the Roles portlet and the CMS Administrator role.
+	 */
+	@Operation(
+		operationId = "addUserToRole",
+		summary = "Grant a role to a user",
+		description = "Grants the role to the user as a DIRECT membership. The operation is " +
+				"IDEMPOTENT: granting a role the user already holds returns 200 and changes " +
+				"nothing — no duplicate membership is created and retries are safe, even when the " +
+				"role's editUsers flag has since been turned off. Note the " +
+				"inherited-membership behavior (legacy parity): role membership is inherited DOWN " +
+				"the role tree, so a user holding a parent role implicitly holds every child role. " +
+				"Granting a role the user already INHERITS this way also returns 200 but does NOT " +
+				"create a direct membership — the user will not appear in the role's direct-users " +
+				"list afterwards. Roles whose editUsers flag is false cannot be granted (403); " +
+				"workflow and system roles are non-grantable because that flag is false on them."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "User holds the role after the call; the response carries the granted "
+							+ "roleId and a minimal user payload",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleUserGrantView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required, or the role's editUsers flag is false",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role or user not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@POST
+	@Path("/{roleid}/users/{userId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleUserGrantView addUserToRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to grant", required = true)
+			final @PathParam("roleid") String roleId,
+			@Parameter(description = "Id of the user to grant the role to", required = true)
+			final @PathParam("userId") String userId) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		final User targetUser = this.roleHelper.addUserToRole(roleId, userId, user);
+
+		return new ResponseEntityRoleUserGrantView(RoleUserGrantView.builder()
+				.granted(true)
+				.roleId(roleId)
+				.user(RoleMemberUserView.builder()
+						.userId(targetUser.getUserId())
+						.email(targetUser.getEmailAddress())
+						.fullName(targetUser.getFullName())
+						.build())
+				.build());
+	}
+
+	/**
+	 * Bulk-removes users from a role with partial-success semantics: removable direct
+	 * memberships are removed, everything else is reported in {@code skipped} with a reason
+	 * ({@code not_found}, {@code inherited}, {@code error}) — the batch never fails as a whole
+	 * once the role resolves. The caller must be a backend user with access to the Roles
+	 * portlet and the CMS Administrator role.
+	 */
+	@Operation(
+		operationId = "removeUsersFromRole",
+		summary = "Remove users from a role",
+		description = "Bulk-removes the DIRECT membership of the given users from the role. The " +
+				"batch has PARTIAL-SUCCESS semantics: it never fails as a whole once the role " +
+				"resolves — every removable membership is removed and every other entry is " +
+				"reported in the skipped list with a reason: not_found (no user matches the id), " +
+				"inherited (the user is not a direct member — the membership is inherited through " +
+				"the role hierarchy, or the user is not a member at all; inherited membership can " +
+				"only be revoked by removing the user from the ancestor role that grants it), or " +
+				"error (unexpected per-user failure, logged server-side). Removals are committed " +
+				"per user, so entries already processed stay removed regardless of later entries."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Batch processed; removedUserIds and skipped report the per-user outcomes",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleUsersRemovalView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - missing body, empty userIds, or null/blank entries",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@DELETE
+	@Path("/{roleid}/users")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleUsersRemovalView removeUsersFromRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to remove users from", required = true)
+			final @PathParam("roleid") String roleId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Ids of the users to remove from the role",
+				required = true,
+				content = @Content(schema = @Schema(implementation = RoleUsersForm.class))
+			)
+			final RoleUsersForm roleUsersForm) throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+
+		if (null == roleUsersForm) {
+			throw new BadRequestException("Request body with userIds is required");
+		}
+		roleUsersForm.checkValid();
+
+		return new ResponseEntityRoleUsersRemovalView(
+				this.roleHelper.removeUsersFromRole(roleId, roleUsersForm.getUserIds(), user));
 	}
 
 	/**

@@ -52,12 +52,13 @@ import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
+import { stripDocStats } from './utils/doc-stats.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
-    return JSON.stringify(editor.getJSON());
+    return JSON.stringify(stripDocStats(editor.getJSON()));
 }
 
 /**
@@ -146,7 +147,7 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         const trimmed = parsed.trimStart();
         if (trimmed.startsWith('{')) {
             try {
-                return JSON.stringify(JSON.parse(parsed)) === currentJson;
+                return JSON.stringify(stripDocStats(JSON.parse(parsed))) === currentJson;
             } catch {
                 return false;
             }
@@ -154,8 +155,9 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         return parsed === editor.getHTML();
     }
     return (
-        JSON.stringify(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor))) ===
-        currentJson
+        JSON.stringify(
+            stripDocStats(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)))
+        ) === currentJson
     );
 }
 

@@ -20,6 +20,7 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     AddToBundleService,
+    PushPublishService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
@@ -160,6 +161,11 @@ describe('DotContentDriveShellComponent', () => {
             }),
             LoggerService,
             StringUtils,
+            mockProvider(PushPublishService, {
+                // The Action Center gates its Push Publish row on this; an empty answer disables it,
+                // which is all the shell's own tests need.
+                getEnvironments: jest.fn().mockReturnValue(of([]))
+            }),
             mockProvider(AddToBundleService, {
                 getBundles: jest.fn().mockReturnValue(of([])),
                 addToBundle: jest.fn().mockReturnValue(of({}))
@@ -2882,6 +2888,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             }),
             LoggerService,
             StringUtils,
+            mockProvider(PushPublishService, {
+                // The Action Center gates its Push Publish row on this; an empty answer disables it,
+                // which is all the shell's own tests need.
+                getEnvironments: jest.fn().mockReturnValue(of([]))
+            }),
             mockProvider(AddToBundleService, {
                 getBundles: jest.fn().mockReturnValue(of([])),
                 addToBundle: jest.fn().mockReturnValue(of({}))
