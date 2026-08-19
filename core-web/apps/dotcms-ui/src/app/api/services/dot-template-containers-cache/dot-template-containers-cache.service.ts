@@ -9,7 +9,7 @@ import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-
     providedIn: 'root'
 })
 export class DotTemplateContainersCacheService {
-    private containers: DotContainerMap;
+    private containers!: DotContainerMap;
 
     set(containers: DotContainerMap): void {
         this.containers = containers;

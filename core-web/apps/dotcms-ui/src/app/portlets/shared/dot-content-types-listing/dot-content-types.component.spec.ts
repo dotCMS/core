@@ -77,7 +77,7 @@ class MockDotContentTypeCloneDialogComponent {
     standalone: false
 })
 class MockDotBaseTypeSelectorComponent {
-    @Input() value: SelectItem;
+    @Input() value!: SelectItem;
     @Output() selected = new EventEmitter<string>();
 }
 
@@ -107,7 +107,7 @@ class MockDotContentTypeStore {}
     standalone: false
 })
 class MockDotAddToBundleComponent {
-    @Input() assetIdentifier: string;
+    @Input() assetIdentifier!: string;
     @Output() cancel = new EventEmitter<boolean>();
 }
 

@@ -50,7 +50,7 @@ export class DotAppsImportExportDialogComponent {
     readonly isLoading = this.#store.isLoading;
 
     form: UntypedFormGroup = this.#fb.group({});
-    dialogActions: DotDialogActions;
+    dialogActions!: DotDialogActions;
     #selectedFile: File | null = null;
 
     // Effect to react to action changes to setup the form

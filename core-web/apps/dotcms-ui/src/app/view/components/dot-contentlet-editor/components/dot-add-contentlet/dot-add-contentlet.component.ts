@@ -35,8 +35,8 @@ export class DotAddContentletComponent implements OnInit {
 
     @Output()
     custom: EventEmitter<unknown> = new EventEmitter();
-    url$: Observable<string>;
-    header$: Observable<string>;
+    url$!: Observable<string>;
+    header$!: Observable<string>;
 
     ngOnInit() {
         this.url$ = this.dotContentletEditorService.addUrl$;

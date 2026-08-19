@@ -39,9 +39,9 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
 
 class TestPaginatorService {
-    filter: string;
-    url: string;
-    paginationPerPage: string;
+    filter!: string;
+    url!: string;
+    paginationPerPage!: string;
     totalRecords = [mockDotPersona].length;
 
     getWithOffset(_offset: number) {

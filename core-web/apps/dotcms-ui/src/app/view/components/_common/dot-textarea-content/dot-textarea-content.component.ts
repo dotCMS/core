@@ -42,7 +42,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     };
 
     @Input()
-    height: string;
+    height!: string;
 
     @Input()
     show;
@@ -51,13 +51,13 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     value = '';
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    customStyles: Record<string, unknown>;
+    customStyles!: Record<string, unknown>;
 
     @Input()
-    editorName: string;
+    editorName!: string;
 
     @Output()
     monacoInit = new EventEmitter<unknown>();
@@ -78,8 +78,8 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     }
 
     selectOptions: SelectItem[] = [];
-    selected: string;
-    styles: Record<string, unknown> | string;
+    selected!: string;
+    styles!: Record<string, unknown> | string;
     editorOptions: MonacoEditorConstructionOptions = {
         theme: 'vs-light',
         minimap: {

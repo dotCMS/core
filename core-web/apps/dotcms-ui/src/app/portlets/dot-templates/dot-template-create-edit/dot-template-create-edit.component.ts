@@ -53,9 +53,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     readonly #store = inject(DotTemplateStore);
     readonly #globalStore = inject(GlobalStore);
 
-    vm$: Observable<VM>;
+    vm$!: Observable<VM>;
 
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {

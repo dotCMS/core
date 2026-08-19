@@ -52,7 +52,7 @@ mockFieldRow.columns[1].fields = [
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
     @Input()
     isSmall = false;
     @Output()
@@ -67,7 +67,7 @@ class TestContentTypeFieldDraggableItemComponent {
     standalone: false
 })
 class DotTestHostComponent {
-    data: DotCMSContentTypeLayoutRow;
+    data!: DotCMSContentTypeLayoutRow;
 
     setData(data: DotCMSContentTypeLayoutRow): void {
         this.data = data;

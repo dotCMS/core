@@ -26,9 +26,9 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     private previousField: DotCMSContentTypeField | null = null;
     private previousPropertyName: string | null = null;
 
-    @Input() propertyName: string;
-    @Input() field: DotCMSContentTypeField;
-    @Input() group: UntypedFormGroup;
+    @Input() propertyName!: string;
+    @Input() field!: DotCMSContentTypeField;
+    @Input() group!: UntypedFormGroup;
 
     ngOnChanges(changes: SimpleChanges): void {
         const fieldChanged = changes.field;

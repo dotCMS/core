@@ -34,9 +34,9 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     private dotMessageService = inject(DotMessageService);
     private readonly cd = inject(ChangeDetectorRef);
 
-    @Input() value: DotDevice;
+    @Input() value!: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
-    @HostBinding('class.disabled') disabled: boolean;
+    @HostBinding('class.disabled') disabled = false;
 
     options: DotDevice[] = [];
     placeholder = '';

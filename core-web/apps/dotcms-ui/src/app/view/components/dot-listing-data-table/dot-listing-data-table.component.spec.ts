@@ -63,15 +63,15 @@ class EmptyMockComponent {}
     standalone: false
 })
 class TestHostComponent {
-    @Input() columns: DataTableColumn[];
+    @Input() columns!: DataTableColumn[];
     @Input() url = '/api/data';
-    @Input() actionHeaderOptions: ActionHeaderOptions;
+    @Input() actionHeaderOptions!: ActionHeaderOptions;
     @Input() buttonActions: ButtonAction[] = [];
-    @Input() sortOrder: string;
-    @Input() sortField: string;
+    @Input() sortOrder!: string;
+    @Input() sortField!: string;
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
-    @Input() actions: DotActionMenuItem[];
+    @Input() actions!: DotActionMenuItem[];
     @Input() dataKey = '';
     @Input() checkbox = false;
     @Input() paginatorExtraParams: { [key: string]: string } = {};

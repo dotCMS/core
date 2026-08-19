@@ -106,12 +106,12 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
-    form: UntypedFormGroup;
-    nameFieldLabel: string;
-    workflowsSelected$: Observable<DotCMSWorkflow[]>;
-    newContentEditorEnabled: boolean;
+    form!: UntypedFormGroup;
+    nameFieldLabel!: string;
+    workflowsSelected$!: Observable<DotCMSWorkflow[]>;
+    newContentEditorEnabled = false;
 
-    private originalValue: DotCMSContentType;
+    private originalValue!: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {

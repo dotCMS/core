@@ -65,10 +65,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     readonly $propertiesContainer = viewChild<ElementRef>('properties');
 
     /** Local copy of form field data for mutations */
-    formFieldData: DotCMSContentTypeField;
+    formFieldData!: DotCMSContentTypeField;
 
     /** Reactive form group for field properties */
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
 
     /** Array of field property names to display */
     fieldProperties: string[] = [];
@@ -77,7 +77,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
     /** Original form value used for change detection */
-    private originalValue: DotCMSContentTypeField;
+    private originalValue!: DotCMSContentTypeField;
 
     /** Subject for managing component destruction and unsubscribing from observables */
     private destroy$: Subject<boolean> = new Subject<boolean>();

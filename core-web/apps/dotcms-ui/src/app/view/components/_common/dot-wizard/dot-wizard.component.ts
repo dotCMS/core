@@ -41,10 +41,10 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     imports: [DialogModule, ButtonModule, DotContainerReferenceDirective]
 })
 export class DotWizardComponent implements AfterViewInit {
-    #wizardData: { [key: string]: string };
+    #wizardData!: { [key: string]: string };
     #currentStep = 0;
-    #componentsHost: DotContainerReferenceDirective[];
-    #stepsValidation: boolean[];
+    #componentsHost: DotContainerReferenceDirective[] = [];
+    #stepsValidation: boolean[] = [];
     #wizardComponentMap: { [key in DotWizardComponentEnum]: Type<unknown> } = {
         commentAndAssign: DotCommentAndAssignFormComponent,
         pushPublish: DotPushPublishFormComponent
@@ -62,8 +62,8 @@ export class DotWizardComponent implements AfterViewInit {
     transform = '';
 
     @ViewChildren(DotContainerReferenceDirective)
-    formHosts: QueryList<DotContainerReferenceDirective>;
-    @ViewChild('dialog', { static: true }) dialog: Dialog;
+    formHosts!: QueryList<DotContainerReferenceDirective>;
+    @ViewChild('dialog', { static: true }) dialog!: Dialog;
 
     constructor() {
         this.#dotWizardService.showDialog$

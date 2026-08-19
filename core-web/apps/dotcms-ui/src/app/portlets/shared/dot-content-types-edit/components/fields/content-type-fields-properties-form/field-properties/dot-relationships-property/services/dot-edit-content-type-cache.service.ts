@@ -10,7 +10,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotEditContentTypeCacheService {
-    private currentContentType: DotCMSContentType;
+    private currentContentType!: DotCMSContentType;
 
     /**
      *Strore the current {@see ContentTye} in cache

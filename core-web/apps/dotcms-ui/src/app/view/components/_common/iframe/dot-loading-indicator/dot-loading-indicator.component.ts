@@ -22,7 +22,7 @@ export class DotLoadingIndicatorComponent {
     dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
 
     @Input()
-    fullscreen: boolean;
+    fullscreen!: boolean;
 
     @Input()
     set show(status: ComponentStatus) {

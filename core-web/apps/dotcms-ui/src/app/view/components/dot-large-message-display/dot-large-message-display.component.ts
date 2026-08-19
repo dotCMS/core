@@ -43,12 +43,12 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     private dotEventsSocket = inject(DotEventsSocket);
     private dotParseHtmlService = inject(DotParseHtmlService);
 
-    @ViewChildren(Dialog) dialogs: QueryList<Dialog>;
+    @ViewChildren(Dialog) dialogs!: QueryList<Dialog>;
 
     messages: DotLargeMessageDisplayParams[] = [];
     messageVisibility: Map<DotLargeMessageDisplayParams, boolean> = new Map();
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private recentlyDialogAdded: boolean;
+    private recentlyDialogAdded = false;
 
     getMessageVisibility(message: DotLargeMessageDisplayParams): boolean {
         return this.messageVisibility.get(message) ?? false;

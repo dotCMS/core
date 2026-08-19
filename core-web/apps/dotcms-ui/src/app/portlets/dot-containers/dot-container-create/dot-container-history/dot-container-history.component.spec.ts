@@ -23,9 +23,9 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     template: ''
 })
 export class IframeMockComponent {
-    @Input() src: string;
+    @Input() src!: string;
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
-    @ViewChild('iframeElement') iframeElement: ElementRef;
+    @ViewChild('iframeElement') iframeElement!: ElementRef;
 }
 
 @Component({

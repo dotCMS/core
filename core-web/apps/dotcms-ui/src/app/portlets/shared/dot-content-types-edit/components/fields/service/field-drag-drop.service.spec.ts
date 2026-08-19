@@ -23,7 +23,7 @@ const by = (opt: string) => (source: Observable<any>) => {
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
 class MockDragulaService {
-    name: string;
+    name!: string;
     options: any;
     mock: Subject<any> = new Subject();
 

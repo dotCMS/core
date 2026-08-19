@@ -64,7 +64,7 @@ export class FieldDragDropService {
     private _fieldRowDropFromTarget: Observable<DotCMSContentTypeLayoutRow[]>;
     private draggedEvent = false;
     private currentFullRowEl: HTMLElement = null;
-    private currentColumnOvered: Element;
+    private currentColumnOvered!: Element;
 
     constructor() {
         const dragulaOver$ = this.dragulaService.over();

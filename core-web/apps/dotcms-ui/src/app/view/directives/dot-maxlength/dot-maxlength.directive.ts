@@ -14,7 +14,7 @@ import { delay, filter, takeUntil, tap } from 'rxjs/operators';
 export class DotMaxlengthDirective implements OnInit, OnDestroy {
     private el = inject(ElementRef);
 
-    private _maxLength: number;
+    private _maxLength!: number;
     private events = ['paste', 'keypress'];
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedEvents = ['Backspace', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];

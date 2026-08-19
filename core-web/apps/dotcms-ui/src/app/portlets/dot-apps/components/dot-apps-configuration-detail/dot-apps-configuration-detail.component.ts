@@ -32,11 +32,11 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
     private dotAppsService = inject(DotAppsService);
 
-    apps: DotApp;
+    apps!: DotApp;
 
     dynamicVariables: DotKeyValue[] = [];
-    formData: { [key: string]: string };
-    formFields: DotAppsSecret[];
+    formData!: { [key: string]: string };
+    formFields: DotAppsSecret[] = [];
     formValid = false;
 
     ngOnInit() {

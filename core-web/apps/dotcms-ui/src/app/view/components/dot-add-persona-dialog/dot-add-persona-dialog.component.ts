@@ -39,11 +39,11 @@ export class DotAddPersonaDialogComponent implements OnInit {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     @Input() visible = false;
-    @Input() personaName: string;
+    @Input() personaName!: string;
     @Output() createdPersona: EventEmitter<DotPersona> = new EventEmitter();
-    @ViewChild('personaForm') personaForm: DotCreatePersonaFormComponent;
+    @ViewChild('personaForm') personaForm!: DotCreatePersonaFormComponent;
 
-    dialogActions: DotDialogActions;
+    dialogActions!: DotDialogActions;
 
     ngOnInit() {
         this.setDialogActions();

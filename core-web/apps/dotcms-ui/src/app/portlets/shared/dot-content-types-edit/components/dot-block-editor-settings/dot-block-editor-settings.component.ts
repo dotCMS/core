@@ -111,7 +111,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
 
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
-    public form: FormGroup;
+    public form!: FormGroup;
     public settingsMap = {
         allowedBlocks: {
             label: 'Allowed Blocks',

@@ -51,7 +51,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
 
     /** Local snapshot of the field, updated on every `$field` change. */
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
 
     /** Signal holding the list of variables currently shown in the table. */
     $fieldVariables = signal<DotFieldVariable[]>([]);

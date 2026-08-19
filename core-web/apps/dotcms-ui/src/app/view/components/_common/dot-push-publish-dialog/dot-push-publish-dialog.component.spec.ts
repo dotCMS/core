@@ -37,7 +37,7 @@ class PushPublishServiceMock {
     template: ''
 })
 class TestDotPushPublishFormComponent {
-    @Input() data: DotPushPublishDialogData;
+    @Input() data!: DotPushPublishDialogData;
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();
 }

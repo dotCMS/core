@@ -34,7 +34,7 @@ const mockFieldTab: DotCMSContentTypeLayoutRow = {
     standalone: false
 })
 class DotTestHostComponent {
-    data: DotCMSContentTypeLayoutRow;
+    data!: DotCMSContentTypeLayoutRow;
 
     setData(data: DotCMSContentTypeLayoutRow): void {
         this.data = data;

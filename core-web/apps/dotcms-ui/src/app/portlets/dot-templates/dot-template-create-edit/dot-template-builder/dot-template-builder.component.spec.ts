@@ -27,7 +27,7 @@ import { DotTemplateItem, DotTemplateItemDesign } from '../store/dot-template.st
     standalone: true
 })
 class MockIframeComponent {
-    @Input() src: string;
+    @Input() src!: string;
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     iframeElement = {

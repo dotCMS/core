@@ -101,14 +101,14 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     $listing = viewChild<DotListingDataTableComponent>('listing');
     $dotDynamicDialog = viewChild.required(DotDynamicDirective);
 
-    filterBy: string;
+    filterBy!: string;
     showTable = false;
-    paginatorExtraParams: { [key: string]: string };
-    contentTypeColumns: DataTableColumn[];
-    actionHeaderOptions: ActionHeaderOptions;
-    rowActions: DotActionMenuItem[];
-    addToBundleIdentifier: string;
-    addToMenuContentType: DotCMSContentType;
+    paginatorExtraParams!: { [key: string]: string };
+    contentTypeColumns: DataTableColumn[] = [];
+    actionHeaderOptions!: ActionHeaderOptions;
+    rowActions: DotActionMenuItem[] = [];
+    addToBundleIdentifier!: string;
+    addToMenuContentType!: DotCMSContentType;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();

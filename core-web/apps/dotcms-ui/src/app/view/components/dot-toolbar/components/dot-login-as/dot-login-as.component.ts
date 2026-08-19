@@ -56,7 +56,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     dropdown = viewChild<Select>('dropdown');
     formEl = viewChild<HTMLFormElement>('formEl');
 
-    form: FormGroup;
+    form!: FormGroup;
     needPassword = signal<boolean>(false);
     userCurrentPage = signal<User[]>([]);
     errorMessage = signal<string>('');

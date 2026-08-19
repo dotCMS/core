@@ -65,7 +65,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     private readonly cd = inject(ChangeDetectorRef);
     private readonly destroy$ = new Subject<boolean>();
 
-    dialogActions: DotDialogActions;
+    dialogActions!: DotDialogActions;
     inputNameWithType = '';
     dialogTitle = '';
     isVisibleDialog = false;

@@ -61,8 +61,8 @@ const messageServiceMock = new MockDotMessageService({
     standalone: false
 })
 class TestHostComponent {
-    @Input() data: DotPushPublishDialogData;
-    valid: boolean;
+    @Input() data!: DotPushPublishDialogData;
+    valid!: boolean;
     value: any;
 }
 

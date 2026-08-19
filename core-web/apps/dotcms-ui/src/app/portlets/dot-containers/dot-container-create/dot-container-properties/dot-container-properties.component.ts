@@ -80,8 +80,8 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     readonly #dotRouterService = inject(DotRouterService);
 
     vm$ = this.#store.vm$;
-    editor: MonacoEditor;
-    form: FormGroup;
+    editor!: MonacoEditor;
+    form!: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {

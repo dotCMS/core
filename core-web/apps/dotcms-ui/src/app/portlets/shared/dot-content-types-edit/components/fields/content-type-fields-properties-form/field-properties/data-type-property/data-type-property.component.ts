@@ -11,9 +11,9 @@ import { FieldProperty } from '../field-properties.model';
     standalone: false
 })
 export class DataTypePropertyComponent implements OnInit {
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    radioInputs: object;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    radioInputs!: object;
 
     ngOnInit(): void {
         this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz];

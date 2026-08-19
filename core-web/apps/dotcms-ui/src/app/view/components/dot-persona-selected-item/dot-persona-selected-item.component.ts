@@ -22,14 +22,14 @@ import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
     imports: [AvatarModule, BadgeModule, TooltipModule, DotAvatarDirective, DotMessagePipe]
 })
 export class DotPersonaSelectedItemComponent {
-    @Input() persona: DotPersona;
+    @Input() persona!: DotPersona;
 
     @Input() isEditMode = false;
     @Input() readonly = false;
 
     @Input()
     @HostBinding('class.disabled')
-    disabled: boolean;
+    disabled = false;
 
     @Output() selected = new EventEmitter<MouseEvent>();
 }

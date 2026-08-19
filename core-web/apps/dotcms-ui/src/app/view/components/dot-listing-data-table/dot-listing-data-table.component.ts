@@ -87,33 +87,33 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loggerService = inject(LoggerService);
     paginatorService = inject(PaginatorService);
 
-    @Input() columns: DataTableColumn[];
-    @Input() url: string;
-    @Input() actionHeaderOptions: ActionHeaderOptions;
+    @Input() columns!: DataTableColumn[];
+    @Input() url!: string;
+    @Input() actionHeaderOptions!: ActionHeaderOptions;
     @Input() buttonActions: ButtonAction[] = [];
-    @Input() sortOrder: string;
-    @Input() sortField: string;
+    @Input() sortOrder!: string;
+    @Input() sortField!: string;
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
     @Input() paginatorExtraParams: { [key: string]: string } = {};
     @Input() actions: DotActionMenuItem[] = [];
     @Input() dataKey = '';
     @Input() checkbox = false;
-    @Input() mapItems: <T = Record<string, unknown>[]>(item: T) => T;
+    @Input() mapItems!: <T = Record<string, unknown>[]>(item: T) => T;
     @Input() contextMenu = false;
     @Output() rowWasClicked: EventEmitter<unknown> = new EventEmitter();
     @Output() selectedItems: EventEmitter<unknown> = new EventEmitter();
     @Output() contextMenuSelect: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('gf', { static: true })
-    globalSearch: ElementRef;
+    globalSearch!: ElementRef;
     @ViewChild('dataTable', { static: true })
-    dataTable: Table;
+    dataTable!: Table;
 
     @ViewChild('cm', { static: false })
     contextMenuRef: ContextMenu | undefined;
 
-    @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
+    @ContentChildren(PrimeTemplate) templates!: QueryList<ElementRef>;
 
     // Signal to track when contextMenuRef is available
     private readonly contextMenuRefSignal = signal<ContextMenu | undefined>(undefined);
@@ -125,20 +125,20 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         return hasContextMenu && ref ? ref : null;
     });
 
-    @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
-    @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
-    @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
+    @ContentChild('rowTemplate') rowTemplate!: TemplateRef<unknown>;
+    @ContentChild('beforeSearchTemplate') beforeSearchTemplate!: TemplateRef<unknown>;
+    @ContentChild('headerTemplate') headerTemplate!: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';
-    items: unknown[];
-    selected: Record<string, unknown>[];
+    items: unknown[] = [];
+    selected: Record<string, unknown>[] = [];
     filter;
     isContentFiltered = false;
-    dateColumns: DataTableColumn[];
+    dateColumns: DataTableColumn[] = [];
     loading = true;
-    contextMenuItems: MenuItem[];
-    maxLinksPage: number;
-    totalRecords: number;
+    contextMenuItems: MenuItem[] = [];
+    maxLinksPage!: number;
+    totalRecords!: number;
 
     constructor() {
         this.paginatorService.url = this.url;

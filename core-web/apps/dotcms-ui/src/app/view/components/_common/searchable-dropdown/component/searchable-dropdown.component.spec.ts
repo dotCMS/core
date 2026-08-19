@@ -36,45 +36,45 @@ import { SearchableDropdownComponent } from './searchable-dropdown.component';
 })
 class HostTestComponent {
     @Input()
-    data: any[];
+    data!: any[];
 
     @Input()
-    cssClass: string;
+    cssClass!: string;
 
-    @Input() action: (action: any) => void;
-
-    @Input()
-    labelPropertyName: string | string[];
+    @Input() action!: (action: any) => void;
 
     @Input()
-    valuePropertyName: string;
+    labelPropertyName!: string | string[];
+
+    @Input()
+    valuePropertyName!: string;
 
     @Input()
     pageLinkSize = 3;
 
     @Input()
-    rows: number;
+    rows!: number;
 
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
 
     @Input()
     placeholder = '';
 
     @Input()
-    persistentPlaceholder: boolean;
+    persistentPlaceholder!: boolean;
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    overlayWidth: string;
+    overlayWidth!: string;
 
     @Input()
-    multiple: boolean;
+    multiple!: boolean;
 
     @Input()
-    disabled: boolean;
+    disabled!: boolean;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -420,42 +420,42 @@ describe('SearchableDropdownComponent', () => {
     standalone: false
 })
 class HostTestExternalTemplateComponent {
-    @Input() data: any[];
+    @Input() data!: any[];
 
     @Input()
-    cssClass: string;
+    cssClass!: string;
 
-    @Input() action: (action: any) => void;
-
-    @Input()
-    labelPropertyName: string | string[];
+    @Input() action!: (action: any) => void;
 
     @Input()
-    valuePropertyName: string;
+    labelPropertyName!: string | string[];
+
+    @Input()
+    valuePropertyName!: string;
 
     @Input()
     pageLinkSize = 3;
 
     @Input()
-    rows: number;
+    rows!: number;
 
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
 
     @Input()
     placeholder = '';
 
     @Input()
-    persistentPlaceholder: boolean;
+    persistentPlaceholder!: boolean;
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    multiple: boolean;
+    multiple!: boolean;
 
     @Input()
-    cssClassDataList: string;
+    cssClassDataList!: string;
 }
 
 describe('SearchableDropdownComponent', () => {

@@ -59,8 +59,8 @@ export class ForgotPasswordComponent implements OnInit {
 
     message = '';
 
-    forgotPasswordForm: UntypedFormGroup;
-    loginInfo$: Observable<DotLoginInformation>;
+    forgotPasswordForm!: UntypedFormGroup;
+    loginInfo$!: Observable<DotLoginInformation>;
 
     private forgotPasswordConfirmationMessage = '';
 
