@@ -356,33 +356,8 @@ export class DotContentTypeFilterComponent implements OnInit {
         if (focused === this.$focusedBaseType()) return;
         // Cancel any in-flight focus/lazy fetch from the previous focus so a
         // late response can't overwrite the new state.
-        this.#cancelFetch$.next();
         this.$focusedBaseType.set(focused);
-        // Eagerly clear the right column so stale items from the previous focus
-        // don't linger while the new fetch is in flight.
-        patchState(this.$state, {
-            contentTypes: [],
-            contentTypeFilter: '',
-            currentPage: 1,
-            canLoadMore: true,
-            loading: true
-        });
-        // Focus changes refetch immediately — no debounce, no race with typing.
-        this.#loadContentTypes({
-            page: 1,
-            filter: '',
-            type: focused === ALL_CONTENT ? undefined : focused
-        })
-            .pipe(takeUntil(this.#cancelFetch$))
-            .subscribe(({ contentTypes, pagination }) => {
-                patchState(this.$state, {
-                    contentTypes,
-                    loading: false,
-                    canLoadMore: this.#hasMorePages(pagination),
-                    currentPage: pagination.currentPage
-                });
-                this.#cacheContentTypes(contentTypes);
-            });
+        this.#resetContentTypeSearch(focused);
     }
 
     /**
@@ -480,11 +455,46 @@ export class DotContentTypeFilterComponent implements OnInit {
         // $focusedBaseType is intentionally NOT reset — the user's last focus
         // persists across popover sessions so reopening lands them where they
         // left off.
+        this.#resetContentTypeSearch(this.$focusedBaseType());
+    }
+
+    /**
+     * Drops the right column's search state — the term, the narrowed options and the pagination
+     * bookkeeping — and reloads the unfiltered page 1 for `focused`.
+     *
+     * The reload is not optional. Resetting the flags alone is not enough to recover the full list:
+     * the reopen's lazy load computes the NEXT page and appends to whatever `contentTypes` still
+     * holds, and it is rejected outright while `page <= currentPage`. So without a fetch the panel
+     * comes back showing the previous narrow result.
+     *
+     * In-flight fetches are cancelled first so a late response cannot overwrite the state set here.
+     */
+    #resetContentTypeSearch(focused: string): void {
+        this.#cancelFetch$.next();
+        // Cleared eagerly so stale items don't linger while the new fetch is in flight.
         patchState(this.$state, {
+            contentTypes: [],
             contentTypeFilter: '',
             currentPage: 1,
-            canLoadMore: true
+            canLoadMore: true,
+            loading: true
         });
+        // Refetches immediately — no debounce, no race with typing.
+        this.#loadContentTypes({
+            page: 1,
+            filter: '',
+            type: focused === ALL_CONTENT ? undefined : focused
+        })
+            .pipe(takeUntil(this.#cancelFetch$))
+            .subscribe(({ contentTypes, pagination }) => {
+                patchState(this.$state, {
+                    contentTypes,
+                    loading: false,
+                    canLoadMore: this.#hasMorePages(pagination),
+                    currentPage: pagination.currentPage
+                });
+                this.#cacheContentTypes(contentTypes);
+            });
     }
 
     protected onLazyLoad(event: ScrollerLazyLoadEvent): void {

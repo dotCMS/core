@@ -840,7 +840,26 @@ describe('DotContentTypeFilterComponent', () => {
 
             expect(spectator.component.$state.contentTypeFilter()).toBe('');
             expect(spectator.component.$state.currentPage()).toBe(1);
-            expect(spectator.component.$state.canLoadMore()).toBe(true);
+            // `canLoadMore` is deliberately not asserted here: the reset refetches, so it settles
+            // from the response's pagination rather than staying at the optimistic `true` the reset
+            // sets on its way out. What matters is that the stale `false` is gone — covered by the
+            // reload assertion below, which is the state that guard would otherwise block.
+        });
+
+        it('should reload the unfiltered list, not just clear the flags', () => {
+            // Flags alone do not recover the list: the reopen's lazy load computes the NEXT page and
+            // appends to whatever `contentTypes` still holds, and it is rejected while
+            // `page <= currentPage`. Without a refetch the panel returns showing the narrow result.
+            patchState(spectator.component.$state, {
+                contentTypes: [CONTENT_TYPES[0]],
+                contentTypeFilter: 'blog',
+                currentPage: 3,
+                canLoadMore: false
+            });
+
+            spectator.component['onPanelHide']();
+
+            expect(spectator.component.$state.contentTypes().length).toBeGreaterThan(1);
         });
 
         it('should keep the focused base type across sessions', () => {
