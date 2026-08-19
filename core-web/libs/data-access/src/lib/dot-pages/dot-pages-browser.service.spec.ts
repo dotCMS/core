@@ -16,7 +16,8 @@ const PAGE_SEARCH_URL = '/api/v1/page/search';
 const ES_SEARCH_URL = '/api/es/search';
 
 const HOSTNAME = 'demo.dotcms.com';
-const PAGE_ID = 'page-1';
+/** Identifiers are UUIDs in dotCMS; the query guard depends on that shape. */
+const PAGE_ID = '2e2e5f6a-1e17-4b21-9c1a-7d3f5b90ac41';
 
 const contentlet = (
     overrides: Partial<DotPageBrowserContentlet> = {}
@@ -223,6 +224,22 @@ describe('DotPagesBrowserService', () => {
 
         it('should report an unlocked page when nothing matches the identifier', () => {
             expect(lockStateOf([])).toEqual({ locked: false });
+        });
+
+        /**
+         * The endpoint takes a Lucene string, so an identifier carrying operators would widen the
+         * search and answer with another contentlet's lock state. Nothing outside the identifier
+         * shape can name a page, so it never reaches the wire.
+         */
+        it('should not query at all for a value that is not shaped like an identifier', () => {
+            let lockInfo: DotPageLockInfo | null = null;
+
+            spectator.service
+                .getPageLockState(`${PAGE_ID} OR +contentType:Host`)
+                .subscribe((result) => (lockInfo = result));
+
+            spectator.controller.expectNone(ES_SEARCH_URL);
+            expect(lockInfo).toEqual({ locked: false });
         });
 
         it('should report an unlocked page when the lock holder is absent', () => {

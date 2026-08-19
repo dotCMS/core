@@ -34,6 +34,7 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { isDotIdentifier } from '@dotcms/utils';
 
 import { dotExperimentsConfigureApiEvents } from './dot-experiments-configure-api.events';
 import {
@@ -470,6 +471,15 @@ export const DotExperimentsConfigureStore = signalStore(
             /** Resolves `?pageId=` / `?url=` to the page the Page card shows. */
             const resolvePrefill = ({ pageId, url }: ConfigurePagePrefill) => {
                 if (pageId) {
+                    // `?pageId=` is whatever the address bar carries, and it is concatenated into
+                    // a Lucene query below: a value with spaces or operators would widen the
+                    // search and prefill the card with some other contentlet. Nothing outside the
+                    // identifier shape can name a page, so it is the same answer as not finding
+                    // one — reported without spending a request on it.
+                    if (!isDotIdentifier(pageId)) {
+                        return of(apiEvents.pagePrefillFailed(pageId));
+                    }
+
                     // The page-search endpoint filters by path only, so an identifier is
                     // resolved with the same content search the list uses for its Page column.
                     return contentSearchService

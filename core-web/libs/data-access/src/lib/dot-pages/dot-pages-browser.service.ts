@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -6,6 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
+import { isDotIdentifier } from '@dotcms/utils';
 
 import {
     DotPageBrowserContentlet,
@@ -85,10 +86,19 @@ export class DotPagesBrowserService {
      * against the current user id (`DotCurrentUserService` / `LoginService`) to obtain
      * `lockedByAnotherUser`.
      *
+     * The identifier is checked before it reaches the query. This endpoint takes a Lucene string,
+     * so a value carrying spaces or operators would widen the search instead of matching an id —
+     * and the widened search would answer with some other contentlet's lock state. Anything not
+     * shaped like an identifier cannot name a page, so it is answered as unlocked without a call.
+     *
      * @param pageId - Identifier of the page
      * @returns Observable of the page's lock state; unlocked when the page cannot be found
      */
     getPageLockState(pageId: string): Observable<DotPageLockInfo> {
+        if (!isDotIdentifier(pageId)) {
+            return of(this.#toLockInfo(undefined));
+        }
+
         const body = {
             query: {
                 query_string: {

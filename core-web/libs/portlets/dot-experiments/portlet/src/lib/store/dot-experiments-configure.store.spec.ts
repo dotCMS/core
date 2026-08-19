@@ -62,7 +62,11 @@ const OTHER_USER_ID = 'user-someone-else';
 const EXPERIMENT_ID = 'exp-1';
 
 /** The page every fixture runs on, as the Page card renders it. */
-const PAGE: DotExperimentConfigurePage = { pageId: 'page-1', title: 'Home', path: '/home' };
+const PAGE: DotExperimentConfigurePage = {
+    pageId: '2e2e5f6a-1e17-4b21-9c1a-7d3f5b90ac41',
+    title: 'Home',
+    path: '/home'
+};
 
 const buildVariant = (id: string, weight: number): Variant => ({ id, name: id, weight });
 
@@ -997,6 +1001,19 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.pagePrefillError()).toBe(PAGE_PREFILL_LOOKUP_ERROR_KEY);
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+        });
+
+        /**
+         * `?pageId=` is whatever the address bar carries, and it is concatenated into a Lucene
+         * query: a value with operators would widen the search and prefill the card with some
+         * other contentlet. It is reported as not found without a request going out.
+         */
+        it('should not look up a ?pageId= that is not shaped like an identifier', () => {
+            initNew({ pageId: `${PAGE.pageId} OR +contentType:Host` });
+
+            expect(contentSearchGet).not.toHaveBeenCalled();
+            expect(store.selectedPage()).toBeNull();
+            expect(store.pagePrefillError()).toBe(PAGE_PREFILL_ERROR_KEY);
         });
 
         it('should look nothing up without ?pageId= or ?url=', () => {
