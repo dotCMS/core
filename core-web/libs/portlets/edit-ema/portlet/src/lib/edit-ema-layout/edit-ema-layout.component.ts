@@ -16,6 +16,7 @@ import { MessageService } from 'primeng/api';
 import {
     debounceTime,
     distinctUntilChanged,
+    filter,
     finalize,
     switchMap,
     take,
@@ -100,6 +101,14 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     saveTemplate(template: DotTemplateDesigner) {
+        const pageId = this.uveStore.$layoutProps()?.pageId;
+
+        // The layout editor only renders for a loaded page, so this is the interval before the first
+        // load — there is no page to save the layout to.
+        if (!pageId) {
+            return;
+        }
+
         this.messageService.add({
             severity: 'info',
             summary: 'Info',
@@ -109,7 +118,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
-            .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
+            .save(pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
                 () => this.handleSuccessSaveTemplate(),
@@ -138,6 +147,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                 tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)), // Prevent the user to access page properties
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
+                filter(() => !!this.uveStore.$layoutProps()?.pageId),
                 switchMap((layout: DotTemplateDesigner) => {
                     this.messageService.add({
                         severity: 'info',
@@ -147,7 +157,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                     });
 
                     return this.dotPageLayoutService
-                        .save(this.uveStore.$layoutProps().pageId, {
+                        .save(this.uveStore.$layoutProps()?.pageId ?? '', {
                             ...layout,
                             title: null
                         })

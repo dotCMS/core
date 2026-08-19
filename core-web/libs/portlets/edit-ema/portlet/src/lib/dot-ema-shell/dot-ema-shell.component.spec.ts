@@ -102,7 +102,8 @@ const NAV_ITEMS = [
         label: 'editema.editor.navbar.layout',
         href: 'layout',
         isDisabled: false,
-        tooltip: null,
+        // See the note in `mocks.ts`: `tooltip` is an optional `string`, never `null`.
+        tooltip: undefined,
         id: 'layout'
     },
     {

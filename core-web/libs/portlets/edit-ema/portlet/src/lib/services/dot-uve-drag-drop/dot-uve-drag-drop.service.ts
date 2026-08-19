@@ -35,7 +35,7 @@ export class DotUveDragDropService {
         handlers: DragDropHandlers
     ): void {
         // Drag start
-        fromEvent(this.window, 'dragstart')
+        fromEvent<DragEvent>(this.window, 'dragstart')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((event: DragEvent) => {
                 const { dataset } = event.target as HTMLDivElement;
@@ -62,7 +62,7 @@ export class DotUveDragDropService {
             });
 
         // Drag enter
-        fromEvent(this.window, 'dragenter')
+        fromEvent<DragEvent>(this.window, 'dragenter')
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
                 filter((event: DragEvent & { fromElement?: HTMLElement }) => !event.fromElement)
@@ -91,14 +91,14 @@ export class DotUveDragDropService {
             });
 
         // Drag end
-        fromEvent(this.window, 'dragend')
+        fromEvent<DragEvent>(this.window, 'dragend')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
                 handlers.onDragEnd();
             });
 
         // Drag over
-        fromEvent(this.window, 'dragover')
+        fromEvent<DragEvent>(this.window, 'dragover')
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
                 filter(() => !!uveStore.editorDragItem())
@@ -148,7 +148,7 @@ export class DotUveDragDropService {
             });
 
         // Drag leave
-        fromEvent(this.window, 'dragleave')
+        fromEvent<DragEvent>(this.window, 'dragleave')
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
                 filter((event: DragEvent) => !event.relatedTarget)
@@ -158,7 +158,7 @@ export class DotUveDragDropService {
             });
 
         // Drop
-        fromEvent(this.window, 'drop')
+        fromEvent<DragEvent>(this.window, 'drop')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((event: DragEvent) => {
                 handlers.onDrop(event);

@@ -6,7 +6,7 @@ import {
     extractContentletPropertiesFromPageAsset,
     updateContentletPropertiesInPageAsset
 } from '../../edit-ema-editor/components/dot-uve-palette/utils';
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload, ContentletActionPayload, hasContentlet } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
 import { PageSnapshot } from '../../store/features/page/withPage';
 import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messenger.service';
@@ -29,7 +29,7 @@ export class UveOptimisticSaveService {
      * Does NOT save to history — call addCurrentPageToHistory() before the API call.
      */
     updateIframeOptimistically(
-        activeContentlet: ActionPayload,
+        activeContentlet: ContentletActionPayload,
         properties: Record<string, unknown>
     ): void {
         const internalPage = this.#uveStore.pageAsset();
@@ -68,7 +68,10 @@ export class UveOptimisticSaveService {
     ): Record<string, unknown> {
         const rolledBackPage = this.#uveStore.pageAsset();
 
-        if (!rolledBackPage || !activeContentlet) {
+        // `hasContentlet` rather than a bare truthiness check: the extraction below indexes the
+        // container by `contentlet.identifier`, so a payload without a contentlet has nothing to
+        // extract — which is the `{}` this guard already returned.
+        if (!rolledBackPage || !hasContentlet(activeContentlet)) {
             return {};
         }
 

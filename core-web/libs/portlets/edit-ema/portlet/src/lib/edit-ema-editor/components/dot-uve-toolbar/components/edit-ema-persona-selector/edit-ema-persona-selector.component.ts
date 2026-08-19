@@ -20,7 +20,7 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
-import { PaginatorModule } from 'primeng/paginator';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { PopoverModule } from 'primeng/popover';
 
 import { catchError } from 'rxjs/operators';
@@ -93,10 +93,13 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         }
 
         // We have a discrepancy between the type of the photo in the API and the type of the photo in GQL
+        // `?? ''` is the field's own declared default: a persona with no photo renders the
+        // placeholder, and the false branch is `string | undefined` because `versionPath` may be
+        // absent on the GQL shape.
         this.photo =
-            typeof this.value?.photo == 'string'
+            (typeof this.value?.photo == 'string'
                 ? this.value?.photo
-                : this.value?.photo?.versionPath;
+                : this.value?.photo?.versionPath) ?? '';
     }
 
     ngAfterViewInit(): void {
@@ -176,8 +179,8 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
             );
     }
 
-    onPaginate(event) {
+    onPaginate(event: PaginatorState) {
         // PrimeNG paginator starts at 0, but the API starts at 1
-        this.fetchPersonas(event.page + 1);
+        this.fetchPersonas((event.page ?? 0) + 1);
     }
 }

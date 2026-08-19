@@ -69,6 +69,17 @@ export type InsertActionPayload = ActionPayload & { newContentletId: string };
 export type ContentletActionPayload = ActionPayload & { contentlet: ContentletPayload };
 
 /**
+ * Narrows an `ActionPayload` to one that carries the contentlet it acts on.
+ *
+ * `contentlet` is optional on `ClientData`, so TypeScript cannot promote a truthiness check on the
+ * property into `ContentletActionPayload` by itself. A predicate keeps that step in one place
+ * rather than a cast at each site that needs the guarantee.
+ */
+export const hasContentlet = (
+    payload: ActionPayload | null | undefined
+): payload is ContentletActionPayload => !!payload?.contentlet;
+
+/**
  * The currently-selected contentlet in the editor: bounds + payload.
  * Bounds drive the floating overlay; payload feeds the side panel /
  * style editor / pencil dialog. Both travel together because every
@@ -277,9 +288,19 @@ export interface CreateFromPaletteAction extends DialogActionPayload {
     language_id?: string | number;
 }
 
+/**
+ * What the dialog needs to open on an existing contentlet.
+ *
+ * `Partial` because callers pass whatever slice of the contentlet they happen to hold — but not for
+ * `inode` and `title`: the store builds the edit URL from the inode and uses the title as the
+ * dialog header, so a payload missing either cannot open a dialog at all. Both are already required
+ * on `DotCMSContentlet`, and every caller supplies them; the bare `Partial` widened them to
+ * `string | undefined` for no caller's benefit, which is what made the store's updaters untypeable.
+ */
 export type EditContentletPayload = Partial<
     DotCMSContentlet & Pick<EditEmaDialogState, 'clientAction'>
->;
+> &
+    Required<Pick<DotCMSContentlet, 'inode' | 'title'>>;
 
 export interface CreateContentletAction extends DialogActionPayload {
     url: string;

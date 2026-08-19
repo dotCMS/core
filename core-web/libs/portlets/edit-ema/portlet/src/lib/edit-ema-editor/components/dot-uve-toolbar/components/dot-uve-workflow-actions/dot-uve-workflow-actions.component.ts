@@ -85,13 +85,19 @@ export class DotUveWorkflowActionsComponent {
     }
 
     private openWizard(workflow: DotCMSWorkflowAction): void {
+        const wizardInput = this.dotWorkflowEventHandlerService.setWizardInput(
+            workflow,
+            this.dotMessageService.get('Workflow-Action')
+        );
+
+        // `setWizardInput` returns null for a workflow with no collectable inputs, and this passed
+        // that null straight into `open()`.
+        if (!wizardInput) {
+            return;
+        }
+
         this.dotWizardService
-            .open<DotWorkflowPayload>(
-                this.dotWorkflowEventHandlerService.setWizardInput(
-                    workflow,
-                    this.dotMessageService.get('Workflow-Action')
-                )
-            )
+            .open<DotWorkflowPayload>(wizardInput)
             .pipe(take(1))
             .subscribe((data: DotWorkflowPayload) => {
                 this.fireWorkflowAction(
@@ -131,7 +137,9 @@ export class DotUveWorkflowActionsComponent {
                     );
                 })
             )
-            .subscribe((contentlet: DotCMSContentlet) => {
+            // `| null` is what the stream carries: the `catchError` above maps the handled error to
+            // null, which is exactly what the guard below is for.
+            .subscribe((contentlet: DotCMSContentlet | null) => {
                 if (!contentlet) {
                     return;
                 }
@@ -150,6 +158,16 @@ export class DotUveWorkflowActionsComponent {
      */
     protected handleNewContent(pageAsset: DotCMSContentlet): void {
         const currentParams = this.#uveStore.pageParams();
+
+        // The toolbar only exists while a page is loaded — the shell gates the editor on
+        // `$canRead`, which reads `pageAsset()?.page?.canRead` — so params are set for every real
+        // call. With none there is nothing to compare against, and a reload is what the
+        // "nothing changed" path at the end of this method does anyway.
+        if (!currentParams) {
+            this.#uveStore['pageReload']();
+
+            return;
+        }
 
         const url = getPageURI(pageAsset);
         const language_id = pageAsset.languageId?.toString();

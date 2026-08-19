@@ -199,6 +199,14 @@ export class DotUveActionsHandlerService {
                 dataset: InlineEditingContentletDataset;
             }) => {
                 const contentArea = uveStore.editorContentArea();
+
+                // No content area means nothing is hovered or selected, so there is no contentlet to
+                // copy and no container to copy it into — both of which the rest of this handler
+                // reads. `editorContentArea()` is null whenever the pointer is outside a contentlet.
+                if (!contentArea) {
+                    return;
+                }
+
                 const { contentlet, container } = contentArea.payload;
 
                 // Move focus to an inline field that has already cleared (or does
@@ -244,6 +252,12 @@ export class DotUveActionsHandlerService {
                         });
                     }
 
+                    return;
+                }
+
+                // The copy is keyed by the contentlet being copied; without one there is nothing
+                // to decide about.
+                if (!contentlet) {
                     return;
                 }
 
@@ -373,7 +387,9 @@ export class DotUveActionsHandlerService {
                     return;
                 }
 
-                const pageParams = convertClientParamsToPageParams(params);
+                // `convertClientParamsToPageParams` returns null for absent params, and
+                // `pageReload` already takes no argument to mean "reload with what the store has".
+                const pageParams = convertClientParamsToPageParams(params) ?? undefined;
 
                 uveStore['pageReload'](pageParams);
                 uveStore.setIsClientReady(true);
@@ -401,11 +417,20 @@ export class DotUveActionsHandlerService {
                 });
             },
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                const pagePath = uveStore.pageParams()?.url;
+                const hostId = uveStore.pageAsset()?.site?.identifier;
+
+                // The reorder dialog is opened on a URL built from both; with either missing there
+                // is no page whose menu could be reordered.
+                if (!pagePath || !hostId) {
+                    return;
+                }
+
                 const urlObject = createReorderMenuURL({
                     startLevel,
                     depth,
-                    pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.pageAsset()?.site?.identifier
+                    pagePath,
+                    hostId
                 });
 
                 dialog.openDialogOnUrl(
@@ -462,7 +487,11 @@ export class DotUveActionsHandlerService {
         // Note: Enterprise check should be done by caller if needed
         switch (type) {
             case 'BLOCK_EDITOR':
-                blockSidebar?.open(data);
+                // `data` is optional on the event and the sidebar cannot open without it: it needs
+                // the inode, field name and content to build the editor.
+                if (data) {
+                    blockSidebar?.open(data);
+                }
                 break;
 
             case 'WYSIWYG':

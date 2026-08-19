@@ -350,7 +350,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                             if (requestWithParams) {
                                 pageRequest = dotPageApiService
                                     .getGraphQLPage(requestWithParams)
-                                    .pipe(map(({ pageAsset, content }) => ({ pageAsset, content })));
+                                    .pipe(
+                                        map(({ pageAsset, content }) => ({ pageAsset, content }))
+                                    );
                             } else if (pageParams) {
                                 pageRequest = dotPageApiService
                                     .get(pageParams)

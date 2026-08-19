@@ -25,7 +25,7 @@ import {
     updateContentletPropertiesInPageAsset
 } from './index';
 
-import { ActionPayload } from '../../../../shared/models';
+import { ActionPayload, ContentletActionPayload } from '../../../../shared/models';
 
 describe('Dot UVE Palette Utils', () => {
     describe('getSortActiveClass', () => {
@@ -919,7 +919,7 @@ describe('Dot UVE Palette Utils', () => {
     });
 
     describe('updateContentletPropertiesInPageAsset', () => {
-        const makePayload = (overrides: Partial<ActionPayload> = {}): ActionPayload =>
+        const makePayload = (overrides: Partial<ActionPayload> = {}): ContentletActionPayload =>
             ({
                 container: {
                     identifier: 'test-container',
@@ -937,7 +937,7 @@ describe('Dot UVE Palette Utils', () => {
                 pageContainers: [],
                 pageId: 'page-1',
                 ...overrides
-            }) as unknown as ActionPayload;
+            }) as unknown as ContentletActionPayload;
 
         const makePageAsset = (extraProps: Record<string, unknown> = {}) =>
             ({
@@ -1015,7 +1015,7 @@ describe('Dot UVE Palette Utils', () => {
     });
 
     describe('extractContentletPropertiesFromPageAsset', () => {
-        const makePayload = (): ActionPayload =>
+        const makePayload = (): ContentletActionPayload =>
             ({
                 container: {
                     identifier: 'test-container',
@@ -1032,7 +1032,7 @@ describe('Dot UVE Palette Utils', () => {
                 language_id: '1',
                 pageContainers: [],
                 pageId: 'page-1'
-            }) as unknown as ActionPayload;
+            }) as unknown as ContentletActionPayload;
 
         const makePageAsset = () =>
             ({
@@ -1111,7 +1111,7 @@ describe('Dot UVE Palette Utils', () => {
                     title: 'X',
                     contentType: 'Y'
                 }
-            } as unknown as ActionPayload;
+            } as unknown as ContentletActionPayload;
 
             const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
                 'dotStyleProperties'

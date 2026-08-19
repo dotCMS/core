@@ -158,8 +158,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 href: 'layout',
                 id: 'layout',
                 isDisabled: isLayoutDisabled,
+                // `undefined`, not `null`: `NavigationBarItem.tooltip` is an optional `string`, and
+                // the nav bar renders the tooltip only when it is set — the two behave identically.
                 tooltip: templateDrawed
-                    ? null
+                    ? undefined
                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
             },
             {
@@ -200,8 +202,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         );
 
         return {
-            siteId: this.uveStore.pageAsset()?.site?.identifier,
-            languageId: this.uveStore.pageAsset()?.viewAs?.language?.id,
+            // Both come from the page asset, which is null until the first load. The SEO tools panel
+            // is only opened from the toolbar of a loaded page, and `handleScannerToolClick` below
+            // already guards `siteId` before using it — these are the values for the interval that
+            // consumers were already written to tolerate. `0` rather than a default language id, so
+            // a URL built during that interval is visibly wrong rather than quietly English.
+            siteId: this.uveStore.pageAsset()?.site?.identifier ?? '',
+            languageId: this.uveStore.pageAsset()?.viewAs?.language?.id ?? 0,
             currentUrl,
             requestHostName
         };
@@ -307,7 +314,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
+                const inode = this.uveStore.pageAsset()?.page?.inode;
+
+                if (inode) {
+                    this.uveStore.workflowFetch(inode);
+                }
                 break;
             }
 
@@ -345,7 +356,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
 
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams()?.url)) {
             // Navigate to the new URL if it's different from the current one
             this.uveStore['pageLoad']({ url: targetUrl });
 
@@ -563,7 +574,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         return params as DotPageAssetParams;
     }
 
-    #getViewParams(uveMode: UVE_MODE): DotUveViewParams {
+    // `| undefined` because `mode` is optional on `DotPageAssetParams`; the only thing read from it
+    // here is whether the mode is a preview one, and an absent mode is not.
+    #getViewParams(uveMode: UVE_MODE | undefined): DotUveViewParams {
         const { queryParams } = this.#activatedRoute.snapshot;
 
         const isPreviewMode = uveMode === UVE_MODE.PREVIEW || uveMode === UVE_MODE.LIVE;
