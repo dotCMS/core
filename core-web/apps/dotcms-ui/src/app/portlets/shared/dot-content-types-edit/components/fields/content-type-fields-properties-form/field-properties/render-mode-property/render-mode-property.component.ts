@@ -18,8 +18,8 @@ interface RenderMode {
     standalone: false
 })
 export class RenderModePropertyComponent {
-    property: FieldProperty;
-    group: UntypedFormGroup;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
 
     /**
      * Signals the render modes available for the field

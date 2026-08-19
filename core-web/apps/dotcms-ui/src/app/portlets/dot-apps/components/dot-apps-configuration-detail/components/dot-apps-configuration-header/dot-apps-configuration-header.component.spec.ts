@@ -37,7 +37,7 @@ class MockMarkdownComponent {}
     standalone: false
 })
 class TestHostComponent {
-    app: DotApp;
+    app!: DotApp;
 }
 
 const messages = {

@@ -32,9 +32,9 @@ import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 export class DotPersonaSelectorOptionComponent {
     @Input() canDespersonalize = true;
 
-    @Input() persona: DotPersona;
+    @Input() persona!: DotPersona;
 
-    @Input() selected: boolean;
+    @Input() selected!: boolean;
 
     @Output() switch = new EventEmitter<DotPersona>();
 

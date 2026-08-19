@@ -27,8 +27,8 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     imports: [DotIframeDialogComponent]
 })
 class TestHostComponent {
-    url: string;
-    header: string;
+    url!: string;
+    header!: string;
     onBeforeClose = jest.fn();
 }
 
@@ -40,8 +40,8 @@ class TestHostComponent {
     imports: [DotIframeDialogComponent]
 })
 class TestHost2Component {
-    url: string;
-    header: string;
+    url!: string;
+    header!: string;
     onBeforeClose = jest.fn();
 }
 

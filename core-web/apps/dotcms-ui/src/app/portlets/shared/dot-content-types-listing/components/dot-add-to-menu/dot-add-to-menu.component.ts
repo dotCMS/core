@@ -68,11 +68,11 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     private dotMenuService = inject(DotMenuService);
     private dotAddToMenuService = inject(DotAddToMenuService);
 
-    form: UntypedFormGroup;
-    menu$: Observable<DotMenu[]>;
+    form!: UntypedFormGroup;
+    menu$!: Observable<DotMenu[]>;
     placeholder = '';
     dialogShow = false;
-    dialogActions: DotDialogActions;
+    dialogActions!: DotDialogActions;
 
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
     readonly cancel = output<boolean>();

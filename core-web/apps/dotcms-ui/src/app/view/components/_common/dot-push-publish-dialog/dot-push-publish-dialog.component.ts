@@ -56,10 +56,10 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private cdr = inject(ChangeDetectorRef);
 
-    dialogActions: DotDialogActions;
+    dialogActions!: DotDialogActions;
     dialogShow = false;
-    eventData: DotPushPublishDialogData;
-    formData: DotPushPublishData;
+    eventData!: DotPushPublishDialogData;
+    formData!: DotPushPublishData;
     formValid = false;
     errorMessage = null;
     isSaving = false;

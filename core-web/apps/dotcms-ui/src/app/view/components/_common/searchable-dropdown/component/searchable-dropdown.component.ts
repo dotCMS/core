@@ -68,36 +68,36 @@ export class SearchableDropdownComponent
     private cd = inject(ChangeDetectorRef);
 
     @Input()
-    data: Record<string, unknown>[];
+    data!: Record<string, unknown>[];
 
-    @Input() action: (event: Event) => void;
-
-    @Input()
-    labelPropertyName: string | string[];
+    @Input() action!: (event: Event) => void;
 
     @Input()
-    valuePropertyName: string;
+    labelPropertyName!: string | string[];
+
+    @Input()
+    valuePropertyName!: string;
 
     @Input()
     pageLinkSize = 3;
 
     @Input()
-    rows: number;
+    rows!: number;
 
     @Input()
-    cssClass: string;
+    cssClass!: string;
 
     @Input()
-    cssClassDataList: string;
+    cssClassDataList!: string;
 
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
 
     @Input()
     placeholder = '';
 
     @Input()
-    persistentPlaceholder: boolean;
+    persistentPlaceholder!: boolean;
 
     /**
      * Sets the width of the searchable-dropdown button
@@ -118,16 +118,16 @@ export class SearchableDropdownComponent
     overlayWidth = '300px';
 
     @Input()
-    multiple: boolean;
+    multiple!: boolean;
 
     @Input()
     disabled = false;
 
     @Input()
-    externalItemListTemplate: TemplateRef<unknown>;
+    externalItemListTemplate!: TemplateRef<unknown>;
 
     @Input()
-    externalFilterTemplate: TemplateRef<unknown>;
+    externalFilterTemplate!: TemplateRef<unknown>;
 
     @Output()
     switch: EventEmitter<unknown> = new EventEmitter();
@@ -145,25 +145,25 @@ export class SearchableDropdownComponent
     display: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('searchInput', { static: false })
-    searchInput: ElementRef;
+    searchInput!: ElementRef;
 
     @ViewChild('searchPanel', { static: true })
-    searchPanelRef: Popover;
+    searchPanelRef!: Popover;
 
     @ViewChild('dataView', { static: true })
-    dataViewRef: DataView;
+    dataViewRef!: DataView;
 
     @ViewChild('button')
-    button: ElementRef;
+    button!: ElementRef;
 
-    @ContentChildren(PrimeTemplate) templates: QueryList<unknown>;
+    @ContentChildren(PrimeTemplate) templates!: QueryList<unknown>;
 
     valueString = '';
     value: unknown;
-    overlayPanelMinHeight: string;
-    options: unknown[];
+    overlayPanelMinHeight!: string;
+    options: unknown[] = [];
     label: string | null = null;
-    externalSelectTemplate: TemplateRef<unknown>;
+    externalSelectTemplate!: TemplateRef<unknown>;
 
     selectedOptionIndex = 0;
     selectedOptionValue = '';

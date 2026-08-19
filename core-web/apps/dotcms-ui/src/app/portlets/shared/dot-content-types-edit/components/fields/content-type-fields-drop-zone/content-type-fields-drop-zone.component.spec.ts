@@ -451,8 +451,8 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
     standalone: false
 })
 class TestHostComponent {
-    layout: DotCMSContentTypeLayoutRow[];
-    loading: boolean;
+    layout!: DotCMSContentTypeLayoutRow[];
+    loading!: boolean;
 }
 
 // TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService

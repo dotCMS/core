@@ -17,15 +17,15 @@ import { ButtonModule } from 'primeng/button';
     imports: [ButtonModule]
 })
 export class DotEmptyStateComponent implements OnInit {
-    @Input() rows: number;
+    @Input() rows!: number;
     @Input() colsTextWidth: number[] = [];
-    @Input() icon: string;
-    @Input() title: string;
-    @Input() content: string;
-    @Input() buttonLabel: string;
+    @Input() icon!: string;
+    @Input() title!: string;
+    @Input() content!: string;
+    @Input() buttonLabel!: string;
     @Output() buttonClick = new EventEmitter<string>();
 
-    columnWidth: string;
+    columnWidth!: string;
     public readonly checkBoxWidth: number = 3.5;
 
     ngOnInit(): void {

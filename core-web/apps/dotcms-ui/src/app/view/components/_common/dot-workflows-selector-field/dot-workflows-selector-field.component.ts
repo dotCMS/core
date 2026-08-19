@@ -27,7 +27,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     private dotWorkflowService = inject(DotWorkflowService);
 
-    options$: Observable<DotCMSWorkflow[]>;
+    options$!: Observable<DotCMSWorkflow[]>;
     value: DotCMSWorkflow[] = [];
     disabled = false;
 

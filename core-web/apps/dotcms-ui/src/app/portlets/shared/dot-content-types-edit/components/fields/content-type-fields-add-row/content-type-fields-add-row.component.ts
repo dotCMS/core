@@ -42,7 +42,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     rowState = 'add';
     selectedColumnIndex = 0;
-    actions: MenuItem[];
+    actions: MenuItem[] = [];
 
     readonly $columns = input<number[]>([1, 2, 3, 4], { alias: 'columns' });
     readonly $disabled = input<boolean>(false, { alias: 'disabled' });

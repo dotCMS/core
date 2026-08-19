@@ -11,12 +11,12 @@ import { DotIconComponent } from '@dotcms/ui';
     imports: [DotIconComponent]
 })
 export class DotRelationshipTreeComponent implements OnChanges {
-    @Input() velocityVar: string;
-    @Input() contentType: DotCMSContentType;
-    @Input() isParentField: boolean;
+    @Input() velocityVar!: string;
+    @Input() contentType!: DotCMSContentType;
+    @Input() isParentField!: boolean;
 
-    child: string;
-    parent: string;
+    child!: string;
+    parent!: string;
 
     ngOnChanges(): void {
         this.setValues();

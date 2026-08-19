@@ -40,14 +40,14 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     imports: [RouterModule]
 })
 export class DotSubNavComponent {
-    @ViewChild('ul', { static: true }) ul: ElementRef;
+    @ViewChild('ul', { static: true }) ul!: ElementRef;
 
-    @Input() data: DotMenu;
+    @Input() data!: DotMenu;
 
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
 
-    @Input() collapsed: boolean;
+    @Input() collapsed!: boolean;
 
     @HostBinding('@expandAnimation') get getAnimation(): string {
         return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';

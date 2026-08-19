@@ -45,12 +45,12 @@ export class DotWorkflowsActionsSelectorFieldComponent
         DotWorkflowsActionsSelectorFieldService
     );
 
-    @ViewChild('dropdown') dropdown: Select;
-    @Input() workflows: DotCMSWorkflow[];
+    @ViewChild('dropdown') dropdown!: Select;
+    @Input() workflows!: DotCMSWorkflow[];
 
-    actions$: Observable<SelectItemGroup[]>;
+    actions$!: Observable<SelectItemGroup[]>;
     disabled = false;
-    value: string;
+    value!: string;
 
     ngOnInit() {
         this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get().pipe(

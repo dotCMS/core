@@ -31,10 +31,10 @@ export class DotBaseTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() value: SelectItem;
+    @Input() value!: SelectItem;
     @Output() selected = new EventEmitter<string>();
 
-    options: Observable<SelectItem[]>;
+    options!: Observable<SelectItem[]>;
 
     ngOnInit() {
         this.options = this.dotContentTypeService.getAllContentTypes().pipe(

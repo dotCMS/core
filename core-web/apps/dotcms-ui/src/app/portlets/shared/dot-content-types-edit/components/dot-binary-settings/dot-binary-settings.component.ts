@@ -48,7 +48,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     readonly $valid = output<boolean>();
     readonly $save = output<DotFieldVariable[]>();
 
-    form: FormGroup;
+    form!: FormGroup;
     protected readonly systemOptions = [
         {
             key: 'allowURLImport',

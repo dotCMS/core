@@ -40,15 +40,15 @@ import { DotTag } from '@dotcms/dotcms-models';
 export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccessor {
     private dotTagsService = inject(DotTagsService);
 
-    @Input() placeholder: string;
+    @Input() placeholder!: string;
 
     value: DotTag[] = [];
-    filteredOptions: DotTag[];
+    filteredOptions: DotTag[] = [];
     disabled = false;
-    inputReference: HTMLInputElement;
-    @ViewChild('autoComplete', { static: true }) autoComplete: AutoComplete;
+    inputReference!: HTMLInputElement;
+    @ViewChild('autoComplete', { static: true }) autoComplete!: AutoComplete;
 
-    private lastDeletedTag: DotTag;
+    private lastDeletedTag!: DotTag;
 
     propagateChange = (_: unknown) => {
         /* empty */

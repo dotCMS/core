@@ -56,9 +56,9 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private dialogService = inject(DialogService);
     private elRef = inject(ElementRef);
 
-    currentField: DotCMSContentTypeField;
-    currentFieldType: FieldType;
-    fieldRows: DotCMSContentTypeLayoutRow[];
+    currentField!: DotCMSContentTypeField;
+    currentFieldType!: FieldType;
+    fieldRows: DotCMSContentTypeLayoutRow[] = [];
 
     /** Layout rows used to render the drop-zone. Changes trigger a structural clone. */
     readonly $layout = input<DotCMSContentTypeLayoutRow[]>(undefined, { alias: 'layout' });

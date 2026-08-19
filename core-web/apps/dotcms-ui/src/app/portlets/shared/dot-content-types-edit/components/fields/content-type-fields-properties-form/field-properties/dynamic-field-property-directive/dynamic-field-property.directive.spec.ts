@@ -52,9 +52,9 @@ class CustomHostComponent {
     standalone: false
 })
 class DynamicComponent {
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    helpText: string;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    helpText!: string;
 }
 
 describe('Directive: DynamicFieldPropertyDirective', () => {

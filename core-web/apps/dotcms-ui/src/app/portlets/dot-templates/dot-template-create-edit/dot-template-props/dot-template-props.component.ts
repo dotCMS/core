@@ -65,11 +65,11 @@ export class DotTemplatePropsComponent implements OnInit, OnDestroy {
     private el = inject(ElementRef);
 
     private destroy$ = new Subject<void>();
-    private originalTemplate: DotTemplateItem;
+    private originalTemplate!: DotTemplateItem;
 
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
 
-    isFormValid$: Observable<boolean>;
+    isFormValid$!: Observable<boolean>;
 
     ngOnInit(): void {
         const { template } = this.config.data;

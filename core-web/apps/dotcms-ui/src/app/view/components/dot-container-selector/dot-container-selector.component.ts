@@ -42,8 +42,8 @@ export class DotContainerSelectorComponent implements OnInit {
 
     @Input() innerClass = '';
 
-    totalRecords: number;
-    currentContainers: Observable<DotContainer[]>;
+    totalRecords!: number;
+    currentContainers!: Observable<DotContainer[]>;
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';

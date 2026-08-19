@@ -68,9 +68,9 @@ export class ContentTypesLayoutComponent implements OnInit {
     $contentTypeNameInput = viewChild.required<ElementRef>('contentTypeNameInput');
     $dotEditInline = viewChild.required<DotInlineEditComponent>('dotEditInline');
 
-    permissionURL: string;
-    pushHistoryURL: string;
-    contentTypeNameInputSize: number;
+    permissionURL!: string;
+    pushHistoryURL!: string;
+    contentTypeNameInputSize!: number;
     readonly $showStyleEditorTab = signal<boolean>(
         this.#route.snapshot.data['featuredFlags']?.[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR] ??
             false
@@ -81,7 +81,7 @@ export class ContentTypesLayoutComponent implements OnInit {
     readonly $activeTab = signal(this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields');
     readonly $addToMenuContentType = signal(false);
 
-    actions: MenuItem[];
+    actions: MenuItem[] = [];
 
     /** Context menu items derived from the current content type. */
     readonly $menuItems = computed<MenuItem[]>(() => {

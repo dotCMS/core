@@ -11,7 +11,7 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     imports: [DotPortletBoxComponent, IframeComponent]
 })
 export class DotContainerPermissionsComponent implements OnInit {
-    @Input() containerId: string;
+    @Input() containerId!: string;
     permissionsUrl = '/html/containers/permissions.jsp';
     ngOnInit() {
         this.permissionsUrl = `/html/containers/permissions.jsp?containerId=${this.containerId}&popup=true`;

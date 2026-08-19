@@ -25,10 +25,10 @@ import { DotLanguage } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLanguageSelectorComponent implements OnChanges {
-    @Input() value: DotLanguage;
-    @Input() readonly: boolean;
+    @Input() value!: DotLanguage;
+    @Input() readonly!: boolean;
     @Output() selected = new EventEmitter<DotLanguage>();
-    @HostBinding('class.disabled') disabled: boolean;
+    @HostBinding('class.disabled') disabled = false;
 
     languagesList = signal<DotLanguage[]>([]);
 

@@ -40,7 +40,7 @@ export class DotCreateContentletComponent implements OnInit {
     private route = inject(ActivatedRoute);
 
     @Output() shutdown: EventEmitter<unknown> = new EventEmitter();
-    url$: Observable<string>;
+    url$!: Observable<string>;
     @Output()
     custom: EventEmitter<unknown> = new EventEmitter();
 

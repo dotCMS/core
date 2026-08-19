@@ -58,7 +58,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
 
-    canAccessPortlet: boolean;
+    canAccessPortlet = false;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = signal(false);
 

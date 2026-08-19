@@ -30,7 +30,7 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     readonly removeRow = output<DotCMSContentTypeLayoutRow>();
 
     /** Local copy of fieldRow for mutations */
-    fieldRow: DotCMSContentTypeLayoutRow;
+    fieldRow!: DotCMSContentTypeLayoutRow;
 
     emptyMessage = '';
 

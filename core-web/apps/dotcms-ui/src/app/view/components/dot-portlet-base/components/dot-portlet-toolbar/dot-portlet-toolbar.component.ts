@@ -16,13 +16,13 @@ import { DotPortletToolbarActions } from '../../../../../shared/models/dot-portl
     imports: [ToolbarModule, ButtonModule, MenuModule, DotMessagePipe]
 })
 export class DotPortletToolbarComponent {
-    @Input() title: string;
+    @Input() title!: string;
 
-    @Input() cancelButtonLabel: string;
+    @Input() cancelButtonLabel!: string;
 
-    @Input() actionsButtonLabel: string;
+    @Input() actionsButtonLabel!: string;
 
-    @Input() actions: DotPortletToolbarActions;
+    @Input() actions!: DotPortletToolbarActions;
 
     /**
      * Handle cancel button click

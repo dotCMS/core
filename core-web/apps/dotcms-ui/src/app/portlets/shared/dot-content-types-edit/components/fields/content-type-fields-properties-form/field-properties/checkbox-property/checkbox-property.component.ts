@@ -10,8 +10,8 @@ import { FieldProperty } from '../field-properties.model';
     standalone: false
 })
 export class CheckboxPropertyComponent {
-    property: FieldProperty;
-    group: UntypedFormGroup;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
 
     private readonly labelMap = {
         indexed: 'contenttypes.field.properties.system_indexed.label',

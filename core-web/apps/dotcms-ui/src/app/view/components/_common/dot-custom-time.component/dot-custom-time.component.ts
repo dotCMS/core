@@ -11,5 +11,5 @@ import { DotRelativeDatePipe } from '@dotcms/ui';
     imports: [DotRelativeDatePipe]
 })
 export class CustomTimeComponent {
-    @Input() time: string;
+    @Input() time!: string;
 }

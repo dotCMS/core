@@ -45,7 +45,7 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     readonly #dotRouterService = inject(DotRouterService);
 
-    private _item: DotTemplateItem;
+    private _item!: DotTemplateItem;
 
     @Input()
     set item(value: DotTemplateItem) {
@@ -55,19 +55,19 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     get item(): DotTemplateItem {
         return this._item;
     }
-    @Input() didTemplateChanged: boolean;
+    @Input() didTemplateChanged!: boolean;
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
-    @ViewChild('historyIframe') historyIframe: IframeComponent;
+    @ViewChild('historyIframe') historyIframe!: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
 
     templateUpdate$ = new Subject<DotTemplateItem>();
     destroy$: Subject<boolean> = new Subject<boolean>();
-    lastTemplate: DotTemplateItem;
+    lastTemplate!: DotTemplateItem;
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;

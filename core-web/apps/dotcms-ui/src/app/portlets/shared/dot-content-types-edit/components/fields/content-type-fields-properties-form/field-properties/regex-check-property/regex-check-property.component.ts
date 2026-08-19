@@ -21,8 +21,8 @@ export class RegexCheckPropertyComponent implements OnInit {
 
     regexCheckTemplates: RegexTemplate[] = [];
 
-    property: FieldProperty;
-    group: UntypedFormGroup;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
 
     ngOnInit() {
         this.regexCheckTemplates = [

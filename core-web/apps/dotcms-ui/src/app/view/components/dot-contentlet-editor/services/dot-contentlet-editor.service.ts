@@ -41,8 +41,8 @@ export class DotContentletEditorService {
 
     private data: Subject<DotEditorAction> = new Subject();
     private _header: Subject<string> = new Subject();
-    private _load: ($event: unknown) => void;
-    private _keyDown: ($event: KeyboardEvent) => void;
+    private _load!: ($event: unknown) => void;
+    private _keyDown!: ($event: KeyboardEvent) => void;
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(

@@ -66,14 +66,14 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
     private cdr = inject(ChangeDetectorRef);
 
-    downloadOptions: SelectItem[];
-    filterOptions: SelectItem[];
-    dialogActions: DotDialogActions;
-    form: UntypedFormGroup;
+    downloadOptions: SelectItem[] = [];
+    filterOptions: SelectItem[] = [];
+    dialogActions!: DotDialogActions;
+    form!: UntypedFormGroup;
     showDialog = false;
     errorMessage = '';
 
-    private currentFilterKey: string;
+    private currentFilterKey!: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private filters: SelectItem[] = null;
 

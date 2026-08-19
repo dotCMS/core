@@ -9,7 +9,7 @@ import { DotCMSResponse, DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotMenuService {
-    menu$: Observable<DotMenu[]>;
+    menu$!: Observable<DotMenu[]>;
 
     private urlMenus = '/api/v1/menu';
     private readonly http = inject(HttpClient);

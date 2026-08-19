@@ -13,7 +13,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockLoginService {
-    private _isLogin$: Observable<boolean>;
+    private _isLogin$!: Observable<boolean>;
     get isLogin$() {
         return this._isLogin$;
     }

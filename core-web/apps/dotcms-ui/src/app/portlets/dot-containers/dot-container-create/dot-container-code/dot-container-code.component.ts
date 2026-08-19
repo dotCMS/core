@@ -62,10 +62,10 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() fg: FormGroup;
-    @Input() contentTypes: DotCMSContentType[];
+    @Input() fg!: FormGroup;
+    @Input() contentTypes!: DotCMSContentType[];
 
-    menuItems: MenuItem[];
+    menuItems: MenuItem[] = [];
     activeTabIndex = 0;
     monacoEditors: Record<string, MonacoStandaloneCodeEditor> = {};
     contentTypeNamesById = {};

@@ -43,7 +43,7 @@ const mockDFormFieldData = {
     standalone: false
 })
 class DotHostTesterComponent {
-    mockDFormFieldData: DotCMSContentTypeField;
+    mockDFormFieldData!: DotCMSContentTypeField;
     contentType = dotcmsContentTypeBasicMock;
 }
 
@@ -53,11 +53,11 @@ class DotHostTesterComponent {
 })
 class TestDynamicFieldPropertyDirective {
     @Input()
-    propertyName: string;
+    propertyName!: string;
     @Input()
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
     @Input()
-    group: UntypedFormGroup;
+    group!: UntypedFormGroup;
 }
 
 @Injectable()

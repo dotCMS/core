@@ -14,9 +14,9 @@ import { FieldProperty } from '../field-properties.model';
 export class DefaultValuePropertyComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
 
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    errorLabel: string;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    errorLabel!: string;
     private errorLabelsMap = new Map<string, string>();
 
     ngOnInit(): void {

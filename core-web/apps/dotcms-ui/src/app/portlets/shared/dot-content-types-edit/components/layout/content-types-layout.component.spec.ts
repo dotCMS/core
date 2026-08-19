@@ -76,7 +76,7 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
     standalone: false
 })
 class TestContentTypeFieldsListComponent {
-    @Input() baseType: string;
+    @Input() baseType!: string;
 }
 
 @Component({
@@ -91,7 +91,7 @@ class TestContentTypeFieldsRowListComponent {}
     template: ''
 })
 class TestDotIframeComponent {
-    @Input() src: string;
+    @Input() src!: string;
 }
 
 @Component({
@@ -100,7 +100,7 @@ class TestDotIframeComponent {
     standalone: false
 })
 class TestHostComponent {
-    @Input() contentType: DotCMSContentType;
+    @Input() contentType!: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
 }
 
@@ -110,7 +110,7 @@ class TestHostComponent {
     standalone: true
 })
 class MockDotStyleEditorBuilderComponent {
-    @Input() contentType: DotCMSContentType;
+    @Input() contentType!: DotCMSContentType;
 }
 
 class FieldDragDropServiceMock {

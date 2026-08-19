@@ -32,16 +32,16 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 export class DotNewRelationshipsComponent implements OnChanges {
     private contentTypeService = inject(DotContentTypeService);
 
-    @Input() cardinality: number;
+    @Input() cardinality!: number;
 
-    @Input() velocityVar: string;
+    @Input() velocityVar!: string;
 
-    @Input() editing: boolean;
+    @Input() editing!: boolean;
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentType: DotCMSContentType;
-    currentCardinalityIndex: number;
+    contentType!: DotCMSContentType;
+    currentCardinalityIndex!: number;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.velocityVar) {

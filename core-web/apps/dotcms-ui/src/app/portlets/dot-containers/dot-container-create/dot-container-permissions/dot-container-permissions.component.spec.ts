@@ -12,8 +12,8 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     template: ''
 })
 export class IframeMockComponent {
-    @Input() src: string;
-    @ViewChild('iframeElement') iframeElement: ElementRef;
+    @Input() src!: string;
+    @ViewChild('iframeElement') iframeElement!: ElementRef;
 }
 
 @Component({

@@ -32,7 +32,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
 
-    @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
+    @ViewChild('subnav', { static: true }) subnav!: DotSubNavComponent;
 
     $data = input.required<MenuGroup>({ alias: 'data' });
 

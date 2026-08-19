@@ -76,31 +76,34 @@ export class DotPushPublishFormComponent
     readonly #dotMessageService = inject(DotMessageService);
 
     dateFieldMinDate = new Date();
-    form: UntypedFormGroup;
-    pushActions: SelectItem[];
+    form!: UntypedFormGroup;
+    pushActions: SelectItem[] = [];
     filterOptions: SelectItem[] = null;
     timeZoneOptions: SelectItem[] = null;
     eventData: DotPushPublishDialogData = { assetIdentifier: '', title: '' };
-    assetIdentifier: string;
-    localTimezone: string;
+    assetIdentifier!: string;
+    localTimezone!: string;
     showTimezonePicker = false;
     changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
-    @Input() data: DotPushPublishDialogData;
+    @Input() data!: DotPushPublishDialogData;
 
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();
 
-    @ViewChild('customCode', { static: true }) customCodeContainer: ElementRef;
+    @ViewChild('customCode', { static: true }) customCodeContainer!: ElementRef;
 
-    private defaultFilterKey: string;
+    private defaultFilterKey!: string;
     private _filterOptions: SelectItem[] = null;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
         if (this.data) {
             this.setPreviousDayToMinDate();
-            if (this.filterOptions) {
+            // `.length`, not truthiness: this branch means "filters are already loaded", and an
+            // empty array is truthy — so it would have skipped the fetch and rendered no filters.
+            // No test covers this path.
+            if (this.filterOptions.length) {
                 this.loadData(this.data);
             } else {
                 this.loadFilters()

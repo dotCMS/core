@@ -118,9 +118,9 @@ class MockDotAppsService {
     standalone: true
 })
 class MockDotKeyValueComponent {
-    @Input() autoFocus: boolean;
-    @Input() showHiddenField: string;
-    @Input() variables: DotKeyValue[];
+    @Input() autoFocus!: boolean;
+    @Input() showHiddenField!: string;
+    @Input() variables!: DotKeyValue[];
     @Output() updatedList = new EventEmitter<DotKeyValue[]>();
 }
 
@@ -130,8 +130,8 @@ class MockDotKeyValueComponent {
     standalone: true
 })
 class MockDotAppsConfigurationDetailFormComponent {
-    @Input() appConfigured: boolean;
-    @Input() formFields: DotAppsSecret[];
+    @Input() appConfigured!: boolean;
+    @Input() formFields!: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
 }

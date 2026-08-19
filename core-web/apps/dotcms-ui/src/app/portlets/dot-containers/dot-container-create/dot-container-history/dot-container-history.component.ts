@@ -20,8 +20,8 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     imports: [DotPortletBoxComponent, IframeComponent]
 })
 export class DotContainerHistoryComponent implements OnChanges {
-    @Input() containerId: string;
-    @ViewChild('historyIframe') historyIframe: IframeComponent;
+    @Input() containerId!: string;
+    @ViewChild('historyIframe') historyIframe!: IframeComponent;
 
     protected historyUrl = '/html/containers/push_history.jsp';
     private readonly dotRouterService = inject(DotRouterService);

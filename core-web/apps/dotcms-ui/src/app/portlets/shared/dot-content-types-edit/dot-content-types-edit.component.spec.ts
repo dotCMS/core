@@ -60,9 +60,9 @@ import { DotMenuService } from '../../../api/services/dot-menu.service';
     standalone: false
 })
 class TestContentTypeFieldsDropZoneComponent {
-    @Input() layout: DotCMSContentTypeLayoutRow[];
-    @Input() loading: boolean;
-    @Input() contentType: DotCMSContentType;
+    @Input() layout!: DotCMSContentTypeLayoutRow[];
+    @Input() loading!: boolean;
+    @Input() contentType!: DotCMSContentType;
     @Output() saveFields = new EventEmitter<DotCMSContentTypeField[]>();
     @Output() removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
@@ -75,7 +75,7 @@ class TestContentTypeFieldsDropZoneComponent {
     standalone: true
 })
 class TestContentTypeLayoutComponent {
-    @Input() contentType: DotCMSContentType;
+    @Input() contentType!: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
     @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
 }
@@ -86,9 +86,9 @@ class TestContentTypeLayoutComponent {
     standalone: true
 })
 class TestContentTypesFormComponent {
-    @Input() data: DotCMSContentType;
-    @Input() layout: DotCMSContentTypeField[];
-    @Input() contentType: DotCMSContentType;
+    @Input() data!: DotCMSContentType;
+    @Input() layout!: DotCMSContentTypeField[];
+    @Input() contentType!: DotCMSContentType;
     @Output() $send: EventEmitter<DotCMSContentType> = new EventEmitter();
     @Output() $valid: EventEmitter<boolean> = new EventEmitter();
 
@@ -103,9 +103,9 @@ class TestContentTypesFormComponent {
     standalone: false
 })
 export class TestDotMenuComponent {
-    @Input() icon: string;
-    @Input() float: boolean;
-    @Input() model: MenuItem[];
+    @Input() icon!: string;
+    @Input() float!: boolean;
+    @Input() model!: MenuItem[];
 }
 
 const messageServiceMock = new MockDotMessageService({

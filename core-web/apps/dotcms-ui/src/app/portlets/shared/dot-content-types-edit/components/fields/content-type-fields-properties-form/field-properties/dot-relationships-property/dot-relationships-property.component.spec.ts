@@ -31,9 +31,9 @@ import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 })
 class TestFieldValidationMessageComponent {
     @Input()
-    field: NgControl;
+    field!: NgControl;
     @Input()
-    message: string;
+    message!: string;
 }
 
 @Component({
@@ -43,13 +43,13 @@ class TestFieldValidationMessageComponent {
 })
 class TestNewRelationshipsComponent {
     @Input()
-    cardinality: number;
+    cardinality!: number;
 
     @Input()
-    velocityVar: string;
+    velocityVar!: string;
 
     @Input()
-    editing: boolean;
+    editing!: boolean;
 
     @Output()
     switch: EventEmitter<any> = new EventEmitter();

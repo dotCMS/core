@@ -107,7 +107,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     });
 
     // Form
-    form: FormGroup;
+    form!: FormGroup;
     emailRegex = '';
 
     // Private fields

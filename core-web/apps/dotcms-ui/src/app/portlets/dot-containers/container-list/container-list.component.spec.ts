@@ -223,7 +223,7 @@ class ActivatedRouteMock {
     template: ''
 })
 class MockDotContentTypeSelectorComponent {
-    @Input() value: SelectItem;
+    @Input() value!: SelectItem;
     @Output() selected = new EventEmitter<string>();
 }
 

@@ -49,7 +49,7 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
     private dotCrudService = inject(DotCrudService);
     private dotMessageService = inject(DotMessageService);
 
-    asset: DotCMSTemplateThumbnail;
+    asset!: DotCMSTemplateThumbnail;
     error = '';
     loading = false;
 

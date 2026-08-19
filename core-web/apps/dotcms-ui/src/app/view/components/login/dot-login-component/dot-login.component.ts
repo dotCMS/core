@@ -79,9 +79,9 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
     message = '';
     isError = false;
-    loginForm: UntypedFormGroup;
+    loginForm!: UntypedFormGroup;
     languages: SelectItem[] = [];
-    loginInfo$: Observable<DotLoginInformation>;
+    loginInfo$!: Observable<DotLoginInformation>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 

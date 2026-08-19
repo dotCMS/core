@@ -81,14 +81,14 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     @Output() selected = new EventEmitter<DotPageAsset | string>();
     @Input() folderSearch = false;
 
-    @ViewChild('autoComplete') autoComplete: AutoComplete;
+    @ViewChild('autoComplete') autoComplete!: AutoComplete;
 
-    val: DotPageSelectorItem;
+    val!: DotPageSelectorItem;
     suggestions$: Subject<DotPageSelectorItem[]> = new Subject<DotPageSelectorItem[]>();
-    message: string;
-    searchType: string;
+    message!: string;
+    searchType!: string;
     isError = false;
-    private currentHost: Site;
+    private currentHost!: Site;
     private invalidHost = false;
 
     propagateChange = (_: unknown) => {

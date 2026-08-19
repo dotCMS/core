@@ -43,16 +43,16 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     readonly $overlayPanel = viewChild.required<Popover>('op');
 
     /** Local copy of field for access */
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
 
     isDragging = false;
     open = false;
 
-    fieldAttributesArray: string[];
+    fieldAttributesArray: string[] = [];
 
-    fieldTypeLabel: string;
-    fieldAttributesString: string;
-    icon: string;
+    fieldTypeLabel!: string;
+    fieldAttributesString!: string;
+    icon!: string;
 
     get variableToShow(): string {
         const field = this.$field();

@@ -32,9 +32,9 @@ export class CategoriesPropertyComponent implements OnInit {
     categoriesCurrentPage: DotCMSContentTypeFieldCategories[] = [];
     loading = false;
     filterValue = '';
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    placeholder: string;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    placeholder!: string;
 
     ngOnInit(): void {
         this.placeholder = !this.property.value

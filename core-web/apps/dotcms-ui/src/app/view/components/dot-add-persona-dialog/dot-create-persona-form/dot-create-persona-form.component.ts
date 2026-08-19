@@ -54,8 +54,8 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     @Input() personaName = '';
     @Output() isValid: EventEmitter<boolean> = new EventEmitter();
 
-    form: UntypedFormGroup;
-    tempUploadedFile: DotCMSTempFile;
+    form!: UntypedFormGroup;
+    tempUploadedFile!: DotCMSTempFile;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 

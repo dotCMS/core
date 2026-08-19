@@ -64,7 +64,7 @@ export class DotContentTypesEditComponent implements OnInit {
     readonly $contentTypesForm = viewChild<ContentTypesFormComponent>('form');
     readonly $fieldsDropZone = viewChild<ContentTypeFieldsDropZoneComponent>('fieldsDropZone');
 
-    contentTypeActions: MenuItem[];
+    contentTypeActions: MenuItem[] = [];
     dialogCloseable = false;
     /**
      * Turns off PrimeNG's `p-dialog` `focusOnShow`. PrimeNG focuses the first focusable element in
@@ -73,9 +73,9 @@ export class DotContentTypesEditComponent implements OnInit {
      * decides what gets focused: the Name input when creating, nothing when editing.
      */
     readonly dialogFocusOnShow = false;
-    data: DotCMSContentType;
-    dialogActions: DotDialogActions;
-    layout: DotCMSContentTypeLayoutRow[];
+    data!: DotCMSContentType;
+    dialogActions!: DotDialogActions;
+    layout: DotCMSContentTypeLayoutRow[] = [];
     show = signal(false);
     templateInfo = {
         icon: '',

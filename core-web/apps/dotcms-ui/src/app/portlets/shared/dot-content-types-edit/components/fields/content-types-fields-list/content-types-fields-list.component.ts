@@ -24,7 +24,7 @@ import { FieldType } from '..';
     imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
-    @Input() baseType: string;
+    @Input() baseType!: string;
 
     $fieldTypes = signal<{ clazz: string; name: string }[]>([]);
     fieldIcons = FIELD_ICONS;

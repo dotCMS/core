@@ -60,8 +60,8 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     private route = inject(ActivatedRoute);
     private readonly cd = inject(ChangeDetectorRef);
 
-    resetPasswordForm: UntypedFormGroup;
-    loginInfo$: Observable<DotLoginInformation>;
+    resetPasswordForm!: UntypedFormGroup;
+    loginInfo$!: Observable<DotLoginInformation>;
     message = '';
     private passwordDontMatchMessage = '';
 

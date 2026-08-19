@@ -60,9 +60,9 @@ export class IframeComponent implements OnInit, OnDestroy {
     iframeOverlayService = inject(IframeOverlayService);
     loggerService = inject(LoggerService);
 
-    @ViewChild('iframeElement') iframeElement: ElementRef;
+    @ViewChild('iframeElement') iframeElement!: ElementRef;
 
-    @Input() src: string;
+    @Input() src!: string;
 
     $isLoading = input(false, { alias: 'isLoading' });
 

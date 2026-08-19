@@ -45,14 +45,14 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     readonly STATUS_NEW = 'NEW';
     readonly STATUS_EXISTING = 'EXISTING';
 
-    property: FieldProperty<{ [key: string]: unknown }>;
-    group: UntypedFormGroup;
+    property!: FieldProperty<{ [key: string]: unknown }>;
+    group!: UntypedFormGroup;
 
     status = this.STATUS_NEW;
 
-    editing: boolean;
+    editing = false;
 
-    beforeValue: DotRelationshipsPropertyValue;
+    beforeValue!: DotRelationshipsPropertyValue;
     ngOnInit() {
         this.beforeValue = structuredClone(this.group.get(this.property.name).value);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
