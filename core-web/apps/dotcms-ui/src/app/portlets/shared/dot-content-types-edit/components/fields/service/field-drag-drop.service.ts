@@ -63,7 +63,7 @@ export class FieldDragDropService {
     private _fieldDropFromTarget: Observable<DropFieldData>;
     private _fieldRowDropFromTarget: Observable<DotCMSContentTypeLayoutRow[]>;
     private draggedEvent = false;
-    private currentFullRowEl: HTMLElement = null;
+    private currentFullRowEl: HTMLElement | null = null;
     private currentColumnOvered!: Element;
 
     constructor() {
@@ -272,7 +272,7 @@ export class FieldDragDropService {
     ): boolean {
         const noDrag = !handle.classList.contains('no-drag');
         const isDragButton =
-            handle.parentElement.classList.contains('row-header__drag') ||
+            handle.parentElement?.classList.contains('row-header__drag') ||
             handle.classList.contains('row-header__drag');
 
         return noDrag && this.shouldDrag(source, isDragButton);
@@ -288,13 +288,19 @@ export class FieldDragDropService {
         _source: HTMLElement,
         _sibling: HTMLElement
     ): boolean {
-        const columnsCount = target.parentElement.querySelectorAll('.row-columns__item').length;
-        const isColumnField = FieldUtil.isColumnBreak(el.dataset['clazz']);
+        const columnsCount =
+            target.parentElement?.querySelectorAll('.row-columns__item').length ?? 0;
+        const isColumnField = FieldUtil.isColumnBreak(el.dataset['clazz'] ?? '');
         const cantAddColumn = isColumnField && columnsCount >= MAX_COLS_PER_ROW;
 
         if (cantAddColumn) {
             this.clearCurrentFullRowEl();
-            this.disableRowElement(target.parentElement.parentElement);
+
+            const rowEl = target.parentElement?.parentElement;
+
+            if (rowEl) {
+                this.disableRowElement(rowEl);
+            }
 
             return false;
         }
@@ -326,8 +332,8 @@ export class FieldDragDropService {
 
     private clearCurrentFullRowEl(): void {
         if (this.currentFullRowEl && this.currentFullRowEl.style.opacity) {
-            this.currentFullRowEl.style.opacity = null;
-            this.currentFullRowEl.style.cursor = null;
+            this.currentFullRowEl.style.opacity = '';
+            this.currentFullRowEl.style.cursor = '';
             this.currentFullRowEl = null;
         }
     }

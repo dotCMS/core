@@ -56,7 +56,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private dialogService = inject(DialogService);
     private elRef = inject(ElementRef);
 
-    currentField!: DotCMSContentTypeField;
+    /** The field the dialog is editing. Null between dialogs, and when a lookup misses. */
+    currentField: DotCMSContentTypeField | null = null;
     currentFieldType!: FieldType;
     fieldRows: DotCMSContentTypeLayoutRow[] = [];
 
@@ -96,6 +97,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         fieldRows: DotCMSContentTypeLayoutRow[]
     ): DotCMSContentTypeLayoutRow[] {
         return fieldRows.map((row: DotCMSContentTypeLayoutRow) => {
+            // A tab divider row has no `columns` (see `FieldUtil.createFieldTabDivider`) and there
+            // is nothing in it to split, so it passes through untouched. Reducing over `undefined`
+            // threw as soon as a column break was dropped into a layout that contained a tab.
+            if (!row.columns) {
+                return row;
+            }
+
             return {
                 ...row,
                 columns: row.columns.reduce(
@@ -162,7 +170,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .listen('add-row')
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
-                document.querySelector('dot-add-rows').scrollIntoView({
+                document.querySelector('dot-add-rows')?.scrollIntoView({
                     behavior: 'smooth'
                 });
             });
@@ -199,7 +207,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             }
         });
 
-        ref.onClose.subscribe((result?: DotEditFieldDialogResult) => {
+        ref?.onClose.subscribe((result?: DotEditFieldDialogResult) => {
             switch (result?.kind) {
                 case 'saved':
                     this.saveFieldsHandler(result.field);
@@ -259,9 +267,16 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     saveFieldsHandler(fieldToSave: DotCMSContentTypeField): void {
         if (!this.currentField) {
             const tabDividerFields = FieldUtil.getTabDividerFields(this.fieldRows);
-            this.currentField = tabDividerFields.find(
-                (field: DotCMSContentTypeField) => fieldToSave.id === field.id
-            );
+            this.currentField =
+                tabDividerFields.find(
+                    (field: DotCMSContentTypeField) => fieldToSave.id === field.id
+                ) ?? null;
+        }
+
+        // The lookup above misses when the saved field is not one of the layout's tab dividers.
+        // `Object.assign` would have thrown on the undefined it used to leave behind.
+        if (!this.currentField) {
+            return;
         }
 
         Object.assign(this.currentField, fieldToSave);
@@ -281,10 +296,16 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     editFieldHandler(fieldToEdit: DotCMSContentTypeField): void {
         if (!this.fieldDragDropService.isDraggedEventStarted()) {
             const fields = FieldUtil.getFieldsWithoutLayout(this.fieldRows);
-            this.currentField = fields.find(
-                (field: DotCMSContentTypeField) => fieldToEdit.id === field.id
+            const field = fields.find(
+                (candidate: DotCMSContentTypeField) => fieldToEdit.id === candidate.id
             );
-            this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
+
+            if (!field) {
+                return;
+            }
+
+            this.currentField = field;
+            this.currentFieldType = this.fieldPropertyService.getFieldType(field.clazz);
             this.openFieldDialog();
         }
     }
@@ -299,10 +320,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         // TODO needs an improvement for performance reasons
         fieldRows.forEach((row, rowIndex) => {
             if (row.columns) {
-                row.columns.forEach((col, colIndex) => {
+                row.columns.forEach((col) => {
                     col.fields.forEach((field, fieldIndex) => {
                         if (!field.id) {
-                            row.columns[colIndex].fields.splice(fieldIndex, 1);
+                            col.fields.splice(fieldIndex, 1);
                         }
                     });
                 });
@@ -333,7 +354,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
         if (!FieldUtil.isNewField(fieldRow.divider)) {
             fieldsToDelete.push(fieldRow.divider);
-            fieldRow.columns.forEach((fieldColumn: DotCMSContentTypeLayoutColumn) => {
+            fieldRow.columns?.forEach((fieldColumn: DotCMSContentTypeLayoutColumn) => {
                 fieldsToDelete.push(fieldColumn.columnDivider);
                 fieldColumn.fields.forEach((field) => fieldsToDelete.push(field));
             });
@@ -357,7 +378,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
-        this.fieldRows = structuredClone(this.$layout());
+        this.fieldRows = structuredClone(this.$layout() ?? []);
     }
 
     private setDroppedField(droppedField: DotCMSContentTypeField): void {

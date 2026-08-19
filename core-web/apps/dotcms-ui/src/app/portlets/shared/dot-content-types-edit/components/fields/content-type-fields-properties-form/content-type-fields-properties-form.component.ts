@@ -142,7 +142,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             const transformedValue = this.transformFormValue(this.form.value);
             this.saveField.emit(transformedValue);
         } else {
-            this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
+            this.fieldProperties.forEach((property) => this.form.get(property)?.markAsTouched());
         }
 
         this.valid.emit(false);
@@ -367,7 +367,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private handleDisabledIndexed(disable: boolean): void {
         if (this.form.get('indexed')) {
-            disable ? this.form.controls['indexed'].disable() : this.form.controls['indexed'].enable();
+            disable
+                ? this.form.controls['indexed'].disable()
+                : this.form.controls['indexed'].enable();
         }
     }
 
@@ -378,7 +380,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private handleDisabledRequired(disable: boolean): void {
         if (this.form.get('required')) {
-            disable ? this.form.controls['required'].disable() : this.form.controls['required'].enable();
+            disable
+                ? this.form.controls['required'].disable()
+                : this.form.controls['required'].enable();
         }
     }
 
@@ -387,7 +391,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private updateFormFieldData() {
         if (!this.formFieldData.id) {
-            delete this.formFieldData['name'];
+            // `name` is required on `DotCMSContentTypeField` because that is what the endpoint
+            // returns; a new field is sent without it so the backend derives it. The cast states
+            // that difference instead of widening the model for all 27 of its consumers.
+            delete (this.formFieldData as Partial<DotCMSContentTypeField>).name;
         }
     }
 }

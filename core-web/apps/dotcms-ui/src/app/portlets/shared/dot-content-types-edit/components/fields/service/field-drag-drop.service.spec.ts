@@ -206,9 +206,12 @@ describe('FieldDragDropService', () => {
                         }
                     });
 
+                    // `''` rather than `null`: CSSOM coerces null to the empty string for a
+                    // style property, so this is what a browser stored all along — the previous
+                    // assertion pinned jsdom keeping the raw `null` the service used to pass.
                     expect(target.parentElement.parentElement.style).toEqual({
-                        opacity: null,
-                        cursor: null
+                        opacity: '',
+                        cursor: ''
                     });
                 });
 
