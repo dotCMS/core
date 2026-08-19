@@ -20,7 +20,6 @@ import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SplitterModule } from 'primeng/splitter';
-import { ToastModule } from 'primeng/toast';
 
 import {
     DotContentletService,
@@ -61,6 +60,7 @@ import {
     DotDialogHeaderComponent
 } from '../dot-dialog';
 import { DotFolderListViewComponent } from '../dot-folder-list-view/dot-folder-list-view.component';
+import { DotToastComponent } from '../dot-toast/dot-toast.component';
 import { DotUploadDropzoneComponent } from '../dot-upload-dropzone/dot-upload-dropzone.component';
 import { DotUploadTypeSelectorComponent } from '../dot-upload-type-selector/dot-upload-type-selector.component';
 import {
@@ -100,7 +100,6 @@ import {
         NgTemplateOutlet,
         PopoverModule,
         SplitterModule,
-        ToastModule,
         DotDialogComponent,
         DotDialogHeaderComponent,
         DotDialogContentComponent,
@@ -109,6 +108,7 @@ import {
         DotAssetPickerSidebarComponent,
         DotAssetPickerToolbarComponent,
         DotFolderListViewComponent,
+        DotToastComponent,
         DotUploadDropzoneComponent,
         DotUploadTypeSelectorComponent,
         DotMessagePipe

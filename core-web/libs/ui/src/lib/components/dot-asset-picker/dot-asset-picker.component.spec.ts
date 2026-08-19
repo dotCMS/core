@@ -11,7 +11,6 @@ import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { PopoverModule } from 'primeng/popover';
 import { Splitter, SplitterModule } from 'primeng/splitter';
-import { ToastModule } from 'primeng/toast';
 
 import { DotContentletService, DotMessageService, DotUploadFileService } from '@dotcms/data-access';
 import {
@@ -36,6 +35,7 @@ import {
     DotDialogFooterComponent,
     DotDialogHeaderComponent
 } from '../dot-dialog';
+import { DotToastComponent } from '../dot-toast/dot-toast.component';
 
 /**
  * What every `overrideComponent({ set: { imports } })` below has to keep real.
@@ -56,7 +56,7 @@ const PICKER_REAL_IMPORTS = [
     DialogModule,
     PopoverModule,
     SplitterModule,
-    ToastModule,
+    DotToastComponent,
     DotDialogComponent,
     DotDialogHeaderComponent,
     DotDialogContentComponent,

@@ -59,6 +59,7 @@ export * from './lib/components/dot-folder-list-view/constants';
 
 export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
+export * from './lib/components/dot-toast/dot-toast.component';
 export * from './lib/components/dot-upload-button/dot-upload-button.component';
 export * from './lib/components/dot-upload-dropzone/dot-upload-dropzone.component';
 export * from './lib/components/dot-upload-dropzone/constants';

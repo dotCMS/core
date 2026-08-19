@@ -21,7 +21,6 @@ import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
 
@@ -59,7 +58,7 @@ import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
     DotMessagePipe,
-    DotSeverityIconComponent,
+    DotToastComponent,
     DotUploadDropzoneComponent,
     DotUploadTypeSelectorComponent
 } from '@dotcms/ui';
@@ -103,7 +102,6 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
-        ToastModule,
         DialogModule,
         PopoverModule,
         NgTemplateOutlet,
@@ -113,7 +111,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         MessageModule,
         DotMessagePipe,
         DotUploadDropzoneComponent,
-        DotSeverityIconComponent,
+        DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent
