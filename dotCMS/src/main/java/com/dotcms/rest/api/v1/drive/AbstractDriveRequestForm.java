@@ -361,6 +361,38 @@ public interface AbstractDriveRequestForm {
     default boolean showFolders(){return true; }
 
     /**
+     * Whether to include menu Links in results.
+     * <p>
+     * When false (default), menu Links are never returned, so existing callers are unaffected.
+     * When true, the Links directly under the resolved {@code assetPath} are returned alongside
+     * folders and contentlets, filtered by the requesting user's READ permission.
+     * </p>
+     * <p>
+     * Links are not a {@code BaseContentType}, so this flag is <b>orthogonal</b> to
+     * {@code baseTypes} rather than a value within it:
+     * </p>
+     * <ul>
+     *   <li>{@code showLinks: true} with {@code baseTypes} omitted returns links <i>plus</i>
+     *       content of every base type.</li>
+     *   <li>{@code showLinks: true, baseTypes: ["HTMLPAGE"]} returns links plus pages.</li>
+     *   <li>{@code showLinks: true, baseTypes: [], showFolders: false} returns links
+     *       <i>only</i> — an empty {@code baseTypes} array disables the content query.</li>
+     * </ul>
+     * <p>
+     * Links are ignored when {@code mimeTypes} or {@code workflow} filters are present, since a
+     * Link carries neither a file MIME type nor workflow state and so could never satisfy them.
+     * Links are also always the <i>direct</i> children of the resolved path — they are never
+     * gathered recursively across subfolders, matching the legacy {@code /api/v1/browser}
+     * endpoint.
+     * </p>
+     *
+     * @return true to include menu Links, false to exclude (default)
+     */
+    @JsonProperty("showLinks")
+    @Value.Default
+    default boolean showLinks(){ return false; }
+
+    /**
      * Content cursor: the DB row to start scanning content from (returned as
      * {@code nextContentCursor} in the previous page response).
      * <p>
@@ -396,6 +428,23 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("folderCursor")
     @Value.Default
     default int folderCursor() { return 0; }
+
+    /**
+     * Link cursor: the index into the link list to start from (returned as
+     * {@code nextLinkCursor} in the previous page response).
+     * <p>
+     * On the first page leave this at 0. On subsequent pages pass the
+     * {@code nextLinkCursor} value from the previous response. When the
+     * previous response returned {@code hasMoreLinks: false} you should
+     * also set {@code showLinks: false} to skip the link query entirely
+     * on pages where all links have already been shown.
+     * </p>
+     *
+     * @return link list index to start from, defaults to 0
+     */
+    @JsonProperty("linkCursor")
+    @Value.Default
+    default int linkCursor() { return 0; }
 
     /**
      * Per-field value filters, keyed by field variable name.

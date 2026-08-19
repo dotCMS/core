@@ -1545,6 +1545,386 @@
 			"description": "Tests combining search, sorting, and pagination features together."
 		},
 		{
+			"name": "Menu Links Tests",
+			"item": [
+			 {
+			  "name": "showLinks Omitted - No Links And Zeroed Link Metadata",
+			  "event": [
+			   {
+			    "listen": "test",
+			    "script": {
+			     "exec": [
+			      "pm.test(\"Status code should be 200\", function () {",
+			      "    pm.response.to.have.status(200);",
+			      "});",
+			      "",
+			      "var entity = pm.response.json().entity;",
+			      "",
+			      "pm.test(\"Link metadata is present and zeroed when showLinks is not sent\", function () {",
+			      "    pm.expect(entity).to.have.property(\"linkCount\", 0);",
+			      "    pm.expect(entity).to.have.property(\"hasMoreLinks\", false);",
+			      "    pm.expect(entity).to.have.property(\"nextLinkCursor\", 0);",
+			      "});",
+			      "",
+			      "pm.test(\"No menu link leaks into a request that never asked for one\", function () {",
+			      "    var links = entity.list.filter(function (item) {",
+			      "        return item.mimeType === \"application/dotlink\";",
+			      "    });",
+			      "    pm.expect(links).to.be.an(\"array\").that.is.empty;",
+			      "});"
+			     ],
+			     "type": "text/javascript"
+			    }
+			   }
+			  ],
+			  "request": {
+			   "method": "POST",
+			   "header": [
+			    {
+			     "key": "Content-Type",
+			     "value": "application/json"
+			    }
+			   ],
+			   "body": {
+			    "mode": "raw",
+			    "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"maxResults\": 50\n}",
+			    "options": {
+			     "raw": {
+			      "language": "json"
+			     }
+			    }
+			   },
+			   "url": {
+			    "raw": "{{serverURL}}/api/v1/drive/search",
+			    "host": [
+			     "{{serverURL}}"
+			    ],
+			    "path": [
+			     "api",
+			     "v1",
+			     "drive",
+			     "search"
+			    ]
+			   }
+			  },
+			  "response": []
+			 },
+			 {
+			  "name": "showLinks True - Response Carries Link Pagination Contract",
+			  "event": [
+			   {
+			    "listen": "test",
+			    "script": {
+			     "exec": [
+			      "pm.test(\"Status code should be 200\", function () {",
+			      "    pm.response.to.have.status(200);",
+			      "});",
+			      "",
+			      "var entity = pm.response.json().entity;",
+			      "",
+			      "pm.test(\"Links are a third symmetric pagination source\", function () {",
+			      "    pm.expect(entity).to.have.property(\"linkCount\");",
+			      "    pm.expect(entity).to.have.property(\"hasMoreLinks\");",
+			      "    pm.expect(entity).to.have.property(\"nextLinkCursor\");",
+			      "    pm.expect(entity.linkCount).to.be.a(\"number\");",
+			      "    pm.expect(entity.hasMoreLinks).to.be.a(\"boolean\");",
+			      "    pm.expect(entity.nextLinkCursor).to.be.a(\"number\");",
+			      "});",
+			      "",
+			      "pm.test(\"Folder and content metadata is unaffected\", function () {",
+			      "    pm.expect(entity).to.have.property(\"folderCount\");",
+			      "    pm.expect(entity).to.have.property(\"contentCount\");",
+			      "    pm.expect(entity).to.have.property(\"hasMoreFolders\");",
+			      "    pm.expect(entity).to.have.property(\"hasMoreContent\");",
+			      "});",
+			      "",
+			      "// This site has no menu links, so linkCount is 0 here. Positive \"a link came back\"",
+			      "// coverage lives in ContentDriveLinksTest -- the REST API exposes no endpoint that",
+			      "// can create a menu Link, so Postman cannot build the fixture.",
+			      "pm.test(\"linkCount agrees with the links actually in the list\", function () {",
+			      "    var links = entity.list.filter(function (item) {",
+			      "        return item.mimeType === \"application/dotlink\";",
+			      "    });",
+			      "    pm.expect(entity.linkCount).to.eql(links.length);",
+			      "});"
+			     ],
+			     "type": "text/javascript"
+			    }
+			   }
+			  ],
+			  "request": {
+			   "method": "POST",
+			   "header": [
+			    {
+			     "key": "Content-Type",
+			     "value": "application/json"
+			    }
+			   ],
+			   "body": {
+			    "mode": "raw",
+			    "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": true,\n    \"maxResults\": 50\n}",
+			    "options": {
+			     "raw": {
+			      "language": "json"
+			     }
+			    }
+			   },
+			   "url": {
+			    "raw": "{{serverURL}}/api/v1/drive/search",
+			    "host": [
+			     "{{serverURL}}"
+			    ],
+			    "path": [
+			     "api",
+			     "v1",
+			     "drive",
+			     "search"
+			    ]
+			   }
+			  },
+			  "response": []
+			 },
+			 {
+			  "name": "showLinks False - Behaves Like Omitting The Flag",
+			  "event": [
+			   {
+			    "listen": "test",
+			    "script": {
+			     "exec": [
+			      "pm.test(\"Status code should be 200\", function () {",
+			      "    pm.response.to.have.status(200);",
+			      "});",
+			      "",
+			      "var entity = pm.response.json().entity;",
+			      "",
+			      "pm.test(\"Explicit false excludes links\", function () {",
+			      "    pm.expect(entity.linkCount).to.eql(0);",
+			      "    pm.expect(entity.hasMoreLinks).to.eql(false);",
+			      "});"
+			     ],
+			     "type": "text/javascript"
+			    }
+			   }
+			  ],
+			  "request": {
+			   "method": "POST",
+			   "header": [
+			    {
+			     "key": "Content-Type",
+			     "value": "application/json"
+			    }
+			   ],
+			   "body": {
+			    "mode": "raw",
+			    "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": false,\n    \"maxResults\": 50\n}",
+			    "options": {
+			     "raw": {
+			      "language": "json"
+			     }
+			    }
+			   },
+			   "url": {
+			    "raw": "{{serverURL}}/api/v1/drive/search",
+			    "host": [
+			     "{{serverURL}}"
+			    ],
+			    "path": [
+			     "api",
+			     "v1",
+			     "drive",
+			     "search"
+			    ]
+			   }
+			  },
+			  "response": []
+			 },
+			 {
+			  "name": "linkCursor - Accepted Alongside The Other Cursors",
+			  "event": [
+			   {
+			    "listen": "test",
+			    "script": {
+			     "exec": [
+			      "pm.test(\"Status code should be 200\", function () {",
+			      "    pm.response.to.have.status(200);",
+			      "});",
+			      "",
+			      "var entity = pm.response.json().entity;",
+			      "",
+			      "pm.test(\"All three cursors round-trip\", function () {",
+			      "    pm.expect(entity.nextLinkCursor).to.be.at.least(0);",
+			      "    pm.expect(entity.nextFolderCursor).to.be.at.least(0);",
+			      "    pm.expect(entity.nextContentCursor).to.be.at.least(0);",
+			      "});",
+			      "",
+			      "pm.test(\"maxResults is still respected\", function () {",
+			      "    pm.expect(entity.list.length).to.be.at.most(5);",
+			      "});"
+			     ],
+			     "type": "text/javascript"
+			    }
+			   }
+			  ],
+			  "request": {
+			   "method": "POST",
+			   "header": [
+			    {
+			     "key": "Content-Type",
+			     "value": "application/json"
+			    }
+			   ],
+			   "body": {
+			    "mode": "raw",
+			    "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": true,\n    \"linkCursor\": 0,\n    \"folderCursor\": 0,\n    \"contentCursor\": 0,\n    \"maxResults\": 5\n}",
+			    "options": {
+			     "raw": {
+			      "language": "json"
+			     }
+			    }
+			   },
+			   "url": {
+			    "raw": "{{serverURL}}/api/v1/drive/search",
+			    "host": [
+			     "{{serverURL}}"
+			    ],
+			    "path": [
+			     "api",
+			     "v1",
+			     "drive",
+			     "search"
+			    ]
+			   }
+			  },
+			  "response": []
+			 },
+			 {
+			  "name": "showLinks With Empty baseTypes - Links Only Request",
+			  "event": [
+			   {
+			    "listen": "test",
+			    "script": {
+			     "exec": [
+			      "pm.test(\"Status code should be 200\", function () {",
+			      "    pm.response.to.have.status(200);",
+			      "});",
+			      "",
+			      "var entity = pm.response.json().entity;",
+			      "",
+			      "// Links are not a BaseContentType, so an empty baseTypes array is the documented",
+			      "// way to ask for links without content.",
+			      "pm.test(\"Empty baseTypes disables folders and content\", function () {",
+			      "    pm.expect(entity.folderCount).to.eql(0);",
+			      "    pm.expect(entity.contentCount).to.eql(0);",
+			      "});",
+			      "",
+			      "pm.test(\"Only links may appear in a links-only request\", function () {",
+			      "    var nonLinks = entity.list.filter(function (item) {",
+			      "        return item.mimeType !== \"application/dotlink\";",
+			      "    });",
+			      "    pm.expect(nonLinks).to.be.an(\"array\").that.is.empty;",
+			      "});"
+			     ],
+			     "type": "text/javascript"
+			    }
+			   }
+			  ],
+			  "request": {
+			   "method": "POST",
+			   "header": [
+			    {
+			     "key": "Content-Type",
+			     "value": "application/json"
+			    }
+			   ],
+			   "body": {
+			    "mode": "raw",
+			    "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": true,\n    \"showFolders\": false,\n    \"baseTypes\": [],\n    \"maxResults\": 50\n}",
+			    "options": {
+			     "raw": {
+			      "language": "json"
+			     }
+			    }
+			   },
+			   "url": {
+			    "raw": "{{serverURL}}/api/v1/drive/search",
+			    "host": [
+			     "{{serverURL}}"
+			    ],
+			    "path": [
+			     "api",
+			     "v1",
+			     "drive",
+			     "search"
+			    ]
+			   }
+			  },
+			  "response": []
+			 },
+			 {
+			  "name": "showLinks With mimeTypes - Links Suppressed",
+			  "event": [
+			   {
+			    "listen": "test",
+			    "script": {
+			     "exec": [
+			      "pm.test(\"Status code should be 200\", function () {",
+			      "    pm.response.to.have.status(200);",
+			      "});",
+			      "",
+			      "var entity = pm.response.json().entity;",
+			      "",
+			      "// A Link carries no file MIME type, so it could never satisfy a mimeTypes filter.",
+			      "pm.test(\"A mimeTypes filter drops links\", function () {",
+			      "    pm.expect(entity.linkCount).to.eql(0);",
+			      "    pm.expect(entity.hasMoreLinks).to.eql(false);",
+			      "});",
+			      "",
+			      "pm.test(\"The mimeType filter itself still works\", function () {",
+			      "    entity.list.forEach(function (item) {",
+			      "        pm.expect(item.mimeType).to.not.eql(\"application/dotlink\");",
+			      "    });",
+			      "});"
+			     ],
+			     "type": "text/javascript"
+			    }
+			   }
+			  ],
+			  "request": {
+			   "method": "POST",
+			   "header": [
+			    {
+			     "key": "Content-Type",
+			     "value": "application/json"
+			    }
+			   ],
+			   "body": {
+			    "mode": "raw",
+			    "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": true,\n    \"mimeTypes\": [\n        \"image/jpeg\"\n    ],\n    \"maxResults\": 50\n}",
+			    "options": {
+			     "raw": {
+			      "language": "json"
+			     }
+			    }
+			   },
+			   "url": {
+			    "raw": "{{serverURL}}/api/v1/drive/search",
+			    "host": [
+			     "{{serverURL}}"
+			    ],
+			    "path": [
+			     "api",
+			     "v1",
+			     "drive",
+			     "search"
+			    ]
+			   }
+			  },
+			  "response": []
+			 }
+			],
+			"description": "Coverage for the showLinks flag and the link pagination fields on POST /api/v1/drive/search (issue #36991)."
+		},
+		{
 			"name": "Cleanup",
 			"item": [
 				{

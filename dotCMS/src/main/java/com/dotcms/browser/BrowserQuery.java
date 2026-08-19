@@ -45,6 +45,7 @@ public class BrowserQuery {
     final boolean respectFrontEndRoles;
     final int contentCursor;
     final int folderCursor;
+    final int linkCursor;
     final User user;
     final String  filter;
     final String fileName;
@@ -116,6 +117,7 @@ public class BrowserQuery {
     public String toString() {
         return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
                 ", contentCursor=" + contentCursor + ", folderCursor=" + folderCursor +
+                ", linkCursor=" + linkCursor +
                 " ,site:" + site + ", folder:" + folder + ", filter:"
                 + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
@@ -136,6 +138,7 @@ public class BrowserQuery {
         this.respectFrontEndRoles = builder.respectFrontEndRoles;
         this.contentCursor = builder.contentCursor;
         this.folderCursor = builder.folderCursor;
+        this.linkCursor = builder.linkCursor;
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
@@ -259,6 +262,7 @@ public class BrowserQuery {
         private boolean respectFrontEndRoles = true;
         private int contentCursor = 0;
         private int folderCursor = 0;
+        private int linkCursor = 0;
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
@@ -297,6 +301,7 @@ public class BrowserQuery {
         private Builder(BrowserQuery browserQuery) {
             this.contentCursor = browserQuery.contentCursor;
             this.folderCursor = browserQuery.folderCursor;
+            this.linkCursor = browserQuery.linkCursor;
             this.user = browserQuery.user;
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
@@ -344,6 +349,11 @@ public class BrowserQuery {
 
         public Builder folderCursor(int folderCursor) {
             this.folderCursor = folderCursor;
+            return this;
+        }
+
+        public Builder linkCursor(int linkCursor) {
+            this.linkCursor = linkCursor;
             return this;
         }
 
