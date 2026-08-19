@@ -67,11 +67,20 @@ export function totalWeight(items: readonly WeightedVariant[]): number {
  * which is non-optional server-side (`AbstractMetric.java`).
  */
 export function validateConfigure(
-    state: Pick<DotExperimentsConfigureViewState, 'draftName' | 'selectedPage' | 'experiment'>
+    state: Pick<
+        DotExperimentsConfigureViewState,
+        'draftName' | 'selectedPage' | 'experiment' | 'pendingPatch'
+    >
 ): ConfigureValidationRule[] {
     const errors: ConfigureValidationRule[] = [];
     const experiment = state.experiment;
-    const goal = experiment?.goals?.primary ?? null;
+
+    // What the user has, persisted or not. The pending diff comes first because it is the newer
+    // of the two, and on `/experiments/new` it is the *only* one: `applyPatchToExperiment` has no
+    // experiment to apply an edit to before the POST answers, so a goal entered while the draft is
+    // still being created lives only here. `draftName` and `selectedPage` exist for the same
+    // reason — this is the rest of that story, not a special case.
+    const goal = state.pendingPatch?.goals?.primary ?? experiment?.goals?.primary ?? null;
 
     if (!state.draftName.trim()) {
         errors.push('name');
@@ -91,7 +100,16 @@ export function validateConfigure(
 
     errors.push(...validateGoalCondition(goal?.type, goal?.conditions?.[0]));
 
-    const variants = experiment?.trafficProportion?.variants ?? [];
+    /**
+     * Variants are the one set that cannot be completed before the draft exists: adding one needs
+     * an experiment id, so the card keeps `Add new variant` disabled until the POST answers and
+     * `minVariants` is unsatisfiable until then. Reading the diff first is still right for the
+     * weights, which the user can be mid-edit on.
+     */
+    const variants =
+        state.pendingPatch?.trafficProportion?.variants ??
+        experiment?.trafficProportion?.variants ??
+        [];
 
     if (variants.length < 2) {
         errors.push('minVariants');
