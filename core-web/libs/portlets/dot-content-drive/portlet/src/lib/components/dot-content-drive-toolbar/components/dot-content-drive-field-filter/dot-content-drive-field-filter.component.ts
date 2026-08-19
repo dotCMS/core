@@ -36,7 +36,13 @@ import {
     getContentTypeIdFromRelationship,
     getSingleSelectableFieldOptions
 } from '@dotcms/edit-content';
-import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    DotChipFilterComponent,
+    DotFilterListItemComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotContentDriveRelationshipFooterComponent } from './dot-content-drive-relationship-footer/dot-content-drive-relationship-footer.component';
 
@@ -126,6 +132,9 @@ export class DotContentDriveFieldFilterComponent {
     readonly #contentletService = inject(DotContentletService);
     readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
+
+    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
+    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     protected readonly LISTBOX_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
     /**
      * Flattens the inline date picker's own panel chrome (border/shadow/rounding) so it blends into

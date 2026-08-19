@@ -20,7 +20,6 @@ import type {
 
 import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
-    ALL_FOLDER,
     DotContentDriveMoveItems,
     DotContentDriveTreeRightClick,
     DotContentDriveUploadFiles,
@@ -29,6 +28,7 @@ import {
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
