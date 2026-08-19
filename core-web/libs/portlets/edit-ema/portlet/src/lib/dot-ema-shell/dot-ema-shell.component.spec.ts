@@ -594,7 +594,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should have nav bar with items', () => {
-                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+                const navBarComponent = spectator.query(EditEmaNavigationBarComponent)!;
 
                 expect(navBarComponent.items()).toEqual(NAV_ITEMS);
             });
@@ -1405,7 +1405,7 @@ describe('DotEmaShellComponent', () => {
             // and the banner renders as an empty colored box with nothing inside.
             expect(spectator.query(byTestId('message'))).not.toBeNull();
 
-            const content = spectator.query(byTestId('message-content'));
+            const content = spectator.query(byTestId('message-content'))!;
             expect(content).not.toBeNull();
             expect(content.querySelector('button')).not.toBeNull();
 
@@ -1416,7 +1416,7 @@ describe('DotEmaShellComponent', () => {
             mockLockedPage({ canLock: true });
             await detectChangesAndFlush();
 
-            const content = spectator.query(byTestId('message-content'));
+            const content = spectator.query(byTestId('message-content'))!;
             expect(content.querySelector('button')).not.toBeNull();
         });
 
@@ -1424,7 +1424,7 @@ describe('DotEmaShellComponent', () => {
             mockLockedPage({ canLock: false });
             await detectChangesAndFlush();
 
-            const content = spectator.query(byTestId('message-content'));
+            const content = spectator.query(byTestId('message-content'))!;
             expect(content.querySelector('button')).toBeNull();
         });
 
@@ -1446,7 +1446,7 @@ describe('DotEmaShellComponent', () => {
             await spectator.fixture.whenStable();
             spectator.detectChanges();
 
-            const body = spectator.query('.dot-ema-shell__body');
+            const body = spectator.query('.dot-ema-shell__body')!;
             expect(body).not.toBeNull();
             expect(body.querySelector('[data-testid="ema-nav-bar"]')).not.toBeNull();
         });
@@ -1468,8 +1468,8 @@ describe('DotEmaShellComponent', () => {
             await spectator.fixture.whenStable();
             spectator.detectChanges();
 
-            const message = spectator.query(byTestId('message'));
-            const body = spectator.query('.dot-ema-shell__body');
+            const message = spectator.query(byTestId('message'))!;
+            const body = spectator.query('.dot-ema-shell__body')!;
 
             expect(message).not.toBeNull();
             expect(body).not.toBeNull();

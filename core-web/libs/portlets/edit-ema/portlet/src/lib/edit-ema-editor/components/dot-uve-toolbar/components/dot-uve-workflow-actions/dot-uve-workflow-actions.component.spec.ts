@@ -174,7 +174,7 @@ describe('DotUveWorkflowActionsComponent', () => {
             uveStoreMock.workflowIsLoading.set(true);
             spectator.detectChanges();
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             expect(dotWorkflowActionsComponent.actions()).toEqual([]);
             expect(dotWorkflowActionsComponent.loading()).toBeTruthy();
             expect(dotWorkflowActionsComponent.size()).toBe('small');
@@ -184,7 +184,7 @@ describe('DotUveWorkflowActionsComponent', () => {
             canEditPageContentSignal.set(false);
             spectator.detectChanges();
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             expect(dotWorkflowActionsComponent.disabled()).toBeTruthy();
         });
     });
@@ -198,7 +198,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should load workflow actions', () => {
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
 
             expect(dotWorkflowActionsComponent.actions()).toEqual(mockWorkflowsActions);
             expect(dotWorkflowActionsComponent.loading()).toBeFalsy();
@@ -208,7 +208,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         it('should fire workflow actions and pageLoads', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
             const spyLoadPageAsset = jest.spyOn(store, 'pageLoad');
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
@@ -251,7 +251,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         it('should fire workflow actions and reloadPage', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
             const spyReloadCurrentPage = jest.spyOn(store, 'pageReload');
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of({ ...dotcmsContentletMock, ...pageParams }));
@@ -292,7 +292,7 @@ describe('DotUveWorkflowActionsComponent', () => {
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
 
             expect(spyWizard).toHaveBeenCalledWith(wizardInputMock);
@@ -325,7 +325,7 @@ describe('DotUveWorkflowActionsComponent', () => {
             });
             const spyWizard = jest.spyOn(dotWizardService, 'open');
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
 
             dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
 
@@ -340,7 +340,7 @@ describe('DotUveWorkflowActionsComponent', () => {
                 .mockReturnValue(of(false));
             const spyWizard = jest.spyOn(dotWizardService, 'open');
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
 
             dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
 

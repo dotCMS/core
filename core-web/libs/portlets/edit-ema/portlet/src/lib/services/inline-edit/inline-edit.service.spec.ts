@@ -108,8 +108,8 @@ describe('InlineEditService', () => {
 
         spectator.service.injectInlineEdit(iframeElement);
 
-        const script = iframe.contentDocument.querySelector('script[data-inline="true"]');
-        const style = iframe.contentDocument.querySelector('style');
+        const script = iframe.contentDocument!.querySelector('script[data-inline="true"]');
+        const style = iframe.contentDocument!.querySelector('style');
 
         expect(script).toBeTruthy();
         expect(style).toBeTruthy();
@@ -122,16 +122,16 @@ describe('InlineEditService', () => {
 
         spectator.service.injectInlineEdit(iframeElement);
 
-        const script = iframe.contentDocument.querySelector('script[data-inline="true"]');
-        const style = iframe.contentDocument.querySelector('style');
+        const script = iframe.contentDocument!.querySelector('script[data-inline="true"]');
+        const style = iframe.contentDocument!.querySelector('style');
 
         expect(script).toBeTruthy();
         expect(style).toBeTruthy();
 
         spectator.service.removeInlineEdit(iframeElement);
 
-        const scriptRemoved = iframe.contentDocument.querySelector('script[data-inline="true"]');
-        const styleRemoved = iframe.contentDocument.querySelector('style');
+        const scriptRemoved = iframe.contentDocument!.querySelector('script[data-inline="true"]');
+        const styleRemoved = iframe.contentDocument!.querySelector('style');
 
         expect(scriptRemoved).toBeFalsy();
         expect(styleRemoved).toBeFalsy();
@@ -148,16 +148,16 @@ describe('InlineEditService', () => {
         const iframe = document.createElement('iframe');
         document.body.appendChild(iframe);
 
-        const targetElementMock = iframe.contentDocument.createElement('div');
+        const targetElementMock = iframe.contentDocument!.createElement('div');
         targetElementMock.setAttribute('data-inode', dataset.inode);
         targetElementMock.setAttribute('data-field-name', dataset.fieldName);
 
-        const contentletMock = iframe.contentDocument.createElement('div');
+        const contentletMock = iframe.contentDocument!.createElement('div');
         contentletMock.setAttribute('data-dot-object', 'contentlet');
         contentletMock.setAttribute('data-dot-on-number-of-pages', '2');
         contentletMock.appendChild(targetElementMock);
 
-        iframe.contentDocument.body.appendChild(contentletMock);
+        iframe.contentDocument!.body.appendChild(contentletMock);
 
         spectator.service.setIframeWindow(iframe.contentWindow);
 
@@ -172,11 +172,11 @@ describe('InlineEditService', () => {
         document.body.appendChild(iframe);
         spectator.service.injectInlineEdit(iframeElement);
 
-        const wysiwygScript = iframe.contentDocument.querySelector(
+        const wysiwygScript = iframe.contentDocument!.querySelector(
             'script[src="/html/js/tinymce/js/tinymce/tinymce.min.js"]'
         );
 
-        const style = iframe.contentDocument.querySelector('style');
+        const style = iframe.contentDocument!.querySelector('style');
 
         expect(wysiwygScript).toBeTruthy();
         expect(style.innerHTML).toBe(INLINE_CONTENT_STYLES);

@@ -65,7 +65,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Font Family');
         });
@@ -91,7 +91,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select).toBeTruthy();
         });
 
@@ -115,7 +115,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.inputId).toBe('test-field');
         });
 
@@ -139,7 +139,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.optionLabel).toBe('label');
             expect(select.optionValue).toBe('value');
         });
@@ -164,7 +164,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.showClear).toBe(false);
         });
     });
@@ -218,7 +218,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.options).toEqual(options);
         });
 
@@ -299,7 +299,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.value).toBe('Arial');
             expect(formControl.value).toBe('Arial');
         });
@@ -327,7 +327,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(formControl.value).toBe('Arial');
 
             formControl.setValue('Helvetica');
@@ -360,7 +360,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             spectator.detectChanges();
 
             expect(formControl.value).toBeNull();
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.value).toBeNull();
         });
     });

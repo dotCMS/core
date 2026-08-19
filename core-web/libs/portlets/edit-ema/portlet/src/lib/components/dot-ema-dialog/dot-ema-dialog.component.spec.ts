@@ -610,7 +610,7 @@ describe('DotEmaDialogComponent', () => {
 
             renderCompareDialog();
 
-            const compareComponent = spectator.query(DotContentCompareComponent);
+            const compareComponent = spectator.query(DotContentCompareComponent)!;
             expect(compareComponent).toBeDefined();
             compareComponent.letMeBringBack.emit({
                 name: 'getVersionBack',

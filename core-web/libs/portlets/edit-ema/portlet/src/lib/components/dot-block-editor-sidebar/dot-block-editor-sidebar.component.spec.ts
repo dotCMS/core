@@ -139,7 +139,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set drawer with correct inputs', () => {
-        const drawer = spectator.query(Drawer);
+        const drawer = spectator.query(Drawer)!;
         expect(drawer.position()).toBe('right');
         expect(drawer.blockScroll).toBe(true);
         expect(drawer.dismissible).toBe(false);
@@ -148,7 +148,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', () => {
-        const blockEditor = spectator.query(DotCMSEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent)!;
 
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toBe(EVENT_DATA.language);
@@ -162,7 +162,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(of({}));
-        const blockEditor = spectator.query(DotCMSEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent)!;
 
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
@@ -187,7 +187,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(of({}));
-        const blockEditor = spectator.query(DotCMSEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent)!;
 
         spectator.setInput('variantName', 'my-experiment-variant');
 
@@ -205,7 +205,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should call drawer close when cancel is clicked', () => {
-        const drawer = spectator.query(Drawer);
+        const drawer = spectator.query(Drawer)!;
         const closeSpy = jest.spyOn(drawer, 'close');
 
         const cancelBtn = spectator.query(byTestId('cancel-btn')) as HTMLButtonElement;
@@ -224,7 +224,7 @@ describe('DotBlockEditorSidebarComponent', () => {
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(throwError(() => error404));
 
-        const blockEditor = spectator.query(DotCMSEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent)!;
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
 
@@ -242,7 +242,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
         jest.spyOn(event, 'stopPropagation');
 
-        const container = spectator.query('[data-testId="dot-container"]');
+        const container = spectator.query('[data-testId="dot-container"]')!;
         container.dispatchEvent(event);
 
         expect(event.stopPropagation).toHaveBeenCalled();

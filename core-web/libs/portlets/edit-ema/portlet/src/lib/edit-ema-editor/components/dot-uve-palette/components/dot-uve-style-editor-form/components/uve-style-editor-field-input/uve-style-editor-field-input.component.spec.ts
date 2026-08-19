@@ -66,7 +66,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Font Size');
         });
@@ -89,7 +89,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const input = spectator.query('input');
+            const input = spectator.query('input')!;
             expect(input).toBeTruthy();
         });
 
@@ -111,7 +111,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const input = spectator.query('input');
+            const input = spectator.query('input')!;
             expect(input.getAttribute('id')).toBe('test-field');
         });
 
@@ -133,7 +133,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label.getAttribute('for')).toBe('test-field');
         });
     });
