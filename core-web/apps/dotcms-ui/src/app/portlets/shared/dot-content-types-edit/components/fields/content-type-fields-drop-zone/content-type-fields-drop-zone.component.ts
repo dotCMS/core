@@ -265,7 +265,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param DotContentTypeField fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    saveFieldsHandler(fieldToSave: DotCMSContentTypeField): void {
+    /**
+     * `fieldToSave` may have no `id`: that is exactly the case the `if (fieldToSave.id)` branch
+     * below distinguishes — a field the user has just dropped and not yet saved, which
+     * `removeFieldsWithoutId` is the other half of. The model declares `id` required, so the
+     * parameter states the looser shape this method actually accepts.
+     */
+    saveFieldsHandler(fieldToSave: Partial<DotCMSContentTypeField>): void {
         if (!this.currentField) {
             const tabDividerFields = FieldUtil.getTabDividerFields(this.fieldRows);
             this.currentField =

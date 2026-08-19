@@ -20,7 +20,8 @@ export interface DotContainer {
     working?: boolean;
     locked?: boolean;
     friendlyName?: string;
-    path?: string;
+    /** Null for a DB container — only file-based containers have a path. */
+    path?: string | null;
     identifier: string;
     name?: string;
     type?: string;

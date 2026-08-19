@@ -7,10 +7,7 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
 
-import {
-    DotContentTypeTabsResolvedData,
-    dotContentTypeTabsResolver
-} from './dot-content-type-tabs.resolver';
+import { dotContentTypeTabsResolver } from './dot-content-type-tabs.resolver';
 
 const mockRoute = {} as ActivatedRouteSnapshot;
 const mockState = {} as RouterStateSnapshot;
@@ -51,7 +48,7 @@ describe('dotContentTypeTabsResolver', () => {
 
         asObservable(
             TestBed.runInInjectionContext(() => dotContentTypeTabsResolver(mockRoute, mockState))
-        ).subscribe((result: DotContentTypeTabsResolvedData) => {
+        ).subscribe((result) => {
             expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
             expect(result).toEqual({ showPermissionsTab: true });
             done();
@@ -63,7 +60,7 @@ describe('dotContentTypeTabsResolver', () => {
 
         asObservable(
             TestBed.runInInjectionContext(() => dotContentTypeTabsResolver(mockRoute, mockState))
-        ).subscribe((result: DotContentTypeTabsResolvedData) => {
+        ).subscribe((result) => {
             expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
             expect(result).toEqual({ showPermissionsTab: false });
             done();
