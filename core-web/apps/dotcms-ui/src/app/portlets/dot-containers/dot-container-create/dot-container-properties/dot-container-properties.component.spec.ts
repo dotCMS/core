@@ -335,7 +335,7 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should clear the field', fakeAsync(() => {
             jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
             const comp = spectator.component;
             jest.spyOn(comp, 'clearContentConfirmationModal');
@@ -362,7 +362,7 @@ describe('DotContainerPropertiesComponent', () => {
             spectator.detectChanges();
             jest.spyOn(comp, 'clearContentConfirmationModal');
             jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
             spectator.click(byTestId('clearContent'));
             expect(comp.form.value).toEqual({

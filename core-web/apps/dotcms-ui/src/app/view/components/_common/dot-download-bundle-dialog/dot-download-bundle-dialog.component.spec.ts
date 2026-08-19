@@ -154,7 +154,7 @@ describe('DotDownloadBundleDialogComponent', () => {
             });
 
             it('should close dialog on Cancel', () => {
-                component.dialogActions.cancel!.action();
+                component.dialogActions.cancel!.action!();
                 expect(component.showDialog).toBe(false);
             });
 

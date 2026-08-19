@@ -427,14 +427,14 @@ describe('ContentTypesLayoutComponent', () => {
                 it('should set actions correctly', () => {
                     const addRow: MenuItem = splitButton.componentInstance.model[0];
                     const addTabDivider: MenuItem = splitButton.componentInstance.model[1];
-                    addRow.command({ originalEvent: createFakeEvent('click') });
+                    addRow.command!({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
                     // Clear the mock before the second call
                     (dotEventsService.notify as jest.Mock).mockClear();
 
-                    addTabDivider.command({ originalEvent: createFakeEvent('click') });
+                    addTabDivider.command!({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                 });

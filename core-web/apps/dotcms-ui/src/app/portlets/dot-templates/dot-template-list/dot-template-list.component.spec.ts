@@ -896,7 +896,7 @@ describe('DotTemplateListComponent', () => {
             it('should call delete api, send notification and reload current page', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                    conf.accept();
+                    conf.accept!();
                 });
                 openRowContextMenu('123Archived');
                 const deleteIdx = getActionIndex(
@@ -914,7 +914,7 @@ describe('DotTemplateListComponent', () => {
             it('should handle error request', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockSingleResponseFail));
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                    conf.accept();
+                    conf.accept!();
                 });
                 openRowContextMenu('123Archived');
                 const deleteIdx = getActionIndex(
@@ -1042,7 +1042,7 @@ describe('DotTemplateListComponent', () => {
             it('should execute Delete action', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                    conf.accept();
+                    conf.accept!();
                 });
                 getBulkActions()[bulkActionIndex('Delete')].command!({
                     originalEvent: createFakeEvent('click')
@@ -1099,7 +1099,7 @@ describe('DotTemplateListComponent', () => {
                 it('should fire exception on delete', () => {
                     dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseFail));
                     jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                        conf.accept();
+                        conf.accept!();
                     });
                     getBulkActions()[bulkActionIndex('Delete')].command!({
                         originalEvent: createFakeEvent('click')

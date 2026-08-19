@@ -252,7 +252,7 @@ describe('DotAppsConfigurationComponent', () => {
             )[1];
 
             jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
 
             jest.spyOn(appsServices, 'deleteAllConfigurations').mockReturnValue(of(null));

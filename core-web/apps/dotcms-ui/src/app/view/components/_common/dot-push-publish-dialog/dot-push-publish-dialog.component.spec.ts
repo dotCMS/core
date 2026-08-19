@@ -259,7 +259,7 @@ describe('DotPushPublishDialogComponent', () => {
             });
 
             it('should close the dialog', () => {
-                comp.dialogActions.cancel!.action();
+                comp.dialogActions.cancel!.action!();
                 expect(comp.cancel.emit).toHaveBeenCalled();
                 expect(comp.dialogShow).toEqual(false);
                 expect(comp.eventData).toEqual(null);

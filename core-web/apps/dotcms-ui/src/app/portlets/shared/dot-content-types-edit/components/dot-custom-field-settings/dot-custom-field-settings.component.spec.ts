@@ -17,7 +17,7 @@ import {
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCustomFieldSettingsComponent } from './dot-custom-field-settings.component';
 import { DotHideLabelSettingsComponent } from './sections/dot-hide-label-settings';
@@ -46,29 +46,13 @@ const MOCK_SAVED_VARIABLE: DotFieldVariable = {
 };
 
 const MOCK_FIELD: DotCMSContentTypeField = {
+    // Everything else comes from the shared mock: this literal had `null` in eighteen fields the
+    // model declares non-nullable, and the same eighteen were copied into all three specs.
+    ...dotcmsContentTypeFieldBasicMock,
     contentTypeId: 'content-type-id-123',
     id: 'field-id-456',
     clazz: DotCMSClazzes.CUSTOM_FIELD,
-    name: 'My Custom Field',
-    dataType: null,
-    fieldType: '',
-    fieldTypeLabel: '',
-    fieldVariables: [],
-    fixed: null,
-    iDate: null,
-    indexed: null,
-    listed: null,
-    modDate: null,
-    readOnly: null,
-    required: null,
-    searchable: null,
-    sortOrder: null,
-    unique: null,
-    variable: null,
-    defaultValue: null,
-    hint: null,
-    regexCheck: undefined,
-    values: null
+    name: 'My Custom Field'
 };
 
 type RenderOptionsFormTree = FieldTree<{

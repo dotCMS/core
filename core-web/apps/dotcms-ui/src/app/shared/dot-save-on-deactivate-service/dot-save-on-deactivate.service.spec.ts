@@ -65,7 +65,7 @@ describe('DotSaveOnDeactivateService', () => {
     it('should return true AND call onDeactivateSave', () => {
         jest.spyOn(mockComponent, 'onDeactivateSave');
         jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
         dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
             expect(val).toBeTruthy();
@@ -76,7 +76,7 @@ describe('DotSaveOnDeactivateService', () => {
     it('should return true if the user decide NOT to save the latest changes', () => {
         jest.spyOn(mockComponent, 'onDeactivateSave');
         jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.reject();
+            conf.reject!();
         });
         dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
             expect(val).toBeTruthy();
@@ -87,7 +87,7 @@ describe('DotSaveOnDeactivateService', () => {
     it('should return false if the save fails and stay in the current route', () => {
         jest.spyOn(mockComponent, 'onDeactivateSave').mockReturnValue(observableOf(false));
         jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
 
         dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {

@@ -687,7 +687,7 @@ describe('DotPageStore', () => {
 
             expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
 
-            menuActions[7].command({ originalEvent: createFakeEvent('click') });
+            menuActions[7].command!({ originalEvent: createFakeEvent('click') });
 
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: item.identifier,
@@ -740,7 +740,9 @@ describe('DotPageStore', () => {
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.menuActions!.length).toEqual(8);
-            expect(data.pages.menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
             expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
@@ -766,7 +768,9 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
             expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
             expect(data.pages.menuActions![2]).toEqual({ separator: true });
             expect(data.pages.menuActions![3].label).toEqual('Assign Workflow');
@@ -856,7 +860,7 @@ describe('DotPageStore', () => {
             const publishAction = menuAction!.find(
                 (action) => action.label === mockPublishAction.name
             );
-            publishAction!.command({ originalEvent: createFakeEvent('click') });
+            publishAction!.command!({ originalEvent: createFakeEvent('click') });
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             done();
