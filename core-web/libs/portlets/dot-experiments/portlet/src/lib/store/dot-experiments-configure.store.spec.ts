@@ -1191,6 +1191,29 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$validationErrors()).not.toContain('page');
         });
 
+        /**
+         * On `/experiments/new` the goal has nowhere to live but the pending diff: there is no
+         * experiment yet for `applyPatchToExperiment` to apply it to. Reading only the persisted
+         * experiment left a goal the user had just filled in still counted as missing.
+         */
+        it('should count a goal entered before the draft exists as entered', () => {
+            initNew();
+            dispatcher.dispatch(pageEvents.formEdited({ name: 'Alpha campaign' }));
+
+            dispatcher.dispatch(pageEvents.startRequested());
+            expect(store.$validationErrors()).toContain('goalType');
+            expect(store.$validationErrors()).toContain('goalName');
+
+            dispatcher.dispatch(
+                pageEvents.formEdited({
+                    goals: buildGoals({ type: GOAL_TYPES.BOUNCE_RATE, name: 'Bounce rate' })
+                })
+            );
+
+            expect(store.$validationErrors()).not.toContain('goalType');
+            expect(store.$validationErrors()).not.toContain('goalName');
+        });
+
         it('should keep the rules revealed for the fields still missing', () => {
             initExisting(buildExperiment({ name: '', goals: null }));
 

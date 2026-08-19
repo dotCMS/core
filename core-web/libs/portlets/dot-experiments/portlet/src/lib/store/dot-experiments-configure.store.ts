@@ -175,7 +175,8 @@ export const DotExperimentsConfigureStore = signalStore(
                 ? validateConfigure({
                       draftName: store.draftName(),
                       selectedPage: store.selectedPage(),
-                      experiment: store.experiment()
+                      experiment: store.experiment(),
+                      pendingPatch: store.pendingPatch()
                   })
                 : []
         );
