@@ -227,7 +227,7 @@ export class DotUveToolbarComponent {
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
-        this.#store.pageReload({ publishDate: publishDateUTC });
+        this.#store['pageReload']({ publishDate: publishDateUTC });
     }
 
     /**
@@ -307,7 +307,7 @@ export class DotUveToolbarComponent {
             return;
         }
 
-        this.#store.pageLoad({ language_id });
+        this.#store['pageLoad']({ language_id });
     }
 
     /**
@@ -321,7 +321,7 @@ export class DotUveToolbarComponent {
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
         if (existPersona) {
-            this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
+            this.#store['pageLoad']({ [PERSONA_KEY]: persona.identifier });
 
             return;
         }
@@ -341,7 +341,7 @@ export class DotUveToolbarComponent {
             accept: () => {
                 this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
                     next: () => {
-                        this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
+                        this.#store['pageLoad']({ [PERSONA_KEY]: persona.identifier });
                         this.$personaSelector().fetchPersonas();
                     },
                     error: (err: unknown) => {
@@ -387,7 +387,7 @@ export class DotUveToolbarComponent {
                         this.$personaSelector().fetchPersonas();
 
                         if (persona.selected) {
-                            this.#store.pageLoad({
+                            this.#store['pageLoad']({
                                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                             });
                         }

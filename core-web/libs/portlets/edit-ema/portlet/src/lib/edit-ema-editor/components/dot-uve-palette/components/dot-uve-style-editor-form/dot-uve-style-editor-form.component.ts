@@ -415,7 +415,7 @@ export class DotUveStyleEditorFormComponent {
                 if (result.isTraditionalPage) {
                     // Re-fetch the page from the backend so the iframe renders
                     // the updated styles. pageReload() handles LOADING→LOADED status.
-                    this.#uveStore.pageReload();
+                    this.#uveStore['pageReload']();
                 }
 
                 this.#messageService.add({
@@ -476,7 +476,7 @@ export class DotUveStyleEditorFormComponent {
         }
 
         return this.#uveStore
-            .saveStyleEditor({
+            ['saveStyleEditor']({
                 containerIdentifier: activeContentlet.container.identifier,
                 contentletIdentifier: activeContentlet.contentlet.identifier,
                 styleProperties: filteredFormValues,

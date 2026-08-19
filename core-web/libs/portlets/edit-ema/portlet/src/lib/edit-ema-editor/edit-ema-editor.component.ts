@@ -105,6 +105,7 @@ import {
 } from '../shared/enums';
 import {
     ActionPayload,
+    ContentletActionPayload,
     ClientData,
     DeletePayload,
     DialogAction,
@@ -811,7 +812,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
+        this.uveStore['pageLoad']({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
     }
 
@@ -985,7 +986,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // Check if active contentlet was removed during move operation
             this.#checkAndResetActiveContentlet(pageContainers);
 
-            this.uveStore.editorSave(pageContainers);
+            this.uveStore['editorSave'](pageContainers);
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
@@ -1029,7 +1030,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // Check if active contentlet was removed during temp insert operation
             this.#checkAndResetActiveContentlet(pageContainers);
 
-            this.uveStore.editorSave(pageContainers);
+            this.uveStore['editorSave'](pageContainers);
         }
     }
     /**
@@ -1039,7 +1040,17 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     deleteContent(payload: ActionPayload) {
-        const { pageContainers } = deleteContentletFromContainer(payload);
+        // The toolbar only emits this for a hovered or selected contentlet, so `contentlet` is
+        // always there in practice — but it arrives through the SDK's bounds payload, where the
+        // field is optional, and there is nothing to remove without it.
+        if (!payload.contentlet) {
+            return;
+        }
+
+        const { pageContainers } = deleteContentletFromContainer({
+            ...payload,
+            contentlet: payload.contentlet
+        });
 
         this.confirmationService.confirm({
             header: this.dotMessageService.get(
@@ -1054,7 +1065,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 // Check if active contentlet was removed during delete operation
                 this.#checkAndResetActiveContentlet(pageContainers);
 
-                this.uveStore.editorSave(pageContainers);
+                this.uveStore['editorSave'](pageContainers);
             }
         });
     }
@@ -1090,7 +1101,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     return;
                 }
 
-                this.uveStore.editorSave(pageContainers);
+                this.uveStore['editorSave'](pageContainers);
                 this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
@@ -1103,7 +1114,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 }
 
                 if (!actionPayload) {
-                    this.uveStore.pageReload();
+                    this.uveStore['pageReload']();
 
                     return;
                 }
@@ -1132,7 +1143,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     return;
                 }
 
-                this.uveStore.editorSave(pageContainers);
+                this.uveStore['editorSave'](pageContainers);
             },
             /**
              * Handles the create contentlet event emitted from within the JSP/iframe
@@ -1193,7 +1204,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                             }
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
-                            this.uveStore.editorSave(pageContainers);
+                            this.uveStore['editorSave'](pageContainers);
                             this.dialog.resetDialog();
                         }
                     });
@@ -1208,7 +1219,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     life: 2000
                 });
 
-                this.uveStore.pageReload();
+                this.uveStore['pageReload']();
                 this.dialog.resetDialog();
 
                 // This is a temporary solution to "reload" the content by reloading the window
@@ -1247,12 +1258,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
                 if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
                     // Navigate to the new URL if it's different from the current one
-                    this.uveStore.pageLoad({ url: targetUrl, language_id });
+                    this.uveStore['pageLoad']({ url: targetUrl, language_id });
 
                     return;
                 }
 
-                this.uveStore.pageLoad({
+                this.uveStore['pageLoad']({
                     language_id
                 });
             }
@@ -1362,7 +1373,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             mode: 'edit',
             contentletInode: contentlet.inode,
             onContentSaved: () => {
-                this.uveStore.pageReload();
+                this.uveStore['pageReload']();
             }
         };
 
@@ -1451,7 +1462,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 }
 
                 this.#checkAndResetActiveContentlet(pageContainers);
-                this.uveStore.editorSave(pageContainers);
+                this.uveStore['editorSave'](pageContainers);
             }
         };
 
@@ -1536,7 +1547,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     // shouldCopy === true  → copyInPage forked it; edit the new copy.
                     const target = copied ?? (contentlet as unknown as DotCMSContentlet);
                     if (copied) {
-                        this.uveStore.pageReload();
+                        this.uveStore['pageReload']();
                     }
 
                     this.openContentForEdit(target);
@@ -1606,7 +1617,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         payload,
         originContainer,
         contentletToMove
-    }: DeletePayload): ActionPayload {
+    }: DeletePayload): ContentletActionPayload {
         return {
             ...payload,
             container: {
@@ -1638,13 +1649,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
                     // If the URL is different, we need to navigate to the new URL
-                    this.uveStore.pageLoad({ url: URL_MAP_FOR_CONTENT });
+                    this.uveStore['pageLoad']({ url: URL_MAP_FOR_CONTENT });
 
                     return;
                 }
 
                 // If the URL is the same, we need to fetch the new page data
-                this.uveStore.pageReload();
+                this.uveStore['pageReload']();
             });
     }
 
@@ -1703,7 +1714,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * Reloads the component from the dialog/sidebar.
      */
     reloadPage() {
-        this.uveStore.pageReload();
+        this.uveStore['pageReload']();
     }
 
     /**

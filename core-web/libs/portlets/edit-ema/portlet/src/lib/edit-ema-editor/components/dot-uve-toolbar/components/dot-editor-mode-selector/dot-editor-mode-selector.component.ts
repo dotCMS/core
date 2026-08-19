@@ -137,7 +137,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
         });
 
         /* More info here: https://github.com/dotCMS/core/issues/31719 */
-        this.#store.pageLoad({ mode: mode, publishDate: undefined });
+        this.#store['pageLoad']({ mode: mode, publishDate: undefined });
     }
 
     onModeOptionChange(option: EditorModeOption | null) {

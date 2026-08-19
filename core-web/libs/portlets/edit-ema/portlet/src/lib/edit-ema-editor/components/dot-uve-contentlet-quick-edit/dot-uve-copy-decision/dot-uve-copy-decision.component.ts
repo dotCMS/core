@@ -123,7 +123,7 @@ export class DotUveCopyDecisionComponent {
                     // position). pageReload will re-emit SET_BOUNDS via
                     // auto-bounds and re-anchor against the new inode.
                     this.#uveStore.setSelectedPayload(activeContentlet);
-                    this.#uveStore.pageReload();
+                    this.#uveStore['pageReload']();
                     this.#isCopying.set(false);
                 },
                 error: (error) => {

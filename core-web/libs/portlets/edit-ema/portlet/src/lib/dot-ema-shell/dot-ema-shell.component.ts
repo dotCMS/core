@@ -289,7 +289,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             currentPageParams[PERSONA_KEY] === params['personaId'];
 
         if (!hasPageData || !paramsMatch) {
-            this.uveStore.pageLoad(params);
+            this.uveStore['pageLoad'](params);
         }
 
         this.#siteService.switchSite$
@@ -301,7 +301,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.uveStore.resetPageParams();
+        this.uveStore['resetPageParams']();
     }
 
     handleNgEvent({ event }: DialogAction) {
@@ -321,7 +321,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
                 // emitted). Reload to refresh pageLanguages so the UVE toolbar language
                 // dropdown reflects the newly created version.
-                this.uveStore.pageReload();
+                this.uveStore['pageReload']();
                 break;
             }
         }
@@ -337,7 +337,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
 
         if (!htmlPageReferer) {
-            this.uveStore.pageReload();
+            this.uveStore['pageReload']();
 
             return;
         }
@@ -347,12 +347,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
             // Navigate to the new URL if it's different from the current one
-            this.uveStore.pageLoad({ url: targetUrl });
+            this.uveStore['pageLoad']({ url: targetUrl });
 
             return;
         }
 
-        this.uveStore.pageReload();
+        this.uveStore['pageReload']();
     }
 
     /**
@@ -492,7 +492,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.pageReload();
+        this.uveStore['pageReload']();
     }
 
     /**

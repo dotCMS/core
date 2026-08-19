@@ -158,7 +158,7 @@ export class DotUveWorkflowActionsComponent {
         const languageChanged = language_id !== currentParams.language_id;
 
         if (urlChanged || languageChanged) {
-            this.#uveStore.pageLoad({
+            this.#uveStore['pageLoad']({
                 url,
                 language_id
             });
@@ -166,6 +166,6 @@ export class DotUveWorkflowActionsComponent {
             return;
         }
 
-        this.#uveStore.pageReload();
+        this.#uveStore['pageReload']();
     }
 }

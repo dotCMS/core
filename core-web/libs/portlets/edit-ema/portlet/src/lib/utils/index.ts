@@ -2,6 +2,7 @@ import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
+    DotContainer,
     DotContainerMap,
     DotDevice,
     DotExperiment,
@@ -18,14 +19,15 @@ import {
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { CONTAINER_INSERT_ERROR } from '../shared/enums';
+import { CommonErrors, CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
-    ActionPayload,
     ContainerPayload,
+    ContentletActionPayload,
     ContentletDragPayload,
     ContentTypeDragPayload,
     DotPageAssetParams,
     DragDatasetItem,
+    InsertActionPayload,
     PageContainer
 } from '../shared/models';
 import { IframeAccessMode, Orientation } from '../store/models';
@@ -209,7 +211,7 @@ export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
  *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
-export function insertContentletInContainer(action: ActionPayload): {
+export function insertContentletInContainer(action: InsertActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
     errorCode?: CONTAINER_INSERT_ERROR;
@@ -277,13 +279,13 @@ export function insertContentletInContainer(action: ActionPayload): {
  * @param {ActionPayload} action
  * @return {*}  {PageContainer[]}
  */
-export function deleteContentletFromContainer(action: ActionPayload): {
+export function deleteContentletFromContainer(action: ContentletActionPayload): {
     pageContainers: PageContainer[];
     contentletsId: string[];
 } {
     const { pageContainers, container, contentlet, personaTag } = action;
 
-    let contentletsId = [];
+    let contentletsId: string[] = [];
 
     const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
         areContainersEquals(pageContainer, container)
@@ -355,7 +357,7 @@ export function areContainersEquals(
  *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
-function insertPositionedContentletInContainer(payload: ActionPayload): {
+function insertPositionedContentletInContainer(payload: InsertActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
     errorCode?: CONTAINER_INSERT_ERROR;
@@ -363,8 +365,7 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
     let didInsert = false;
     let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
-    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
-        payload;
+    const { pageContainers, container, personaTag, newContentletId, position } = payload;
 
     const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
         areContainersEquals(pageContainer, container)
@@ -397,7 +398,11 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+            // No pivot contentlet means "append", which is what this already did:
+            // `indexOf(undefined)` is -1, and -1 falls through to the push below. `contentlet` is
+            // optional on `ClientData` because a drop onto an empty container has none.
+            const pivotId = payload.contentlet?.identifier;
+            const index = pivotId ? pageContainer.contentletsId.indexOf(pivotId) : -1;
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
@@ -492,9 +497,12 @@ export function getFullPageURL({
     );
 
     const path = cleanPageURL(url);
-    const paramsAsString = new URLSearchParams({
-        ...searchParams
-    }).toString();
+    // `removeUndefinedValues` — the helper this file already exports — instead of spreading:
+    // the `delete` loop above strips undefined values but narrowing does not follow a `delete`,
+    // and `URLSearchParams` takes only defined strings.
+    const paramsAsString = new URLSearchParams(
+        removeUndefinedValues(searchParams) as Record<string, string>
+    ).toString();
 
     return paramsAsString ? `${path}?${paramsAsString}` : path;
 }
@@ -511,7 +519,10 @@ export function getFullPageURL({
  * @param {string} baseClientHost - The base client host to be used to compare with the clientHost query param.
  * @return {Object} A cleaned and formatted version of the query parameters.
  */
-export function normalizeQueryParams(params, baseClientHost?: string) {
+export function normalizeQueryParams(
+    params: Record<string, string | undefined>,
+    baseClientHost?: string
+) {
     const queryParams = { ...params };
 
     if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
@@ -523,11 +534,15 @@ export function normalizeQueryParams(params, baseClientHost?: string) {
         delete queryParams[PERSONA_KEY];
     }
 
+    // Both guards are needed: without a `clientHost` there is nothing to compare, and the
+    // parameter map is index-signature typed.
+    const clientHost = params['clientHost'];
     if (
         baseClientHost &&
-        new URL(baseClientHost).toString() === new URL(params.clientHost).toString()
+        clientHost &&
+        new URL(baseClientHost).toString() === new URL(clientHost).toString()
     ) {
-        delete queryParams.clientHost;
+        delete queryParams['clientHost'];
     }
 
     return queryParams;
@@ -607,8 +622,9 @@ export function createFavoritePagesURL(params: {
  * @return {*}  {string}
  */
 export function createFullURL(params: DotPageApiParams, siteId?: string): string {
-    // If we are going to delete properties from the params, we need to make a copy of it
-    const paramsCopy = { ...params };
+    // `Partial`, because the two `delete`s below remove keys that `DotPageApiParams` declares as
+    // required. They are required *of the page request*; they are not part of the query string.
+    const paramsCopy: Partial<DotPageApiParams> & { host_id?: string } = { ...params };
 
     if (siteId) {
         paramsCopy['host_id'] = siteId;
@@ -677,10 +693,10 @@ export function computeCanEditPage(
 ): boolean {
     const hasEditPermission = !!page?.canEdit;
 
-    const isBlockedByExperiment = [
-        DotExperimentStatus.RUNNING,
-        DotExperimentStatus.SCHEDULED
-    ].includes(experiment?.status);
+    const experimentStatus = experiment?.status;
+    const isBlockedByExperiment =
+        !!experimentStatus &&
+        [DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED].includes(experimentStatus);
 
     if (!hasEditPermission || isBlockedByExperiment) {
         return false;
@@ -707,8 +723,12 @@ export function computeCanEditPage(
 export function mapContainerStructureToDotContainerMap(
     containers: DotCMSPageAssetContainers
 ): DotContainerMap {
-    return Object.keys(containers).reduce((acc, id) => {
-        acc[id] = containers[id].container;
+    return Object.keys(containers).reduce<DotContainerMap>((acc, id) => {
+        // The boundary between the two container models. They agree on everything except
+        // `source`, which `DotCMSContainer` types as `string` and `DotContainer` narrows to
+        // `CONTAINER_SOURCE`; the API only ever sends one of that enum's values. The template
+        // builder downstream is typed against the legacy model.
+        acc[id] = containers[id].container as DotContainer;
 
         return acc;
     }, {});
@@ -830,7 +850,9 @@ export const getErrorPayload = (errorCode: number) =>
     errorCode
         ? {
               code: errorCode,
-              pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
+              // `COMMON_ERRORS` is a `Record<CommonErrors, InfoPage>`; an arbitrary HTTP status
+              // need not be one of its keys, which is exactly what the `?? null` covers.
+              pageInfo: COMMON_ERRORS[errorCode.toString() as CommonErrors] ?? null
           }
         : null;
 
@@ -857,10 +879,24 @@ export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
  */
 export const getDragItemData = ({ type, item }: DOMStringMap) => {
     try {
+        // `item` is `string | undefined`: `DOMStringMap` cannot promise a `data-item` attribute is
+        // present. `JSON.parse(undefined!)` threw into the catch below, which is where an absent or
+        // malformed dataset already ended up — this just reaches it without the throw.
+        if (!item) {
+            return null;
+        }
+
         const data = JSON.parse(item) as DragDatasetItem;
         const { contentType, contentlet, container, move } = data;
 
         if (type === 'content-type') {
+            // Both branches read a field the dataset declares as optional. A dataset whose `type`
+            // says 'content-type' but carries no `contentType` is malformed, which is the same
+            // conclusion the catch reaches.
+            if (!contentType) {
+                return null;
+            }
+
             return {
                 baseType: contentType.baseType,
                 contentType: contentType.variable,
@@ -873,6 +909,10 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
                     move
                 } as ContentTypeDragPayload
             };
+        }
+
+        if (!contentlet) {
+            return null;
         }
 
         return {
@@ -1117,8 +1157,12 @@ export const convertUTCToLocalTime = (date: Date) => {
     );
 };
 
-export const removeUndefinedValues = (params: DotPageAssetParams) => {
-    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value !== undefined));
+export const removeUndefinedValues = <T extends Record<string, unknown>>(
+    params: T
+): Partial<T> => {
+    return Object.fromEntries(
+        Object.entries(params).filter(([_, value]) => value !== undefined)
+    ) as Partial<T>;
 };
 
 /**
@@ -1127,7 +1171,9 @@ export const removeUndefinedValues = (params: DotPageAssetParams) => {
  * @param {*} params
  * @return {*}
  */
-export const convertClientParamsToPageParams = (params) => {
+export const convertClientParamsToPageParams = (
+    params: (Record<string, unknown> & { personaId?: string; languageId?: string }) | null
+) => {
     if (!params) {
         return null;
     }
