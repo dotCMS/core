@@ -65,7 +65,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
-        this.dotRouterService.portletReload$.subscribe((portletId: string) => {
+        this.dotRouterService.portletReload$.subscribe((portletId) => {
             if (this.dotRouterService.isJSPPortlet()) {
                 this.reloadIframePortlet(portletId);
             }

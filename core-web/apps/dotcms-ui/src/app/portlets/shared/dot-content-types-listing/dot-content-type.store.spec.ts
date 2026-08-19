@@ -105,6 +105,10 @@ describe('DotContentTypeComponentStore', () => {
                 throwError(() => error)
             );
 
+            // Selected first, as the copy dialog does before it can be submitted — the effect no
+            // longer sends a request without an asset to copy.
+            store.setAssetSelected('content-type-id');
+
             store.saveCopyDialog({
                 name: 'new-name',
                 host: 'host',

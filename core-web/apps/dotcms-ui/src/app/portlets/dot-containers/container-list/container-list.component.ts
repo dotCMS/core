@@ -135,7 +135,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     getContainerState({ live, working, deleted }: DotContainer): DotContentState {
-        return { live, working, deleted, hasLiveVersion: live };
+        return { live: live ?? false, working: working ?? false, deleted, hasLiveVersion: live };
     }
 
     /**

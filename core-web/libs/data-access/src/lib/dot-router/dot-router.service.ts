@@ -22,7 +22,7 @@ export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
 
-    portletReload$ = new Subject();
+    portletReload$ = new Subject<string | undefined>();
     private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';

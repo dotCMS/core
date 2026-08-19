@@ -13,7 +13,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotFieldContent, FilteredFieldTypes } from '../dot-add-variable.models';
+import { DotFieldContent, FieldTypes, FilteredFieldTypes } from '../dot-add-variable.models';
 import { DotFieldsService } from '../services/dot-fields.service';
 
 export interface DotAddVariableState {
@@ -86,7 +86,7 @@ export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
 
         fields.push(
             // This will try to find the fields by field type, if it doesn't exist it will use the default one
-            ...(this.dotFieldsService.fields[fieldType]?.(currentField) ??
+            ...(this.dotFieldsService.fields[fieldType as FieldTypes]?.(currentField) ??
                 this.dotFieldsService.fields.default(currentField))
         );
 

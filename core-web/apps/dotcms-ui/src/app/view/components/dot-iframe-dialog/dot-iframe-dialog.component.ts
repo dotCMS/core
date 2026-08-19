@@ -25,7 +25,7 @@ export class DotIframeDialogComponent implements OnChanges {
     dotDialog!: Dialog;
 
     @Input()
-    url!: string;
+    url: string | null = null;
 
     @Input()
     header = '';
