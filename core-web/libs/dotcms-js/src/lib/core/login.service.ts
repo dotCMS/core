@@ -270,10 +270,10 @@ export class LoginService {
     /**
      * Subscribe to ser change and call received function on change.
      *
-     * @param {(params?: unknown) => void} func
+     * @param {(auth: Auth) => void} func
      * @memberof LoginService
      */
-    watchUser(func: (params?: unknown) => void): void {
+    watchUser(func: (auth: Auth) => void): void {
         if (this.auth) {
             func(this.auth);
         }

@@ -20,12 +20,14 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
     private allowedEvents = ['Backspace', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
 
     ngOnInit() {
-        const eventStreams = this.events.map((ev) => fromEvent(this.el.nativeElement, ev));
+        const eventStreams = this.events.map((ev) =>
+            fromEvent<KeyboardEvent>(this.el.nativeElement, ev)
+        );
         const allEvents$ = merge(...eventStreams);
         allEvents$
             .pipe(
                 takeUntil(this.destroy$),
-                tap((keyboardEvent: KeyboardEvent) => {
+                tap((keyboardEvent) => {
                     if (!this.isValidAction(keyboardEvent)) {
                         keyboardEvent.preventDefault();
                     }

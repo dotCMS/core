@@ -82,7 +82,7 @@ export class DotContainerSelectorComponent implements OnInit {
 
     private getContainersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.currentContainers = this.paginationService.getWithOffset(offset).pipe(
+        this.currentContainers = this.paginationService.getWithOffset<DotContainer[]>(offset).pipe(
             take(1),
             map((items: DotContainer[]) => this.setIdentifierReference(items.splice(0)))
         );

@@ -20,7 +20,7 @@ import {
     DotPropertiesService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { Auth, LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
@@ -169,7 +169,8 @@ describe('DotToolbarUserComponent', () => {
                 fullName: 'Regular User'
             },
             isLoginAs: true
-        };
+            // Three of `User`'s seven fields — the component only reads the email and the name.
+        } as unknown as Auth;
 
         jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
             callback(mockAuth);

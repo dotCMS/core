@@ -20,7 +20,7 @@ import { RouterModule, NavigationExtras } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { take, tap } from 'rxjs/operators';
+import { filter, take, tap } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -67,6 +67,8 @@ export class ForgotPasswordComponent implements OnInit {
     ngOnInit(): void {
         this.loginInfo$ = this.loginPageStateService.get().pipe(
             take(1),
+            // Null until `set()` has fetched the login page state.
+            filter((loginInfo): loginInfo is DotLoginInformation => !!loginInfo),
             tap((loginInfo: DotLoginInformation) => {
                 this.forgotPasswordConfirmationMessage =
                     loginInfo.i18nMessagesMap['an-email-with-instructions-will-be-sent'];
