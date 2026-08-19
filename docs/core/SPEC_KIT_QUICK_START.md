@@ -4,6 +4,9 @@ Get from an issue to merged code using spec-driven development in this repo — 
 spec is approved first, the implementation follows. Sections 1-4 are the ones to actually read (~5 min);
 the rest is reference you consult when you hit it.
 
+> 🎥 **New to this?** Watch the [walkthrough video](https://drive.google.com/file/d/1XhQBgbME2XejZ7PHc7-xNdFtaXUFOULL/view?usp=sharing) first — it covers the same
+> ground in a few minutes. This doc is what you come back to afterward.
+
 > **See also:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)
 > — the project law every `/speckit-*` command loads. If a command pushes back on you,
 > it's almost always quoting this file.
@@ -433,6 +436,7 @@ and it never creates, edits, or commits an ADR.
 
 ## Reference
 
+- Walkthrough video: [Spec-Kit quick start (Google Drive)](https://drive.google.com/file/d/1XhQBgbME2XejZ7PHc7-xNdFtaXUFOULL/view?usp=sharing)
 - Install, customizations, upgrade notes: [`.specify/CUSTOMIZATIONS.md`](../../.specify/CUSTOMIZATIONS.md)
 - Project law: [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)
 - Worked examples: [#37070](https://github.com/dotCMS/core/issues/37070) (feature, §5) and [#36958](https://github.com/dotCMS/core/issues/36958) (bug, §6)
