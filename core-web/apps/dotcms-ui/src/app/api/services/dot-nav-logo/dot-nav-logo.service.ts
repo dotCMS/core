@@ -5,7 +5,11 @@ import { Injectable } from '@angular/core';
     providedIn: 'root'
 })
 export class DotNavLogoService {
-    navBarLogo$: BehaviorSubject<string> = new BehaviorSubject('');
+    /**
+     * `| null` because `setLogo` publishes null for anything that is not a `/dA` asset path — that
+     * is how "no custom logo" is spelled, and the nav header's template branches on it.
+     */
+    navBarLogo$: BehaviorSubject<string | null> = new BehaviorSubject<string | null>('');
 
     /**
      * Sets a logo for the nav bar

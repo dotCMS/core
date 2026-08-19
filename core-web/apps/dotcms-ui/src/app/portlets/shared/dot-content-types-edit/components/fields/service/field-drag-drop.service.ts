@@ -71,7 +71,10 @@ export class FieldDragDropService {
         const dragulaDropModel$ = this.dragulaService.dropModel();
 
         const isRowFull = () => !!this.currentFullRowEl;
-        const wasDrop = (target) => target === null;
+        // NOTE: `DragulaCustomEvent.target` is optional, so a drop arrives as `undefined` and this
+        // has always returned false — the `clearCurrentFullRowEl` branch below it is dead. Left as
+        // it stands: making it fire changes when the row highlight clears, which is behaviour.
+        const wasDrop = (target?: Element) => target === null;
 
         merge(this.dragulaService.drop(), dragulaOver$)
             .pipe(filter(isRowFull))
@@ -220,11 +223,11 @@ export class FieldDragDropService {
         return {
             item: data.item,
             source: {
-                columnId: (<HTMLElement>data.source).dataset['columnid'],
+                columnId: (<HTMLElement>data.source).dataset['columnid'] ?? '',
                 model: data.sourceModel
             },
             target: {
-                columnId: (<HTMLElement>data.target).dataset['columnid'],
+                columnId: (<HTMLElement>data.target).dataset['columnid'] ?? '',
                 model: data.targetModel as DotCMSContentTypeField[]
             }
         };
@@ -260,22 +263,26 @@ export class FieldDragDropService {
         return this.currentColumnOvered && this.currentColumnOvered !== container;
     }
 
-    private shouldCopy(_el: HTMLElement, source: HTMLElement): boolean {
-        return this.isDraggingFromSource(source);
+    private shouldCopy(_el: Element, source: Element): boolean {
+        return this.isDraggingFromSource(source as HTMLElement);
     }
 
     private shouldMoveRow(
-        _el: HTMLElement,
-        source: HTMLElement,
-        handle: HTMLElement,
-        _sibling: HTMLElement
+        _el?: Element,
+        source?: Element,
+        handle?: Element,
+        _sibling?: Element
     ): boolean {
+        if (!source || !handle) {
+            return false;
+        }
+
         const noDrag = !handle.classList.contains('no-drag');
         const isDragButton =
             handle.parentElement?.classList.contains('row-header__drag') ||
             handle.classList.contains('row-header__drag');
 
-        return noDrag && this.shouldDrag(source, isDragButton);
+        return noDrag && this.shouldDrag(source as HTMLElement, !!isDragButton);
     }
 
     private shouldDrag(source: HTMLElement, isDragButton: boolean): boolean {
@@ -283,14 +290,18 @@ export class FieldDragDropService {
     }
 
     private shouldAccepts(
-        el: HTMLElement,
-        target: HTMLElement,
-        _source: HTMLElement,
-        _sibling: HTMLElement
+        el?: Element,
+        target?: Element,
+        _source?: Element,
+        _sibling?: Element
     ): boolean {
+        if (!el || !target) {
+            return false;
+        }
+
         const columnsCount =
             target.parentElement?.querySelectorAll('.row-columns__item').length ?? 0;
-        const isColumnField = FieldUtil.isColumnBreak(el.dataset['clazz'] ?? '');
+        const isColumnField = FieldUtil.isColumnBreak((el as HTMLElement).dataset['clazz'] ?? '');
         const cantAddColumn = isColumnField && columnsCount >= MAX_COLS_PER_ROW;
 
         if (cantAddColumn) {
@@ -309,12 +320,12 @@ export class FieldDragDropService {
     }
 
     private shouldMovesField(
-        el: HTMLElement,
-        _container: Element,
-        _handle: Element,
-        _sibling: Element
+        el?: Element,
+        _container?: Element,
+        _handle?: Element,
+        _sibling?: Element
     ): boolean {
-        return el.dataset['dragType'] !== 'not_field';
+        return (el as HTMLElement | undefined)?.dataset['dragType'] !== 'not_field';
     }
 
     private itShouldSetCurrentOveredContainer(
