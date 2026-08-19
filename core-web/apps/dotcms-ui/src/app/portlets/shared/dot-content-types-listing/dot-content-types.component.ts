@@ -105,7 +105,11 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     showTable = false;
     paginatorExtraParams!: { [key: string]: string };
     contentTypeColumns: DataTableColumn[] = [];
-    actionHeaderOptions!: ActionHeaderOptions;
+    /**
+     * `primary` is optional on `ActionHeaderOptions`, but `ngOnInit` always builds it with one and
+     * `setFilterByContentType` mutates that block's `command` and `model` in place.
+     */
+    actionHeaderOptions!: ActionHeaderOptions & Required<Pick<ActionHeaderOptions, 'primary'>>;
     rowActions: DotActionMenuItem[] = [];
     addToBundleIdentifier!: string;
     addToMenuContentType!: DotCMSContentType;
@@ -178,10 +182,21 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesPortletComponent
      */
     changeBaseTypeSelector(value: string) {
-        value !== ''
-            ? this.$listing().paginatorService.setExtraParams('type', value)
-            : this.$listing().paginatorService.deleteExtraParams('type');
-        this.$listing().loadFirstPage();
+        // `#listing` sits behind `@if (showTable)`, so the read has to admit the absence even
+        // though the selector that fires this lives inside the table's own header.
+        const listing = this.$listing();
+
+        if (!listing) {
+            return;
+        }
+
+        if (value !== '') {
+            listing.paginatorService.setExtraParams('type', value);
+        } else {
+            listing.paginatorService.deleteExtraParams('type');
+        }
+
+        listing.loadFirstPage();
     }
 
     /**
@@ -204,7 +219,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             this.createContentType(null, $event);
         };
 
-        this.actionHeaderOptions.primary.model = null;
+        this.actionHeaderOptions.primary.model = undefined;
     }
 
     private createRowActions(rowActionsMap: DotRowActions): DotActionMenuItem[] {
@@ -346,7 +361,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
         ];
     }
 
-    private createContentType(type: string, _event?): void {
+    private createContentType(type: string | null, _event?: unknown): void {
         const params = ['create'];
         if (type) {
             params.push(type);
@@ -378,7 +393,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 () => {
-                    this.$listing().loadCurrentPage();
+                    this.$listing()?.loadCurrentPage();
                 },
                 (error) => this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
             );
@@ -405,7 +420,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             title: `${this.dotMessageService.get('contenttypes.content.copy')} ${item.name}`,
             baseType: item.baseType as DotCMSBaseTypesContentTypes,
             data: {
-                icon: item.icon,
+                icon: item.icon ?? '',
                 host: item.host
             }
         });

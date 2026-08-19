@@ -537,7 +537,9 @@ describe('DotContentTypesPortletComponent', () => {
             fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
             expect(comp.$listing().paginatorService.extraParams.get('type')).toBe('Form');
-            expect(comp.actionHeaderOptions.primary!.model).toBe(null);
+            // `undefined`, not `null`: `ActionHeaderOptionsPrimary.model` is optional, and
+            // "no model" is how the absence is spelled.
+            expect(comp.actionHeaderOptions.primary.model).toBeUndefined();
             expect(comp.actionHeaderOptions.primary!.command).toBeDefined();
         }));
     });

@@ -183,7 +183,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
     saveSettings(): void {
         forkJoin(
             this.settings.map(({ variable, key }) => {
-                const value = this.form.get(key).value?.join(',');
+                const value = this.form.get(key)?.value?.join(',');
                 const fieldVariable = {
                     ...variable,
                     key,

@@ -214,7 +214,7 @@ describe('DotEditFieldDialogComponent', () => {
         });
 
         it('should disable the Save button on init', () => {
-            expect(comp.saveBtn.disabled).toBeTruthy();
+            expect(comp.saveBtn!.disabled).toBeTruthy();
         });
 
         it('should pass the contentType to the properties form', () => {
@@ -226,10 +226,10 @@ describe('DotEditFieldDialogComponent', () => {
 
         it('should enable/disable Save through setDialogOkButtonState', () => {
             comp.setDialogOkButtonState(true);
-            expect(comp.saveBtn.disabled).toBe(false);
+            expect(comp.saveBtn!.disabled).toBe(false);
 
             comp.setDialogOkButtonState(false);
-            expect(comp.saveBtn.disabled).toBe(true);
+            expect(comp.saveBtn!.disabled).toBe(true);
         });
 
         it('should replace Save button with accept controls in changesDialogActions', () => {
@@ -262,7 +262,7 @@ describe('DotEditFieldDialogComponent', () => {
         });
 
         it('should call saveFieldProperties from saveBtn.action', () => {
-            comp.saveBtn.action();
+            comp.saveBtn!.action();
             expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();
         });
 
@@ -315,17 +315,17 @@ describe('DotEditFieldDialogComponent', () => {
 
             // Switching back to Overview restores the enabled state
             comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
-            expect(comp.saveBtn.disabled).toBe(false);
+            expect(comp.saveBtn!.disabled).toBe(false);
         });
 
         it('should keep Save enabled when switching to Settings and back after a change', () => {
             comp.activeTab = comp.OVERVIEW_TAB_INDEX;
             comp.setDialogOkButtonState(true);
-            expect(comp.saveBtn.disabled).toBe(false);
+            expect(comp.saveBtn!.disabled).toBe(false);
 
             comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
             comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
-            expect(comp.saveBtn.disabled).toBe(false);
+            expect(comp.saveBtn!.disabled).toBe(false);
         });
 
         it('should keep Save disabled when switching to Settings and back with no change', () => {
@@ -334,7 +334,7 @@ describe('DotEditFieldDialogComponent', () => {
 
             comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
             comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
-            expect(comp.saveBtn.disabled).toBe(true);
+            expect(comp.saveBtn!.disabled).toBe(true);
         });
 
         it('should restore the Overview save action after a Settings tab swaps it', () => {
@@ -352,11 +352,11 @@ describe('DotEditFieldDialogComponent', () => {
 
             // Returning to Overview must restore the Overview action, not keep the Settings one.
             comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
-            comp.saveBtn.action();
+            comp.saveBtn!.action();
 
             expect(settingsAction).not.toHaveBeenCalled();
             expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();
-            expect(comp.saveBtn.disabled).toBe(false);
+            expect(comp.saveBtn!.disabled).toBe(false);
         });
 
         it('should hide the buttons when switching to the variables tab', () => {

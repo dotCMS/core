@@ -258,9 +258,9 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.setOriginalValue();
         this.setDateVarFieldsState();
         this.setSystemWorkflow();
-        this.workflowsSelected$ = this.form
-            .get('workflows')
-            .valueChanges.pipe(startWith(this.form.controls['workflows'].value));
+        this.workflowsSelected$ = this.form.controls['workflows'].valueChanges.pipe(
+            startWith(this.form.controls['workflows'].value)
+        );
     }
 
     private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
@@ -372,9 +372,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private enableWorkflowFormControls(): void {
         const workflowControl = this.form.controls['workflows'];
-        const workflowActionControl = this.form
-            .get('systemActionMappings')
-            .get(DotCMSSystemActionType.NEW);
+        const systemActionMappings = this.form.controls['systemActionMappings'] as UntypedFormGroup;
+        const workflowActionControl = systemActionMappings.controls[DotCMSSystemActionType.NEW];
 
         workflowControl.enable();
         workflowActionControl.enable();
@@ -405,7 +404,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         }
     }
 
-    private getMetaDataProperty(_prop: string): string | number | boolean {
+    private getMetaDataProperty(_prop: string): string | number | boolean | undefined {
         return this.$contentType().metadata?.[_prop];
     }
 

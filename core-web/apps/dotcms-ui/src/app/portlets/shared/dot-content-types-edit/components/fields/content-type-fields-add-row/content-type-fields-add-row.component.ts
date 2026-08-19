@@ -125,8 +125,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * Set focus on element sent as param
      * @param elem
      */
-    setFocus(elem: HTMLElement): void {
-        elem.focus({ preventScroll: true });
+    setFocus(elem: HTMLElement | undefined): void {
+        elem?.focus({ preventScroll: true });
     }
 
     /**
@@ -135,8 +135,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * @returns *
      * @memberof ContentTypeFieldsAddRowComponent
      */
-    removeFocus(elem: HTMLElement): void {
-        elem.blur();
+    removeFocus(elem: HTMLElement | undefined): void {
+        elem?.blur();
     }
 
     /**
@@ -161,8 +161,13 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         this.selectedColumnIndex = 0;
     }
 
-    private getElementSelected(): HTMLElement {
-        return this.$colContainerElem().nativeElement.children[this.selectedColumnIndex];
+    /**
+     * `#colContainer` lives behind `@if (rowState === 'select')`, and `setColumnSelect` reaches for
+     * it after a 201 ms timeout — by which point the state may have moved back to `'add'` or the
+     * component may be gone. Both focus helpers above accept the absence.
+     */
+    private getElementSelected(): HTMLElement | undefined {
+        return this.$colContainerElem()?.nativeElement.children[this.selectedColumnIndex];
     }
 
     private loadActions(): void {

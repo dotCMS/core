@@ -259,7 +259,7 @@ export class DotContentTypesEditComponent implements OnInit {
             },
             error: (err) => {
                 this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.$fieldsDropZone().cancelLastDragAndDrop();
+                    this.$fieldsDropZone()?.cancelLastDragAndDrop();
                     this.loadingFields.set(false);
                 });
             }
@@ -281,7 +281,7 @@ export class DotContentTypesEditComponent implements OnInit {
             },
             error: (err) => {
                 this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.$fieldsDropZone().cancelLastDragAndDrop();
+                    this.$fieldsDropZone()?.cancelLastDragAndDrop();
                     this.loadingFields.set(false);
                 });
             }
@@ -305,7 +305,7 @@ export class DotContentTypesEditComponent implements OnInit {
                     ? this.dotMessageService.get('contenttypes.action.update')
                     : this.dotMessageService.get('contenttypes.action.create'),
                 action: () => {
-                    this.$contentTypesForm().submitForm();
+                    this.$contentTypesForm()?.submitForm();
                 }
             },
             cancel: {
@@ -377,7 +377,10 @@ export class DotContentTypesEditComponent implements OnInit {
     private cleanUpFormValue(value: DotCMSContentType): DotCMSContentType {
         if (value.workflows) {
             value['workflow'] = this.getWorkflowsIds(value.workflows);
-            delete value.workflows;
+            // `workflows` is required on `DotCMSContentType` because that is the *response* shape;
+            // the cast states that the request shape differs rather than widening the model for
+            // every consumer. Both callers hand in a fresh spread, so the mutation is local.
+            delete (value as Partial<DotCMSContentType>).workflows;
         }
 
         return value;
