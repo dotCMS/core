@@ -28,14 +28,19 @@ import { withHistory } from '../history/withHistory';
  */
 export interface PageLoadingConfigState {
     isClientReady: boolean;
+    /**
+     * Both are `| null`, which is what they have always held: the initial state sets them to null,
+     * `resetRequestMetadata` and `resetClientConfiguration` set them back, and the declaration
+     * simply did not say so.
+     */
     requestMetadata: {
         query: string;
         variables: Record<string, string>;
-    };
+    } | null;
     pageAssetResponse: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
-    };
+    } | null;
 }
 
 export type PageClientResponse = {
@@ -66,7 +71,7 @@ export interface PageComputed {
      * `viewParams`, where most are, and `normalizeQueryParams` copies them through. Both consumers
      * hand the result to Angular's `queryParams`, which omits keys whose value is `undefined`.
      */
-    pageFriendlyParams: Signal<Record<string, string | undefined>>;
+    pageFriendlyParams: Signal<Record<string, string | null | undefined>>;
 }
 
 /**
@@ -159,7 +164,13 @@ export function withPage() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setCustomClient: ({ query, variables }) => {
+                setCustomClient: ({
+                    query,
+                    variables
+                }: {
+                    query: string;
+                    variables: Record<string, string>;
+                }) => {
                     patchState(store, {
                         requestMetadata: {
                             query,
@@ -170,7 +181,10 @@ export function withPage() {
                 resetRequestMetadata: () => {
                     patchState(store, { requestMetadata: null });
                 },
-                setPageAsset: (payload) => {
+                setPageAsset: (payload: {
+                    pageAsset: DotCMSPageAsset;
+                    content?: Record<string, unknown>;
+                }) => {
                     const current = store.pageAssetResponse();
                     const content = 'content' in payload ? payload.content : current?.content;
                     const nextResponse = {

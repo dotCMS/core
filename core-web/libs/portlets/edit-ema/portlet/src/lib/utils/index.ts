@@ -536,7 +536,9 @@ export function getFullPageURL({
  * @return {Object} A cleaned and formatted version of the query parameters.
  */
 export function normalizeQueryParams(
-    params: Record<string, string | undefined>,
+    // `null` as well as `undefined`: the view params use null for "no preset of that kind active",
+    // and Angular's `queryParams` reads a null value as "remove this parameter".
+    params: Record<string, string | null | undefined>,
     baseClientHost?: string
 ) {
     const queryParams = { ...params };
