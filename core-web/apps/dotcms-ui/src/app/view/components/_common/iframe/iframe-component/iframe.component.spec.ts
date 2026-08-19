@@ -143,7 +143,7 @@ describe('IframeComponent', () => {
     });
 
     it('should bind src to the iframe', () => {
-        expect(iframeEl.properties.srcdoc).toBe('');
+        expect(iframeEl.properties['srcdoc']).toBe('');
     });
 
     it('should reload iframe', () => {

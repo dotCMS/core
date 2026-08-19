@@ -42,7 +42,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     ngOnInit() {
         this.route.data
             .pipe(
-                map((x) => x?.data),
+                map((x) => x?.['data']),
                 take(1)
             )
             .subscribe((app: DotApp) => {

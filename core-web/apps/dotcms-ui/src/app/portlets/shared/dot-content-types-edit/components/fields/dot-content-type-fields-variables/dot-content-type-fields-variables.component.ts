@@ -78,7 +78,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.$field?.currentValue) {
+        if (changes['$field']?.currentValue) {
             this.field = this.$field();
             this.initTableData();
         }

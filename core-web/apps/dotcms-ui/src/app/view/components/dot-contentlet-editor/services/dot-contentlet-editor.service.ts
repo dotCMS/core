@@ -185,11 +185,11 @@ export class DotContentletEditorService {
     private geAddtUrl(action: DotEditorAction): string {
         return action === null
             ? ''
-            : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data.container}&add=${action.data.baseTypes}`;
+            : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data['container']}&add=${action.data['baseTypes']}`;
     }
 
     private getCreateUrl(action: DotEditorAction): string {
-        return action === null ? '' : action.data.url;
+        return action === null ? '' : action.data['url'];
     }
 
     private getEditUrl(action: DotEditorAction): string {
@@ -202,20 +202,20 @@ export class DotContentletEditorService {
                   `&p_p_state=maximized`,
                   `&p_p_mode=view`,
                   `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
-                  `&_content_cmd=edit&inode=${action.data.inode}`
+                  `&_content_cmd=edit&inode=${action.data['inode']}`
               ].join('');
     }
 
     private isAddUrl(action: DotEditorAction): boolean {
-        return action === null || !!action.data.container;
+        return action === null || !!action.data['container'];
     }
 
     private isCreateUrl(action: DotEditorAction): boolean {
-        return action === null || !!action.data.url;
+        return action === null || !!action.data['url'];
     }
 
     private isEditUrl(action: DotEditorAction): boolean {
-        return action === null || !!action.data.inode;
+        return action === null || !!action.data['inode'];
     }
 
     private setData(action: DotEditorAction): void {

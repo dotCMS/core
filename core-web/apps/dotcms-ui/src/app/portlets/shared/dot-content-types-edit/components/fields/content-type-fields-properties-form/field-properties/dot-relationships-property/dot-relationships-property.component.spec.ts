@@ -274,7 +274,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         describe('with inverse relationship', () => {
             it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
                 // Same object reference as the form control value (legacy DOTTestBed pattern).
-                comp.property.value.velocityVar = 'contentType.fieldName';
+                comp.property.value['velocityVar'] = 'contentType.fieldName';
                 comp.ngOnInit();
                 fixture.detectChanges();
                 flushRelationshipHttpMocks();

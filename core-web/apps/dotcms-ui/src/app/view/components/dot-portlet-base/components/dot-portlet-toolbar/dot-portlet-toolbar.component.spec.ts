@@ -211,8 +211,8 @@ describe('DotPortletToolbarComponent', () => {
                 const actionsMenuButton = de.query(By.css('[data-testId="actionsMenuButton"]'));
 
                 expect(actionsMenuButton.nativeElement.textContent).toBe('Actions');
-                expect(actionsMenuButton.attributes.icon).toBe('pi pi-chevron-down');
-                expect(actionsMenuButton.attributes.iconPos).toBe('right');
+                expect(actionsMenuButton.attributes['icon']).toBe('pi pi-chevron-down');
+                expect(actionsMenuButton.attributes['iconPos']).toBe('right');
 
                 const actionsMenu = de.query(By.css('[data-testId="actionsMenu"]'));
                 expect(actionsMenu.componentInstance.model).toEqual([

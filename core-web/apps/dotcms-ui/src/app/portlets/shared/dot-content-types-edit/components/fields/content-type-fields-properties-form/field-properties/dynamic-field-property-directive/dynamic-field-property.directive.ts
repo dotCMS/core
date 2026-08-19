@@ -31,9 +31,9 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     @Input() group!: UntypedFormGroup;
 
     ngOnChanges(changes: SimpleChanges): void {
-        const fieldChanged = changes.field;
-        const propertyNameChanged = changes.propertyName;
-        const groupChanged = changes.group;
+        const fieldChanged = changes['field'];
+        const propertyNameChanged = changes['propertyName'];
+        const groupChanged = changes['group'];
 
         // Only create component if field, propertyName or group actually changed
         if (

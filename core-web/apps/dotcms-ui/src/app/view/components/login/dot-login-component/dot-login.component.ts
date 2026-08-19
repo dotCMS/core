@@ -155,7 +155,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private isEmail(potentialEmail: string): boolean {
-        return !!new FormControl(potentialEmail, Validators.email).errors?.email;
+        return !!new FormControl(potentialEmail, Validators.email).errors?.['email'];
     }
 
     private setInitialMessage(loginInfo: DotLoginInformation): void {

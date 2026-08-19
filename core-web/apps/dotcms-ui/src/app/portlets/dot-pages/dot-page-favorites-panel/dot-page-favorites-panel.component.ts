@@ -52,11 +52,11 @@ export class DotPageFavoritesPanelComponent {
      * @returns {string} The screenshot URL with cache-busting params, or empty string if missing.
      */
     protected getScreenshotUri(favoritePage: DotCMSContentlet): string {
-        if (!favoritePage?.screenshot) {
+        if (!favoritePage?.['screenshot']) {
             return '';
         }
 
-        return `${favoritePage.screenshot}?language_id=${favoritePage.languageId}&${this.$timeStamp()}`;
+        return `${favoritePage['screenshot']}?language_id=${favoritePage.languageId}&${this.$timeStamp()}`;
     }
 
     /**

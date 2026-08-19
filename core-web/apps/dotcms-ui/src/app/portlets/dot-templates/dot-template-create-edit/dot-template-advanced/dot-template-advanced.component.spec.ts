@@ -168,12 +168,12 @@ describe('DotTemplateAdvancedComponent', () => {
             const code = de.query(By.css('dot-textarea-content'));
 
             expect(container).not.toBeNull();
-            expect(container.attributes.class).toBeUndefined();
+            expect(container.attributes['class']).toBeUndefined();
 
             expect(code).not.toBeNull();
-            expect(code.attributes.formControlName).toBe('body');
-            expect(code.attributes.height).toBe('100%');
-            expect(code.attributes.language).toBe('html');
+            expect(code.attributes['formControlName']).toBe('body');
+            expect(code.attributes['height']).toBe('100%');
+            expect(code.attributes['language']).toBe('html');
             const codeComponent = code.componentInstance as DotTextareaContentMockComponent;
             expect(codeComponent.show).toEqual(['code']);
         });

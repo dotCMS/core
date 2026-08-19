@@ -90,7 +90,7 @@ export class DotContentTypesEditComponent implements OnInit {
     ngOnInit(): void {
         this.route.data
             .pipe(
-                map((data) => data.contentType),
+                map((data) => data['contentType']),
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((contentType: DotCMSContentType) => {

@@ -66,8 +66,8 @@ export class DotWorkflowsActionsSelectorFieldComponent
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (!changes.workflows.firstChange) {
-            this.dotWorkflowsActionsSelectorFieldService.load(changes.workflows.currentValue);
+        if (!changes['workflows'].firstChange) {
+            this.dotWorkflowsActionsSelectorFieldService.load(changes['workflows'].currentValue);
         }
     }
 

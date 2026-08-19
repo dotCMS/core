@@ -122,7 +122,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 take(1)
             ),
             this.route.data.pipe(
-                map((x) => x?.filterBy),
+                map((x) => x?.['filterBy']),
                 take(1)
             )
         ).subscribe(([contentTypes, isEnterprise, environments, filterBy]) => {
@@ -215,7 +215,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                     command: (item: DotCMSContentType) => this.removeConfirmation(item),
                     icon: 'pi pi-trash'
                 },
-                shouldShow: (item) => !item.fixed && !item.defaultType
+                shouldShow: (item) => !item['fixed'] && !item['defaultType']
             }
         ];
 
@@ -268,7 +268,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                     command: (item: DotCMSContentType) => this.addToBundleMenu(item)
                 },
                 shouldShow: (item: Record<string, unknown>) => {
-                    return item.variable !== 'Host';
+                    return item['variable'] !== 'Host';
                 }
             });
         }

@@ -61,7 +61,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         });
         this.activatedRoute.data
             .pipe(
-                map((x) => x?.container),
+                map((x) => x?.['container']),
                 take(1),
                 filter((containerEntity) => !!containerEntity)
             )

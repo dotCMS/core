@@ -25,8 +25,8 @@ export class DotFeatureFlagResolver implements Resolve<
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
     resolve(route: ActivatedRouteSnapshot) {
-        if (route.data.featuredFlagsToCheck) {
-            return this.dotConfigurationService.getFeatureFlags(route.data.featuredFlagsToCheck);
+        if (route.data['featuredFlagsToCheck']) {
+            return this.dotConfigurationService.getFeatureFlags(route.data['featuredFlagsToCheck']);
         }
 
         return of(false);

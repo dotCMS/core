@@ -85,7 +85,7 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
     ngOnInit() {
         this.#route.data
             .pipe(
-                map((x) => x?.data),
+                map((x) => x?.['data']),
                 take(1)
             )
             .subscribe((app: DotApp) => {

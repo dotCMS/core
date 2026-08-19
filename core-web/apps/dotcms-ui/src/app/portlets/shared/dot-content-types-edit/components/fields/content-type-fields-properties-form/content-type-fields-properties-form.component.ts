@@ -95,8 +95,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     ngOnChanges(changes: SimpleChanges): void {
         if (
-            changes.$formFieldData?.currentValue &&
-            changes.$formFieldData.currentValue !== this.formFieldData
+            changes['$formFieldData']?.currentValue &&
+            changes['$formFieldData'].currentValue !== this.formFieldData
         ) {
             this.formFieldData = this.$formFieldData();
             if (this.formFieldData) {

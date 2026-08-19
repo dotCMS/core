@@ -285,8 +285,8 @@ describe('DotContentEditorComponent', () => {
                 hostFixture.detectChanges();
                 tick(100);
                 expect(code).not.toBeNull();
-                expect(code.attributes.formControlName).toBe('code');
-                expect(code.attributes.language).toBe('html');
+                expect(code.attributes['formControlName']).toBe('code');
+                expect(code.attributes['language']).toBe('html');
                 // In Angular 20, ng-reflect-* attributes are not available
                 // Verify the show property directly on the component instance
                 const codeComponent = code.componentInstance;
@@ -335,8 +335,8 @@ describe('DotContentEditorComponent', () => {
                 hostFixture.detectChanges(false);
 
                 // Verify first content type was added correctly
-                expect(code.attributes.formControlName).toBe('code');
-                expect(code.attributes.language).toBe('html');
+                expect(code.attributes['formControlName']).toBe('code');
+                expect(code.attributes['language']).toBe('html');
                 const codeComponent = code.componentInstance;
                 expect(codeComponent?.show).toEqual(['code']);
 

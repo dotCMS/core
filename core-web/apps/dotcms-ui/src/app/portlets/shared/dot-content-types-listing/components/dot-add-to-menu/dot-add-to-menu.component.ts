@@ -95,7 +95,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.$contentType) {
+        if (changes['$contentType']) {
             this.dialogShow = !!this.$contentType();
             if (this.$contentType()) {
                 this.initForm();
