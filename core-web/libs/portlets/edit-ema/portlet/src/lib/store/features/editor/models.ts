@@ -46,9 +46,14 @@ export interface PageDataContainer {
 export interface PageData {
     containers: PageDataContainer[];
     personalization: string;
-    id: string;
-    languageId: number;
-    personaTag: string;
+    /**
+     * The three below are optional because this is derived from `pageAsset()`, which is null until
+     * a page loads. Every consumer is reached from an SDK message that only a rendered page can
+     * produce, so in practice they are always set.
+     */
+    id?: string;
+    languageId?: number;
+    personaTag?: string;
 }
 
 export interface ReloadEditorContent {

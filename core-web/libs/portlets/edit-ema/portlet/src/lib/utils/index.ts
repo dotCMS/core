@@ -449,7 +449,23 @@ export function sanitizeURL(url?: string): string {
  * @param {DotCMSViewAsPersona} persona
  * @return {*}
  */
-export const getPersonalization = (persona: DotCMSViewAsPersona) => {
+/**
+ * Whether a running or scheduled experiment blocks editing the page it is attached to.
+ *
+ * Extracted because three call sites had the same `[RUNNING, SCHEDULED].includes(...)` written
+ * inline against an optional status, which `includes` rejects: no experiment is not a blocked one.
+ */
+export const isExperimentBlockingEdit = (experiment?: DotExperiment | null): boolean => {
+    const status = experiment?.status;
+
+    return (
+        !!status &&
+        [DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED].includes(status)
+    );
+};
+
+/** `persona` is optional: the body's first branch is the "no persona" case. */
+export const getPersonalization = (persona?: DotCMSViewAsPersona) => {
     if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
@@ -693,10 +709,7 @@ export function computeCanEditPage(
 ): boolean {
     const hasEditPermission = !!page?.canEdit;
 
-    const experimentStatus = experiment?.status;
-    const isBlockedByExperiment =
-        !!experimentStatus &&
-        [DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED].includes(experimentStatus);
+    const isBlockedByExperiment = isExperimentBlockingEdit(experiment);
 
     if (!hasEditPermission || isBlockedByExperiment) {
         return false;
