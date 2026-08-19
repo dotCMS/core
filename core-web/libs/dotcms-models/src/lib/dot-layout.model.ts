@@ -15,6 +15,10 @@ export interface DotLayout {
 
 export interface DotTemplateDesigner {
     layout: DotLayout;
-    title?: string;
+    /**
+     * `null` means "save this as a page layout, not as a named template" — three call sites send it
+     * deliberately, and the layout endpoint distinguishes it from an absent title.
+     */
+    title?: string | null;
     themeId: string;
 }
