@@ -21,7 +21,7 @@ export class DataTypePropertyComponent implements OnInit {
         /**
          * Workaround because of this bug: https://github.com/primefaces/primeng/issues/9162#issuecomment-686370453
          */
-        const control = this.group.get(this.property.name);
+        const control = this.group.get(this.property.name)!;
         control.valueChanges.subscribe((value: string) => {
             control.setValue(value, {
                 emitEvent: false

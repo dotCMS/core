@@ -185,7 +185,7 @@ export class DotPushPublishFormComponent
     }
 
     private setUsersTimeZone(): void {
-        const ppTimezone = this.form.get('timezoneId');
+        const ppTimezone = this.form.controls['timezoneId'];
 
         const localTZItem = this.timeZoneOptions.find(
             ({ value }) => value === Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -244,9 +244,9 @@ export class DotPushPublishFormComponent
             environment: ['', [Validators.required]]
         });
 
-        const publishDate = this.form.get('publishDate');
-        const expireDate = this.form.get('expireDate');
-        const ppFilter = this.form.get('filterKey');
+        const publishDate = this.form.controls['publishDate'];
+        const expireDate = this.form.controls['expireDate'];
+        const ppFilter = this.form.controls['filterKey'];
 
         const enableFilters = () => {
             ppFilter.enable();

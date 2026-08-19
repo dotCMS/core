@@ -41,7 +41,7 @@ describe('DotCrumbtrailComponent', () => {
 
     it('should use dot-collapse-breadcrumb component', () => {
         spectator.detectChanges();
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu).toBeTruthy();
     });
 
@@ -55,7 +55,7 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu.$model()).toEqual([
             { label: 'First', url: '/first' },
             { label: 'Second', url: '/second' }
@@ -72,7 +72,7 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 
@@ -82,7 +82,7 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu.$model()).toEqual([]);
     });
 
@@ -92,7 +92,7 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast.textContent.trim()).toBe('Single Item');
     });
 
@@ -102,7 +102,7 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast).toBeFalsy();
     });
 
@@ -112,7 +112,7 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu.$model()).toEqual([]);
     });
 
@@ -126,13 +126,13 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu.$model()).toEqual([
             { label: 'First', target: '_self', url: '/first' },
             { label: 'Second', target: '_blank', url: '/second' }
         ]);
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 
@@ -146,7 +146,7 @@ describe('DotCrumbtrailComponent', () => {
         spectator.detectChanges();
 
         let breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
-        expect(breadcrumbMenu.$model()).toEqual([{ label: 'First', url: '/first' }]);
+        expect(breadcrumbMenu!.$model()).toEqual([{ label: 'First', url: '/first' }]);
 
         const updatedCrumbs = [
             { label: 'Home', url: '/home' },
@@ -158,12 +158,12 @@ describe('DotCrumbtrailComponent', () => {
         spectator.detectChanges();
 
         breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
-        expect(breadcrumbMenu.$model()).toEqual([
+        expect(breadcrumbMenu!.$model()).toEqual([
             { label: 'Home', url: '/home' },
             { label: 'Section', url: '/section' }
         ]);
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast.textContent.trim()).toBe('Page');
     });
 
@@ -177,13 +177,13 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu.$model()).toEqual([
             { label: 'First', url: '/first' },
             { label: '', url: '/empty' }
         ]);
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 
@@ -197,13 +197,13 @@ describe('DotCrumbtrailComponent', () => {
         patchState(unprotected(store), { breadcrumbs: crumbs });
         spectator.detectChanges();
 
-        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
         expect(breadcrumbMenu.$model()).toEqual([
             { label: 'First', url: '/first' },
             { label: null, url: '/null' }
         ]);
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'))!;
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 });

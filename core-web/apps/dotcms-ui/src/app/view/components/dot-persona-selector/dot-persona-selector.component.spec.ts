@@ -133,7 +133,7 @@ describe('DotPersonaSelectorComponent', () => {
 
     const openOverlay = () => {
         spectator.component.disabled = false;
-        const personaSelectedItem = spectator.query('dot-persona-selected-item');
+        const personaSelectedItem = spectator.query('dot-persona-selected-item')!;
         personaSelectedItem.dispatchEvent(new MouseEvent('click'));
         spectator.detectChanges();
     };
@@ -188,7 +188,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should set dot-persona-selected-item with right attributes', () => {
-        const personaSelectedItem = spectator.query('dot-persona-selected-item');
+        const personaSelectedItem = spectator.query('dot-persona-selected-item')!;
         expect(personaSelectedItem.getAttribute('appendTo')).toBe('target');
         expect(personaSelectedItem.getAttribute('tooltipPosition')).toBe('bottom');
         const nameSpan = spectator.query('dot-persona-selected-item .dot-persona-selector__name');
@@ -214,7 +214,7 @@ describe('DotPersonaSelectorComponent', () => {
         await spectator.fixture.whenStable();
         spectator.detectChanges();
 
-        const personaOption = spectator.query('dot-persona-selector-option');
+        const personaOption = spectator.query('dot-persona-selector-option')!;
         expect(personaOption).toBeTruthy();
         expect(personaOption.classList.contains('highlight')).toEqual(true);
     });
@@ -230,7 +230,7 @@ describe('DotPersonaSelectorComponent', () => {
         spectator.detectChanges();
 
         const mockPersonaData = { ...mockDotPersona, label: 'Global Investor' };
-        const personaOption = spectator.query('dot-persona-selector-option');
+        const personaOption = spectator.query('dot-persona-selector-option')!;
         expect(personaOption).toBeTruthy();
         const personaComponent = spectator.debugElement.query(
             (el) => el.name === 'dot-persona-selector-option'

@@ -213,12 +213,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                 Validators.required,
                 Validators.minLength(1)
             ]);
-            this.form.get('code').clearValidators();
-            this.form.get('code').reset('');
+            this.form.controls['code'].clearValidators();
+            this.form.controls['code'].reset('');
             this.#store.updateContentTypeVisibility(true);
         } else {
-            this.form.get('code').setValidators(Validators.required);
-            this.form.get('containerStructures').clearValidators();
+            this.form.controls['code'].setValidators(Validators.required);
+            this.form.controls['containerStructures'].clearValidators();
         }
 
         this.form.updateValueAndValidity();
@@ -262,7 +262,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             },
             reject: () => {
                 if (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets) {
-                    this.form.get('maxContentlets').setValue(lastValue);
+                    this.form.controls['maxContentlets'].setValue(lastValue);
                 }
             },
             header: this.dotMessageService.get(
@@ -280,14 +280,14 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
      * @memberof DotContainerPropertiesComponent
      */
     private clearContentTypesAndCode(): void {
-        this.form.get('containerStructures').clearValidators();
-        this.form.get('containerStructures').reset();
-        this.form.get('preLoop').reset();
-        this.form.get('postLoop').reset();
+        this.form.controls['containerStructures'].clearValidators();
+        this.form.controls['containerStructures'].reset();
+        this.form.controls['preLoop'].reset();
+        this.form.controls['postLoop'].reset();
         // clear containerStructures array
         (this.form.get('containerStructures') as FormArray).clear();
-        this.form.get('code').addValidators(Validators.required);
-        this.form.get('maxContentlets').setValue(0);
+        this.form.controls['code'].addValidators(Validators.required);
+        this.form.controls['maxContentlets'].setValue(0);
         this.form.updateValueAndValidity();
 
         this.#store.updateContentTypeAndPrePostLoopVisibility({

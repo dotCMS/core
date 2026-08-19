@@ -162,15 +162,15 @@ describe('DotCreatePersonaFormComponent', () => {
             const hostFolderInput: DebugElement = fixture.debugElement.query(
                 By.css('#content-type-form-host')
             );
-            component.form.get('hostFolder').setValue(mockSites[0].identifier);
+            component.form.get('hostFolder')!.setValue(mockSites[0].identifier);
             fixture.detectChanges();
             expect(hostFolderInput).toBeTruthy();
-            expect(component.form.get('hostFolder').value).toEqual(mockSites[0].identifier);
+            expect(component.form.get('hostFolder')!.value).toEqual(mockSites[0].identifier);
         });
 
         it('should update input name when set form name', () => {
             const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
-            component.form.get('name').setValue('John');
+            component.form.get('name')!.setValue('John');
             fixture.detectChanges();
             expect(nameInput.nativeElement.value).toEqual('John');
         });
@@ -178,7 +178,7 @@ describe('DotCreatePersonaFormComponent', () => {
         it('should set Key Tag camel case based on the name value', () => {
             const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
             const keyTagInput: DebugElement = fixture.debugElement.query(By.css('#persona-keyTag'));
-            component.form.get('name').setValue('John Doe');
+            component.form.get('name')!.setValue('John Doe');
             nameInput.triggerEventHandler('keyup', {});
             fixture.detectChanges();
             expect(keyTagInput.nativeElement.value).toEqual('johnDoe');
@@ -210,7 +210,7 @@ describe('DotCreatePersonaFormComponent', () => {
             expect(fileUpload).toBeTruthy();
             fileUpload.triggerEventHandler('onUpload', mockFileUploadResponse);
             fixture.detectChanges();
-            expect(component.form.get('photo').value).toEqual('temp-file_123');
+            expect(component.form.get('photo')!.value).toEqual('temp-file_123');
             expect(component.tempUploadedFile).toEqual(mockDotCMSTempFile);
         });
 
@@ -219,12 +219,12 @@ describe('DotCreatePersonaFormComponent', () => {
         // binding changes 22→-1 in the same cycle). To use a click-based test, the NG0100
         // cause (e.g. DotSiteComponent mock or form control) would need to be fixed first.
         it('should clear photo form value and tempUploadedFile when removeImage is called', () => {
-            component.form.get('photo').setValue('test');
+            component.form.get('photo')!.setValue('test');
             component.tempUploadedFile = mockDotCMSTempFile;
 
             component.removeImage();
 
-            expect(component.form.get('photo').value).toEqual('');
+            expect(component.form.get('photo')!.value).toEqual('');
             expect(component.tempUploadedFile).toEqual(null);
         });
 
@@ -243,7 +243,7 @@ describe('DotCreatePersonaFormComponent', () => {
 
         it('should emit if form is invalid after changes', () => {
             jest.spyOn(component.isValid, 'emit');
-            component.form.get('photo').setValue('test');
+            component.form.get('photo')!.setValue('test');
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
             expect(component.isValid.emit).toHaveBeenCalledTimes(1);
         });

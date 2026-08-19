@@ -319,12 +319,12 @@ describe('DotContainerPropertiesComponent', () => {
         it('should render content types when max-content greater then zero', fakeAsync(() => {
             const comp = spectator.component;
             jest.spyOn(comp, 'showContentTypeAndCode');
-            comp.form.get('maxContentlets').setValue(0);
-            comp.form.get('maxContentlets').valueChanges.subscribe((value) => {
+            comp.form.get('maxContentlets')!.setValue(0);
+            comp.form.get('maxContentlets')!.valueChanges.subscribe((value) => {
                 expect(value).toBe(5);
             });
-            expect(comp.form.get('maxContentlets').updateOn).toBe('change');
-            comp.form.get('maxContentlets').setValue(5);
+            expect(comp.form.get('maxContentlets')!.updateOn).toBe('change');
+            comp.form.get('maxContentlets')!.setValue(5);
             tick(150);
             spectator.detectChanges();
             tick(50);
@@ -339,7 +339,7 @@ describe('DotContainerPropertiesComponent', () => {
             });
             const comp = spectator.component;
             jest.spyOn(comp, 'clearContentConfirmationModal');
-            comp.form.get('maxContentlets').setValue(0);
+            comp.form.get('maxContentlets')!.setValue(0);
             tick(150);
             spectator.detectChanges();
             expect(comp.form.value).toEqual({
@@ -357,8 +357,8 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should clear the field when user click on clear button', () => {
             const comp = spectator.component;
-            comp.form.get('maxContentlets').setValue(0);
-            comp.form.get('maxContentlets').setValue(5);
+            comp.form.get('maxContentlets')!.setValue(0);
+            comp.form.get('maxContentlets')!.setValue(5);
             spectator.detectChanges();
             jest.spyOn(comp, 'clearContentConfirmationModal');
             jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
@@ -385,19 +385,19 @@ describe('DotContainerPropertiesComponent', () => {
         });
 
         it('should save button enable when data change', fakeAsync(() => {
-            spectator.component.form.get('title').setValue('Hello');
+            spectator.component.form.get('title')!.setValue('Hello');
             tick(150);
             spectator.detectChanges();
             const saveBtn = spectator.query(byTestId('saveBtn')) as HTMLButtonElement;
             expect(saveBtn.disabled).toBe(false);
-            spectator.component.form.get('title').setValue('FAQ');
+            spectator.component.form.get('title')!.setValue('FAQ');
             tick(150);
             spectator.detectChanges();
             expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
         }));
 
         it('should save button disable after save', fakeAsync(() => {
-            spectator.component.form.get('title').setValue('Hello');
+            spectator.component.form.get('title')!.setValue('Hello');
             tick(150);
             spectator.detectChanges();
             spectator.click(byTestId('saveBtn'));
@@ -418,8 +418,8 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should save button disable but code field is not required', fakeAsync(() => {
             const comp = spectator.component;
-            comp.form.get('maxContentlets').setValue(0);
-            comp.form.get('maxContentlets').setValue(5);
+            comp.form.get('maxContentlets')!.setValue(0);
+            comp.form.get('maxContentlets')!.setValue(5);
             tick(200);
             spectator.detectChanges();
             spectator.click(byTestId('saveBtn'));
@@ -434,7 +434,7 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should redirect to containers list after save', fakeAsync(() => {
             (dotRouterService.goToURL as jest.Mock).mockClear();
-            spectator.component.form.get('title').setValue('Hello');
+            spectator.component.form.get('title')!.setValue('Hello');
             tick(150);
             spectator.detectChanges();
             spectator.click(byTestId('saveBtn'));

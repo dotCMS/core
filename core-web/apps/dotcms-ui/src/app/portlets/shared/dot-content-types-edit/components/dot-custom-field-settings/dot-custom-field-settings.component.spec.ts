@@ -131,7 +131,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should pass the field input to dot-hide-label-settings', () => {
-            const child = spectator.query(DotHideLabelSettingsComponent);
+            const child = spectator.query(DotHideLabelSettingsComponent)!;
             expect(child.$field()).toEqual(MOCK_FIELD);
         });
 
@@ -143,12 +143,12 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should render the dot-render-options-settings child component (default iframe mode)', () => {
-            const child = spectator.query(DotRenderOptionsSettingsComponent);
+            const child = spectator.query(DotRenderOptionsSettingsComponent)!;
             expect(child).not.toBeNull();
         });
 
         it('should pass the field input to dot-render-options-settings', () => {
-            const child = spectator.query(DotRenderOptionsSettingsComponent);
+            const child = spectator.query(DotRenderOptionsSettingsComponent)!;
             expect(child.$field()).toEqual(MOCK_FIELD);
         });
 
@@ -363,7 +363,7 @@ describe('DotCustomFieldSettingsComponent', () => {
             spectator.setInput('isVisible', true);
 
             const emitted = emitSpy.mock.calls[0][0] as DotDialogActions;
-            expect(emitted.accept.disabled).toBe(false);
+            expect(emitted.accept!.disabled).toBe(false);
         });
 
         it('should call saveSettings when the emitted accept.action is invoked', () => {

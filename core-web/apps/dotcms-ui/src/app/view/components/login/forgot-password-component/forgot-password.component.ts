@@ -86,14 +86,14 @@ export class ForgotPasswordComponent implements OnInit {
         if (confirm(this.forgotPasswordConfirmationMessage)) {
             this.message = '';
             this.loginService
-                .recoverPassword(this.forgotPasswordForm.get('login').value)
+                .recoverPassword(this.forgotPasswordForm.controls['login'].value)
                 .pipe(take(1))
                 .subscribe(
                     () => {
                         this.goToLogin({
                             queryParams: {
                                 resetEmailSent: true,
-                                resetEmail: this.forgotPasswordForm.get('login').value
+                                resetEmail: this.forgotPasswordForm.controls['login'].value
                             }
                         });
                     },

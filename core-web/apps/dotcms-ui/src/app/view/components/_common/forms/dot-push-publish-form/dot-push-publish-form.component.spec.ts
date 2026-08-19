@@ -348,7 +348,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should be valid when environment selected', () => {
-        pushPublishForm.form.get('environment').setValue(['123']);
+        pushPublishForm.form.get('environment')!.setValue(['123']);
         expect(hostComponent.valid).toEqual(true);
         expect(hostComponent.value).toEqual({
             ...mockFormInitialValue,
@@ -359,17 +359,17 @@ xdescribe('DotPushPublishFormComponent', () => {
     it('should show error messages', () => {
         selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         selectActionButtons[2].triggerEventHandler('click', {});
-        pushPublishForm.form.get('environment').setValue(null);
-        pushPublishForm.form.get('environment').markAsDirty();
-        pushPublishForm.form.get('environment').updateValueAndValidity();
+        pushPublishForm.form.get('environment')!.setValue(null);
+        pushPublishForm.form.get('environment')!.markAsDirty();
+        pushPublishForm.form.get('environment')!.updateValueAndValidity();
 
-        pushPublishForm.form.get('publishDate').setValue(null);
-        pushPublishForm.form.get('publishDate').markAsDirty();
-        pushPublishForm.form.get('publishDate').updateValueAndValidity();
+        pushPublishForm.form.get('publishDate')!.setValue(null);
+        pushPublishForm.form.get('publishDate')!.markAsDirty();
+        pushPublishForm.form.get('publishDate')!.updateValueAndValidity();
 
-        pushPublishForm.form.get('expireDate').setValue(null);
-        pushPublishForm.form.get('expireDate').markAsDirty();
-        pushPublishForm.form.get('expireDate').updateValueAndValidity();
+        pushPublishForm.form.get('expireDate')!.setValue(null);
+        pushPublishForm.form.get('expireDate')!.markAsDirty();
+        pushPublishForm.form.get('expireDate')!.updateValueAndValidity();
 
         fixture.detectChanges();
         const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));

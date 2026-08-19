@@ -110,8 +110,8 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should setup form values', () => {
-            expect(component.form.get('accept').value).toBe('image/*');
-            expect(component.form.get('systemOptions').value).toEqual({
+            expect(component.form.get('accept')!.value).toBe('image/*');
+            expect(component.form.get('systemOptions')!.value).toEqual({
                 allowURLImport: false,
                 allowCodeWrite: true,
                 allowGenerateImg: false
@@ -221,7 +221,7 @@ describe('DotBinarySettingsComponent', () => {
 
             spectator.detectChanges();
 
-            component.form.get('accept').setValue('');
+            component.form.get('accept')!.setValue('');
             component.saveSettings();
 
             expect(dotFieldVariableService.delete).not.toHaveBeenCalled();

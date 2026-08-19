@@ -232,7 +232,7 @@ describe('DotRelationshipsPropertyComponent', () => {
 
             comp.clean();
 
-            expect(comp.group.get('relationship').value).toEqual(comp.beforeValue);
+            expect(comp.group.get('relationship')!.value).toEqual(comp.beforeValue);
         });
     });
 
@@ -266,7 +266,7 @@ describe('DotRelationshipsPropertyComponent', () => {
             expect(dotNewRelationships).toBeDefined();
             expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-            const relationshipValue = comp.group.get('relationship').value;
+            const relationshipValue = comp.group.get('relationship')!.value;
             expect(relationshipValue.velocityVar).toEqual('velocityVar');
             expect(relationshipValue.cardinality).toEqual(1);
         });
@@ -285,7 +285,7 @@ describe('DotRelationshipsPropertyComponent', () => {
                 expect(de.query(By.css('dot-new-relationships'))).toBeDefined();
                 expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-                const relationshipValue = comp.group.get('relationship').value;
+                const relationshipValue = comp.group.get('relationship')!.value;
                 expect(relationshipValue.velocityVar).toEqual('contentType.fieldName');
                 expect(relationshipValue.cardinality).toEqual(1);
             });

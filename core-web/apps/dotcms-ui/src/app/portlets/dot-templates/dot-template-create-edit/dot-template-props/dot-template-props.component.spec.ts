@@ -244,7 +244,7 @@ describe('DotTemplatePropsComponent', () => {
         });
 
         it('should be valid when required fields are set', () => {
-            component.form.get('title').setValue('Hello World');
+            component.form.get('title')!.setValue('Hello World');
 
             expect(component.form.valid).toBe(true);
             expect(component.form.value).toEqual({
@@ -261,11 +261,11 @@ describe('DotTemplatePropsComponent', () => {
             const saveButton = de.query(By.css('[data-testid="dotFormDialogSave"]'));
             expect(saveButton.componentInstance.disabled).toBe(true);
 
-            component.form.get('title').setValue('Hello World');
+            component.form.get('title')!.setValue('Hello World');
             fixture.detectChanges();
             expect(saveButton.componentInstance.disabled).toBe(false);
 
-            component.form.get('title').setValue(''); // back to original value
+            component.form.get('title')!.setValue(''); // back to original value
             fixture.detectChanges();
             expect(saveButton.componentInstance.disabled).toBe(true);
         });

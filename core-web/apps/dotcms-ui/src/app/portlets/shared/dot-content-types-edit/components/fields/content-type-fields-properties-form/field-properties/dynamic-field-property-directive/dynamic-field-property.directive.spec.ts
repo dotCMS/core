@@ -93,7 +93,7 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
 
         expect(hostSpectator.query('dot-test')).toContainText('Dynamic Component');
 
-        const testComponent = hostSpectator.query(DynamicComponent);
+        const testComponent = hostSpectator.query(DynamicComponent)!;
         expect(testComponent).toBeDefined();
         expect(testComponent.property).toEqual({
             field: hostSpectator.hostComponent.field,

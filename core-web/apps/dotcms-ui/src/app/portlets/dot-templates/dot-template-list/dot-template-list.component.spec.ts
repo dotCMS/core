@@ -628,7 +628,7 @@ describe('DotTemplateListComponent', () => {
             const lastCell = cells.pop();
             expect(lastCell).toBeTruthy();
 
-            expect(lastCell.nativeElement.textContent.trim()).toEqual('');
+            expect(lastCell!.nativeElement.textContent.trim()).toEqual('');
         }));
 
         it('should not trigger goToFolder when the theme is null or undefined', fakeAsync(() => {
@@ -640,7 +640,7 @@ describe('DotTemplateListComponent', () => {
             const lastCell = cells.pop();
             expect(lastCell).toBeTruthy();
 
-            lastCell.nativeElement.click();
+            lastCell!.nativeElement.click();
 
             expect(mockGoToFolder).not.toHaveBeenCalled();
         }));
