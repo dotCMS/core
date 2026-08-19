@@ -201,7 +201,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             if (this.invalidHost) {
                 this.message = this.getEmptyMessage(SearchType.SITE);
             } else if (this.isFolderAndHost(query)) {
-                this.propagateChange(this.autoComplete.inputEL.nativeElement.value);
+                this.propagateChange(this.autoComplete.inputEL?.nativeElement.value);
                 this.message = this.dotMessageService.get('page.selector.folder.new');
             } else {
                 this.message = this.getEmptyMessage(this.searchType);
@@ -326,7 +326,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             cleanedQuery = this.cleanPath(query);
         }
 
-        this.autoComplete.inputEL.nativeElement.value = cleanedQuery;
+        if (this.autoComplete.inputEL) {
+            this.autoComplete.inputEL.nativeElement.value = cleanedQuery;
+        }
 
         return cleanedQuery.startsWith('//')
             ? cleanedQuery

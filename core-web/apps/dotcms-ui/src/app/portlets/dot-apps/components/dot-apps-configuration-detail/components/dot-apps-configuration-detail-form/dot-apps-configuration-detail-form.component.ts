@@ -130,7 +130,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
             return field.value ? JSON.parse(field.value) : field.value;
         },
         SELECT: (field: DotAppsSecret) => {
-            return field.value === '' ? field.options[0].value : field.value;
+            return field.value === '' ? (field.options?.[0]?.value ?? '') : field.value;
         },
         STRING: (field: DotAppsSecret, status: FieldStatus) => {
             const fieldValue =

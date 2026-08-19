@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { map, take } from 'rxjs/operators';
 
 import { DotAppsService, DotRouterService } from '@dotcms/data-access';
-import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
+import { DotApp, DotAppsSaveData, DotAppsSecret, DotAppsSite } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './components/dot-apps-configuration-detail-form/dot-apps-configuration-detail-form.component';
@@ -33,6 +33,8 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     private dotAppsService = inject(DotAppsService);
 
     apps!: DotApp;
+    /** The single site this route configures — see the guard in `ngOnInit`. */
+    site!: DotAppsSite;
 
     dynamicVariables: DotKeyValue[] = [];
     formData!: { [key: string]: string };
@@ -47,9 +49,20 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
             )
             .subscribe((app: DotApp) => {
                 this.apps = app;
-                this.formFields = this.getSecrets(app.sites[0].secrets);
+
+                // `sites` is optional on `DotApp` because the listing endpoint omits it, but this
+                // route resolves a single site's configuration — there is nothing to show without
+                // it, and reading `[0]` threw before this guard existed.
+                const site = app.sites?.[0];
+
+                if (!site) {
+                    return;
+                }
+
+                this.site = site;
+                this.formFields = this.getSecrets(site.secrets);
                 this.dynamicVariables = this.transformSecretsToKeyValue(
-                    this.getSecrets(app.sites[0].secrets, true)
+                    this.getSecrets(site.secrets, true)
                 );
             });
     }
@@ -61,11 +74,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
      */
     onSubmit(): void {
         this.dotAppsService
-            .saveSiteConfiguration(
-                this.apps.key,
-                this.apps.sites[0].id,
-                this.getTransformedFormData()
-            )
+            .saveSiteConfiguration(this.apps.key, this.site.id, this.getTransformedFormData())
             .pipe(take(1))
             .subscribe(() => {
                 this.goToApps(this.apps.key);

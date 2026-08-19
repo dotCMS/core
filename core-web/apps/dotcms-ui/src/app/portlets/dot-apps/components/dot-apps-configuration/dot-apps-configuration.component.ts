@@ -63,7 +63,11 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
 
     $searchInputElement = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
-    $state = signalState({
+    $state = signalState<{
+        app: DotApp | null;
+        paginationPerPage: number;
+        totalRecords: number;
+    }>({
         app: null,
         paginationPerPage: 40,
         totalRecords: 0
@@ -130,7 +134,9 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
                 patchState(this.$state, {
                     app: {
                         ...app,
-                        sites: event ? this.$state().app.sites.concat(app.sites) : app.sites,
+                        sites: event
+                            ? [...(this.$app()?.sites ?? []), ...(app.sites ?? [])]
+                            : app.sites,
                         configurationsCount: app.configurationsCount
                     },
                     totalRecords: this.paginationService.totalRecords
@@ -142,7 +148,13 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
      * Redirects to create/edit configuration site page
      */
     gotoConfiguration(site: DotAppsSite): void {
-        this.#dotRouterService.goToUpdateAppsConfiguration(this.$app().key, site);
+        const app = this.$app();
+
+        if (!app) {
+            return;
+        }
+
+        this.#dotRouterService.goToUpdateAppsConfiguration(app.key, site);
     }
 
     /**
@@ -163,13 +175,19 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
      * Delete a specific configuration
      */
     deleteConfiguration(site: DotAppsSite): void {
+        const app = this.$app();
+
+        if (!app) {
+            return;
+        }
+
         this.#dotAppsService
-            .deleteConfiguration(this.$app().key, site.id)
+            .deleteConfiguration(app.key, site.id)
             .pipe(take(1))
             .subscribe(() => {
                 patchState(this.$state, {
                     app: {
-                        ...this.$app(),
+                        ...app,
                         sites: []
                     }
                 });
@@ -181,10 +199,16 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
      * Display confirmation dialog to delete all configurations
      */
     deleteAllConfigurations(): void {
+        const app = this.$app();
+
+        if (!app) {
+            return;
+        }
+
         this.#dotAlertConfirmService.confirm({
             accept: () => {
                 this.#dotAppsService
-                    .deleteAllConfigurations(this.$app().key)
+                    .deleteAllConfigurations(app.key)
                     .pipe(take(1))
                     .subscribe(() => {
                         patchState(this.$state, {

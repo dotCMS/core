@@ -56,7 +56,11 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private cdr = inject(ChangeDetectorRef);
 
-    dialogActions!: DotDialogActions;
+    /**
+     * `accept` is required here even though `DotDialogActions` declares it optional: the setter
+     * below always builds one, and the handlers toggle its `disabled` flag in place.
+     */
+    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
     dialogShow = false;
     eventData!: DotPushPublishDialogData;
     formData!: DotPushPublishData;

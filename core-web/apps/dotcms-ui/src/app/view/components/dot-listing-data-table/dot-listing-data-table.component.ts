@@ -280,8 +280,12 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      * @memberof ListingDataTableComponent
      */
     focusFirstRow(): void {
-        const rows: HTMLTableRowElement[] = this.dataTable.tableViewChild.nativeElement.rows;
-        if (rows.length > 1) {
+        // PrimeNG only assigns `tableViewChild` once the table renders, and this is called from a
+        // keyboard handler that can arrive first.
+        const rows: HTMLTableRowElement[] | undefined =
+            this.dataTable.tableViewChild?.nativeElement.rows;
+
+        if (rows && rows.length > 1) {
             rows[1].focus();
         }
     }

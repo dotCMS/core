@@ -199,9 +199,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
             if (languages?.length) {
                 languages.forEach((language) => {
-                    const countryCode = language.countryCode.length
-                        ? ` (${language.countryCode})`
-                        : '';
+                    const countryCode = language.countryCode ? ` (${language.countryCode})` : '';
 
                     languageOptions.push({
                         label: `${language.language}${countryCode}`,
@@ -229,9 +227,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             const langLabels = {};
             if (languages?.length) {
                 languages.forEach((language) => {
-                    const countryCode = language.countryCode.length
-                        ? `-${language.countryCode}`
-                        : '';
+                    const countryCode = language.countryCode ? `-${language.countryCode}` : '';
 
                     langLabels[language.id] = `${language.languageCode}${countryCode}`;
                 });

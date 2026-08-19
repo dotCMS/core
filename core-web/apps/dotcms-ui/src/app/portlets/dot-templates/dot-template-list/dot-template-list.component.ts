@@ -288,9 +288,7 @@ export class DotTemplateListComponent implements OnInit {
         this.contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );
-        if (this.contextMenu()) {
-            this.contextMenu().show(event);
-        }
+        this.contextMenu()?.show(event);
     }
 
     /**
@@ -785,8 +783,10 @@ export class DotTemplateListComponent implements OnInit {
     clearSelection(): void {
         this.selectedTemplates = [];
         patchState(this.$state, { selectedTemplates: [] });
-        if (this.dataTable()) {
-            this.dataTable().selection = [];
+        const dataTable = this.dataTable();
+
+        if (dataTable) {
+            dataTable.selection = [];
         }
     }
 

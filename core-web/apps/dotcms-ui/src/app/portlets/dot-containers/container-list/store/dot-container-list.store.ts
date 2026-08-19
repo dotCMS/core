@@ -668,9 +668,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private getContainerName(identifier: string): string {
         const { selectedContainers } = this.get();
 
-        return selectedContainers.find((container: DotContainer) => {
-            return container.identifier === identifier;
-        }).name;
+        return (
+            selectedContainers.find((container: DotContainer) => {
+                return container.identifier === identifier;
+            })?.name ?? ''
+        );
     }
 
     /**
@@ -683,7 +685,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         return containers.map((container) => {
             const copyContainer = structuredClone(container);
             copyContainer.disableInteraction =
-                copyContainer.identifier.includes('/') ||
+                !!copyContainer.identifier?.includes('/') ||
                 copyContainer.identifier === 'SYSTEM_CONTAINER' ||
                 copyContainer.source === CONTAINER_SOURCE.FILE;
 

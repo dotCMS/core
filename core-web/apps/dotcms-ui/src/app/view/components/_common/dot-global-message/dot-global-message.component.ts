@@ -41,7 +41,7 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     message: DotGlobalMessage = { value: '' };
 
     private visibility = false;
-    private icons = {
+    private icons: Record<string, string> = {
         loading: 'loading',
         success: 'pi pi-check-circle',
         error: 'pi pi-exclamation-circle',
@@ -64,7 +64,7 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
             .subscribe((event: DotEvent<DotGlobalMessage>) => {
                 this.message = event.data;
                 this.visibility = true;
-                this.message.icon = this.icons[this.message.type] || '';
+                this.message.icon = this.icons[this.message.type ?? ''] || '';
 
                 if (this.message.life) {
                     setTimeout(() => {
