@@ -45,7 +45,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     height!: string;
 
     @Input()
-    show;
+    show?: string[];
 
     @Input()
     value = '';

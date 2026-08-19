@@ -125,31 +125,31 @@ class HostTestComponent {
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
-    code;
+    code!: { mode: string; options: Record<string, unknown> };
 
     @Input()
-    height;
+    height!: string;
 
     @Input()
-    show;
+    show!: string[];
 
     @Input()
-    value;
+    value!: string;
 
     @Input()
-    width;
+    width!: string;
 
     @Input()
-    customStyles;
+    customStyles!: Record<string, unknown>;
 
     @Input()
-    editorName;
+    editorName!: string;
 
     @Output()
     monacoInit = new EventEmitter();
 
     @Input()
-    language;
+    language!: string;
 
     writeValue() {
         //

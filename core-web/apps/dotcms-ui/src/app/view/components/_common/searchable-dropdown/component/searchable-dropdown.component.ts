@@ -320,9 +320,11 @@ export class SearchableDropdownComponent
         if (dropDownItem && Array.isArray(this.labelPropertyName)) {
             resultProps = this.labelPropertyName.map((item) => {
                 if (item.indexOf('.') > -1) {
-                    let propertyName;
+                    let propertyName: unknown;
                     item.split('.').forEach((nested) => {
-                        propertyName = propertyName ? propertyName[nested] : dropDownItem[nested];
+                        propertyName = propertyName
+                            ? (propertyName as Record<string, unknown>)[nested]
+                            : (dropDownItem as Record<string, unknown>)[nested];
                     });
 
                     return propertyName;

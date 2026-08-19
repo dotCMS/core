@@ -63,7 +63,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     template: ''
 })
 export class DotApiLinkMockComponent {
-    @Input() href;
+    @Input() href!: string;
 }
 
 @Component({
@@ -71,8 +71,8 @@ export class DotApiLinkMockComponent {
     template: ''
 })
 export class DotTemplateBuilderMockComponent {
-    @Input() item;
-    @Input() didTemplateChanged;
+    @Input() item!: DotTemplateItem;
+    @Input() didTemplateChanged!: boolean;
     @Output() save = new EventEmitter();
     @Output() cancel = new EventEmitter();
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
@@ -83,7 +83,7 @@ export class DotTemplateBuilderMockComponent {
     template: '<ng-content></ng-content>'
 })
 export class DotPortletBaseMockComponent {
-    @Input() boxed;
+    @Input() boxed!: boolean;
 }
 
 @Component({
@@ -92,7 +92,7 @@ export class DotPortletBaseMockComponent {
         '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
 })
 export class DotPortletToolbarMockComponent {
-    @Input() title;
+    @Input() title!: string;
 }
 
 @Component({

@@ -360,7 +360,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Fields', () => {
-            let pTabPanel;
+            let pTabPanel: DebugElement;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 pTabPanel = panels[0];
@@ -442,7 +442,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Permission', () => {
-            let pTabPanel;
+            let pTabPanel: DebugElement;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions
@@ -469,7 +469,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Push History', () => {
-            let pTabPanel;
+            let pTabPanel: DebugElement;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions, [3]=PushHistory
