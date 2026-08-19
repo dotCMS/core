@@ -120,7 +120,12 @@ export function withWorkflow() {
                 return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
             });
 
-            const $lockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+            // `?? false`: `UVEFeatureFlags` is `Partial<Record<flag, boolean>>` and the state seeds
+            // it to `{}`, so the flag reads `undefined` until the fetch lands. Not-yet-known is not
+            // enabled, which is what every consumer of this signal already assumes.
+            const $lockFeatureEnabled = computed(
+                () => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK ?? false
+            );
 
             const $lockOptions = computed<WorkflowLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;

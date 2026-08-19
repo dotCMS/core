@@ -95,8 +95,18 @@ export class DotUveCopyDecisionComponent {
             return;
         }
 
-        this.#isCopying.set(true);
         const { container, contentlet } = this.data();
+
+        // Both the tree-node lookup and the save payload below are keyed by the container, so a
+        // contentlet that is not placed in one cannot be copied in place. Checked before the
+        // copying flag goes up, so the dialog does not sit in a state it can never leave.
+        if (!container) {
+            this.decisionMade.emit();
+
+            return;
+        }
+
+        this.#isCopying.set(true);
         const treeNode = this.#uveStore.getCurrentTreeNode(container, contentlet);
 
         this.#dotCopyContentService

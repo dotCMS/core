@@ -29,23 +29,32 @@ export function withLayout() {
         withComputed((uveStore) => {
             const store = uveStore as StoreWithLayoutDeps<typeof uveStore>;
             return {
-                $layoutProps: computed<LayoutProps>(() => {
+                /**
+                 * `| null` until a page is loaded. `containers`, `layout`, `page` and `template` are
+                 * all required on `DotCMSPageAsset`, and `identifier` / `theme` / `anonymous` are
+                 * required on the template — so the asset itself is the only thing that can be
+                 * absent, and one guard covers every field. `LayoutProps` was declaring four
+                 * required values that this could not produce before the first load.
+                 */
+                $layoutProps: computed<LayoutProps | null>(() => {
                     const page = store.pageAsset();
-                    const pageData = page?.page;
-                    const containersData = page?.containers;
-                    const layoutData = page?.layout;
-                    const templateData = page?.template;
+
+                    if (!page) {
+                        return null;
+                    }
+
+                    const templateData = page.template;
 
                     return {
-                        containersMap: mapContainerStructureToDotContainerMap(containersData ?? {}),
-                        layout: layoutData,
+                        containersMap: mapContainerStructureToDotContainerMap(page.containers),
+                        layout: page.layout,
                         template: {
-                            identifier: templateData?.identifier,
+                            identifier: templateData.identifier,
                             // The themeId should be here, in the old store we had a bad reference and we were saving all the templates with themeId undefined
-                            themeId: templateData?.theme,
-                            anonymous: templateData?.anonymous || false
+                            themeId: templateData.theme,
+                            anonymous: templateData.anonymous || false
                         },
-                        pageId: pageData?.identifier
+                        pageId: page.page.identifier
                     };
                 })
             };

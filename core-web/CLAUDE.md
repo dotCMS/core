@@ -20,7 +20,7 @@ Configured in `/.mcp.json`. Use these instead of guessing:
 pnpm nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
 pnpm nx build dotcms-ui                    # Build
 pnpm nx test {project}                     # Test specific project
-pnpm nx test {project} --testPathPattern=  # Test specific file
+pnpm nx test {project} --testPathPatterns=  # Test specific file (note the plural — Jest renamed it)
 pnpm nx lint {project}                     # Lint
 pnpm nx affected:test                      # Test only changed projects
 pnpm run test:dotcms                       # Test all
@@ -159,6 +159,18 @@ Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the
 > **`SpyObject<T>` cannot re-implement a union-returning method.** `@openng/spectator`'s mapped type routes every member through `T[P] extends (...args: any[]) => infer R ? ... : ...`. When `R` is a union — `string | string[] | undefined`, say — that conditional *distributes*, so the member's type becomes an **intersection** of `jest.Mock`s whose `mockImplementation` overloads demand `=> undefined`, `=> string` and `=> string[]` simultaneously. No implementation satisfies all three, and the error names an intersection the source never wrote. Reach the spy through one explicit signature (`store.m as unknown as jest.Mock<R, [A]>`) rather than trying to satisfy it.
 >
 > **Flags interact across projects.** `libs/portlets/dot-query-tool` has `noImplicitReturns` *without* `strict`, and that combination caught a `TS7030` that `libs/edit-content` — which has `noImplicitReturns` too — did not, because its `strict` changes how a mixed `void`/teardown return is inferred. A clean `tsc -p` on the project you changed is not sufficient: re-measure the strict consumers as well.
+>
+> **A duplicate key in a tsconfig silently wins, and `tsc` does not warn.** `"strict": true` followed later in the same object by `"strict": false` leaves the project non-strict, with no diagnostic of any kind. Two projects on this branch (`libs/new-block-editor`, `libs/edit-content-bridge`) were closed as strict while being nothing of the kind, because the flags were added above a pre-existing `"strict": false`. The only thing that reported it was the **Angular compiler**, as a `Duplicate key "strict" in object literal` warning in an app build's output. After adding flags, read the whole `compilerOptions` block — do not just append.
+>
+> **The app build is the template gate even when `strictTemplates` is off.** It is `false` in all four apps (#35930), but a library's own `strictNullChecks` still applies to the expressions in its templates, and the Angular compiler is the only thing that evaluates them. `dotcms-binary-field-builder:build:production` found eight real errors in `libs/edit-content` and `libs/portlets/edit-ema/ui` after both measured 0 on `tsc -p`. For any library whose types feed a template, run a consuming app's production build before calling it done.
+>
+> **An ambient `.d.ts` only protects the project that includes it.** `libs/portlets/dot-experiments` declared the untyped `jstat` module in `src/jstat.d.ts`, reached through its own `include`. A strict consumer compiling those sources through a path mapping pulls in the import graph but *not* that sibling declaration, so `edit-ema/portlet` inherited a `TS7016` from a dependency measuring 0. Put such declarations in `core-web/types/` and wire them with a `paths` entry in `tsconfig.base.json`, which every project inherits (`htmldiff-js` and `jstat` are the precedents). A triple-slash reference also works but `@typescript-eslint/triple-slash-reference` forbids it.
+>
+> **An unresolved type name becomes `any` and inflates the count downstream.** Annotating a parameter with a type you forgot to import gives you one `TS2304` *and* a cascade of `TS7006`/`TS7031` on everything that reads it, because the annotation itself is `any`. Check `grep -cE 'TS2304|TS2552'` after every batch of annotations; a count that went *up* is usually this. Related: **an intersection with `any` is `any`** — one `declare global { interface Window { x: any } }` defeated every annotation downstream of it.
+>
+> **Removing an `any` raises the count before it lowers it.** Typing two parameters in `edit-ema/portlet` took it 213 → 239 → 194. Do not judge a fix by the immediate delta.
+>
+> **Nx silently runs a subset when a project name is wrong.** `nx run-many -t test -p edit-ema-portlet edit-ema-ui` ran only `edit-ema-ui` and exited **0** — the real name is `portlets-edit-ema-portlet`. There is no warning about the name that matched nothing. Confirm the summary names every project you asked for; `nx show projects | grep <fragment>` gets the real names.
 >
 > **`nx run <project>:test` does not type-check — anywhere.** `jest-preset-angular` runs on ts-jest, and ts-jest copies TypeScript's `isolatedModules` into its own transpile-only switch (`config-set.js:229`), which stops it from building the language-service host it needs for diagnostics (`ts-compiler.js:74`). Since the Jest guidance below requires `isolatedModules: true` in every `tsconfig.spec.json`, **passing tests are never evidence that specs type-check.** `libs/data-access` proved it: 84 `tsc` errors alongside 754 green tests. Always verify specs with `tsc -p <projectRoot>/tsconfig.spec.json --noEmit`.
 

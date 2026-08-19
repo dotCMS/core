@@ -255,7 +255,10 @@ describe('DotEmaDialogStoreService', () => {
             expect(state).toEqual({
                 header: 'Search Form',
                 status: DialogStatus.LOADING,
-                url: null,
+                // `''`, not `null`: the state declares `url: string` and `resetDialog` already uses
+                // `''` for "no URL". The template gates the iframe on `@if (ds.url)`, so the form
+                // dialog behaves identically — this assertion had pinned the declaration's lie.
+                url: '',
                 type: 'form',
                 actionPayload: PAYLOAD_MOCK,
                 form: {

@@ -35,7 +35,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { UveOptimisticSaveService } from '../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { ActionPayload } from '../../../../shared/models';
+import { ContentletActionPayload, hasContentlet } from '../../../../shared/models';
 import { UVEStore } from '../../../../store/dot-uve.store';
 import { PageType } from '../../../../store/models';
 import { filterFormValues } from '../../dot-uve-palette/utils';
@@ -186,7 +186,8 @@ export class DotUveQuickEditFormComponent {
         }
 
         const filteredFormValues = filterFormValues(this.#currentFormValues());
-        const activeContentlet = this.#uveStore.editorSelected()?.payload;
+        const selected = this.#uveStore.editorSelected()?.payload;
+        const activeContentlet = hasContentlet(selected) ? selected : null;
         const isTraditionalPage = this.#uveStore.pageType() === PageType.TRADITIONAL;
 
         this.#saveFields(filteredFormValues, activeContentlet, isTraditionalPage);
@@ -225,7 +226,15 @@ export class DotUveQuickEditFormComponent {
                         ),
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.editorSelected()?.payload,
+                            // Narrowed here rather than at each read: the preview below and the
+                            // save both go on to read `contentlet`, so a payload without one is
+                            // not worth carrying past this point.
+                            activeContentlet: hasContentlet(
+                                this.#uveStore.editorSelected()?.payload
+                            )
+                                ? (this.#uveStore.editorSelected()
+                                      ?.payload as ContentletActionPayload)
+                                : null,
                             isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
                         })),
                         tap(({ formValues, activeContentlet, isTraditionalPage }) => {
@@ -249,7 +258,7 @@ export class DotUveQuickEditFormComponent {
 
     #saveFields(
         filteredFormValues: Record<string, unknown>,
-        activeContentlet: ActionPayload | null,
+        activeContentlet: ContentletActionPayload | null,
         isTraditionalPage = false
     ): void {
         if (!activeContentlet || Object.keys(filteredFormValues).length === 0) {

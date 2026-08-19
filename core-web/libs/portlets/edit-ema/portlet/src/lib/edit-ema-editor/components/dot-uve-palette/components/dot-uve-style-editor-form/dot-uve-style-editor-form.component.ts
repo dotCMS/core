@@ -49,7 +49,7 @@ import {
     STYLE_EDITOR_SAVE_DEBOUNCE_TIME
 } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
-import { ActionPayload } from '../../../../../shared/models';
+import { ContentletActionPayload, hasContentlet } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { PageType } from '../../../../../store/models';
 import { filterFormValues } from '../../utils';
@@ -64,7 +64,12 @@ type SaveResult =
  * selected after the edit happened.
  */
 type SaveContext = {
-    activeContentlet: ActionPayload | null | undefined;
+    /**
+     * `ContentletActionPayload`, narrowed where the context is built: everything downstream —
+     * the live preview and the save — reads `contentlet.identifier`, so a payload without one
+     * cannot be styled and is not worth carrying past that point.
+     */
+    activeContentlet: ContentletActionPayload | null;
     isTraditionalPage: boolean;
 };
 
@@ -303,8 +308,10 @@ export class DotUveStyleEditorFormComponent {
                             const changedKeys = this.#changedFieldKeys(previousValue, currentValue);
                             previousValue = currentValue;
 
+                            const selected = this.#uveStore.editorSelected()?.payload;
+
                             const context: SaveContext = {
-                                activeContentlet: this.#uveStore.editorSelected()?.payload,
+                                activeContentlet: hasContentlet(selected) ? selected : null,
                                 isTraditionalPage:
                                     this.#uveStore.pageType() === PageType.TRADITIONAL
                             };
@@ -315,7 +322,7 @@ export class DotUveStyleEditorFormComponent {
                         // Live preview: headless pushes every change (incl. keystrokes)
                         // to the iframe immediately. Traditional pages cannot do this.
                         tap(({ context }) => {
-                            if (!context.isTraditionalPage) {
+                            if (!context.isTraditionalPage && context.activeContentlet) {
                                 this.#optimisticSave.updateIframeOptimistically(
                                     context.activeContentlet,
                                     { dotStyleProperties: form.getRawValue() }
@@ -455,7 +462,7 @@ export class DotUveStyleEditorFormComponent {
      */
     #performSave(
         formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload | null | undefined,
+        activeContentlet: ContentletActionPayload | null,
         isTraditionalPage: boolean
     ): Observable<SaveResult> {
         if (!activeContentlet) {

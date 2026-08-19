@@ -3,8 +3,7 @@
      hover. The bounds box itself stays pointer-events: none so wheel/clicks
      pass through to the iframe; the toolbar and add buttons opt back in via
      CSS. The SDK's CONTENTLET_CLICKED event still drives selection. -->
-@if (showHoverOverlay()) {
-    @let hoverContext = contentContext();
+@if (contentContext(); as hoverContext) {
     @let hoverDragItem = hoverDragPayload();
     @let hoverIsEmpty = isContainerEmpty();
 

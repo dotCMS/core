@@ -459,8 +459,7 @@ export const isExperimentBlockingEdit = (experiment?: DotExperiment | null): boo
     const status = experiment?.status;
 
     return (
-        !!status &&
-        [DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED].includes(status)
+        !!status && [DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED].includes(status)
     );
 };
 
@@ -669,7 +668,10 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
  * @param {CurrentUser} currentUser - The current user
  * @return {boolean} True if page is locked by another user
  */
-export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUser): boolean {
+export function isPageLockedByOtherUser(
+    page: DotCMSPage | null,
+    currentUser: CurrentUser | null
+): boolean {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
@@ -679,11 +681,18 @@ export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUs
  * With feature flag enabled: Returns true if page is locked by ANY user
  * With feature flag disabled: Returns true if page is locked by ANOTHER user
  *
- * @param {DotCMSPage} page - The page to check
+ * `page` is `| null` because the store's `pageAsset()` is: null until the first page loads. All
+ * three of these functions already read it through `?.`, so the non-null declarations contradicted
+ * their own bodies — and `withWorkflow` was already passing `?? null` into one of them.
+ *
+ * @param {DotCMSPage | null} page - The page to check
  * @param {CurrentUser} currentUser - The current user
  * @return {boolean} True if page is considered locked based on feature flag
  */
-export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
+export function computeIsPageLocked(
+    page: DotCMSPage | null,
+    currentUser: CurrentUser | null
+): boolean {
     // This is the legacy behavior, only show "locked" button if it is locked by another user
     const isLocked = isPageLockedByOtherUser(page, currentUser);
     return isLocked;
@@ -833,7 +842,9 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageA
  *                                        (e.g. "siteb.example.com" or "https://siteb.example.com")
  * @return {*}  {string}
  */
-export const getRequestHostName = (params: DotPageApiParams, pageHostname?: string) => {
+// `params` is `| null` because the store's `pageParams()` is, and the body already reads it through
+// `params?.clientHost`.
+export const getRequestHostName = (params: DotPageApiParams | null, pageHostname?: string) => {
     if (params?.clientHost) {
         return params.clientHost;
     }
@@ -878,7 +889,14 @@ export const getErrorPayload = (errorCode: number) =>
  * @param {string} urlPath2
  * @return {*}  {boolean}
  */
-export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
+export const compareUrlPaths = (urlPath?: string, urlPath2?: string): boolean => {
+    // Either side absent means there is nothing to compare. `new URL(undefined, origin)` coerces to
+    // the literal path `/undefined`, so an unknown url compared unequal to every real one — the
+    // right answer, reached by accident.
+    if (!urlPath || !urlPath2) {
+        return false;
+    }
+
     // Host doesn't matter here, we just need the pathname
     const { pathname: pathname1 } = new URL(urlPath, window.origin);
     const { pathname: pathname2 } = new URL(urlPath2, window.origin);
@@ -931,7 +949,11 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
         }
 
         return {
-            baseType: contentlet.baseType,
+            // `?? ''`: `baseType` is optional on `ContentletPayload` but required on `EmaDragItem`.
+            // An empty base type is never `WIDGET`, so the drop falls through to the container's
+            // `acceptTypes` match — which is the right answer for a contentlet that did not declare
+            // one.
+            baseType: contentlet.baseType ?? '',
             contentType: contentlet.contentType,
             draggedPayload: {
                 item: {
@@ -1040,7 +1062,10 @@ export function getTargetUrl(
  * @param {string | undefined} targetUrl - The target URL for navigation.
  * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
  */
-export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
+export function shouldNavigate(
+    targetUrl: string | undefined,
+    currentUrl: string | undefined
+): boolean {
     // Navigate if the target URL is defined and different from the current URL
     return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
 }
@@ -1173,9 +1198,7 @@ export const convertUTCToLocalTime = (date: Date) => {
     );
 };
 
-export const removeUndefinedValues = <T extends Record<string, unknown>>(
-    params: T
-): Partial<T> => {
+export const removeUndefinedValues = <T extends Record<string, unknown>>(params: T): Partial<T> => {
     return Object.fromEntries(
         Object.entries(params).filter(([_, value]) => value !== undefined)
     ) as Partial<T>;

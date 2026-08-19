@@ -316,6 +316,13 @@ describe('DotUveWorkflowActionsComponent', () => {
             const spyCheckPublishEnvironments = jest
                 .spyOn(dotWorkflowEventHandlerService, 'checkPublishEnvironments')
                 .mockReturnValue(of(true));
+            // `setWizardInput` returns null for an action with no collectable inputs, and the
+            // component no longer calls `open(null)` — so a test about opening the wizard has to
+            // supply one, the way the test above already does.
+            jest.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue({
+                steps: [],
+                title: 'title'
+            });
             const spyWizard = jest.spyOn(dotWizardService, 'open');
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);

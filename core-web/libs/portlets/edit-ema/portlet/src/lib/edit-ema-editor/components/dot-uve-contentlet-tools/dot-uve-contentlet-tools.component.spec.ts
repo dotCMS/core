@@ -587,7 +587,7 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(items[1].label).toBe('template2.vtl');
             });
 
-            it('should return undefined when no vtl files', () => {
+            it('should return an empty list when no vtl files', () => {
                 const areaWithoutVtl = {
                     ...MOCK_CONTENTLET_AREA,
                     x: MOCK_CONTENTLET_AREA.x + 1, // Change position to make it different
@@ -604,7 +604,10 @@ describe('DotUveContentletToolsComponent', () => {
                 editorSelected.set(toSelected(areaWithoutVtl));
                 spectator.detectChanges();
 
-                expect(spectator.component.vtlMenuItems()).toBeUndefined();
+                // `[]`, not `undefined`: the computed is declared `MenuItem[]` and used to return
+                // `undefined` when the contentlet had no VTL files, which this test had pinned. The
+                // declared type is the one every consumer reads against.
+                expect(spectator.component.vtlMenuItems()).toEqual([]);
             });
         });
 

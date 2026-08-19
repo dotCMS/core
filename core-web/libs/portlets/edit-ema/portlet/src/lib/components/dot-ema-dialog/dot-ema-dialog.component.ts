@@ -250,7 +250,14 @@ export class DotEmaDialogComponent {
                         detail
                     });
                 } else {
-                    this.callEmbeddedFunction(callback, args);
+                    // Only the embedded call needs a callback name — `WorkflowActionResult` is
+                    // `Partial`, so an action can succeed without one. The reload and the toast
+                    // below are about the action having succeeded, which is what this branch means,
+                    // and gating all three on `callback` stopped both for every such action.
+                    if (callback) {
+                        this.callEmbeddedFunction(callback, args);
+                    }
+
                     // Reload so pageLanguages reflects the post-action state. The workflow
                     // action triggers an async save inside the iframe; by the time
                     // saveContentCallback fires LANGUAGE_IS_CHANGED, the dialog may already
@@ -275,7 +282,9 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     reloadIframe() {
-        this.iframe.nativeElement.contentWindow.location.reload();
+        // `?.`: `contentWindow` is null for an iframe that has not been attached to the document
+        // yet, and this used to throw rather than skip the reload.
+        this.iframe.nativeElement.contentWindow?.location.reload();
     }
 
     /**
@@ -292,7 +301,14 @@ export class DotEmaDialogComponent {
         whenFinished?: () => void
     ) {
         this.ngZone.run(() => {
-            this.iframe.nativeElement.contentWindow?.[callback]?.(...args);
+            // The iframe hosts legacy JSP code that hangs its callbacks off `window` by name, which
+            // is not something `Window` declares. The intersection states that view in one place
+            // instead of indexing a type that has no index signature.
+            const iframeWindow = this.iframe.nativeElement.contentWindow as
+                | (Window & Record<string, ((...args: unknown[]) => void) | undefined>)
+                | null;
+
+            iframeWindow?.[callback]?.(...args);
             whenFinished?.();
         });
     }
@@ -331,10 +347,17 @@ export class DotEmaDialogComponent {
         // Inject CSS variables into iframe
         const iframeDoc = this.getIframeDocument();
         if (iframeDoc) {
-            this.dotUiColorsService.setColors(iframeDoc.querySelector('html'));
+            const iframeHtml = iframeDoc.querySelector('html');
+
+            // Guarded on its own, not together with the listener below: the two are independent, and
+            // an iframe document with no <html> element still dispatches `ng-event`. Folding both
+            // into one condition dropped the event subscription and broke ten tests.
+            if (iframeHtml) {
+                this.dotUiColorsService.setColors(iframeHtml);
+            }
 
             // This event is destroyed when you close the dialog
-            fromEvent(
+            fromEvent<CustomEvent>(
                 // The events are getting sended to the document
                 iframeDoc,
                 'ng-event'

@@ -945,7 +945,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const pivotContentlet = payload.contentlet;
         const positionToInsert = positionPayload.position;
 
-
         if (dragItem.draggedPayload.type === 'contentlet') {
             const draggedPayload = dragItem.draggedPayload;
             const originContainer = draggedPayload.item.container;

@@ -85,12 +85,22 @@ export class DotEmaBookmarksComponent implements OnInit {
      * @memberof DotEmaBookmarksComponent
      */
     private fetchFavoritePage(url: string): void {
+        const userId = this.store.uveCurrentUser()?.userId;
+
+        // The service interpolates this straight into an Elasticsearch query as `+owner:${userId}`,
+        // so an absent user would send `+owner:` — malformed rather than empty. With no current user
+        // there are no favourites to fetch, and the loading flag is left off rather than started and
+        // never resolved.
+        if (!userId) {
+            return;
+        }
+
         this.loading.set(true);
 
         this.dotFavoritePageService
             .get({
                 url,
-                userId: this.store.uveCurrentUser()?.userId,
+                userId,
                 limit: 10
             })
             .pipe(

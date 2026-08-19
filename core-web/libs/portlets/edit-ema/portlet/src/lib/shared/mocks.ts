@@ -741,7 +741,10 @@ export const BASE_SHELL_ITEMS = [
         href: 'layout',
         id: 'layout',
         isDisabled: false,
-        tooltip: null
+        // `undefined`, not `null`: `NavigationBarItem.tooltip` is an optional `string`, so `null`
+        // was never assignable — it compiled only because this file sits outside the type-checked
+        // configs. `toEqual` treats an undefined-valued key as an absent one, which is the intent.
+        tooltip: undefined
     },
     {
         icon: 'pi-sliders-h',
