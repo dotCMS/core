@@ -257,12 +257,12 @@ describe('DotEditFieldDialogComponent', () => {
         });
 
         it('should call ref.close with no argument from cancelBtn.action', () => {
-            comp.cancelBtn.action();
+            comp.cancelBtn.action!();
             expect(refMock.close).toHaveBeenCalledWith();
         });
 
         it('should call saveFieldProperties from saveBtn.action', () => {
-            comp.saveBtn!.action();
+            comp.saveBtn!.action!();
             expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();
         });
 
@@ -352,7 +352,7 @@ describe('DotEditFieldDialogComponent', () => {
 
             // Returning to Overview must restore the Overview action, not keep the Settings one.
             comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
-            comp.saveBtn!.action();
+            comp.saveBtn!.action!();
 
             expect(settingsAction).not.toHaveBeenCalled();
             expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();

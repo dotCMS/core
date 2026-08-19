@@ -407,7 +407,7 @@ describe('ContainerListComponent', () => {
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
-            menu.model![0].command({
+            menu.model![0].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(store['dotContainersService'].publish).toHaveBeenCalledWith([

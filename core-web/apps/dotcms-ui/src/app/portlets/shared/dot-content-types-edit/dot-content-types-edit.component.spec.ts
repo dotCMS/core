@@ -443,7 +443,7 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
                 fixture.detectChanges();
                 // Call accept action directly via component
-                comp.dialogActions.accept!.action();
+                comp.dialogActions.accept!.action!();
                 expect(form.componentInstance.submitForm).toHaveBeenCalledTimes(1);
             }));
         });
@@ -617,12 +617,12 @@ describe('DotContentTypesEditComponent', () => {
             const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
             jest.spyOn(dotEventsService, 'notify');
 
-            comp.contentTypeActions[0].command({ originalEvent: createFakeEvent('click') });
+            comp.contentTypeActions[0].command!({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[0].label).toBe('Add rows');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
             expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
-            comp.contentTypeActions[1].command({ originalEvent: createFakeEvent('click') });
+            comp.contentTypeActions[1].command!({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[1].label).toBe('Add tab');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
             expect(dotEventsService.notify).toHaveBeenCalledTimes(2);

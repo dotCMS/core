@@ -287,11 +287,11 @@ describe('DotContentTypesPortletComponent', () => {
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
 
         jest.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
-        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         fixture.detectChanges();
 
@@ -361,7 +361,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
-        comp.rowActions[0].menuItem.command(mockContentType);
+        comp.rowActions[0].menuItem.command!(mockContentType);
         fixture.detectChanges();
         expect(de.query(By.css('p-dialog'))).toBeDefined();
         expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
@@ -389,7 +389,7 @@ describe('DotContentTypesPortletComponent', () => {
         };
         expect(comp.addToBundleIdentifier).not.toBeDefined();
 
-        comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         // Verify the component state was updated correctly
         expect(comp.addToBundleIdentifier).toEqual(mockContentType.id);
@@ -414,7 +414,7 @@ describe('DotContentTypesPortletComponent', () => {
         };
         expect(comp.addToMenuContentType).not.toBeDefined();
 
-        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command!(mockContentType);
 
         // Verify the component state was updated correctly
         expect(comp.addToMenuContentType).toEqual(mockContentType);
@@ -471,12 +471,12 @@ describe('DotContentTypesPortletComponent', () => {
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
 
         jest.spyOn(dotHttpErrorManagerService, 'handle');
         jest.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
-        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         fixture.detectChanges();
 
@@ -486,7 +486,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should show remove option', () => {
         fixture.detectChanges();
 
-        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow!({
             fixed: false,
             defaultType: false
         });
@@ -496,7 +496,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should not show remove option if content type is defaultType', () => {
         fixture.detectChanges();
-        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow!({
             fixed: false,
             defaultType: true
         });
@@ -505,7 +505,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should not show Add To Menu option if content type is HOST', () => {
         fixture.detectChanges();
-        const shouldShow = comp.rowActions[ADD_TO_MENU_INDEX].shouldShow({
+        const shouldShow = comp.rowActions[ADD_TO_MENU_INDEX].shouldShow!({
             variable: 'Host'
         });
         expect(shouldShow).toBeFalsy();

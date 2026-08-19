@@ -126,7 +126,7 @@ describe('ContentTypeFieldsTabComponent', () => {
 
     it('should emit delete evt', () => {
         jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
         jest.spyOn(comp.removeTab, 'emit');
         const deleteButton = de.query(By.css('p-button')).nativeElement;

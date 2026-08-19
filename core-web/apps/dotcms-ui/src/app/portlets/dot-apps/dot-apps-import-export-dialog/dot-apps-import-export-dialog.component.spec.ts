@@ -144,7 +144,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             spectator.component.form.setValue({ password: 'test123' });
             spectator.detectChanges();
 
-            spectator.component.dialogActions.accept!.action();
+            spectator.component.dialogActions.accept!.action!();
 
             expect(mockStore.exportConfiguration).toHaveBeenCalledWith({ password: 'test123' });
         });
@@ -152,7 +152,7 @@ describe('DotAppsImportExportDialogComponent', () => {
         it('should call closeDialog when cancel action is triggered', () => {
             jest.spyOn(spectator.component, 'closeDialog');
 
-            spectator.component.dialogActions.cancel!.action();
+            spectator.component.dialogActions.cancel!.action!();
 
             expect(spectator.component.closeDialog).toHaveBeenCalled();
         });
@@ -224,7 +224,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             spectator.component.form.controls['password'].setValue('test123');
             spectator.detectChanges();
 
-            spectator.component.dialogActions.accept!.action();
+            spectator.component.dialogActions.accept!.action!();
 
             expect(mockStore.importConfiguration).toHaveBeenCalledWith({
                 file: mockFile,
@@ -236,7 +236,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             spectator.component.form.controls['password'].setValue('test123');
             spectator.detectChanges();
 
-            spectator.component.dialogActions.accept!.action();
+            spectator.component.dialogActions.accept!.action!();
 
             expect(mockStore.importConfiguration).not.toHaveBeenCalled();
         });

@@ -109,7 +109,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     it('should bind send notification after click on Add Tab button', () => {
         jest.spyOn(dotEventsService, 'notify');
         fixture.detectChanges();
-        comp.actions[1].command({} as MenuItemCommandEvent);
+        comp.actions[1].command!({} as MenuItemCommandEvent);
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
         expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
     });
