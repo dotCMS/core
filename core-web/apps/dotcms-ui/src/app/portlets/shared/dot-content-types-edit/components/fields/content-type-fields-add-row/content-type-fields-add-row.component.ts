@@ -79,14 +79,15 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * Set columns active when mouse enter
      * @param col
      */
-    onMouseEnter(col: number, event): void {
+    onMouseEnter(col: number, event: MouseEvent): void {
         this.selectedColumnIndex = col;
         this.setFocus(this.getElementSelected());
         event.preventDefault();
     }
 
-    onMouseLeave(event): void {
-        this.removeFocus(event.target);
+    onMouseLeave(event: MouseEvent): void {
+        // The handler is bound to the column element itself, so `target` is that element.
+        this.removeFocus(event.target as HTMLElement);
     }
 
     /**

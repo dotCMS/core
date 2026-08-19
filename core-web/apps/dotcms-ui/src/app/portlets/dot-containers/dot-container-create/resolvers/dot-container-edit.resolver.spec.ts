@@ -63,7 +63,7 @@ describe('DotContainerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? null : 'ID';
                         }
                     }

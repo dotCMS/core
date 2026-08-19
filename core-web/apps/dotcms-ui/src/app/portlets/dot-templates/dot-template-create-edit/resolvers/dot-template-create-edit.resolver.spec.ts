@@ -70,7 +70,7 @@ describe('DotTemplateDesignerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? null : 'ID';
                         }
                     }
@@ -93,7 +93,7 @@ describe('DotTemplateDesignerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? 'inode123' : 'ID';
                         }
                     }
@@ -116,7 +116,7 @@ describe('DotTemplateDesignerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? 'inode123' : 'ID';
                         }
                     }

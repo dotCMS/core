@@ -143,7 +143,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         route.queryParams = of({ url: 'hello/world' });
         route.params = of({ id: 'portlet-id' });
 
-        let src: string;
+        let src: string | undefined;
         comp.url.subscribe((url) => {
             src = url;
         });
@@ -159,7 +159,7 @@ xdescribe('IframePortletLegacyComponent', () => {
 
         jest.spyOn(dotMenuService, 'getUrlById').mockReturnValue(of('fake-url'));
 
-        let src: string;
+        let src: string | undefined;
 
         comp.url.subscribe((url) => {
             src = url;

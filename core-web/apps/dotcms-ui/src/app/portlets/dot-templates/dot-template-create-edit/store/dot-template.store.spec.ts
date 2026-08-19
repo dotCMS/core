@@ -30,7 +30,15 @@ const messageServiceMock = new MockDotMessageService({
     'message.template.published': 'published'
 });
 
-function getTemplate({ identifier, name, body }) {
+function getTemplate({
+    identifier,
+    name,
+    body
+}: {
+    identifier: string;
+    name: string;
+    body?: string;
+}) {
     return {
         body: body || '',
         canPublish: true,

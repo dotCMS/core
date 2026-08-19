@@ -161,7 +161,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(button).not.toBeNull();
         expect(button.attributes['icon']).toEqual('pi pi-trash');
 
-        let resp: DotCMSContentTypeField;
+        let resp: DotCMSContentTypeField | undefined;
         comp.remove.subscribe((fieldItem) => (resp = fieldItem));
         button.triggerEventHandler('click', {
             stopPropagation: () => {
@@ -203,7 +203,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         createComponent(mockField);
 
-        let resp: DotCMSContentTypeField;
+        let resp: DotCMSContentTypeField | undefined;
         comp.edit.subscribe((field) => (resp = field));
 
         de.triggerEventHandler('click', {

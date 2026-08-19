@@ -161,7 +161,7 @@ class MockDotSystemConfigService {
     }
 }
 
-async function makeFormValid(fixture) {
+async function makeFormValid(fixture: ComponentFixture<DotTemplateCreateEditComponent>) {
     // can't use debugElement because the dialogs opens outside the component
     const title: HTMLInputElement = document.querySelector(
         '[data-testid="templatePropsTitleField"]'

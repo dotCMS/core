@@ -39,7 +39,7 @@ describe('ValidAuthGuardService', () => {
     });
 
     it('should allow access to the requested route, User is logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(true),
             writable: true
@@ -51,7 +51,7 @@ describe('ValidAuthGuardService', () => {
     });
 
     it('should denied access to the requested route, User is NOT logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(false),
             writable: true

@@ -8,6 +8,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -49,7 +50,7 @@ describe('ForgotPasswordComponent', () => {
         const loginPageState = spectator.inject(
             DotLoginPageStateService
         ) as unknown as MockDotLoginPageStateService;
-        loginPageState.get().subscribe((loginInfo) => {
+        loginPageState.get().subscribe((loginInfo: DotLoginInformation) => {
             expect(loginInfo.i18nMessagesMap['forgot-password']).toEqual('Forgot Password');
             expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toContain('Email Address');
             expect(loginInfo.i18nMessagesMap['cancel']).toContain('Cancel');

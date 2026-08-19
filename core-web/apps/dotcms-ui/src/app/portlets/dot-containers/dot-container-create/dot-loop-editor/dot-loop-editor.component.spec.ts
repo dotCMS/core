@@ -58,7 +58,7 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
         //
     };
 
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 
