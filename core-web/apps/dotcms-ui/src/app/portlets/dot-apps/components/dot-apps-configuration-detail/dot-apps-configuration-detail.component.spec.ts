@@ -331,9 +331,13 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const saveBtn = fixture.debugElement.query(By.css('[data-testid="saveBtn"]'));
             saveBtn.triggerEventHandler('click', {});
 
-            expect<(appKey: string, id: string, params: DotAppsSaveData) => Observable<string>>(
-                appsServices.saveSiteConfiguration
-            ).toHaveBeenCalledWith(component.apps.key, component.apps.sites![0].id, transformedData);
+            expect<
+                (appKey: string, id: string, params: DotAppsSaveData) => Observable<string | null>
+            >(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
+                component.apps.key,
+                component.apps.sites![0].id,
+                transformedData
+            );
         });
     });
 

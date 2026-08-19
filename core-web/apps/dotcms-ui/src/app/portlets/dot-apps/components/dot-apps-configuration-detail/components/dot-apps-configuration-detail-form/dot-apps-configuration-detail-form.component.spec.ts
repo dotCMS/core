@@ -1,3 +1,4 @@
+import { SpectatorOverrides } from '@openng/spectator';
 import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownComponent } from 'ngx-markdown';
@@ -12,6 +13,7 @@ import { Select, SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
@@ -143,10 +145,19 @@ const formState = {
     name: secrets[0].value,
     password: secrets[1].value,
     enabled: JSON.parse(secrets[2].value),
-    select: secrets[3].options[0].value,
+    select: secrets[3].options![0].value,
     integration: secrets[4].value,
     generatedString: secrets[5].value
 };
+
+/**
+ * Spectator keys `props` by the class *property* name (`$formFields`), while the
+ * `ComponentRef.setInput` it calls underneath needs the public *alias* (`formFields`). An aliased
+ * signal input cannot satisfy both, which is what the `as unknown` cast at each call site was
+ * working around. Stated once here, and still applied before the first change-detection pass.
+ */
+const formFieldsProp = (formFields: DotAppsSecret[]) =>
+    ({ formFields }) as unknown as SpectatorOverrides<DotAppsConfigurationDetailFormComponent>['props'];
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
@@ -172,9 +183,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     describe('Without warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
-                props: {
-                    formFields: secrets
-                } as unknown
+                props: formFieldsProp(secrets)
             });
             spectator.detectChanges();
         });
@@ -192,9 +201,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should focus the first form field when form fields are available', async () => {
             // Create component with formFields
             const spectatorWithFields = createComponent({
-                props: {
-                    formFields: secrets
-                } as unknown
+                props: formFieldsProp(secrets)
             });
             spectatorWithFields.detectChanges();
             await spectatorWithFields.fixture.whenStable();
@@ -345,19 +352,19 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should render HEADING field as section header with label text', () => {
             const spectatorWithHeading = createComponent({
-                props: { formFields: [headingSecret, ...secrets] } as unknown
+                props: formFieldsProp([headingSecret, ...secrets])
             });
             spectatorWithHeading.detectChanges();
 
             const header = spectatorWithHeading.query('[data-testid="sectionHeader"]')!;
             expect(header).toBeTruthy();
             expect(header.classList).toContain('dot-apps-configuration-detail__section-header');
-            expect(header.querySelector('h3').textContent.trim()).toBe(headingSecret.label);
+            expect(header.querySelector('h3')!.textContent.trim()).toBe(headingSecret.label);
         });
 
         it('should render INFO field as info box with hint text', () => {
             const spectatorWithInfo = createComponent({
-                props: { formFields: [infoSecret, ...secrets] } as unknown
+                props: formFieldsProp([infoSecret, ...secrets])
             });
             spectatorWithInfo.detectChanges();
 
@@ -369,9 +376,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should not add HEADING or INFO fields to the form group', () => {
             const spectatorWithExtra = createComponent({
-                props: {
-                    formFields: [headingSecret, infoSecret, ...secrets]
-                } as unknown
+                props: formFieldsProp([headingSecret, infoSecret, ...secrets])
             });
             spectatorWithExtra.detectChanges();
 
@@ -391,18 +396,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     describe('With warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
-                props: {
-                    formFields: secrets.map((item, i) => {
-                        if (i < 3) {
-                            return {
-                                ...item,
-                                warnings: [`error ${i}`]
-                            };
-                        }
-
-                        return item;
-                    })
-                } as unknown
+                props: formFieldsProp(
+                    secrets.map((item, i) =>
+                        i < 3 ? { ...item, warnings: [`error ${i}`] } : item
+                    )
+                )
             });
             spectator.detectChanges();
         });

@@ -101,7 +101,7 @@ export class DotAppsListComponent implements AfterViewInit {
      */
     openExportDialog(): void {
         // For export all, we don't pass an app - the store handles this
-        this.#dialogStore.openExport(null as unknown as DotApp);
+        this.#dialogStore.openExport(null);
     }
 
     /**
