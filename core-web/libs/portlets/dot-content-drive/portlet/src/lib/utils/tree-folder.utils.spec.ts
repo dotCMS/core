@@ -20,7 +20,7 @@ describe('ALL_FOLDER constant', () => {
     });
 
     it('should be a folder type', () => {
-        expect(ALL_FOLDER.data.type).toBe('folder');
+        expect(ALL_FOLDER.data!.type).toBe('folder');
     });
 
     it('should be expanded by default', () => {

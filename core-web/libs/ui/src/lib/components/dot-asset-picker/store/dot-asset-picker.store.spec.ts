@@ -14,8 +14,10 @@ import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcm
 import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
     DotContentDriveSearchResponse,
     DotSite,
+    FolderSearchView,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
 
@@ -29,6 +31,12 @@ const SITE: DotSite = {
     aliases: null,
     archived: false
 };
+
+/**
+ * A contentlet stub. `DotCMSContentlet` has far more required fields than any of these tests
+ * reads — they only ever look at `inode` — so the shape is asserted once here.
+ */
+const asset = (inode = ''): DotCMSContentlet => ({ inode }) as DotCMSContentlet;
 
 const EMPTY_RESPONSE: DotContentDriveSearchResponse = {
     folderCount: 0,
@@ -112,9 +120,9 @@ describe('DotAssetPickerStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        contentDriveService = spectator.inject(DotContentDriveService, true);
-        folderService = spectator.inject(DotFolderService, true);
-        siteService = spectator.inject(DotSiteService, true);
+        contentDriveService = spectator.inject(DotContentDriveService);
+        folderService = spectator.inject(DotFolderService);
+        siteService = spectator.inject(DotSiteService);
 
         // `mockProvider` builds one mock per file and `clearAllMocks` only clears calls, not
         // implementations — so re-seed the defaults here or a test that overrides a return value
@@ -302,7 +310,7 @@ describe('DotAssetPickerStore', () => {
 
         it('should store the returned items and mark itself loaded', () => {
             contentDriveService.search.mockReturnValue(
-                of({ ...EMPTY_RESPONSE, list: [{ inode: 'a' }], contentCount: 1 })
+                of({ ...EMPTY_RESPONSE, list: [asset('a')], contentCount: 1 })
             );
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
@@ -404,7 +412,7 @@ describe('DotAssetPickerStore', () => {
     });
 
     describe('paginator row count', () => {
-        const page = (list: unknown[], hasMoreContent: boolean) => ({
+        const page = (list: DotCMSContentlet[], hasMoreContent: boolean) => ({
             ...EMPTY_RESPONSE,
             list,
             contentCount: list.length,
@@ -415,7 +423,7 @@ describe('DotAssetPickerStore', () => {
         it('should claim a page beyond the current one while there is more content', () => {
             // `contentCount` is the size of THIS page, so a full page looks like the last one and
             // PrimeNG disables "next". Claiming one page beyond is what keeps the arrow clickable.
-            contentDriveService.search.mockReturnValue(of(page(Array(20).fill({}), true)));
+            contentDriveService.search.mockReturnValue(of(page(Array(20).fill(asset()), true)));
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
@@ -424,7 +432,7 @@ describe('DotAssetPickerStore', () => {
         });
 
         it('should report the exact total once the last page is on screen', () => {
-            contentDriveService.search.mockReturnValue(of(page(Array(7).fill({}), false)));
+            contentDriveService.search.mockReturnValue(of(page(Array(7).fill(asset()), false)));
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
@@ -432,12 +440,12 @@ describe('DotAssetPickerStore', () => {
         });
 
         it('should count the pages already behind it on a later page', () => {
-            contentDriveService.search.mockReturnValue(of(page(Array(20).fill({}), true)));
+            contentDriveService.search.mockReturnValue(of(page(Array(20).fill(asset()), true)));
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
             // Page 2 comes back short and with nothing after it: 20 behind + 5 on screen.
-            contentDriveService.search.mockReturnValue(of(page(Array(5).fill({}), false)));
+            contentDriveService.search.mockReturnValue(of(page(Array(5).fill(asset()), false)));
             store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
             spectator.flushEffects();
 
@@ -552,7 +560,7 @@ describe('DotAssetPickerStore', () => {
                                 name: 'images',
                                 path: '/',
                                 hasChildren: false
-                            }
+                            } as FolderSearchView
                         ],
                         pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
                     })
@@ -805,14 +813,14 @@ describe('DotAssetPickerStore', () => {
 
     describe('selection', () => {
         it('should hold a single asset', () => {
-            store.setSelectedAsset({ inode: 'a' });
-            store.setSelectedAsset({ inode: 'b' });
+            store.setSelectedAsset(asset('a'));
+            store.setSelectedAsset(asset('b'));
 
             expect(store.selectedAsset()).toEqual({ inode: 'b' });
         });
 
         it('should clear the selection', () => {
-            store.setSelectedAsset({ inode: 'a' });
+            store.setSelectedAsset(asset('a'));
             store.clearSelection();
 
             expect(store.selectedAsset()).toBeNull();
@@ -825,7 +833,7 @@ describe('DotAssetPickerStore', () => {
             beforeEach(() => {
                 store.initPicker(FILE_FIELD_CONFIG);
                 spectator.flushEffects();
-                store.setSelectedAsset({ inode: 'a' });
+                store.setSelectedAsset(asset('a'));
             });
 
             it('should drop the selection when the folder changes', () => {
