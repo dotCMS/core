@@ -134,7 +134,7 @@ export class DotUveActionsHandlerService {
                 if (isSameUrl) {
                     uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    uveStore.pageLoad({
+                    uveStore['pageLoad']({
                         url: payload.url,
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
@@ -263,7 +263,7 @@ export class DotUveActionsHandlerService {
                             uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                             if (res) {
-                                uveStore.pageReload();
+                                uveStore['pageReload']();
                             }
                         })
                     )
@@ -339,7 +339,7 @@ export class DotUveActionsHandlerService {
                             }
                         })
                     )
-                    .subscribe(() => uveStore.pageReload());
+                    .subscribe(() => uveStore['pageReload']());
             },
             [DotCMSUVEAction.CLIENT_READY]: (devConfig: {
                 graphql: {
@@ -375,7 +375,7 @@ export class DotUveActionsHandlerService {
 
                 const pageParams = convertClientParamsToPageParams(params);
 
-                uveStore.pageReload(pageParams);
+                uveStore['pageReload'](pageParams);
                 uveStore.setIsClientReady(true);
             },
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {

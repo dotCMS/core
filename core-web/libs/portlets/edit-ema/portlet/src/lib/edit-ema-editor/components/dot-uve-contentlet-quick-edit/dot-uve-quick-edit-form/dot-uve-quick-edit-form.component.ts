@@ -263,7 +263,7 @@ export class DotUveQuickEditFormComponent {
         }
 
         this.#uveStore
-            .saveQuickEditFields(filteredFormValues as Record<string, string>)
+            ['saveQuickEditFields'](filteredFormValues as Record<string, string>)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: (response) => {
@@ -281,7 +281,7 @@ export class DotUveQuickEditFormComponent {
                     }
 
                     if (isTraditionalPage) {
-                        this.#uveStore.pageReload();
+                        this.#uveStore['pageReload']();
                     }
 
                     this.#messageService.add({

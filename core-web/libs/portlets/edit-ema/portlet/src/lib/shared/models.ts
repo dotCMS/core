@@ -51,6 +51,24 @@ export interface StyleEditorContentletPayload extends ActionPayload {
 }
 
 /**
+ * An `ActionPayload` for an insert: the id of the contentlet being written.
+ *
+ * `newContentletId` is optional on `ActionPayload` because most payloads describe a position, not
+ * a write. Every caller of `insertContentletInContainer` already supplies it — without one there
+ * is nothing to insert, and the old signature let `undefined` reach `contentletsId.push()` and
+ * from there the save request.
+ */
+export type InsertActionPayload = ActionPayload & { newContentletId: string };
+
+/**
+ * An `ActionPayload` for an operation that acts on an existing contentlet — currently removal.
+ *
+ * `ClientData.contentlet` is optional because a drop onto an empty container has none, but this
+ * operation cannot run without one: it filters the container's ids by `contentlet.identifier`.
+ */
+export type ContentletActionPayload = ActionPayload & { contentlet: ContentletPayload };
+
+/**
  * The currently-selected contentlet in the editor: bounds + payload.
  * Bounds drive the floating overlay; payload feeds the side panel /
  * style editor / pencil dialog. Both travel together because every
