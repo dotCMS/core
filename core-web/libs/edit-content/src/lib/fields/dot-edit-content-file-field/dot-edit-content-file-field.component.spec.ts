@@ -1,22 +1,29 @@
 import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
     DotAiService,
     DotContentletService,
     DotMessageService,
+    DotSiteService,
     DotUploadFileService,
     DotUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { DotCMSContentTypeField, DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
+import {
+    DotAssetPickerComponent,
+    DotAssetPickerConfig,
+    DotDropZoneComponent,
+    DropZoneErrorType,
+    DropZoneFileEvent
+} from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
@@ -50,6 +57,14 @@ const mockLauncher = {
     open: jest.fn().mockReturnValue(of(null))
 };
 
+/** The AssetPicker needs a site to browse. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
 describe('DotFileFieldComponent', () => {
     let spectator: SpectatorHost<DotFileFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof FileFieldStore>;
@@ -70,6 +85,9 @@ describe('DotFileFieldComponent', () => {
         // We also provide them (and mock the upload service's transitive deps) at
         // the module level so the harness can resolve them, then spy per test.
         providers: [
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest.fn().mockReturnValue(of(SITE_MOCK))
+            }),
             FileFieldStore,
             DialogService,
             DotFileFieldUploadService,
@@ -600,6 +618,263 @@ describe('DotFileFieldComponent', () => {
 
             expect(dojoLauncher.open).toHaveBeenCalled();
             expect(dialogLauncher.open).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('select existing asset (AssetPicker)', () => {
+        /** The site signal is created once by the factory, so a test that nulls it would leak. */
+        /**
+         * `DotSiteService` is root-provided and mocked once for the file, so re-seed the return
+         * value per test rather than mutating a signal.
+         */
+        const setSite = (site: DotSite | null) =>
+            (spectator.inject(DotSiteService).getCurrentSite as jest.Mock).mockReturnValue(
+                site ? of(site) : of(null)
+            );
+
+        const openPicker = (field: DotCMSContentTypeField, contentlet?: DotCMSContentlet) => {
+            setup(field, contentlet);
+            setSite(SITE_MOCK);
+            spectator.detectChanges();
+
+            const dialogService = spectator.inject(DialogService, true);
+            const spyOpen = jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(undefined),
+                close: jest.fn()
+            } as unknown as DynamicDialogRef);
+
+            spectator.component.showSelectExistingFileDialog();
+
+            return spyOpen;
+        };
+
+        /** The picker config the dialog was opened with. */
+        const configOf = (spyOpen: jest.SpyInstance): DotAssetPickerConfig =>
+            spyOpen.mock.calls[0][1].data as DotAssetPickerConfig;
+
+        /** The `DialogService.open` options, minus the picker config. */
+        const optionsOf = (spyOpen: jest.SpyInstance) => spyOpen.mock.calls[0][1];
+
+        it('should open the AssetPicker, not the browser selector', () => {
+            const spyOpen = openPicker(FILE_FIELD_MOCK);
+
+            expect(spyOpen).toHaveBeenCalledWith(
+                DotAssetPickerComponent,
+                expect.objectContaining({ data: expect.anything() })
+            );
+        });
+
+        describe('dialog chrome', () => {
+            it('should hide PrimeNG’s header so the picker can render its own', () => {
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.showHeader).toBe(false);
+                expect(options.header).toBeUndefined();
+            });
+
+            it('should not autofocus on open', () => {
+                // Autofocus lands on the picker's search input and paints the theme's focus halo
+                // the moment the dialog appears.
+                expect(optionsOf(openPicker(FILE_FIELD_MOCK)).focusOnShow).toBe(false);
+            });
+
+            it('should let the picker fill the dialog so full screen can grow it', () => {
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.height).toBeTruthy();
+                expect(options.contentStyle).toEqual(
+                    expect.objectContaining({ height: '100%', padding: '0' })
+                );
+            });
+
+            it('should size the windowed dialog without an inline max-width', () => {
+                // An inline max-width survives `.p-dialog-maximized` (which only overrides
+                // width/height), so it would clamp the dialog once it goes full screen.
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.width).toBe('min(90vw, 114rem)');
+                expect(options.style).toBeUndefined();
+            });
+
+            it('should enable PrimeNG’s maximized state without adding its button', () => {
+                const options = optionsOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(options.maximizable).toBe(true);
+                // PrimeNG renders the maximize button inside the header we hid.
+                expect(options.showHeader).toBe(false);
+            });
+        });
+
+        describe('File field', () => {
+            it('should open in file mode: no type or mime restriction', () => {
+                const config = configOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(config.baseTypes).toBeUndefined();
+                expect(config.mimeTypes).toBeUndefined();
+            });
+
+            it('should pass the site being edited', () => {
+                const config = configOf(openPicker(FILE_FIELD_MOCK));
+
+                expect(config.site).toEqual(SITE_MOCK);
+            });
+
+            it('should carry the "Add File" title in the config', () => {
+                const config = configOf(openPicker(FILE_FIELD_MOCK));
+
+                // The mocked message service returns a fixed string, so the assertion that
+                // distinguishes File from Image is which key was resolved.
+                expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                    'dot.asset.picker.header.file'
+                );
+                expect(config.title).toBeTruthy();
+            });
+        });
+
+        describe('Image field', () => {
+            it('should restrict to the dotAsset and File Asset base types', () => {
+                const config = configOf(openPicker(IMAGE_FIELD_MOCK));
+
+                expect(config.baseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+            });
+
+            it('should apply the image mime restriction', () => {
+                const config = configOf(openPicker(IMAGE_FIELD_MOCK));
+
+                expect(config.mimeTypes).toEqual(['image/*']);
+            });
+
+            it('should carry the "Add Image" title in the config', () => {
+                const config = configOf(openPicker(IMAGE_FIELD_MOCK));
+
+                expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                    'dot.asset.picker.header.image'
+                );
+                expect(config.title).toBeTruthy();
+            });
+        });
+
+        describe('locale', () => {
+            it("should use the contentlet's language when editing", () => {
+                const config = configOf(
+                    openPicker(FILE_FIELD_MOCK, createFakeContentlet({ languageId: 2 }))
+                );
+
+                expect(config.languageId).toBe('2');
+            });
+        });
+
+        describe('guards', () => {
+            it('should not open when no site has resolved yet', () => {
+                setup(FILE_FIELD_MOCK);
+                spectator.detectChanges();
+
+                // Cold start: no site resolves.
+                setSite(null);
+
+                const dialogService = spectator.inject(DialogService, true);
+                const spyOpen = jest.spyOn(dialogService, 'open');
+
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spyOpen).not.toHaveBeenCalled();
+            });
+
+            it('should not stack a second picker while the site lookup is still in flight', () => {
+                // The site lookup is what makes opening asynchronous. `#dialogRef` is still null
+                // while it runs, so without a pending flag a double click opens two dialogs — and
+                // only the second is reachable, leaving the first live and able to write a value.
+                const site$ = new Subject<DotSite>();
+                setup(FILE_FIELD_MOCK);
+                (spectator.inject(DotSiteService).getCurrentSite as jest.Mock).mockReturnValue(
+                    site$.asObservable()
+                );
+                spectator.detectChanges();
+
+                const spyOpen = jest
+                    .spyOn(spectator.inject(DialogService, true), 'open')
+                    .mockReturnValue({
+                        onClose: of(undefined),
+                        close: jest.fn()
+                    } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showSelectExistingFileDialog();
+                site$.next(SITE_MOCK);
+
+                expect(spyOpen).toHaveBeenCalledTimes(1);
+            });
+
+            it('should open again after the picker closed', () => {
+                setup(FILE_FIELD_MOCK);
+                setSite(SITE_MOCK);
+                spectator.detectChanges();
+
+                // Released on cancel too, or the button is dead for the rest of the session.
+                const spyOpen = jest
+                    .spyOn(spectator.inject(DialogService, true), 'open')
+                    .mockReturnValue({
+                        onClose: of(undefined),
+                        close: jest.fn()
+                    } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spyOpen).toHaveBeenCalledTimes(2);
+            });
+
+            it('should allow a retry after the site lookup failed', () => {
+                setup(FILE_FIELD_MOCK);
+                const siteService = spectator.inject(DotSiteService);
+                const getCurrentSite = siteService.getCurrentSite as jest.Mock;
+                getCurrentSite.mockReturnValue(throwError(() => new Error('no site')));
+                spectator.detectChanges();
+
+                // The mock is shared across this file's tests, so only calls from here on count.
+                getCurrentSite.mockClear();
+
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showSelectExistingFileDialog();
+
+                // The guard has to be released on error too, or the button dies for the session.
+                expect(getCurrentSite).toHaveBeenCalledTimes(2);
+            });
+        });
+
+        describe('close contract', () => {
+            it('should set the preview from the returned contentlet', () => {
+                const asset = createFakeContentlet({ identifier: 'asset-1' });
+                setup(FILE_FIELD_MOCK);
+                setSite(SITE_MOCK);
+                spectator.detectChanges();
+
+                const spySetPreview = jest.spyOn(spectator.component.store, 'setPreviewFile');
+                jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                    onClose: of(asset),
+                    close: jest.fn()
+                } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spySetPreview).toHaveBeenCalledWith({ source: 'contentlet', file: asset });
+            });
+
+            it('should leave the field untouched on cancel', () => {
+                setup(FILE_FIELD_MOCK);
+                setSite(SITE_MOCK);
+                spectator.detectChanges();
+
+                const spySetPreview = jest.spyOn(spectator.component.store, 'setPreviewFile');
+                jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                    onClose: of(undefined),
+                    close: jest.fn()
+                } as unknown as DynamicDialogRef);
+
+                spectator.component.showSelectExistingFileDialog();
+
+                expect(spySetPreview).not.toHaveBeenCalled();
+            });
         });
     });
 });

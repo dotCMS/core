@@ -22,10 +22,10 @@ import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
-    ALL_FOLDER,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { ALL_FOLDER } from '@dotcms/ui';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
