@@ -200,7 +200,7 @@ describe('DotPersonaSelectorComponent', () => {
         await spectator.fixture.whenStable();
 
         const selectedItem = spectator.query('dot-persona-selected-item');
-        spectator.click(selectedItem);
+        spectator.click(selectedItem!);
         expect(spectator.component.searchableDropdown.toggleOverlayPanel).toHaveBeenCalled();
     });
 
@@ -296,7 +296,7 @@ describe('DotPersonaSelectorComponent', () => {
             jest.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
 
             spectator.triggerEventHandler('dot-searchable-dropdown', 'filterChange', 'Bill');
-            spectator.click(addPersonaIcon);
+            spectator.click(addPersonaIcon!);
             spectator.detectChanges();
             expect(spectator.component.searchableDropdown.toggleOverlayPanel).toHaveBeenCalled();
             expect(personaDialog.visible).toBe(true);

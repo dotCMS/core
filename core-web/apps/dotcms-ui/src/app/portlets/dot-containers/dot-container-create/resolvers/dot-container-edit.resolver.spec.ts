@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
@@ -13,6 +14,9 @@ import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotContainerEditResolver } from './dot-container-edit.resolver';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+
+/** Both resolvers declare this parameter `_state` and never read it. */
+const UNUSED_STATE = null as unknown as RouterStateSnapshot;
 
 describe('DotContainerService', () => {
     let service: DotContainerEditResolver;
@@ -68,7 +72,7 @@ describe('DotContainerService', () => {
                         }
                     }
                 } as any,
-                null
+                UNUSED_STATE
             )
             .subscribe(
                 (_res) => {

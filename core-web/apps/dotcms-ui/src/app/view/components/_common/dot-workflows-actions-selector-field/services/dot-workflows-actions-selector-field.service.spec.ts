@@ -95,7 +95,6 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
             new HttpResponse({
                 body: null,
                 status: HttpCode.BAD_REQUEST,
-                headers: null,
                 url: ''
             })
         );

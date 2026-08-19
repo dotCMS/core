@@ -163,9 +163,9 @@ class MockDotSystemConfigService {
 
 async function makeFormValid(fixture: ComponentFixture<DotTemplateCreateEditComponent>) {
     // can't use debugElement because the dialogs opens outside the component
-    const title: HTMLInputElement = document.querySelector(
+    const title = document.querySelector<HTMLInputElement>(
         '[data-testid="templatePropsTitleField"]'
-    );
+    )!;
 
     title.value = 'Hello World';
 
@@ -184,7 +184,7 @@ async function makeFormValid(fixture: ComponentFixture<DotTemplateCreateEditComp
     themeButton.click();
     fixture.detectChanges();
     await fixture.whenRenderingDone();
-    const item: HTMLElement = document.querySelector('.theme-selector__data-list-item');
+    const item = document.querySelector<HTMLElement>('.theme-selector__data-list-item')!;
     item.click();
 }
 
@@ -424,7 +424,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
             it('should go to template list when cancel dialog button is clicked', () => {
                 // can't use debugElement because the dialogs opens outside the component
-                const button: HTMLButtonElement = document.querySelector(
+                const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogCancel"]'
                 );
                 button.click();
@@ -435,7 +435,7 @@ describe('DotTemplateCreateEditComponent', () => {
             xit('should save template when save dialog button is clicked', async () => {
                 await makeFormValid(fixture);
 
-                const button: HTMLButtonElement = document.querySelector(
+                const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogSave"]'
                 );
 
@@ -504,7 +504,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
             it('should save template when save dialog button is clicked', async () => {
                 // can't use debugElement because the dialogs opens outside the component
-                const title: HTMLInputElement = document.querySelector(
+                const title = document.querySelector<HTMLInputElement>(
                     '[data-testid="templatePropsTitleField"]'
                 );
 
@@ -517,7 +517,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 title.dispatchEvent(event);
 
-                const button: HTMLButtonElement = document.querySelector(
+                const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogSave"]'
                 );
                 button.click();

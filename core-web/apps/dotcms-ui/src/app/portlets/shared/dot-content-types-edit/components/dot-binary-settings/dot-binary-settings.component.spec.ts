@@ -130,7 +130,7 @@ describe('DotBinarySettingsComponent', () => {
             jest.spyOn(component.$valid, 'emit');
 
             const acceptInput = spectator.query(byTestId('setting-accept'));
-            spectator.typeInElement('text/*', acceptInput);
+            spectator.typeInElement('text/*', acceptInput!);
 
             expect(component.$valid.emit).toHaveBeenCalled();
         });

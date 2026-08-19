@@ -2,7 +2,6 @@
 
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -661,7 +660,7 @@ describe('DotTemplateStore', () => {
             });
 
             it('should handle error on update template', (done) => {
-                const error = throwError(() => new HttpErrorResponse(mockResponseView(400)));
+                const error = throwError(() => mockResponseView(400));
                 dotTemplatesService.update = jest.fn().mockReturnValue(error);
                 service.saveTemplate({
                     type: 'advanced',
