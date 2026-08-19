@@ -20,6 +20,7 @@ import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { SplitterModule } from 'primeng/splitter';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, take } from 'rxjs/operators';
@@ -37,9 +38,12 @@ import {
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
+import { DotVelocityPlaygroundWarningsComponent } from './dot-velocity-playground-warnings/dot-velocity-playground-warnings.component';
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
 
 import {
+    firstLine,
+    formatErrorTrace,
     formatHistoryLabel,
     getDownloadParams,
     VELOCITY_HELP_EXAMPLES
@@ -63,9 +67,11 @@ import {
         MenuModule,
         PanelModule,
         PopoverModule,
+        TagModule,
         DotEmptyContainerComponent,
         DotSpinnerComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotVelocityPlaygroundWarningsComponent
     ],
     providers: [DotVelocityPlaygroundStore, DotClipboardUtil],
     templateUrl: './dot-velocity-playground-page.component.html',
@@ -102,6 +108,31 @@ export class DotVelocityPlaygroundPageComponent {
         wordWrap: this.store.wrapCode() ? 'on' : 'off',
         readOnly: true
     }));
+
+    // Read-only, plaintext options for the error "stack trace" pane.
+    readonly $errorEditorOptions = computed(() => ({
+        ...DOT_MONACO_RAW_OPTIONS,
+        language: 'plaintext',
+        wordWrap: this.store.wrapCode() ? 'on' : 'off',
+        readOnly: true,
+        lineNumbers: 'off',
+        folding: false
+    }));
+
+    // Full error rendered as a copyable, stack-trace-style block for the output pane.
+    readonly $errorTrace = computed(() => {
+        const error = this.store.error();
+        if (!error) return '';
+        const resolvedMessage = this.#messageService.get(error.message);
+        return formatErrorTrace(error, resolvedMessage);
+    });
+
+    // Single-line summary for the banner — the full multi-line detail lives in the trace pane.
+    readonly $errorSummary = computed(() => {
+        const error = this.store.error();
+        if (!error) return '';
+        return firstLine(this.#messageService.get(error.message));
+    });
 
     readonly $historyOptions = computed(() =>
         this.store.history().map((entry) => ({

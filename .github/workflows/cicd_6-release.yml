@@ -302,6 +302,12 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
         working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          # The engine reads the Hub tag list before it moves anything, and Hub
+          # refuses anonymous pagination past offset 1000 (these repos are well
+          # past it). docker/login-action above does not cover the Hub API.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           for repo in dotcms/dotcms dotcms/dotcms-dev; do
             echo "--- promoting latest on ${repo} ---"

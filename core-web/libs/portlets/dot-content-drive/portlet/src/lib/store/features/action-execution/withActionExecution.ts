@@ -1,13 +1,23 @@
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotActionBulkRequestOptions } from '@dotcms/dotcms-models';
+import {
+    AddToBundleService,
+    DotHttpErrorManagerService,
+    DotWorkflowActionsFireService,
+    PushPublishService
+} from '@dotcms/data-access';
+import {
+    DotActionBulkRequestOptions,
+    DotAjaxActionResponseView,
+    DotBundle,
+    DotWorkflowPushPublishValue
+} from '@dotcms/dotcms-models';
 
 import {
     DotContentDriveActionExecution,
@@ -52,7 +62,9 @@ export function withActionExecution() {
             (
                 store,
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
-                httpErrorManagerService = inject(DotHttpErrorManagerService)
+                httpErrorManagerService = inject(DotHttpErrorManagerService),
+                addToBundleService = inject(AddToBundleService),
+                pushPublishService = inject(PushPublishService)
             ) => {
                 /**
                  * Settles a finished run by publishing its result for the shell to present.
@@ -93,9 +105,86 @@ export function withActionExecution() {
                     );
                 };
 
+                /**
+                 * Runs one of the legacy `RemotePublishAjaxAction` bulk operations.
+                 *
+                 * Add to Bundle and Push Publish differ only in which servlet command they call and
+                 * in what to say when it answers with nothing usable. Everything else — the replay
+                 * guard, the in-flight marker, the error routing and the count arithmetic — is the
+                 * *servlet's* response contract rather than either action's own logic, so it belongs
+                 * in one place. A third command should be a call, not another copy.
+                 *
+                 * Deliberately not `onUnknownOutcome`, which serves the `bulkFire` path: that
+                 * endpoint answers with a `summary` object, so "no honest count" is a different
+                 * shape and a different message from the servlet's non-numeric `errors`.
+                 *
+                 * @param actionName Shown in the toolbar indicator and the result toast
+                 * @param identifiers Asset identifiers — the servlet splits `assetIdentifier` on ","
+                 * @param request Built lazily, so nothing is posted when the guards refuse the run
+                 * @param noResultMessage Reported when the response carries no numeric `errors`
+                 */
+                const fireLegacyServletBulk = (
+                    actionName: string,
+                    identifiers: string[],
+                    request: () => Observable<DotAjaxActionResponseView>,
+                    noResultMessage: string
+                ): void => {
+                    if (!identifiers.length || store.actionExecution()) {
+                        return;
+                    }
+
+                    patchState(store, {
+                        actionExecution: { actionName, total: identifiers.length },
+                        actionExecutionResult: undefined
+                    });
+
+                    request()
+                        .pipe(
+                            take(1),
+                            catchError((error) => {
+                                patchState(store, { actionExecution: undefined });
+                                httpErrorManagerService.handle(error);
+
+                                return EMPTY;
+                            })
+                        )
+                        .subscribe((result) => {
+                            // The servlet answers 200 for its own failures too: on a
+                            // `DotPublisherException` it writes `{"errors": "<message>"}` with no
+                            // `total`, and when the publisher returns nothing it writes no body at
+                            // all. Either shape would arrive here as a "success" — the first
+                            // producing `NaN` from `total - "<message>"`, the second reporting zero
+                            // of everything on what may well have worked. Neither is a result worth
+                            // showing, so both go to the error handler instead.
+                            if (typeof result?.errors !== 'number') {
+                                patchState(store, { actionExecution: undefined });
+                                httpErrorManagerService.handle(
+                                    new HttpErrorResponse({
+                                        status: 500,
+                                        statusText:
+                                            typeof result?.errors === 'string'
+                                                ? result.errors
+                                                : noResultMessage
+                                    })
+                                );
+
+                                return;
+                            }
+
+                            onSettled({
+                                actionName,
+                                // `total` counts everything queued, failures included, so the
+                                // successes are what is left after removing them.
+                                successCount: Math.max((result.total ?? 0) - result.errors, 0),
+                                skippedCount: 0,
+                                failCount: result.errors
+                            });
+                        });
+                };
+
                 return {
                     /**
-                     * Fires a quick action (publish, unpublish, archive, …) over the given inodes.
+                     * Fires a quick action (lock, unlock) over the given inodes.
                      *
                      * Counts come from the response rather than `inodes.length`: the endpoint answers
                      * 200 with per-item failures inside, so a lock held by another user or a
@@ -150,11 +239,22 @@ export function withActionExecution() {
                      * Contentlets whose scheme does not own the action are skipped server-side and
                      * reported in `skippedCount`, so a mixed-type selection partially skips by
                      * design — the result carries that through to the toast.
+                     *
+                     * `inputs` carries whatever the action declared it needs — a move destination in the
+                     * `//hostname/path` form the actionlet reads, an assignee and comment, push publish
+                     * settings. Each is ignored by an action that did not ask for it, which is why they
+                     * stay optional on one method rather than becoming three: the request shape is
+                     * identical either way, and only the filled-in parts are read server-side.
                      */
                     executeWorkflowAction: (
                         workflowActionId: string,
                         actionName: string,
-                        contentletIds: string[]
+                        contentletIds: string[],
+                        inputs?: {
+                            pathToMove?: string;
+                            assignComment?: { assign: string; comment: string };
+                            pushPublish?: DotActionBulkRequestOptions['additionalParams']['pushPublish'];
+                        }
                     ): void => {
                         if (!contentletIds.length || store.actionExecution()) {
                             return;
@@ -169,9 +269,14 @@ export function withActionExecution() {
                             workflowActionId,
                             contentletIds,
                             additionalParams: {
-                                assignComment: { assign: '', comment: '' },
-                                pushPublish: {},
-                                additionalParamsMap: { _path_to_move: '' }
+                                assignComment: inputs?.assignComment ?? {
+                                    assign: '',
+                                    comment: ''
+                                },
+                                pushPublish: inputs?.pushPublish ?? {},
+                                additionalParamsMap: {
+                                    _path_to_move: inputs?.pathToMove ?? ''
+                                }
                             }
                         };
 
@@ -195,6 +300,69 @@ export function withActionExecution() {
                                 })
                             );
                     },
+
+                    /**
+                     * Adds the given contentlets to a bundle.
+                     *
+                     * Separate from the other two because it is not a workflow action at all: no
+                     * actionlet, no step transition, and it posts form-encoded to the legacy
+                     * `/DotAjaxDirector/…/addToBundle` servlet rather than a workflow endpoint. It
+                     * shares the execution *state* so the toolbar indicator, the "one at a time" guard
+                     * and the result toast all behave identically.
+                     *
+                     * Takes **identifiers**, not inodes — the one action here that does. A bundle holds
+                     * one entry per identifier, so language versions of a contentlet are one asset.
+                     *
+                     * `total` is the server's count of assets actually queued, already deduped and with
+                     * anything already in the bundle removed. It is reported rather than
+                     * `identifiers.length` so the toast cannot claim more than was added.
+                     */
+                    executeAddToBundle: (
+                        actionName: string,
+                        bundle: DotBundle,
+                        identifiers: string[]
+                    ): void =>
+                        fireLegacyServletBulk(
+                            actionName,
+                            identifiers,
+                            // Comma-joined: the servlet splits `assetIdentifier` on "," and has
+                            // always accepted several ids that way, so bulk needs no new endpoint.
+                            () => addToBundleService.addToBundle(identifiers.join(','), bundle),
+                            'Adding to the bundle returned no result'
+                        ),
+
+                    /**
+                     * Push publishes the given identifiers to the chosen environments.
+                     *
+                     * Identifiers, not inodes: push publish sends the *asset*, so every language
+                     * version of a contentlet is one entry — the same collapse Add to Bundle makes.
+                     *
+                     * Shares the legacy servlet's response shape with Add to Bundle, and the same
+                     * caveat: it answers 200 for its own failures, so a body without a numeric
+                     * `errors` is routed to the error handler rather than reported as a success.
+                     *
+                     * Known under-report on `publishexpire`. `RemotePublishAjaxAction.publish`
+                     * creates one bundle for the publish half and a second for the expire half, and
+                     * the second `responseMap` overwrites the first — so the counts that come back
+                     * describe the expire half alone and the toast reports fewer items than were
+                     * actually queued. Not a regression here: `PushPublishActionlet.doPushPublish`
+                     * splits the same way, so the workflow path reports it identically.
+                     */
+                    executePushPublish: (
+                        actionName: string,
+                        identifiers: string[],
+                        settings: DotWorkflowPushPublishValue
+                    ): void =>
+                        fireLegacyServletBulk(
+                            actionName,
+                            identifiers,
+                            () =>
+                                pushPublishService.pushPublishAssets(
+                                    identifiers.join(','),
+                                    settings
+                                ),
+                            'The push publish returned no result'
+                        ),
 
                     /** Called by the shell once the result has been presented. */
                     clearActionExecutionResult: (): void => {

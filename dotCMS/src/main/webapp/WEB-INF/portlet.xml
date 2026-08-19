@@ -498,6 +498,12 @@
     </portlet>
 
     <portlet>
+        <portlet-name>experiments</portlet-name>
+        <display-name>Experiments</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
         <portlet-name>usage</portlet-name>
         <display-name>Usage</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>

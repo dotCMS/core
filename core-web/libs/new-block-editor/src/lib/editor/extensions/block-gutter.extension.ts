@@ -1,8 +1,28 @@
 import { autoUpdate, computePosition, offset, shift } from '@floating-ui/dom';
 
-import type { Editor } from '@tiptap/core';
+import { Extension, type Editor } from '@tiptap/core';
 import { DragHandle, defaultComputePositionConfig } from '@tiptap/extension-drag-handle';
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import type { Node as ProseMirrorNode, Slice } from '@tiptap/pm/model';
+import { NodeSelection, Plugin, PluginKey } from '@tiptap/pm/state';
+import type { EditorView } from '@tiptap/pm/view';
+
+/**
+ * Runtime shape of `EditorView.dragging`. Public typings only declare `{ slice, move }`, but
+ * ProseMirror also carries an optional `node` (`NodeSelection`) used on drop to delete the source.
+ */
+type ViewDragging = {
+    slice: Slice;
+    move: boolean;
+    node?: NodeSelection | null;
+};
+
+export function getViewDragging(view: EditorView): ViewDragging | null {
+    return (view.dragging as ViewDragging | null) ?? null;
+}
+
+export function setViewDragging(view: EditorView, dragging: ViewDragging): void {
+    view.dragging = dragging;
+}
 
 /**
  * Shared mutable state for the block gutter (drag grip + add button), updated on each hover.
@@ -317,6 +337,32 @@ function createGutterAutoPositioner(state: GutterState): {
 }
 
 /**
+ * TipTap's drag-handle sets `view.dragging` without `dragging.node`. For atom NodeViews
+ * (e.g. `dotContent`), ProseMirror's `deleteSelection()` path can miss the source delete on
+ * drop and leave a duplicate (#36976). A `NodeSelection` makes the drop use `node.replace(tr)`.
+ */
+export function patchAtomDragToNodeSelection(view: EditorView, pos: number): boolean {
+    if (pos < 0) return false;
+    const node = view.state.doc.nodeAt(pos);
+    if (!node?.isAtom || !getViewDragging(view)) return false;
+
+    const nodeSelection = NodeSelection.create(view.state.doc, pos);
+    setViewDragging(view, {
+        slice: nodeSelection.content(),
+        move: true,
+        node: nodeSelection
+    });
+
+    if (!(view.state.selection instanceof NodeSelection) || view.state.selection.from !== pos) {
+        view.dispatch(view.state.tr.setSelection(nodeSelection));
+    }
+
+    return true;
+}
+
+const ATOM_DRAG_MOVE_FIX_KEY = new PluginKey('blockGutterAtomDragMoveFix');
+
+/**
  * Configures TipTap’s {@link DragHandle} with a two-part gutter: draggable grip + “+” button.
  *
  * - One wrapper from `render()`; TipTap attaches drag behavior to that root’s draggable child.
@@ -325,15 +371,18 @@ function createGutterAutoPositioner(state: GutterState): {
  * - Floating UI `shift` keeps the gutter on-screen; `autoUpdate` re-runs positioning on scroll
  *   (TipTap’s plugin only recomputes when the hovered *node* changes, and `document` scroll misses
  *   inner scroll containers because scroll events do not bubble).
+ * - Atom NodeView reorder fix (#36976): after TipTap’s dragHandler runs, rewrite `view.dragging`
+ *   to a `NodeSelection` so the drop’s source-delete half cannot be skipped.
  *
  * @param addBlockAriaLabel - Pre-translated aria-label for the “+” button.
- * @returns A configured `DragHandle` extension ready for `Editor` extensions array.
+ * @returns An extension that registers the drag handle plus the atom-move fix plugin.
  */
 export function createBlockGutterDragHandle(addBlockAriaLabel: string) {
     const state: GutterState = { editor: null, pos: -1, nodeSize: 0, wrapper: null };
     const positioner = createGutterAutoPositioner(state);
 
     let isDragHandleDrag = false;
+    let dragSourcePos = -1;
     const dragImageListenerRegistered = { current: false };
     let editorEventsHooked = false;
 
@@ -384,7 +433,7 @@ export function createBlockGutterDragHandle(addBlockAriaLabel: string) {
         editorEventsHooked = true;
     };
 
-    return DragHandle.configure({
+    const dragHandle = DragHandle.configure({
         computePositionConfig: GUTTER_COMPUTE_POSITION_CONFIG,
         onNodeChange: (raw) => {
             const payload = raw as DragHandleNodeChangePayload;
@@ -402,12 +451,48 @@ export function createBlockGutterDragHandle(addBlockAriaLabel: string) {
         },
         onElementDragStart: () => {
             isDragHandleDrag = true;
+            dragSourcePos = state.pos;
             document.documentElement.style.setProperty('cursor', 'grabbing', 'important');
+
+            // onElementDragStart runs before TipTap's dragHandler sets view.dragging.
+            queueMicrotask(() => {
+                const editor = state.editor;
+                if (!editor || !isDragHandleDrag || dragSourcePos < 0) return;
+                patchAtomDragToNodeSelection(editor.view, dragSourcePos);
+            });
         },
         onElementDragEnd: () => {
             isDragHandleDrag = false;
+            dragSourcePos = -1;
             document.documentElement.style.removeProperty('cursor');
         },
         render: () => createGutterRoot(state, addBlockAriaLabel)
+    });
+
+    return Extension.create({
+        name: 'blockGutter',
+        addExtensions() {
+            return [dragHandle];
+        },
+        addProseMirrorPlugins() {
+            return [
+                new Plugin({
+                    key: ATOM_DRAG_MOVE_FIX_KEY,
+                    props: {
+                        handleDrop(view, _event, _slice, moved) {
+                            if (!isDragHandleDrag || !moved || dragSourcePos < 0) return false;
+
+                            const dragging = getViewDragging(view);
+                            const node = view.state.doc.nodeAt(dragSourcePos);
+                            if (node?.isAtom && !dragging?.node) {
+                                patchAtomDragToNodeSelection(view, dragSourcePos);
+                            }
+
+                            return false;
+                        }
+                    }
+                })
+            ];
+        }
     });
 }

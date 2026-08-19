@@ -5,7 +5,7 @@
     (removed)="onClearAll()"
     data-testid="content-type-filter-chip" />
 
-<p-popover #popover [pt]="popoverPt" (onShow)="$popoverOpen.set(true)" (onHide)="onPanelHide()">
+<p-popover #popover (onShow)="$popoverOpen.set(true)" (onHide)="onPanelHide()">
     @if ($popoverOpen()) {
         <div
             class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[min-content] overflow-hidden"
@@ -24,14 +24,13 @@
                     optionLabel="label"
                     optionValue="name"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     data-testid="base-type-listbox">
                     <ng-template let-item pTemplate="item">
                         @if (item.name === ALL_CONTENT) {
                             <!--
                                 Absolute-positioned divider extends 1rem past each side to
                                 cover the option's horizontal padding (from
-                                CHIP_FILTER_LISTBOX_PT), without shrinking the content width
+                                the chip-filter panel styles), without shrinking the content width
                                 and truncating the label.
                             -->
                             <div class="relative flex w-full min-w-0 items-center gap-2">
@@ -105,7 +104,6 @@
                     [scrollHeight]="$rightScrollHeight()"
                     [lazy]="true"
                     (onLazyLoad)="onLazyLoad($event)"
-                    [pt]="listboxPt"
                     optionLabel="name"
                     dataKey="variable"
                     data-testid="content-type-listbox">

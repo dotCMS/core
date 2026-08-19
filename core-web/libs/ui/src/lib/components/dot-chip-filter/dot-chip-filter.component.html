@@ -1,0 +1,20 @@
+<span class="truncate">
+    <span class="font-semibold" data-testid="chip-title">{{ title() }}</span>
+    @if (active()) {
+        <span data-testid="chip-values">: {{ valuesLabel() }}</span>
+    } @else if (emptyLabel()) {
+        <span data-testid="chip-empty-label">: {{ emptyLabel() }}</span>
+    }
+</span>
+@if (active()) {
+    <button
+        type="button"
+        class="flex cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-current"
+        [attr.aria-label]="'dot.common.remove' | dm"
+        (click)="onRemove($event)"
+        data-testid="chip-remove">
+        <i class="pi pi-times text-sm leading-none"></i>
+    </button>
+} @else {
+    <i class="pi pi-chevron-down text-sm leading-none"></i>
+}
