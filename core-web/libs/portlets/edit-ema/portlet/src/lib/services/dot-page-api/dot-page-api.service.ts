@@ -176,12 +176,18 @@ export class DotPageApiService {
      * @return {*}  {Observable<T>}
      * @memberof DotPageApiService
      */
+/**
+ * GraphQL variables for the page request. Values are optional because `mode` and `variantName`
+ * genuinely can be absent, and `JSON.stringify` — which is what `HttpClient` applies to the body —
+ * omits keys whose value is `undefined`. So this is what has always gone over the wire; the old
+ * `Record<string, string>` simply did not say so.
+ */
     getGraphQLPage({
         query,
         variables
     }: {
         query: string;
-        variables: Record<string, string>;
+        variables: Record<string, string | undefined>;
     }): Observable<{
         pageAsset: DotCMSPageAsset;
         content: Record<string, unknown>;
