@@ -41,7 +41,7 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
      * @param {*} fn
      * @memberof DotWorkflowsSelectorFieldComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 

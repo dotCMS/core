@@ -25,7 +25,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 
-import { take, takeUntil, tap } from 'rxjs/operators';
+import { filter, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
@@ -96,6 +96,8 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
         this.loginInfo$ = this.loginPageStateService.get().pipe(
             takeUntil(this.destroy$),
+            // Null until `set()` has fetched the login page state.
+            filter((loginInfo): loginInfo is DotLoginInformation => !!loginInfo),
             tap((loginInfo: DotLoginInformation) => {
                 this.setInitialFormValues(loginInfo);
             })

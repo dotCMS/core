@@ -91,7 +91,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
      * @param {*} fn
      * @memberof DotWorkflowsActionsSelectorFieldComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 

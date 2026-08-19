@@ -21,7 +21,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { take, tap } from 'rxjs/operators';
+import { filter, take, tap } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -72,6 +72,8 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     ngOnInit(): void {
         this.loginInfo$ = this.dotLoginPageStateService.get().pipe(
             take(1),
+            // Null until `set()` has fetched the login page state.
+            filter((loginInfo): loginInfo is DotLoginInformation => !!loginInfo),
             tap((loginInfo: DotLoginInformation) => {
                 this.passwordDontMatchMessage =
                     loginInfo.i18nMessagesMap['reset-password-confirmation-do-not-match'];
@@ -118,7 +120,7 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
             this.loginService
                 .changePassword(
                     this.resetPasswordForm.controls['password'].value,
-                    this.route.snapshot.paramMap.get('token')
+                    this.route.snapshot.paramMap.get('token') ?? ''
                 )
                 .pipe(take(1))
                 .subscribe(

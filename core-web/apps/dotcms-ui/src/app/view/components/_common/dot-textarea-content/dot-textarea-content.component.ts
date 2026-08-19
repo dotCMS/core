@@ -177,7 +177,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @param any fn
      * @memberof DotTextareaContentComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 
