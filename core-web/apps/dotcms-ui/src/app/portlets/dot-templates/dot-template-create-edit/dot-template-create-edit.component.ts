@@ -191,7 +191,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
             }
         });
-        ref.onClose.pipe(takeUntil(this.destroy$)).subscribe((goToListing: boolean) => {
+        ref?.onClose.pipe(takeUntil(this.destroy$)).subscribe((goToListing: boolean) => {
             if (goToListing || goToListing === undefined) {
                 this.cancelTemplate();
             }

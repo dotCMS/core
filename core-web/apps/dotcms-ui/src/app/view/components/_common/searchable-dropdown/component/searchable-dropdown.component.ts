@@ -194,7 +194,10 @@ export class SearchableDropdownComponent
                             this.selectDropdownOption(keyboardEvent.key);
                         }
                     }),
-                    map((keyboardEvent: KeyboardEvent) => keyboardEvent.target['value']),
+                    map(
+                        (keyboardEvent: KeyboardEvent) =>
+                            (keyboardEvent.target as HTMLInputElement).value
+                    ),
                     distinctUntilChanged(),
                     debounceTime(500)
                 )
@@ -248,10 +251,11 @@ export class SearchableDropdownComponent
         }
 
         setTimeout(() => {
-            if (!this.overlayPanelMinHeight) {
-                this.overlayPanelMinHeight = this.searchPanelRef.container
-                    .getBoundingClientRect()
-                    .height.toString();
+            // `container` is only set while the popover is mounted, and this runs a tick later.
+            const container = this.searchPanelRef.container;
+
+            if (!this.overlayPanelMinHeight && container) {
+                this.overlayPanelMinHeight = container.getBoundingClientRect().height.toString();
             }
         }, 0);
         this.display.emit();

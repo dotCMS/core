@@ -135,7 +135,8 @@ export class DotPushPublishFormComponent
      * @memberof DotPushPublishFormComponent
      */
     updateTimezoneLabel(timezone: string): void {
-        this.localTimezone = this.timeZoneOptions.find(({ value }) => value === timezone)['label'];
+        this.localTimezone =
+            this.timeZoneOptions.find(({ value }) => value === timezone)?.label ?? '';
     }
 
     /**
@@ -190,6 +191,12 @@ export class DotPushPublishFormComponent
         const localTZItem = this.timeZoneOptions.find(
             ({ value }) => value === Intl.DateTimeFormat().resolvedOptions().timeZone
         );
+        // The list comes from the server; it need not carry the browser's resolved zone, in which
+        // case the form keeps whatever default it was built with.
+        if (!localTZItem) {
+            return;
+        }
+
         ppTimezone.setValue(localTZItem.value);
         this.localTimezone = localTZItem.label;
     }
@@ -254,17 +261,15 @@ export class DotPushPublishFormComponent
             ppFilter.setValue(this.defaultFilterKey);
         };
 
-        this.form
-            .get('filterKey')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.controls['filterKey'].valueChanges
+            .pipe(takeUntil(this.destroy$))
             .pipe(filter((value: string) => !!value))
             .subscribe((filterSelected: string) => {
                 this.defaultFilterKey = filterSelected;
             });
 
-        this.form
-            .get('pushActionSelected')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.controls['pushActionSelected'].valueChanges
+            .pipe(takeUntil(this.destroy$))
             .subscribe((pushActionSelected: string) => {
                 switch (pushActionSelected) {
                     case 'publish': {

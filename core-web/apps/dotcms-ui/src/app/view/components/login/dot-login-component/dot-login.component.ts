@@ -147,9 +147,9 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private setInitialFormValues(loginInfo: DotLoginInformation): void {
-        this.loginForm
-            .get('language')
-            .setValue(this.getLanguageFormatted(loginInfo.entity.currentLanguage));
+        this.loginForm.controls['language'].setValue(
+            this.getLanguageFormatted(loginInfo.entity.currentLanguage)
+        );
         this.setLanguageItems(loginInfo.entity.languages);
         this.setInitialMessage(loginInfo);
     }

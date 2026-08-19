@@ -52,7 +52,7 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
         return (
             this.el.nativeElement.textContent.length < this._maxLength ||
             this.isAllowedKeyCode(event) ||
-            !!window.getSelection().toString()
+            !!window.getSelection()?.toString()
         );
     }
     private reduceText(): void {

@@ -129,9 +129,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                             this.errorMessage.set(
                                 this.#dotMessageService.get('loginas.error.wrong-credentials')
                             );
-                            if (this.passwordElem()) {
-                                this.passwordElem().nativeElement.focus();
-                            }
+                            this.passwordElem()?.nativeElement.focus();
                         }
                     }
                 });

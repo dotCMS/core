@@ -152,6 +152,12 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     }
 
     private setPortletUrl(): void {
+        const parent = this.route.parent;
+
+        if (!parent) {
+            return;
+        }
+
         const portletId$ = this.route.params.pipe(
             map((x) => x?.['id']),
             map((id: string) => id)
@@ -160,9 +166,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         portletId$
             .pipe(
                 withLatestFrom(
-                    this.route.parent.url.pipe(
-                        map((urlSegment: UrlSegment[]) => urlSegment[0].path)
-                    )
+                    parent.url.pipe(map((urlSegment: UrlSegment[]) => urlSegment[0].path))
                 ),
                 mergeMap(([id, url]) =>
                     url === 'add'

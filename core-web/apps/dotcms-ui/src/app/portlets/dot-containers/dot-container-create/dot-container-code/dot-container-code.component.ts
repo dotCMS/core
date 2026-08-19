@@ -206,7 +206,12 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                 onSave: (codeTemplate: string) => {
                     const editor = this.monacoEditors[contentType.structureId];
 
-                    const selections = editor.getSelections();
+                    const selections = editor?.getSelections();
+                    const model = editor?.getModel();
+
+                    if (!selections || !model) {
+                        return;
+                    }
 
                     const editOperation = selections.map((selection) => {
                         return {
@@ -220,7 +225,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                         };
                     });
 
-                    editor.getModel().pushEditOperations(selections, editOperation, () => {
+                    model.pushEditOperations(selections, editOperation, () => {
                         return null;
                     });
                 }

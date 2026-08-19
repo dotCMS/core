@@ -133,7 +133,7 @@ export class DotContentletWrapperComponent {
      * @param * $event
      * @memberof DotContentletWrapperComponent
      */
-    onBeforeClose($event?: { close: () => void }): void {
+    onBeforeClose($event: { close: () => void }): void {
         if (this.isContentletModified) {
             this.dotAlertConfirmService.confirm({
                 accept: () => {
