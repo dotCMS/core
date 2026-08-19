@@ -69,8 +69,13 @@ process to the work. **When in doubt, size up** — and ask a teammate rather th
 | Tier | Typical change | Flow |
 |------|----------------|------|
 | **0 — Trivial** | Typos, copy, config, true no-op refactors | No spec. Keep tests green. |
-| **1 — Standard** | Most bug fixes; small changes inside an existing interface | **Lean** — `specify` → `plan` → `tasks` → `implement` |
-| **2 — Significant** | New features, new or changed interfaces, data-model changes, cross-team or security-sensitive work | **Full** — `specify` → (`clarify`) → (`checklist`) → `plan` → `tasks` → (`analyze`) → `implement` |
+| **1 — Standard** | Most bug fixes; small changes inside an existing interface | **Lean** — `specify` / `specify-fix` → `plan` → `tasks` → `implement` |
+| **2 — Significant** | New features, new or changed interfaces, data-model changes, cross-team or security-sensitive work | **Full** — `specify` / `specify-fix` → (`clarify`) → (`checklist`) → `plan` → `tasks` → (`analyze`) → `implement` |
+
+The entry command is a separate question from the tier: `specify` for new behavior,
+`specify-fix` for broken behavior (§1). **Tier decides how much process; new-vs-broken decides
+where you start.** A bug can be Tier 2 — §6's example is one — and a small non-bug change
+inside an existing interface is Tier 1 but still starts at `specify`.
 
 **Steps in parentheses are optional.** They are judgment calls, not required stages — nothing
 blocks or complains if you skip them. The four unparenthesized commands are the flow; the rest
