@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
@@ -438,10 +440,12 @@ describe('DotContentEditorComponent', () => {
 
         it('should initialize monaco editor correctly', fakeAsync(() => {
             const mockEditor = { focus: jest.fn(), updateOptions: jest.fn() };
+            // Stubbed to the two methods `monacoInit` touches, out of the 111 on
+            // `MonacoStandaloneCodeEditor`.
             const monacoInstance = {
                 name: 'testEditor',
                 editor: mockEditor
-            };
+            } as unknown as { name: string; editor: MonacoStandaloneCodeEditor };
 
             comp.monacoInit(monacoInstance);
             // Trigger requestAnimationFrame
@@ -453,10 +457,12 @@ describe('DotContentEditorComponent', () => {
 
         it('should set monaco editor to readonly when no content types', fakeAsync(() => {
             const mockEditor = { focus: jest.fn(), updateOptions: jest.fn() };
+            // Stubbed to the two methods `monacoInit` touches, out of the 111 on
+            // `MonacoStandaloneCodeEditor`.
             const monacoInstance = {
                 name: 'testEditor',
                 editor: mockEditor
-            };
+            } as unknown as { name: string; editor: MonacoStandaloneCodeEditor };
 
             comp.contentTypes = [];
             comp.monacoInit(monacoInstance);

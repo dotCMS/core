@@ -24,29 +24,33 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  * @implements {Resolve<ContentType>}
  */
 @Injectable()
-export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
+export class DotContentTypeEditResolver implements Resolve<DotCMSContentType | null> {
     private contentTypesInfoService = inject(DotContentTypesInfoService);
     private crudService = inject(DotCrudService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private dotRouterService = inject(DotRouterService);
     private loginService = inject(LoginService);
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotCMSContentType> {
-        if (route.paramMap.get('id')) {
-            return this.getContentType(route.paramMap.get('id'));
-        } else {
-            const contentType = this.getFilterByParam(route) || route.paramMap.get('type');
+    resolve(route: ActivatedRouteSnapshot): Observable<DotCMSContentType | null> {
+        // Read once: `paramMap.get` returns `string | null` and calling it twice does not carry the
+        // first check's narrowing to the second.
+        const id = route.paramMap.get('id');
 
-            return this.getDefaultContentType(contentType);
+        if (id) {
+            return this.getContentType(id);
         }
+
+        return this.getDefaultContentType(
+            this.getFilterByParam(route) || route.paramMap.get('type') || ''
+        );
     }
 
-    private getFilterByParam(route: ActivatedRouteSnapshot): string {
+    private getFilterByParam(route: ActivatedRouteSnapshot): string | undefined {
         return route.data && route.data['filterBy'];
     }
 
-    private getContentType(id: string): Observable<DotCMSContentType> {
-        return this.crudService.getDataById('v1/contenttype', id).pipe(
+    private getContentType(id: string): Observable<DotCMSContentType | null> {
+        return this.crudService.getDataById<DotCMSContentType>('v1/contenttype', id).pipe(
             take(1),
             catchError((err: HttpErrorResponse) => {
                 return this.dotHttpErrorManagerService.handle(err).pipe(
@@ -65,6 +69,9 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
     }
 
     private getDefaultContentType(type: string): Observable<DotCMSContentType> {
+        // The seed for a content type that does not exist yet: the endpoint fills in `id`, `iDate`,
+        // `modDate` and the rest on save, which is why they are null here against a model that
+        // describes what the endpoint *returns*.
         return of({
             baseType: type,
             clazz: this.contentTypesInfoService.getClazz(type),
@@ -85,6 +92,6 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
             variable: null,
             versionable: false,
             workflows: []
-        });
+        } as unknown as DotCMSContentType);
     }
 }
