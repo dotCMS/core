@@ -574,6 +574,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             seo: queryParams['seo']
         };
 
+        // `undefined`, not `null`: absent means "this preset is not in the URL", which is what edit
+        // mode has. `null` is the store's separate signal for "a preset was explicitly cleared".
         return isPreviewMode
             ? viewParams
             : { device: undefined, orientation: undefined, seo: undefined };
