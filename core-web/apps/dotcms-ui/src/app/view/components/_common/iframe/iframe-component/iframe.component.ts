@@ -99,11 +99,12 @@ export class IframeComponent implements OnInit, OnDestroy {
             .ran()
             .pipe(takeUntil(this.destroy$))
             .subscribe((func: DotFunctionInfo) => {
-                if (
-                    this.getIframeWindow() &&
-                    typeof this.getIframeWindow()[func.name] === 'function'
-                ) {
-                    this.getIframeWindow()[func.name](...this.setArgs(func.args));
+                const iframeWindow = this.getIframeWindow() as unknown as
+                    | Record<string, (...args: unknown[]) => void>
+                    | undefined;
+
+                if (typeof iframeWindow?.[func.name] === 'function') {
+                    iframeWindow[func.name](...this.setArgs(func.args));
                 }
             });
 
@@ -111,10 +112,10 @@ export class IframeComponent implements OnInit, OnDestroy {
             .reloadedColors()
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
-                const doc = this.getIframeDocument();
+                const html = this.getIframeDocument()?.querySelector('html');
 
-                if (doc) {
-                    this.dotUiColorsService.setColors(doc.querySelector('html'));
+                if (html) {
+                    this.dotUiColorsService.setColors(html);
                 }
             });
 
@@ -132,9 +133,13 @@ export class IframeComponent implements OnInit, OnDestroy {
      * @param any $event
      * @memberof IframeComponent
      */
-    onLoad($event): void {
+    onLoad($event: Event): void {
+        // The template binds the DOM `load` event, whose `target` is `EventTarget | null`, and a
+        // cross-origin or not-yet-ready frame has no `contentDocument`. `parseInt('')` is `NaN`,
+        // which fails the `> 400` test below exactly as a missing title always did.
+        const iframe = $event.target as HTMLIFrameElement | null;
         // JSP is setting the error number in the title
-        const errorCode = parseInt($event.target.contentDocument.title, 10);
+        const errorCode = parseInt(iframe?.contentDocument?.title ?? '', 10);
         if (errorCode > 400) {
             this.handleErrors(errorCode);
         }
@@ -252,7 +257,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private handleErrors(error: number): void {
-        const errorMapHandler = {
+        const errorMapHandler: Record<number, () => void> = {
             401: () => {
                 this.dotRouterService.doLogOut();
             }
@@ -263,24 +268,31 @@ export class IframeComponent implements OnInit, OnDestroy {
         }
     }
 
-    private handleIframeEvents($event): void {
+    private handleIframeEvents($event: Event): void {
+        // `'ng-event'` is a custom event name, so `addEventListener` resolves to its `Event`
+        // overload and will not take a `CustomEvent` handler directly.
+        //
+        // NOTE: each `.bind(this)` below produces a fresh function, so neither
+        // `removeEventListener` call has ever removed anything — every iframe load adds another
+        // pair of listeners. Left alone here: changing listener identity changes what this
+        // component emits, which is more than a strict-mode pass should do.
         this.getIframeWindow().removeEventListener('keydown', this.emitKeyDown.bind(this));
         this.getIframeWindow().document.removeEventListener(
             'ng-event',
-            this.emitCustonEvent.bind(this)
+            this.emitCustonEvent.bind(this) as EventListener
         );
 
         this.getIframeWindow().addEventListener('keydown', this.emitKeyDown.bind(this));
         this.getIframeWindow().document.addEventListener(
             'ng-event',
-            this.emitCustonEvent.bind(this)
+            this.emitCustonEvent.bind(this) as EventListener
         );
         this.charge.emit($event);
 
-        const doc = this.getIframeDocument();
+        const html = this.getIframeDocument()?.querySelector('html');
 
-        if (doc) {
-            this.dotUiColorsService.setColors(doc.querySelector('html'));
+        if (html) {
+            this.dotUiColorsService.setColors(html);
         }
     }
 
@@ -289,7 +301,7 @@ export class IframeComponent implements OnInit, OnDestroy {
             ?.length;
     }
 
-    private setArgs(args: unknown[]): unknown[] {
+    private setArgs(args?: unknown[]): unknown[] {
         return args ? args : [];
     }
 }
