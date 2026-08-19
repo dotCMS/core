@@ -50,12 +50,12 @@ export class DotIframeDialogComponent implements OnChanges {
     show = false;
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.url) {
-            this.show = !!changes.url.currentValue;
+        if (changes['url']) {
+            this.show = !!changes['url'].currentValue;
         }
 
-        if (changes.header) {
-            this.header = changes.header.currentValue;
+        if (changes['header']) {
+            this.header = changes['header'].currentValue;
         }
     }
 

@@ -80,7 +80,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     this.paginatorService.setExtraParams('host', identifier);
 
                     return this.route.data.pipe(
-                        map((x) => x?.dotContainerListResolverData),
+                        map((x) => x?.['dotContainerListResolverData']),
                         take(1)
                     );
                 })

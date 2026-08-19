@@ -586,12 +586,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         loggedUser: {
                             id: currentUser.userId,
                             canRead: {
-                                contentlets: permissions.CONTENTLETS.canRead,
-                                htmlPages: permissions.HTMLPAGES.canRead
+                                contentlets: permissions['CONTENTLETS'].canRead,
+                                htmlPages: permissions['HTMLPAGES'].canRead
                             },
                             canWrite: {
-                                contentlets: permissions.CONTENTLETS.canWrite,
-                                htmlPages: permissions.HTMLPAGES.canWrite
+                                contentlets: permissions['CONTENTLETS'].canWrite,
+                                htmlPages: permissions['HTMLPAGES'].canWrite
                             }
                         },
                         pages: {
@@ -874,7 +874,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 item?.contentType === 'dotFavoritePage'
                                     ? item.url
                                     : generateDotFavoritePageUrl({
-                                          pageURI: item.urlMap || item.url.split('?')[0],
+                                          pageURI: item['urlMap'] || item.url.split('?')[0],
                                           languageId: item.languageId,
                                           siteId: item.host
                                       })
@@ -927,7 +927,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const favoritePageUrl = favoritePage
             ? favoritePage.url
             : generateDotFavoritePageUrl({
-                  pageURI: item.urlMap || item.url,
+                  pageURI: item['urlMap'] || item.url,
                   languageId: item.languageId,
                   siteId: item.host
               });

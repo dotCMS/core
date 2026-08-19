@@ -73,9 +73,9 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should have pTooltip attributes', () => {
-            expect(button.attributes.appendTo).toEqual('body');
-            expect(button.attributes.tooltipPosition).toEqual('bottom');
-            expect(button.attributes.hideDelay).toEqual('300');
+            expect(button.attributes['appendTo']).toEqual('body');
+            expect(button.attributes['tooltipPosition']).toEqual('bottom');
+            expect(button.attributes['hideDelay']).toEqual('300');
         });
 
         it('should copy text to clipboard', () => {

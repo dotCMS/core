@@ -85,8 +85,8 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.didTemplateChanged) {
-            this.actions = this.getActions(!changes.didTemplateChanged.currentValue);
+        if (changes['didTemplateChanged']) {
+            this.actions = this.getActions(!changes['didTemplateChanged'].currentValue);
         }
     }
 

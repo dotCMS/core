@@ -173,7 +173,7 @@ export class SearchableDropdownComponent
     };
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (this.usePlaceholder(changes.placeholder) || changes.persistentPlaceholder) {
+        if (this.usePlaceholder(changes['placeholder']) || changes['persistentPlaceholder']) {
             this.setLabel();
         }
 
@@ -408,8 +408,8 @@ export class SearchableDropdownComponent
     }
 
     private setOptions(change: SimpleChanges): void {
-        if (change.data && change.data.currentValue) {
-            this.options = structuredClone(change.data.currentValue).map((item) => {
+        if (change['data'] && change['data'].currentValue) {
+            this.options = structuredClone(change['data'].currentValue).map((item) => {
                 item.label = this.getItemLabel(item);
 
                 return item;

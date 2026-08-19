@@ -135,7 +135,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         }
 
         this.newContentEditorEnabled =
-            this.route.snapshot?.data?.featuredFlags[
+            this.route.snapshot?.data?.['featuredFlags'][
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
             ];
     }

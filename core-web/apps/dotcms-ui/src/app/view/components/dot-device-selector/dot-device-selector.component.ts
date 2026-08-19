@@ -46,7 +46,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.value && !changes.value.firstChange) {
+        if (changes['value'] && !changes['value'].firstChange) {
             this.loadOptions();
         }
     }

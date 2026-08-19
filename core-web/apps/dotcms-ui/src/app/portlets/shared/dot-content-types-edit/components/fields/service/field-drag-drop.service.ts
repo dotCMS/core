@@ -220,11 +220,11 @@ export class FieldDragDropService {
         return {
             item: data.item,
             source: {
-                columnId: (<HTMLElement>data.source).dataset.columnid,
+                columnId: (<HTMLElement>data.source).dataset['columnid'],
                 model: data.sourceModel
             },
             target: {
-                columnId: (<HTMLElement>data.target).dataset.columnid,
+                columnId: (<HTMLElement>data.target).dataset['columnid'],
                 model: data.targetModel as DotCMSContentTypeField[]
             }
         };
@@ -240,12 +240,12 @@ export class FieldDragDropService {
     private isDraggingExistingField(data: DragulaDropModel): boolean {
         return (
             data.name === FieldDragDropService.FIELD_BAG_NAME &&
-            (<HTMLElement>data.source).dataset.dragType === 'target'
+            (<HTMLElement>data.source).dataset['dragType'] === 'target'
         );
     }
 
     private isDraggingFromSource(source: HTMLElement): boolean {
-        return source.dataset.dragType === 'source';
+        return source.dataset['dragType'] === 'source';
     }
 
     private isFieldBeingDragFromColumns(data: DragulaDropModel): boolean {
@@ -289,7 +289,7 @@ export class FieldDragDropService {
         _sibling: HTMLElement
     ): boolean {
         const columnsCount = target.parentElement.querySelectorAll('.row-columns__item').length;
-        const isColumnField = FieldUtil.isColumnBreak(el.dataset.clazz);
+        const isColumnField = FieldUtil.isColumnBreak(el.dataset['clazz']);
         const cantAddColumn = isColumnField && columnsCount >= MAX_COLS_PER_ROW;
 
         if (cantAddColumn) {
@@ -308,7 +308,7 @@ export class FieldDragDropService {
         _handle: Element,
         _sibling: Element
     ): boolean {
-        return el.dataset.dragType !== 'not_field';
+        return el.dataset['dragType'] !== 'not_field';
     }
 
     private itShouldSetCurrentOveredContainer(

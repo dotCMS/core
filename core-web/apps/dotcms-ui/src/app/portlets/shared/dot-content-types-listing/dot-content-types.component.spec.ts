@@ -302,7 +302,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map((action) => action.menuItem['label'])).toEqual([
             'Push Publish',
             'Add to bundle',
             'Add to Menu',
@@ -318,8 +318,8 @@ describe('DotContentTypesPortletComponent', () => {
         expect(
             comp.rowActions.map((action) => {
                 return {
-                    label: action.menuItem.label,
-                    icon: action.menuItem.icon
+                    label: action.menuItem['label'],
+                    icon: action.menuItem['icon']
                 };
             })
         ).toEqual([
@@ -334,7 +334,7 @@ describe('DotContentTypesPortletComponent', () => {
         jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map((action) => action.menuItem['label'])).toEqual([
             'Add to bundle',
             'Add to Menu',
             'Copy',
@@ -513,7 +513,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should show Add to Menu option', () => {
         fixture.detectChanges();
-        expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe('Add to Menu');
+        expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem['label']).toBe('Add to Menu');
     });
 
     describe('filterBy', () => {

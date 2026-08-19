@@ -196,8 +196,8 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     handleRowClick(rowData: Record<string, unknown>): void {
         // If the system template or system container is clicked, do nothing.
         if (
-            rowData?.identifier === 'SYSTEM_TEMPLATE' ||
-            rowData?.identifier === 'SYSTEM_CONTAINER'
+            rowData?.['identifier'] === 'SYSTEM_TEMPLATE' ||
+            rowData?.['identifier'] === 'SYSTEM_CONTAINER'
         ) {
             return;
         }

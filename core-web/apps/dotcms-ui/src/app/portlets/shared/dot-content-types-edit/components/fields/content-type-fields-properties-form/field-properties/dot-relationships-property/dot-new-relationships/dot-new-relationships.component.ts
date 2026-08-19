@@ -44,12 +44,12 @@ export class DotNewRelationshipsComponent implements OnChanges {
     currentCardinalityIndex!: number;
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.velocityVar) {
-            this.loadContentType(changes.velocityVar.currentValue);
+        if (changes['velocityVar']) {
+            this.loadContentType(changes['velocityVar'].currentValue);
         }
 
-        if (changes.cardinality) {
-            this.currentCardinalityIndex = changes.cardinality.currentValue;
+        if (changes['cardinality']) {
+            this.currentCardinalityIndex = changes['cardinality'].currentValue;
         }
     }
 

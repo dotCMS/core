@@ -26,7 +26,7 @@ export const newEditContentForContentletGuard: CanActivateFn = (
         switchMap((contentlet) => {
             return dotContentTypeService.getContentType(contentlet.contentType).pipe(
                 map(({ metadata }) => {
-                    const newEditorEnabled = metadata?.CONTENT_EDITOR2_ENABLED;
+                    const newEditorEnabled = metadata?.['CONTENT_EDITOR2_ENABLED'];
                     if (!newEditorEnabled) {
                         return true;
                     }
@@ -56,7 +56,7 @@ export const newEditContentForContentTypeGuard: CanActivateFn = (
 
     return dotContentTypeService.getContentType(contentType).pipe(
         map(({ metadata }) => {
-            const newEditorEnabled = metadata?.CONTENT_EDITOR2_ENABLED;
+            const newEditorEnabled = metadata?.['CONTENT_EDITOR2_ENABLED'];
             if (!newEditorEnabled) {
                 return true;
             }

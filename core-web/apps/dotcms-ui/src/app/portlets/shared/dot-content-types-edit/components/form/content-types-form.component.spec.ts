@@ -560,7 +560,7 @@ describe('ContentTypesFormComponent', () => {
             id: '123'
         });
 
-        activatedRoute.snapshot.data.featuredFlags[
+        activatedRoute.snapshot.data['featuredFlags'][
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = true;
 
@@ -574,7 +574,7 @@ describe('ContentTypesFormComponent', () => {
 
     it('should hide the new content banner when the feature flag is disabled', () => {
         // Need to update the flag before component initialization
-        activatedRoute.snapshot.data.featuredFlags[
+        activatedRoute.snapshot.data['featuredFlags'][
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = false;
 
@@ -593,7 +593,7 @@ describe('ContentTypesFormComponent', () => {
         expect(newContentBanner).toBeNull();
 
         // Reset flag for other tests
-        activatedRoute.snapshot.data.featuredFlags[
+        activatedRoute.snapshot.data['featuredFlags'][
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = true;
     });
@@ -695,9 +695,9 @@ describe('ContentTypesFormComponent', () => {
             data = null;
             jest.spyOn(spectator.component, 'submitForm');
             spectator.component.$send.subscribe((res) => (data = res));
-            spectator.component.form.controls.name.setValue('A content type name');
+            spectator.component.form.controls['name'].setValue('A content type name');
             // Set host to match SiteServiceMock currentSite identifier
-            spectator.component.form.controls.host.setValue('123-xyz-567-xxl');
+            spectator.component.form.controls['host'].setValue('123-xyz-567-xxl');
             spectator.detectChanges();
         });
 

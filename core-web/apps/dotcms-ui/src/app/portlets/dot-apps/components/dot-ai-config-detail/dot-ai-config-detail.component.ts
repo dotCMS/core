@@ -89,7 +89,7 @@ export class DotAiConfigDetailComponent implements OnInit {
     ngOnInit(): void {
         this.route.data
             .pipe(
-                map((x) => x?.data),
+                map((x) => x?.['data']),
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((app: DotApp) => {

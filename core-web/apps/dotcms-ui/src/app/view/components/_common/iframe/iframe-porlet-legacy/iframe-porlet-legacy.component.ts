@@ -85,7 +85,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
         this.route.data
             .pipe(
-                map((x) => x?.canAccessPortlet),
+                map((x) => x?.['canAccessPortlet']),
                 takeUntil(this.destroy$)
             )
             .subscribe((canAccessPortlet: boolean) => {
@@ -138,7 +138,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
         const queryUrl$ = this.route.queryParams.pipe(
-            map((x) => x?.url),
+            map((x) => x?.['url']),
             map((url: string) => url)
         );
 
@@ -153,7 +153,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
     private setPortletUrl(): void {
         const portletId$ = this.route.params.pipe(
-            map((x) => x?.id),
+            map((x) => x?.['id']),
             map((id: string) => id)
         );
 

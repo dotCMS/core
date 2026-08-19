@@ -228,7 +228,7 @@ describe('DotPageFavoritesPanelComponent', () => {
             spectator.detectChanges();
 
             const timestamp = spectator.component.$timeStamp();
-            const expected = `${page.screenshot}?language_id=${page.languageId}&${timestamp}`;
+            const expected = `${page['screenshot']}?language_id=${page.languageId}&${timestamp}`;
 
             const card = spectator.query(DotPagesCardComponent);
             expect(card).toBeTruthy();

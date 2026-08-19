@@ -239,7 +239,7 @@ describe('SearchableDropdownComponent', () => {
     it('should display defaultFilterTemplate', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
-        expect(searchInput.attributes.autofocus).toBeDefined();
+        expect(searchInput.attributes['autofocus']).toBeDefined();
         expect(searchInput).not.toBeNull();
     });
 

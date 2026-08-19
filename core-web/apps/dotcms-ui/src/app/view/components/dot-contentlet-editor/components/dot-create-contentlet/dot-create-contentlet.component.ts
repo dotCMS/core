@@ -47,7 +47,7 @@ export class DotCreateContentletComponent implements OnInit {
     ngOnInit() {
         this.url$ = merge(
             this.dotContentletEditorService.createUrl$,
-            this.route.data.pipe(map((x) => x?.url))
+            this.route.data.pipe(map((x) => x?.['url']))
         ).pipe(
             filter((url: string) => {
                 return url !== undefined;

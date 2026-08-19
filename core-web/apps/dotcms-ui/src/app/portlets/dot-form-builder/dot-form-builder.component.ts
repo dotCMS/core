@@ -23,6 +23,6 @@ export class DotFormBuilderComponent implements OnInit {
     haveLicense$!: Observable<boolean>;
 
     ngOnInit() {
-        this.haveLicense$ = this.route.data.pipe(map((x) => x?.haveLicense));
+        this.haveLicense$ = this.route.data.pipe(map((x) => x?.['haveLicense']));
     }
 }

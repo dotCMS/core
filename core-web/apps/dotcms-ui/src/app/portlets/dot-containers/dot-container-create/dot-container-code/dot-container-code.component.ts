@@ -82,8 +82,8 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.contentTypes?.currentValue?.length > 0) {
-            changes.contentTypes.currentValue.forEach(({ id, name }: DotCMSContentType) => {
+        if (changes['contentTypes']?.currentValue?.length > 0) {
+            changes['contentTypes'].currentValue.forEach(({ id, name }: DotCMSContentType) => {
                 this.contentTypeNamesById[id] = name;
             });
 

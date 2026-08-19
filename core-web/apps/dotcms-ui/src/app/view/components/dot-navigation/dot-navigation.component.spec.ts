@@ -210,7 +210,7 @@ describe('DotNavigationComponent collapsed', () => {
             globalStore.collapseNavigation();
             spectator.detectChanges();
 
-            expect(spectator.debugElement.styles.cssText).toEqual('');
+            expect(spectator.debugElement.styles['cssText']).toEqual('');
         });
     });
 });
@@ -352,7 +352,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should have scroll', () => {
             spectator.detectChanges();
 
-            expect(spectator.debugElement.styles.cssText).toEqual('overflow-y: auto;');
+            expect(spectator.debugElement.styles['cssText']).toEqual('overflow-y: auto;');
         });
     });
 
