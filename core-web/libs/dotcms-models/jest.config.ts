@@ -1,4 +1,3 @@
- 
 export default {
     displayName: 'dotcms-models',
     preset: '../../jest.preset.js',

@@ -167,9 +167,11 @@ export class DotCardView {
         // empty list keeps the `forEach` callers working if it somehow does not.
         return (
             this.el.shadowRoot?.querySelectorAll('dot-card-contentlet') ??
-            (document.createDocumentFragment().querySelectorAll(
-                'dot-card-contentlet'
-            ) as NodeListOf<HTMLDotCardContentletElement>)
+            (document
+                .createDocumentFragment()
+                .querySelectorAll(
+                    'dot-card-contentlet'
+                ) as NodeListOf<HTMLDotCardContentletElement>)
         );
     }
 }

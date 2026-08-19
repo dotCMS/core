@@ -158,13 +158,14 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         ({ results }) => !!results && results.sessions.total >= MINIMUM_SESSIONS_TO_SHOW_CHART
     );
 
-    readonly getDailyChartData$: Observable<ChartData<'line'> | null> = this.select(({ results }) =>
-        results
-            ? {
-                  labels: this.getDailyChartLabels(results.goals.primary.variants),
-                  datasets: this.getDailyChartDatasets(results.goals.primary.variants)
-              }
-            : null
+    readonly getDailyChartData$: Observable<ChartData<'line'> | null> = this.select(
+        ({ results }) =>
+            results
+                ? {
+                      labels: this.getDailyChartLabels(results.goals.primary.variants),
+                      datasets: this.getDailyChartDatasets(results.goals.primary.variants)
+                  }
+                : null
     );
 
     readonly dailyChart$: Observable<DotChart> = this.select(

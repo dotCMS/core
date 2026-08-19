@@ -157,7 +157,11 @@ interface CheckError extends Error {
     validatedValue: unknown;
 }
 
-const createCheckError = function (validation: string, value: unknown, message: string): CheckError {
+const createCheckError = function (
+    validation: string,
+    value: unknown,
+    message: string
+): CheckError {
     const e = new Error('Check.' + validation + " failed: '" + message + "'.") as CheckError;
     e.validation = validation;
     e.validatedValue = value;

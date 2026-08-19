@@ -91,8 +91,12 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should render Share and Export buttons only when results are available', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.hasLoadedResults = jest.fn().mockReturnValue(true) as unknown as typeof store.hasLoadedResults;
-        store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
+        store.hasLoadedResults = jest
+            .fn()
+            .mockReturnValue(true) as unknown as typeof store.hasLoadedResults;
+        store.status = jest
+            .fn()
+            .mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         expect(spectator.query(byTestId('es-search-share-btn'))).toBeTruthy();
@@ -130,7 +134,9 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should make the Status column sortable by the live field', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
+        store.status = jest
+            .fn()
+            .mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
         store.contentlets = jest.fn().mockReturnValue([
             { identifier: 'a', title: 'A', contentType: 'X', modDate: '', live: false },
             { identifier: 'b', title: 'B', contentType: 'X', modDate: '', live: true }
@@ -162,7 +168,9 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should call store.runSearch() when Run button is clicked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
+        store.query = jest
+            .fn()
+            .mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
@@ -177,7 +185,9 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should call store.runSearch() when onRun is invoked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
+        store.query = jest
+            .fn()
+            .mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
         spectator.component.onRun();
         expect(store.runSearch).toHaveBeenCalled();
     });
@@ -228,7 +238,9 @@ describe('DotEsSearchPageComponent', () => {
             beforeEach(() => {
                 spectator = createComponent({ detectChanges: false });
                 const store = spectator.inject(DotEsSearchStore, true);
-                store.wrapCode = jest.fn().mockReturnValue(true) as unknown as typeof store.wrapCode;
+                store.wrapCode = jest
+                    .fn()
+                    .mockReturnValue(true) as unknown as typeof store.wrapCode;
             });
 
             it('should set wordWrap on', () => {
@@ -246,11 +258,17 @@ describe('DotEsSearchPageComponent', () => {
     describe('when results are loaded with no hits', () => {
         beforeEach(() => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
-            store.hasLoadedResults = jest.fn().mockReturnValue(true) as unknown as typeof store.hasLoadedResults;
+            store.status = jest
+                .fn()
+                .mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
+            store.hasLoadedResults = jest
+                .fn()
+                .mockReturnValue(true) as unknown as typeof store.hasLoadedResults;
             store.hitCount = jest.fn().mockReturnValue(0) as unknown as typeof store.hitCount;
             store.queryTimeMs = jest.fn().mockReturnValue(5) as unknown as typeof store.queryTimeMs;
-            store.contentlets = jest.fn().mockReturnValue([]) as unknown as typeof store.contentlets;
+            store.contentlets = jest
+                .fn()
+                .mockReturnValue([]) as unknown as typeof store.contentlets;
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
         });
@@ -264,10 +282,16 @@ describe('DotEsSearchPageComponent', () => {
     describe('when results are loaded', () => {
         beforeEach(() => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
-            store.hasLoadedResults = jest.fn().mockReturnValue(true) as unknown as typeof store.hasLoadedResults;
+            store.status = jest
+                .fn()
+                .mockReturnValue(ComponentStatus.LOADED) as unknown as typeof store.status;
+            store.hasLoadedResults = jest
+                .fn()
+                .mockReturnValue(true) as unknown as typeof store.hasLoadedResults;
             store.hitCount = jest.fn().mockReturnValue(5) as unknown as typeof store.hitCount;
-            store.queryTimeMs = jest.fn().mockReturnValue(142) as unknown as typeof store.queryTimeMs;
+            store.queryTimeMs = jest
+                .fn()
+                .mockReturnValue(142) as unknown as typeof store.queryTimeMs;
             store.contentlets = jest.fn().mockReturnValue([
                 {
                     identifier: 'abc',
@@ -300,8 +324,12 @@ describe('DotEsSearchPageComponent', () => {
 
         it('should show partial results message in stats bar when hasPartialResults is true', () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.hasPartialResults = jest.fn().mockReturnValue(true) as unknown as typeof store.hasPartialResults;
-            store.returnedCount = jest.fn().mockReturnValue(20) as unknown as typeof store.returnedCount;
+            store.hasPartialResults = jest
+                .fn()
+                .mockReturnValue(true) as unknown as typeof store.hasPartialResults;
+            store.returnedCount = jest
+                .fn()
+                .mockReturnValue(20) as unknown as typeof store.returnedCount;
             store.hitCount = jest.fn().mockReturnValue(10000) as unknown as typeof store.hitCount;
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
@@ -324,8 +352,14 @@ describe('DotEsSearchPageComponent', () => {
 
         it('Copy as cURL targets /api/es/search with depth=1 and the parsed query body', () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.query = jest.fn().mockReturnValue(`{"query":{"match":{"title":"it's"}}}`) as unknown as typeof store.query;
-            store.params = jest.fn().mockReturnValue({ live: true, userid: '' }) as unknown as typeof store.params;
+            store.query = jest
+                .fn()
+                .mockReturnValue(
+                    `{"query":{"match":{"title":"it's"}}}`
+                ) as unknown as typeof store.query;
+            store.params = jest
+                .fn()
+                .mockReturnValue({ live: true, userid: '' }) as unknown as typeof store.params;
             const copy = getClipboardCopy();
 
             spectator.component.exportItems[0].command?.({} as never);
@@ -337,8 +371,12 @@ describe('DotEsSearchPageComponent', () => {
 
         it('Copy as fetch emits a fetch() call against /api/es/search', () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
-            store.params = jest.fn().mockReturnValue({ live: true, userid: '' }) as unknown as typeof store.params;
+            store.query = jest
+                .fn()
+                .mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
+            store.params = jest
+                .fn()
+                .mockReturnValue({ live: true, userid: '' }) as unknown as typeof store.params;
             const copy = getClipboardCopy();
 
             spectator.component.exportItems[1].command?.({} as never);
@@ -350,8 +388,12 @@ describe('DotEsSearchPageComponent', () => {
 
         it('calls DotGlobalMessageService.error when clipboard.copy resolves false', async () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
-            store.params = jest.fn().mockReturnValue({ live: true, userid: '' }) as unknown as typeof store.params;
+            store.query = jest
+                .fn()
+                .mockReturnValue('{"query":{"match_all":{}}}') as unknown as typeof store.query;
+            store.params = jest
+                .fn()
+                .mockReturnValue({ live: true, userid: '' }) as unknown as typeof store.params;
             const copy = getClipboardCopy(false);
             const globalMessage = spectator.inject(DotGlobalMessageService);
 
