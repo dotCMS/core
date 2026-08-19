@@ -45,7 +45,8 @@ import { DotPageActionsService } from '../services/dot-page-actions.service';
 
 type LanguageOption = {
     label: string;
-    value: string | number;
+    /** Null on the "All" row, which is how the table spells "no language filter". */
+    value: string | number | null;
 };
 
 type TableRowSelectEvent<T> = {

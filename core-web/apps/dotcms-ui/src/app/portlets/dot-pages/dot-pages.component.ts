@@ -36,7 +36,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
-    DotEvent,
     DotMessageSeverity,
     DotMessageType,
     DotSystemLanguage
@@ -139,7 +138,7 @@ export class DotPagesComponent {
      */
     protected navigateToPage(url: string): void {
         const splittedUrl = url.split('?');
-        const urlParams = { url: splittedUrl[0] };
+        const urlParams: Record<string, string> = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
 
         for (const entry of searchParams) {
@@ -243,15 +242,20 @@ export class DotPagesComponent {
      */
     private listenSavePageEvent(): void {
         this.#dotEventsService
-            .listen('save-page')
+            .listen<SavePageEventData>('save-page')
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event: DotEvent<SavePageEventData>) => {
-                const { data } = event;
-                const { value, payload } = data;
+            .subscribe((event) => {
+                const { value, payload } = event.data ?? {};
                 const { contentletIdentifier, identifier, contentletType, contentType } =
                     payload ?? {};
                 const baseType = contentType ?? contentletType;
                 const baseIdentifier = identifier ?? contentletIdentifier;
+
+                // Every key on the payload is optional; without an identifier there is no node to
+                // refresh, so the event is not about a page this portlet shows.
+                if (!baseIdentifier) {
+                    return;
+                }
 
                 if (baseType === 'dotFavoritePage') {
                     this.#dotCMSPagesStore.updateFavoritePageNode(baseIdentifier);
@@ -261,7 +265,7 @@ export class DotPagesComponent {
 
                 this.#dotMessageDisplayService.push({
                     life: 3000,
-                    message: value,
+                    message: value ?? '',
                     severity: DotMessageSeverity.SUCCESS,
                     type: DotMessageType.SIMPLE_MESSAGE
                 });

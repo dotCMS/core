@@ -39,9 +39,10 @@ export interface DotTemplateItemDesign {
     identifier: string;
     layout: DotLayout;
     live?: boolean;
-    theme: string;
+    /** Null when the template carries neither `theme` nor `themeId`. */
+    theme: string | null;
     title: string;
-    type?: 'design';
+    type: 'design';
     image?: string;
 }
 
@@ -52,7 +53,7 @@ interface DotTemplateItemadvanced {
     identifier: string;
     live?: boolean;
     title: string;
-    type?: 'advanced';
+    type: 'advanced';
     image?: string;
 }
 
@@ -161,6 +162,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 return this.dotTemplateService
                     .saveAndPublish(this.cleanTemplateItem(template))
                     .pipe(
+                        // See the note in `saveTemplate`: a failed publish arrives as `null`.
+                        filter((saved): saved is DotTemplate => !!saved),
                         tapResponse({
                             next: (template: DotTemplate) => {
                                 this.dotGlobalMessageService.success(
@@ -207,6 +210,9 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
                 return this.dotTemplateService.update(this.cleanTemplateItem(template));
             }),
+            // `DotTemplatesService` swallows a failed request into `of(null)`, so `catchError`
+            // never sees it and the tap below used to read `.drawed` off nothing.
+            filter((template): template is DotTemplate => !!template),
             tap((template: DotTemplate) => this.onSaveTemplate(template)),
             catchError((err: HttpErrorResponse) => this.onSaveTemplateError(err))
         );
@@ -230,6 +236,9 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
                 return this.dotTemplateService.update(this.cleanTemplateItem(template));
             }),
+            // `DotTemplatesService` swallows a failed request into `of(null)`, so `catchError`
+            // never sees it and the tap below used to read `.drawed` off nothing.
+            filter((template): template is DotTemplate => !!template),
             tap((template: DotTemplate) => this.onSaveTemplate(template)),
             catchError((err: HttpErrorResponse) => this.onSaveTemplateError(err))
         );
@@ -253,6 +262,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
             switchMap((template: DotTemplateItem) =>
                 this.dotTemplateService.update(this.cleanTemplateItem(template))
             ),
+            // See the note in `saveTemplate`: a failed update arrives as `null`.
+            filter((template): template is DotTemplate => !!template),
             tap((template: DotTemplate) => {
                 this.updateProperties(this.getTemplateItem(template));
             })
@@ -263,14 +274,20 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         (origin$: Observable<DotTemplateItem>) => {
             return origin$.pipe(
                 switchMap((template: DotTemplateItem) => {
-                    if (template.type === 'design') {
-                        delete template.containers;
-                    }
+                    // The create endpoint takes neither `type` (ours, for the editor's two modes)
+                    // nor a design template's `containers`, which it derives from the layout.
+                    // Dropped by omission rather than `delete`, which the required keys now reject.
+                    const { type, ...rest } = template;
+                    const payload =
+                        type === 'design'
+                            ? (({ containers: _containers, ...withoutContainers }) =>
+                                  withoutContainers)(rest as DotTemplateItemDesign)
+                            : rest;
 
-                    delete template.type;
-
-                    return this.dotTemplateService.create(template as DotTemplate);
+                    return this.dotTemplateService.create(payload as DotTemplate);
                 }),
+                // See the note in `saveTemplate`: a failed create arrives as `null`.
+                filter((template): template is DotTemplate => !!template),
                 tap(({ identifier }: DotTemplate) => {
                     this.dotRouterService.goToEditTemplate(identifier);
                 })
@@ -279,7 +296,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     );
 
     constructor() {
-        super(null);
+        super();
 
         const template$ = this.activatedRoute.data.pipe(pluck('template'));
         const type$ = this.activatedRoute.params.pipe(pluck('type'));
@@ -304,7 +321,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
                 if (template.type === 'design') {
                     this.canRouteBeDesativated();
-                    this.templateContainersCacheService.set(template.containers);
+                    this.templateContainersCacheService.set(template.containers ?? {});
                 }
 
                 this.setState({
@@ -329,13 +346,13 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
      *
      * @memberof DotTemplateStore
      */
-    goToEditTemplate = (id, inode) => {
+    goToEditTemplate = (id: string, inode?: string) => {
         this.dotRouterService.goToEditTemplate(id, inode);
     };
 
     private onSaveTemplate(template: DotTemplate) {
         if (template.drawed) {
-            this.templateContainersCacheService.set(template.containers);
+            this.templateContainersCacheService.set(template.containers ?? {});
         }
 
         this.updateTemplate(this.getTemplateItem(template));
@@ -367,7 +384,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         return isAdvanced ? EMPTY_TEMPLATE_ADVANCED : EMPTY_TEMPLATE_DESIGN;
     }
 
-    private getIsAdvanced(type: DotTemplateType, drawed: boolean): boolean {
+    private getIsAdvanced(type: DotTemplateType, drawed?: boolean): boolean {
         return type === 'advanced' || drawed === false;
     }
 
@@ -380,8 +397,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
             result = {
                 type: 'design',
                 identifier,
-                title,
-                friendlyName,
+                title: title ?? '',
+                friendlyName: friendlyName ?? '',
                 layout: template.layout || EMPTY_TEMPLATE_DESIGN.layout,
                 theme: template.theme ?? template.themeId ?? null,
                 containers: template.containers,
@@ -393,9 +410,9 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
             result = {
                 type: 'advanced',
                 identifier,
-                title,
-                friendlyName,
-                body: template.body,
+                title: title ?? '',
+                friendlyName: friendlyName ?? '',
+                body: template.body ?? '',
                 drawed: false,
                 image: template.image
             };
@@ -449,17 +466,23 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     }
 
     private cleanTemplateItem(template: DotTemplateItem): DotTemplate {
-        delete template.type;
-        if (template.type === 'design') {
-            delete template.containers;
-        }
+        // `type` is ours, for the editor's two modes; the update endpoint does not take it.
+        //
+        // Two things about what this replaces. It deleted `type` and *then* tested
+        // `template.type === 'design'`, so the branch that strips a design template's
+        // `containers` was dead and those containers have always been sent — preserved here
+        // rather than changed as a side effect of the type work. And it deleted the key off the
+        // argument, which is the same object the store holds, so every later
+        // `template.type === 'design'` in this store was reading a key a save had removed.
+        const payload = { ...template } as Partial<DotTemplateItem>;
+        delete payload.type;
 
-        return template as DotTemplate;
+        return payload as DotTemplate;
     }
 
     private updateTemplateState(template: DotTemplate): void {
         if (template.drawed) {
-            this.templateContainersCacheService.set(template.containers);
+            this.templateContainersCacheService.set(template.containers ?? {});
         }
 
         this.updateTemplate(this.getTemplateItem(template));
