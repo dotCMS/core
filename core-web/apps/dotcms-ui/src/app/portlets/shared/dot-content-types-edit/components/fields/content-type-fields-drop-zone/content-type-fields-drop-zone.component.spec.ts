@@ -272,7 +272,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should emit removeFields event when a Row is removed', () => {
-        let fieldsToRemove: DotCMSContentTypeField[];
+        let fieldsToRemove: DotCMSContentTypeField[] | undefined;
 
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
@@ -907,7 +907,7 @@ describe('Load fields and drag and drop', () => {
             item: newlyField
         });
 
-        let emittedFields: DotCMSContentTypeLayoutRow[];
+        let emittedFields: DotCMSContentTypeLayoutRow[] | undefined;
         comp.saveFields.subscribe((fields) => {
             emittedFields = fields;
         });

@@ -132,7 +132,7 @@ describe('DotContentTypesEditComponent', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dialog: DebugElement;
 
-    const getConfig = (route) => {
+    const getConfig = (route: { contentType: Partial<DotCMSContentType> }) => {
         return {
             declarations: [
                 DotContentTypesEditComponent,

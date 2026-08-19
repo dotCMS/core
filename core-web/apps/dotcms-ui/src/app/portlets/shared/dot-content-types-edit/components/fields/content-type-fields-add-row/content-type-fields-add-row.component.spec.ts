@@ -115,7 +115,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should select columns number after click on li', () => {
-        let colsToEmit: number;
+        let colsToEmit: number | undefined;
         comp.rowState = 'select';
         fixture.detectChanges();
         const lis = de.queryAll(By.css('ul li'));

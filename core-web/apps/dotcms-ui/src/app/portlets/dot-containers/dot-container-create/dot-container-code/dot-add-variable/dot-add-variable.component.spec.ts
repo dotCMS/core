@@ -275,7 +275,7 @@ describe('DotAddVariableComponent', () => {
 
         it('should be a field list without FielteredTypes', () => {
             const fieldTypes = fixture.nativeElement.querySelectorAll('small');
-            fieldTypes.forEach((field) => {
+            fieldTypes.forEach((field: Element) => {
                 const content = field.textContent.trim();
                 expect(content).not.toEqual(FilteredFieldTypes.Column);
                 expect(content).not.toEqual(FilteredFieldTypes.Row);

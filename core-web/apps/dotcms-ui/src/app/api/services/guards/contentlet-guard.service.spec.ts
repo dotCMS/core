@@ -56,7 +56,7 @@ describe('ValidContentletGuardService', () => {
     });
 
     it('should allow children access to Content Types Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
         jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(true));
         contentletGuardService
@@ -68,7 +68,7 @@ describe('ValidContentletGuardService', () => {
     });
 
     it('should prevent children access to Content Types Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
         jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(false));
         contentletGuardService

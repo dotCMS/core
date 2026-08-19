@@ -50,7 +50,7 @@ export class DotRouterService {
         return this._routeHistory.previousUrl;
     }
 
-    get currentPortlet(): PortletNav {
+    get currentPortlet(): PortletNav & { id: string } {
         return {
             url: this.router.routerState.snapshot.url,
             id: this.getPortletId(this.router.routerState.snapshot.url),

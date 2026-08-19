@@ -46,7 +46,7 @@ describe('ValidPublicAuthGuardService', () => {
     });
 
     it('should redirect to to Main Portlet if User is logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(true),
             writable: true
@@ -59,7 +59,7 @@ describe('ValidPublicAuthGuardService', () => {
     });
 
     it('should allow access to the requested route if User is NOT logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(false),
             writable: true

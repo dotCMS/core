@@ -332,7 +332,7 @@ export class DotStyleEditorBuilderComponent {
                 return styleEditorField.dropdown({
                     id: field.identifier,
                     label: field.label,
-                    options: validOptions.map((o) => ({ label: o.label, value: o.value }))
+                    options: validOptions.map((o) => ({ label: o.label, value: o.value ?? '' }))
                 });
 
             case 'radio':
@@ -342,7 +342,7 @@ export class DotStyleEditorBuilderComponent {
                     columns: field.columns,
                     options: validOptions.map((o) => ({
                         label: o.label,
-                        value: o.value,
+                        value: o.value ?? '',
                         ...(o.imageURL ? { imageURL: o.imageURL } : {})
                     }))
                 });

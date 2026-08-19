@@ -67,7 +67,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should allow access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
         menuGuardService
@@ -79,7 +79,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should prevent access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
         menuGuardService
@@ -92,7 +92,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should allow children access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
         menuGuardService
@@ -104,7 +104,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should prevent children access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         jest.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
         menuGuardService

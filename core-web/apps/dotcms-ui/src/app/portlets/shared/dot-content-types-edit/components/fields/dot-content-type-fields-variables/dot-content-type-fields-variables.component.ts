@@ -45,7 +45,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private fieldVariablesService = inject(DotFieldVariablesService);
 
     /** The content-type field whose variables are loaded and managed. */
-    readonly $field = input<DotCMSContentTypeField>(undefined, { alias: 'field' });
+    readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /** When `false`, hides the key-value table (used to embed without the table UI). */
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
