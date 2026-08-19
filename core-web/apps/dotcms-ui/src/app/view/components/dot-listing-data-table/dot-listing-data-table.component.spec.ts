@@ -119,6 +119,8 @@ type ListingRow = {
     identifier?: string;
     /** Added by the host's `mapItems`, not present in the seeded rows. */
     disableInteraction?: boolean;
+    /** The assertions look rows up by the column's `fieldName`, which is a plain string. */
+    [key: string]: string | number | boolean | undefined;
 };
 
 describe('DotListingDataTableComponent', () => {
@@ -330,7 +332,7 @@ describe('DotListingDataTableComponent', () => {
                 const item = items[rowIndex];
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 3) {
-                        expect(cells[cellIndex].querySelector('span').textContent).toContain(
+                        expect(cells[cellIndex].querySelector('span')!.textContent).toContain(
                             item[hostComponent.columns[cellIndex].fieldName]
                         );
                     }
@@ -384,16 +386,17 @@ describe('DotListingDataTableComponent', () => {
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
                         const textContent = cells[cellIndex].textContent;
+                        const cellValue = item[comp.columns[cellIndex].fieldName];
                         const itemContent =
                             comp.columns[cellIndex].format === 'date'
-                                ? new Date(
-                                      item[comp.columns[cellIndex].fieldName]
-                                  ).toLocaleDateString('en-US', {
+                                ? // A `date` column is seeded with a timestamp; `boolean` is only
+                                  // in the row's index signature for `disableInteraction`.
+                                  new Date(cellValue as number).toLocaleDateString('en-US', {
                                       month: '2-digit',
                                       day: '2-digit',
                                       year: 'numeric'
                                   })
-                                : item[comp.columns[cellIndex].fieldName];
+                                : cellValue;
                         expect(textContent).toContain(itemContent);
                     }
                 });
@@ -500,7 +503,7 @@ describe('DotListingDataTableComponent', () => {
         comp.globalSearch.nativeElement.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'arrowDown' })
         );
-        expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
+        expect(comp.dataTable.tableViewChild!.nativeElement.rows[1]).toBe(document.activeElement);
     }));
 
     it('should set the pagination size in the Table', fakeAsync(() => {

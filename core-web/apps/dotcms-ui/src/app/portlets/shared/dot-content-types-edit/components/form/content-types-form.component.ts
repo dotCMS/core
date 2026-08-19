@@ -277,7 +277,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         return item && typeof item !== 'string' ? item.workflowAction.id : '';
     }
 
-    private getProp(item?: string): string {
+    private getProp(item?: string | null): string {
         return item || '';
     }
 

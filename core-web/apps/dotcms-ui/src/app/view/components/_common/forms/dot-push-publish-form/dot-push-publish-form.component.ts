@@ -86,7 +86,7 @@ export class DotPushPublishFormComponent
     showTimezonePicker = false;
     changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
-    @Input() data!: DotPushPublishDialogData;
+    @Input() data: DotPushPublishDialogData | null = null;
 
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();
@@ -98,18 +98,20 @@ export class DotPushPublishFormComponent
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
-        if (this.data) {
+        // Held in a local so the narrowing survives into the `loadFilters` callback below.
+        const data = this.data;
+        if (data) {
             this.setPreviousDayToMinDate();
             // `.length`, not truthiness: this branch means "filters are already loaded", and an
             // empty array is truthy — so it would have skipped the fetch and rendered no filters.
             // No test covers this path.
             if (this.filterOptions.length) {
-                this.loadData(this.data);
+                this.loadData(data);
             } else {
                 this.loadFilters()
                     .pipe(take(1))
                     .subscribe(() => {
-                        this.loadData(this.data);
+                        this.loadData(data);
                     });
             }
         }

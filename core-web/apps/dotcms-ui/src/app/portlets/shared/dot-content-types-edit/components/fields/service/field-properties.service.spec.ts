@@ -192,8 +192,8 @@ describe('FieldPropertyService', () => {
 
             const customFieldType = service.getFieldType(DotCMSClazzes.CUSTOM_FIELD);
             expect(customFieldType).toBeDefined();
-            expect(customFieldType.properties).toContain(NEW_RENDER_MODE_VARIABLE_KEY);
-            expect(customFieldType.properties).toEqual([
+            expect(customFieldType!.properties).toContain(NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(customFieldType!.properties).toEqual([
                 'property1',
                 'property2',
                 NEW_RENDER_MODE_VARIABLE_KEY
@@ -201,8 +201,8 @@ describe('FieldPropertyService', () => {
 
             const otherFieldType = service.getFieldType('otherFieldClass');
             expect(otherFieldType).toBeDefined();
-            expect(otherFieldType.properties).not.toContain(NEW_RENDER_MODE_VARIABLE_KEY);
-            expect(otherFieldType.properties).toEqual(['property1', 'property2']);
+            expect(otherFieldType!.properties).not.toContain(NEW_RENDER_MODE_VARIABLE_KEY);
+            expect(otherFieldType!.properties).toEqual(['property1', 'property2']);
         }));
     });
 

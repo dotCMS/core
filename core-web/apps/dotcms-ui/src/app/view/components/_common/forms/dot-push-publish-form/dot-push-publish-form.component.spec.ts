@@ -61,7 +61,7 @@ const messageServiceMock = new MockDotMessageService({
     standalone: false
 })
 class TestHostComponent {
-    @Input() data!: DotPushPublishDialogData;
+    @Input() data: DotPushPublishDialogData | null = null;
     valid!: boolean;
     value: any;
 }
@@ -209,7 +209,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         expect(timezoneDropDownContainer.attributes['hidden']).toBeDefined();
         expect(timezoneDropDown.options.length).toEqual(mockDotTimeZones.length);
         expect(timeZoneLabel.outerText).toEqual(
-            pushPublishForm.timeZoneOptions.find(({ value }) => value === localTZ)['label']
+            pushPublishForm.timeZoneOptions.find(({ value }) => value === localTZ)!.label
         );
     });
 
@@ -244,7 +244,7 @@ xdescribe('DotPushPublishFormComponent', () => {
             By.css('.push-publish-dialog__timezone-label span')
         ).nativeElement;
         expect(timeZoneLabel.outerText).toEqual(
-            pushPublishForm.timeZoneOptions.find(({ value }) => value === changedTZ)['label']
+            pushPublishForm.timeZoneOptions.find(({ value }) => value === changedTZ)!.label
         );
     });
 
