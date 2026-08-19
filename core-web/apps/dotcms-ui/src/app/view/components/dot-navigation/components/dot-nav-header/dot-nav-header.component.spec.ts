@@ -62,7 +62,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should have pi-bars icon on toggle button', () => {
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
 
             expect(toggleButton).toBeTruthy();
             expect(toggleButton.getAttribute('icon')).toBe('pi pi-bars');
@@ -71,7 +71,7 @@ describe('DotNavHeaderComponent', () => {
         it('should emit toggle event when button is clicked', () => {
             const spy = jest.spyOn(component.toggle, 'emit');
 
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
             spectator.click(toggleButton);
 
             expect(spy).toHaveBeenCalledTimes(1);
@@ -80,7 +80,7 @@ describe('DotNavHeaderComponent', () => {
         it('should emit toggle event with no parameters', () => {
             const spy = jest.spyOn(component.toggle, 'emit');
 
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
             spectator.click(toggleButton);
 
             expect(spy).toHaveBeenCalledWith();
@@ -309,7 +309,7 @@ describe('DotNavHeaderComponent', () => {
             spectator.detectChanges();
 
             const spy = jest.spyOn(component.toggle, 'emit');
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
 
             // Click multiple times
             spectator.click(toggleButton);
@@ -325,7 +325,7 @@ describe('DotNavHeaderComponent', () => {
             spectator.detectChanges();
 
             const spy = jest.spyOn(component.toggle, 'emit');
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
 
             spectator.click(toggleButton);
 
@@ -341,14 +341,14 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should have accessible button element', () => {
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
             expect(toggleButton).toBeTruthy();
             expect(toggleButton.tagName.toLowerCase()).toBe('button');
         });
 
         it('should maintain button functionality across logo changes', () => {
             const spy = jest.spyOn(component.toggle, 'emit');
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
 
             // Test with default logo
             spectator.click(toggleButton);
@@ -365,7 +365,7 @@ describe('DotNavHeaderComponent', () => {
 
         it('should maintain consistent testid attributes', () => {
             // Test that testid attributes are always present for testing
-            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
+            const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'))!;
             expect(toggleButton).toBeTruthy();
 
             const defaultLogo = spectator.query(byTestId('default-logo'));

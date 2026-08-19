@@ -71,7 +71,7 @@ describe('ForgotPasswordComponent', () => {
     it('should do the request password correctly and redirect to login', fakeAsync(() => {
         tick();
         spectator.detectChanges();
-        const control = spectator.component.forgotPasswordForm.get('login');
+        const control = spectator.component.forgotPasswordForm.get('login')!;
         control.setValue('test');
         control.markAsTouched();
         control.markAsDirty();
@@ -100,7 +100,7 @@ describe('ForgotPasswordComponent', () => {
     it('should show error message for required form fields', fakeAsync(() => {
         tick();
         spectator.detectChanges();
-        const control = spectator.component.forgotPasswordForm.get('login');
+        const control = spectator.component.forgotPasswordForm.get('login')!;
         control.setValue('');
         control.markAsTouched();
         control.markAsDirty();

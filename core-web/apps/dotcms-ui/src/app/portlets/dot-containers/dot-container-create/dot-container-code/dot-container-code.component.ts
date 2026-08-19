@@ -158,8 +158,16 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      */
     focusCurrentEditor(tabIdx: number) {
         if (tabIdx > 0) {
+            // `.get(...)`, not `.controls[...]`: a `FormArray` element is an `AbstractControl`, which
+            // has no `controls` map — only `FormGroup` does. The id also gates the lookup below,
+            // where an absent one would index `monacoEditors` by `undefined`.
             const contentTypeId =
-                this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
+                this.getcontainerStructures.controls[tabIdx - 1].get('structureId')?.value;
+
+            if (!contentTypeId) {
+                return;
+            }
+
             // Tab Panel does not trigger any event after completely rendered.
             // Tab Panel and Monaco-Editor take sometime to render it completely.
             requestAnimationFrame(() => {

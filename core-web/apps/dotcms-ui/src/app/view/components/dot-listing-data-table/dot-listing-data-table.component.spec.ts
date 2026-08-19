@@ -301,7 +301,7 @@ describe('DotListingDataTableComponent', () => {
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]')!;
         const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
@@ -323,7 +323,7 @@ describe('DotListingDataTableComponent', () => {
                     }
 
                     if (cellIndex === 3) {
-                        const anchor = cells[cellIndex].querySelector('a');
+                        const anchor = cells[cellIndex].querySelector('a')!;
                         expect(anchor.textContent).toContain(
                             `View (${item[hostComponent.columns[cellIndex].fieldName]})`
                         );
@@ -355,7 +355,7 @@ describe('DotListingDataTableComponent', () => {
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]')!;
         const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
@@ -399,7 +399,7 @@ describe('DotListingDataTableComponent', () => {
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]')!;
         const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
     }));

@@ -182,7 +182,7 @@ describe('DotTemplateAdvancedComponent', () => {
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
             const updateTemplate = jest.spyOn(component.updateTemplate, 'emit');
-            component.form.get('body').setValue('<body></body>');
+            component.form.get('body')!.setValue('<body></body>');
 
             expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
         });

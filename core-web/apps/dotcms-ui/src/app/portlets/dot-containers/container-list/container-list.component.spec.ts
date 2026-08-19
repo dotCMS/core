@@ -407,7 +407,7 @@ describe('ContainerListComponent', () => {
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
-            menu.model[0].command({
+            menu.model![0].command({
                 originalEvent: createFakeEvent('click')
             });
             expect(store['dotContainersService'].publish).toHaveBeenCalledWith([
@@ -443,7 +443,7 @@ describe('ContainerListComponent', () => {
 
             fixture.detectChanges();
             expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledWith(
-                fileContainer.pathName
+                fileContainer!.pathName
             );
             expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledTimes(1);
             expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledTimes(1);

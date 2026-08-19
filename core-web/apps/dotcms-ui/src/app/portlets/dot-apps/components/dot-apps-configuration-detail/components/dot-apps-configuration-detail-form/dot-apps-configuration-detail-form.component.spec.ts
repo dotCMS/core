@@ -213,27 +213,27 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('name'));
+            const row = spectator.query(byTestId('name'))!;
 
             const markdownElement = row.querySelector('markdown');
             expect(markdownElement).toBeTruthy();
 
             const field = secrets[0];
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent.trim()).toBe(field.label);
             expect(labelElement.classList).toContain('p-label-input-required');
 
-            const textareaElement = row.querySelector('textarea');
+            const textareaElement = row.querySelector('textarea')!;
             expect(textareaElement.getAttribute('id')).toBe(field.name);
             expect(textareaElement.value).toBe(field.value);
 
-            const hintElement = row.querySelector('.p-field-hint');
+            const hintElement = row.querySelector('.p-field-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Checkbox & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('enabled'));
+            const row = spectator.query(byTestId('enabled'))!;
 
             const markdownElement = row.querySelector('markdown');
             expect(markdownElement).toBeTruthy();
@@ -243,52 +243,52 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const checkboxElement = row.querySelector('p-checkbox');
             expect(checkboxElement).toBeTruthy();
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent).toContain(field.label);
 
-            const inputElement = row.querySelector('input');
+            const inputElement = row.querySelector('input')!;
             expect(inputElement.id).toBe(field.name);
 
-            const hintElement = row.querySelector('.p-field-hint');
+            const hintElement = row.querySelector('.p-field-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Label, Select & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('select'));
+            const row = spectator.query(byTestId('select'))!;
 
             const markdownElement = row.querySelector('markdown');
             expect(markdownElement).toBeTruthy();
 
             const field = secrets[3];
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent.trim()).toBe(field.label);
 
-            const selectComponent = spectator.query(Select);
+            const selectComponent = spectator.query(Select)!;
             expect(selectComponent.id).toBe(field.name);
             expect(selectComponent.options).toBe(field.options);
 
-            const hintElement = row.querySelector('.p-field-hint');
+            const hintElement = row.querySelector('.p-field-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Label, Button & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('integration'));
+            const row = spectator.query(byTestId('integration'))!;
 
             const field = secrets[4];
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent.trim()).toBe(field.label);
 
-            const buttonElement = row.querySelector('button');
+            const buttonElement = row.querySelector('button')!;
             expect(buttonElement.id).toBe(field.name);
 
-            const hintElement = row.querySelector('.form__group-hint');
+            const hintElement = row.querySelector('.form__group-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Generated String Field component with right attributes', () => {
-            const row = spectator.query(byTestId('generated-string-field'));
+            const row = spectator.query(byTestId('generated-string-field'))!;
             expect(row).toBeTruthy();
 
             expect(
@@ -297,8 +297,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should Button be disabled when no configured app', () => {
-            const row = spectator.query(byTestId('integration'));
-            const buttonElement = row.querySelector('button');
+            const row = spectator.query(byTestId('integration'))!;
+            const buttonElement = row.querySelector('button')!;
             expect(buttonElement.disabled).toBe(true);
         });
 
@@ -310,8 +310,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const openMock = jest.fn();
             window.open = openMock;
-            const row = spectator.query(byTestId('integration'));
-            const buttonElement = row.querySelector('button');
+            const row = spectator.query(byTestId('integration'))!;
+            const buttonElement = row.querySelector('button')!;
 
             buttonElement.click();
             expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
@@ -335,9 +335,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
             const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
-            spectator.component.myFormGroup.get('name').setValue('Test2');
-            spectator.component.myFormGroup.get('password').setValue('Password2');
-            spectator.component.myFormGroup.get('enabled').setValue('false');
+            spectator.component.myFormGroup.get('name')!.setValue('Test2');
+            spectator.component.myFormGroup.get('password')!.setValue('Password2');
+            spectator.component.myFormGroup.get('enabled')!.setValue('false');
 
             expect(spyDataOutput).toHaveBeenCalledTimes(3);
             expect(spyValidOutput).toHaveBeenCalledTimes(3);
@@ -349,7 +349,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             });
             spectatorWithHeading.detectChanges();
 
-            const header = spectatorWithHeading.query('[data-testid="sectionHeader"]');
+            const header = spectatorWithHeading.query('[data-testid="sectionHeader"]')!;
             expect(header).toBeTruthy();
             expect(header.classList).toContain('dot-apps-configuration-detail__section-header');
             expect(header.querySelector('h3').textContent.trim()).toBe(headingSecret.label);
@@ -361,7 +361,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             });
             spectatorWithInfo.detectChanges();
 
-            const infoBox = spectatorWithInfo.query('[data-testid="infoBox"]');
+            const infoBox = spectatorWithInfo.query('[data-testid="infoBox"]')!;
             expect(infoBox).toBeTruthy();
             expect(infoBox.classList).toContain('dot-apps-configuration-detail__info-box');
             expect(infoBox.querySelector('markdown')).toBeTruthy();
@@ -382,7 +382,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should emit form state disabled when required field empty', () => {
             const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
-            spectator.component.myFormGroup.get('name').setValue('');
+            spectator.component.myFormGroup.get('name')!.setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);
             expect(spyValidOutput).toHaveBeenCalledTimes(1);
         });

@@ -423,12 +423,12 @@ describe('DotContentTypesPortletComponent', () => {
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
         fixture.detectChanges();
         expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
-        expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
+        expect(comp.actionHeaderOptions.primary!.model!.length).toEqual(3);
     });
 
     it('should not set primary command in the header options', () => {
         fixture.detectChanges();
-        expect(comp.actionHeaderOptions.primary.command).toBe(undefined);
+        expect(comp.actionHeaderOptions.primary!.command).toBe(undefined);
     });
 
     it('should emit changes in base types selector', fakeAsync(() => {
@@ -537,8 +537,8 @@ describe('DotContentTypesPortletComponent', () => {
             fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
             expect(comp.$listing().paginatorService.extraParams.get('type')).toBe('Form');
-            expect(comp.actionHeaderOptions.primary.model).toBe(null);
-            expect(comp.actionHeaderOptions.primary.command).toBeDefined();
+            expect(comp.actionHeaderOptions.primary!.model).toBe(null);
+            expect(comp.actionHeaderOptions.primary!.command).toBeDefined();
         }));
     });
 });

@@ -81,7 +81,13 @@ export interface DotPagesState {
         canWrite: { contentlets: boolean; htmlPages: boolean };
         id: string;
     };
-    pages?: DotPagesInfo;
+    /**
+     * Required, not optional: the initial state seeds it and `patchState` never removes a key, so it
+     * is present for the whole life of the store. Declared optional, every read of `pages.items` /
+     * `pages.keyword` / `pages.status` across this store's spec needed narrowing for a state that
+     * cannot occur — 54 of them.
+     */
+    pages: DotPagesInfo;
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
 }

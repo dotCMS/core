@@ -337,7 +337,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private setIndexedValueChecked(propertyValue: boolean): void {
         if (this.form.get('indexed') && propertyValue) {
-            this.form.get('indexed').setValue(propertyValue);
+            this.form.controls['indexed'].setValue(propertyValue);
         }
 
         this.handleDisabledIndexed(propertyValue);
@@ -353,7 +353,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.setIndexedValueChecked(propertyValue);
 
         if (this.form.get('required') && propertyValue) {
-            this.form.get('required').setValue(propertyValue);
+            this.form.controls['required'].setValue(propertyValue);
         }
 
         this.handleDisabledRequired(propertyValue);
@@ -367,7 +367,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private handleDisabledIndexed(disable: boolean): void {
         if (this.form.get('indexed')) {
-            disable ? this.form.get('indexed').disable() : this.form.get('indexed').enable();
+            disable ? this.form.controls['indexed'].disable() : this.form.controls['indexed'].enable();
         }
     }
 
@@ -378,7 +378,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private handleDisabledRequired(disable: boolean): void {
         if (this.form.get('required')) {
-            disable ? this.form.get('required').disable() : this.form.get('required').enable();
+            disable ? this.form.controls['required'].disable() : this.form.controls['required'].enable();
         }
     }
 

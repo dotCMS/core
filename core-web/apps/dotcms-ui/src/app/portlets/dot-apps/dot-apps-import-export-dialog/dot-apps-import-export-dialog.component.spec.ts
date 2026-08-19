@@ -130,21 +130,21 @@ describe('DotAppsImportExportDialogComponent', () => {
         });
 
         it('should have accept button disabled when form is invalid', () => {
-            expect(spectator.component.dialogActions.accept.disabled).toBe(true);
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(true);
         });
 
         it('should enable accept button when form is valid', () => {
             spectator.component.form.setValue({ password: 'test123' });
             spectator.detectChanges();
 
-            expect(spectator.component.dialogActions.accept.disabled).toBe(false);
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(false);
         });
 
         it('should call store.exportConfiguration when accept action is triggered', () => {
             spectator.component.form.setValue({ password: 'test123' });
             spectator.detectChanges();
 
-            spectator.component.dialogActions.accept.action();
+            spectator.component.dialogActions.accept!.action();
 
             expect(mockStore.exportConfiguration).toHaveBeenCalledWith({ password: 'test123' });
         });
@@ -152,14 +152,14 @@ describe('DotAppsImportExportDialogComponent', () => {
         it('should call closeDialog when cancel action is triggered', () => {
             jest.spyOn(spectator.component, 'closeDialog');
 
-            spectator.component.dialogActions.cancel.action();
+            spectator.component.dialogActions.cancel!.action();
 
             expect(spectator.component.closeDialog).toHaveBeenCalled();
         });
 
         it('should have correct dialog action labels', () => {
-            expect(spectator.component.dialogActions.accept.label).toBe('Accept');
-            expect(spectator.component.dialogActions.cancel.label).toBe('Cancel');
+            expect(spectator.component.dialogActions.accept!.label).toBe('Accept');
+            expect(spectator.component.dialogActions.cancel!.label).toBe('Cancel');
         });
     });
 
@@ -183,7 +183,7 @@ describe('DotAppsImportExportDialogComponent', () => {
         });
 
         it('should have accept button disabled when form is invalid', () => {
-            expect(spectator.component.dialogActions.accept.disabled).toBe(true);
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(true);
         });
 
         it('should render file upload component', () => {
@@ -224,7 +224,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             spectator.component.form.controls['password'].setValue('test123');
             spectator.detectChanges();
 
-            spectator.component.dialogActions.accept.action();
+            spectator.component.dialogActions.accept!.action();
 
             expect(mockStore.importConfiguration).toHaveBeenCalledWith({
                 file: mockFile,
@@ -236,7 +236,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             spectator.component.form.controls['password'].setValue('test123');
             spectator.detectChanges();
 
-            spectator.component.dialogActions.accept.action();
+            spectator.component.dialogActions.accept!.action();
 
             expect(mockStore.importConfiguration).not.toHaveBeenCalled();
         });
@@ -300,7 +300,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             // Trigger form value change to update disabled state
             spectator.component.form.updateValueAndValidity();
 
-            expect(spectator.component.dialogActions.accept.disabled).toBe(true);
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(true);
         });
     });
 });

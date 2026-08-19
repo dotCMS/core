@@ -91,7 +91,7 @@ describe('NamePropertyComponent', () => {
     });
 
     it('should focus on input on load using the directive', () => {
-        const input = spectator.query('input.name__input');
+        const input = spectator.query('input.name__input')!;
         expect(input).toBeTruthy();
         expect(input.getAttribute('dotautofocus')).toBeDefined();
     });

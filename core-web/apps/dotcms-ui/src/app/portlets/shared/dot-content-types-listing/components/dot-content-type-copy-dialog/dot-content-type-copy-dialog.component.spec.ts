@@ -150,7 +150,7 @@ describe('DotContentTypeCopyDialogComponent', () => {
         expect(copyButton).toBeDefined();
 
         expect(component.form.valid).toEqual(false);
-        expect(component.dialogActions.accept.disabled).toEqual(true);
+        expect(component.dialogActions.accept!.disabled).toEqual(true);
 
         // Check that button component instance is disabled
         const buttonComponent = copyButton.componentInstance;

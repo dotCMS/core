@@ -280,7 +280,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         fieldRow.divider.id = 'test';
 
         comp.fieldRows = [fieldRow];
@@ -289,7 +289,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         comp.removeFieldRow(fieldRow, 0);
 
-        expect([fieldRow.divider, fieldRow.columns[0].columnDivider, field]).toEqual(
+        expect([fieldRow.divider, fieldRow.columns![0].columnDivider, field]).toEqual(
             fieldsToRemove
         );
     });
@@ -314,7 +314,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
-        fieldRow1.columns[0].fields = [field];
+        fieldRow1.columns![0].fields = [field];
 
         fixture.componentRef.setInput('layout', [fieldRow1]);
 
@@ -354,7 +354,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             name: 'nameField'
         };
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
@@ -378,7 +378,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             name: 'nameField'
         };
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
@@ -419,7 +419,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             name: 'WYSIWYG'
         };
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 

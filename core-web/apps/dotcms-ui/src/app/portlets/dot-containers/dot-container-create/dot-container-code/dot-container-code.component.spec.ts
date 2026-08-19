@@ -272,12 +272,12 @@ describe('DotContentEditorComponent', () => {
             });
 
             it('should have add content type', fakeAsync(() => {
-                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                menu.model![0].command({ originalEvent: createFakeEvent('click') });
                 hostFixture.detectChanges();
                 const contentTypes = de.queryAll(By.css('p-tabpanel'));
                 const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
                 code.triggerEventHandler('monacoInit', {
-                    name: menu.model[0].label,
+                    name: menu.model![0].label,
                     editor: {
                         focus: jest.fn()
                     }
@@ -318,7 +318,7 @@ describe('DotContentEditorComponent', () => {
 
             it('should have select content type and focus on field', fakeAsync(() => {
                 // Add first content type
-                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                menu.model![0].command({ originalEvent: createFakeEvent('click') });
                 flush();
                 hostFixture.detectChanges(false);
 

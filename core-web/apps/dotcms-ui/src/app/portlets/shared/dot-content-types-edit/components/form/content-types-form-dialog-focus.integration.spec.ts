@@ -206,14 +206,14 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
             openDialogAndSettleFocus({ focusOnShow: false, newContentEditorEnabled: true });
 
             const form = formComponent().form;
-            const newEditContentBefore = form.get('newEditContent').value;
+            const newEditContentBefore = form.get('newEditContent')!.value;
             const nameInput = document.activeElement as HTMLInputElement;
 
             nameInput.value = 'My Content Type';
             nameInput.dispatchEvent(new Event('input'));
 
-            expect(form.get('name').value).toBe('My Content Type');
-            expect(form.get('newEditContent').value).toBe(newEditContentBefore);
+            expect(form.get('name')!.value).toBe('My Content Type');
+            expect(form.get('newEditContent')!.value).toBe(newEditContentBefore);
         });
     });
 

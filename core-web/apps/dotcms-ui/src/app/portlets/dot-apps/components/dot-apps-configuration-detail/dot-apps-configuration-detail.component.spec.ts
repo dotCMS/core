@@ -250,7 +250,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
                     .nativeElement.textContent
-            ).toContain(component.apps.sites[0].name);
+            ).toContain(component.apps.sites![0].name);
             expect(fixture.debugElement.query(By.css('dot-key-value-ng'))).toBeFalsy();
         });
 
@@ -333,7 +333,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
             expect<(appKey: string, id: string, params: DotAppsSaveData) => Observable<string>>(
                 appsServices.saveSiteConfiguration
-            ).toHaveBeenCalledWith(component.apps.key, component.apps.sites[0].id, transformedData);
+            ).toHaveBeenCalledWith(component.apps.key, component.apps.sites![0].id, transformedData);
         });
     });
 
@@ -437,7 +437,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             saveBtn.triggerEventHandler('click', {});
             expect(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
                 component.apps.key,
-                component.apps.sites[0].id,
+                component.apps.sites![0].id,
                 transformedData
             );
         });

@@ -77,7 +77,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     onFileUpload(event: DotFileUpload) {
         const body = event.originalEvent.body;
         this.tempUploadedFile = body.tempFiles[0] as DotCMSTempFile;
-        this.form.get('photo').setValue(this.tempUploadedFile.id);
+        this.form.controls['photo'].setValue(this.tempUploadedFile.id);
     }
 
     /**
@@ -87,7 +87,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      */
     removeImage(): void {
         this.tempUploadedFile = null;
-        this.form.get('photo').setValue('');
+        this.form.controls['photo'].setValue('');
     }
 
     /**
@@ -96,7 +96,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      * @memberof DotCreatePersonaFormComponent
      */
     setKeyTag(): void {
-        this.form.get('keyTag').setValue(camelCase(this.form.get('name').value));
+        this.form.controls['keyTag'].setValue(camelCase(this.form.controls['name'].value));
     }
 
     /**
@@ -107,7 +107,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     resetForm(): void {
         this.tempUploadedFile = null;
         this.form.reset();
-        this.form.get('hostFolder').setValue(this.globalStore.currentSiteId() ?? '');
+        this.form.controls['hostFolder'].setValue(this.globalStore.currentSiteId() ?? '');
     }
 
     private initPersonaForm(): void {

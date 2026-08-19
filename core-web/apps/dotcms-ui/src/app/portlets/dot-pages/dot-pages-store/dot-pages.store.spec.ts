@@ -618,17 +618,17 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             const menuActions = data.pages.menuActions;
 
-            expect(menuActions.length).toEqual(9);
+            expect(menuActions!.length).toEqual(9);
 
-            expect(menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
-            expect(menuActions[2].label).toEqual(undefined);
-            expect(menuActions[3].label).toEqual('Edit');
-            expect(menuActions[4].label).toEqual(mockWorkflowsActions[0].name);
-            expect(menuActions[5].label).toEqual(mockWorkflowsActions[1].name);
-            expect(menuActions[6].label).toEqual(mockWorkflowsActions[2].name);
-            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
-            expect(menuActions[8].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(menuActions![2].label).toEqual(undefined);
+            expect(menuActions![3].label).toEqual('Edit');
+            expect(menuActions![4].label).toEqual(mockWorkflowsActions[0].name);
+            expect(menuActions![5].label).toEqual(mockWorkflowsActions[1].name);
+            expect(menuActions![6].label).toEqual(mockWorkflowsActions[2].name);
+            expect(menuActions![7].label).toEqual('contenttypes.content.push_publish');
+            expect(menuActions![8].label).toEqual('contenttypes.content.add_to_bundle');
 
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
@@ -739,9 +739,9 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(8);
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions!.length).toEqual(8);
+            expect(data.pages.menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
 
@@ -766,14 +766,14 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
-            expect(data.pages.menuActions[2]).toEqual({ separator: true });
-            expect(data.pages.menuActions[3].label).toEqual('Assign Workflow');
-            expect(data.pages.menuActions[4].label).toEqual('Save');
-            expect(data.pages.menuActions[5].label).toEqual('Save / Publish');
-            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(data.pages.menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions![2]).toEqual({ separator: true });
+            expect(data.pages.menuActions![3].label).toEqual('Assign Workflow');
+            expect(data.pages.menuActions![4].label).toEqual('Save');
+            expect(data.pages.menuActions![5].label).toEqual('Save / Publish');
+            expect(data.pages.menuActions![6].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions![7].label).toEqual('contenttypes.content.add_to_bundle');
         });
     });
 
@@ -853,10 +853,10 @@ describe('DotPageStore', () => {
 
         dotPageStore.state$.subscribe(({ pages }) => {
             const menuAction = pages.menuActions;
-            const publishAction = menuAction.find(
+            const publishAction = menuAction!.find(
                 (action) => action.label === mockPublishAction.name
             );
-            publishAction.command({ originalEvent: createFakeEvent('click') });
+            publishAction!.command({ originalEvent: createFakeEvent('click') });
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             done();
