@@ -14,7 +14,11 @@ export interface MessagePipeOptions {
 export interface InfoOptions {
     icon: string;
     info: MessagePipeOptions;
-    id: string;
+    /**
+     * Optional because `DotEmaInfoDisplayComponent.handleAction` reads it as `$options()?.id` and
+     * only emits when it is set — the component was already written for an info bar with no action.
+     */
+    id?: string;
     actionIcon?: string;
 }
 

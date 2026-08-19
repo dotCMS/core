@@ -133,7 +133,12 @@ export function getHrefFromClickTarget(target: EventTarget | null): string | nul
  */
 export type InjectBaseTagData = {
     html: string;
-    url: string;
+    /**
+     * `| undefined`: the page URI is not always known, and `injectBaseTag` already returns the html
+     * untouched when it is missing — a behaviour its spec asserts directly. The declaration was the
+     * only thing claiming otherwise.
+     */
+    url: string | undefined;
     origin: string;
 };
 

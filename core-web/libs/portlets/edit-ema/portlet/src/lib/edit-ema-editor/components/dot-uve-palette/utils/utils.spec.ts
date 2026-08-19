@@ -368,11 +368,11 @@ describe('Dot UVE Palette Utils', () => {
                 result.contenttypes.map((ct) => [ct.variable, ct])
             );
 
-            expect(byVariable.blog.disabled).toBeUndefined();
-            expect(byVariable.banner.disabled).toBeUndefined();
-            expect(byVariable.article.disabled).toBe(true);
-            expect(byVariable.news.disabled).toBe(true);
-            expect(byVariable.product.disabled).toBe(true);
+            expect(byVariable['blog'].disabled).toBeUndefined();
+            expect(byVariable['banner'].disabled).toBeUndefined();
+            expect(byVariable['article'].disabled).toBe(true);
+            expect(byVariable['news'].disabled).toBe(true);
+            expect(byVariable['product'].disabled).toBe(true);
         });
 
         it('should treat WIDGET baseType as allowed when allowedContentTypes is non-empty', () => {
@@ -395,9 +395,9 @@ describe('Dot UVE Palette Utils', () => {
             const byVariable = Object.fromEntries(
                 result.contenttypes.map((ct) => [ct.variable, ct])
             );
-            expect(byVariable.alpha.disabled).toBeUndefined();
-            expect(byVariable.widgetZ.disabled).toBeUndefined(); // allowed because widget
-            expect(byVariable.beta.disabled).toBe(true);
+            expect(byVariable['alpha'].disabled).toBeUndefined();
+            expect(byVariable['widgetZ'].disabled).toBeUndefined(); // allowed because widget
+            expect(byVariable['beta'].disabled).toBe(true);
         });
 
         it('should keep alphabetical order even when some favorites are disabled', () => {
@@ -892,8 +892,10 @@ describe('Dot UVE Palette Utils', () => {
                 }
             });
             expect(result).not.toHaveProperty('age');
-            expect(result.settings).not.toHaveProperty('preferences');
-            expect(result.settings.notifications).not.toHaveProperty('sms');
+            expect(result['settings']).not.toHaveProperty('preferences');
+            expect(
+                (result['settings'] as Record<string, unknown>)['notifications']
+            ).not.toHaveProperty('sms');
             expect(result).not.toHaveProperty('tags');
         });
 
@@ -965,8 +967,11 @@ describe('Dot UVE Palette Utils', () => {
 
             updateContentletPropertiesInPageAsset(pageAsset, payload, { color: 'red', size: 14 });
 
-            const contentlet =
-                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            // The content fields written above are the content type's own, which
+            // `DotCMSBasicContentlet` does not declare — the same widening the production util needs.
+            const contentlet = pageAsset.containers['test-container'].contentlets[
+                'uuid-test-uuid'
+            ][0] as unknown as Record<string, unknown>;
             expect(contentlet['color']).toBe('red');
             expect(contentlet['size']).toBe(14);
         });
@@ -984,8 +989,11 @@ describe('Dot UVE Palette Utils', () => {
 
             updateContentletPropertiesInPageAsset(pageAsset, payload, { color: 'blue' });
 
-            const contentlet =
-                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            // The content fields written above are the content type's own, which
+            // `DotCMSBasicContentlet` does not declare — the same widening the production util needs.
+            const contentlet = pageAsset.containers['test-container'].contentlets[
+                'uuid-test-uuid'
+            ][0] as unknown as Record<string, unknown>;
             expect(contentlet['color']).toBeUndefined();
         });
 
@@ -1008,8 +1016,11 @@ describe('Dot UVE Palette Utils', () => {
                 dotStyleProperties: { 'font-size': 20 }
             });
 
-            const contentlet =
-                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            // The content fields written above are the content type's own, which
+            // `DotCMSBasicContentlet` does not declare — the same widening the production util needs.
+            const contentlet = pageAsset.containers['test-container'].contentlets[
+                'uuid-test-uuid'
+            ][0] as unknown as Record<string, unknown>;
             expect(contentlet['dotStyleProperties']).toEqual({ 'font-size': 20 });
         });
     });

@@ -17,8 +17,8 @@ function bindBlurHarness(setup: (editor: TinyMceEditorStub) => void): {
     invokeBlur: () => void;
 } {
     const targetElm = document.createElement('span');
-    targetElm.dataset.inode = '1';
-    targetElm.dataset.fieldName = 'body';
+    targetElm.dataset['inode'] = '1';
+    targetElm.dataset['fieldName'] = 'body';
 
     const container = document.createElement('div');
     container.setAttribute('data-dot-object', 'container');
@@ -109,7 +109,7 @@ describe('InlineEditService', () => {
         spectator.service.injectInlineEdit(iframeElement);
 
         const script = iframe.contentDocument!.querySelector('script[data-inline="true"]');
-        const style = iframe.contentDocument!.querySelector('style');
+        const style = iframe.contentDocument!.querySelector('style')!;
 
         expect(script).toBeTruthy();
         expect(style).toBeTruthy();
@@ -123,7 +123,7 @@ describe('InlineEditService', () => {
         spectator.service.injectInlineEdit(iframeElement);
 
         const script = iframe.contentDocument!.querySelector('script[data-inline="true"]');
-        const style = iframe.contentDocument!.querySelector('style');
+        const style = iframe.contentDocument!.querySelector('style')!;
 
         expect(script).toBeTruthy();
         expect(style).toBeTruthy();
@@ -159,7 +159,7 @@ describe('InlineEditService', () => {
 
         iframe.contentDocument!.body.appendChild(contentletMock);
 
-        spectator.service.setIframeWindow(iframe.contentWindow);
+        spectator.service.setIframeWindow(iframe.contentWindow!);
 
         const isInMultiplePages = spectator.service['isInMultiplePages'](dataset);
 
@@ -176,7 +176,7 @@ describe('InlineEditService', () => {
             'script[src="/html/js/tinymce/js/tinymce/tinymce.min.js"]'
         );
 
-        const style = iframe.contentDocument!.querySelector('style');
+        const style = iframe.contentDocument!.querySelector('style')!;
 
         expect(wysiwygScript).toBeTruthy();
         expect(style.innerHTML).toBe(INLINE_CONTENT_STYLES);

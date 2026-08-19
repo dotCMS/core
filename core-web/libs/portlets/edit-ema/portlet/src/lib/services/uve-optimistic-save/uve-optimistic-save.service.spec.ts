@@ -57,7 +57,9 @@ describe('UveOptimisticSaveService', () => {
     let includeClientResponse: ReturnType<typeof signal<boolean>>;
     let mockUveStore: {
         pageAsset: ReturnType<typeof computed>;
-        setPageAsset: jest.Mock;
+        // Declared with the implementation's own signature: a bare `jest.Mock` is
+        // `Mock<UnknownFunction>`, and a `jest.fn` with a typed parameter is not assignable to it.
+        setPageAsset: jest.Mock<(payload: { pageAsset: DotCMSPageAsset | null }) => void>;
     };
     let mockIframeMessenger: { sendPageData: jest.Mock };
 

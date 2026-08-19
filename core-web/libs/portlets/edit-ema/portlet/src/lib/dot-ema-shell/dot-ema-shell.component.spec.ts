@@ -1079,7 +1079,7 @@ describe('DotEmaShellComponent', () => {
             it('should reload content from dialog', () => {
                 const reloadSpy = jest.spyOn(store, 'pageReload');
 
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', undefined);
 
                 expect(reloadSpy).toHaveBeenCalled();
             });
@@ -1301,8 +1301,10 @@ describe('DotEmaShellComponent', () => {
                             title: 'Page Title',
                             identifier: 'page-id'
                         },
+                        // `urlContentMap` is optional on the asset, not nullable — and null is
+                        // exactly the absence this test is named for.
                         urlContentMap: null
-                    })
+                    }) as unknown as ReturnType<DotPageApiService['get']>
                 );
 
                 mockGlobalStore.addNewBreadcrumb.mockClear();
@@ -1513,7 +1515,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 const menuItems = spectator.component['$menuItems']();
-                const layoutItem = menuItems.find((item) => item.id === 'layout');
+                const layoutItem = menuItems.find((item) => item.id === 'layout')!;
 
                 expect(layoutItem.isDisabled).toBe(true);
             });
@@ -1531,7 +1533,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 const menuItems = spectator.component['$menuItems']();
-                const layoutItem = menuItems.find((item) => item.id === 'layout');
+                const layoutItem = menuItems.find((item) => item.id === 'layout')!;
 
                 expect(layoutItem.tooltip).toBe(
                     'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
@@ -1549,7 +1551,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(seoParams).toEqual({
                     siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
-                    languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
+                    languageId: MOCK_RESPONSE_HEADLESS.viewAs!.language.id,
                     currentUrl: expect.stringContaining('/'),
                     requestHostName: expect.any(String)
                 });
@@ -1623,10 +1625,12 @@ describe('DotEmaShellComponent', () => {
 
             it('should return false when page is undefined', () => {
                 jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    // The test is named for a response with no page, which is precisely what the
+                    // service's return type says cannot happen.
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         page: undefined
-                    })
+                    }) as unknown as ReturnType<DotPageApiService['get']>
                 );
                 spectator.detectChanges();
 

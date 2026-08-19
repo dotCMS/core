@@ -216,7 +216,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should display a toast on saving error', () => {
-        const error404 = mockResponseView(404, '', null, {
+        const error404 = mockResponseView(404, '', undefined, {
             error: { message: 'An error occurred' }
         });
         const dotAletConfirmServiceSpy = jest.spyOn(dotAlertConfirmService, 'alert');
