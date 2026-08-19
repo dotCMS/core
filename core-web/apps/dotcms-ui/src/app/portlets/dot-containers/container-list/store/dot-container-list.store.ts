@@ -31,7 +31,7 @@ import { DotListingDataTableComponent } from '../../../../view/components/dot-li
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
     selectedContainers: DotContainer[];
-    addToBundleIdentifier: string;
+    addToBundleIdentifier: string | null;
     actionHeaderOptions: ActionHeaderOptions;
     tableColumns: DataTableColumn[];
     isEnterprise: boolean;
@@ -144,8 +144,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         return notifyMessages;
     });
 
-    readonly updateBundleIdentifier = this.updater<string>(
-        (state: DotContainerListState, addToBundleIdentifier: string) => {
+    readonly updateBundleIdentifier = this.updater<string | null>(
+        (state: DotContainerListState, addToBundleIdentifier: string | null) => {
             return {
                 ...state,
                 addToBundleIdentifier

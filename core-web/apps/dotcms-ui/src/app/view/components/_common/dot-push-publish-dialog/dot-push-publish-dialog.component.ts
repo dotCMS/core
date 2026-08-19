@@ -62,10 +62,10 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
      */
     dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
     dialogShow = false;
-    eventData!: DotPushPublishDialogData;
+    eventData: DotPushPublishDialogData | null = null;
     formData!: DotPushPublishData;
     formValid = false;
-    errorMessage = null;
+    errorMessage: number | null = null;
     isSaving = false;
 
     cancel = output<boolean>();
@@ -114,14 +114,11 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
      * @memberof DotPushPublishDialogComponent
      */
     submitPushAction(): void {
-        if (this.formValid) {
+        if (this.formValid && this.eventData) {
+            const eventData = this.eventData;
             this.isSaving = true;
             this.pushPublishService
-                .pushPublishContent(
-                    this.eventData.assetIdentifier,
-                    this.formData,
-                    !!this.eventData.isBundle
-                )
+                .pushPublishContent(eventData.assetIdentifier, this.formData, !!eventData.isBundle)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((result: DotAjaxActionResponseView) => {
                     this.isSaving = false;

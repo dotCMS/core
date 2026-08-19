@@ -78,7 +78,7 @@ export class DotPersonaSelectorComponent implements OnInit {
     paginationPerPage = 10;
     personas: DotPersona[] = [];
     totalRecords!: number;
-    value!: DotPersona;
+    value: DotPersona | undefined;
     defaultPersonaIdentifier = DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND;
     private personaSeachQuery!: string;
 
@@ -155,7 +155,10 @@ export class DotPersonaSelectorComponent implements OnInit {
      * @memberof DotPersonaSelectorComponent
      */
     reloadPersonasListCurrentPage(): void {
-        this.paginationService.getCurrentPage().pipe(take(1)).subscribe(this.setList.bind(this));
+        this.paginationService
+            .getCurrentPage<DotPersona[]>()
+            .pipe(take(1))
+            .subscribe(this.setList.bind(this));
     }
 
     /**
@@ -186,7 +189,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         // Set filter if undefined
         this.paginationService.filter = filter;
         this.paginationService
-            .getWithOffset(offset)
+            .getWithOffset<DotPersona[]>(offset)
             .pipe(take(1), delay(0))
             .subscribe(this.setList.bind(this));
     }

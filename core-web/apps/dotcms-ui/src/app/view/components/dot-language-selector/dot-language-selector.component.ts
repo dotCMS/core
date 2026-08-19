@@ -46,9 +46,10 @@ export class DotLanguageSelectorComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         const { value } = changes;
-        if (value && value.currentValue) {
+        const pageId = this._pageId();
+        if (value && value.currentValue && pageId) {
             this.dotLanguagesService
-                .getLanguagesUsedPage(this._pageId())
+                .getLanguagesUsedPage(pageId)
                 .subscribe((languages: DotLanguage[]) => {
                     this.languagesList.set(languages);
                 });

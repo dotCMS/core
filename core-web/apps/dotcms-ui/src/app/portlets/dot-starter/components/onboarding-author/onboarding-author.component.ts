@@ -92,13 +92,13 @@ export class DotOnboardingAuthorComponent implements OnInit {
                                 return {
                                     username: user.givenName,
                                     showCreateContentLink:
-                                        permissions[PermissionsType.CONTENTLETS].canWrite,
+                                        !!permissions[PermissionsType.CONTENTLETS].canWrite,
                                     showCreateDataModelLink:
-                                        permissions[PermissionsType.STRUCTURES].canWrite,
+                                        !!permissions[PermissionsType.STRUCTURES].canWrite,
                                     showCreatePageLink:
-                                        permissions[PermissionsType.HTMLPAGES].canWrite,
+                                        !!permissions[PermissionsType.HTMLPAGES].canWrite,
                                     showCreateTemplateLink:
-                                        permissions[PermissionsType.TEMPLATES].canWrite
+                                        !!permissions[PermissionsType.TEMPLATES].canWrite
                                 };
                             }
                         )

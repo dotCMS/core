@@ -273,12 +273,6 @@ describe('DotCustomEventHandlerService', () => {
 
     it('should set colors in the ui', () => {
         jest.spyOn(dotUiColorsService, 'setColors');
-        const fakeHtmlEl = { hello: 'html' };
-        // No type argument: `jest.spyOn` takes either none or two. The service only forwards this
-        // element to `setColors`, which the assertion below checks by identity.
-        jest.spyOn(document, 'querySelector').mockReturnValue(
-            fakeHtmlEl as unknown as HTMLElement
-        );
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -294,7 +288,9 @@ describe('DotCustomEventHandlerService', () => {
                 }
             })
         );
-        expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl, {
+        // The service reads `document.documentElement` rather than querying for it, so there is
+        // nothing to stub — the root element jsdom already provides is the one it colours.
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(document.documentElement, {
             primary: '#fff',
             secondary: '#000',
             background: '#ccc'

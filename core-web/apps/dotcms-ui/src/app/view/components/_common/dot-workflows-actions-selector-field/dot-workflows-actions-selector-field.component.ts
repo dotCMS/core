@@ -137,6 +137,6 @@ export class DotWorkflowsActionsSelectorFieldComponent
      *                      and the current value is not in the list of options). Otherwise, returns `false`.
      */
     private shouldClearDropdown(dropdown: Select, options: string[], value: string): boolean {
-        return dropdown && options.length && !options.includes(value);
+        return !!dropdown && options.length > 0 && !options.includes(value);
     }
 }

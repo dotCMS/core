@@ -75,8 +75,8 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             this.patchState({
                 items: this.getItems(auth),
                 userData: {
-                    email: userData.emailAddress,
-                    name: userData.name || userData.fullName
+                    email: userData.emailAddress ?? '',
+                    name: userData.name || userData.fullName || ''
                 }
             });
         });

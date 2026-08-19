@@ -191,7 +191,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
                   .map((item) => {
                       return this.DEFAULT_OPTIONS.find((option) => option.value === item);
                   })
-                  .filter((item) => item) // Remove undefined values in the array
+                  .filter((item): item is SelectItem => !!item) // Remove undefined values
             : this.DEFAULT_OPTIONS;
     }
 }

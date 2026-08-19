@@ -48,7 +48,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
     inputReference!: HTMLInputElement;
     @ViewChild('autoComplete', { static: true }) autoComplete!: AutoComplete;
 
-    private lastDeletedTag!: DotTag;
+    private lastDeletedTag: DotTag | null = null;
 
     propagateChange = (_: unknown) => {
         /* empty */
@@ -96,7 +96,10 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      * @memberof DotAutocompleteTagsComponent
      */
     addItem(): void {
-        this.value.unshift(this.value.pop());
+        const selected = this.value.pop();
+        if (selected) {
+            this.value.unshift(selected);
+        }
         this.propagateChange(this.getStringifyLabels());
     }
 
@@ -165,7 +168,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
             this.value.unshift(this.createNewTag(input.value));
             this.propagateChange(this.getStringifyLabels());
             this.filterTags({ query: input.value });
-            input.value = null;
+            input.value = '';
             this.autoComplete.hide();
         }
     }
