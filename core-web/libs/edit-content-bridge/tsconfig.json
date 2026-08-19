@@ -4,7 +4,6 @@
         "strict": true,
         "module": "preserve",
         "forceConsistentCasingInFileNames": true,
-        "strict": false,
         "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
