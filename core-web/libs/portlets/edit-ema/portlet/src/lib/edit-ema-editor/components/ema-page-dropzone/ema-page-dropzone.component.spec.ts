@@ -227,7 +227,7 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.setInput('containers', BOUNDS_EMPTY_CONTAINER_MOCK);
                 spectator.detectChanges();
 
-                const errorZone = spectator.query('.drop-zone_error');
+                const errorZone = spectator.query('.drop-zone_error')!;
                 const errorZoneText = errorZone.querySelector('span').textContent;
 
                 // Check that the error message is displayed

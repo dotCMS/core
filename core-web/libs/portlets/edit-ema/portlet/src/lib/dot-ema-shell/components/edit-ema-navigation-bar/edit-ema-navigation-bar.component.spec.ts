@@ -95,7 +95,7 @@ describe('EditEmaNavigationBarComponent', () => {
             });
 
             it('should have a <nav> with aria-label "Page editor navigation"', () => {
-                const nav = spectator.query('nav');
+                const nav = spectator.query('nav')!;
                 expect(nav.getAttribute('aria-label')).toBe('Page editor navigation');
             });
         });

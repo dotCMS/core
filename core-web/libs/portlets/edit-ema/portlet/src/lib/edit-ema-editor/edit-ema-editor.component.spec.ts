@@ -541,7 +541,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide palette when state changes', () => {
-                const wrapper = spectator.query('.palette-wrapper');
+                const wrapper = spectator.query('.palette-wrapper')!;
 
                 // First, make sure palette wrapper is open by default
                 expect(wrapper.classList).toContain('open');
@@ -666,7 +666,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should reload when Block editor is saved', () => {
-                const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
+                const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent)!;
                 const spy = jest.spyOn(store, 'pageReload');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
@@ -1409,7 +1409,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should edit urlContentMap page', () => {
                     spectator.detectChanges();
-                    const dialog = spectator.query(DotEmaDialogComponent);
+                    const dialog = spectator.query(DotEmaDialogComponent)!;
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
                     const payload = {
@@ -2061,7 +2061,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
                     spectator.detectChanges();
 
-                    const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                    const confirmDialog = spectator.query(byTestId('confirm-dialog'))!;
 
                     expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
                     expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
