@@ -27,9 +27,9 @@ export class DotAppsConfigurationItemComponent {
 
     site = input<DotAppsSite>();
 
-    edit = output<DotAppsSite>();
+    edit = output<DotAppsSite | undefined>();
     export = output<DotAppsSite>();
-    delete = output<DotAppsSite>();
+    delete = output<DotAppsSite | undefined>();
 
     onClick(event: MouseEvent): void {
         event.stopPropagation();

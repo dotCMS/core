@@ -74,8 +74,11 @@ export class DotAppsListComponent implements AfterViewInit {
                 map((data) => data['dotAppsListResolverData']),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((apps: DotApp[]) => {
-                this.initAppsState(apps);
+            .subscribe((apps: DotApp[] | null) => {
+                // `null` arrives when the request failed; the list keeps what it had.
+                if (apps) {
+                    this.initAppsState(apps);
+                }
             });
     }
 
@@ -115,8 +118,11 @@ export class DotAppsListComponent implements AfterViewInit {
         this.#dotAppsService
             .get()
             .pipe(take(1))
-            .subscribe((apps: DotApp[]) => {
-                this.initAppsState(apps);
+            .subscribe((apps: DotApp[] | null) => {
+                // `null` arrives when the request failed; the list keeps what it had.
+                if (apps) {
+                    this.initAppsState(apps);
+                }
             });
     }
 
@@ -143,9 +149,9 @@ export class DotAppsListComponent implements AfterViewInit {
     }
 
     private filterApps(searchCriteria?: string): void {
-        this.#dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
+        this.#dotAppsService.get(searchCriteria).subscribe((apps: DotApp[] | null) => {
             patchState(this.state, {
-                displayedApps: apps
+                displayedApps: apps ?? []
             });
         });
     }

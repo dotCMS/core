@@ -144,9 +144,10 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1))
                 )
             )
-            .subscribe((value: DotFieldVariable[]) => {
+            .subscribe((value) => {
                 this.form.markAsPristine();
-                this.$save.emit(value);
+                // The stream carries the error handler's result alongside the saved variables.
+                this.$save.emit(value as DotFieldVariable[]);
             });
     }
 
