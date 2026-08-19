@@ -39,28 +39,31 @@ export class DotContentletEditorService {
         DotCMSContentType | DotCMSContentlet
     >();
 
-    private data: Subject<DotEditorAction> = new Subject();
+    private data: Subject<DotEditorAction | null> = new Subject();
     private _header: Subject<string> = new Subject();
-    private _load!: ($event: unknown) => void;
-    private _keyDown!: ($event: KeyboardEvent) => void;
+    /** Both are null until an action binds them, and back to null on `clear()`. */
+    private _load: (($event: Event) => void) | null = null;
+    private _keyDown: (($event: KeyboardEvent) => void) | null = null;
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(
-            filter((action: DotEditorAction) => this.isAddUrl(action)),
+            filter((action): action is DotEditorAction => !!action && this.isAddUrl(action)),
             map((action: DotEditorAction) => this.geAddtUrl(action))
         );
     }
 
     get editUrl$(): Observable<string> {
         return this.data.pipe(
-            filter((action: DotEditorAction) => this.isEditUrl(action)),
+            filter((action): action is DotEditorAction => !!action && this.isEditUrl(action)),
             mergeMap((action: DotEditorAction) => of(this.getEditUrl(action)))
         );
     }
 
     get createUrl$(): Observable<string> {
         return this.data.pipe(
-            filter((action: DotEditorAction) => this.isCreateUrl(action)),
+            filter(
+                (action): action is DotEditorAction => !!action && this.isCreateUrl(action)
+            ),
             map((action: DotEditorAction) => this.getCreateUrl(action))
         );
     }
@@ -69,11 +72,11 @@ export class DotContentletEditorService {
         return this._header;
     }
 
-    get loadHandler(): ($event: unknown) => void {
+    get loadHandler(): (($event: Event) => void) | null {
         return this._load;
     }
 
-    get keyDownHandler(): ($event: KeyboardEvent) => void {
+    get keyDownHandler(): (($event: KeyboardEvent) => void) | null {
         return this._keyDown;
     }
 
@@ -137,7 +140,7 @@ export class DotContentletEditorService {
      * @param unknown $event
      * @memberof DotContentletEditorService
      */
-    load($event: unknown): void {
+    load($event: Event): void {
         if (this._load) {
             this._load($event);
         }
@@ -149,7 +152,7 @@ export class DotContentletEditorService {
      * @returns Observable<string>
      * @memberof DotContentletEditorService
      */
-    getActionUrl(contentTypeVariable: string): Observable<string> {
+    getActionUrl(contentTypeVariable: string): Observable<string | null> {
         return this.http
             .get<DotCMSResponse<string>>(`/api/v1/portlet/_actionurl/${contentTypeVariable}`)
             .pipe(

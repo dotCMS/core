@@ -70,61 +70,63 @@ export class DotContentletWrapperComponent {
 
     private isContentletModified = false;
     private _appMainTitle = '';
-    private readonly customEventsHandler;
+    /**
+     * Handlers for the custom events the contentlet iframe raises, keyed by event name — the
+     * dialog forwards anything not listed to `DotCustomEventHandlerService`.
+     */
+    private readonly customEventsHandler: Record<string, (event: CustomEvent) => void>;
 
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
 
     constructor() {
-        if (!this.customEventsHandler) {
-            this.customEventsHandler = {
-                close: ({ detail: { data } }: CustomEvent) => {
-                    this.onClose();
-                    if (data?.redirectUrl) {
-                        this.dotRouterService.goToEditPage({
-                            url: data.redirectUrl,
-                            language_id: data.languageId
-                        });
-                    }
-                },
-                'edit-page': ({ detail: { data } }: CustomEvent<DotCMSEditPageEvent>) => {
+        this.customEventsHandler = {
+            close: ({ detail: { data } }: CustomEvent) => {
+                this.onClose();
+                if (data?.redirectUrl) {
                     this.dotRouterService.goToEditPage({
-                        url: data.url,
-                        language_id: data.languageId,
-                        host_id: data.hostId
+                        url: data.redirectUrl,
+                        language_id: data.languageId
                     });
-                },
-                'deleted-page': () => {
-                    this.onClose();
-                },
-                'edit-contentlet-data-updated': (e: CustomEvent) => {
-                    this.isContentletModified = e.detail.payload;
-                },
-                'save-page': (data: DotCSMSavePageEvent) => {
-                    if (this.shouldRefresh(data)) {
-                        this.dotIframeService.reload();
-                    }
-
-                    // Message emitted to notify DotPagesComponent
-                    this.dotEventsService.notify('save-page', {
-                        payload: data.detail.payload,
-                        value: this.dotMessageService.get('message.content.saved')
-                    });
-
-                    this.isContentletModified = false;
-                },
-                'edit-contentlet-loaded': (e: CustomEvent) => {
-                    this._appMainTitle = this.titleService.getTitle();
-                    this.header = e.detail.data.contentType;
-                    this.titleService.setTitle(
-                        `${
-                            e.detail.data.pageTitle
-                                ? e.detail.data.pageTitle + ' -'
-                                : `${this.dotMessageService.get('New')} ${this.header} -`
-                        } ${this.titleService.getTitle().split(' - ')[1]}`
-                    );
                 }
-            };
-        }
+            },
+            'edit-page': ({ detail: { data } }: CustomEvent<DotCMSEditPageEvent>) => {
+                this.dotRouterService.goToEditPage({
+                    url: data.url,
+                    language_id: data.languageId,
+                    host_id: data.hostId
+                });
+            },
+            'deleted-page': () => {
+                this.onClose();
+            },
+            'edit-contentlet-data-updated': (e: CustomEvent) => {
+                this.isContentletModified = e.detail.payload;
+            },
+            'save-page': (data: DotCSMSavePageEvent) => {
+                if (this.shouldRefresh(data)) {
+                    this.dotIframeService.reload();
+                }
+
+                // Message emitted to notify DotPagesComponent
+                this.dotEventsService.notify('save-page', {
+                    payload: data.detail.payload,
+                    value: this.dotMessageService.get('message.content.saved')
+                });
+
+                this.isContentletModified = false;
+            },
+            'edit-contentlet-loaded': (e: CustomEvent) => {
+                this._appMainTitle = this.titleService.getTitle();
+                this.header = e.detail.data.contentType;
+                this.titleService.setTitle(
+                    `${
+                        e.detail.data.pageTitle
+                            ? e.detail.data.pageTitle + ' -'
+                            : `${this.dotMessageService.get('New')} ${this.header} -`
+                    } ${this.titleService.getTitle().split(' - ')[1]}`
+                );
+            }
+        };
     }
 
     /**
@@ -203,7 +205,7 @@ export class DotContentletWrapperComponent {
      * @param any $event
      * @memberof DotContentletWrapperComponent
      */
-    onKeyDown($event): void {
+    onKeyDown($event: KeyboardEvent): void {
         if (this.dotContentletEditorService.keyDown) {
             this.dotContentletEditorService.keyDown($event);
         }
@@ -215,7 +217,7 @@ export class DotContentletWrapperComponent {
      * @param any $event
      * @memberof DotContentletWrapperComponent
      */
-    onLoad($event): void {
+    onLoad($event: Event): void {
         if (this.dotContentletEditorService.load) {
             this.dotContentletEditorService.load($event);
         }
