@@ -17,33 +17,58 @@ export interface DotContentDriveLazyLoadEvent {
     forceUpdate?: () => void;
 }
 
-export interface DotContentDriveFolder {
-    __icon__: 'folderIcon';
+/**
+ * The folder fields required to drive the shared folder actions — the context menu's permission
+ * gating and the "Edit folder" dialog's payload.
+ *
+ * Deliberately narrower than {@link DotContentDriveFolder}: the table sources folders from
+ * `POST /api/v1/drive/search` (a full folder row), while the sidebar tree sources them from
+ * `GET /api/v1/folder/search`, which returns only the fields listed here. Rather than fabricate
+ * the table-only fields (`modDate`, `owner`, `iDate`, …) for sidebar folders, both views converge
+ * on this contract, and only consumers that genuinely need the full row ask for
+ * `DotContentDriveFolder`.
+ */
+export interface DotContentDriveActionableFolder {
+    type: 'folder';
+    identifier: string;
+    /** The folder's own name (last path segment). */
+    name: string;
+    /** The folder's own full path, e.g. `/application/blog/`. */
+    path: string;
+    title: string;
+    sortOrder: number;
+    showOnMenu: boolean;
+    /** Comma-separated file-name masks allowed in this folder, e.g. `*.jpg,*.png`. */
+    filesMasks: string;
     defaultFileType: string;
     /**
      * Folder upload preference: `DOTASSET`/`FILEASSET` forces every upload to that base type,
      * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
      */
     defaultBaseType?: string | null;
+    /**
+     * Permission types the requesting user holds on this folder.
+     *
+     * Required, and always an array by the time a folder reaches an action: whoever builds this
+     * object resolves the folder's permissions first (or substitutes `[]` when they cannot be
+     * resolved), so gating never runs against `null`/`undefined`. The "not yet resolved" state
+     * lives upstream, on `DotFolder.permissions` / the tree node's data.
+     */
+    permissions: PermissionType[];
+}
+
+export interface DotContentDriveFolder extends DotContentDriveActionableFolder {
+    __icon__: 'folderIcon';
     description: string;
     extension: 'folder';
-    filesMasks: string;
     hasTitleImage: boolean;
     hostId: string;
     iDate: number;
-    identifier: string;
     inode: string;
     mimeType: string;
     modDate: number;
-    name: string;
     owner: string | null;
     parent: string;
-    path: string;
-    permissions: PermissionType[];
-    showOnMenu: boolean;
-    sortOrder: number;
-    title: string;
-    type: 'folder';
 }
 
 export const PERMISSIONS_TYPE = {
@@ -61,6 +86,15 @@ export type PermissionType = (typeof PERMISSIONS_TYPE)[keyof typeof PERMISSIONS_
 export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
 
 /**
+ * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
+ *
+ * Wider than {@link DotContentDriveItem} on the folder side: the table passes a full
+ * {@link DotContentDriveFolder} and the sidebar tree passes a {@link DotContentDriveActionableFolder},
+ * so one gating implementation serves both. Every `DotContentDriveItem` is assignable to this.
+ */
+export type DotContentDriveActionableItem = DotCMSContentlet | DotContentDriveActionableFolder;
+
+/**
  * Pagination event emitted by the folder list view,
  * extending the lazy-load event shape with a resolved 1-indexed page number.
  */
@@ -70,11 +104,12 @@ export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & { page
  * Interface representing data needed for context menu interactions
  * @interface ContextMenuData
  * @property {Event} event - The DOM event that triggered the context menu
- * @property {DotContentDriveItem} contentlet - The content item associated with the context menu
+ * @property {DotContentDriveActionableItem} contentlet - The item associated with the context menu.
+ * Accepts folders from either the table (full row) or the sidebar tree (search view).
  */
 export interface ContextMenuData {
     event: Event;
-    contentlet: DotContentDriveItem;
+    contentlet: DotContentDriveActionableItem;
 }
 
 /**

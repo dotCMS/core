@@ -210,6 +210,29 @@ describe('DotFolderService', () => {
             const req = spectator.expectOne(url, HttpMethod.GET);
             req.flush({ entity: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } });
         });
+
+        it('should send includePermissions when the caller opts in', () => {
+            spectator.service
+                .searchFolders({ siteId: 'site-1', includePermissions: true })
+                .subscribe();
+
+            const url =
+                '/api/v1/folder/search?siteId=site-1&includePermissions=true&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: mockPagination });
+        });
+
+        it('should omit includePermissions entirely when not requested', () => {
+            // The backend defaults it to false, so sending `includePermissions=false` on every tree
+            // request would be pure noise.
+            spectator.service
+                .searchFolders({ siteId: 'site-1', includePermissions: false })
+                .subscribe();
+
+            const url = '/api/v1/folder/search?siteId=site-1&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: mockPagination });
+        });
     });
 
     describe('createFolder', () => {

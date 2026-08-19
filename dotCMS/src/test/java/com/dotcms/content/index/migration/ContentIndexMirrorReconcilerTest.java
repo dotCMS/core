@@ -2,14 +2,19 @@ package com.dotcms.content.index.migration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.DatabaseCounts;
 import com.dotcms.content.index.IndexAPI;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
@@ -30,21 +35,40 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
 
     private IndexAPI es;
     private IndexAPI os;
+    private ContentletIndexOperations esOps;
+    private ContentletIndexOperations osOps;
 
     @Before
     public void setUp() {
         es = mock(IndexAPI.class);
         os = mock(IndexAPI.class);
+        esOps = mock(ContentletIndexOperations.class);
+        osOps = mock(ContentletIndexOperations.class);
         when(es.removeClusterIdFromName(anyString())).thenAnswer(inv -> {
             final String n = inv.getArgument(0);
             return n.startsWith(PREFIX) ? n.substring(PREFIX.length()) : n;
         });
+        // Mirror each leaf's physical-name convention: ES cluster-prefixes, OS also tags with .os.
+        when(esOps.toPhysicalName(anyString())).thenAnswer(inv -> PREFIX + inv.getArgument(0));
+        when(osOps.toPhysicalName(anyString())).thenAnswer(inv -> PREFIX + inv.getArgument(0) + ".os");
     }
 
-    private static IndexStats stats(final long count) {
+    /**
+     * A stats entry that marks an index as PRESENT. Its {@code documentCount} is deliberately a poison
+     * value: existence comes from the stats snapshot but the reported count must come from a live count
+     * query, because the stats counter trails a just-written document by seconds (issue #36983). If the
+     * implementation ever reads the count from here again, every assertion below fails loudly instead of
+     * silently reintroducing the lag.
+     */
+    private static IndexStats present() {
         final IndexStats s = mock(IndexStats.class);
-        when(s.documentCount()).thenReturn(count);
+        when(s.documentCount()).thenReturn(-999L);
         return s;
+    }
+
+    /** Stubs the live count query of one engine leaf for a logical index name. */
+    private void count(final ContentletIndexOperations ops, final String logicalName, final long n) {
+        when(ops.getIndexDocumentCount(ops.toPhysicalName(logicalName))).thenReturn(n);
     }
 
     private static IndiciesInfo indicies(final String working, final String live) {
@@ -52,7 +76,13 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     }
 
     private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info) {
-        return new ContentIndexMirrorReconciler(es, os, () -> info);
+        return reconciler(info, null);
+    }
+
+    /** @param expected the database denominator behind the coverage percentages, or null when absent */
+    private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info,
+            final DatabaseCounts expected) {
+        return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info, () -> expected);
     }
 
     /** Both content indices present on both engines with equal counts → two IN_SYNC rows. */
@@ -60,10 +90,12 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void workingAndLive_inSync() {
         // Build the stats maps first: nesting stats() (a when()) inside a when().thenReturn(...) would
         // trip Mockito's UnfinishedStubbingException.
-        final Map<String, IndexStats> esStats = Map.of("working_1", stats(100), "live_1", stats(50));
-        final Map<String, IndexStats> osStats = Map.of("working_1.os", stats(100), "live_1.os", stats(50));
+        final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present(), "live_1.os", present());
         when(es.getIndicesStats()).thenReturn(esStats);
         when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 100); count(osOps, "working_1", 100);
+        count(esOps, "live_1", 50);     count(osOps, "live_1", 50);
 
         final List<MirrorStatus> statuses =
                 reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).statuses();
@@ -85,10 +117,12 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     /** The OpenSearch counterpart of the working index is missing → MISSING_COUNTERPART. */
     @Test
     public void missingOsCounterpart_onWorking() {
-        final Map<String, IndexStats> esStats = Map.of("working_1", stats(100), "live_1", stats(50));
-        final Map<String, IndexStats> osStats = Map.of("live_1.os", stats(50)); // working_1.os absent
+        final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
+        final Map<String, IndexStats> osStats = Map.of("live_1.os", present()); // working_1.os absent
         when(es.getIndicesStats()).thenReturn(esStats);
         when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 100);
+        count(esOps, "live_1", 50); count(osOps, "live_1", 50);
 
         final List<MirrorStatus> statuses =
                 reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).statuses();
@@ -102,13 +136,15 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertTrue(working.recommendation().contains("OpenSearch"));
     }
 
-    /** Counts diverge on the live index (exact stats, no cap) → COUNT_DRIFT. */
+    /** Counts diverge on the live index (exact count query, no cap) → COUNT_DRIFT. */
     @Test
     public void countDrift_onLive() {
-        final Map<String, IndexStats> esStats = Map.of("working_1", stats(100), "live_1", stats(50));
-        final Map<String, IndexStats> osStats = Map.of("working_1.os", stats(100), "live_1.os", stats(40));
+        final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present(), "live_1.os", present());
         when(es.getIndicesStats()).thenReturn(esStats);
         when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 100); count(osOps, "working_1", 100);
+        count(esOps, "live_1", 50);     count(osOps, "live_1", 40);
 
         final List<MirrorStatus> statuses =
                 reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).statuses();
@@ -131,14 +167,173 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     /** An unset working/live slot is skipped (no row, no NPE). */
     @Test
     public void unsetSlot_skipped() {
-        final Map<String, IndexStats> esStats = Map.of("live_1", stats(50));
-        final Map<String, IndexStats> osStats = Map.of("live_1.os", stats(50));
+        final Map<String, IndexStats> esStats = Map.of("live_1", present());
+        final Map<String, IndexStats> osStats = Map.of("live_1.os", present());
         when(es.getIndicesStats()).thenReturn(esStats);
         when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "live_1", 50); count(osOps, "live_1", 50);
 
         final List<MirrorStatus> statuses = reconciler(indicies(null, PREFIX + "live_1")).statuses();
 
         assertEquals(1, statuses.size());
         assertEquals(IndexKind.CONTENT_LIVE, statuses.get(0).kind());
+    }
+
+    /**
+     * The count is read live, not from the stats snapshot: the stats counter only advances on shard
+     * refresh, so reading it would report a just-published document as missing for seconds — which a
+     * support technician reads as a lost write (issue #36983). The stats entries here carry a poison
+     * count, so this passes only if the reported numbers came from the count query.
+     */
+    @Test
+    public void docCount_comesFromTheLiveCountQuery_notFromStats() {
+        // Build the maps first: present() calls when(), which cannot run inside another when().
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 683); count(osOps, "working_1", 15);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
+
+        assertEquals(683, working.es().docCount());
+        assertEquals(15, working.os().docCount());
+        verify(esOps).getIndexDocumentCount("cluster_x.working_1");
+        verify(osOps).getIndexDocumentCount("cluster_x.working_1.os");
+    }
+
+    /**
+     * Coverage is each engine measured against the DATABASE, not against the other engine — the only
+     * completeness signal that survives into Phase 3, where there is no second engine to diff against
+     * (issue #36983). The scenario is the one observed live: the content mirror was never rebuilt.
+     */
+    @Test
+    public void coverage_isMeasuredAgainstTheDatabase() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 686); count(osOps, "working_1", 21);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
+                new DatabaseCounts(686L, 685L)).statuses().get(0);
+
+        assertEquals(Long.valueOf(686), working.databaseDocCount());
+        assertEquals(100.0, working.esIndexedPercent(), 0.001);
+        assertEquals(3.06, working.osIndexedPercent(), 0.001);
+        // The incomplete copy is named in the recommendation, with the fallout spelled out.
+        assertTrue(working.recommendation().contains("OpenSearch copy holds 21 of the 686"));
+        assertTrue(working.recommendation().contains("Site Search crawl"));
+        assertFalse("the complete copy must not be flagged",
+                working.recommendation().contains("Elasticsearch copy holds"));
+    }
+
+    /** No denominator (the query failed, or this is a Site Search row) → the fields are simply absent. */
+    @Test
+    public void coverage_absentWithoutADatabaseDenominator() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 686); count(osOps, "working_1", 21);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
+
+        assertNull(working.databaseDocCount());
+        assertNull(working.esIndexedPercent());
+        assertNull(working.osIndexedPercent());
+        assertFalse(working.recommendation().contains("NOTE"));
+    }
+
+    /**
+     * A complete mirror is not annotated, and coverage does not touch the verdict: the verdict states
+     * the ES↔OS relationship, coverage states completeness against the database. Two separate facts.
+     */
+    @Test
+    public void coverage_completeMirror_isNotFlagged() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 686); count(osOps, "working_1", 686);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
+                new DatabaseCounts(686L, 685L)).statuses().get(0);
+
+        assertEquals(100.0, working.osIndexedPercent(), 0.001);
+        assertEquals(Verdict.IN_SYNC, working.verdict());
+        assertFalse(working.recommendation().contains("NOTE"));
+    }
+
+    /**
+     * A failing count query is reported as {@code -1} (the unmeasurable marker) instead of propagating:
+     * an "unknown" answer for one engine still leaves a usable report, and -1 compares unequal so the
+     * verdict degrades to out-of-sync rather than to a false green.
+     */
+    @Test
+    public void countQueryFailure_isReportedAsUnmeasurable() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(esOps, "working_1", 683);
+        when(osOps.getIndexDocumentCount("cluster_x.working_1.os"))
+                .thenThrow(new DotRuntimeException("OS unreachable"));
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
+
+        assertEquals(683, working.es().docCount());
+        assertEquals(-1, working.os().docCount());
+        assertEquals(Verdict.COUNT_DRIFT, working.verdict());
+        assertNull("an unmeasurable count has no drift percentage", working.driftPercent());
+    }
+
+    /**
+     * The dangerous case: BOTH count queries fail. Both sides read {@code -1}, and left to plain
+     * equality {@code -1 == -1} would look like a perfect match — the report would answer "in sync,
+     * safe to advance" about a mirror it never measured. Existence still resolves here (the stats call
+     * succeeds), which is exactly how it happens in the field: a search user granted
+     * {@code indices:monitor/stats} but not {@code indices:data/read/count}, or a cluster too loaded to
+     * answer counts.
+     */
+    @Test
+    public void bothCountQueriesFailing_isNeverInSync() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present());
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        when(esOps.getIndexDocumentCount("cluster_x.working_1"))
+                .thenThrow(new DotRuntimeException("ES unreachable"));
+        when(osOps.getIndexDocumentCount("cluster_x.working_1.os"))
+                .thenThrow(new DotRuntimeException("OS unreachable"));
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
+
+        assertEquals(-1, working.es().docCount());
+        assertEquals(-1, working.os().docCount());
+        assertEquals("two unmeasurable counts must not read as a match",
+                Verdict.COUNT_DRIFT, working.verdict());
+        assertTrue("an unmeasured mirror needs attention", working.needsAttention());
+    }
+
+    /**
+     * An engine that has no copy of the index reports no indexed percentage at all — not {@code 0.0}.
+     * Zero would say "this engine lost all its content"; the truth is "there is no such index here",
+     * which `exists` and the MISSING_COUNTERPART verdict already state. It matters most in Phase 3,
+     * where every Elasticsearch copy is legitimately gone.
+     */
+    @Test
+    public void absentCopy_reportsNoIndexedPercentage() {
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
+        when(es.getIndicesStats()).thenReturn(Map.of());
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(osOps, "working_1", 686);
+
+        final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
+                new DatabaseCounts(686L, 685L)).statuses().get(0);
+
+        assertFalse(working.es().exists());
+        assertNull("an absent copy has no completeness to report", working.esIndexedPercent());
+        assertEquals(100.0, working.osIndexedPercent(), 0.001);
     }
 }
