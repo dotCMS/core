@@ -76,6 +76,13 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
+    // Stable bound references required so removeEventListener can match the
+    // exact function object that was passed to addEventListener. Using
+    // .bind(this) inline creates a new object each call, making removal a
+    // no-op and causing listeners to accumulate on every iframe load event.
+    private readonly boundEmitKeyDown = this.emitKeyDown.bind(this);
+    private readonly boundEmitCustomEvent = this.emitCustonEvent.bind(this);
+
     ngOnInit(): void {
         this.iframeOverlayService.overlay
             .pipe(takeUntil(this.destroy$))
@@ -264,17 +271,11 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private handleIframeEvents($event): void {
-        this.getIframeWindow().removeEventListener('keydown', this.emitKeyDown.bind(this));
-        this.getIframeWindow().document.removeEventListener(
-            'ng-event',
-            this.emitCustonEvent.bind(this)
-        );
+        this.getIframeWindow().removeEventListener('keydown', this.boundEmitKeyDown);
+        this.getIframeWindow().document.removeEventListener('ng-event', this.boundEmitCustomEvent);
 
-        this.getIframeWindow().addEventListener('keydown', this.emitKeyDown.bind(this));
-        this.getIframeWindow().document.addEventListener(
-            'ng-event',
-            this.emitCustonEvent.bind(this)
-        );
+        this.getIframeWindow().addEventListener('keydown', this.boundEmitKeyDown);
+        this.getIframeWindow().document.addEventListener('ng-event', this.boundEmitCustomEvent);
         this.charge.emit($event);
 
         const doc = this.getIframeDocument();
