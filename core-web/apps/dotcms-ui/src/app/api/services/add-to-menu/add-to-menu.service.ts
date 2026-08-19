@@ -47,10 +47,10 @@ export class DotAddToMenuService {
      * Creates a Custom tool portlet and returns the name of the portlet created
      *
      * @param {DotCreateCustomTool} params
-     * @returns Observable<string>
+     * @returns Observable<string | null> — null when the request failed
      * @memberof DotAddToMenuService
      */
-    createCustomTool(params: DotCreateCustomTool): Observable<string> {
+    createCustomTool(params: DotCreateCustomTool): Observable<string | null> {
         return this.http
             .post<DotCMSResponse<string>>(`${addToMenuUrl}/custom`, {
                 ...params,
@@ -75,10 +75,10 @@ export class DotAddToMenuService {
      * Assigns a Custom tool portlet to a layout Id (menu)
      *
      * @param {DotCustomToolToLayout} params
-     * @returns Observable<string>
+     * @returns Observable<string | null> — null when the request failed
      * @memberof DotAddToMenuService
      */
-    addToLayout(params: DotCustomToolToLayout): Observable<string> {
+    addToLayout(params: DotCustomToolToLayout): Observable<string | null> {
         const portletId = `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`;
 
         return this.http

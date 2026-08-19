@@ -25,10 +25,12 @@ export class DotCreateContentletResolver implements Resolve<Observable<string>> 
         // request.getParameter("folder")).
         const folder = route.queryParamMap.get('folder');
 
-        return this.dotContentletEditorService.getActionUrl(route.paramMap.get('contentType')).pipe(
-            take(1),
-            map((url) => this.appendFolder(url, folder))
-        );
+        return this.dotContentletEditorService
+            .getActionUrl(route.paramMap.get('contentType') ?? '')
+            .pipe(
+                take(1),
+                map((url) => this.appendFolder(url, folder))
+            );
     }
 
     private appendFolder(url: string, folder: string | null): string {

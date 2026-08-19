@@ -74,7 +74,11 @@ export class DotContentTypesEditComponent implements OnInit {
      */
     readonly dialogFocusOnShow = false;
     data!: DotCMSContentType;
-    dialogActions!: DotDialogActions;
+    /**
+     * `accept` is required here even though `DotDialogActions` declares it optional: this component
+     * always builds one with a label, and updates its `disabled` flag by spreading it.
+     */
+    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
     layout: DotCMSContentTypeLayoutRow[] = [];
     show = signal(false);
     templateInfo = {
