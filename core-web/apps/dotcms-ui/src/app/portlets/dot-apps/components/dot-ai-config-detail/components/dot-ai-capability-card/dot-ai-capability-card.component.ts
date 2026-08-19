@@ -39,7 +39,8 @@ import {
     CAPABILITY_LABELS,
     DotAiCapabilityMeta,
     PROVIDER_DISPLAY_NAMES,
-    PROVIDER_ORDER
+    PROVIDER_ORDER,
+    isFieldAlwaysVisible
 } from '../../dot-ai-config.constants';
 import {
     DotAiAdditionalPropertiesComponent,
@@ -101,12 +102,15 @@ export class DotAiCapabilityCardComponent implements OnInit {
         () => this.providers().find((p) => p.provider === this.providerId()) ?? null
     );
 
-    readonly requiredFields = computed(() =>
-        this.fieldsForCurrentProvider().filter((f) => f.required)
+    /** Fields shown above the "Advanced" panel — required, plus optional fields worth surfacing
+     *  by default (credentials, identity fields). See {@link isFieldAlwaysVisible}. */
+    readonly visibleFields = computed(() =>
+        this.fieldsForCurrentProvider().filter((f) => isFieldAlwaysVisible(f))
     );
 
-    readonly optionalFields = computed(() =>
-        this.fieldsForCurrentProvider().filter((f) => !f.required)
+    /** Truly-optional tuning fields (e.g. temperature, timeout) tucked under "Advanced". */
+    readonly advancedFields = computed(() =>
+        this.fieldsForCurrentProvider().filter((f) => !isFieldAlwaysVisible(f))
     );
 
     readonly badgeLabel = computed(() => {
@@ -175,13 +179,9 @@ export class DotAiCapabilityCardComponent implements OnInit {
             return;
         }
 
-        const carryOver = this.fieldsGroup().value as Record<string, unknown>;
         this.providerId.set(provider.provider);
         this.testResult.set(null);
-        this.rebuildFieldsGroup(provider.provider, {
-            apiKey: carryOver['apiKey'],
-            model: carryOver['model']
-        });
+        this.rebuildFieldsGroup(provider.provider, {});
         this.changed.emit();
     }
 

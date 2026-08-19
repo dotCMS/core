@@ -45,29 +45,29 @@
             </div>
         </div>
 
-        <!-- Required fields -->
-        @if (requiredFields().length > 0) {
+        <!-- Visible fields (required, plus credentials/identity fields shown by default) -->
+        @if (visibleFields().length > 0) {
             <div class="grid grid-cols-2 gap-4">
-                @for (field of requiredFields(); track field.name) {
+                @for (field of visibleFields(); track field.name) {
                     <dot-ai-dynamic-field [field]="field" [formGroup]="fieldsGroup()" />
                 }
             </div>
         }
 
-        <!-- Advanced (optional fields + additional properties) -->
+        <!-- Advanced (tuning fields + additional properties) -->
         <p-panel
             [toggleable]="true"
             [toggler]="'header'"
             [collapsed]="true"
             [header]="
-                'apps.ai.advanced.optional.fields.header' | dm: [optionalFields().length.toString()]
+                'apps.ai.advanced.optional.fields.header' | dm: [advancedFields().length.toString()]
             "
             transitionOptions="250ms cubic-bezier(0.4, 0, 0.2, 1)"
             styleClass="text-sm">
             <div class="flex flex-col gap-4">
-                @if (optionalFields().length > 0) {
+                @if (advancedFields().length > 0) {
                     <div class="grid grid-cols-2 gap-4">
-                        @for (field of optionalFields(); track field.name) {
+                        @for (field of advancedFields(); track field.name) {
                             <dot-ai-dynamic-field [field]="field" [formGroup]="fieldsGroup()" />
                         }
                     </div>

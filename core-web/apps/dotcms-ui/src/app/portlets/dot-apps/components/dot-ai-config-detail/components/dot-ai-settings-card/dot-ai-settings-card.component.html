@@ -73,44 +73,48 @@
         [collapsed]="true"
         [header]="'apps.ai.settings.advanced.header' | dm: [advancedFields.length.toString()]"
         transitionOptions="250ms cubic-bezier(0.4, 0, 0.2, 1)">
-        <form [formGroup]="advancedForm" class="grid grid-cols-2 gap-4">
-            @for (settingsField of advancedFields; track settingsField.key) {
-                @if (settingsField.type === 'checkbox') {
-                    <div class="field col-span-2 flex items-center gap-2">
-                        <p-checkbox
-                            [inputId]="settingsField.key"
-                            [formControlName]="settingsField.key"
-                            [binary]="true" />
-                        <label [for]="settingsField.key" class="text-sm text-gray-700">
-                            {{ settingsField.label | dm }}
-                        </label>
-                    </div>
-                } @else {
-                    <div class="field">
-                        <label [for]="settingsField.key" class="text-xs font-medium text-gray-600">
-                            {{ settingsField.label | dm }}
-                        </label>
-                        @if (settingsField.type === 'number') {
-                            <p-inputnumber
+        <div class="flex flex-col gap-4">
+            <form [formGroup]="advancedForm" class="grid grid-cols-2 gap-4">
+                @for (settingsField of advancedFields; track settingsField.key) {
+                    @if (settingsField.type === 'checkbox') {
+                        <div class="field col-span-2 flex items-center gap-2">
+                            <p-checkbox
                                 [inputId]="settingsField.key"
                                 [formControlName]="settingsField.key"
-                                [useGrouping]="false"
-                                styleClass="w-full"
-                                inputStyleClass="w-full" />
-                        } @else {
-                            <input
-                                pInputText
-                                [id]="settingsField.key"
-                                [formControlName]="settingsField.key"
-                                class="w-full" />
-                        }
-                        @if (settingsField.hint) {
-                            <small class="text-gray-500">{{ settingsField.hint | dm }}</small>
-                        }
-                    </div>
+                                [binary]="true" />
+                            <label [for]="settingsField.key" class="text-sm text-gray-700">
+                                {{ settingsField.label | dm }}
+                            </label>
+                        </div>
+                    } @else {
+                        <div class="field">
+                            <label
+                                [for]="settingsField.key"
+                                class="text-xs font-medium text-gray-600">
+                                {{ settingsField.label | dm }}
+                            </label>
+                            @if (settingsField.type === 'number') {
+                                <p-inputnumber
+                                    [inputId]="settingsField.key"
+                                    [formControlName]="settingsField.key"
+                                    [useGrouping]="false"
+                                    styleClass="w-full"
+                                    inputStyleClass="w-full" />
+                            } @else {
+                                <input
+                                    pInputText
+                                    [id]="settingsField.key"
+                                    [formControlName]="settingsField.key"
+                                    class="w-full" />
+                            }
+                            @if (settingsField.hint) {
+                                <small class="text-gray-500">{{ settingsField.hint | dm }}</small>
+                            }
+                        </div>
+                    }
                 }
-            }
-        </form>
-        <dot-ai-additional-properties [properties]="additionalProperties" />
+            </form>
+            <dot-ai-additional-properties [properties]="additionalProperties" />
+        </div>
     </p-panel>
 </div>

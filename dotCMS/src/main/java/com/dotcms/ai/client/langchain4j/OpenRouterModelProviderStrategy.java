@@ -55,7 +55,8 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
                     ProviderField.optional("timeout", ProviderFieldType.NUMBER));
             case EMBEDDINGS -> List.of(
                     ProviderField.required("apiKey", ProviderFieldType.SECRET),
-                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.required("model", ProviderFieldType.STRING,
+                            "Namespaced model ID, e.g. openai/text-embedding-3-small"),
                     ProviderField.optional("endpoint", ProviderFieldType.STRING,
                             "Defaults to " + DEFAULT_BASE_URL),
                     ProviderField.optional("dimensions", ProviderFieldType.NUMBER),

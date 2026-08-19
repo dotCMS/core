@@ -25,6 +25,15 @@ public final class ProviderConnectionTester {
     private static final String TEST_EMBEDDING_INPUT = "dotCMS connection test";
     private static final String TEST_IMAGE_PROMPT = "a single red pixel on a white background";
 
+    /**
+     * Provider SDK exceptions (OpenAI, Bedrock, Google, etc.) often carry the full raw HTTP
+     * response body in {@link Exception#getMessage()} — sometimes several KB of JSON. Capping the
+     * length keeps the UI toast readable; the untruncated message is still recorded via
+     * {@link Logger#warn} in {@link #test} for anyone debugging the actual failure.
+     */
+    private static final int MAX_MESSAGE_LENGTH = 200;
+    private static final String TRUNCATION_SUFFIX = "…";
+
     private ProviderConnectionTester() {
     }
 
@@ -71,9 +80,23 @@ public final class ProviderConnectionTester {
         return "Connection successful. A test image was generated.";
     }
 
-    private static String friendlyMessage(final Exception e) {
+    /**
+     * Reduces a provider exception to something short enough to show in a UI toast: collapses
+     * whitespace/newlines into single spaces and caps the length, appending
+     * {@value #TRUNCATION_SUFFIX} when text was cut. Falls back to the exception's simple class
+     * name when there's no message at all. Provider-agnostic on purpose — it doesn't parse any
+     * SDK's specific error shape, so it needs no per-provider maintenance.
+     */
+    static String friendlyMessage(final Exception e) {
         final String message = e.getMessage();
-        return message == null || message.isBlank() ? e.getClass().getSimpleName() : message;
+        if (message == null || message.isBlank()) {
+            return e.getClass().getSimpleName();
+        }
+
+        final String collapsed = message.trim().replaceAll("\\s+", " ");
+        return collapsed.length() > MAX_MESSAGE_LENGTH
+                ? collapsed.substring(0, MAX_MESSAGE_LENGTH).stripTrailing() + TRUNCATION_SUFFIX
+                : collapsed;
     }
 
 }

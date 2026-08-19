@@ -1,4 +1,4 @@
-import { DotAiCapability } from '@dotcms/dotcms-models';
+import { DotAiCapability, DotAiProviderField, DotAiProviderFieldType } from '@dotcms/dotcms-models';
 
 /**
  * The JSON key each capability occupies inside the `providerConfig` payload
@@ -72,6 +72,32 @@ export const PROVIDER_ORDER = [
     'anthropic',
     'openrouter'
 ];
+
+/**
+ * Field names that identify a provider/model, even when the backend marks them `optional`
+ * because a fallback exists (e.g. Azure's `model`/`deploymentName` — either one satisfies the
+ * requirement). Almost every user fills these in, so they're kept visible above the "Advanced"
+ * panel instead of being buried alongside true tuning knobs like `temperature` or `timeout`.
+ * Matched by field name only — not tied to any specific provider, so a future provider reusing
+ * this naming pattern gets the same treatment automatically.
+ */
+const ALWAYS_VISIBLE_OPTIONAL_FIELD_NAMES = new Set(['model', 'deploymentName']);
+
+/**
+ * Whether a provider field should render above the "Advanced" panel regardless of its `required`
+ * flag. Required fields always qualify; optional fields qualify when they're a credential
+ * (`SECRET` type — e.g. AWS's `accessKeyId`/`secretAccessKey`, Vertex AI's `credentialsJson`,
+ * both optional only because an AWS/ADC fallback exists) or an identity field (see
+ * {@link ALWAYS_VISIBLE_OPTIONAL_FIELD_NAMES}). This is a type/name-based rule, not a per-provider
+ * one, so it applies to future providers with no extra maintenance.
+ */
+export function isFieldAlwaysVisible(field: DotAiProviderField): boolean {
+    return (
+        field.required ||
+        field.type === DotAiProviderFieldType.SECRET ||
+        ALWAYS_VISIBLE_OPTIONAL_FIELD_NAMES.has(field.name)
+    );
+}
 
 /** Message keys for the lowercase, mid-sentence capability word (e.g. "no {0} support"). */
 export const CAPABILITY_LABELS: Record<DotAiCapability, string> = {
