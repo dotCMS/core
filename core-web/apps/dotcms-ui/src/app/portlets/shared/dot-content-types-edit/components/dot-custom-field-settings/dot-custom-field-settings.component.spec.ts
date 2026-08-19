@@ -192,8 +192,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit true when a section becomes dirty and valid', () => {
             jest.spyOn(component.$valid, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft().markAsDirty();
             spectator.flushEffects();
 
@@ -203,8 +204,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit false when a section is dirty but invalid', () => {
             jest.spyOn(component.$valid, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft.showAsModal().value.set(true);
             ft.customFieldWidth().value.set(0);
             ft().markAsDirty();
@@ -241,8 +243,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should call save on the renderOptions section when it is dirty', () => {
             jest.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft.showAsModal().value.set(true);
             ft().markAsDirty();
 
@@ -255,8 +258,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit $save after successful save', () => {
             jest.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft().markAsDirty();
 
             component.saveSettings();
@@ -270,8 +274,9 @@ describe('DotCustomFieldSettingsComponent', () => {
             );
             jest.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft().markAsDirty();
 
             component.saveSettings();
@@ -283,8 +288,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should call save on the hideLabel section when it is dirty', () => {
             jest.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotHideLabelSettingsComponent) as WithHideLabelFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotHideLabelSettingsComponent) as unknown as WithHideLabelFormTree
+            ).formTree;
             ft.hideLabel().value.set(true);
             ft().markAsDirty();
 
@@ -301,13 +307,14 @@ describe('DotCustomFieldSettingsComponent', () => {
             jest.spyOn(component.$save, 'emit');
 
             const renderFt = (
-                spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
             ).formTree;
             renderFt.showAsModal().value.set(true);
             renderFt().markAsDirty();
 
-            const hideFt = (spectator.query(DotHideLabelSettingsComponent) as WithHideLabelFormTree)
-                .formTree;
+            const hideFt = (
+                spectator.query(DotHideLabelSettingsComponent) as unknown as WithHideLabelFormTree
+            ).formTree;
             hideFt.hideLabel().value.set(true);
             hideFt().markAsDirty();
 
@@ -346,8 +353,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should emit $changeControls with accept.disabled false when a section is dirty and valid', () => {
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft.showAsModal().value.set(true);
             ft().markAsDirty();
 

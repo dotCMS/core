@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { MenuItemCommandEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
@@ -108,7 +109,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     it('should bind send notification after click on Add Tab button', () => {
         jest.spyOn(dotEventsService, 'notify');
         fixture.detectChanges();
-        comp.actions[1].command();
+        comp.actions[1].command({} as MenuItemCommandEvent);
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
         expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
     });

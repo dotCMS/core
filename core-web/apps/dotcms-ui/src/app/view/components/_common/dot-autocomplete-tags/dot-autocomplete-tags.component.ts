@@ -179,10 +179,14 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
 
     private createNewTag(label: string): DotTag {
         return {
+            // `''` and `false` rather than omitting `id` and passing `persona: null`: both are
+            // required on `DotTag`, and a tag created here has not been persisted yet — the server
+            // assigns the id on save.
+            id: '',
             label: label,
             siteId: '',
             siteName: '',
-            persona: null
+            persona: false
         };
     }
 }

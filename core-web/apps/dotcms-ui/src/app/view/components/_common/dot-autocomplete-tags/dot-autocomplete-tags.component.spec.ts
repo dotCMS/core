@@ -14,8 +14,8 @@ import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
 const mockResponse = [
-    { label: 'test', siteId: '1', siteName: 'Site', persona: false },
-    { label: 'united', siteId: '1', siteName: 'Site', persona: false }
+    { id: '1', label: 'test', siteId: '1', siteName: 'Site', persona: false },
+    { id: '2', label: 'united', siteId: '1', siteName: 'Site', persona: false }
 ];
 
 class DotTagsServiceMock {
@@ -69,16 +69,18 @@ describe('DotAutocompleteTagsComponent', () => {
         describe('events', () => {
             const preLoadedTags = [
                 {
+                    id: '',
                     label: 'enterEvent',
                     siteId: '',
                     siteName: '',
-                    persona: null
+                    persona: false
                 },
                 {
+                    id: '',
                     label: 'Dotcms',
                     siteId: '',
                     siteName: '',
-                    persona: null
+                    persona: false
                 }
             ];
 
@@ -161,10 +163,11 @@ describe('DotAutocompleteTagsComponent', () => {
             it('should call filterTags on completeMethod and remove already selected', () => {
                 jest.spyOn(component, 'filterTags');
                 component.value.push({
+                    id: '',
                     label: 'test',
                     siteId: '',
                     siteName: '',
-                    persona: null
+                    persona: false
                 });
                 const fakeEvent = createFakeEvent('click');
                 autoComplete.completeMethod.emit({

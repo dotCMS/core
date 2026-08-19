@@ -156,7 +156,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     transformFormValue(
         value: Partial<DotCMSContentTypeField> & { newRenderMode?: string }
-    ): DotCMSContentTypeField {
+    ): DotCMSContentTypeField & { newRenderMode?: string; label?: string } {
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
             const existingVariables = this.formFieldData.fieldVariables || [];
             const otherVariables = existingVariables.filter(

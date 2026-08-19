@@ -58,10 +58,12 @@ describe('ValidMenuGuardService', () => {
         dotMenuService = TestBed.inject(DotMenuService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        // Minimal snapshots rather than `jest.fn<T>(name, methods)`: that shape is
+        // `jasmine.createSpyObj` migrated mechanically, and `jest.fn` takes neither argument — it
+        // produced a `jest.Mock` standing in for a router snapshot, which is why these two
+        // declarations reported ~30 missing properties. The specs only ever read `url` and `params`.
+        mockRouterStateSnapshot = { url: '' } as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { params: {} } as ActivatedRouteSnapshot;
     });
 
     it('should allow access to Menu Portlets', () => {
