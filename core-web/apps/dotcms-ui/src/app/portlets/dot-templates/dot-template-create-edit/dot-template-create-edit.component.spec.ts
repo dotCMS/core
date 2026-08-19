@@ -426,7 +426,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 // can't use debugElement because the dialogs opens outside the component
                 const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogCancel"]'
-                );
+                )!;
                 button.click();
 
                 expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
@@ -437,7 +437,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogSave"]'
-                );
+                )!;
 
                 button.click();
 
@@ -506,7 +506,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 // can't use debugElement because the dialogs opens outside the component
                 const title = document.querySelector<HTMLInputElement>(
                     '[data-testid="templatePropsTitleField"]'
-                );
+                )!;
 
                 title.value = 'Hello World';
 
@@ -519,7 +519,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogSave"]'
-                );
+                )!;
                 button.click();
 
                 await fixture.whenStable();

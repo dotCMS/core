@@ -145,7 +145,8 @@ export interface DotCMSContentType {
     fields: DotCMSContentTypeField[];
     fixed: boolean;
     folder: string;
-    host: string;
+    /** Null on a content type that is not scoped to a site. */
+    host: string | null;
     iDate: number;
     id: string;
     layout: DotCMSContentTypeLayoutRow[];
@@ -637,7 +638,8 @@ export type DotCopyContentTypeDialogFormFields = {
     name: string;
     variable: string;
     folder: string;
-    host: string;
+    /** Null on a content type that is not scoped to a site. */
+    host: string | null;
     icon: string;
 };
 

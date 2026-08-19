@@ -702,7 +702,7 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should submit form correctly', () => {
-            const metadata = {};
+            const metadata: Record<string, boolean> = {};
             metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
             spectator.component.submitForm();
 
@@ -759,8 +759,8 @@ describe('ContentTypesFormComponent', () => {
                     expect(spectator.component.form.get('workflows')!.disabled).toBe(true);
                     expect(
                         spectator.component.form
-                            .get('systemActionMappings')
-                            .get(DotCMSSystemActionType.NEW).disabled
+                            .get('systemActionMappings')!
+                            .get(DotCMSSystemActionType.NEW)!.disabled
                     ).toBe(true);
                 });
             });
@@ -785,8 +785,8 @@ describe('ContentTypesFormComponent', () => {
                     );
                     expect(
                         enterpriseSpectator.component.form
-                            .get('systemActionMappings')
-                            .get(DotCMSSystemActionType.NEW).disabled
+                            .get('systemActionMappings')!
+                            .get(DotCMSSystemActionType.NEW)!.disabled
                     ).toBe(false);
                 });
             });
