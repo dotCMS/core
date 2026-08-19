@@ -1,5 +1,4 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
-import type { InferInputSignals } from '@openng/spectator';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -7,6 +6,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentListFilterComponent } from './dot-experiment-list-filter.component';
 
 import { ExperimentFilterOption } from '../../shared/models';
+
+import type { InferInputSignals } from '@openng/spectator';
 
 const OPTIONS: ExperimentFilterOption[] = [
     { value: 'DRAFT', label: 'Draft', count: '3', testId: 'option-draft' },

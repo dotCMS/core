@@ -19,6 +19,7 @@
         "baseUrl": ".",
         "paths": {
             "htmldiff-js": ["types/htmldiff-js.d.ts"],
+            "jstat": ["types/jstat.d.ts"],
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
             "@dotcms/ai-ui": ["libs/ai-ui/src/index.ts"],

@@ -1604,7 +1604,13 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
         it('should split failures out of the total', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(
-                of({ _body: null, total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+                of({
+                    _body: null,
+                    total: 3,
+                    errors: 1,
+                    errorMessages: ['nope'],
+                    bundleId: 'bundle-1'
+                })
             );
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
