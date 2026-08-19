@@ -212,7 +212,11 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      * @memberof DotListingDataTableComponent
      */
     loadDataPaginationEvent(event: TableLazyLoadEvent): void {
-        this.loadData(event.first, event.sortField as string, event.sortOrder);
+        this.loadData(
+            event.first ?? 0,
+            event.sortField as string,
+            (event.sortOrder as OrderDirection) ?? undefined
+        );
     }
 
     /**
@@ -242,7 +246,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loadFirstPage(): void {
         this.loading = true;
         this.paginatorService
-            .get()
+            .get<unknown[]>()
             .pipe(take(1))
             .subscribe((items) => {
                 this.setItems(items);
@@ -258,7 +262,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         this.loading = true;
         if (this.columns) {
             this.paginatorService
-                .getCurrentPage()
+                .getCurrentPage<unknown[]>()
                 .pipe(take(1))
                 .subscribe((items) => this.setItems(items));
         }
@@ -301,7 +305,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         );
     }
 
-    private setItems(items): void {
+    private setItems(items: unknown[]): void {
         // Defer state updates to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
         // This is needed because p-table with lazy loading triggers onLazyLoad during initialization
         setTimeout(() => {
@@ -314,7 +318,9 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     }
 
     private isTypeNumber(col: DataTableColumn): boolean {
-        return this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number';
+        const first = this.items?.[0] as Record<string, unknown> | undefined;
+
+        return typeof first?.[col.fieldName] === 'number';
     }
 
     private setSortParams(sortFieldParam?: string, sortOrderParam?: OrderDirection) {
@@ -326,7 +332,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
 
     private getPage(offset: number): void {
         this.paginatorService
-            .getWithOffset(offset)
+            .getWithOffset<unknown[]>(offset)
             .pipe(take(1))
             .subscribe((items) => this.setItems(items));
     }

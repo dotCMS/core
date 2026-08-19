@@ -1,4 +1,4 @@
-import { UntypedFormControl } from '@angular/forms';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 import { _isValid } from '@dotcms/data-access';
 
@@ -15,7 +15,7 @@ const format = {
  * @param FormControl formControl
  * @returns
  */
-export function validateDateDefaultValue(formControl: UntypedFormControl) {
+export function validateDateDefaultValue(formControl: AbstractControl): ValidationErrors | null {
     const invalidResponse = {
         validateDate: {
             valid: false
@@ -31,7 +31,7 @@ export function validateDateDefaultValue(formControl: UntypedFormControl) {
     return valid ? null : invalidResponse;
 }
 
-function isValueValid(formControl: UntypedFormControl): boolean {
+function isValueValid(formControl: AbstractControl): boolean {
     const clazz: string = formControl.parent?.get('clazz')?.value;
 
     return format[clazz]

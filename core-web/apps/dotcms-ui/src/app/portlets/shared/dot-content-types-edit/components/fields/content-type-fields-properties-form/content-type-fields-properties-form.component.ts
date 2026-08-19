@@ -98,8 +98,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             changes['$formFieldData']?.currentValue &&
             changes['$formFieldData'].currentValue !== this.formFieldData
         ) {
-            this.formFieldData = this.$formFieldData();
-            if (this.formFieldData) {
+            const field = this.$formFieldData();
+
+            if (field) {
+                this.formFieldData = field;
                 this.destroy();
                 this.init();
                 this.cdr.detectChanges();
@@ -111,8 +113,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * Angular lifecycle hook called after component initialization
      */
     ngOnInit(): void {
-        this.formFieldData = this.$formFieldData();
-        if (this.formFieldData) {
+        const field = this.$formFieldData();
+
+        if (field) {
+            this.formFieldData = field;
             // ngOnChanges runs before ngOnInit when formFieldData is provided up-front,
             // so the form may already be initialized. Re-running init() here would create
             // a second FormGroup, leaving the rendered inputs bound to the old one while
@@ -210,7 +214,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * @param [properties] - Optional array of property names to include in the form
      */
     private initFormGroup(properties?: string[]): void {
-        const formFields = {};
+        const formFields: Record<string, unknown> = {};
 
         if (properties) {
             properties
