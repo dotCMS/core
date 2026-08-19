@@ -10,6 +10,13 @@ import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotDialogComponent,
+    DotDialogContentComponent,
+    DotDialogFooterComponent,
+    DotDialogHeaderComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { imageEditorModalScaleFade } from '../../animations/image-editor.animations';
 import { DIALOG_SIZE_TRANSITION, FULLSCREEN_DIALOG_STYLE } from '../../image-editor.constants';
@@ -21,7 +28,7 @@ import {
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorCanvasComponent } from '../dot-image-editor-canvas/dot-image-editor-canvas.component';
 import { DotImageEditorFooterComponent } from '../dot-image-editor-footer/dot-image-editor-footer.component';
-import { DotImageEditorHeaderComponent } from '../dot-image-editor-header/dot-image-editor-header.component';
+import { DotImageEditorFullscreenToggleComponent } from '../dot-image-editor-fullscreen-toggle/dot-image-editor-fullscreen-toggle.component';
 import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-image-editor-panels.component';
 
 /**
@@ -36,7 +43,12 @@ import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-im
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ConfirmDialogModule,
-        DotImageEditorHeaderComponent,
+        DotDialogComponent,
+        DotDialogHeaderComponent,
+        DotDialogContentComponent,
+        DotDialogFooterComponent,
+        DotMessagePipe,
+        DotImageEditorFullscreenToggleComponent,
         DotImageEditorCanvasComponent,
         DotImageEditorPanelsComponent,
         DotImageEditorFooterComponent

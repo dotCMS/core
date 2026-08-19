@@ -11,14 +11,12 @@
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
-                    <p-button
+                    <dot-upload-button
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
-                        [label]="$uploadLabelKey() | dm"
-                        icon="pi pi-upload"
-                        [outlined]="true"
+                        [defaultBaseType]="$uploadBaseType()"
                         data-testid="upload-asset-button"
-                        (click)="$upload.emit($event)" />
+                        (upload)="$upload.emit($event)" />
 
                     <p-button
                         animate.enter="toolbar-enter"

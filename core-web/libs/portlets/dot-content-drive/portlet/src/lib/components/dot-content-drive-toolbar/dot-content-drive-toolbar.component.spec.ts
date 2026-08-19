@@ -15,9 +15,10 @@ import { MessageService } from 'primeng/api';
 
 import {
     DotCategoriesService,
-    DotContentletService,
     DotContentTypeService,
+    DotContentletService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
@@ -103,6 +104,12 @@ describe('DotContentDriveToolbarComponent', () => {
                     })
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+            }),
+            // The shared DotLanguageFilterComponent fetches the language list on init, so without
+            // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
+            // NetworkError rather than on anything it is testing.
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.

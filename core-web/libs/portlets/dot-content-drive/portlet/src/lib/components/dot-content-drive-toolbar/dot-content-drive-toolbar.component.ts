@@ -17,13 +17,13 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotFolderTreeNodeContentData,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotUploadButtonComponent } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
 import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
@@ -131,6 +131,7 @@ interface ToolbarAnimationState {
         ButtonModule,
         MenuModule,
         DotMessagePipe,
+        DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
         DotContentDriveContentTypeFilterComponent,
         DotContentDriveSearchInputComponent,
@@ -208,23 +209,15 @@ export class DotContentDriveToolbarComponent {
     $upload = output<MouseEvent>({ alias: 'upload' });
 
     /**
-     * Upload button label, folder-aware: when the current folder pins uploads to a base type
-     * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
+     * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the
+     * folder-aware label ("Upload Asset" / "Upload File" / "Upload").
      */
-    protected readonly $uploadLabelKey = computed(() => {
+    protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;
-        const defaultBaseType =
-            data && data.type !== LOAD_MORE_NODE_TYPE
-                ? (data as DotFolderTreeNodeContentData).defaultBaseType
-                : undefined;
-        switch (defaultBaseType?.toUpperCase()) {
-            case DotCMSBaseTypesContentTypes.DOTASSET:
-                return 'content-drive.upload-asset';
-            case DotCMSBaseTypesContentTypes.FILEASSET:
-                return 'content-drive.upload-file';
-            default:
-                return 'content-drive.upload';
-        }
+
+        return data && data.type !== LOAD_MORE_NODE_TYPE
+            ? ((data as DotFolderTreeNodeContentData).defaultBaseType ?? null)
+            : null;
     });
 
     readonly $items = signal<MenuItem[]>([

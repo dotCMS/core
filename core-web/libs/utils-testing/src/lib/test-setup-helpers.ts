@@ -60,13 +60,6 @@ export class MockDotSpinner {}
 })
 export class MockDotEmptyState {}
 
-@Component({
-    selector: 'dot-dialog',
-    changeDetection: ChangeDetectionStrategy.Eager,
-    template: '<div data-testid="mock-dialog"><ng-content /></div>'
-})
-export class MockDotDialog {}
-
 /**
  * Collection of commonly needed mock dotCMS components
  */
@@ -75,8 +68,7 @@ export const MOCK_DOTCMS_COMPONENTS = [
     MockDotPortletBase,
     MockDotLoadingIndicator,
     MockDotSpinner,
-    MockDotEmptyState,
-    MockDotDialog
+    MockDotEmptyState
 ];
 
 /**

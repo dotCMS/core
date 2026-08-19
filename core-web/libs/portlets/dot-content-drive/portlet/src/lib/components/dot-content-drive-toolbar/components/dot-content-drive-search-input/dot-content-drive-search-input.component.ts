@@ -1,67 +1,40 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    effect,
-    inject,
-    OnInit
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { IconField } from 'primeng/iconfield';
-import { InputIcon } from 'primeng/inputicon';
-import { InputTextModule } from 'primeng/inputtext';
+import { DotSearchInputComponent } from '@dotcms/ui';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-
-import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
+/**
+ * Store adapter over the shared {@link DotSearchInputComponent}: binds the `title` filter in and
+ * writes the debounced term back. The presentational box (debounce, clear icon) lives in
+ * `@dotcms/ui` so AssetPicker can reuse it without the store.
+ */
 @Component({
     selector: 'dot-content-drive-search-input',
-    templateUrl: './dot-content-drive-search-input.component.html',
+    template: `
+        <!-- Placeholder falls back to the shared "search" i18n key. -->
+        <dot-search-input [value]="$searchTerm()" (search)="onSearch($event)" />
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [IconField, InputIcon, InputTextModule, ReactiveFormsModule],
+    imports: [DotSearchInputComponent],
     host: { class: 'w-full' }
 })
-export class DotContentDriveSearchInputComponent implements OnInit {
+export class DotContentDriveSearchInputComponent {
     readonly #store = inject(DotContentDriveStore);
-    readonly #destroyRef = inject(DestroyRef);
 
-    readonly searchControl = new FormControl('');
+    protected readonly $searchTerm = computed(
+        () => (this.#store.getFilterValue('title') as string) ?? ''
+    );
 
-    readonly cleanTextEffect = effect(() => {
-        const searchValue = this.#store.getFilterValue('title') || '';
-
-        if (searchValue !== this.searchControl.value) {
-            this.searchControl.setValue(searchValue as string, { emitEvent: false });
-        }
-    });
-
-    readonly $title = computed(() => this.#store.getFilterValue('title') || '', {
-        equal: (a, b) => a === b
-    });
-
-    // We need to use ngOnInit to retrieve the filter value from the store
-    ngOnInit() {
-        const searchValue = this.#store.getFilterValue('title');
-
-        if (searchValue) {
-            this.searchControl.setValue(searchValue as string);
-        }
-
-        this.searchControl.valueChanges
-            .pipe(
-                debounceTime(DEBOUNCE_TIME),
-                distinctUntilChanged(),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((value) => {
-                const searchValue = (value as string)?.trim() || '';
-                this.#store.setGlobalSearch(searchValue);
-                this.#store.selectRootNode();
-            });
+    /**
+     * A new search resets the folder scope: results are drive-wide, so leaving the tree pinned to
+     * the previously selected folder would contradict what the list shows.
+     *
+     * `selectRootNode()` rather than pinning a synthetic node: the tree's root is the real site
+     * row now (see `createSiteNode`), so there is no "All folders" node left to select.
+     */
+    protected onSearch(term: string): void {
+        this.#store.setGlobalSearch(term);
+        this.#store.selectRootNode();
     }
 }
