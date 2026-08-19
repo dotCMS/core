@@ -1147,6 +1147,22 @@ describe('DotFolderListViewComponent', () => {
                     ).toBe('content-drive.list-view.shared-asset');
                 });
 
+                it('should label the row by scope and keep the full phrase on hover', () => {
+                    // Two keys on purpose. The visible marker has to be short (the row is tight) and
+                    // has to name the axis: "Shared" alone reads as shared with other users, which is
+                    // not what this means. The full sentence lives in the tooltip.
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    const hint = spectator.query(byTestId('shared-asset-hint'));
+
+                    expect(hint.textContent.trim()).toBe(
+                        'content-drive.list-view.shared-asset.label'
+                    );
+                    expect(hint.getAttribute('title')).toBe('content-drive.list-view.shared-asset');
+                });
+
                 it('should not flag a row that lives on a real site', () => {
                     spectator.setInput('items', [{ ...mockItems[0], host: 'demo.dotcms.com' }]);
                     spectator.setInput('loading', false);
