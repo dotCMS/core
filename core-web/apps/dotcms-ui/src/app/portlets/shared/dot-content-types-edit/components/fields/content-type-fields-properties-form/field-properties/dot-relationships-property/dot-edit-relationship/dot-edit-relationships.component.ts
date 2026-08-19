@@ -122,7 +122,7 @@ export class DotEditRelationshipsComponent implements OnInit {
 
         this.currentPage = this.getCardinalities().pipe(
             switchMap((cardinalities: CardinalitySorted) => {
-                return this.dotPaginatorService.getWithOffset(offset).pipe(
+                return this.dotPaginatorService.getWithOffset<DotRelationship[]>(offset).pipe(
                     mergeMap((relationships: DotRelationship[]) => relationships),
                     map((relationship: DotRelationship) => {
                         return {

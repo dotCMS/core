@@ -30,9 +30,11 @@ export class DefaultValuePropertyComponent implements OnInit {
     }
 
     private getErrorLabel(clazz: string | null): string {
-        return this.errorLabelsMap.get(clazz as string)
-            ? this.errorLabelsMap.get(clazz as string)
-            : this.errorLabelsMap.get('default');
+        return (
+            (clazz ? this.errorLabelsMap.get(clazz) : undefined) ??
+            this.errorLabelsMap.get('default') ??
+            ''
+        );
     }
 
     private setErrorLabelMap(): void {

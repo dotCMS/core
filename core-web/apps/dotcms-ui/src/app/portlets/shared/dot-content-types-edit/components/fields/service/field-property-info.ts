@@ -1,4 +1,7 @@
-import { Validators } from '@angular/forms';
+import { Type } from '@angular/core';
+import { ValidatorFn, Validators } from '@angular/forms';
+
+import { DotDynamicFieldComponent } from '@dotcms/dotcms-models';
 
 import { validateDateDefaultValue } from './validators';
 
@@ -17,7 +20,25 @@ import { DotRelationshipsPropertyComponent } from '../content-type-fields-proper
 import { validateRelationship } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/services/validators/dot-relationship-validator';
 import { noWhitespaceValidator } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/services/validators/no-whitespace-validator';
 
-export const PROPERTY_INFO = {
+/**
+ * One row of {@link PROPERTY_INFO}.
+ *
+ * `validations` holds Angular `ValidatorFn`s, not `ValidationErrors` — that is what the reactive
+ * form builder is handed at the one call site.
+ */
+export interface FieldPropertyInfo {
+    component: Type<DotDynamicFieldComponent>;
+    defaultValue: unknown;
+    order: number;
+    validations?: ValidatorFn[];
+    disabledInEdit?: boolean;
+}
+
+/**
+ * Keyed by the property names the field-types endpoint sends, so a lookup can miss — hence the
+ * index signature rather than the inferred literal keys.
+ */
+export const PROPERTY_INFO: Record<string, FieldPropertyInfo> = {
     categories: {
         component: CategoriesPropertyComponent,
         defaultValue: '',

@@ -13,7 +13,7 @@ export class CheckboxPropertyComponent {
     property!: FieldProperty;
     group!: UntypedFormGroup;
 
-    private readonly labelMap = {
+    private readonly labelMap: Record<string, string> = {
         indexed: 'contenttypes.field.properties.system_indexed.label',
         listed: 'contenttypes.field.properties.listed.label',
         required: 'contenttypes.field.properties.required.label',
@@ -21,7 +21,7 @@ export class CheckboxPropertyComponent {
         unique: 'contenttypes.field.properties.unique.label'
     };
 
-    setCheckboxLabel(field): string {
+    setCheckboxLabel(field: string): string {
         return this.labelMap[field] || field;
     }
 }
