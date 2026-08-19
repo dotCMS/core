@@ -65,7 +65,10 @@ export interface WithPageApiDeps {
 
     // Request metadata
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
-    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    $requestWithParams: Signal<{
+        query: string;
+        variables: Record<string, string | undefined>;
+    } | null>;
 
     // Page asset management
     setPageAsset: (payload: {

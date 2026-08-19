@@ -61,7 +61,12 @@ export interface PageComputed {
     pageURI: Signal<string>;
     pageVariantId: Signal<string>;
     pageTranslateProps: Signal<TranslateProps>;
-    pageFriendlyParams: Signal<Record<string, string>>;
+    /**
+     * Query params as they appear in the URL. Values are optional: they come from `pageParams` /
+     * `viewParams`, where most are, and `normalizeQueryParams` copies them through. Both consumers
+     * hand the result to Angular's `queryParams`, which omits keys whose value is `undefined`.
+     */
+    pageFriendlyParams: Signal<Record<string, string | undefined>>;
 }
 
 /**
@@ -111,7 +116,10 @@ export interface WithPageMethods extends PageComputed {
     resetHistoryToCurrent: () => void;
 
     // Computed
-    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    $requestWithParams: Signal<{
+        query: string;
+        variables: Record<string, string | undefined>;
+    } | null>;
 }
 
 const pageLoadingConfigState: PageLoadingConfigState = {
@@ -324,7 +332,7 @@ export function withPage() {
             } satisfies PageComputed & {
                 $requestWithParams: Signal<{
                     query: string;
-                    variables: Record<string, string>;
+                    variables: Record<string, string | undefined>;
                 } | null>;
             };
         })

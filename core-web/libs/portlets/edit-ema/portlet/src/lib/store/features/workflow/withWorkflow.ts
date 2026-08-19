@@ -77,7 +77,9 @@ interface WorkflowPageApiDeps {
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
     $requestWithParams: () => {
         query: string;
-        variables: Record<string, string>;
+        // Optional values: see the note on `getGraphQLPage`. `withPage` produces them and this
+        // declaration has to match, or the whole store composition fails to type.
+        variables: Record<string, string | undefined>;
     } | null;
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
