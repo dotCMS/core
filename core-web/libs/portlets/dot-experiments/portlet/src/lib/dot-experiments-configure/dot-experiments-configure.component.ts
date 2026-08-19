@@ -65,6 +65,7 @@ import { DotExperimentsConfigureVariantsComponent } from './components/dot-exper
 import {
     EXPERIMENTS_URL,
     MAX_TRAFFIC_ALLOCATION,
+    MIN_PROGRESS_BAR_VISIBLE_MS,
     MIN_TRAFFIC_ALLOCATION,
     SUCCESS_MESSAGE_LIFE,
     TOTAL_WEIGHT,
@@ -166,14 +167,33 @@ export class DotExperimentsConfigureComponent {
     readonly $hasError = computed<boolean>(() => this.store.status() === ComponentStatus.ERROR);
 
     /**
-     * Indeterminate bar under the header while a request is actually on the wire — the same
-     * affordance UVE gives its autosave. Deliberately not the whole pending window: the debounce
-     * runs from the first keystroke for as long as the user types, and a prominent animated bar
-     * for that long reads as a stuck operation. The footer's "Saving…" copy covers that window
-     * instead ($isAutosaving); this bar covers the flight ($isSaving: PATCH on the wire via
-     * `saveRequested`, the creation POST via `creating`).
+     * Indeterminate bar under the header while a request is on the wire — the same affordance UVE
+     * gives its autosave.
+     *
+     * Deliberately not the whole pending window: the debounce runs from the first keystroke for as
+     * long as the user types, and a prominent animated bar for that long reads as a stuck
+     * operation. The footer's "Saving…" copy covers that window instead (`$isAutosaving`); the bar
+     * covers the flight — `$isSaving`, which is every request this screen makes, not only the
+     * autosave: a PATCH via `saveRequested`, the creation POST via `creating`, a variant
+     * add/rename/delete, and a start/stop/cancel-schedule/abort.
+     *
+     * Nor is it exactly the flight, in the other direction: once shown the bar stays for at least
+     * `MIN_PROGRESS_BAR_VISIBLE_MS` (see the constant for why). The store keeps reporting the
+     * truth; how long that truth is worth showing is this screen's business.
      */
-    readonly $showProgressBar = computed<boolean>(() => this.store.$isSaving());
+    readonly $showProgressBar = signal(false);
+
+    /** When the bar currently on screen appeared, so the hold can be measured from it. */
+    #progressBarShownAt = 0;
+
+    /** A hide waiting out the remainder of the window, cancelled if another save starts first. */
+    #progressBarHideTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    protected readonly holdProgressBarEffect = effect(() => {
+        const isSaving = this.store.$isSaving();
+
+        untracked(() => this.#trackSavingBar(isSaving));
+    });
 
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
@@ -466,6 +486,9 @@ export class DotExperimentsConfigureComponent {
             .on(dotExperimentsConfigureApiEvents.createSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(({ payload }) => this.#hydratedExperimentId.set(payload.id));
+
+        // A save that settled as the screen was left would otherwise fire into a dead component.
+        this.#destroyRef.onDestroy(() => this.#cancelProgressBarHide());
     }
 
     /**
@@ -489,6 +512,51 @@ export class DotExperimentsConfigureComponent {
                     injector: this.#injector
                 });
             });
+    }
+
+    /**
+     * Shows the bar as soon as a request leaves, and holds it for the rest of the window once the
+     * request settles inside it.
+     *
+     * A save starting while a hide is pending cancels that hide and leaves the bar where it is,
+     * rather than restarting the window: back-to-back saves read as one continuous bar instead of
+     * a blink between them.
+     */
+    #trackSavingBar(isSaving: boolean): void {
+        if (isSaving) {
+            this.#cancelProgressBarHide();
+
+            if (!this.$showProgressBar()) {
+                this.#progressBarShownAt = Date.now();
+                this.$showProgressBar.set(true);
+            }
+
+            return;
+        }
+
+        if (!this.$showProgressBar() || this.#progressBarHideTimeout) {
+            return;
+        }
+
+        const remaining = MIN_PROGRESS_BAR_VISIBLE_MS - (Date.now() - this.#progressBarShownAt);
+
+        if (remaining <= 0) {
+            this.$showProgressBar.set(false);
+
+            return;
+        }
+
+        this.#progressBarHideTimeout = setTimeout(() => {
+            this.#progressBarHideTimeout = null;
+            this.$showProgressBar.set(false);
+        }, remaining);
+    }
+
+    #cancelProgressBarHide(): void {
+        if (this.#progressBarHideTimeout) {
+            clearTimeout(this.#progressBarHideTimeout);
+            this.#progressBarHideTimeout = null;
+        }
     }
 
     /** Brings the first failing field into view. Public so the footer can re-run it on a re-press. */

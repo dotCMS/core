@@ -34,7 +34,11 @@ import { DotExperimentsConfigureSchedulingComponent } from './components/dot-exp
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 import { DotExperimentsConfigureComponent } from './dot-experiments-configure.component';
 
-import { LOCKED_BANNER_KEY_READ_ONLY, LOCKED_BANNER_KEY_RUNNING } from '../shared/constants';
+import {
+    LOCKED_BANNER_KEY_READ_ONLY,
+    LOCKED_BANNER_KEY_RUNNING,
+    MIN_PROGRESS_BAR_VISIBLE_MS
+} from '../shared/constants';
 import {
     ConfigureFormModel,
     ConfigureValidationRule,
@@ -477,13 +481,67 @@ describe('DotExperimentsConfigureComponent', () => {
                 ).not.toBeNull();
             });
 
-            it('should leave once the save settles', () => {
-                storeMock.$isSaving.set(true);
-                spectator.detectChanges();
-                storeMock.$isSaving.set(false);
-                spectator.detectChanges();
+            /**
+             * The bar outlives the request on purpose. A local PATCH can answer in a few
+             * milliseconds, and a bar that appears and vanishes inside a frame reads as a glitch
+             * rather than as feedback, so it is held for a legible beat.
+             */
+            describe('the minimum it stays up', () => {
+                const bar = () => spectator.query(byTestId('experiments-configure-progress-bar'));
 
-                expect(spectator.query(byTestId('experiments-configure-progress-bar'))).toBeNull();
+                const settleSaveAfter = (ms: number) => {
+                    storeMock.$isSaving.set(true);
+                    spectator.detectChanges();
+                    jest.advanceTimersByTime(ms);
+                    storeMock.$isSaving.set(false);
+                    spectator.detectChanges();
+                };
+
+                beforeEach(() => jest.useFakeTimers());
+                afterEach(() => jest.useRealTimers());
+
+                it('should stay up for the rest of the window when the save beats it', () => {
+                    settleSaveAfter(20);
+
+                    expect(bar()).not.toBeNull();
+
+                    jest.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS - 20 - 1);
+                    spectator.detectChanges();
+                    expect(bar()).not.toBeNull();
+
+                    jest.advanceTimersByTime(1);
+                    spectator.detectChanges();
+                    expect(bar()).toBeNull();
+                });
+
+                it('should leave at once when the save already outlasted the window', () => {
+                    settleSaveAfter(MIN_PROGRESS_BAR_VISIBLE_MS + 100);
+
+                    expect(bar()).toBeNull();
+                });
+
+                it('should stay up for as long as a slow save takes', () => {
+                    storeMock.$isSaving.set(true);
+                    spectator.detectChanges();
+
+                    jest.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS * 5);
+                    spectator.detectChanges();
+
+                    expect(bar()).not.toBeNull();
+                });
+
+                /** Back-to-back saves are one bar, not a blink between them. */
+                it('should not blink when another save starts inside the window', () => {
+                    settleSaveAfter(20);
+
+                    storeMock.$isSaving.set(true);
+                    spectator.detectChanges();
+                    jest.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS);
+                    spectator.detectChanges();
+
+                    // The first hide was cancelled, so the still-running save keeps it up.
+                    expect(bar()).not.toBeNull();
+                });
             });
         });
 
