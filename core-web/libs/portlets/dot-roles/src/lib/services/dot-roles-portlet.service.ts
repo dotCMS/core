@@ -119,11 +119,33 @@ export class DotRolesPortletService {
         );
     }
 
-    /** POST /v1/roles — create role (Add Role dialog). */
+    /**
+     * POST /v1/roles — create role (Add Role dialog).
+     *
+     * The `cms_role.role_key` column has a UNIQUE constraint at the DB
+     * level and legacy roles ship with `role_key = ''`, so posting an
+     * empty string on new roles reliably hits a `duplicate key value
+     * violates unique constraint` from Postgres. We strip empty-string
+     * optional fields to `undefined` here (JSON.stringify then omits
+     * them), which lets the backend persist NULL and satisfy the
+     * uniqueness contract.
+     */
     createRole(form: DotRoleFormValue): Observable<DotRoleDetail> {
         return this.#http
-            .post<DotCMSResponse<DotRoleDetail>>('/api/v1/roles', form)
+            .post<DotCMSResponse<DotRoleDetail>>('/api/v1/roles', this.#sanitizeRoleForm(form))
             .pipe(map((response) => response.entity));
+    }
+
+    #sanitizeRoleForm(form: DotRoleFormValue): DotRoleFormValue {
+        const trimmedKey = form.roleKey?.trim();
+        const trimmedDescription = form.description?.trim();
+
+        return {
+            ...form,
+            roleKey: trimmedKey ? trimmedKey : undefined,
+            description: trimmedDescription ? trimmedDescription : undefined,
+            parentRoleId: form.parentRoleId ?? undefined
+        };
     }
 
     /**

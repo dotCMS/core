@@ -48,7 +48,8 @@
             [pt]="treePt"
             treeTestId="roles-tree-view"
             (onNodeSelect)="onNodeSelect($event)"
-            (onNodeExpand)="onNodeExpand($event)">
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)">
             <ng-template #folderTreeNodeLabel let-node>
                 @let data = node.data;
                 @let isLeaf = node.leaf === true;
