@@ -149,7 +149,7 @@ describe('DotNavItemComponent', () => {
         host = spectator.component;
         host.menu = { ...defaultMenu };
         host.collapsed = false;
-        component = spectator.query(DotNavItemComponent);
+        component = spectator.query(DotNavItemComponent)!;
         globalStore = spectator.inject(GlobalStore);
         globalStore.loadMenu([menuForStore]);
         spectator.detectChanges();
@@ -252,7 +252,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -279,7 +279,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -314,7 +314,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -348,7 +348,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();

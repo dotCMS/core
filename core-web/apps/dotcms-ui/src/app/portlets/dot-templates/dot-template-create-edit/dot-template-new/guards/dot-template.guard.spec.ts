@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { UrlSegment } from '@angular/router';
+import { Route, UrlSegment } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 
@@ -25,19 +25,22 @@ describe('DotTemplateGuard', () => {
         dotRouterService = TestBed.inject(DotRouterService);
     });
 
+    /** `canLoad` declares this parameter `_route` and never reads it. */
+    const UNUSED_ROUTE = null as unknown as Route;
+
     it('should return true when path is /advanced', () => {
-        const segment = new UrlSegment('advanced', null);
-        expect(guard.canLoad(null, [segment])).toBe(true);
+        const segment = new UrlSegment('advanced', {});
+        expect(guard.canLoad(UNUSED_ROUTE, [segment])).toBe(true);
     });
 
     it('should return true when path is /designer', () => {
-        const segment = new UrlSegment('designer', null);
-        expect(guard.canLoad(null, [segment])).toBe(true);
+        const segment = new UrlSegment('designer', {});
+        expect(guard.canLoad(UNUSED_ROUTE, [segment])).toBe(true);
     });
 
     it('should return false and redirect with invalid path', () => {
-        const segment = new UrlSegment('xxxx', null);
-        expect(guard.canLoad(null, [segment])).toBe(false);
+        const segment = new UrlSegment('xxxx', {});
+        expect(guard.canLoad(UNUSED_ROUTE, [segment])).toBe(false);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });

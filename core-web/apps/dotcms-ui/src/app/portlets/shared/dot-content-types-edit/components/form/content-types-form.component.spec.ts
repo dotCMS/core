@@ -4,7 +4,6 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
-import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -620,7 +619,7 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should patch publishDateVar', () => {
-            const field: AbstractControl = spectator.component.form.get('publishDateVar');
+            const field = spectator.component.form.get('publishDateVar')!;
             field.setValue('123');
 
             spectator.component.handleDateVarChange({ value: '123' }, 'expireDateVar');
@@ -629,7 +628,7 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should patch expireDateVar', () => {
-            const field: AbstractControl = spectator.component.form.get('expireDateVar');
+            const field = spectator.component.form.get('expireDateVar')!;
 
             field.setValue('123');
 

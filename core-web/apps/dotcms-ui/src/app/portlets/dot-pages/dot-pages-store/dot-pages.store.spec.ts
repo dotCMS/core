@@ -226,7 +226,7 @@ describe('DotPageStore', () => {
     });
 
     it('should load null Favorite Pages data when error on initial data fetch', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
         jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         // Mock sessionStorage.getItem
         (sessionStorage.getItem as jest.Mock).mockReturnValue(null);
@@ -547,7 +547,7 @@ describe('DotPageStore', () => {
     });
 
     it('should handle error when get Pages value fails', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
         jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
 
