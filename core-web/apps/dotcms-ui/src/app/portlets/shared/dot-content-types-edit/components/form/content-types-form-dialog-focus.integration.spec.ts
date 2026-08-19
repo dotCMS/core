@@ -91,7 +91,7 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     const openDialogAndSettleFocus = ({
         focusOnShow,
         newContentEditorEnabled,
-        baseType = 'CONTENT',
+        baseType = DotCMSBaseTypesContentTypes.CONTENT,
         id = null
     }: {
         focusOnShow: boolean;
@@ -174,7 +174,10 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     describe('create mode', () => {
         // The binding does not branch on baseType, but every base type reaches this same dialog
         // through create/:type — so the focus outcome is asserted for real, not just inferred.
-        it.each<DotCMSBaseTypesContentTypes>(['CONTENT', 'WIDGET'])(
+        it.each<DotCMSBaseTypesContentTypes>([
+            DotCMSBaseTypesContentTypes.CONTENT,
+            DotCMSBaseTypesContentTypes.WIDGET
+        ])(
             'should focus the name input instead of the new content banner checkbox for %s',
             (baseType) => {
                 openDialogAndSettleFocus({

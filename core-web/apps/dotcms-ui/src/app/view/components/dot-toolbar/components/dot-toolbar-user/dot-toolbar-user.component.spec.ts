@@ -197,6 +197,7 @@ describe('DotToolbarUserComponent', () => {
     it('should hide login as link', () => {
         jest.spyOn(loginService, 'getCurrentUser').mockReturnValue(
             of({
+                admin: true,
                 email: 'admin@dotcms.com',
                 givenName: 'Admin',
                 loginAs: false,

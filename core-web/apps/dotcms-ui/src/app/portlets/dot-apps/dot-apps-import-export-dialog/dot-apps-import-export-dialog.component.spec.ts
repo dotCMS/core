@@ -34,7 +34,9 @@ describe('DotAppsImportExportDialogComponent', () => {
         errorMessage: signal<string | null>(null),
         dialogHeaderKey: signal(''),
         isLoading: signal(false),
-        status: signal(ComponentStatus.INIT),
+        // Annotated for the same reason as `statusSignal` below: bare, this infers the literal
+        // `'INIT'` because `ComponentStatus` is an `as const` object.
+        status: signal<ComponentStatus>(ComponentStatus.INIT),
         close: jest.fn(),
         exportConfiguration: jest.fn(),
         importConfiguration: jest.fn()
@@ -78,7 +80,9 @@ describe('DotAppsImportExportDialogComponent', () => {
         errorMessageSignal = signal<string | null>(null);
         dialogHeaderKeySignal = signal('');
         isLoadingSignal = signal(false);
-        statusSignal = signal(ComponentStatus.INIT);
+        // Annotated: `ComponentStatus` is an `as const` object, so a bare `signal(ComponentStatus.INIT)`
+        // infers `WritableSignal<'INIT'>` and cannot stand in for the store's signal.
+        statusSignal = signal<ComponentStatus>(ComponentStatus.INIT);
 
         mockStore.visible = visibleSignal;
         mockStore.action = actionSignal;

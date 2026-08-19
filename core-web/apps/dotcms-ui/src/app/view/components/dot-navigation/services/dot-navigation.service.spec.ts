@@ -294,6 +294,7 @@ describe('DotNavigationService', () => {
                     active: false,
                     id: '123',
                     isOpen: false,
+                    label: 'Nav 1',
                     menuItems: [
                         {
                             active: false,

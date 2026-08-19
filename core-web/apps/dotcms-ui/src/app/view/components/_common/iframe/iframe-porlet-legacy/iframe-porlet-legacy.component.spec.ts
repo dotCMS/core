@@ -50,7 +50,7 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
-import { IFrameModule } from '../index';
+import { IframeComponent } from '../iframe-component/iframe.component';
 
 const routeDatamock = {
     canAccessPortlet: true
@@ -85,7 +85,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogComponent],
+            imports: [IframeComponent, RouterTestingModule, DotDownloadBundleDialogComponent],
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),

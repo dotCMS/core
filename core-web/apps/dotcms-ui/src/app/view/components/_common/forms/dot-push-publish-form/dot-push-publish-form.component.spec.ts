@@ -27,10 +27,10 @@ import {
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import {
-    DotDialogModule,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotSafeHtmlPipe
+    DotSafeHtmlPipe,
+    PushPublishEnvSelectorComponent
 } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
@@ -143,7 +143,6 @@ xdescribe('DotPushPublishFormComponent', () => {
                 AutoFocusModule,
                 FormsModule,
                 DatePickerModule,
-                DotDialogModule,
                 PushPublishEnvSelectorComponent,
                 ReactiveFormsModule,
                 SelectModule,
@@ -156,9 +155,11 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
+        // No type argument: `jest.spyOn` takes either none or two (`<T, K extends keyof T>`), and
+        // only `resolvedOptions` is read from the stub — the rest of `DateTimeFormat` is not.
+        jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
-        });
+        } as unknown as Intl.DateTimeFormat);
         jest.useFakeTimers();
         jest.setSystemTime(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);

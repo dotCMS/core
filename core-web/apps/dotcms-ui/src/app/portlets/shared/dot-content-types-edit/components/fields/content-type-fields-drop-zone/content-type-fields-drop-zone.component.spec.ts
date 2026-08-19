@@ -414,7 +414,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fixture.componentRef.setInput('contentType', fakeContentType);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+            clazz: DotCMSClazzes.WYSIWYG,
             id: 'wysiwyg-id',
             name: 'WYSIWYG'
         };
@@ -429,7 +429,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         const blockField = {
             ...field,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            clazz: DotCMSClazzes.BLOCK_EDITOR,
             fieldType: 'Story-Block'
         };
         dialogOnClose.next({ kind: 'convert-to-block', field: blockField });
@@ -461,7 +461,7 @@ class TestHostComponent {
 
 const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    clazz: DotCMSClazzes.BLOCK_EDITOR,
     id: '12',
     name: 'field 12',
     sortOrder: 12,
@@ -547,7 +547,7 @@ describe('Load fields and drag and drop', () => {
                         loadFieldTypes() {
                             return of([
                                 {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                                    clazz: DotCMSClazzes.WYSIWYG,
                                     helpText:
                                         'Show a rich text area for content input that allows a user to format content.',
                                     id: 'wysiwyg',
@@ -563,7 +563,7 @@ describe('Load fields and drag and drop', () => {
                                     ]
                                 },
                                 {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+                                    clazz: DotCMSClazzes.BLOCK_EDITOR,
                                     id: 'block editor',
                                     label: 'BLOCK EDITOR',
                                     properties: ['name', 'body', 'required', 'indexed']
@@ -621,7 +621,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                                clazz: DotCMSClazzes.WYSIWYG,
                                 id: '3',
                                 name: 'field 3',
                                 sortOrder: 2,
