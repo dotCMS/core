@@ -33,7 +33,10 @@ import {
     DotContentDriveItem,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { DotPermissionsIframeDialogComponent } from '@dotcms/ui';
+import {
+    DotPermissionsIframeDialogComponent,
+    DotPushHistoryIframeDialogComponent
+} from '@dotcms/ui';
 import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
@@ -492,6 +495,72 @@ describe('DotFolderListViewContextMenuComponent', () => {
                             closeOnEscape: true,
                             data: {
                                 url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`
+                            }
+                        })
+                    );
+                });
+            });
+
+            describe('push history dialog', () => {
+                const folderWithEditPermissions: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.EDIT, PERMISSIONS_TYPE.EDIT_PERMISSIONS]
+                };
+
+                const folderContextMenuWithEditPermissions: DotContentDriveContextMenu = {
+                    triggeredEvent: mockEvent,
+                    contentlet: folderWithEditPermissions,
+                    showAddToBundle: false
+                };
+
+                let dialogService: SpyObject<DialogService>;
+
+                beforeEach(() => {
+                    dialogService = spectator.inject(DialogService, true);
+                    jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+                    component.$memoizedMenuItems.set({});
+                });
+
+                it('should show Push History item when folder has EDIT_PERMISSIONS permission', async () => {
+                    await component.getMenuItems(folderContextMenuWithEditPermissions);
+
+                    expect(
+                        component
+                            .$items()
+                            .find(
+                                (item) => item.label === 'content-drive.context-menu.push-history'
+                            )
+                    ).toBeDefined();
+                });
+
+                it('should not show Push History item when folder lacks EDIT_PERMISSIONS permission', async () => {
+                    await component.getMenuItems(mockFolderContextMenuData);
+
+                    expect(
+                        component
+                            .$items()
+                            .find(
+                                (item) => item.label === 'content-drive.context-menu.push-history'
+                            )
+                    ).toBeUndefined();
+                });
+
+                it('should open DotPushHistoryIframeDialogComponent with correct config when triggered', async () => {
+                    await component.getMenuItems(folderContextMenuWithEditPermissions);
+
+                    component
+                        .$items()
+                        .find((item) => item.label === 'content-drive.context-menu.push-history')
+                        ?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(dialogService.open).toHaveBeenCalledWith(
+                        DotPushHistoryIframeDialogComponent,
+                        expect.objectContaining({
+                            width: 'min(92vw, 75rem)',
+                            closable: true,
+                            closeOnEscape: true,
+                            data: {
+                                url: `/html/portlet/ext/folders/push_history.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`
                             }
                         })
                     );

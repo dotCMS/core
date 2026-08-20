@@ -33,7 +33,12 @@ import {
     DotWorkflowPayload,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { DotPermissionsIframeDialogComponent, DotPermissionsIframeDialogData } from '@dotcms/ui';
+import {
+    DotPermissionsIframeDialogComponent,
+    DotPermissionsIframeDialogData,
+    DotPushHistoryIframeDialogComponent,
+    DotPushHistoryIframeDialogData
+} from '@dotcms/ui';
 
 import {
     DIALOG_TYPE,
@@ -161,10 +166,17 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
+            // Permissions and Push History share one gate, matching the legacy folder editor,
+            // where both tabs sit behind the same EDIT_PERMISSIONS check.
             if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('Edit-Permissions'),
                     command: () => this.#openPermissionsDialog(contentlet.identifier)
+                });
+
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('content-drive.context-menu.push-history'),
+                    command: () => this.#openPushHistoryDialog(contentlet.identifier)
                 });
             }
 
@@ -408,5 +420,32 @@ export class DotFolderListViewContextMenuComponent {
             popup: 'true'
         });
         return `/html/portlet/ext/folders/permissions.jsp?${params.toString()}`;
+    }
+
+    #openPushHistoryDialog(identifier: string): void {
+        this.#dialogService.open(DotPushHistoryIframeDialogComponent, {
+            header: this.#dotMessageService.get('content-drive.context-menu.push-history'),
+            width: 'min(92vw, 75rem)',
+            contentStyle: { overflow: 'hidden' },
+            data: {
+                url: this.#buildPushHistoryUrl(identifier)
+            } satisfies DotPushHistoryIframeDialogData,
+            modal: true,
+            appendTo: 'body',
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            resizable: false,
+            position: 'center'
+        });
+    }
+
+    #buildPushHistoryUrl(identifier: string): string {
+        // `popup=true` is what un-hides the body of a legacy JSP loaded outside the portal frame.
+        const params = new URLSearchParams({
+            folderIdentifier: identifier,
+            popup: 'true'
+        });
+        return `/html/portlet/ext/folders/push_history.jsp?${params.toString()}`;
     }
 }
