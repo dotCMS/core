@@ -23,8 +23,7 @@
             [outlined]="true"
             [disabled]="!$canBulkRemove() || !store.canGrantUsers()"
             (click)="onRemoveSelected()"
-            data-testid="bulk-remove-btn"
-            [pTooltip]="'roles.users.remove.blocked' | dm">
+            data-testid="bulk-remove-btn">
             {{ 'roles.users.remove' | dm }}
         </button>
 
@@ -37,29 +36,6 @@
             {{ 'roles.users.grant' | dm }}
         </button>
     </div>
-
-    <p-popover #grantPanel styleClass="min-w-80">
-        <ng-template pTemplate="content">
-            <p-autoComplete
-                [suggestions]="$userSuggestions()"
-                (completeMethod)="searchUsers($event)"
-                [placeholder]="'roles.users.search.placeholder' | dm"
-                appendTo="body"
-                field="emailAddress"
-                (onSelect)="onGrantUser($event.value, grantPanel)"
-                data-testid="grant-user-search">
-                <ng-template let-user pTemplate="item">
-                    <div class="flex flex-col gap-0.5">
-                        <strong>{{ user.firstName }} {{ user.lastName }}</strong>
-                        <small class="text-color-secondary">{{ user.emailAddress }}</small>
-                    </div>
-                </ng-template>
-            </p-autoComplete>
-            <p class="text-color-secondary mt-2 mb-0 text-xs" data-testid="grant-hint">
-                {{ 'roles.users.grant.blocked' | dm }}
-            </p>
-        </ng-template>
-    </p-popover>
 
     @if (store.membersStatus() === 'loading') {
         <p class="text-color-secondary m-0 px-6 text-sm" data-testid="members-loading">
@@ -122,3 +98,47 @@
         </p-table>
     }
 </div>
+
+<!--
+    Overlay helpers live OUTSIDE the `flex flex-col gap-4` above so their
+    (visually empty) host elements don't contribute extra `gap-4` slots
+    between the actions row and the members table.
+-->
+<p-popover #grantPanel styleClass="w-96" (onShow)="onGrantPanelShow()">
+    <ng-template pTemplate="content">
+        <p-listbox
+            [options]="$userSuggestions()"
+            [filter]="true"
+            filterBy="firstName,lastName,emailAddress"
+            [filterPlaceHolder]="'roles.users.search.placeholder' | dm"
+            [checkmark]="false"
+            [showToggleAll]="false"
+            [listStyle]="{ 'max-height': '360px' }"
+            (onChange)="onGrantUser($event.value, grantPanel)"
+            data-testid="grant-user-list">
+            <ng-template let-user pTemplate="item">
+                <div class="flex items-center gap-3">
+                    <p-avatar
+                        [label]="initialsFor(user)"
+                        shape="circle"
+                        size="normal"
+                        styleClass="bg-primary-100 text-primary-800 font-semibold" />
+                    <div class="flex flex-col gap-0.5">
+                        <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                        <small class="text-color-secondary">{{ user.emailAddress }}</small>
+                    </div>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="empty">
+                <p class="text-color-secondary m-0 px-3 py-2 text-sm">
+                    {{ 'roles.users.search.empty' | dm }}
+                </p>
+            </ng-template>
+        </p-listbox>
+    </ng-template>
+</p-popover>
+
+<p-confirmDialog
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    data-testid="remove-confirm-dialog" />

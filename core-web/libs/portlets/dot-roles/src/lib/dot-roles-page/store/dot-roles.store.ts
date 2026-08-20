@@ -16,7 +16,12 @@ import {
     DotRoleTab,
     DotRolesStatus
 } from '../../models/dot-roles.models';
-import { DotRolesPortletService } from '../../services/dot-roles-portlet.service';
+import {
+    DotRoleDeletionResult,
+    DotRolesPortletService,
+    DotRoleUserGrantResult,
+    DotRoleUsersRemovalResult
+} from '../../services/dot-roles-portlet.service';
 
 export interface DotRolesState {
     /**
@@ -131,6 +136,68 @@ export const DotRolesStore = signalStore(
             )
         );
 
+        /**
+         * Shared ancestor-walk + fan-out that powers both `loadMembers` and
+         * the post-grant / post-remove refresh. Kept as a local closure so
+         * cross-method reuse doesn't require `this` binding through NgRx's
+         * `withMethods` wrapping.
+         */
+        const refreshMembersFor = (role: { id: string; roleKey?: string | null }): void => {
+            const chain = collectAncestorChain(store.roles(), role);
+            if (chain.length === 0) {
+                patchState(store, { members: [], membersStatus: 'loaded' });
+
+                return;
+            }
+
+            patchState(store, { membersStatus: 'loading' });
+
+            const requests = chain.map((node) => {
+                const source$ = node.roleKey
+                    ? service.loadRoleMembersByKey(node.roleKey)
+                    : service.loadRoleMembersById(node.id);
+
+                return source$.pipe(
+                    map((users) =>
+                        users.map<DotRoleMember>((u) => ({
+                            userId: u.userId,
+                            firstName: u.firstName ?? '',
+                            lastName: u.lastName ?? '',
+                            emailAddress: u.emailAddress ?? '',
+                            grantedFromRoleId: node.id,
+                            grantedFromRoleName: node.name
+                        }))
+                    ),
+                    catchError((error) => {
+                        httpErrorManager.handle(error);
+
+                        return of<DotRoleMember[]>([]);
+                    })
+                );
+            });
+
+            forkJoin(requests).subscribe({
+                next: (batches) => {
+                    const byUserId = new Map<string, DotRoleMember>();
+                    for (const batch of batches) {
+                        for (const member of batch) {
+                            if (!byUserId.has(member.userId)) {
+                                byUserId.set(member.userId, member);
+                            }
+                        }
+                    }
+                    patchState(store, {
+                        members: Array.from(byUserId.values()),
+                        membersStatus: 'loaded'
+                    });
+                },
+                error: (error) => {
+                    httpErrorManager.handle(error);
+                    patchState(store, { membersStatus: 'error' });
+                }
+            });
+        };
+
         return {
             loadRootRoles,
             loadRoleDetail,
@@ -176,65 +243,7 @@ export const DotRolesStore = signalStore(
              * (including email) server-side.
              */
             loadMembers(role: { id: string; roleKey?: string | null }): void {
-                const chain = collectAncestorChain(store.roles(), role);
-                if (chain.length === 0) {
-                    patchState(store, { members: [], membersStatus: 'loaded' });
-
-                    return;
-                }
-
-                patchState(store, { membersStatus: 'loading' });
-
-                const requests = chain.map((node) => {
-                    const source$ = node.roleKey
-                        ? service.loadRoleMembersByKey(node.roleKey)
-                        : service.loadRoleMembersById(node.id);
-
-                    return source$.pipe(
-                        map((users) =>
-                            users.map<DotRoleMember>((u) => ({
-                                userId: u.userId,
-                                firstName: u.firstName ?? '',
-                                lastName: u.lastName ?? '',
-                                emailAddress: u.emailAddress ?? '',
-                                grantedFromRoleId: node.id,
-                                grantedFromRoleName: node.name
-                            }))
-                        ),
-                        catchError((error) => {
-                            // Fail one ancestor gracefully — don't abort the
-                            // whole load if a single call errors out.
-                            httpErrorManager.handle(error);
-
-                            return of<DotRoleMember[]>([]);
-                        })
-                    );
-                });
-
-                forkJoin(requests).subscribe({
-                    next: (batches) => {
-                        // Dedup: first insertion wins. Chain is ordered
-                        // selected → parent → ..., so the closest ancestor
-                        // is the one that survives when a user is granted
-                        // at more than one level.
-                        const byUserId = new Map<string, DotRoleMember>();
-                        for (const batch of batches) {
-                            for (const member of batch) {
-                                if (!byUserId.has(member.userId)) {
-                                    byUserId.set(member.userId, member);
-                                }
-                            }
-                        }
-                        patchState(store, {
-                            members: Array.from(byUserId.values()),
-                            membersStatus: 'loaded'
-                        });
-                    },
-                    error: (error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { membersStatus: 'error' });
-                    }
-                });
+                refreshMembersFor(role);
             },
 
             /**
@@ -323,15 +332,191 @@ export const DotRolesStore = signalStore(
 
                     return null;
                 }
-            }
+            },
 
-            // NOTE: updateRole / deleteRole / grantUserToRole / removeUsersFromRole /
-            // reparentRole are intentionally NOT exposed from the store yet.
-            // They depend on backend endpoints that don't exist:
-            //   - #36936 (PUT  /v1/roles/{roleId})           → Edit Role, reparent
-            //   - #36937 (POST /v1/roles/{roleId}/users/{userId}) → Grant user
-            //   - #36938 (DELETE /v1/roles/{roleId}/users)   → Remove members
-            //   - #36939 (DELETE /v1/roles/{roleId})         → Delete Role
+            /**
+             * Update a role (PUT /v1/roles/{roleId} — #36936). Returns the
+             * hydrated updated role on success, or `null` on failure with the
+             * error routed through `httpErrorManager`.
+             *
+             * State reconciliation:
+             *   - `selectedRole` refreshed with the response
+             *   - If the `parent` didn't change, the tree node is patched in place
+             *   - If the `parent` changed (reparent), the node is spliced out of
+             *     the old parent and appended to the new one — no full-tree reload
+             *
+             * The response is trusted for parent because the BE encodes root as
+             * `parent === role.id`. `null` `parentRoleId` in the request becomes
+             * that self-referential shape in the response.
+             */
+            async updateRole(
+                roleId: string,
+                form: DotRoleFormValue
+            ): Promise<DotRoleDetail | null> {
+                try {
+                    const updated = await new Promise<DotRoleDetail>((resolve, reject) => {
+                        service.updateRole(roleId, form).subscribe({
+                            next: (role) => resolve(role),
+                            error: (err) => reject(err)
+                        });
+                    });
+
+                    const previous = findRoleInTree(store.roles(), roleId);
+                    const previousParentId = previous?.parent ?? null;
+                    const nextParentId =
+                        updated.parent && updated.parent !== updated.id ? updated.parent : null;
+
+                    if (previousParentId === nextParentId) {
+                        patchState(store, {
+                            roles: patchNodeInPlace(store.roles(), roleId, updated),
+                            selectedRole: updated
+                        });
+                    } else {
+                        const detached = removeNodeFromTree(store.roles(), roleId);
+                        const inserted = nextParentId
+                            ? appendChildToParent(detached, nextParentId, updated)
+                            : [...detached, updated];
+                        patchState(store, { roles: inserted, selectedRole: updated });
+                    }
+
+                    return updated;
+                } catch (error) {
+                    httpErrorManager.handle(error);
+
+                    return null;
+                }
+            },
+
+            /**
+             * Delete a role (DELETE /v1/roles/{roleId} — #36939). Returns the
+             * deletion result on success (including `usersAffected`, the
+             * cascade blast radius) so the caller can surface it in a toast.
+             *
+             * State reconciliation: the node is removed from the tree; if it
+             * was the selected role, selection + members + selectedRole are
+             * cleared. On BE rejection (403 system/locked, 404, 409 has
+             * children/workflow), the error routes through `httpErrorManager`
+             * and this method returns `null`.
+             */
+            async deleteRole(roleId: string): Promise<DotRoleDeletionResult | null> {
+                try {
+                    const result = await new Promise<DotRoleDeletionResult>((resolve, reject) => {
+                        service.deleteRole(roleId).subscribe({
+                            next: (r) => resolve(r),
+                            error: (err) => reject(err)
+                        });
+                    });
+
+                    patchState(store, { roles: removeNodeFromTree(store.roles(), roleId) });
+
+                    if (store.selectedRoleId() === roleId) {
+                        patchState(store, {
+                            selectedRoleId: null,
+                            selectedRole: null,
+                            members: [],
+                            selectedMembers: [],
+                            membersStatus: 'init'
+                        });
+                    }
+
+                    return result;
+                } catch (error) {
+                    httpErrorManager.handle(error);
+
+                    return null;
+                }
+            },
+
+            /**
+             * Grant a user membership in the currently-selected role
+             * (POST /v1/roles/{roleId}/users/{userId} — #36937).
+             *
+             * Refreshes members on success so the Users tab reflects the grant
+             * (and inherited-vs-direct labelling stays correct). The BE is
+             * idempotent — re-granting an already-held role returns `granted:
+             * true` and no error.
+             *
+             * Returns the granted result on success, `null` on failure.
+             */
+            async grantUserToRole(userId: string): Promise<DotRoleUserGrantResult | null> {
+                const role = store.selectedRole();
+                if (!role) {
+                    return null;
+                }
+
+                try {
+                    const result = await new Promise<DotRoleUserGrantResult>((resolve, reject) => {
+                        service.grantUserToRole(role.id, userId).subscribe({
+                            next: (r) => resolve(r),
+                            error: (err) => reject(err)
+                        });
+                    });
+
+                    // Reload members so the new row lands in the table with the
+                    // correct grantedFromRoleId/Name (matching the selected role).
+                    refreshMembersFor({ id: role.id, roleKey: role.roleKey ?? null });
+
+                    return result;
+                } catch (error) {
+                    httpErrorManager.handle(error);
+
+                    return null;
+                }
+            },
+
+            /**
+             * Bulk-remove users from the currently-selected role
+             * (DELETE /v1/roles/{roleId}/users — #36938). Returns the
+             * partial-success report so the caller can surface which rows
+             * were skipped (typically inherited memberships that can only
+             * be revoked from the ancestor that grants them).
+             *
+             * State reconciliation: on any success, prune the removed users
+             * out of `members` immediately (optimistic), clear the current
+             * bulk-selection, and refetch members to reconcile with any BE
+             * changes we didn't observe. Returns `null` when the request
+             * itself fails (routed through `httpErrorManager`).
+             */
+            async removeUsersFromRole(
+                userIds: string[]
+            ): Promise<DotRoleUsersRemovalResult | null> {
+                const role = store.selectedRole();
+                if (!role || userIds.length === 0) {
+                    return null;
+                }
+
+                try {
+                    const result = await new Promise<DotRoleUsersRemovalResult>(
+                        (resolve, reject) => {
+                            service.removeUsersFromRole(role.id, userIds).subscribe({
+                                next: (r) => resolve(r),
+                                error: (err) => reject(err)
+                            });
+                        }
+                    );
+
+                    if (result.removedUserIds.length > 0) {
+                        const removed = new Set(result.removedUserIds);
+                        patchState(store, {
+                            members: store.members().filter((m) => !removed.has(m.userId)),
+                            selectedMembers: store
+                                .selectedMembers()
+                                .filter((m) => !removed.has(m.userId))
+                        });
+                    }
+
+                    // Refresh from the BE too — inherited-vs-direct labelling
+                    // can shift if a user was ONLY direct on this role and now
+                    // ends up inherited from an ancestor still granting them.
+                    refreshMembersFor({ id: role.id, roleKey: role.roleKey ?? null });
+
+                    return result;
+                } catch (error) {
+                    httpErrorManager.handle(error);
+
+                    return null;
+                }
+            }
         };
     })
 );
@@ -373,6 +558,48 @@ function patchNodeChildren(
         }
         return node;
     });
+}
+
+/**
+ * Immutably replace the node with `id`, preserving `roleChildren` from the
+ * previous version. Used by updateRole when the parent hasn't changed — the
+ * server response may omit deeper descendants we already lazy-loaded.
+ */
+function patchNodeInPlace(
+    nodes: DotRoleNode[],
+    id: string,
+    replacement: DotRoleNode
+): DotRoleNode[] {
+    return nodes.map((node) => {
+        if (node.id === id) {
+            return { ...replacement, roleChildren: node.roleChildren ?? [] };
+        }
+        if (node.roleChildren && node.roleChildren.length > 0) {
+            return {
+                ...node,
+                roleChildren: patchNodeInPlace(node.roleChildren, id, replacement)
+            };
+        }
+        return node;
+    });
+}
+
+/** Immutably drop the node with `id` from anywhere in the tree. */
+function removeNodeFromTree(nodes: DotRoleNode[], id: string): DotRoleNode[] {
+    return nodes.reduce<DotRoleNode[]>((acc, node) => {
+        if (node.id === id) {
+            return acc;
+        }
+        if (node.roleChildren && node.roleChildren.length > 0) {
+            acc.push({
+                ...node,
+                roleChildren: removeNodeFromTree(node.roleChildren, id)
+            });
+        } else {
+            acc.push(node);
+        }
+        return acc;
+    }, []);
 }
 
 /**

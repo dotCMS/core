@@ -46,10 +46,12 @@
             [selectedNode]="$selectedNode()"
             selectionMode="single"
             [pt]="treePt"
+            [contextMenu]="rolesCtxMenu"
             treeTestId="roles-tree-view"
             (onNodeSelect)="onNodeSelect($event)"
             (onNodeExpand)="onNodeExpand($event)"
-            (onNodeCollapse)="onNodeCollapse($event)">
+            (onNodeCollapse)="onNodeCollapse($event)"
+            (onNodeContextMenuSelect)="onNodeContextMenu($event)">
             <ng-template #folderTreeNodeLabel let-node>
                 @let data = node.data;
                 @let isLeaf = node.leaf === true;
@@ -84,3 +86,15 @@
         </div>
     }
 }
+
+<!--
+    Overlay helpers — kept as siblings (not inside the tree branch above)
+    so they don't participate in any parent gap/flex layout and stay
+    available regardless of the tree's loading / empty state.
+-->
+<p-contextMenu #rolesCtxMenu [model]="$contextMenuItems()" appendTo="body" />
+
+<p-confirmDialog
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    data-testid="tree-delete-confirm-dialog" />
