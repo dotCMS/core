@@ -15,6 +15,7 @@ import {
     AddToBundleService,
     PushPublishService,
     DotContentDriveService,
+    DotLanguagesService,
     DotCurrentUserService,
     DotFolderService,
     DotHttpErrorManagerService,
@@ -27,11 +28,12 @@ import {
     DotContentDriveSearchResponse,
     DotCurrentUser,
     DotFireDefaultActionResult,
+    DotLanguage,
     DotSite,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { createFakeTagField, createFakeTextField } from '@dotcms/utils-testing';
+import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
@@ -40,10 +42,27 @@ import {
     DEFAULT_PATH,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST
 } from '../shared/constants';
 import { MOCK_ITEMS, MOCK_SEARCH_RESPONSE, MOCK_SITES } from '../shared/mocks';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveFilters,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
+
+/**
+ * Expected filters, with the shared-assets default the store seeds on every path that builds a
+ * filter set. Spelled out here rather than assumed so a test that cares about the toggle can pass
+ * its own value and still read as one object.
+ */
+const withSeeded = (filters: DotContentDriveFilters = {}): DotContentDriveFilters => ({
+    [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE,
+    ...filters
+});
 
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
@@ -86,6 +105,13 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
+            }),
             provideHttpClient()
         ]
     });
@@ -101,7 +127,9 @@ describe('DotContentDriveStore', () => {
         it('should have the correct initial state', () => {
             expect(store.currentSite()).toEqual(undefined);
             expect(store.path()).toBe(DEFAULT_PATH);
-            expect(store.filters()).toEqual({});
+            // The default language is seeded during onInit — "no language selected" is never a
+            // state the portlet sits in.
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             expect(store.items()).toEqual([]);
             expect(store.selectedItems()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
@@ -166,6 +194,77 @@ describe('DotContentDriveStore', () => {
         });
     });
 
+    describe('default language', () => {
+        // `mockLocales` marks English (id 1) as the default and Spanish (id 2) as non-default, so
+        // these assertions prove the seed reads the `defaultLanguage` flag rather than picking the
+        // first entry or hardcoding id 1.
+        it('should resolve the environment default language on init', () => {
+            expect(store.defaultLanguageId()).toBe(1);
+            expect(store.defaultLanguageLoaded()).toBe(true);
+        });
+
+        it('should seed the default language when the URL carries none', () => {
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        });
+
+        it('should leave a language restored from the URL untouched', () => {
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: { languageId: ['2'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['2'] }));
+        });
+
+        it('should re-seed the default language when every filter is cleared', () => {
+            store.patchFilters({ languageId: ['2'], title: 'Blog' });
+
+            store.clearFilters();
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        });
+
+        it('should re-seed the default language when the language filter is removed', () => {
+            // "Nothing selected" is never a valid state: the backend omits the language term and
+            // returns every language version as its own row.
+            store.patchFilters({ languageId: ['2'] });
+
+            store.removeFilter('languageId');
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        });
+
+        it('should keep other filters when re-seeding after a language removal', () => {
+            store.patchFilters({ languageId: ['2'], title: 'Blog' });
+
+            store.removeFilter('languageId');
+
+            expect(store.filters()).toEqual(withSeeded({ title: 'Blog', languageId: ['1'] }));
+        });
+
+        it('should still show folders when a language is selected', () => {
+            // Folders have no language, so a locale filter — which selects a *version* of content —
+            // must not tear down the structure being navigated.
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: { languageId: ['1', '2'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.$request().showFolders).toBe(true);
+        });
+    });
+
     describe('Computed Properties', () => {
         describe('$request', () => {
             it('should build request with default values when no path or filters are provided', () => {
@@ -184,7 +283,7 @@ describe('DotContentDriveStore', () => {
                     text: '',
                     filterFolders: true
                 });
-                expect(request.language).toBeUndefined();
+                expect(request.language).toEqual(['1']);
                 expect(request.contentTypes).toBeUndefined();
                 expect(request.baseTypes).toBeUndefined();
                 expect(request.contentCursor).toBe(0);
@@ -193,6 +292,61 @@ describe('DotContentDriveStore', () => {
                 expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
                 expect(request.archived).toBe(false);
                 expect(request.showFolders).toBe(true);
+            });
+
+            describe('includeSystemHost', () => {
+                it('should stay on when the shared-assets filter carries its seeded default', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.filters()[SHARED_ASSETS_FILTER_KEY]).toBe(
+                        SHARED_ASSETS_ENABLED_VALUE
+                    );
+                    expect(store.$request().includeSystemHost).toBe(true);
+                });
+
+                it('should turn off when the shared-assets filter is disabled', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().includeSystemHost).toBe(false);
+                });
+
+                it('should follow the filter when it is toggled after init', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    store.patchFilters({
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    });
+
+                    expect(store.$request().includeSystemHost).toBe(false);
+                });
+
+                it('should come back on when "Clear all" drops every filter', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE },
+                        isTreeExpanded: false
+                    });
+
+                    store.clearFilters();
+
+                    expect(store.$request().includeSystemHost).toBe(true);
+                });
             });
 
             it('should include path in assetPath when provided', () => {
@@ -291,7 +445,6 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.language).toEqual(['en']);
-                expect(request.showFolders).toBe(false);
             });
 
             it('should map the workflow filter tokens into request.workflow entries', () => {
@@ -386,7 +539,9 @@ describe('DotContentDriveStore', () => {
                 expect(request.showFolders).toBe(false);
             });
 
-            it('should set showFolders to false when languageId filter is provided', () => {
+            it('should KEEP showFolders true when a languageId filter is provided', () => {
+                // Folders have no language, so a locale filter — which picks a *version* of content
+                // — must not tear down the structure being navigated.
                 const filters = {
                     languageId: ['en']
                 };
@@ -400,7 +555,7 @@ describe('DotContentDriveStore', () => {
 
                 const request = store.$request();
 
-                expect(request.showFolders).toBe(false);
+                expect(request.showFolders).toBe(true);
             });
 
             it('should set showFolders to false when workflow filter is provided', () => {
@@ -495,7 +650,7 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.currentSite()).toEqual(testSite);
                 expect(store.path()).toBe(testPath);
-                expect(store.filters()).toEqual(testFilters);
+                expect(store.filters()).toEqual(withSeeded({ ...testFilters, languageId: ['1'] }));
                 expect(store.status()).toBe(DotContentDriveStatus.LOADING);
                 expect(store.isTreeExpanded()).toBe(true);
             });
@@ -543,7 +698,9 @@ describe('DotContentDriveStore', () => {
         describe('setGlobalSearch', () => {
             it('should update filters with title search value', () => {
                 store.setGlobalSearch('test search');
-                expect(store.filters()).toEqual({ title: 'test search' });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], title: 'test search' })
+                );
             });
 
             it('should preserve other filters when setting a search value', () => {
@@ -551,19 +708,26 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test search');
 
-                expect(store.filters()).toEqual({
-                    contentType: ['Blog'],
-                    baseType: ['1'],
-                    title: 'test search'
-                });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        baseType: ['1'],
+                        title: 'test search'
+                    })
+                );
             });
 
             it('should preserve other filters when search is empty', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
 
                 store.setGlobalSearch('');
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
 
             it('should reset pagination offset when setting global search', () => {
@@ -590,7 +754,9 @@ describe('DotContentDriveStore', () => {
 
                 store.clearFilters();
 
-                expect(store.filters()).toEqual({});
+                // Clearing everything still leaves the default language: an empty language filter
+                // is not a neutral state.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should reset pagination when clearing filters', () => {
@@ -605,10 +771,16 @@ describe('DotContentDriveStore', () => {
         describe('removeFilter', () => {
             it('should remove the specified filter', () => {
                 store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'], baseType: ['1'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        baseType: ['1']
+                    })
+                );
 
                 store.removeFilter('contentType');
-                expect(store.filters()).toEqual({ baseType: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'], baseType: ['1'] }));
             });
 
             it('should reset pagination offset when removing filter', () => {
@@ -627,7 +799,9 @@ describe('DotContentDriveStore', () => {
 
                 store.removeFilter('nonExistentFilter');
 
-                expect(store.filters()).toEqual(initialFilters);
+                expect(store.filters()).toEqual(
+                    withSeeded({ ...initialFilters, languageId: ['1'] })
+                );
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
             });
         });
@@ -635,15 +809,19 @@ describe('DotContentDriveStore', () => {
         describe('patchFilters', () => {
             it('should update filters with provided values', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
 
             it('should remove filter if value is undefined', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
 
                 store.patchFilters({ contentType: undefined });
-                expect(store.filters()).toEqual({});
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should update filters and reset pagination offset', () => {
@@ -652,7 +830,9 @@ describe('DotContentDriveStore', () => {
 
                 store.patchFilters({ contentType: ['Blog'] });
                 expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
         });
 
@@ -752,17 +932,29 @@ describe('DotContentDriveStore', () => {
             it('should not touch filters when changing path', () => {
                 store.patchFilters({ contentType: ['Blog'] });
                 store.setGlobalSearch('hello');
-                expect(store.filters()).toEqual({ contentType: ['Blog'], title: 'hello' });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'hello'
+                    })
+                );
 
                 store.setPath('/documents/');
 
-                expect(store.filters()).toEqual({ contentType: ['Blog'], title: 'hello' });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'hello'
+                    })
+                );
             });
 
-            it('should leave filters empty when entering a folder with no filters set', () => {
+            it('should leave filters at just the default language when entering a folder', () => {
                 store.setPath('/some/folder/');
 
-                expect(store.filters()).toEqual({});
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
         });
     });
@@ -810,6 +1002,13 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
+            }),
             provideHttpClient()
         ]
     });
@@ -823,9 +1022,12 @@ describe('DotContentDriveStore - onInit', () => {
         spectator.flushEffects();
 
         expect(store.path()).toBe('/initial/test/path');
-        expect(store.filters()).toEqual({
-            contentType: ['InitialTestContentType']
-        });
+        expect(store.filters()).toEqual(
+            withSeeded({
+                contentType: ['InitialTestContentType'],
+                languageId: ['1']
+            })
+        );
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
     });
@@ -865,6 +1067,13 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
+            }),
             provideHttpClient()
         ]
     });
@@ -885,7 +1094,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
     it('re-hydrates the store when Back changes the filters param (fixes the stale-list bug)', () => {
         popstate('/c/content-drive?filters=contentType:Blog');
 
-        expect(store.filters()).toEqual({ contentType: ['Blog'] });
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
         // Reset to LOADING is what the search effect turns into a fresh load.
         expect(store.status()).toBe(DotContentDriveStatus.LOADING);
     });
@@ -924,7 +1133,147 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
 
         expect(initSpy).not.toHaveBeenCalled();
         expect(store.path()).toBe('/keep');
-        expect(store.filters()).toEqual({ contentType: ['Blog'] });
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
+    });
+
+    it('does NOT re-hydrate when Back returns to a URL with no filters while the default is seeded', () => {
+        // The seeded default is written to the URL, which pushes a history entry. Without a
+        // seed-aware guard, Back lands on the language-less URL, re-hydrates, re-seeds, and the
+        // write-back pushes the same entry again — the user can never Back out of the portlet.
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: {},
+            isTreeExpanded: true
+        });
+        const initSpy = jest.spyOn(store, 'initContentDrive');
+
+        popstate('/c/content-drive?path=/keep&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+    });
+
+    it('does NOT re-hydrate when the restored filters differ only in key order', () => {
+        // The guard compares encoded strings, and the seed appends `languageId` last — so a URL
+        // written with the keys in another order must still read as unchanged.
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: { title: 'Blog', languageId: ['2'] },
+            isTreeExpanded: true
+        });
+        const initSpy = jest.spyOn(store, 'initContentDrive');
+
+        popstate('/c/content-drive?path=/keep&filters=languageId:2;title:Blog&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotContentDriveStore - default language resolution', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let contentDriveService: SpyObject<DotContentDriveService>;
+    /**
+     * Feeds the store's one-shot languages fetch. A subject rather than a fixed `of(...)` so these
+     * tests control *when* the default lands relative to the first search — the whole point of the
+     * gate in `loadItems`.
+     */
+    let languages$: Subject<DotLanguage[]>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: jest.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(Location, {
+                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+            }),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(AddToBundleService),
+            mockProvider(PushPublishService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn(() => languages$)
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    beforeEach(() => {
+        // Assigned before the store is built: `onInit` subscribes straight away.
+        languages$ = new Subject<DotLanguage[]>();
+        spectator = createService();
+        store = spectator.service;
+        contentDriveService = spectator.inject(DotContentDriveService);
+        // The factory's spies are shared across the tests in this block, so call counts would
+        // otherwise carry over. Cleared after construction but before any effect is flushed, so no
+        // search has been recorded yet. (Clear, not reset: the mock implementations must survive.)
+        jest.clearAllMocks();
+    });
+
+    it('should hold the first search until the default language resolves', () => {
+        // Searching before the seed lands would fire once with no language — briefly showing every
+        // language version of every row — and again with it.
+        spectator.flushEffects();
+
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+        expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({ language: ['1'] })
+        );
+    });
+
+    it('should search unseeded when the languages request fails', () => {
+        // A portlet that cannot resolve the default must still work: it degrades to exactly the
+        // behaviour it had before the seed existed rather than hanging in LOADING.
+        spectator.flushEffects();
+
+        languages$.error(new HttpErrorResponse({ status: 500 }));
+        spectator.flushEffects();
+
+        expect(store.defaultLanguageLoaded()).toBe(true);
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(store.filters()).toEqual(withSeeded({}));
+        expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should search unseeded when the environment declares no default language', () => {
+        spectator.flushEffects();
+
+        languages$.next([]);
+        spectator.flushEffects();
+
+        expect(store.defaultLanguageId()).toBeUndefined();
+        expect(store.filters()).toEqual(withSeeded({}));
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+    });
+
+    it('should expose the environment languages for the Locale filter to render', () => {
+        spectator.flushEffects();
+        languages$.next(mockLocales);
+
+        expect(store.languages()).toEqual(mockLocales);
     });
 });
 
@@ -967,6 +1316,13 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1255,6 +1611,13 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]

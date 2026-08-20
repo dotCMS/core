@@ -494,6 +494,56 @@ describe('DotFolderListViewComponent', () => {
             expect(paginateSpy).toHaveBeenCalled();
         });
 
+        it('should not ask for another page while a search is in flight', () => {
+            // The paginator stays mounted while rows are swapped for skeletons, so an ungated click
+            // fires a second search for a page the user cannot see yet, and whichever response lands
+            // last wins regardless of which page was actually requested.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        it('should ask for the page again once the search settles', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
+        });
+
+        it('should take the paginator out of play while loading', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-paginator-next')).toBeTruthy();
+            expect(spectator.component.$ptConfig().paginator.class).toContain(
+                'pointer-events-none'
+            );
+        });
+
+        it('should leave the paginator usable once loading finishes', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.component.$ptConfig().paginator.class).toBe('');
+        });
+
         it('should not fetch languages when the locale column is hidden', () => {
             // The preview is a second instance of this grid, built and torn down on every drill-in,
             // and it hides the locale column — so the map that request builds is never read.
@@ -655,15 +705,19 @@ describe('DotFolderListViewComponent', () => {
             expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
         });
 
-        it('should leave the title column unsized so it absorbs the leftover width', () => {
-            // The one column without a width is what makes every other case below work: whatever
-            // the sized columns and the 3rem checkbox one do not claim lands here.
+        it('should size the title column so extras cannot collapse it', () => {
+            // Leaving it unsized makes it the leftover column, and `table-layout: fixed` satisfies the
+            // sized columns, the 3rem checkbox one and every Show-In-List extra first — so two or three
+            // extras drove the leftover to zero and the title collapsed under its own status badge.
+            // Measured at a 1200px container: unsized gave 316px with no extras, 50px at two and 0px at
+            // three; 28% holds ~325px throughout. `min-width` is no substitute, since fixed layout
+            // sizes columns from `width` and ignores a cell's min-width.
             spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
             spectator.detectChanges();
 
             const [title, status, type] = headerCells();
 
-            expect(title.style.width).toBe('');
+            expect(title.style.width).toBe('28%');
             expect(status.style.width).toBe('10%');
             expect(type.style.width).toBe('15%');
         });
@@ -1085,6 +1139,69 @@ describe('DotFolderListViewComponent', () => {
              * user's admin role, which lives in the portlet. An administrator releases every lock,
              * so their caller passes nothing and no row is marked.
              */
+            describe('shared-asset hint', () => {
+                it('should flag a row that lives on SYSTEM_HOST', () => {
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('shared-asset-hint'))).toBeTruthy();
+                });
+
+                it('should explain the hint on hover', () => {
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(
+                        spectator.query(byTestId('shared-asset-hint')).getAttribute('title')
+                    ).toBe('content-drive.list-view.shared-asset');
+                });
+
+                it('should label the row by scope and keep the full phrase on hover', () => {
+                    // Two keys on purpose. The visible marker has to be short (the row is tight) and
+                    // has to name the axis: "Shared" alone reads as shared with other users, which is
+                    // not what this means. The full sentence lives in the tooltip.
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'SYSTEM_HOST' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    const hint = spectator.query(byTestId('shared-asset-hint'));
+
+                    expect(hint.textContent.trim()).toBe(
+                        'content-drive.list-view.shared-asset.label'
+                    );
+                    expect(hint.getAttribute('title')).toBe('content-drive.list-view.shared-asset');
+                });
+
+                it('should not flag a row that lives on a real site', () => {
+                    spectator.setInput('items', [{ ...mockItems[0], host: 'demo.dotcms.com' }]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('shared-asset-hint'))).toBeFalsy();
+                });
+
+                it('should not flag a folder row', () => {
+                    // A folder carries `hostId`, never `host`, so the narrowing guard skips it even when
+                    // the folder itself sits on SYSTEM_HOST.
+                    const folder = {
+                        ...mockItems[0],
+                        type: 'folder',
+                        name: 'shared-folder',
+                        hostId: 'SYSTEM_HOST',
+                        host: undefined
+                    } as unknown as DotContentDriveItem;
+
+                    spectator.setInput('items', [folder]);
+                    spectator.setInput('loading', false);
+                    spectator.detectChanges();
+
+                    expect(spectator.query(byTestId('folder-icon'))).toBeTruthy();
+                    expect(spectator.query(byTestId('shared-asset-hint'))).toBeFalsy();
+                });
+            });
+
             describe('locks held by another user', () => {
                 const lockedItem = { ...mockItems[0], locked: true, inode: 'locked-inode' };
 
@@ -2417,8 +2534,14 @@ describe('DotFolderListViewComponent', () => {
 
         const notSortableHeaders = () =>
             spectator.queryAll(byTestId('header-column-not-sortable')) as HTMLElement[];
+        /** Finds a header by its label across both branches: sortable headers also carry a sort icon. */
         const headerByLabel = (label: string) =>
-            notSortableHeaders().find((th) => th.textContent?.trim() === label);
+            (
+                [
+                    ...notSortableHeaders(),
+                    ...(spectator.queryAll(byTestId('header-column-sortable')) as HTMLElement[])
+                ] as HTMLElement[]
+            ).find((th) => th.textContent?.trim().startsWith(label));
 
         beforeEach(() => {
             spectator.setInput('items', rows);
@@ -2490,12 +2613,36 @@ describe('DotFolderListViewComponent', () => {
 
             const cells = spectator.queryAll(byTestId('item-extra-myBool'));
             expect(
-                cells[0].querySelector('[data-testId="item-extra-bool"]')?.textContent?.trim()
+                cells[0]
+                    .querySelector('[data-testid="item-extra-bool-myBool"]')
+                    ?.textContent?.trim()
             ).toBe('check_circle');
             expect(
-                cells[1].querySelector('[data-testId="item-extra-bool"]')?.textContent?.trim()
+                cells[1]
+                    .querySelector('[data-testid="item-extra-bool-myBool"]')
+                    ?.textContent?.trim()
             ).toBe('cancel');
-            expect(cells[2].querySelector('[data-testId="item-extra-bool"]')).toBeFalsy();
+            expect(cells[2].querySelector('[data-testid="item-extra-bool-myBool"]')).toBeFalsy();
+        });
+
+        it('should give each boolean column its own test id', () => {
+            // The id used to be static, so two boolean columns emitted duplicates and a test could
+            // not address one of them.
+            spectator.setInput('items', [
+                { identifier: '1', type: 'content', title: 'A', boolA: true, boolB: false }
+            ] as unknown as (typeof mockItems)[number][]);
+            spectator.setInput('extraColumns', [
+                { field: 'boolA', header: 'A', order: 0, type: 'boolean' },
+                { field: 'boolB', header: 'B', order: 1, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-extra-bool-boolA'))?.textContent?.trim()).toBe(
+                'check_circle'
+            );
+            expect(spectator.query(byTestId('item-extra-bool-boolB'))?.textContent?.trim()).toBe(
+                'cancel'
+            );
         });
 
         it('should include the time for datetime but not for date', () => {
@@ -2560,6 +2707,72 @@ describe('DotFolderListViewComponent', () => {
 
             expect(headerByLabel('T')?.style.width).toMatch(/ch$/);
             expect(headerByLabel('D')?.style.width).toBe('12rem');
+        });
+
+        it('should let the browser size a header so it is never cut nor over-reserved', () => {
+            // `max-content` is measured, not estimated: a character count over-reserved badly (`1ch` is
+            // the width of "0", wider than the average character), and it is also what stops
+            // `table-layout: fixed` from squeezing a cell until even a short label like "Bool OK" lost
+            // its end.
+            const header = 'Bool Radio With A Deliberately Long Header';
+            spectator.setInput('extraColumns', [
+                { field: 'long', header, order: 0, type: 'boolean', sortable: true },
+                { field: 'short', header: 'Bool OK', order: 1, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerByLabel(header)?.style.minWidth).toBe('max-content');
+            expect(headerByLabel('Bool OK')?.style.minWidth).toBe('max-content');
+            expect(headerByLabel(header)?.getAttribute('title')).toBe(header);
+        });
+
+        it('should keep a fixed-width column from clipping a long header', () => {
+            // The per-type width used to be an override, so a boolean column stayed pinned at 7rem
+            // however long its header was. Under `table-layout: fixed` with a `whitespace-nowrap`
+            // sortable header and no overflow clipping, the label then spilled into the next header.
+            // The type width is a floor now: wide enough for the label, never narrower than 7rem.
+            spectator.setInput('extraColumns', [
+                {
+                    field: 'myBool',
+                    header: 'Bool Radio With A Very Long Header Name',
+                    order: 0,
+                    type: 'boolean'
+                }
+            ]);
+            spectator.detectChanges();
+
+            const width = headerByLabel('Bool Radio With A Very Long Header Name')?.style.width;
+
+            expect(width).toMatch(/ch$/);
+            expect(width).not.toBe('7rem');
+        });
+
+        it('should not over-reserve width for a long header', () => {
+            // The estimate is clamped and `max-content` does the real work, so the column does not end
+            // up far wider than the label — which is what a per-character reservation caused.
+            spectator.setInput('extraColumns', [
+                {
+                    field: 'myBool',
+                    header: 'Bool Radio With A Deliberately Long Header',
+                    order: 0,
+                    type: 'boolean'
+                }
+            ]);
+            spectator.detectChanges();
+
+            const width = headerByLabel('Bool Radio With A Deliberately Long Header')?.style.width;
+
+            expect(parseInt(width ?? '0', 10)).toBeLessThanOrEqual(32);
+        });
+
+        it('should keep the compact fixed width for a short boolean header', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'On', order: 0, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            // The label fits well inside 7rem, so the compact per-type width still wins.
+            expect(headerByLabel('On')?.style.width).toBe('7rem');
         });
 
         it('should clamp a text column width to the max for very long values', () => {

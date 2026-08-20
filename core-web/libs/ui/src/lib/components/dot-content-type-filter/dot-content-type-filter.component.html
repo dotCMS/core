@@ -34,15 +34,23 @@
                         @if (item.name === ALL_CONTENT) {
                             <!--
                                 Absolute-positioned divider extends 1rem past each side to
-                                cover the option's horizontal padding (from
-                                CHIP_FILTER_LISTBOX_PT), without shrinking the content width
-                                and truncating the label.
+                                cover the option's horizontal padding, without shrinking the
+                                content width and truncating the label.
+
+                                `-bottom-2.5` reaches past the option's VERTICAL padding for the
+                                same reason. This span is positioned against the content box, so
+                                `bottom-0` leaves it floating 8.75px inside the option — and the
+                                option's hover background fills the whole padded box, so the line
+                                ends up sitting in the middle of the hover instead of separating
+                                the rows. 2.5 is Lara's `0.625rem` option padding, which the theme
+                                deliberately owns (see LISTBOX_OPTION_HEIGHT); if that padding
+                                changes, this offset has to change with it.
                             -->
                             <div class="relative flex w-full min-w-0 items-center gap-2">
                                 <i class="pi pi-list text-sm text-slate-500"></i>
                                 <dot-filter-list-item [label]="item.label" />
                                 <span
-                                    class="pointer-events-none absolute -inset-x-4 bottom-0 h-px bg-slate-200"></span>
+                                    class="pointer-events-none absolute -inset-x-4 -bottom-2.5 h-px bg-slate-200"></span>
                             </div>
                         } @else {
                             @let partial = isBaseTypePartial(item.name);
@@ -69,7 +77,16 @@
                 <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
                     {{ 'content-drive.type-filter.column.content-type' | dm }}
                 </div>
-                <div class="px-3 pb-2">
+                <!--
+                    `pt-2` is the listbox's own `--p-listbox-list-padding` (0.5rem), the offset the
+                    left column already gives its first option. Matching it here centers the search
+                    field on the "All Content Types" label instead of 6px above it: the option's
+                    0.625rem vertical padding pushes that label down, and the padding belongs to Lara
+                    (LISTBOX_OPTION_HEIGHT), so the right column moves to meet the left rather than
+                    the row being re-padded. `pb-1` rather than `pb-2` keeps the content-type list
+                    where it already sat, so only the input moves.
+                -->
+                <div class="px-3 pt-2 pb-1">
                     <p-iconfield class="w-full">
                         <p-inputicon class="pi pi-search" />
                         <input
