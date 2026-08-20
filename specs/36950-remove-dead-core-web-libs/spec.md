@@ -54,7 +54,7 @@ from the graph without checking whether each project was alive.
 
 1. `cd core-web && pnpm install`
 2. Observe both projects still exist in the graph:
-   `pnpm exec nx show projects | grep -E '^(dotcms|dot-layout-grid)$'`
+   `pnpm exec nx show projects --json | jq -r '.[]' | grep -E '^(dotcms|dot-layout-grid)$'`
 3. Attempt to compile `libs/dotcms` with every strict flag explicitly disabled:
    `pnpm exec tsc -p libs/dotcms/tsconfig.lib.json --noEmit --strict false --noPropertyAccessFromIndexSignature false --noImplicitReturns false`
 4. Attempt to compile `libs/dot-layout-grid` with no strict flags at all:
@@ -203,7 +203,10 @@ so nothing ever reported them as broken.
 
 ## Acceptance & Verification *(mandatory)*
 
-- **AC-001**: `pnpm exec nx show projects` no longer lists `dotcms` or `dot-layout-grid`.
+- **AC-001**: `pnpm exec nx show projects --json` no longer lists `dotcms` or `dot-layout-grid`.
+  (Note: `nx show projects` emits a single-line JSON array when stdout is not a TTY, so a
+  line-oriented `grep` needs `--json | jq -r '.[]'`. Corrected after the spec was approved —
+  command form only, no change to any acceptance criterion.)
 - **AC-002**: `core-web/libs/dotcms/` and `core-web/libs/dot-layout-grid/` do not exist.
 - **AC-003**: A repository-wide search for `@dotcms/dot-layout-grid`, `"@dotcms/dotcms"`,
   `libs/dotcms/` and `libs/dot-layout-grid` returns no results.
@@ -233,12 +236,12 @@ The Red → Green gate is an executable removal assertion, run before and after 
 cd core-web
 
 # RED — must hold BEFORE implementation
-pnpm exec nx show projects | grep -qE '^(dotcms|dot-layout-grid)$' && echo "RED: still present"
-grep -c '"@dotcms/dotcms"\|"@dotcms/dot-layout-grid"' tsconfig.base.json   # expect 2
+pnpm exec nx show projects --json | jq -r '.[]' | grep -qE '^(dotcms|dot-layout-grid)$' && echo "RED: still present"
+grep -Ec '"@dotcms/dotcms"|"@dotcms/dot-layout-grid"' tsconfig.base.json   # expect 2
 
 # GREEN — must hold AFTER implementation
-pnpm exec nx show projects | grep -qE '^(dotcms|dot-layout-grid)$' || echo "GREEN: gone"
-grep -c '"@dotcms/dotcms"\|"@dotcms/dot-layout-grid"' tsconfig.base.json   # expect 0
+pnpm exec nx show projects --json | jq -r '.[]' | grep -qE '^(dotcms|dot-layout-grid)$' || echo "GREEN: gone"
+grep -Ec '"@dotcms/dotcms"|"@dotcms/dot-layout-grid"' tsconfig.base.json   # expect 0
 ```
 
 The regression gate is the existing suite (AC-004/AC-005), re-run in CI by
