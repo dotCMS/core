@@ -1,0 +1,37 @@
+<div class="flex w-full max-w-[1040px] flex-col gap-4">
+    <div class="flex flex-row gap-6 border-0 border-b border-solid border-gray-200" role="tablist">
+        @for (tab of tabs; track tab.id) {
+            <button
+                class="-mb-px cursor-pointer border-0 border-b-2 border-solid bg-transparent px-1 pb-3 text-base"
+                [class]="
+                    $activeTab() === tab.id
+                        ? 'border-[#18186D] font-semibold text-[#18186D]'
+                        : 'border-transparent font-medium text-[#64748b]'
+                "
+                [attr.aria-selected]="$activeTab() === tab.id"
+                [attr.data-testid]="'results-chart-tab-' + tab.id"
+                (click)="selectTab(tab.id)"
+                type="button"
+                role="tab">
+                {{ tab.labelKey | dm }}
+            </button>
+        }
+    </div>
+
+    @if ($activeTab() === 'daily') {
+        <dot-experiments-reports-chart
+            [isLoading]="store.$isLoading()"
+            [isEmpty]="$isDailyEmpty()"
+            [config]="dailyAxisLabels"
+            [data]="store.$dailyChartData()"
+            data-testid="results-daily-chart" />
+    } @else {
+        <dot-experiments-reports-chart
+            [isLoading]="store.$isLoading()"
+            [isEmpty]="$isBayesianEmpty()"
+            [config]="bayesianAxisLabels"
+            [data]="store.$bayesianChartData()"
+            [isLinearAxis]="true"
+            data-testid="results-bayesian-chart" />
+    }
+</div>
