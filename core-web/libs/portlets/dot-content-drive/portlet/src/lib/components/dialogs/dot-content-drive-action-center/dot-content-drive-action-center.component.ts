@@ -20,11 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize, map, take } from 'rxjs/operators';
 
-import {
-    DotMessageService,
-    DotWorkflowsActionsService,
-    PushPublishService
-} from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
@@ -170,7 +166,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
-    readonly #pushPublishService = inject(PushPublishService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -246,11 +241,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /**
      * Whether any push publish environment is reachable by this user's role.
      *
-     * `undefined` until the lookup lands, which keeps the Push Publish row disabled in the meantime
-     * rather than enabling it and then retracting. A failed lookup settles on `false` for the same
-     * reason: offering a push with nowhere to send it is worse than one disabled row.
+     * Read from the store, resolved once on portlet init, for the same reason the admin flag is: the
+     * folder context menu gates on this too, and two independent lookups would mean two copies of
+     * the three-state handling to keep in step.
+     *
+     * `undefined` means the lookup has not landed and reads as "disabled", so the row never enables
+     * and then retracts. A failed lookup settles on `false` for the same reason: offering a push
+     * with nowhere to send it is worse than one disabled row.
      */
-    protected readonly $hasPushPublishEnvironments = signal<boolean | undefined>(undefined);
+    protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -569,29 +568,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadWorkflowActions();
-        this.loadPushPublishEnvironments();
-    }
-
-    /**
-     * Resolves whether Push Publish has anywhere to send to.
-     *
-     * Runs beside the workflow lookup rather than after it: the two answer different questions and
-     * neither needs the other, so chaining them would only delay the quick actions behind a request
-     * they do not depend on.
-     *
-     * A failure settles on "none", which disables the row. The alternative — treating an unreachable
-     * lookup as "probably fine" — offers a push that has nowhere to go and fails at the servlet with
-     * a message the user cannot act on.
-     */
-    private loadPushPublishEnvironments(): void {
-        this.#pushPublishService
-            .getEnvironments()
-            .pipe(take(1))
-            .subscribe({
-                next: (environments) =>
-                    this.$hasPushPublishEnvironments.set(environments.length > 0),
-                error: () => this.$hasPushPublishEnvironments.set(false)
-            });
     }
 
     /**

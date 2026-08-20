@@ -157,8 +157,6 @@ describe('DotContentDriveActionCenterComponent', () => {
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     /** What the push publish environments lookup answers; see the `mockProvider` below. */
     let pushPublishEnvironments: DotEnvironment[] = [];
-    /** When true the lookup errors instead, for the fails-closed case. */
-    let pushPublishEnvironmentsFail = false;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
@@ -166,6 +164,10 @@ describe('DotContentDriveActionCenterComponent', () => {
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
+    // Also resolved once on portlet init, for the same reason and because the folder context menu
+    // gates on it too. `undefined` is "not looked up yet" and reads as disabled; the mapping from a
+    // lookup (empty list, or a failure) onto this flag is asserted in `withPushPublishEnvironments`.
+    const mockHasPushPublishEnvironments = signal<boolean | undefined>(undefined);
     // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
     const mockCurrentSite = signal<{ hostname: string } | undefined>({
         hostname: 'demo.dotcms.com'
@@ -180,6 +182,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 selectedItems: mockSelectedItems,
                 actionExecution: mockActionExecution,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
+                hasPushPublishEnvironments: mockHasPushPublishEnvironments,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,
@@ -211,11 +214,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 // test: `mockProvider` builds this `jest.fn` once for the whole file, and the
                 // `afterEach` `clearAllMocks` drops any `mockReturnValue` set on it, so only the
                 // first test in a block would see one. A closure over a mutable answer is immune.
-                getEnvironments: jest.fn(() =>
-                    pushPublishEnvironmentsFail
-                        ? throwError(() => new Error('environments lookup failed'))
-                        : of(pushPublishEnvironments)
-                ),
+                getEnvironments: jest.fn(() => of(pushPublishEnvironments)),
                 lastEnvironmentPushed: null
             }),
             mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
@@ -259,8 +258,8 @@ describe('DotContentDriveActionCenterComponent', () => {
         ]);
         mockActionExecution.set(undefined);
         mockCurrentUserIsAdmin.set(false);
+        mockHasPushPublishEnvironments.set(false);
         pushPublishEnvironments = [];
-        pushPublishEnvironmentsFail = false;
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
 
@@ -1613,15 +1612,16 @@ describe('DotContentDriveActionCenterComponent', () => {
         /**
          * Renders as if an environment were reachable.
          *
-         * Sets the resolved signal rather than the service answer. The lookup fires once from
-         * `ngOnInit`, and re-programming a `mockProvider` method per test proved unreliable here —
-         * the value only took for the first test in the block. The service-to-signal wiring is
-         * covered on its own by the two tests that exercise the real lookup (no environments, and
-         * the failing lookup); everything below is about what the dialog does *given* an answer.
+         * Drives the store signal the dialog reads. The lookup itself moved to
+         * `withPushPublishEnvironments`, which owns the mapping from a service answer (a list, an
+         * empty list, or a failure) onto this flag; everything below is about what the dialog does
+         * *given* an answer.
          */
         const withEnvironments = (): void => {
-            spectator.detectChanges();
-            spectator.component['$hasPushPublishEnvironments'].set(true);
+            mockHasPushPublishEnvironments.set(true);
+            // The service still backs the environment selector embedded in the push publish step,
+            // so give it something to list even though the gate no longer comes from it.
+            pushPublishEnvironments = ENVIRONMENTS;
             spectator.detectChanges();
         };
 
@@ -1633,8 +1633,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         };
 
         it('should enable the row once an environment is reachable', () => {
-            // Through the real lookup, so the service-to-signal wiring is covered.
-            pushPublishEnvironments = ENVIRONMENTS;
+            withEnvironments();
 
             spectator.detectChanges();
 
@@ -1743,10 +1742,12 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).not.toHaveBeenCalled();
         });
 
-        it('should disable the row when the environments lookup fails', () => {
-            // Fails closed: offering a push with nowhere to go fails at the servlet with a message
-            // the user cannot act on.
-            pushPublishEnvironmentsFail = true;
+        it('should disable the row when no environment is reachable', () => {
+            // The dialog's half of failing closed: offering a push with nowhere to go fails at the
+            // servlet with a message the user cannot act on. That a failed *lookup* resolves to
+            // `false` rather than being treated as "probably fine" is asserted in
+            // `withPushPublishEnvironments`, which now owns the lookup.
+            mockHasPushPublishEnvironments.set(false);
 
             spectator.detectChanges();
 

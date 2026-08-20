@@ -161,8 +161,9 @@ describe('DotContentDriveShellComponent', () => {
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
-                // The Action Center gates its Push Publish row on this; an empty answer disables it,
-                // which is all the shell's own tests need.
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
@@ -225,6 +226,9 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedItems: jest.fn(),
                     // Read by the Action Center, which the shell renders for real inside the dialog.
                     currentUserIsAdmin: jest.fn().mockReturnValue(false),
+                    // Resolved on portlet init; `false` disables Push Publish everywhere it
+                    // is gated, which is all the shell's own tests need.
+                    hasPushPublishEnvironments: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
@@ -2888,8 +2892,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
-                // The Action Center gates its Push Publish row on this; an empty answer disables it,
-                // which is all the shell's own tests need.
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
