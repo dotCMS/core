@@ -213,12 +213,12 @@ describe('DotUsersListComponent', () => {
         };
 
         it('confirmDelete should open the bulk delete dialog and reset the replacement', () => {
-            spectator.component['bulkReplacementUser'].set(REPLACEMENT);
+            spectator.component['$bulkReplacementUser'].set(REPLACEMENT);
 
             spectator.component.confirmDelete();
 
-            expect(spectator.component['bulkDeleteVisible']()).toBe(true);
-            expect(spectator.component['bulkReplacementUser']()).toBeNull();
+            expect(spectator.component['$bulkDeleteVisible']()).toBe(true);
+            expect(spectator.component['$bulkReplacementUser']()).toBeNull();
         });
 
         it('canConfirmBulkDelete should require a replacement not in the selection', () => {
@@ -226,13 +226,13 @@ describe('DotUsersListComponent', () => {
             (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
             spectator.detectChanges();
 
-            expect(spectator.component['canConfirmBulkDelete']()).toBe(false);
+            expect(spectator.component['$canConfirmBulkDelete']()).toBe(false);
 
             spectator.component.onBulkReplacementSelect(MOCK_USERS[0]);
-            expect(spectator.component['canConfirmBulkDelete']()).toBe(false);
+            expect(spectator.component['$canConfirmBulkDelete']()).toBe(false);
 
             spectator.component.onBulkReplacementSelect(REPLACEMENT);
-            expect(spectator.component['canConfirmBulkDelete']()).toBe(true);
+            expect(spectator.component['$canConfirmBulkDelete']()).toBe(true);
         });
 
         it('confirmBulkDelete should forward the replacement id to the store and close', () => {
@@ -244,7 +244,7 @@ describe('DotUsersListComponent', () => {
             spectator.component.confirmBulkDelete();
 
             expect(store.deleteSelectedUsers).toHaveBeenCalledWith('dotcms.org.42');
-            expect(spectator.component['bulkDeleteVisible']()).toBe(false);
+            expect(spectator.component['$bulkDeleteVisible']()).toBe(false);
         });
 
         it('confirmBulkDelete should no-op when no replacement was picked', () => {

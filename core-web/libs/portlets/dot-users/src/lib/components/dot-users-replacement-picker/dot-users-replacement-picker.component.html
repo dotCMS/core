@@ -2,7 +2,7 @@
     [inputId]="inputId()"
     [ngModel]="value()"
     (ngModelChange)="onSelect($event)"
-    [suggestions]="suggestions()"
+    [suggestions]="$suggestions()"
     (completeMethod)="onSearch($event)"
     optionLabel="fullName"
     [placeholder]="placeholderKey() | dm"

@@ -41,7 +41,6 @@ import { DotUserListItem } from '../services/dot-users.service';
 
 @Component({
     selector: 'dot-users-list',
-    standalone: true,
     imports: [
         DatePipe,
         FormsModule,
@@ -68,36 +67,36 @@ import { DotUserListItem } from '../services/dot-users.service';
 export class DotUsersListComponent {
     readonly store = inject(DotUsersListStore);
 
-    private readonly dialogService = inject(DialogService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #dialogService = inject(DialogService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
 
-    private readonly searchSubject = new Subject<string>();
+    readonly #searchSubject = new Subject<string>();
 
-    protected readonly bulkDeleteVisible = signal(false);
-    protected readonly bulkReplacementUser = signal<DotUserListItem | null>(null);
+    protected readonly $bulkDeleteVisible = signal(false);
+    protected readonly $bulkReplacementUser = signal<DotUserListItem | null>(null);
     /**
      * Flips on when Delete is clicked with an invalid form. Drives the
      * footer validation hint; the button stays enabled per design.
      */
-    protected readonly bulkDeleteAttempted = signal(false);
+    protected readonly $bulkDeleteAttempted = signal(false);
 
     /**
      * The picker must never surface any user currently selected for
      * deletion — same rule as the single-delete flow but generalized
      * to the whole selection.
      */
-    protected readonly bulkExcludedIds = computed(() =>
+    protected readonly $bulkExcludedIds = computed(() =>
         this.store.selectedUsers().map((user) => user.userId)
     );
 
-    protected readonly canConfirmBulkDelete = computed(() => {
-        const replacement = this.bulkReplacementUser();
+    protected readonly $canConfirmBulkDelete = computed(() => {
+        const replacement = this.$bulkReplacementUser();
         if (!replacement) {
             return false;
         }
 
-        return !this.bulkExcludedIds().includes(replacement.userId);
+        return !this.$bulkExcludedIds().includes(replacement.userId);
     });
 
     /**
@@ -105,16 +104,16 @@ export class DotUsersListComponent {
      * the user tries to click Delete with an invalid state. Same
      * pattern as the single-delete flow.
      */
-    protected readonly bulkReplacementError = computed(() => {
-        if (!this.bulkDeleteAttempted()) {
+    protected readonly $bulkReplacementError = computed(() => {
+        if (!this.$bulkDeleteAttempted()) {
             return null;
         }
 
-        const replacement = this.bulkReplacementUser();
+        const replacement = this.$bulkReplacementUser();
         if (!replacement) {
             return 'users.dialog.delete-confirm.replacement.required';
         }
-        if (this.bulkExcludedIds().includes(replacement.userId)) {
+        if (this.$bulkExcludedIds().includes(replacement.userId)) {
             return 'users.dialog.delete-confirm.replacement.self';
         }
 
@@ -122,13 +121,13 @@ export class DotUsersListComponent {
     });
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setFilter(value));
     }
 
     onSearch(value: string): void {
-        this.searchSubject.next(value);
+        this.#searchSubject.next(value);
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {
@@ -162,8 +161,8 @@ export class DotUsersListComponent {
      * standard 700px form dialog.
      */
     private openUserDialog(user?: DotUserListItem): void {
-        const ref = this.dialogService.open(DotUsersCreateComponent, {
-            header: this.dotMessageService.get(user ? 'users.edit.header' : 'users.create.header'),
+        const ref = this.#dialogService.open(DotUsersCreateComponent, {
+            header: this.#dotMessageService.get(user ? 'users.edit.header' : 'users.create.header'),
             width: 'min(92vw, 75rem)',
             height: 'min(90vh, 48rem)',
             data: user ? { user } : undefined,
@@ -193,29 +192,29 @@ export class DotUsersListComponent {
     }
 
     confirmDelete(): void {
-        this.bulkReplacementUser.set(null);
-        this.bulkDeleteAttempted.set(false);
-        this.bulkDeleteVisible.set(true);
+        this.$bulkReplacementUser.set(null);
+        this.$bulkDeleteAttempted.set(false);
+        this.$bulkDeleteVisible.set(true);
     }
 
     closeBulkDelete(): void {
-        this.bulkDeleteVisible.set(false);
+        this.$bulkDeleteVisible.set(false);
     }
 
     onBulkReplacementSelect(user: DotUserListItem | null): void {
-        this.bulkReplacementUser.set(user);
-        this.bulkDeleteAttempted.set(false);
+        this.$bulkReplacementUser.set(user);
+        this.$bulkDeleteAttempted.set(false);
     }
 
     confirmBulkDelete(): void {
-        const replacement = this.bulkReplacementUser();
-        if (!this.canConfirmBulkDelete() || !replacement) {
-            this.bulkDeleteAttempted.set(true);
+        const replacement = this.$bulkReplacementUser();
+        if (!this.$canConfirmBulkDelete() || !replacement) {
+            this.$bulkDeleteAttempted.set(true);
 
             return;
         }
 
-        this.bulkDeleteVisible.set(false);
+        this.$bulkDeleteVisible.set(false);
         this.store.deleteSelectedUsers(replacement.userId);
     }
 

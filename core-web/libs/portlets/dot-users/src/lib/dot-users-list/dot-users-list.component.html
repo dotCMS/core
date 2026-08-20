@@ -182,8 +182,8 @@
 </div>
 
 <p-dialog
-    [visible]="bulkDeleteVisible()"
-    (visibleChange)="bulkDeleteVisible.set($event)"
+    [visible]="$bulkDeleteVisible()"
+    (visibleChange)="$bulkDeleteVisible.set($event)"
     [modal]="true"
     [closable]="true"
     [closeOnEscape]="true"
@@ -202,12 +202,12 @@
             </label>
             <dot-users-replacement-picker
                 inputId="users-bulk-delete-replacement-picker"
-                [value]="bulkReplacementUser()"
-                [excludedUserIds]="bulkExcludedIds()"
-                [invalid]="!!bulkReplacementError()"
+                [value]="$bulkReplacementUser()"
+                [excludedUserIds]="$bulkExcludedIds()"
+                [invalid]="!!$bulkReplacementError()"
                 (selectionChange)="onBulkReplacementSelect($event)"
                 data-testid="users-bulk-delete-replacement-picker" />
-            @if (bulkReplacementError(); as key) {
+            @if ($bulkReplacementError(); as key) {
                 <small class="text-red-600" data-testid="users-bulk-delete-replacement-error">
                     {{ key | dm }}
                 </small>

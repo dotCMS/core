@@ -118,7 +118,7 @@ describe('DotUsersCreateComponent', () => {
         });
 
         it('should show NU as the initials placeholder', () => {
-            expect(spectator.component.initials()).toBe('NU');
+            expect(spectator.component.$initials()).toBe('NU');
         });
 
         it('should mark password as required in create mode', () => {
@@ -164,7 +164,7 @@ describe('DotUsersCreateComponent', () => {
         });
 
         it('should keep canConfirmDelete false when the user is missing', () => {
-            expect(spectator.component['canConfirmDelete']()).toBe(false);
+            expect(spectator.component['$canConfirmDelete']()).toBe(false);
         });
     });
 
@@ -208,16 +208,16 @@ describe('DotUsersCreateComponent', () => {
             const access = spectator.component.form.controls.access.controls;
 
             // Loaded user has DOTCMS_BACK_END_USER → chip shows.
-            expect(spectator.component.canLoginToAdmin()).toBe(true);
+            expect(spectator.component.$canLoginToAdmin()).toBe(true);
 
             access.backend.setValue(false);
-            expect(spectator.component.canLoginToAdmin()).toBe(false);
+            expect(spectator.component.$canLoginToAdmin()).toBe(false);
 
             access.cmsAdmin.setValue(true);
-            expect(spectator.component.canLoginToAdmin()).toBe(true);
+            expect(spectator.component.$canLoginToAdmin()).toBe(true);
 
             access.cmsAdmin.setValue(false);
-            expect(spectator.component.canLoginToAdmin()).toBe(false);
+            expect(spectator.component.$canLoginToAdmin()).toBe(false);
         });
 
         it('should merge access toggles into `roles` and drop the personal role on save', () => {
@@ -272,13 +272,13 @@ describe('DotUsersCreateComponent', () => {
 
         it('should require both email match AND a replacement user to enable delete confirmation', () => {
             spectator.component['openDeleteConfirm']();
-            expect(spectator.component['canConfirmDelete']()).toBe(false);
+            expect(spectator.component['$canConfirmDelete']()).toBe(false);
 
             spectator.component['onDeleteInputChange']('jane@dotcms.com');
-            expect(spectator.component['canConfirmDelete']()).toBe(false);
+            expect(spectator.component['$canConfirmDelete']()).toBe(false);
 
             spectator.component['onReplacementSelect'](REPLACEMENT_USER);
-            expect(spectator.component['canConfirmDelete']()).toBe(true);
+            expect(spectator.component['$canConfirmDelete']()).toBe(true);
         });
 
         it('should keep delete confirmation disabled when the picked replacement is the same user', () => {
@@ -286,7 +286,7 @@ describe('DotUsersCreateComponent', () => {
             spectator.component['onDeleteInputChange']('jane@dotcms.com');
             spectator.component['onReplacementSelect'](MOCK_USER);
 
-            expect(spectator.component['canConfirmDelete']()).toBe(false);
+            expect(spectator.component['$canConfirmDelete']()).toBe(false);
         });
 
         it('should close with delete action carrying the replacement userId when confirmed', () => {
@@ -318,7 +318,7 @@ describe('DotUsersCreateComponent', () => {
 
             spectator.component['openDeleteConfirm']();
 
-            expect(spectator.component['replacementUser']()).toBeNull();
+            expect(spectator.component['$replacementUser']()).toBeNull();
         });
     });
 });

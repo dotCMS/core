@@ -17,6 +17,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 
@@ -25,7 +26,7 @@ import { catchError, finalize, take } from 'rxjs/operators';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { passwordsMatchValidator } from './dot-users-form.model';
+import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
 
 import { DotUsersReplacementPickerComponent } from '../components/dot-users-replacement-picker/dot-users-replacement-picker.component';
@@ -90,7 +91,6 @@ const ACCESS_ROLE_KEYS = {
  */
 @Component({
     selector: 'dot-users-create',
-    standalone: true,
     imports: [
         CommonModule,
         FormsModule,
@@ -99,6 +99,7 @@ const ACCESS_ROLE_KEYS = {
         ButtonModule,
         DialogModule,
         InputTextModule,
+        SkeletonModule,
         TabsModule,
         TagModule,
         DotMessagePipe,
@@ -108,40 +109,43 @@ const ACCESS_ROLE_KEYS = {
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex h-full min-h-0 flex-col block' }
+    host: { class: 'flex h-full min-h-0 flex-col' }
 })
 export class DotUsersCreateComponent {
-    private readonly dialogRef = inject(DynamicDialogRef);
-    private readonly config = inject<DynamicDialogConfig<DialogData>>(DynamicDialogConfig);
-    private readonly fb = inject(FormBuilder);
-    private readonly messageService = inject(DotMessageService);
-    private readonly usersService = inject(DotUsersService);
-    private readonly httpErrorManager = inject(DotHttpErrorManagerService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #config = inject<DynamicDialogConfig<DialogData>>(DynamicDialogConfig);
+    readonly #fb = inject(FormBuilder);
+    readonly #messageService = inject(DotMessageService);
+    readonly #usersService = inject(DotUsersService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    readonly #destroyRef = inject(DestroyRef);
 
-    readonly user = this.config.data?.user ?? null;
+    readonly user = this.#config.data?.user ?? null;
     readonly isEdit = !!this.user;
 
-    readonly form = this.fb.nonNullable.group({
-        account: this.fb.nonNullable.group(
+    readonly form: DotUsersFormGroup = this.#fb.nonNullable.group({
+        account: this.#fb.nonNullable.group(
             {
                 firstName: ['', [Validators.required]],
                 lastName: ['', [Validators.required]],
                 email: ['', [Validators.required, Validators.email]],
-                password: [''],
+                // minLength runs in both modes — the passwordsMatchValidator on
+                // the group treats an empty password as "keep current" for edit,
+                // so a 1-char value can't slip through on either flow.
+                password: ['', [Validators.minLength(6)]],
                 confirmPassword: [''],
                 active: [true]
             },
             { validators: [passwordsMatchValidator] }
         ),
-        additionalInfo: this.fb.nonNullable.group({
+        additionalInfo: this.#fb.nonNullable.group({
             prefix: [''],
             suffix: [''],
             title: [''],
             company: [''],
             website: ['']
         }),
-        access: this.fb.nonNullable.group({
+        access: this.#fb.nonNullable.group({
             cmsAdmin: [false],
             backend: [true],
             frontend: [false],
@@ -156,7 +160,7 @@ export class DotUsersCreateComponent {
      * and disappears as those toggles change without any manual
      * change detection.
      */
-    private readonly accessValue = toSignal(this.form.controls.access.valueChanges, {
+    readonly #$accessValue = toSignal(this.form.controls.access.valueChanges, {
         initialValue: this.form.controls.access.getRawValue()
     });
 
@@ -166,8 +170,8 @@ export class DotUsersCreateComponent {
      * lets the header chip react instantly to Access toggle changes
      * without waiting for a save round-trip.
      */
-    readonly canLoginToAdmin = computed(() => {
-        const access = this.accessValue();
+    readonly $canLoginToAdmin = computed(() => {
+        const access = this.#$accessValue();
 
         return !!access.cmsAdmin || !!access.backend;
     });
@@ -179,12 +183,12 @@ export class DotUsersCreateComponent {
      * form value so the very first render already reflects the reset
      * we ran below.
      */
-    private readonly accountValue = toSignal(this.form.controls.account.valueChanges, {
+    readonly #$accountValue = toSignal(this.form.controls.account.valueChanges, {
         initialValue: this.form.controls.account.getRawValue()
     });
 
-    readonly displayName = computed(() => {
-        const account = this.accountValue();
+    readonly $displayName = computed(() => {
+        const account = this.#$accountValue();
         const first = (account.firstName ?? '').trim();
         const last = (account.lastName ?? '').trim();
         const combined = `${first} ${last}`.trim();
@@ -194,12 +198,12 @@ export class DotUsersCreateComponent {
         }
 
         return this.isEdit
-            ? this.messageService.get('users.dialog.untitled-user')
-            : this.messageService.get('users.dialog.new-user');
+            ? this.#messageService.get('users.dialog.untitled-user')
+            : this.#messageService.get('users.dialog.new-user');
     });
 
-    readonly initials = computed(() => {
-        const account = this.accountValue();
+    readonly $initials = computed(() => {
+        const account = this.#$accountValue();
         const first = (account.firstName ?? '').charAt(0);
         const last = (account.lastName ?? '').charAt(0);
         const value = `${first}${last}`.toUpperCase();
@@ -207,12 +211,12 @@ export class DotUsersCreateComponent {
         return value || (this.isEdit ? '?' : 'NU');
     });
 
-    readonly isActive = computed(() => Boolean(this.accountValue().active));
+    readonly $isActive = computed(() => Boolean(this.#$accountValue().active));
 
-    protected readonly activeTab = signal(0);
-    protected readonly deleteConfirmVisible = signal(false);
-    protected readonly deleteConfirmationInput = signal('');
-    protected readonly replacementUser = signal<DotUserListItem | null>(null);
+    protected readonly $activeTab = signal(0);
+    protected readonly $deleteConfirmVisible = signal(false);
+    protected readonly $deleteConfirmationInput = signal('');
+    protected readonly $replacementUser = signal<DotUserListItem | null>(null);
     /**
      * Flips on when the user clicks Delete without a valid form.
      * Used to reveal a footer validation message; the button itself
@@ -220,8 +224,8 @@ export class DotUsersCreateComponent {
      * Reset every time the picker or email input changes so the user
      * gets a fresh state after they course-correct.
      */
-    protected readonly deleteAttempted = signal(false);
-    protected readonly isLoading = signal(false);
+    protected readonly $deleteAttempted = signal(false);
+    protected readonly $isLoading = signal(false);
 
     /**
      * Full list of role KEYS the user currently holds — populated by
@@ -231,14 +235,23 @@ export class DotUsersCreateComponent {
      * membership (personal role, project-specific roles, etc.) since
      * the backend `PUT /api/v1/users` replaces the full role list.
      */
-    private readonly loadedUserRoleKeys = signal<string[]>([]);
+    readonly #$loadedUserRoleKeys = signal<string[]>([]);
 
     /**
      * Snapshot of the `Show Getting Started` toggle at load time so
      * `buildPayload` can detect a diff and emit the appropriate
      * `add` / `remove` instruction for the toolgroup PUT.
      */
-    private readonly initialGettingStarted = signal(false);
+    readonly #$initialGettingStarted = signal(false);
+
+    /**
+     * The full `additionalInfo` map as returned by `getUser`. The backend
+     * replaces this map wholesale on save (it does not merge), so we
+     * carry the untouched keys through here and overlay only the five
+     * fields the profile tab surfaces. Without this, custom keys stored
+     * by other tools would be wiped every time this dialog saves.
+     */
+    readonly #$loadedAdditionalInfo = signal<Record<string, unknown>>({});
 
     /**
      * Signals that the initial data is fully hydrated — profile fields,
@@ -247,9 +260,9 @@ export class DotUsersCreateComponent {
      * is disabled until this flips to `true` so we never send a `roles`
      * list built from a stale, empty snapshot.
      */
-    protected readonly dataReady = signal(false);
+    protected readonly $dataReady = signal(false);
 
-    protected readonly isSaveDisabled = computed(() => !this.dataReady());
+    protected readonly $isSaveDisabled = computed(() => !this.$dataReady());
 
     /**
      * ID list handed to the replacement picker so the user being
@@ -261,15 +274,15 @@ export class DotUsersCreateComponent {
     /**
      * Granular per-field validity for the delete confirm dialog. The
      * error strings are surfaced under each field only after the user
-     * has actually tried to click Delete (`deleteAttempted`) so an
+     * has actually tried to click Delete (`$deleteAttempted`) so an
      * untouched form stays clean-looking on open.
      */
-    protected readonly replacementError = computed(() => {
-        if (!this.deleteAttempted()) {
+    protected readonly $replacementError = computed(() => {
+        if (!this.$deleteAttempted()) {
             return null;
         }
 
-        const replacement = this.replacementUser();
+        const replacement = this.$replacementUser();
         if (!replacement) {
             return 'users.dialog.delete-confirm.replacement.required';
         }
@@ -280,12 +293,12 @@ export class DotUsersCreateComponent {
         return null;
     });
 
-    protected readonly emailConfirmError = computed(() => {
-        if (!this.deleteAttempted()) {
+    protected readonly $emailConfirmError = computed(() => {
+        if (!this.$deleteAttempted()) {
             return null;
         }
 
-        const input = this.deleteConfirmationInput().trim().toLowerCase();
+        const input = this.$deleteConfirmationInput().trim().toLowerCase();
         if (!input) {
             return 'users.dialog.delete-confirm.confirm.required';
         }
@@ -298,14 +311,14 @@ export class DotUsersCreateComponent {
         return null;
     });
 
-    protected readonly canConfirmDelete = computed(() => {
+    protected readonly $canConfirmDelete = computed(() => {
         const target = (this.user?.emailAddress ?? '').trim().toLowerCase();
         if (!target) {
             return false;
         }
 
-        const emailMatches = this.deleteConfirmationInput().trim().toLowerCase() === target;
-        const replacement = this.replacementUser();
+        const emailMatches = this.$deleteConfirmationInput().trim().toLowerCase() === target;
+        const replacement = this.$replacementUser();
         const replacementValid = !!replacement && replacement.userId !== this.user?.userId;
 
         return emailMatches && replacementValid;
@@ -317,17 +330,17 @@ export class DotUsersCreateComponent {
             this.loadUserDetail(this.user.userId);
         } else {
             this.enableCreatePasswordValidators();
-            this.dataReady.set(true);
+            this.$dataReady.set(true);
         }
     }
 
     protected close(): void {
-        this.dialogRef.close();
+        this.#dialogRef.close();
     }
 
     protected save(): void {
         this.form.markAllAsTouched();
-        if (this.form.invalid || this.isSaveDisabled()) {
+        if (this.form.invalid || this.$isSaveDisabled()) {
             return;
         }
 
@@ -339,27 +352,27 @@ export class DotUsersCreateComponent {
             gettingStartedChange
         };
 
-        this.dialogRef.close(result);
+        this.#dialogRef.close(result);
     }
 
     protected openDeleteConfirm(): void {
-        this.deleteConfirmationInput.set('');
-        this.replacementUser.set(null);
-        this.deleteAttempted.set(false);
-        this.deleteConfirmVisible.set(true);
+        this.$deleteConfirmationInput.set('');
+        this.$replacementUser.set(null);
+        this.$deleteAttempted.set(false);
+        this.$deleteConfirmVisible.set(true);
     }
 
     protected closeDeleteConfirm(): void {
-        this.deleteConfirmVisible.set(false);
+        this.$deleteConfirmVisible.set(false);
     }
 
     protected confirmDelete(): void {
-        const replacement = this.replacementUser();
-        if (!this.canConfirmDelete() || !this.user?.userId || !replacement) {
+        const replacement = this.$replacementUser();
+        if (!this.$canConfirmDelete() || !this.user?.userId || !replacement) {
             // Surface the footer hint instead of silently swallowing the
             // click — matches the design convention of always-enabled
             // buttons + contextual validation.
-            this.deleteAttempted.set(true);
+            this.$deleteAttempted.set(true);
 
             return;
         }
@@ -370,17 +383,17 @@ export class DotUsersCreateComponent {
             replacementUserId: replacement.userId
         };
 
-        this.dialogRef.close(result);
+        this.#dialogRef.close(result);
     }
 
     protected onDeleteInputChange(value: string): void {
-        this.deleteConfirmationInput.set(value);
-        this.deleteAttempted.set(false);
+        this.$deleteConfirmationInput.set(value);
+        this.$deleteAttempted.set(false);
     }
 
     protected onReplacementSelect(user: DotUserListItem | null): void {
-        this.replacementUser.set(user);
-        this.deleteAttempted.set(false);
+        this.$replacementUser.set(user);
+        this.$deleteAttempted.set(false);
     }
 
     /**
@@ -417,21 +430,21 @@ export class DotUsersCreateComponent {
      * a non-critical side surface — if it fails we default to `false`
      * and let the user toggle it manually. All three run in parallel;
      * the Save button stays disabled until every response has landed
-     * (see `dataReady`).
+     * (see `$dataReady`).
      */
     private loadUserDetail(userId: string): void {
-        this.isLoading.set(true);
+        this.$isLoading.set(true);
         forkJoin({
-            user: this.usersService.getUser(userId),
-            userRoles: this.usersService.getUserRoles(userId),
-            gettingStarted: this.usersService
+            user: this.#usersService.getUser(userId),
+            userRoles: this.#usersService.getUserRoles(userId),
+            gettingStarted: this.#usersService
                 .getGettingStartedState(userId)
                 .pipe(catchError(() => of(false)))
         })
             .pipe(
                 take(1),
-                finalize(() => this.isLoading.set(false)),
-                takeUntilDestroyed(this.destroyRef)
+                finalize(() => this.$isLoading.set(false)),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe({
                 next: ({ user, userRoles, gettingStarted }) => {
@@ -439,11 +452,12 @@ export class DotUsersCreateComponent {
                         .map((role) => role.roleKey)
                         .filter((key): key is string => !!key);
 
-                    this.loadedUserRoleKeys.set(roleKeys);
-                    this.initialGettingStarted.set(gettingStarted);
+                    this.#$loadedUserRoleKeys.set(roleKeys);
+                    this.#$initialGettingStarted.set(gettingStarted);
 
                     const roleKeySet = new Set(roleKeys);
                     const additionalInfo = user.additionalInfo ?? {};
+                    this.#$loadedAdditionalInfo.set(additionalInfo);
 
                     this.form.patchValue({
                         account: {
@@ -467,14 +481,23 @@ export class DotUsersCreateComponent {
                         }
                     });
                     this.form.markAsPristine();
-                    this.dataReady.set(true);
+                    this.$dataReady.set(true);
                 },
-                error: (error) => this.httpErrorManager.handle(error)
+                error: (error) => {
+                    // Toast fires from the manager; dropping the dialog
+                    // frees the user from a permanently disabled Save
+                    // with no hint why. Cancel still worked, but nothing
+                    // pointed at the load failure.
+                    this.#httpErrorManager.handle(error);
+                    this.#dialogRef.close();
+                }
             });
     }
 
     private enableCreatePasswordValidators(): void {
         const account = this.form.controls.account;
+        // Layer `required` on top of the always-on `minLength(6)` so
+        // create mode rejects empty strings.
         account.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
         account.controls.confirmPassword.setValidators([Validators.required]);
         account.controls.password.updateValueAndValidity({ emitEvent: false });
@@ -503,14 +526,15 @@ export class DotUsersCreateComponent {
         const additionalInfoValue = raw.additionalInfo;
         const access = raw.access;
 
-        const additionalInfo = ADDITIONAL_INFO_KEYS.reduce<Record<string, string>>((acc, key) => {
-            const value = (additionalInfoValue[key] ?? '').trim();
-            if (value) {
-                acc[key] = value;
-            }
-
-            return acc;
-        }, {});
+        // Backend replaces `additionalInfo` wholesale (see
+        // UserResource#save), so we spread the loaded map first to keep
+        // any keys the profile tab does not surface, then overlay the
+        // five managed fields. We always write those five — an empty
+        // string wins over the stale value that would otherwise stick.
+        const additionalInfo: Record<string, unknown> = { ...this.#$loadedAdditionalInfo() };
+        for (const key of ADDITIONAL_INFO_KEYS) {
+            additionalInfo[key] = (additionalInfoValue[key] ?? '').trim();
+        }
 
         const payload: DotUserFormPayload = {
             firstName: account.firstName.trim(),
@@ -528,14 +552,12 @@ export class DotUsersCreateComponent {
             payload.password = password;
         }
 
-        if (Object.keys(additionalInfo).length > 0) {
-            payload.additionalInfo = additionalInfo;
-        }
+        payload.additionalInfo = additionalInfo;
 
         payload.roles = this.mergeRoleKeysForSave(access);
 
         let gettingStartedChange: 'add' | 'remove' | undefined;
-        if (access.showGettingStarted !== this.initialGettingStarted()) {
+        if (access.showGettingStarted !== this.#$initialGettingStarted()) {
             gettingStartedChange = access.showGettingStarted ? 'add' : 'remove';
         }
 
@@ -570,7 +592,7 @@ export class DotUsersCreateComponent {
     }): string[] {
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
         const personalRoleKey = this.user?.userId ?? '';
-        const nonAccess = this.loadedUserRoleKeys().filter(
+        const nonAccess = this.#$loadedUserRoleKeys().filter(
             (key) => !accessKeys.has(key) && key !== personalRoleKey
         );
         const merged = new Set(nonAccess);

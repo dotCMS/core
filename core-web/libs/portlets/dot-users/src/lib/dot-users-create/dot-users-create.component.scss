@@ -1,9 +1,6 @@
-:host {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-}
+// Layout on :host comes from the host tailwind class
+// (`flex h-full min-h-0 flex-col`) — keeping only the PrimeNG-preset
+// override below.
 
 // Force the flex-fill chain from the body wrapper down to each p-tabpanel.
 // Tailwind's `flex`/`block` utilities lose against PrimeNG's default block

@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -12,7 +12,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotUserListItem } from '../../../services/dot-users.service';
-import { generateSecurePassword } from '../../dot-users-form.model';
+import { DotUsersFormGroup, generateSecurePassword } from '../../dot-users-form.model';
 
 interface AccessRow {
     key: 'cmsAdmin' | 'backend' | 'frontend' | 'showGettingStarted';
@@ -51,7 +51,6 @@ const ACCESS_ROWS: AccessRow[] = [
  */
 @Component({
     selector: 'dot-users-profile-tab',
-    standalone: true,
     imports: [
         DatePipe,
         ReactiveFormsModule,
@@ -67,10 +66,10 @@ const ACCESS_ROWS: AccessRow[] = [
     templateUrl: './dot-users-profile-tab.component.html',
     styleUrl: './dot-users-profile-tab.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col gap-6 block' }
+    host: { class: 'flex flex-col gap-6' }
 })
 export class DotUsersProfileTabComponent {
-    readonly form = input.required<FormGroup>();
+    readonly form = input.required<DotUsersFormGroup>();
     readonly isEdit = input<boolean>(false);
     readonly user = input<DotUserListItem | null>(null);
 
@@ -87,35 +86,33 @@ export class DotUsersProfileTabComponent {
 
     protected readonly accessRows = ACCESS_ROWS;
 
-    protected readonly showPassword = signal(false);
+    protected readonly $accountGroup = computed(() => this.form().controls.account);
 
-    protected readonly accountGroup = computed(() => this.form().get('account') as FormGroup);
+    protected readonly $additionalInfoGroup = computed(() => this.form().controls.additionalInfo);
 
-    protected readonly additionalInfoGroup = computed(
-        () => this.form().get('additionalInfo') as FormGroup
-    );
-
-    protected readonly accessGroup = computed(() => this.form().get('access') as FormGroup);
+    protected readonly $accessGroup = computed(() => this.form().controls.access);
 
     protected onGeneratePassword(): void {
         const password = generateSecurePassword();
-        const account = this.accountGroup();
+        const account = this.$accountGroup();
         account.patchValue({ password, confirmPassword: password });
-        account.get('password')?.markAsDirty();
-        account.get('confirmPassword')?.markAsDirty();
+        account.controls.password.markAsDirty();
+        account.controls.confirmPassword.markAsDirty();
     }
 
     /**
-     * Whether a control (relative to `accountGroup`) is in an error
+     * Whether a control (relative to `$accountGroup`) is in an error
      * state we want to visualize on the input. PrimeNG's `[invalid]`
      * input drives the red-outline treatment; we base it on
      * `touched || dirty` so Save's `markAllAsTouched()` triggers it
      * even for fields the user never focused.
      */
-    protected isAccountFieldInvalid(controlName: string): boolean {
-        const control = this.accountGroup().get(controlName);
+    protected isAccountFieldInvalid(
+        controlName: keyof DotUsersFormGroup['controls']['account']['controls']
+    ): boolean {
+        const control = this.$accountGroup().controls[controlName];
 
-        return !!control && control.invalid && (control.touched || control.dirty);
+        return control.invalid && (control.touched || control.dirty);
     }
 
     /**
@@ -124,11 +121,8 @@ export class DotUsersProfileTabComponent {
      * required error but the source is the group-level validator.
      */
     protected isConfirmPasswordInvalid(): boolean {
-        const group = this.accountGroup();
-        const confirm = group.get('confirmPassword');
-        if (!confirm) {
-            return false;
-        }
+        const group = this.$accountGroup();
+        const confirm = group.controls.confirmPassword;
         const touched = confirm.touched || confirm.dirty;
 
         return touched && (confirm.invalid || !!group.errors?.['passwordMismatch']);

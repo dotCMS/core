@@ -38,7 +38,7 @@
 
 <form [formGroup]="form()" class="form flex flex-col gap-6">
     <section
-        [formGroup]="accountGroup()"
+        formGroupName="account"
         class="flex flex-col gap-4 rounded-lg border border-surface-200 p-6"
         data-testid="users-profile-account-section">
         <header class="flex flex-col gap-1">
@@ -64,8 +64,8 @@
                     [class.ng-dirty]="isAccountFieldInvalid('firstName')"
                     data-testid="users-profile-first-name" />
                 @if (
-                    accountGroup().get('firstName')?.touched &&
-                    accountGroup().get('firstName')?.errors?.['required']
+                    $accountGroup().get('firstName')?.touched &&
+                    $accountGroup().get('firstName')?.errors?.['required']
                 ) {
                     <small class="text-red-600" data-testid="users-profile-first-name-error">
                         {{ 'users.dialog.error.required' | dm }}
@@ -85,8 +85,8 @@
                     [class.ng-dirty]="isAccountFieldInvalid('lastName')"
                     data-testid="users-profile-last-name" />
                 @if (
-                    accountGroup().get('lastName')?.touched &&
-                    accountGroup().get('lastName')?.errors?.['required']
+                    $accountGroup().get('lastName')?.touched &&
+                    $accountGroup().get('lastName')?.errors?.['required']
                 ) {
                     <small class="text-red-600" data-testid="users-profile-last-name-error">
                         {{ 'users.dialog.error.required' | dm }}
@@ -99,6 +99,14 @@
                 </label>
                 <p-iconField iconPosition="left" class="w-full">
                     <p-inputIcon>
+                        <!--
+                            `text-*!` needed on every Material Symbols icon:
+                            Google's `.material-symbols-rounded { font-size: 24px }`
+                            ties tailwind's `text-*` classes on specificity,
+                            so we force with `!important` (`!` suffix) to size
+                            the icon. Same rationale applies to the other
+                            `text-lg!`/`text-base!` occurrences below.
+                        -->
                         <span
                             class="material-symbols-rounded text-lg! leading-none"
                             aria-hidden="true">
@@ -117,15 +125,15 @@
                         data-testid="users-profile-email" />
                 </p-iconField>
                 @if (
-                    accountGroup().get('email')?.touched &&
-                    accountGroup().get('email')?.errors?.['required']
+                    $accountGroup().get('email')?.touched &&
+                    $accountGroup().get('email')?.errors?.['required']
                 ) {
                     <small class="text-red-600" data-testid="users-profile-email-required-error">
                         {{ 'users.dialog.error.required' | dm }}
                     </small>
                 } @else if (
-                    accountGroup().get('email')?.touched &&
-                    accountGroup().get('email')?.errors?.['email']
+                    $accountGroup().get('email')?.touched &&
+                    $accountGroup().get('email')?.errors?.['email']
                 ) {
                     <small class="text-red-600" data-testid="users-profile-email-error">
                         {{ 'users.dialog.error.email' | dm }}
@@ -153,15 +161,15 @@
                     inputStyleClass="w-full"
                     data-testid="users-profile-password" />
                 @if (
-                    accountGroup().get('password')?.touched &&
-                    accountGroup().get('password')?.errors?.['required']
+                    $accountGroup().get('password')?.touched &&
+                    $accountGroup().get('password')?.errors?.['required']
                 ) {
                     <small class="text-red-600" data-testid="users-profile-password-required-error">
                         {{ 'users.dialog.error.required' | dm }}
                     </small>
                 } @else if (
-                    accountGroup().get('password')?.touched &&
-                    accountGroup().get('password')?.errors?.['minlength']
+                    $accountGroup().get('password')?.touched &&
+                    $accountGroup().get('password')?.errors?.['minlength']
                 ) {
                     <small class="text-red-600" data-testid="users-profile-password-min-error">
                         {{ 'users.dialog.error.password-min' | dm }}
@@ -190,15 +198,15 @@
                     inputStyleClass="w-full"
                     data-testid="users-profile-confirm-password" />
                 @if (
-                    accountGroup().get('confirmPassword')?.touched &&
-                    accountGroup().get('confirmPassword')?.errors?.['required']
+                    $accountGroup().get('confirmPassword')?.touched &&
+                    $accountGroup().get('confirmPassword')?.errors?.['required']
                 ) {
                     <small
                         class="text-red-600"
                         data-testid="users-profile-confirm-password-required-error">
                         {{ 'users.dialog.error.required' | dm }}
                     </small>
-                } @else if (accountGroup().errors?.['passwordMismatch']) {
+                } @else if ($accountGroup().errors?.['passwordMismatch']) {
                     <small class="text-red-600" data-testid="users-profile-password-mismatch-error">
                         {{ 'users.dialog.error.password-mismatch' | dm }}
                     </small>
@@ -235,7 +243,7 @@
     </section>
 
     <section
-        [formGroup]="additionalInfoGroup()"
+        formGroupName="additionalInfo"
         class="flex flex-col gap-4 rounded-lg border border-surface-200 p-6"
         data-testid="users-profile-additional-info-section">
         <header class="flex flex-col gap-1">
@@ -317,7 +325,7 @@
     </section>
 
     <section
-        [formGroup]="accessGroup()"
+        formGroupName="access"
         class="flex flex-col gap-2 rounded-lg border border-surface-200 p-6"
         data-testid="users-profile-access-section">
         <header class="mb-2 flex flex-col gap-1">

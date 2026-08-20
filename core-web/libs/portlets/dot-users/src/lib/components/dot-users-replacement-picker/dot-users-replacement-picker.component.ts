@@ -30,15 +30,14 @@ import { DotUserListItem, DotUsersService } from '../../services/dot-users.servi
  */
 @Component({
     selector: 'dot-users-replacement-picker',
-    standalone: true,
     imports: [FormsModule, AutoCompleteModule, DotMessagePipe],
     templateUrl: './dot-users-replacement-picker.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' }
 })
 export class DotUsersReplacementPickerComponent {
-    private readonly usersService = inject(DotUsersService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #usersService = inject(DotUsersService);
+    readonly #destroyRef = inject(DestroyRef);
 
     /** ID passed to the underlying <input> so an external <label for> hooks up. */
     readonly inputId = input<string>('users-replacement-picker');
@@ -62,24 +61,24 @@ export class DotUsersReplacementPickerComponent {
     /** Emits every selection change (user or null when cleared). */
     readonly selectionChange = output<DotUserListItem | null>();
 
-    protected readonly suggestions = signal<DotUserListItem[]>([]);
+    protected readonly $suggestions = signal<DotUserListItem[]>([]);
 
     protected onSearch(event: AutoCompleteCompleteEvent): void {
-        this.usersService
+        this.#usersService
             .getUsersPaginated({
                 filter: event.query,
                 page: 1,
                 perPage: 10
             })
-            .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: (response) => {
                     const excluded = new Set(this.excludedUserIds());
-                    this.suggestions.set(
+                    this.$suggestions.set(
                         response.entity.filter((user) => !excluded.has(user.userId))
                     );
                 },
-                error: () => this.suggestions.set([])
+                error: () => this.$suggestions.set([])
             });
     }
 
