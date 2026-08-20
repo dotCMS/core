@@ -54,6 +54,14 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # The phase gates its publish job on startsWith(release_tag, 'v'). Without this
+          # check a tag typed without the prefix resolves fine, gets approved at the gate,
+          # and is then silently skipped -- a green run that published nothing.
+          case "$RELEASE_TAG" in
+            v*) ;;
+            *) echo "Error: release_tag must start with 'v' (got '$RELEASE_TAG')"; exit 1;;
+          esac
+
           VERSION="${RELEASE_TAG#v}"
           echo "release_version=${VERSION}" >> "$GITHUB_OUTPUT"
 
