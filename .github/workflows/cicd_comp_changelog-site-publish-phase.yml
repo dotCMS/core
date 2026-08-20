@@ -33,6 +33,16 @@ on:
         description: 'Space-separated docker image tags produced by the deployment phase'
         required: true
         type: string
+      force:
+        description: 'Override human-edit protection and update in place. Manual operator use only — the release pipeline never sets this.'
+        required: false
+        type: boolean
+        default: false
+      released_date:
+        description: 'Availability date (yyyy-MM-dd). Defaults to today, which is correct for a live release; a manual backfill of an older release should pass that release''s own date.'
+        required: false
+        type: string
+        default: ''
       allow_failure:
         description: 'If true, job failures are non-blocking (used by release pipeline). Defaults to false.'
         required: false
@@ -109,10 +119,12 @@ jobs:
           DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
           # Read once by the tool; never echoed to logs / GITHUB_OUTPUT / step summary.
           DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
-          # Service-account modUser id for human-edit protection (FR-011). --force is never
-          # passed here — override is a manual operator re-run only.
+          # Service-account modUser id for human-edit protection (FR-011). The release
+          # pipeline never sets force; only a manual operator re-run does.
           DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT }}
           DOCKER_TAGS: ${{ inputs.docker_tags }}
+          FORCE: ${{ inputs.force }}
+          RELEASED_DATE: ${{ inputs.released_date }}
         run: |
           # Pick the sha-tagged dotcms/dotcms image (version_sha form, e.g.
           # dotcms/dotcms:26.07.10-01_84b0486). The `_` in the glob excludes the floating
@@ -130,13 +142,17 @@ jobs:
           # T005 contract (0 = success/skip via ::changelog-skip:: marker; non-zero = failure).
           # This step itself always exits 0 so the branch steps run and the release is never
           # blocked (FR-008); the job is also allow_failure as belt-and-suspenders.
+          # ponytail: empty force/released_date are the pipeline's path — same command as before.
+          FORCE_FLAG=""
+          [ "$FORCE" = "true" ] && FORCE_FLAG="--force"
+
           set +e
           OUTPUT=$(uv run changelog-publisher publish \
             --version "$RELEASE_VERSION" \
             --notes-file /tmp/site-release-notes.md \
             --docker-image "$DOCKER_IMAGE" \
-            --released-date "$(date -u +%F)" \
-            --apply 2>&1)
+            --released-date "${RELEASED_DATE:-$(date -u +%F)}" \
+            --apply $FORCE_FLAG 2>&1)
           RC=$?
           set -e
           echo "$OUTPUT"
