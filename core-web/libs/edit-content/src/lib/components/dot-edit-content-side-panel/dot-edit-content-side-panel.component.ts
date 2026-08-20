@@ -22,7 +22,7 @@ import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
-import { DotMessagePipe } from '@dotcms/ui';
+import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
 import {
     AngularImageEditorLauncher,
@@ -84,6 +84,9 @@ function writeExpandedPreference(expanded: boolean): void {
         // Required by AngularImageEditorLauncher to open the new image editor as a modal.
         DialogService,
         { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher },
+        // Same reasoning for the AssetPicker: without this the three asset-selection entry
+        // points would fall back to the legacy picker inside this panel.
+        { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher },
         {
             // The overlay host reads the content identity from the dialog config; this panel is not
             // opened through DialogService, so feed it from the `data` input. The `data` getter is

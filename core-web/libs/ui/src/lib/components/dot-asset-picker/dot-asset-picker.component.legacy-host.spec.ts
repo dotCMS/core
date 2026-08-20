@@ -17,9 +17,15 @@ import { DotAssetPickerComponent } from './dot-asset-picker.component';
 import { DotAssetPickerConfig } from './store/models';
 
 /**
- * The picker has to construct in the **legacy Dojo binary-field host**, not just in the Angular
- * shell — the File/Image field still renders there as the `dotcms-binary-field` custom element, and
- * "Select Existing File" opens this component from inside it.
+ * The picker has to construct under the **legacy Dojo binary-field host's provider set**, not just
+ * the Angular shell's.
+ *
+ * It is no longer *opened* from that host — `ASSET_PICKER_LAUNCHER` is absent there, so the File and
+ * Image fields fall back to `DotBrowserSelectorComponent` (#37132). This spec is kept anyway, as a
+ * dependency-graph guard rather than a behavioral one: the picker lives in `@dotcms/ui`, which the
+ * custom-element bootstraps do import, so the moment anything it pulls in starts needing a `Router`
+ * or an app-shell provider, that whole bundle breaks in a host that has neither. That failure mode
+ * is unchanged by which host opens the dialog.
  *
  * That host (`apps/dotcms-binary-field-builder/src/app/app.module.ts`) bootstraps with only
  * `provideHttpClient`, `provideAnimations`, `DotMessageService`, `DotUploadService`,
