@@ -18,17 +18,26 @@ import {
     DotHttpErrorManagerService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
-/** Builds a mock store exposing only what the nav service reads: the `flags()` slice. */
+/**
+ * Builds a mock store exposing what the nav service reads: the `flags()` slice, plus the active
+ * language filter and the environment default used to resolve an `editContent` deep link.
+ */
 const mockStoreWithFlag = (enabled: boolean) =>
     mockProvider(DotContentDriveStore, {
-        flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled })
+        flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled }),
+        getFilterValue: jest.fn().mockReturnValue(undefined),
+        defaultLanguageId: jest.fn().mockReturnValue(undefined)
     });
 
 describe('DotContentDriveNavigationService', () => {
@@ -40,6 +49,7 @@ describe('DotContentDriveNavigationService', () => {
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let contentSearch: jest.Mocked<DotContentSearchService>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -77,6 +87,7 @@ describe('DotContentDriveNavigationService', () => {
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         contentSearch = spectator.inject(DotContentSearchService);
+        store = spectator.inject(DotContentDriveStore);
     });
 
     afterEach(() => {
@@ -138,6 +149,8 @@ describe('DotContentDriveNavigationService', () => {
                 mode: 'edit',
                 contentletInode: 'test-inode-123',
                 identifier: 'test-identifier-123',
+                // Recorded so the shareable URL can name the exact version, not just the content.
+                languageId: 1,
                 title: 'My Blog Post'
             });
             expect(router.navigate).not.toHaveBeenCalled();
@@ -477,15 +490,109 @@ describe('DotContentDriveNavigationService', () => {
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
-            });
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({ query: '+identifier:shared-identifier +working:true' })
+            );
             expect(service.$editPanelRequest()).toEqual({
                 mode: 'edit',
                 contentletInode: 'working-inode-1',
                 identifier: 'shared-identifier',
+                languageId: 1,
                 title: 'Shared Content'
+            });
+        });
+
+        /** Answers each `contentSearch.get` call in order, so a fallback lookup can be simulated. */
+        const answerWith = (...batches: DotCMSContentlet[][]) => {
+            let call = 0;
+            contentSearch.get.mockImplementation(() =>
+                of({ jsonObjectView: { contentlets: batches[call++] ?? [] } })
+            );
+        };
+
+        it('should look up the exact version the URL asked for', () => {
+            // One identifier has one inode PER LANGUAGE, so the identifier alone does not name a
+            // version. Pinning the query is exact and has no result-window ceiling.
+            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
+
+            service.openEditByIdentifier('shared-identifier', 2);
+
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true +languageId:2',
+                limit: 1
+            });
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'es-inode', languageId: 2 })
+            );
+        });
+
+        it('should prefer the URL language over the active filter', () => {
+            store.getFilterValue.mockReturnValue(['1']);
+            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
+
+            service.openEditByIdentifier('shared-identifier', 2);
+
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: '+identifier:shared-identifier +working:true +languageId:2'
+                })
+            );
+        });
+
+        it('should fall back to the drive language, then the environment default', () => {
+            store.getFilterValue.mockReturnValue(['3']);
+            answerWith([createFakeContentlet({ inode: 'i' })]);
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: '+identifier:shared-identifier +working:true +languageId:3'
+                })
+            );
+
+            contentSearch.get.mockClear();
+            store.getFilterValue.mockReturnValue(undefined);
+            store.defaultLanguageId.mockReturnValue(4);
+            answerWith([createFakeContentlet({ inode: 'i' })]);
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: '+identifier:shared-identifier +working:true +languageId:4'
+                })
+            );
+        });
+
+        it('should still open another language when the preferred one has no version', () => {
+            // A pinned query returns nothing for a language the content was never translated into, and
+            // "nothing" must not be read as "do not open" — a shared link to English-only content would
+            // silently do nothing on a Spanish-default environment.
+            answerWith([], [createFakeContentlet({ inode: 'en-inode', languageId: 1 })]);
+
+            service.openEditByIdentifier('shared-identifier', 2);
+
+            expect(contentSearch.get).toHaveBeenLastCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
+            });
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ contentletInode: 'en-inode' })
+            );
+        });
+
+        it('should not run a second lookup when no language is known at all', () => {
+            store.getFilterValue.mockReturnValue(undefined);
+            store.defaultLanguageId.mockReturnValue(undefined);
+            answerWith([createFakeContentlet({ inode: 'i' })]);
+
+            service.openEditByIdentifier('shared-identifier');
+
+            expect(contentSearch.get).toHaveBeenCalledTimes(1);
+            expect(contentSearch.get).toHaveBeenCalledWith({
+                query: '+identifier:shared-identifier +working:true',
+                limit: 1
             });
         });
 

@@ -1,6 +1,7 @@
 <dot-chip-filter
     [title]="$title() | dm"
     [selections]="$selectedLanguageNames()"
+    [removable]="$removable()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"
     data-testid="language-chip" />

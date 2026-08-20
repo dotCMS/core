@@ -46,6 +46,7 @@ import { DotLocaleTagPipe } from '../../pipes/dot-locale-tag/dot-locale-tag.pipe
 import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotContentThumbnailComponent } from '../dot-content-thumbnail/dot-content-thumbnail.component';
 import { DotContentletStatusBadgeComponent } from '../dot-contentlet-status-badge/dot-contentlet-status-badge.component';
+import { SYSTEM_HOST_ID } from '../dot-folder-tree/constants';
 
 /**
  * Canonical position of the "type" column. Extra columns follow it, in the header and in the body
@@ -344,12 +345,36 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         });
     });
 
+    /**
+     * Rough `ch` per `rem` (16px font, ~8px advance), used ONLY to compare a fixed per-type width
+     * against a header-derived one and pick the wider. Never used to compute a rendered size, so the
+     * approximation cannot drift a column's actual width.
+     */
+    private readonly REM_TO_CH = 2;
     /** Character-count clamps for content-based (text/number) column widths, in `ch`. */
     private readonly EXTRA_COL_MIN_CH = 8;
     private readonly EXTRA_COL_MAX_CH = 32;
+
     private readonly EXTRA_COL_PAD_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
     protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
+
+    /**
+     * Whether the row is an asset shared across every site, i.e. one living on SYSTEM_HOST.
+     *
+     * The "Show Shared Assets" filter is seeded on, so shared assets are mixed into every folder
+     * listing by default and are otherwise indistinguishable from the site's own content.
+     *
+     * `'host' in item` is the narrowing check, not a stylistic choice: a row is a contentlet or a
+     * folder, and only the contentlet carries `host` (a folder has `hostId`), so the guard both
+     * satisfies the union and excludes folders in one step.
+     *
+     * @param item The row to test.
+     * @return {*} {boolean} `true` when the row lives on SYSTEM_HOST.
+     */
+    protected isSharedAsset(item: DotContentDriveItem): boolean {
+        return 'host' in item && item.host === SYSTEM_HOST_ID;
+    }
 
     /** Fixed widths per non-text column type (predictable, so no measuring needed). */
     private readonly EXTRA_COL_TYPE_WIDTH: Partial<
@@ -457,6 +482,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         const extras = this.$sizedExtraColumns();
 
         return {
+            // Take the paginator out of play while a search is in flight, so the controls cannot be
+            // clicked into queueing more searches. `pointer-events-none` covers the rows-per-page
+            // dropdown too, which triggers a fetch of its own.
+            paginator: {
+                class: this.$loading() ? 'pointer-events-none opacity-60' : ''
+            },
             table: {
                 style: {
                     'table-layout': 'fixed',
@@ -560,11 +591,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return column.width;
         }
 
-        const fixed = column.type && this.EXTRA_COL_TYPE_WIDTH[column.type];
-        if (fixed) {
-            return fixed;
-        }
-
         const lengths = items
             .map((item) => (item as Record<string, unknown>)?.[column.field])
             .filter((value) => value !== null && value !== undefined && value !== '')
@@ -574,15 +600,35 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             ? Math.round(lengths.reduce((sum, length) => sum + length, 0) / lengths.length)
             : 0;
 
+        const fixed = column.type && this.EXTRA_COL_TYPE_WIDTH[column.type];
+
+        // A fixed-type column renders formatted text (a date, an icon, a thumbnail) whose width does
+        // not depend on the raw value, so it must not be measured from content — only from its
+        // header, which is the one part that can outgrow the fixed width.
+        const contentLength = fixed ? 0 : averageLength;
+
+        // Both are clamped here, and neither has to be exact: a header is guaranteed to fit by
+        // `min-width: max-content` on the header cell, which the browser measures precisely. Sizing it
+        // from a character count instead over-reserved badly — `1ch` is the width of "0", wider than
+        // the average character in a proportional font, so a 41-character label asked for ~40% more
+        // room than it needed.
         const chars = Math.min(
             Math.max(
-                Math.max(column.header?.length ?? 0, averageLength) + this.EXTRA_COL_PAD_CH,
+                Math.max(column.header?.length ?? 0, contentLength) + this.EXTRA_COL_PAD_CH,
                 this.EXTRA_COL_MIN_CH
             ),
             this.EXTRA_COL_MAX_CH
         );
 
-        return `${chars}ch`;
+        if (!fixed) {
+            return `${chars}ch`;
+        }
+
+        // The per-type width is a floor, not an override: a boolean column pinned at 7rem could not
+        // show a header longer than that. Resolved to whichever is wider rather than a CSS `max()`,
+        // because these widths are also summed into the table's `min-width: calc(100% + …)` and a
+        // single length keeps that expression parseable.
+        return chars > parseFloat(fixed) * this.REM_TO_CH ? `${chars}ch` : fixed;
     }
 
     ngOnInit(): void {
@@ -666,6 +712,15 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // Lazy only. `paginate` means "fetch me this page" — nothing a caller holding every row can
         // act on, and the skeleton rows it primes would never be shown. The table pages itself.
         if (!this.$lazy()) {
+            return;
+        }
+
+        // A search is already in flight. The paginator stays mounted while the rows are replaced by
+        // skeletons, so without this every further click fires another search for a page the user
+        // cannot see yet, and the last response to arrive wins regardless of which page was asked
+        // for last. The controls are also visually disabled via `$ptConfig`, but this is the part
+        // that has to hold: a keyboard activation or a fast double click does not wait for CSS.
+        if (this.$loading()) {
             return;
         }
 

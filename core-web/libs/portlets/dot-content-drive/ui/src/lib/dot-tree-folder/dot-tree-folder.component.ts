@@ -16,7 +16,6 @@ import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 import { isTreeNodeContentData } from '@dotcms/dotcms-models';
 import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
-import { ALL_FOLDER } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
@@ -26,8 +25,8 @@ import {
 } from '../shared/models';
 
 /**
- * Content Drive folder tree wrapper: owns drag-and-drop, ALL_FOLDER labeling,
- * and pulse empty-loading UX around the shared {@link DotFolderTreeComponent}.
+ * Content Drive folder tree wrapper: owns drag-and-drop, site-row styling, and pulse
+ * empty-loading UX around the shared {@link DotFolderTreeComponent}.
  */
 @Component({
     selector: 'dot-tree-folder',
@@ -57,11 +56,29 @@ export class DotTreeFolderComponent {
 
     readonly $activeDropNode = signal<DotFolderTreeNodeData | null>(null);
 
-    protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
-
     protected readonly treePt = {
         root: { class: 'w-full h-full border-none overflow-y-auto' },
-        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' }
+        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' },
+        /**
+         * The node icon (a globe on the site row, a folder on the rest) has never had dotCMS styling.
+         * `dotcms-theme/components/_tree.scss` is meant to own it, but that theme is not in the build
+         * at all — `dotcms-scss/angular/styles.scss` has its `@import "dotcms-theme/theme"` commented
+         * out — and its selectors predate PrimeNG 21 anyway (`.p-treenode-icon`, now
+         * `.p-tree-node-icon`). So the icon was left inheriting the 14px root font size, which made it
+         * the largest thing in the row, and relying on PrimeNG's 4px node gap.
+         *
+         * Like the toggler chevron, the icon owns its own centring: `flex size-4 items-center
+         * justify-center` gives the glyph a fixed square box and centres it inside that box, so its
+         * position stops depending on the icon font's baseline. A baseline-aligned glyph shifts as the
+         * em box changes, which is why the alignment previously got worse as the icon got smaller.
+         *
+         * The `!` modifiers are required because PrimeNG is provided without a `cssLayer`, so its CSS
+         * is injected unlayered and outranks Tailwind utilities, which live in `@layer utilities`.
+         * `mr-1` adds to the node's own 4px gap for the 8px the theme asked for.
+         */
+        nodeIcon: {
+            class: 'flex! size-4 shrink-0 translate-y-px items-center justify-center text-sm! leading-none! mr-1'
+        }
     };
 
     protected onLoadMore(node: TreeNode): void {
@@ -102,13 +119,11 @@ export class DotTreeFolderComponent {
         const data = JSON.parse(nodeData) as DotFolderTreeNodeData;
 
         // Only nodes that can actually produce a menu get the native one suppressed. "Load more"
-        // sentinels are not folders (and render a different template, so they should not reach
-        // here at all) and neither is the synthetic "All folders" root. Both keep the browser menu
-        // rather than having it swallowed for nothing.
-        if (
-            !isTreeNodeContentData(data) ||
-            label?.getAttribute('data-node-key') === this.ALL_FOLDER_KEY
-        ) {
+        // sentinels are not folders (and render a different template, so they should not reach here
+        // at all), and a row with no path is a site rather than a folder, so it has no folder
+        // permissions to build a menu from. Both keep the browser menu rather than having it
+        // swallowed for nothing.
+        if (!isTreeNodeContentData(data) || !data.path) {
             return;
         }
 

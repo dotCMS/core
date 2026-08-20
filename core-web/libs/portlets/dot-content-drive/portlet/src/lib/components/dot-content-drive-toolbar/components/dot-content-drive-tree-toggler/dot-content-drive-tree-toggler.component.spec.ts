@@ -45,11 +45,37 @@ describe('DotContentDriveTreeTogglerComponent', () => {
         jest.clearAllMocks();
     });
 
-    it('should render both panel glyphs, so neither is fetched mid-interaction', () => {
+    it('should render the dock glyph for a left-hand panel', () => {
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('tree-toggle-open-icon'))).toBeTruthy();
-        expect(spectator.query(byTestId('tree-toggle-close-icon'))).toBeTruthy();
+        const icon = spectator.query(byTestId('tree-toggle-icon'));
+
+        // The ligature text IS the icon, so the exact string matters — a typo renders as plain words.
+        expect(icon?.textContent?.trim()).toBe('dock_to_right');
+        expect(icon?.classList.contains('material-symbols-outlined')).toBe(true);
+        // Decorative: the accessible name lives on the button.
+        expect(icon?.getAttribute('aria-hidden')).toBe('true');
+
+        // The previous two-image (open/close SVG) markup is gone.
+        expect(spectator.query(byTestId('tree-toggle-open-icon'))).toBeFalsy();
+        expect(spectator.query(byTestId('tree-toggle-close-icon'))).toBeFalsy();
+    });
+
+    it('should keep the same glyph whether the tree is expanded or collapsed', () => {
+        // The icon names where the panel docks, not what the click does, so it must not react to the
+        // state — swapping it made one control read as two different things.
+        store.isTreeExpanded.mockReturnValue(true);
+        store.isTreeVisuallyExpanded.mockReturnValue(true);
+        spectator.detectChanges();
+        const whenExpanded = spectator.query(byTestId('tree-toggle-icon'))?.textContent?.trim();
+
+        store.isTreeExpanded.mockReturnValue(false);
+        store.isTreeVisuallyExpanded.mockReturnValue(false);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('tree-toggle-icon'))?.textContent?.trim()).toBe(
+            whenExpanded
+        );
     });
 
     it('should collapse the tree when clicked and currently expanded', () => {

@@ -81,6 +81,56 @@ describe('DotChipFilterComponent', () => {
         });
     });
 
+    describe('toggle mode with an empty label', () => {
+        it('should not show the empty label while the toggle is on', () => {
+            // The two features met in the same @if chain during a merge: a toggle never matches the
+            // values branch, so an unguarded @else would render the "nothing selected" label on an
+            // ACTIVE toggle.
+            spectator.setInput('mode', 'toggle');
+            spectator.setInput('emptyLabel', 'All');
+            spectator.setInput('toggled', true);
+
+            expect(spectator.query(byTestId('chip-empty-label'))).toBeFalsy();
+        });
+
+        it('should not show the empty label while the toggle is off either', () => {
+            spectator.setInput('mode', 'toggle');
+            spectator.setInput('emptyLabel', 'All');
+            spectator.setInput('toggled', false);
+
+            expect(spectator.query(byTestId('chip-empty-label'))).toBeFalsy();
+        });
+
+        it('should still show the empty label on a dropdown chip with no selection', () => {
+            spectator.setInput('emptyLabel', 'All');
+            spectator.setInput('selections', []);
+
+            expect(spectator.query(byTestId('chip-empty-label'))?.textContent).toContain('All');
+        });
+    });
+
+    describe('removable', () => {
+        it('should hide the remove button when not removable, keeping the selection visible', () => {
+            // A filter that always holds a value (the Locale chip on its environment default) has
+            // nothing to remove — clearing it would re-select the very same value.
+            spectator.setInput('selections', ['English (en-US)']);
+            spectator.setInput('removable', false);
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeFalsy();
+            expect(spectator.query('.pi-chevron-down')).toBeTruthy();
+            expect(spectator.query(byTestId('chip-values'))?.textContent).toContain(
+                'English (en-US)'
+            );
+        });
+
+        it('should show the remove button once removable', () => {
+            spectator.setInput('selections', ['English (en-US)', 'Spanish (es-ES)']);
+            spectator.setInput('removable', true);
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeTruthy();
+        });
+    });
+
     describe('outputs', () => {
         it('should emit clicked on host click', () => {
             const handler = jest.fn();
@@ -158,10 +208,78 @@ describe('DotChipFilterComponent', () => {
         });
     });
 
+    describe('toggle mode', () => {
+        beforeEach(() => {
+            spectator.setInput('mode', 'toggle');
+            spectator.setInput('title', 'Show shared assets');
+        });
+
+        it('should take its state from `toggled` rather than from selections', () => {
+            spectator.setInput('toggled', true);
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeTruthy();
+        });
+
+        it('should read as off while `toggled` is false, even with selections passed', () => {
+            spectator.setInput('toggled', false);
+            spectator.setInput('selections', ['ignored']);
+
+            expect(spectator.query(byTestId('chip-remove'))).toBeFalsy();
+        });
+
+        it('should render no values label, since being on is the whole state', () => {
+            spectator.setInput('toggled', true);
+            spectator.setInput('selections', ['ignored']);
+
+            expect(spectator.query(byTestId('chip-values'))).toBeFalsy();
+            expect(getTitle()).toBe('Show shared assets');
+        });
+
+        it('should offer the remove control while on, because it turns the toggle off', () => {
+            spectator.setInput('toggled', true);
+
+            expect(spectator.query('.pi-times')).toBeTruthy();
+            expect(spectator.query('.pi-chevron-down')).toBeFalsy();
+        });
+
+        it('should render no trailing affordance while off: there is no overlay and nothing to clear', () => {
+            spectator.setInput('toggled', false);
+
+            expect(spectator.query('.pi-times')).toBeFalsy();
+            expect(spectator.query('.pi-chevron-down')).toBeFalsy();
+        });
+
+        it('should emit removed when the remove control is clicked', () => {
+            spectator.setInput('toggled', true);
+            spectator.detectChanges();
+
+            const handler = jest.fn();
+            spectator.output('removed').subscribe(handler);
+            spectator.click(byTestId('chip-remove'));
+
+            expect(handler).toHaveBeenCalled();
+        });
+
+        it.each([
+            [true, 'true'],
+            [false, 'false']
+        ])('should report aria-pressed=%s as "%s"', (toggled: boolean, expected: string) => {
+            spectator.setInput('toggled', toggled);
+
+            expect(spectator.element.getAttribute('aria-pressed')).toBe(expected);
+        });
+    });
+
     describe('accessibility', () => {
         it('should expose role=button and tabindex=0 on the host', () => {
             expect(spectator.element.getAttribute('role')).toBe('button');
             expect(spectator.element.getAttribute('tabindex')).toBe('0');
+        });
+
+        it('should not claim a pressed state in dropdown mode, whose state lives in its overlay', () => {
+            spectator.setInput('selections', ['Blog']);
+
+            expect(spectator.element.getAttribute('aria-pressed')).toBeNull();
         });
 
         it('should label the close button with the remove translation', () => {
