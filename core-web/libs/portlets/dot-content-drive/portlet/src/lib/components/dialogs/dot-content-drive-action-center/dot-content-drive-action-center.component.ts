@@ -25,7 +25,8 @@ import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
     DotBundle,
-    DotCMSContentlet
+    DotCMSContentlet,
+    DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
     DotMessagePipe,

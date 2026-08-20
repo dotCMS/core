@@ -245,8 +245,8 @@ export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[]
  * it here as well is what lets the dialog say how many assets it is really about to add, instead of
  * promising a row count the result will silently undercut.
  */
-export const toDistinctIdentifiers = (contentlets: DotCMSContentlet[]): string[] => [
-    ...new Set(contentlets.map((item) => item.identifier).filter(Boolean))
+export const toDistinctIdentifiers = (items: DotContentDriveItem[]): string[] => [
+    ...new Set(items.map((item) => item.identifier).filter(Boolean))
 ];
 
 /** Contentlet inodes for bulk endpoints (folders dropped). */
