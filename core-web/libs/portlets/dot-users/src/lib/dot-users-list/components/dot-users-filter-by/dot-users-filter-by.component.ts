@@ -5,7 +5,13 @@ import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotChipFilterComponent, DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    DotChipFilterComponent,
+    DotFilterListItemComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotUsersListStore } from '../../store/dot-users-list.store';
 
@@ -39,6 +45,9 @@ interface FilterOption {
 export class DotUsersFilterByComponent {
     readonly #store = inject(DotUsersListStore);
     readonly #dotMessageService = inject(DotMessageService);
+
+    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
+    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
 
     protected readonly $options: FilterOption[] = [
         {

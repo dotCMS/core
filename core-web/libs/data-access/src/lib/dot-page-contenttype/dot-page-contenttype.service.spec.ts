@@ -549,6 +549,43 @@ describe('DotPageContentTypeService', () => {
         });
 
         describe('Query Parameters', () => {
+            it('should send system=false to exclude system content types', () => {
+                const params: DotContentTypeQueryParams = {
+                    system: false
+                };
+
+                spectator.service.getAllContentTypes(params).subscribe();
+
+                const req = httpMock.expectOne(
+                    (request) =>
+                        request.url === CONTENTTYPE_API_URL &&
+                        request.params.get('system') === 'false'
+                );
+
+                expect(req.request.params.get('system')).toBe('false');
+                req.flush(MOCK_API_RESPONSE);
+            });
+
+            it('should send system=true when system types are explicitly wanted', () => {
+                spectator.service.getAllContentTypes({ system: true }).subscribe();
+
+                const req = httpMock.expectOne((request) => request.url === CONTENTTYPE_API_URL);
+
+                expect(req.request.params.get('system')).toBe('true');
+                req.flush(MOCK_API_RESPONSE);
+            });
+
+            it('should omit the system parameter when it is not specified', () => {
+                // The backend defaults to including system types, so callers that never asked about
+                // them must keep their current behaviour.
+                spectator.service.getAllContentTypes({}).subscribe();
+
+                const req = httpMock.expectOne((request) => request.url === CONTENTTYPE_API_URL);
+
+                expect(req.request.params.has('system')).toBe(false);
+                req.flush(MOCK_API_RESPONSE);
+            });
+
             it('should include language parameter when provided', () => {
                 const params: DotContentTypeQueryParams = {
                     language: 2

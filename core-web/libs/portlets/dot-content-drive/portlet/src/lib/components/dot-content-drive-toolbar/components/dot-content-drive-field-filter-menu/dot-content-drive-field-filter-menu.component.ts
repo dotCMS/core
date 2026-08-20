@@ -21,7 +21,12 @@ import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFilterListItemComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    DotFilterListItemComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { TITLE_FIELD_VARIABLE, USER_SEARCHABLE_FIELD_TYPES } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -55,6 +60,9 @@ export class DotContentDriveFieldFilterMenuComponent {
     readonly #destroyRef = inject(DestroyRef);
     readonly #contentTypeService = inject(DotContentTypeService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+
+    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
+    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
 
     protected readonly $loading = signal(false);
 
