@@ -21,7 +21,7 @@
                 id="rolePrompt"
                 formControlName="rolePrompt"
                 rows="3"
-                class="w-full resize-y"
+                class="w-full resize-y text-sm"
                 [placeholder]="'apps.ai.settings.role-prompt.placeholder' | dm"></textarea>
             <small class="text-gray-500">
                 {{ 'apps.ai.settings.role-prompt.hint' | dm }}
@@ -37,7 +37,7 @@
                     pInputText
                     id="textPrompt"
                     formControlName="textPrompt"
-                    class="w-full"
+                    class="w-full text-sm"
                     [placeholder]="'apps.ai.settings.text-prompt.placeholder' | dm" />
             </div>
             <div class="field">
@@ -48,7 +48,7 @@
                     pInputText
                     id="imagePrompt"
                     formControlName="imagePrompt"
-                    class="w-full"
+                    class="w-full text-sm"
                     [placeholder]="'apps.ai.settings.image-prompt.placeholder' | dm" />
             </div>
         </div>
@@ -63,7 +63,7 @@
                 [options]="imageSizeOptions"
                 optionLabel="label"
                 optionValue="value"
-                styleClass="w-full" />
+                styleClass="w-full text-sm" />
         </div>
     </form>
 
@@ -99,13 +99,13 @@
                                     [formControlName]="settingsField.key"
                                     [useGrouping]="false"
                                     styleClass="w-full"
-                                    inputStyleClass="w-full" />
+                                    inputStyleClass="w-full text-sm" />
                             } @else {
                                 <input
                                     pInputText
                                     [id]="settingsField.key"
                                     [formControlName]="settingsField.key"
-                                    class="w-full" />
+                                    class="w-full text-sm" />
                             }
                             @if (settingsField.hint) {
                                 <small class="text-gray-500">{{ settingsField.hint | dm }}</small>

@@ -157,4 +157,102 @@ describe('DotAiCapabilityCardComponent', () => {
             expect(advancedNames).not.toContain('credentialsJson');
         });
     });
+
+    describe('requiredUnless cross-field validation (Azure model/deploymentName pattern)', () => {
+        const azureLikeProvider: DotAiProviderMetadata = {
+            provider: 'azure_openai',
+            supportedCapabilities: [DotAiCapability.CHAT],
+            fields: {
+                [DotAiCapability.CHAT]: [
+                    {
+                        name: 'apiKey',
+                        type: DotAiProviderFieldType.SECRET,
+                        required: true,
+                        hint: ''
+                    },
+                    {
+                        name: 'model',
+                        type: DotAiProviderFieldType.STRING,
+                        required: false,
+                        hint: 'Required if deploymentName is not set',
+                        requiredUnless: 'deploymentName'
+                    },
+                    {
+                        name: 'deploymentName',
+                        type: DotAiProviderFieldType.STRING,
+                        required: false,
+                        hint: 'Required if model is not set',
+                        requiredUnless: 'model'
+                    }
+                ]
+            }
+        };
+
+        beforeEach(() => {
+            spectator.setInput('providers', [azureLikeProvider]);
+            spectator.detectChanges();
+            spectator.component.onToggleEnabled(true);
+            spectator.component.selectProvider(azureLikeProvider);
+            spectator.component.fieldsGroup().patchValue({ apiKey: 'sk-azure-key' });
+        });
+
+        it('is invalid when both model and deploymentName are empty', () => {
+            expect(spectator.component.isValid()).toBe(false);
+        });
+
+        it('becomes valid when only model is filled', () => {
+            spectator.component.fieldsGroup().patchValue({ model: 'gpt-4o' });
+
+            expect(spectator.component.isValid()).toBe(true);
+        });
+
+        it('becomes valid when only deploymentName is filled', () => {
+            spectator.component.fieldsGroup().patchValue({ deploymentName: 'my-deployment' });
+
+            expect(spectator.component.isValid()).toBe(true);
+        });
+
+        it('re-validates model when deploymentName changes after model was left empty', () => {
+            const modelControl = spectator.component.fieldsGroup().get('model');
+            // Touch model while both are empty — it fails, as expected.
+            modelControl?.updateValueAndValidity();
+            expect(modelControl?.valid).toBe(false);
+
+            // Filling the sibling (deploymentName) must clear model's error too, even though
+            // model's own value never changed.
+            spectator.component.fieldsGroup().patchValue({ deploymentName: 'my-deployment' });
+
+            expect(modelControl?.valid).toBe(true);
+        });
+
+        it('goes back to invalid if the only filled field is cleared again', () => {
+            spectator.component.fieldsGroup().patchValue({ model: 'gpt-4o' });
+            expect(spectator.component.isValid()).toBe(true);
+
+            spectator.component.fieldsGroup().patchValue({ model: '' });
+
+            expect(spectator.component.isValid()).toBe(false);
+        });
+
+        it('is valid on initial load from a saved config that only set the sibling field', () => {
+            // Regression test: a control's initial status is computed in its own constructor,
+            // before Angular wires its `parent` — so hydrating a saved Azure config that only
+            // persisted `deploymentName` must not render `model` as falsely invalid on load.
+            const hydrated = createComponent({
+                props: {
+                    meta: chatMeta,
+                    providers: [azureLikeProvider],
+                    initialValue: {
+                        provider: 'azure_openai',
+                        apiKey: 'sk-azure-key',
+                        deploymentName: 'my-deployment'
+                    }
+                }
+            });
+            hydrated.detectChanges();
+
+            expect(hydrated.component.isValid()).toBe(true);
+            expect(hydrated.component.fieldsGroup().get('model')?.valid).toBe(true);
+        });
+    });
 });

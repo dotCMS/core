@@ -34,8 +34,10 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         final List<ProviderField> common = List.of(
                 ProviderField.required("apiKey", ProviderFieldType.SECRET),
                 ProviderField.required("endpoint", ProviderFieldType.STRING),
-                ProviderField.optional("model", ProviderFieldType.STRING, "Required if deploymentName is not set"),
-                ProviderField.optional("deploymentName", ProviderFieldType.STRING, "Required if model is not set"),
+                ProviderField.optionalUnless("model", ProviderFieldType.STRING, "deploymentName",
+                        "Required if deploymentName is not set"),
+                ProviderField.optionalUnless("deploymentName", ProviderFieldType.STRING, "model",
+                        "Required if model is not set"),
                 ProviderField.optional("apiVersion", ProviderFieldType.STRING, "e.g. 2024-02-01"));
         return switch (capability) {
             case CHAT -> concat(common,

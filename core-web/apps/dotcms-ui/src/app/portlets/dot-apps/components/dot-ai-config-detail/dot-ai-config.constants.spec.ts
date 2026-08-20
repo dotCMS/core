@@ -1,6 +1,8 @@
+import { FormControl, FormGroup } from '@angular/forms';
+
 import { DotAiProviderFieldType } from '@dotcms/dotcms-models';
 
-import { isFieldAlwaysVisible } from './dot-ai-config.constants';
+import { isFieldAlwaysVisible, requiredUnlessValidator } from './dot-ai-config.constants';
 
 describe('isFieldAlwaysVisible', () => {
     it('returns true for a required field regardless of type', () => {
@@ -76,5 +78,59 @@ describe('isFieldAlwaysVisible', () => {
                 hint: ''
             })
         ).toBe(false);
+    });
+});
+
+describe('requiredUnlessValidator', () => {
+    // A control computes its initial status in its own constructor, before Angular assigns its
+    // `parent` — so the validator's sibling lookup sees no parent yet on the very first pass.
+    // Real usage (`dot-ai-capability-card.component.ts`) re-triggers validation once every
+    // control is wired into the group; this helper mirrors that so the test reflects how the
+    // validator is actually used, not a construction-order artifact.
+    function groupWith(modelValue: string | null, deploymentNameValue: string | null): FormGroup {
+        const group = new FormGroup({
+            model: new FormControl(modelValue, requiredUnlessValidator('deploymentName')),
+            deploymentName: new FormControl(deploymentNameValue, requiredUnlessValidator('model'))
+        });
+        group.get('model')?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        group.get('deploymentName')?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+
+        return group;
+    }
+
+    it('is invalid when both the field and its sibling are empty', () => {
+        const group = groupWith(null, '');
+
+        expect(group.get('model')?.errors).toEqual({
+            requiredUnless: { requires: 'deploymentName' }
+        });
+        expect(group.get('deploymentName')?.errors).toEqual({
+            requiredUnless: { requires: 'model' }
+        });
+    });
+
+    it('is valid when only the field itself has a value', () => {
+        const group = groupWith('gpt-4o', null);
+
+        expect(group.get('model')?.valid).toBe(true);
+    });
+
+    it('is valid when only the sibling has a value', () => {
+        const group = groupWith(null, 'my-deployment');
+
+        expect(group.get('model')?.valid).toBe(true);
+    });
+
+    it('is valid when both the field and its sibling have a value', () => {
+        const group = groupWith('gpt-4o', 'my-deployment');
+
+        expect(group.get('model')?.valid).toBe(true);
+        expect(group.get('deploymentName')?.valid).toBe(true);
+    });
+
+    it('treats a control with no parent as invalid when its own value is empty', () => {
+        const control = new FormControl(null, requiredUnlessValidator('deploymentName'));
+
+        expect(control.errors).toEqual({ requiredUnless: { requires: 'deploymentName' } });
     });
 });

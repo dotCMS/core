@@ -14,7 +14,7 @@
                 [useGrouping]="false"
                 [invalid]="isInvalid()"
                 styleClass="w-full"
-                inputStyleClass="w-full" />
+                inputStyleClass="w-full text-sm" />
         }
         @case (DotAiProviderFieldType.SECRET) {
             @if (isMaskedSecret()) {
@@ -24,7 +24,7 @@
                     [id]="field().name"
                     [formControlName]="field().name"
                     [invalid]="isInvalid()"
-                    class="w-full" />
+                    class="w-full text-sm" />
             } @else {
                 <p-password
                     [inputId]="field().name"
@@ -33,7 +33,7 @@
                     [toggleMask]="true"
                     [invalid]="isInvalid()"
                     styleClass="w-full"
-                    inputStyleClass="w-full" />
+                    inputStyleClass="w-full text-sm" />
             }
         }
         @default {
@@ -42,7 +42,7 @@
                 [id]="field().name"
                 [formControlName]="field().name"
                 [invalid]="isInvalid()"
-                class="w-full" />
+                class="w-full text-sm" />
         }
     }
 

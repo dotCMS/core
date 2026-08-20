@@ -136,6 +136,12 @@ export interface DotAiProviderField {
     type: DotAiProviderFieldType;
     required: boolean;
     hint: string;
+    /**
+     * When non-empty, the name of a sibling field whose presence satisfies this field's
+     * requirement (e.g. Azure's `model` is required unless `deploymentName` is set, and vice
+     * versa). Only meaningful when `required` is `false`.
+     */
+    requiredUnless?: string;
 }
 
 /**

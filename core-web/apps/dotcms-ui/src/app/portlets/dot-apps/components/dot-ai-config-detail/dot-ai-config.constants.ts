@@ -1,3 +1,5 @@
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
 import { DotAiCapability, DotAiProviderField, DotAiProviderFieldType } from '@dotcms/dotcms-models';
 
 /**
@@ -97,6 +99,33 @@ export function isFieldAlwaysVisible(field: DotAiProviderField): boolean {
         field.type === DotAiProviderFieldType.SECRET ||
         ALWAYS_VISIBLE_OPTIONAL_FIELD_NAMES.has(field.name)
     );
+}
+
+/**
+ * Cross-field validator for a field declared `optionalUnless` by the backend (e.g. Azure's
+ * `model`/`deploymentName` — either one satisfies the requirement). The control is invalid only
+ * when BOTH it and the named sibling control are empty; filling either one clears the error on
+ * both, since each field's own validator re-checks the other via {@link isEmptyValue}.
+ *
+ * Driven entirely by the `requiredUnless` field name from provider metadata — no per-provider
+ * logic here, so a future provider with the same either-or pattern needs no frontend changes.
+ */
+export function requiredUnlessValidator(siblingFieldName: string): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+        if (!isEmptyValue(control.value)) {
+            return null;
+        }
+
+        const sibling = control.parent?.get(siblingFieldName);
+
+        return sibling && !isEmptyValue(sibling.value)
+            ? null
+            : { requiredUnless: { requires: siblingFieldName } };
+    };
+}
+
+function isEmptyValue(value: unknown): boolean {
+    return value === null || value === undefined || value === '';
 }
 
 /** Message keys for the lowercase, mid-sentence capability word (e.g. "no {0} support"). */

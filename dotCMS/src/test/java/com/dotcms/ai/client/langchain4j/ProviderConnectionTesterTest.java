@@ -7,10 +7,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Regression tests for {@link ProviderConnectionTester#friendlyMessage}: provider SDK exceptions
- * often carry the full raw HTTP response body in {@code getMessage()} — sometimes several KB of
- * JSON — which made the "Test Connection" failure toast unreadably long. This caps the length and
- * collapses whitespace, without any per-provider/per-SDK parsing.
+ * Regression tests for {@link ProviderConnectionTester#friendlyMessage} (message truncation) and
+ * {@link ProviderConnectionTester#withDefaultTimeoutIfUnset} (bounding an otherwise-unbounded test
+ * call when the posted config omits {@code timeout}).
  */
 public class ProviderConnectionTesterTest {
 
@@ -116,6 +115,58 @@ public class ProviderConnectionTesterTest {
         final String message = "   Invalid credentials   ";
 
         assertEquals("Invalid credentials", ProviderConnectionTester.friendlyMessage(new RuntimeException(message)));
+    }
+
+    // -------------------------------------------------------------------------
+    // withDefaultTimeoutIfUnset
+    // -------------------------------------------------------------------------
+
+    /**
+     * Given a config with no timeout set,
+     * When withDefaultTimeoutIfUnset is called,
+     * Then the default test timeout is applied.
+     */
+    @Test
+    public void test_withDefaultTimeoutIfUnset_noTimeoutSet_appliesDefault() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("test-key").model("gpt-4o").build();
+
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config);
+
+        assertEquals(Integer.valueOf(10), result.timeout());
+    }
+
+    /**
+     * Given a config that already sets a timeout,
+     * When withDefaultTimeoutIfUnset is called,
+     * Then the caller's timeout is preserved unchanged.
+     */
+    @Test
+    public void test_withDefaultTimeoutIfUnset_timeoutAlreadySet_preservesCallerValue() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("test-key").model("gpt-4o").timeout(45).build();
+
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config);
+
+        assertEquals(Integer.valueOf(45), result.timeout());
+    }
+
+    /**
+     * Given a config with no timeout set,
+     * When withDefaultTimeoutIfUnset is called,
+     * Then every other field is preserved unchanged — only timeout is added.
+     */
+    @Test
+    public void test_withDefaultTimeoutIfUnset_preservesOtherFields() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("test-key").model("gpt-4o").temperature(0.5).build();
+
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config);
+
+        assertEquals("openai", result.provider());
+        assertEquals("test-key", result.apiKey());
+        assertEquals("gpt-4o", result.model());
+        assertEquals(Double.valueOf(0.5), result.temperature());
     }
 
 }

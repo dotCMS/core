@@ -112,6 +112,33 @@ public class ProviderMetadataTest {
         assertTrue(deploymentName.hint().contains("model"));
     }
 
+    /**
+     * A client (e.g. the config UI) needs {@code requiredUnless} — not just the hint text — to
+     * enforce the either-or relationship without parsing hint wording. Confirms both directions
+     * of the Azure model/deploymentName pair declare their sibling by field name.
+     */
+    @Test
+    public void test_azureOpenAi_modelAndDeploymentName_declareRequiredUnlessSibling() {
+        final ProviderMetadata metadata = indexByProvider().get("azure_openai");
+        final List<ProviderField> chatFields = metadata.fields().get(Capability.CHAT);
+        final ProviderField model = fieldNamed(chatFields, "model");
+        final ProviderField deploymentName = fieldNamed(chatFields, "deploymentName");
+        assertEquals("deploymentName", model.requiredUnless());
+        assertEquals("model", deploymentName.requiredUnless());
+    }
+
+    /**
+     * A field with no either-or relationship (e.g. a plain required field) must declare an empty
+     * {@code requiredUnless}, not null — so clients can treat it as always-falsy without a
+     * null-check.
+     */
+    @Test
+    public void test_openai_apiKey_hasNoRequiredUnless() {
+        final ProviderMetadata metadata = indexByProvider().get("openai");
+        final ProviderField apiKey = fieldNamed(metadata.fields().get(Capability.CHAT), "apiKey");
+        assertEquals("", apiKey.requiredUnless());
+    }
+
     @Test
     public void test_bedrock_chatRequiredFields_missingRegion_throws() {
         assertMissingRequiredFieldBreaksChatBuild("bedrock",

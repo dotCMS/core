@@ -16,6 +16,7 @@ import {
     FormGroup,
     FormsModule,
     ReactiveFormsModule,
+    ValidatorFn,
     Validators
 } from '@angular/forms';
 
@@ -40,7 +41,8 @@ import {
     DotAiCapabilityMeta,
     PROVIDER_DISPLAY_NAMES,
     PROVIDER_ORDER,
-    isFieldAlwaysVisible
+    isFieldAlwaysVisible,
+    requiredUnlessValidator
 } from '../../dot-ai-config.constants';
 import {
     DotAiAdditionalPropertiesComponent,
@@ -304,10 +306,28 @@ export class DotAiCapabilityCardComponent implements OnInit {
         const group = new FormGroup({});
         fields.forEach((field) => {
             const preset = presetValues[field.name];
-            group.addControl(
-                field.name,
-                new FormControl(preset ?? null, field.required ? Validators.required : [])
-            );
+            group.addControl(field.name, new FormControl(preset ?? null, fieldValidators(field)));
+        });
+
+        const requiredUnlessFields = fields.filter((field) => field.requiredUnless);
+
+        // A control's initial status is computed in its own constructor, before Angular has
+        // wired it into this group — so `requiredUnlessValidator`'s sibling lookup (via
+        // `control.parent`) sees no parent yet and assumes the sibling is empty. Force one
+        // recheck now that every control (and its parent link) exists, so a hydrated config
+        // where only the sibling was saved doesn't render this field as falsely invalid on load.
+        requiredUnlessFields.forEach((field) => {
+            group.get(field.name)?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        });
+
+        // From here on, a field with `requiredUnless` must re-validate whenever that sibling
+        // changes — not just when its own value changes.
+        requiredUnlessFields.forEach((field) => {
+            const ownControl = group.get(field.name);
+            const siblingControl = group.get(field.requiredUnless as string);
+            siblingControl?.valueChanges
+                .pipe(takeUntilDestroyed(this.destroyRef))
+                .subscribe(() => ownControl?.updateValueAndValidity({ emitEvent: false }));
         });
 
         group.valueChanges
@@ -315,6 +335,18 @@ export class DotAiCapabilityCardComponent implements OnInit {
             .subscribe(() => this.changed.emit());
         this.fieldsGroup.set(group);
     }
+}
+
+function fieldValidators(field: DotAiProviderField): ValidatorFn[] {
+    if (field.required) {
+        return [Validators.required];
+    }
+
+    if (field.requiredUnless) {
+        return [requiredUnlessValidator(field.requiredUnless)];
+    }
+
+    return [];
 }
 
 function providerSortIndex(providerId: string): number {

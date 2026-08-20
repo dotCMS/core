@@ -34,6 +34,17 @@ public final class ProviderConnectionTester {
     private static final int MAX_MESSAGE_LENGTH = 200;
     private static final String TRUNCATION_SUFFIX = "…";
 
+    /**
+     * Upper bound applied to the test call when the posted config doesn't set {@code timeout}.
+     * Every provider strategy honors {@code timeout} once set (see each strategy's {@code build*}
+     * methods) except Vertex AI, which ignores it outright regardless of source — so this default
+     * only ever narrows an otherwise-unbounded provider-SDK default, never overrides an explicit
+     * value the caller supplied. Without this, an unreachable or slow {@code endpoint} could hold
+     * the request thread open indefinitely, since the SDKs' own defaults vary by provider and
+     * aren't all finite.
+     */
+    private static final int DEFAULT_TEST_TIMEOUT_SECONDS = 10;
+
     private ProviderConnectionTester() {
     }
 
@@ -45,11 +56,12 @@ public final class ProviderConnectionTester {
      * @return a result carrying whether the call succeeded and a human-readable message
      */
     public static TestConnectionResult test(final Capability capability, final ProviderConfig config) {
+        final ProviderConfig effectiveConfig = withDefaultTimeoutIfUnset(config);
         try {
             final String detail = switch (capability) {
-                case CHAT -> testChat(config);
-                case EMBEDDINGS -> testEmbeddings(config);
-                case IMAGE -> testImage(config);
+                case CHAT -> testChat(effectiveConfig);
+                case EMBEDDINGS -> testEmbeddings(effectiveConfig);
+                case IMAGE -> testImage(effectiveConfig);
             };
             return new TestConnectionResult(true, detail);
         } catch (final Exception e) {
@@ -58,6 +70,17 @@ public final class ProviderConnectionTester {
                             + config.provider() + ", capability=" + capability + ": " + e.getMessage());
             return new TestConnectionResult(false, friendlyMessage(e));
         }
+    }
+
+    /**
+     * Returns {@code config} unchanged when it already sets a {@code timeout}, otherwise a copy
+     * with {@link #DEFAULT_TEST_TIMEOUT_SECONDS} applied — scoped to this connection-test path
+     * only, so normal save/use of the configuration is unaffected.
+     */
+    static ProviderConfig withDefaultTimeoutIfUnset(final ProviderConfig config) {
+        return config.timeout() != null
+                ? config
+                : ImmutableProviderConfig.copyOf(config).withTimeout(DEFAULT_TEST_TIMEOUT_SECONDS);
     }
 
     private static String testChat(final ProviderConfig config) {
