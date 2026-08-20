@@ -1,4 +1,4 @@
-import { Observable, defer, shareReplay } from 'rxjs';
+import { Observable, Subscription, defer, shareReplay } from 'rxjs';
 import { Editor } from 'tinymce';
 
 import { DestroyRef, Injectable, NgZone, OnDestroy, inject } from '@angular/core';
@@ -60,6 +60,12 @@ export class DotWysiwygPluginService implements OnDestroy {
      * field that opened it.
      */
     private pickerRef: DynamicDialogRef | null = null;
+
+    /**
+     * Subscription to the live picker's `onClose`, held so teardown can cancel it *before* closing
+     * the dialog — see {@link ngOnDestroy}.
+     */
+    private pickerCloseSub: Subscription | null = null;
 
     private IMAGE_URL_PATTERN = DEFAULT_IMAGE_URL_PATTERN;
 
@@ -213,7 +219,7 @@ export class DotWysiwygPluginService implements OnDestroy {
     private trackImagePicker(editor: Editor, ref: DynamicDialogRef): void {
         this.pickerRef = ref;
 
-        ref.onClose.subscribe((asset: DotCMSContentlet) => {
+        this.pickerCloseSub = ref.onClose.subscribe((asset: DotCMSContentlet) => {
             this.imagePickerBusy = false;
             this.pickerRef = null;
 
@@ -230,8 +236,19 @@ export class DotWysiwygPluginService implements OnDestroy {
     /**
      * Closes an open picker when the field is torn down. PrimeNG's `DialogService` has no
      * `ngOnDestroy`, so nothing else would.
+     *
+     * The unsubscribe has to come **first**. `DynamicDialogRef.close()` pushes through `onClose`
+     * synchronously (`_onClose.next(result)` — the close animation only gates `destroy()`), so
+     * leaving the subscription live would run the close handler inline, right here, and call
+     * `editor.focus()` on a TinyMCE instance `DotWysiwygTinymceComponent.ngOnDestroy` may already
+     * have `remove()`d. `takeUntilDestroyed` would not fix that: it makes no ordering guarantee
+     * against this hook. Suppressing the handler also means nothing else clears the busy flag, so
+     * teardown does it.
      */
     ngOnDestroy(): void {
+        this.pickerCloseSub?.unsubscribe();
+        this.pickerCloseSub = null;
+        this.imagePickerBusy = false;
         this.pickerRef?.close();
         this.pickerRef = null;
     }

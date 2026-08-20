@@ -33,9 +33,14 @@ export const FULLSCREEN_AWARE_OVERLAY_OPTIONS: OverlayOptions = {
  * the presence of `ASSET_PICKER_LAUNCHER`.
  *
  * Callers provide only the dialog header and the contentlet mime-type allowlist
- * (e.g. `['image']`, `['video']`, or `['audio']`). Everything else mirrors the file-field's
- * configuration so customers see the same UX whether they're picking an asset for a file field or
- * for a Story Block.
+ * (e.g. `['image']`, `['video']`, or `['audio']`).
+ *
+ * The rest deliberately tracks the File field's own legacy dialog (`DotFileFieldComponent`) so
+ * customers see the same picker whether they are filling a file field or a Story Block — with two
+ * differences this host needs and that one does not, both carried over from the pre-#36944 config:
+ * `style.overflow: 'hidden'` and a viewport-clamped `contentStyle['min-height']`
+ * (`min(45rem, 80vh)` rather than a flat `45rem`). The editor opens this from inside its
+ * full-screen shell, where an unclamped min-height can push the dialog past the viewport.
  */
 export function buildBrowserSelectorConfig(opts: {
     header: string;

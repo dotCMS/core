@@ -166,4 +166,42 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
 
         expect(closeSpy).toHaveBeenCalledTimes(1);
     });
+
+    describe('teardown while a dialog is open', () => {
+        /**
+         * Faithful stand-in for `DynamicDialogRef`: `close()` pushes through `onClose`
+         * **synchronously** (`_onClose.next(result)`), which is what makes teardown dangerous — the
+         * close handler runs inline, in the middle of `ngOnDestroy`.
+         */
+        const openWithRealisticRef = () => {
+            const onClose = new Subject<unknown>();
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose,
+                close: (result?: unknown) => onClose.next(result)
+            } as unknown as DynamicDialogRef);
+
+            spectator.service.initializePlugins(editor as never);
+            editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
+        };
+
+        it('should not touch the editor when teardown closes the dialog', () => {
+            // The editor is being destroyed alongside the field — `DotWysiwygTinymceComponent`
+            // calls `editor.remove()` — so focusing it here reaches into a torn-down instance.
+            openWithRealisticRef();
+
+            spectator.service.ngOnDestroy();
+
+            expect(editor.focus).not.toHaveBeenCalled();
+            expect(editor.insertContent).not.toHaveBeenCalled();
+        });
+
+        it('should leave no busy flag behind', () => {
+            // Suppressing the close handler means it no longer clears the flag, so teardown must.
+            openWithRealisticRef();
+
+            spectator.service.ngOnDestroy();
+
+            expect(spectator.service['imagePickerBusy']).toBe(false);
+        });
+    });
 });
