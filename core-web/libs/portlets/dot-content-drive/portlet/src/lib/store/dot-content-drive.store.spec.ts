@@ -1293,11 +1293,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
         ) as jest.Mocked<DotBulkRefreshService>;
         bulkRefreshService.refresh.mockReturnValue(
             of({
-                total: 2,
-                successCount: 2,
-                failedCount: 0,
-                skippedCount: 0,
-                versionsIndexed: 3
+                state: 'SUCCESS',
+                counts: {
+                    total: 2,
+                    successCount: 2,
+                    failedCount: 0,
+                    skippedCount: 0,
+                    versionsIndexed: 3
+                }
             })
         );
     });
@@ -1324,11 +1327,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // contentlet are a single reindex — reporting the inode count would overstate the work.
             bulkRefreshService.refresh.mockReturnValue(
                 of({
-                    total: 1,
-                    successCount: 1,
-                    failedCount: 0,
-                    skippedCount: 0,
-                    versionsIndexed: 3
+                    state: 'SUCCESS',
+                    counts: {
+                        total: 1,
+                        successCount: 1,
+                        failedCount: 0,
+                        skippedCount: 0,
+                        versionsIndexed: 3
+                    }
                 })
             );
 
@@ -1346,11 +1352,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should carry failures and skips through to the result', () => {
             bulkRefreshService.refresh.mockReturnValue(
                 of({
-                    total: 4,
-                    successCount: 1,
-                    failedCount: 2,
-                    skippedCount: 1,
-                    versionsIndexed: 1
+                    state: 'SUCCESS',
+                    counts: {
+                        total: 4,
+                        successCount: 1,
+                        failedCount: 2,
+                        skippedCount: 1,
+                        versionsIndexed: 1
+                    }
                 })
             );
 
@@ -1386,7 +1395,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report an error instead of inventing counts when the job returns none', () => {
             // Substituting the inode count would claim every item was reindexed; substituting zero
             // would claim none were. Both invent a number the server never sent.
-            bulkRefreshService.refresh.mockReturnValue(of(null));
+            bulkRefreshService.refresh.mockReturnValue(of({ state: 'SUCCESS', counts: null }));
 
             store.executeRefresh('Refresh', ['inode-1']);
 
@@ -1407,6 +1416,81 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(httpErrorManager.handle).toHaveBeenCalled();
             expect(store.actionExecution()).toBeUndefined();
             expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error, not a success toast, when the job failed', () => {
+            // A job that died mid-run still carries the counters it had reached, so an all-zero result
+            // from FAILED_PERMANENTLY is indistinguishable from a clean run over nothing unless the
+            // state is checked. Reporting it as settled is exactly the misleading success this
+            // endpoint exists to remove.
+            bulkRefreshService.refresh.mockReturnValue(
+                of({
+                    state: 'FAILED_PERMANENTLY',
+                    counts: {
+                        total: 0,
+                        successCount: 0,
+                        failedCount: 0,
+                        skippedCount: 0,
+                        versionsIndexed: 0
+                    }
+                })
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should report an error when the counters do not account for every item', () => {
+            // A run that stopped after 3 of 10 reports successCount 3 with nothing failed or skipped.
+            // Settling on that would silently drop the 7 never attempted.
+            bulkRefreshService.refresh.mockReturnValue(
+                of({
+                    state: 'SUCCESS',
+                    counts: {
+                        total: 10,
+                        successCount: 3,
+                        failedCount: 0,
+                        skippedCount: 0,
+                        versionsIndexed: 3
+                    }
+                })
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should still report a cancelled run, whose counters do account for every item', () => {
+            // Cancelling is an outcome, not a failure: the run stopped early but every item is
+            // accounted for, so the user should see what did get reindexed.
+            bulkRefreshService.refresh.mockReturnValue(
+                of({
+                    state: 'CANCELED',
+                    counts: {
+                        total: 4,
+                        successCount: 1,
+                        failedCount: 0,
+                        skippedCount: 3,
+                        versionsIndexed: 1
+                    }
+                })
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 3,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
         });
 
         it('should not fire when there are no inodes', () => {

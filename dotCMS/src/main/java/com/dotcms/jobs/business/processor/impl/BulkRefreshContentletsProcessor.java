@@ -45,8 +45,13 @@ import javax.enterprise.context.Dependent;
  * Backs {@code POST /api/v1/content/_bulkrefresh}. For each identifier it clears the contentlet cache
  * and writes every version to the index <b>synchronously</b>: the default {@link IndexPolicy#DEFER}
  * only enqueues into {@code dist_reindex_journal} and returns, which is exactly why the single-item
- * {@code _refresh} can answer {@code true} with nothing actually reindexed. Synchronous writes are
- * what make "done" honest.
+ * {@code _refresh} can answer {@code true} with nothing actually reindexed. Waiting for the write is
+ * what makes "done" mean the work was attempted rather than merely queued.
+ * <p>
+ * <b>Scope of that guarantee.</b> It covers enqueue-versus-write, not the fate of each document: the
+ * underlying bulk call logs per-document failures without throwing, so a mapping error on one version
+ * can still be counted a success. A {@code SUCCESS} here means every identifier was submitted to the
+ * index and waited on, not that every document is certainly searchable.
  * <p>
  * Reindexing is not retried — {@link NoRetryPolicy}. A failed item is a per-item record, and replaying
  * a whole batch to re-attempt one identifier costs far more than it recovers.
@@ -143,6 +148,12 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
             }
 
             progressTracker.updateProgress(processed() / (float) workItems.size());
+        }
+
+        if (workItems.isEmpty()) {
+            // Unreachable through the endpoint (validate() rejects an empty selection), but dividing
+            // by zero above would report NaN progress rather than a finished job.
+            progressTracker.updateProgress(1.0f);
         }
 
         Logger.info(this, String.format(
@@ -312,8 +323,8 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
         }
 
         // Only when asked for: this map is persisted with the job, so a 500-entry array nobody
-        // requested is storage spent on nothing. The terminal SSE event is built from here, though,
-        // so when it is requested it has to be complete.
+        // requested is storage spent on nothing. When it is requested this is the only place the
+        // records survive, so it has to be complete.
         if (flag(job.parameters(), PARAM_INCLUDE_ITEM_RESULTS)) {
             metadata.put("results", List.copyOf(this.itemResults));
         }

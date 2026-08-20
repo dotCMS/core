@@ -1,15 +1,16 @@
-import { Observable, of, timer } from 'rxjs';
+import { Observable, of, throwError, timer } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { last, map, switchMap, takeWhile, timeout } from 'rxjs/operators';
+import { catchError, exhaustMap, last, map, retry, takeWhile, timeout } from 'rxjs/operators';
 
 import {
     DOT_BULK_REFRESH_TERMINAL_STATES,
     DotBulkRefreshCounts,
     DotBulkRefreshJob,
     DotBulkRefreshJobState,
+    DotBulkRefreshOutcome,
     DotBulkRefreshSubmitResponse
 } from '@dotcms/dotcms-models';
 
@@ -25,14 +26,17 @@ export const DOT_BULK_REFRESH_POLL_INTERVAL_MS = 1500;
  */
 export const DOT_BULK_REFRESH_TIMEOUT_MS = 5 * 60 * 1000;
 
+/** Consecutive failures of a single status poll tolerated before the run is abandoned. */
+export const DOT_BULK_REFRESH_POLL_RETRIES = 3;
+
 const BULK_REFRESH_URL = '/api/v1/content/_bulkrefresh';
 
 /**
  * Reindexes a selection of contentlets through `POST /api/v1/content/_bulkrefresh`.
  *
  * The endpoint is job-backed: the submit call only accepts the work and answers `202` with a job id, so
- * this service submits and then polls the status endpoint until the job settles, emitting the final
- * counters once. Callers get a single-emission observable and never see the job machinery.
+ * this service submits and then polls the status endpoint until the job settles, emitting the outcome
+ * once. Callers get a single-emission observable and never see the job machinery.
  *
  * Progress while the run is in flight is deliberately not surfaced: the status endpoint reports a
  * `progress` float but no live counters, so there is nothing item-wise to report until the end.
@@ -44,20 +48,20 @@ export class DotBulkRefreshService {
     readonly #http = inject(HttpClient);
 
     /**
-     * Reindexes every given contentlet and emits the final counters.
+     * Reindexes every given contentlet and emits how the job settled.
      *
      * @param inodes Contentlet inodes. The server collapses them by identifier, so the reported
      *     `total` can be lower than what was sent.
-     * @returns The terminal counters, or `null` when the selection was empty or the finished job
-     *     carried none — in which case there is no honest count to report and the caller should treat
-     *     it as a failure rather than substitute one.
+     * @returns The terminal state and its counters. `counts` is `null` when the selection was empty or
+     *     the finished job carried none — there is no honest count to report in that case, and the
+     *     caller must not substitute one.
      */
-    refresh(inodes: string[]): Observable<DotBulkRefreshCounts | null> {
+    refresh(inodes: string[]): Observable<DotBulkRefreshOutcome | null> {
         if (!inodes.length) {
             return of(null);
         }
 
-        return this.#submit(inodes).pipe(switchMap(({ jobId }) => this.#awaitCompletion(jobId)));
+        return this.#submit(inodes).pipe(exhaustMap(({ jobId }) => this.#awaitCompletion(jobId)));
     }
 
     #submit(inodes: string[]): Observable<DotBulkRefreshSubmitResponse> {
@@ -78,15 +82,56 @@ export class DotBulkRefreshService {
      * The first poll fires immediately so a fast job is not held back by the interval, and polling
      * stops on the terminal value itself rather than one tick later.
      */
-    #awaitCompletion(jobId: string): Observable<DotBulkRefreshCounts | null> {
-        return timer(0, DOT_BULK_REFRESH_POLL_INTERVAL_MS).pipe(
-            switchMap(() => this.#status(jobId)),
-            takeWhile((job) => !this.#isTerminal(job.state), true),
-            last(),
-            // Bounds the whole run, not the gap between polls: `last()` emits once, at the end.
-            timeout(DOT_BULK_REFRESH_TIMEOUT_MS),
-            map((job) => job.result?.metadata ?? null)
-        );
+    #awaitCompletion(jobId: string): Observable<DotBulkRefreshOutcome> {
+        return timer(0, DOT_BULK_REFRESH_POLL_INTERVAL_MS)
+            .pipe(
+                // exhaustMap, not switchMap: a status call slower than the interval must be allowed to
+                // finish. Cancelling and reissuing it would mean that under sustained latency no poll
+                // ever completes, nothing is ever emitted, and only the overall timeout ends the run.
+                exhaustMap(() =>
+                    this.#status(jobId).pipe(
+                        // One blip over a five-minute run is ~200 requests' worth of exposure. The job
+                        // is unaffected by a failed poll, so retrying beats abandoning it.
+                        retry({ count: DOT_BULK_REFRESH_POLL_RETRIES, delay: () => timer(1000) })
+                    )
+                ),
+                takeWhile((job) => !this.#isTerminal(job.state), true),
+                // Bounds the whole run, not the gap between polls: `last()` emits once, at the end.
+                last(),
+                timeout(DOT_BULK_REFRESH_TIMEOUT_MS)
+            )
+            .pipe(
+                // A bare TimeoutError has no `status`, so the shared HTTP error handler finds no
+                // handler for it and says nothing at all — the indicator would clear silently and
+                // leave a stale grid. Give it a shape that handler understands.
+                catchError((error) =>
+                    throwError(() =>
+                        error?.name === 'TimeoutError'
+                            ? new HttpErrorResponse({
+                                  status: 504,
+                                  statusText:
+                                      'Stopped waiting for the reindex job; it may still be running'
+                              })
+                            : error
+                    )
+                ),
+                map((job) => ({
+                    state: job.state,
+                    // `result` IS the counters: the server flattens the job's metadata map straight
+                    // into it rather than nesting it under `metadata`.
+                    counts: job.result ? this.#toCounts(job.result) : null
+                }))
+            );
+    }
+
+    #toCounts(result: NonNullable<DotBulkRefreshJob['result']>): DotBulkRefreshCounts {
+        return {
+            total: result.total,
+            successCount: result.successCount,
+            failedCount: result.failedCount,
+            skippedCount: result.skippedCount,
+            versionsIndexed: result.versionsIndexed
+        };
     }
 
     #status(jobId: string): Observable<DotBulkRefreshJob> {
@@ -96,8 +141,8 @@ export class DotBulkRefreshService {
     }
 
     /**
-     * Whether the job has settled. A cancelled or failed job is settled too — the caller reports what
-     * happened rather than waiting for a state that will never come.
+     * Whether the job has settled. A cancelled or failed job is settled too — the caller decides what
+     * each terminal state means rather than this waiting for one that will never come.
      */
     #isTerminal(state: DotBulkRefreshJobState): boolean {
         return (DOT_BULK_REFRESH_TERMINAL_STATES as readonly string[]).includes(state);

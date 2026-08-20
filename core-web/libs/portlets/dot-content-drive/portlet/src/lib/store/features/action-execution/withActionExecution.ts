@@ -14,6 +14,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
+    DOT_BULK_REFRESH_REPORTABLE_STATES,
     DotActionBulkRequestOptions,
     DotAjaxActionResponseView,
     DotBundle,
@@ -250,6 +251,11 @@ export function withActionExecution() {
                      * Reported through the same {@link onSettled} path as everything else, with its own
                      * partial-outcome copy: a failure here is content that could not be read or indexed
                      * and a skip is a cancelled run, neither of which is what the default copy blames.
+                     *
+                     * Only SUCCESS and CANCELED are reported as outcomes, and only when the counters
+                     * close over `total`. A job that died mid-run still carries counters describing how
+                     * far it got, and reporting those as a result would turn a failure into a green
+                     * toast - the exact misleading success this endpoint exists to remove.
                      */
                     executeRefresh: (actionName: string, inodes: string[]): void => {
                         if (!inodes.length || store.actionExecution()) {
@@ -272,17 +278,42 @@ export function withActionExecution() {
                                     return EMPTY;
                                 })
                             )
-                            .subscribe((counts) => {
-                                // A finished job with no counters leaves nothing honest to report:
-                                // `inodes.length` would claim every item was reindexed and `0` would
-                                // claim none were, and the first errs in the reassuring direction.
-                                if (!counts) {
+                            .subscribe((outcome) => {
+                                const counts = outcome?.counts;
+
+                                // Three ways a run can end with nothing honest to report, all of
+                                // which would otherwise render as a green success toast:
+                                //
+                                // 1. No counters at all.
+                                // 2. A state whose counters describe only how far the job got before
+                                //    dying - a FAILED_PERMANENTLY job still carries its metadata, so
+                                //    an all-zero result is indistinguishable from a clean run over
+                                //    nothing unless the state is checked.
+                                // 3. Counters that do not close over `total`, which means the run did
+                                //    not account for every item and the shortfall is unexplained.
+                                //
+                                // Substituting a number in any of these cases - `inodes.length` or
+                                // `0` - invents one the server never sent, and the first errs in the
+                                // reassuring direction.
+                                const reportable =
+                                    !!counts &&
+                                    !!outcome &&
+                                    (
+                                        DOT_BULK_REFRESH_REPORTABLE_STATES as readonly string[]
+                                    ).includes(outcome.state) &&
+                                    counts.successCount +
+                                        counts.failedCount +
+                                        counts.skippedCount ===
+                                        counts.total;
+
+                                if (!reportable) {
                                     patchState(store, { actionExecution: undefined });
                                     httpErrorManagerService.handle(
                                         new HttpErrorResponse({
                                             status: 500,
-                                            statusText:
-                                                'The reindex job finished without reporting counts'
+                                            statusText: `The reindex job did not report a usable outcome (state: ${
+                                                outcome?.state ?? 'unknown'
+                                            })`
                                         })
                                     );
 

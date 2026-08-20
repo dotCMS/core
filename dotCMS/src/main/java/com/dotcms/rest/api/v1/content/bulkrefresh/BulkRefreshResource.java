@@ -121,6 +121,7 @@ public class BulkRefreshResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Job status retrieved"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - no backend user session"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - not a CMS Power User or CMS Administrator"),
                     @ApiResponse(responseCode = "404", description = "Not Found - unknown job id"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
@@ -130,9 +131,9 @@ public class BulkRefreshResource {
             @Parameter(name = "jobId", in = ParameterIn.PATH, required = true,
                     description = "The reindex job's unique identifier.",
                     schema = @Schema(type = "string", format = "uuid"))
-            final String jobId) throws DotDataException {
+            final String jobId) throws DotDataException, DotSecurityException {
 
-        final User user = init(request, response).getUser();
+        final User user = authorized(request, response);
 
         Logger.debug(this, () -> String.format("User %s is retrieving reindex job %s",
                 user.getUserId(), jobId));
@@ -152,9 +153,9 @@ public class BulkRefreshResource {
                     + "stay reindexed; the remainder are counted as skipped.",
             tags = {"Content"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Cancellation requested"),
-                    @ApiResponse(responseCode = "400", description = "Bad request - the job is already in a terminal state"),
+                    @ApiResponse(responseCode = "200", description = "Cancellation requested. A job that is already terminal is reported as accepted; the job queue ignores the request rather than rejecting it."),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - no backend user session"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - not a CMS Power User or CMS Administrator"),
                     @ApiResponse(responseCode = "404", description = "Not Found - unknown job id"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
@@ -164,9 +165,9 @@ public class BulkRefreshResource {
             @Parameter(name = "jobId", in = ParameterIn.PATH, required = true,
                     description = "The reindex job's unique identifier.",
                     schema = @Schema(type = "string", format = "uuid"))
-            final String jobId) throws DotDataException {
+            final String jobId) throws DotDataException, DotSecurityException {
 
-        final User user = init(request, response).getUser();
+        final User user = authorized(request, response);
 
         Logger.debug(this, () -> String.format("User %s is cancelling reindex job %s",
                 user.getUserId(), jobId));
@@ -174,6 +175,26 @@ public class BulkRefreshResource {
         this.bulkRefreshHelper.cancelJob(jobId);
         return new ResponseEntityStringView(
                 "Cancellation request successfully sent to job " + jobId);
+    }
+
+    /**
+     * Requires a backend user who may reindex content.
+     * <p>
+     * Applied to the status and cancel calls as well as the submit, so the role gate is not decorative:
+     * without it any backend user could cancel somebody else's in-flight reindex, or read a job back
+     * and recover the submitted inode list and the submitter's id from its parameters.
+     */
+    private User authorized(final HttpServletRequest request, final HttpServletResponse response)
+            throws DotDataException, DotSecurityException {
+
+        final User user = init(request, response).getUser();
+        if (!this.bulkRefreshHelper.canRefresh(user)) {
+            throw new DotSecurityException(String.format(
+                    "User [%s] must be a CMS Power User or a CMS Administrator to reindex content",
+                    user.getUserId()));
+        }
+
+        return user;
     }
 
     /**

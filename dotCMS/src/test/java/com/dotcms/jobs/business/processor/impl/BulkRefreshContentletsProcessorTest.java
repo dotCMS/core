@@ -271,8 +271,8 @@ public class BulkRefreshContentletsProcessorTest {
      * <p>
      * Given scenario: The job ran with {@code includeItemResults} true.
      * <p>
-     * Expected result: The persisted metadata carries one record per identifier. The terminal SSE event
-     * is built from this, not from the live processor, so it has to be complete here.
+     * Expected result: The persisted metadata carries one record per identifier. This is the only
+     * place the records survive the run, so it has to be complete here.
      */
     @Test
     public void test_getResultMetadata_carriesEveryRecordWhenRequested() throws Exception {
