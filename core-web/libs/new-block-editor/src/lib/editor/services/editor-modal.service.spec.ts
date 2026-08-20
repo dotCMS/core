@@ -14,7 +14,11 @@ import { Editor } from '@tiptap/core';
 
 import { DotMessageService, DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
-import { DotAssetPickerComponent } from '@dotcms/ui';
+import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
+    DotAssetPickerComponent
+} from '@dotcms/ui';
 
 import { EditorModalService } from './editor-modal.service';
 
@@ -66,7 +70,10 @@ describe('EditorModalService — asset pickers', () => {
             mockProvider(DialogService),
             mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
             mockProvider(DotSiteService, { getCurrentSite: jest.fn(() => siteSource) }),
-            { provide: EditorStore, useValue: { languageId: signal(LANGUAGE_ID) } }
+            { provide: EditorStore, useValue: { languageId: signal(LANGUAGE_ID) } },
+            // Angular Edit Content host: the launcher is what makes the new picker the picker.
+            // Its legacy counterpart lives in `editor-modal.service.legacy-host.spec.ts`.
+            { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher }
         ]
     });
 
