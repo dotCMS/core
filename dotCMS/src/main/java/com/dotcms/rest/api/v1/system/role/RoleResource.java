@@ -547,8 +547,9 @@ public class RoleResource implements Serializable {
 	 * Bulk-removes users from a role with partial-success semantics: removable direct
 	 * memberships are removed, everything else is reported in {@code skipped} with a reason
 	 * ({@code not_found}, {@code inherited}, {@code error}) — the batch never fails as a whole
-	 * once the role resolves. The caller must be a backend user with access to the Roles
-	 * portlet and the CMS Administrator role.
+	 * once the role resolves and passes the {@code editUsers} gate (non-user-assignable roles
+	 * are rejected with 403, mirroring the grant endpoint). The caller must be a backend user
+	 * with access to the Roles portlet and the CMS Administrator role.
 	 */
 	@Operation(
 		operationId = "removeUsersFromRole",
@@ -561,7 +562,10 @@ public class RoleResource implements Serializable {
 				"the role hierarchy, or the user is not a member at all; inherited membership can " +
 				"only be revoked by removing the user from the ancestor role that grants it), or " +
 				"error (unexpected per-user failure, logged server-side). Removals are committed " +
-				"per user, so entries already processed stay removed regardless of later entries."
+				"per user, so entries already processed stay removed regardless of later entries. " +
+				"Only user-assignable roles (editUsers=true) accept membership changes: a role " +
+				"whose editUsers flag is false — e.g. a user's individual role or a system role — " +
+				"is rejected with 403 for the whole request, mirroring the grant endpoint."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -575,7 +579,7 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - admin permissions required",
+					description = "Forbidden - admin permissions required, or the role's editUsers flag is false",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404",
 					description = "Role not found",

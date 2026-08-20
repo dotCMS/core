@@ -15494,7 +15494,10 @@ paths:
         \ all; inherited membership can only be revoked by removing the user from\
         \ the ancestor role that grants it), or error (unexpected per-user failure,\
         \ logged server-side). Removals are committed per user, so entries already\
-        \ processed stay removed regardless of later entries."
+        \ processed stay removed regardless of later entries. Only user-assignable\
+        \ roles (editUsers=true) accept membership changes: a role whose editUsers\
+        \ flag is false — e.g. a user's individual role or a system role — is rejected\
+        \ with 403 for the whole request, mirroring the grant endpoint."
       operationId: removeUsersFromRole
       parameters:
       - description: Id of the role to remove users from
@@ -15529,7 +15532,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - admin permissions required
+          description: "Forbidden - admin permissions required, or the role's editUsers\
+            \ flag is false"
         "404":
           content:
             application/json: {}
@@ -18194,7 +18198,15 @@ paths:
     put:
       description: "Updates an existing user's information including personal details,\
         \ roles, and account settings. Only admin users or users with appropriate\
-        \ portlet access can perform this operation."
+        \ portlet access can perform this operation. The optional roles list carries\
+        \ role KEYS and is the user's complete desired set of user-assignable roles\
+        \ (editUsers=true): omit the field to leave roles untouched, send a non-empty\
+        \ list to replace the user-assignable role set, or send an empty list to remove\
+        \ all of the user's user-assignable roles. System-managed memberships (e.g.\
+        \ the user's individual role) are never modified, keys that resolve to no\
+        \ role are ignored, and null or blank entries are rejected with 400. Note\
+        \ that roles without a key cannot be expressed in this list — manage those\
+        \ through the role-centric /v1/roles/{roleId}/users endpoints instead."
       operationId: updateUser
       requestBody:
         content:
@@ -18202,7 +18214,9 @@ paths:
             schema:
               $ref: "#/components/schemas/UserForm"
         description: "User update data including personal information, roles, and\
-          \ account settings"
+          \ account settings. The roles list (role keys) is the complete desired set\
+          \ of user-assignable roles: absent = untouched, empty = remove all user-assignable\
+          \ roles, non-empty = replace."
         required: true
       responses:
         "200":
