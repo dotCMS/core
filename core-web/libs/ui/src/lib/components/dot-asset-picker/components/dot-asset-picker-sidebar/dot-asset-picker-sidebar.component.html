@@ -1,0 +1,32 @@
+<!-- `p-4` mirrors the right column's padding: that is what puts this search on the same line as the
+     asset search rather than under it. -->
+<div class="p-4">
+    <dot-search-input
+        data-testid="asset-picker-tree-search"
+        testId="asset-picker-tree-search-input"
+        placeholder="dot.asset.picker.sidebar.search.placeholder"
+        [value]="store.treeSearch()"
+        (search)="store.setTreeSearch($event)" />
+</div>
+
+<dot-folder-tree
+    class="min-h-0 overflow-auto px-2 pb-2"
+    [folders]="store.folders()"
+    [loading]="$loading()"
+    [selectedNode]="store.selectedNode()"
+    selectionMode="single"
+    styleClass="size-full min-w-0"
+    [pt]="treePt"
+    treeTestId="asset-picker-folder-tree"
+    loadMoreTestId="asset-picker-load-more"
+    loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+    [showLoadMorePlusIcon]="true"
+    (onNodeSelect)="onNodeSelect($event)"
+    (onNodeExpand)="onNodeExpand($event)"
+    (loadMore)="onLoadMore($event)">
+    <ng-template #folderTreeNodeLabel let-node>
+        <span class="block min-w-0 truncate font-normal" data-testid="tree-node-label">
+            {{ node.label | dotFolderName }}
+        </span>
+    </ng-template>
+</dot-folder-tree>

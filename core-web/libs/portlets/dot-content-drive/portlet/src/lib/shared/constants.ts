@@ -244,28 +244,6 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
 
 /**
- * Options shown in the upload-type selector dialog. `baseType` is the base type fired to the
- * upload endpoint, which the backend resolves to the matching content type: `DOTASSET` for Assets,
- * `FILEASSET` for Files.
- */
-export const UPLOAD_SELECTOR_OPTIONS = [
-    {
-        baseType: DotCMSBaseTypesContentTypes.DOTASSET,
-        icon: 'image',
-        labelKey: 'content-drive.dialog.upload-selector.asset',
-        descriptionKey: 'content-drive.dialog.upload-selector.asset.description',
-        recommended: true
-    },
-    {
-        baseType: DotCMSBaseTypesContentTypes.FILEASSET,
-        icon: 'code_blocks',
-        labelKey: 'content-drive.dialog.upload-selector.file',
-        descriptionKey: 'content-drive.dialog.upload-selector.file.description',
-        recommended: false
-    }
-] as const;
-
-/**
  * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
  * folder's `defaultBaseType`: `null` means "ask each time" (the upload menu is shown on every
  * upload), `DOTASSET`/`FILEASSET` force every upload to that base type. The backend routes the
@@ -315,13 +293,6 @@ export const SUCCESS_MESSAGE_LIFE = 4500;
 export const WARNING_MESSAGE_LIFE = 4200;
 export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
-
-// Dropzone state
-export const DROPZONE_STATE = {
-    INTERNAL_DRAG: 'internal-drag',
-    ACTIVE: 'active',
-    INACTIVE: 'inactive'
-} as const;
 
 /**
  * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
