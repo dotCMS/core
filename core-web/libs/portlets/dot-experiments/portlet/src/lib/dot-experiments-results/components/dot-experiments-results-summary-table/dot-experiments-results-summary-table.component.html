@@ -1,0 +1,99 @@
+<div class="overflow-x-auto">
+    <div class="min-w-5xl">
+        <dot-experiments-details-table
+            [data]="$rows()"
+            [isLoading]="store.$isLoading()"
+            [isEmpty]="!store.$hasEnoughSessionsForTable()">
+            <ng-template #headers>
+                <div class="col-span-3" data-testid="summary-header-variant">
+                    {{ 'experiments.promote.variant' | dm }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-header-sessions">
+                    {{ 'experiments.reports.sessions' | dm }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-header-conversions">
+                    {{ 'experiments.reports.conversions' | dm }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-header-conversion-rate">
+                    {{ 'experiments.reports.conversions.rate' | dm }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-header-lift">
+                    {{ 'experiments.results.summary.column.lift' | dm }}
+                </div>
+                <div class="col-span-2 text-right" data-testid="summary-header-probability">
+                    {{ 'experiments.reports.probability.best' | dm }}
+                </div>
+                <div class="col-span-2 text-right" data-testid="summary-header-range">
+                    {{ 'experiments.reports.conversion.rate.range' | dm }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-header-promote">
+                    {{ 'experiments.reports.promote' | dm }}
+                </div>
+            </ng-template>
+
+            <ng-template #rows let-row>
+                <div class="col-span-3 flex min-w-0 items-center gap-2">
+                    <span
+                        class="size-2.5 flex-none rounded-full"
+                        [style.background-color]="row.color"
+                        aria-hidden="true"></span>
+                    <span class="truncate text-surface-900" [title]="row.name">{{ row.name }}</span>
+                    @if (row.isControl) {
+                        <p-tag
+                            severity="secondary"
+                            [value]="'experiments.configure.variants.control-chip' | dm"
+                            data-testid="summary-row-control-chip" />
+                    }
+                    @if (row.isWinner) {
+                        <p-tag
+                            severity="success"
+                            [value]="'experiments.results.summary.chip.leading' | dm"
+                            data-testid="summary-row-leading-chip" />
+                    }
+                    @if (row.isPromoted) {
+                        <p-tag
+                            severity="info"
+                            [value]="'experiments.results.summary.chip.promoted' | dm"
+                            data-testid="summary-row-promoted-chip" />
+                    }
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-row-sessions">
+                    {{ row.sessions }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-row-conversions">
+                    {{ row.conversions }}
+                </div>
+                <div class="col-span-1 text-right" data-testid="summary-row-conversion-rate">
+                    {{ row.conversionRate }}
+                </div>
+                <div
+                    class="col-span-1 text-right"
+                    [class]="row.liftClass"
+                    data-testid="summary-row-lift">
+                    {{ row.liftVsOriginal }}
+                </div>
+                <div class="col-span-2 text-right" data-testid="summary-row-probability">
+                    {{ row.probabilityToBeBest }}
+                </div>
+                <div class="col-span-2 text-right" data-testid="summary-row-range">
+                    {{ row.conversionRateRange }}
+                </div>
+                <div class="col-span-1 flex items-center justify-end">
+                    @if ($canPromote() && !row.isControl) {
+                        <p-button
+                            [rounded]="true"
+                            [outlined]="true"
+                            size="small"
+                            severity="secondary"
+                            [label]="'experiments.reports.promote' | dm"
+                            [disabled]="store.$isSaving()"
+                            (onClick)="promoteVariant(row)"
+                            data-testid="summary-row-promote-btn" />
+                    }
+                </div>
+            </ng-template>
+        </dot-experiments-details-table>
+    </div>
+</div>
+
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
