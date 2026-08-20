@@ -138,6 +138,17 @@ describe('DotPushHistoryIframeDialogComponent', () => {
             expect(spectator.query(byTestId('push-history-iframe'))).toBeFalsy();
         });
 
+        // Resolves cross-origin because browsers normalize the backslash into the authority
+        // position, so it must be rejected even though it starts with a single slash.
+        it('should render push-history-empty when url uses a backslash to escape the origin', () => {
+            configRef.data = { url: '/\\evil.example.com' };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('push-history-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('push-history-iframe'))).toBeFalsy();
+        });
+
         it('should render the push history empty message', () => {
             configRef.data = undefined;
             spectator = createComponent();

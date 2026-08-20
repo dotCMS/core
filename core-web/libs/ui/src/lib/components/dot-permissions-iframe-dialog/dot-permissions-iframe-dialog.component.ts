@@ -3,6 +3,8 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
+import { isSameOriginRelativeUrl } from '@dotcms/utils';
+
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 export interface DotPermissionsIframeDialogData {
@@ -35,7 +37,7 @@ export interface DotPermissionsIframeDialogData {
                 title="Permissions"
                 data-testid="permissions-iframe"></iframe>
         } @else {
-            <p class="p-3 m-0 text-500" data-testid="permissions-empty">
+            <p class="text-500 m-0 p-3" data-testid="permissions-empty">
                 {{ 'dot.permissions.iframe.dialog.no-asset' | dm }}
             </p>
         }
@@ -48,10 +50,8 @@ export class DotPermissionsIframeDialogComponent {
 
     readonly $iframeSrc = computed<SafeResourceUrl | null>(() => {
         const url = this.#config.data?.url;
-        if (!url) return null;
-        // Only allow same-origin relative paths; reject absolute URLs, protocol-relative
-        // URLs, and dangerous schemes (javascript:, data:, http:, etc.)
-        if (!url.startsWith('/') || url.startsWith('//')) return null;
+        if (!isSameOriginRelativeUrl(url)) return null;
+
         return this.#sanitizer.bypassSecurityTrustResourceUrl(url);
     });
 

@@ -3,6 +3,8 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
+import { isSameOriginRelativeUrl } from '@dotcms/utils';
+
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 export interface DotPushHistoryIframeDialogData {
@@ -48,10 +50,7 @@ export class DotPushHistoryIframeDialogComponent {
 
     readonly $iframeSrc = computed<SafeResourceUrl | null>(() => {
         const url = this.#config.data?.url;
-        if (!url) return null;
-        // Only allow same-origin relative paths; reject absolute URLs, protocol-relative
-        // URLs, and dangerous schemes (javascript:, data:, http:, etc.)
-        if (!url.startsWith('/') || url.startsWith('//')) return null;
+        if (!isSameOriginRelativeUrl(url)) return null;
 
         return this.#sanitizer.bypassSecurityTrustResourceUrl(url);
     });
