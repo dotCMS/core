@@ -50,23 +50,29 @@
     <%-- Users-grid init @ view_roles_js_inc.jsp:765-818. --%>
     <div id="usersGrid"></div>
 
-    <%-- Portlet FilteringSelect @ view_roles_js_inc.jsp:1147-1316. The
-         tools wrapper already provides `portletList` in its inc file, so
-         only inject a stub if it isn't already present. --%>
-    <script>
-        if (!document.getElementById('portletList')) {
-            var _portletListStub = document.createElement('select');
-            _portletListStub.id = 'portletList';
-            document.getElementById('rolesIframeStubsWrapper').appendChild(_portletListStub);
-        }
-    </script>
+    <%-- NOTE: `portletList` is NOT stubbed here. Injecting one would run
+         BEFORE `view_role_tools_inc.jsp`'s real `<select id="portletList">`
+         is parsed, so `dijit.form.FilteringSelect` would upgrade THE STUB
+         (first-in-DOM wins for `getElementById`) — leaving the real select
+         inside the New Layout dialog with no widget and an empty dropdown.
+         Wrappers that DO need the stub (currently `view_role_permissions_wrapper.jsp`)
+         should inject their own. --%>
 </div>
 
 <script type="text/javascript">
-    // Override the NAMED portlet-scoped initializers to no-ops before
-    // dojo fires its onLoad queue. See file header for the rationale.
+    // Suppress the tree bootstrap only — everything else the shared
+    // `view_roles_js_inc.jsp` needs at load time is now satisfied by the
+    // hidden DOM stubs above (including the `<select id="portletList">`
+    // that `initializePortletInfoList` upgrades to a FilteringSelect).
+    //
+    // DO NOT override `initializePortletInfoList` here: `createNewLayout`
+    // calls it with itself as the callback and expects the callback to
+    // fire only AFTER `allPortletInfoList` is populated. A synchronous
+    // no-op that just invokes the callback creates an infinite recursion
+    // (`createNewLayout` -> `initializePortletInfoList(createNewLayout)`
+    // -> `createNewLayout` -> ...).
+    //
     // `buildRolesTree` covers both the initial tree build AND the dijit
     // `roleTreeMenu.bindDomNode(...)` call inside `initializeRolesTreeWidget`.
     buildRolesTree = function () {};
-    initializePortletInfoList = function (callback) { if (callback) callback(); };
 </script>
