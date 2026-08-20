@@ -254,11 +254,13 @@ jobs:
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of
       # self-skipping. Ubuntu 24.04 libvips42 bundles the pdf/heif/svg/webp/jxl delegates.
-      # Bounded: a wedged Ubuntu mirror hung this class of step for hours (#37118).
-      # Normally ~12s, so 5m fails loud and fast instead of burning the job timeout.
+      # Bounded so a wedged Ubuntu mirror can't burn the job timeout (#37118).
+      # 15m, not tighter: measured median 21s but max 521s on a throttled mirror
+      # (198 kB/s) that still succeeded. The hang case ran 3h+, so 15m separates
+      # the two without tripping on slow-but-alive fetches.
       - name: Install native libvips (image engine parity tests)
         if: matrix.test_type == 'jvm'
-        timeout-minutes: 5
+        timeout-minutes: 15
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips42 libheif-plugin-aomenc
 
       - name: Run ${{ matrix.name }}
