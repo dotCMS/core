@@ -386,6 +386,21 @@ public interface AbstractDriveRequestForm {
      * gathered recursively across subfolders, matching the legacy {@code /api/v1/browser}
      * endpoint.
      * </p>
+     * <p>
+     * Two ordering and filtering details are worth knowing:
+     * </p>
+     * <ul>
+     *   <li><b>Links page in title order, independent of {@code sortBy}.</b> The page slice is
+     *       taken in title-ascending order (identifier as tiebreaker) so that an index-based
+     *       {@code linkCursor} stays stable; {@code sortBy} then reorders the items already
+     *       selected. This matches the other two sources — folders slice in name-ascending order
+     *       and contentlets in {@code mod_date} order, likewise regardless of {@code sortBy}.</li>
+     *   <li><b>{@code filters.filterFolders} does not gate link titles.</b> That flag only
+     *       controls whether folder <i>names</i> are narrowed by {@code filters.text}; link titles
+     *       are always narrowed when {@code filters.text} is set, because a link is a selectable
+     *       leaf rather than something to navigate into. There is no {@code filterLinks}
+     *       equivalent.</li>
+     * </ul>
      *
      * @return true to include menu Links, false to exclude (default)
      */

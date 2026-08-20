@@ -1920,7 +1920,142 @@
 			   }
 			  },
 			  "response": []
-			 }
+			 },
+			{
+			 "name": "showLinks With filters.text - Filter Applied To Link Titles",
+			 "event": [
+			  {
+			   "listen": "test",
+			   "script": {
+			    "exec": [
+			     "pm.test(\"Status code should be 200\", function () {",
+			     "    pm.response.to.have.status(200);",
+			     "});",
+			     "",
+			     "var entity = pm.response.json().entity;",
+			     "var term = \"alpha\";",
+			     "",
+			     "pm.test(\"Link pagination contract survives filters.text\", function () {",
+			     "    pm.expect(entity).to.have.property(\"linkCount\");",
+			     "    pm.expect(entity).to.have.property(\"hasMoreLinks\");",
+			     "    pm.expect(entity).to.have.property(\"nextLinkCursor\");",
+			     "    pm.expect(entity.linkCount).to.be.at.least(0);",
+			     "});",
+			     "",
+			     "var links = entity.list.filter(function (item) {",
+			     "    return item.mimeType === \"application/dotlink\";",
+			     "});",
+			     "",
+			     "pm.test(\"linkCount agrees with the links in the page\", function () {",
+			     "    pm.expect(entity.linkCount).to.eql(links.length);",
+			     "});",
+			     "",
+			     "pm.test(\"Every returned link title matches the filter term\", function () {",
+			     "    links.forEach(function (link) {",
+			     "        pm.expect(String(link.title).toLowerCase()).to.include(term);",
+			     "    });",
+			     "});"
+			    ],
+			    "type": "text/javascript"
+			   }
+			  }
+			 ],
+			 "request": {
+			  "method": "POST",
+			  "header": [
+			   {
+			    "key": "Content-Type",
+			    "value": "application/json"
+			   }
+			  ],
+			  "body": {
+			   "mode": "raw",
+			   "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": true,\n    \"showFolders\": false,\n    \"baseTypes\": [],\n    \"filters\": {\n        \"text\": \"alpha\"\n    },\n    \"maxResults\": 50\n}",
+			   "options": {
+			    "raw": {
+			     "language": "json"
+			    }
+			   }
+			  },
+			  "url": {
+			   "raw": "{{serverURL}}/api/v1/drive/search",
+			   "host": [
+			    "{{serverURL}}"
+			   ],
+			   "path": [
+			    "api",
+			    "v1",
+			    "drive",
+			    "search"
+			   ]
+			  },
+			  "description": "showLinks combined with filters.text. Link titles are narrowed in memory because links are not indexed in Elasticsearch, and this combination had no coverage at all before -- not even that it returns 200 rather than erroring. Menu links cannot be created over REST, so the substantive assertions (only the matching link comes back, case-insensitively) live in the ContentDriveLinksTest integration test. What is pinned here is that the combination is accepted, that the link pagination contract survives it, and that any link returned really does match the term."
+			 },
+			 "response": []
+			},
+			{
+			 "name": "showLinks With live true - No Duplicate Links",
+			 "event": [
+			  {
+			   "listen": "test",
+			   "script": {
+			    "exec": [
+			     "pm.test(\"Status code should be 200\", function () {",
+			     "    pm.response.to.have.status(200);",
+			     "});",
+			     "",
+			     "var entity = pm.response.json().entity;",
+			     "var links = entity.list.filter(function (item) {",
+			     "    return item.mimeType === \"application/dotlink\";",
+			     "});",
+			     "",
+			     "pm.test(\"live:true must never return the same link twice\", function () {",
+			     "    var ids = links.map(function (link) { return link.identifier; });",
+			     "    var unique = ids.filter(function (id, index) { return ids.indexOf(id) === index; });",
+			     "    pm.expect(unique.length, JSON.stringify(ids)).to.eql(ids.length);",
+			     "});",
+			     "",
+			     "pm.test(\"linkCount agrees with the links in the page\", function () {",
+			     "    pm.expect(entity.linkCount).to.eql(links.length);",
+			     "});"
+			    ],
+			    "type": "text/javascript"
+			   }
+			  }
+			 ],
+			 "request": {
+			  "method": "POST",
+			  "header": [
+			   {
+			    "key": "Content-Type",
+			    "value": "application/json"
+			   }
+			  ],
+			  "body": {
+			   "mode": "raw",
+			   "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"showLinks\": true,\n    \"showFolders\": false,\n    \"baseTypes\": [],\n    \"live\": true,\n    \"archived\": false,\n    \"maxResults\": 50\n}",
+			   "options": {
+			    "raw": {
+			     "language": "json"
+			    }
+			   }
+			  },
+			  "url": {
+			   "raw": "{{serverURL}}/api/v1/drive/search",
+			   "host": [
+			    "{{serverURL}}"
+			   ],
+			   "path": [
+			    "api",
+			    "v1",
+			    "drive",
+			    "search"
+			   ]
+			  },
+			  "description": "Regression guard for showLinks + live:true -- the combination the redirect custom field sends as showWorking:false. Asking FolderFactoryImpl for working=false left the version-table predicate uncorrelated, so the query degenerated into a cross product and could return the same link many times. BrowserAPIImpl.getLinks now always asks for the working links and resolves 'live' by keeping the ones that carry a published version."
+			 },
+			 "response": []
+			}
 			],
 			"description": "Coverage for the showLinks flag and the link pagination fields on POST /api/v1/drive/search (issue #36991)."
 		},

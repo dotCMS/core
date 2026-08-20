@@ -1682,8 +1682,8 @@ public class BrowserAPIImpl implements BrowserAPI {
                 contentCount = contentlets.size();
                 list.addAll(contentlets);
             } else {
-                // maxResults was exhausted by folders — probe with limit=1 to detect
-                // whether content exists without adding items to this page.
+                // maxResults was exhausted by folders and/or links — probe with limit=1 to
+                // detect whether content exists without adding items to this page.
                 final ContentUnderParent probe = getContentUnderParentFromDB(browserQuery, 1);
                 hasMoreContent = !probe.contentlets.isEmpty();
             }
@@ -1717,6 +1717,12 @@ public class BrowserAPIImpl implements BrowserAPI {
      * <p>Folders, links and contentlets are paged independently: each source has its own
      * cursor, count and {@code hasMore} flag, and each consumes the page budget in that
      * order. A source is exhausted when its {@code hasMore} flag is {@code false}.</p>
+     *
+     * <p>Each source also slices its page in its <i>own</i> internal order — folders by name
+     * ascending, links by title ascending, contentlets by {@code mod_date} — which is what keeps
+     * the index-based cursors stable across pages. {@code sortBy} is applied afterwards, to the
+     * merged {@link #list} of this page only: it decides how the page is presented, not which
+     * items the page contains.</p>
      */
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
@@ -2591,20 +2597,48 @@ public class BrowserAPIImpl implements BrowserAPI {
     } // includeLinks.
 
 
+    /**
+     * Retrieves the menu Links directly under the browser query's parent, honouring
+     * {@code showWorking} and {@code showArchived}.
+     *
+     * <p>The {@code working} flag handed to {@link FolderAPI} is always {@code true}, never
+     * {@code browserQuery.showWorking}. {@code FolderFactoryImpl.getChildrenClass} adds the version
+     * table to the {@code FROM} list without a join predicate of its own, so the only correlation
+     * it ever produces is the incidental one from {@code working_inode = links_1_.inode}. Asking
+     * for {@code working=false} flips that to {@code <>}, which correlates nothing and turns the
+     * query into a cross product against every link version in the installation — duplicates, an
+     * archived filter that silently stops applying, and non-deterministic truncation at the
+     * factory's 1000-row ceiling.</p>
+     *
+     * <p>"Live" is therefore resolved here instead: fetch the working links and keep the ones that
+     * carry a published version.</p>
+     *
+     * @param browserQuery the query holding the parent and the version flags
+     * @return the links under the parent, already filtered by READ permission by {@link FolderAPI}
+     */
     private List<Link> getLinks(final BrowserQuery browserQuery) throws DotDataException, DotSecurityException {
+        final List<Link> links;
         if (browserQuery.directParent instanceof Host) {
-            return folderAPI.getLinks((Host) browserQuery.directParent,
-                    browserQuery.showWorking, browserQuery.showArchived, browserQuery.user,
+            links = folderAPI.getLinks((Host) browserQuery.directParent,
+                    true, browserQuery.showArchived, browserQuery.user,
                     false);
-        }
-
-        if (browserQuery.directParent instanceof Folder) {
-            return folderAPI
-                    .getLinks((Folder) browserQuery.directParent, browserQuery.showWorking, browserQuery.showArchived,
+        } else if (browserQuery.directParent instanceof Folder) {
+            links = folderAPI
+                    .getLinks((Folder) browserQuery.directParent, true, browserQuery.showArchived,
                             browserQuery.user,
                             false);
+        } else {
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+
+        if (browserQuery.showWorking) {
+            return links;
+        }
+
+        return links.stream()
+                .filter(link -> Try.of(() -> APILocator.getVersionableAPI().hasLiveVersion(link))
+                        .getOrElse(false))
+                .collect(Collectors.toList());
     }
 
 
@@ -2683,7 +2717,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         // Links are not indexed in Elasticsearch, so the text filter has to be applied here or a
-        // narrowed search would return every link under the parent.
+        // narrowed search would return every link under the parent. Unlike getFolders, this is
+        // not gated behind filterFolderNames: that flag exists so a client can keep folders
+        // navigable while narrowing the results, and a link is a selectable leaf, not something
+        // to navigate into.
         final Stream<Link> filtered = UtilMethods.isSet(browserQuery.filter)
                 ? links.stream().filter(link -> null != link.getTitle() && link.getTitle()
                         .toLowerCase().contains(browserQuery.filter.toLowerCase()))

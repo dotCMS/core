@@ -343,18 +343,37 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * Cursors are designed to be echoed back verbatim from a previous response, so a client
+         * replaying a corrupted value is plausible. All three are clamped at zero: the folder and
+         * link slices index a list directly, so a negative cursor would reach
+         * {@code List.subList} and surface as a 500 rather than an empty page.
+         *
+         * @param contentCursor DB row to resume the content scan from; negatives are treated as 0
+         * @return this builder
+         */
         public Builder contentCursor(int contentCursor) {
-            this.contentCursor = contentCursor;
+            this.contentCursor = Math.max(0, contentCursor);
             return this;
         }
 
+        /**
+         * @param folderCursor index into the folder list to start from; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
         public Builder folderCursor(int folderCursor) {
-            this.folderCursor = folderCursor;
+            this.folderCursor = Math.max(0, folderCursor);
             return this;
         }
 
+        /**
+         * @param linkCursor index into the link list to start from; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
         public Builder linkCursor(int linkCursor) {
-            this.linkCursor = linkCursor;
+            this.linkCursor = Math.max(0, linkCursor);
             return this;
         }
 
@@ -463,8 +482,13 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * @param offset row offset for the content query; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
         public Builder offset(@Nonnull int offset) {
-            this.offset = offset;
+            this.offset = Math.max(0, offset);
             return this;
         }
 
