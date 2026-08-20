@@ -22,7 +22,7 @@ import { ACTIVE_ROUTE_MOCK_CONFIG } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 
-import { DotExperimentsReportsChartComponent } from '../../../dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
+import { DotExperimentsReportsChartComponent } from '../../../../shared/ui/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 describe('DotExperimentsConfigurationVariantsAddComponent', () => {
