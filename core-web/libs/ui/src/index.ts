@@ -7,6 +7,11 @@ export * from './lib/components/add-to-bundle/dot-add-to-bundle.component';
 export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
 export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
+export * from './lib/components/dot-asset-picker/dot-asset-picker.component';
+export * from './lib/components/dot-asset-picker/asset-picker-config';
+export * from './lib/components/dot-asset-picker/asset-picker-dialog';
+export * from './lib/components/dot-asset-picker/last-asset-path';
+export * from './lib/components/dot-asset-picker/store/models';
 // Moved out of `apps/dotcms-ui` so libs can embed it without reaching back into the app
 // (`dotcms-ui` -> portlet -> `@components/*` -> `dotcms-ui` is a project cycle).
 export * from './lib/components/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
@@ -18,9 +23,12 @@ export * from './lib/components/dot-asset-search/components/dot-asset-search-dia
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
+export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
+export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';
 export * from './lib/components/dot-copy-button/dot-copy-button.component';
+export * from './lib/components/dot-dialog';
 export * from './lib/components/dot-drop-zone/dot-drop-zone.component';
 export * from './lib/components/dot-empty-container/dot-empty-container.component';
 export * from './lib/components/dot-field-validation-message/dot-field-validation-message.component';
@@ -28,12 +36,15 @@ export * from './lib/components/dot-filter-list-item/dot-filter-list-item.compon
 export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
 export * from './lib/components/dot-info-page/dot-info-page.component';
 export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
+export * from './lib/components/dot-language-filter/dot-language-filter.component';
 export * from './lib/components/dot-language-variable-selector/dot-language-variable-selector.component';
 export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-permissions-iframe-dialog/dot-permissions-iframe-dialog.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+export * from './lib/components/dot-search-input/dot-search-input.component';
+export * from './lib/components/dot-search-input/constants';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
@@ -41,11 +52,25 @@ export * from './lib/components/dot-content-thumbnail/dot-content-thumbnail.comp
 export * from './lib/components/dot-content-thumbnail/models/dot-content-thumbnail.model';
 export * from './lib/components/dot-content-thumbnail/utils/dot-content-thumbnail.utils';
 export * from './lib/components/dot-content-type/dot-content-type.component';
+export * from './lib/components/dot-content-type-filter/dot-content-type-filter.component';
+export * from './lib/components/dot-folder-list-view/dot-folder-list-view.component';
+export * from './lib/components/dot-folder-list-view/models';
+export * from './lib/components/dot-folder-list-view/constants';
+
 export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
+export * from './lib/components/dot-toast/dot-toast.component';
+export * from './lib/components/dot-upload-button/dot-upload-button.component';
+export * from './lib/components/dot-upload-dropzone/dot-upload-dropzone.component';
+export * from './lib/components/dot-upload-dropzone/constants';
+export * from './lib/components/dot-upload-type-selector/dot-upload-type-selector.component';
+export * from './lib/components/dot-upload-type-selector/constants';
+export * from './lib/components/dot-upload-type-selector/models';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
 export * from './lib/components/dot-browser-selector/dot-browser-selector.component';
 export * from './lib/components/dot-folder-tree/dot-folder-tree.component';
+export * from './lib/components/dot-folder-tree/constants';
+export { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
@@ -92,6 +117,9 @@ export * from './lib/validators/dotValidators';
 
 // Animations
 export * from './lib/animations/fade.animations';
+
+// Dialog
+export * from './lib/dialog/fullscreen-dialog';
 
 // Monaco editor presets
 export * from './lib/monaco/editor-options';

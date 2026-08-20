@@ -38,7 +38,7 @@ neutral names:
 - **Target engine** — **OpenSearch 3.x**, the engine we are migrating *to* (the "new" one).
 
 > In the lab stack below, the source engine is **OpenSearch 1.3** (standing in for a legacy
-> Elasticsearch / OpenSearch 1.x deployment) and the target engine is **OpenSearch 3.4**. The concepts
+> Elasticsearch / OpenSearch 1.x deployment) and the target engine is **OpenSearch 3.8**. The concepts
 > are identical if the source is real Elasticsearch — see the *Elasticsearch variant* note in §4.
 
 ### Concepts in two minutes
@@ -154,7 +154,7 @@ docker compose up -d
 | dotCMS | app under test | http://localhost:8082 | Admin UI + REST API. Login `admin` / `admin`. |
 | Source engine (OpenSearch 1.3) | "old" engine | https://localhost:9200 | HTTPS + auth. |
 | Source dashboards | inspect source indices | http://localhost:5601 | Login `admin` / `admin`. |
-| Target engine (OpenSearch 3.4) | "new" engine | https://localhost:9201 | HTTPS + auth. |
+| Target engine (OpenSearch 3.8) | "new" engine | https://localhost:9201 | HTTPS + auth. |
 | Target dashboards | inspect target indices | http://localhost:5602 | Login `admin` / `Dev!Search3-Kx9mP-2026`. |
 | Glowroot | JVM profiler | http://localhost:4000 | Optional. |
 | PostgreSQL | database | *(not published to host)* | Reach it via `docker compose exec db …` — see §6. |

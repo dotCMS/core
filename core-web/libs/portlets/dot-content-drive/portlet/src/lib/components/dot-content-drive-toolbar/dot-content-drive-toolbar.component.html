@@ -11,14 +11,12 @@
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
-                    <p-button
+                    <dot-upload-button
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
-                        [label]="$uploadLabelKey() | dm"
-                        icon="pi pi-upload"
-                        [outlined]="true"
+                        [defaultBaseType]="$uploadBaseType()"
                         data-testid="upload-asset-button"
-                        (click)="$upload.emit($event)" />
+                        (upload)="$upload.emit($event)" />
 
                     <p-button
                         animate.enter="toolbar-enter"
@@ -57,6 +55,9 @@
         </div>
 
         <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
+            <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
+                 precondition for the filters that narrow within them. -->
+            <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />

@@ -21,7 +21,6 @@ import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
 
@@ -46,23 +45,27 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
-    DotFolderListViewComponent,
-    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotContentDriveUploadFiles,
-    DotFolderListViewColumn,
     DotFolderTreeNodeData,
     DotFolderTreeNodeContentData,
     DotContentDriveMoveItems,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
+import {
+    DotAddToBundleComponent,
+    DotFolderListViewComponent,
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
+    DotFolderListViewColumn,
+    DotMessagePipe,
+    DotToastComponent,
+    DotUploadDropzoneComponent,
+    DotUploadTypeSelectorComponent
+} from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
-import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
-import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
@@ -99,17 +102,16 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
-        ToastModule,
         DialogModule,
         PopoverModule,
         NgTemplateOutlet,
         DotContentDriveDialogFolderComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
-        DotContentDriveDialogUploadSelectorComponent,
+        DotUploadTypeSelectorComponent,
         MessageModule,
         DotMessagePipe,
-        DotContentDriveDropzoneComponent,
-        DotSeverityIconComponent,
+        DotUploadDropzoneComponent,
+        DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent
@@ -159,6 +161,12 @@ export class DotContentDriveShellComponent {
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
     #editPanelUrlWasSet = false;
+    /**
+     * The folder path the URL was last written with, so a genuine folder navigation can be told apart
+     * from a filter-only write. `undefined` until the first write, which is what keeps the very first
+     * URL from pushing an entry on top of the one the user arrived on.
+     */
+    #lastWrittenPath: string | undefined = undefined;
 
     /**
      * The rendered side panel, so browser Back can route its close through the panel's guard.
@@ -178,6 +186,12 @@ export class DotContentDriveShellComponent {
      * `isTreeVisuallyExpanded` on the store for why these are kept separate.
      */
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Folder a dropped file lands in. The shared dropzone is presentational, so the target comes
+     * from here rather than the dropzone reaching into the store itself.
+     */
+    readonly $selectedFolder = computed(() => this.#store.selectedNode()?.data);
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -339,7 +353,14 @@ export class DotContentDriveShellComponent {
         // are resolved.
         const editContent = this.#route.snapshot.queryParams['editContent'];
         if (editContent && editContent !== NEW_CONTENT_MARKER) {
-            this.#navigationService.openEditByIdentifier(editContent);
+            // `editContentLang` names the exact version to reopen: an identifier has one version per
+            // language, so without it the resolver can only guess. Absent on a link written before it
+            // was recorded, which the resolver still handles.
+            const languageId = Number(this.#route.snapshot.queryParams['editContentLang']);
+            this.#navigationService.openEditByIdentifier(
+                editContent,
+                Number.isFinite(languageId) && languageId > 0 ? languageId : undefined
+            );
         }
 
         // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
@@ -561,6 +582,12 @@ export class DotContentDriveShellComponent {
                 : NEW_CONTENT_MARKER
             : null;
         queryParams['editContent'] = editContent;
+        // Written alongside so the link reopens the very version that is open, not just the content.
+        // `null` removes it, so it never lingers once the panel is closed or a `new` panel is open.
+        queryParams['editContentLang'] =
+            editRequest?.mode === 'edit' && editRequest.languageId
+                ? String(editRequest.languageId)
+                : null;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
@@ -568,15 +595,30 @@ export class DotContentDriveShellComponent {
         });
 
         // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
-        // moved the URL). Push when opening the panel so Back can pop it (AC8); replace when closing
-        // it, so no phantom history entry is left whose Back would resurrect the removed param.
+        // moved the URL).
         const newUrl = urlTree.toString();
         if (newUrl !== this.#location.path(true)) {
-            if (editContent === null && this.#editPanelUrlWasSet) {
-                this.#location.replaceState(newUrl);
-            } else {
+            // Push only for the two transitions a user would expect Back to undo: opening the panel
+            // (AC8) and navigating to a different folder. Everything else replaces.
+            //
+            // Filter writes must never push, because the default seed is a filter write and is not a
+            // user action at all: it lands on a cold load and again when the default language
+            // resolves. Pushing those buried the entry the user arrived on, so Back took two or three
+            // presses to leave the portlet. Folder navigation still pushes, so Back walks back up the
+            // tree as it did before.
+            //
+            // The first write never pushes: `#lastWrittenPath` is undefined until then, so the URL the
+            // portlet opens with replaces rather than stacking on top of the referring page.
+            const isOpeningPanel = editContent !== null && !this.#editPanelUrlWasSet;
+            const isFolderNavigation =
+                this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
+
+            if (isOpeningPanel || isFolderNavigation) {
                 this.#location.go(newUrl);
+            } else {
+                this.#location.replaceState(newUrl);
             }
+            this.#lastWrittenPath = path;
         }
         this.#editPanelUrlWasSet = editContent !== null;
     });
@@ -1139,6 +1181,14 @@ export class DotContentDriveShellComponent {
     }
 
     protected onTableScroll() {
+        this.#store.resetContextMenu();
+    }
+
+    /**
+     * A file drag entering the list dismisses the context menu, which would otherwise float over
+     * the drop overlay. The dropzone reports the drag; deciding what it means stays here.
+     */
+    protected onDropzoneDragEnter() {
         this.#store.resetContextMenu();
     }
 }
