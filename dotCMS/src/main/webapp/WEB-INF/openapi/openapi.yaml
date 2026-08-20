@@ -6150,6 +6150,90 @@ paths:
       summary: Copies a container to the current host
       tags:
       - Containers
+  /v1/content/_bulkrefresh:
+    post:
+      description: "Clears the contentlet cache and reindexes every selected contentlet,\
+        \ all versions of each. Returns a job id plus the URLs to follow the run:\
+        \ this is accepted work, not finished work. Not a full index rebuild."
+      operationId: bulkRefreshContent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkRefreshForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkRefreshSubmitView"
+          description: Accepted - reindex job enqueued
+        "400":
+          description: Bad request - empty selection or over the configured item cap
+        "401":
+          description: Unauthorized - no backend user session
+        "403":
+          description: Forbidden - not a CMS Power User or CMS Administrator
+        "415":
+          description: Unsupported Media Type
+        "500":
+          description: Internal Server Error - the job could not be created
+      summary: Reindex a selection of contentlets
+      tags:
+      - Content
+  /v1/content/_bulkrefresh/{jobId}:
+    get:
+      description: "Returns the job's current state and progress while it runs, and\
+        \ once terminal the full result including counters and — when requested at\
+        \ submit — the per-item records."
+      operationId: getBulkRefreshStatus
+      parameters:
+      - description: The reindex job's unique identifier.
+        in: path
+        name: jobId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Job status retrieved
+        "401":
+          description: Unauthorized - no backend user session
+        "404":
+          description: Not Found - unknown job id
+        "500":
+          description: Internal Server Error
+      summary: Get the status of a reindex job
+      tags:
+      - Content
+  /v1/content/_bulkrefresh/{jobId}/cancel:
+    post:
+      description: Stops the run at the next item boundary. Identifiers already reindexed
+        stay reindexed; the remainder are counted as skipped.
+      operationId: cancelBulkRefresh
+      parameters:
+      - description: The reindex job's unique identifier.
+        in: path
+        name: jobId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Cancellation requested
+        "400":
+          description: Bad request - the job is already in a terminal state
+        "401":
+          description: Unauthorized - no backend user session
+        "404":
+          description: Not Found - unknown job id
+        "500":
+          description: Internal Server Error
+      summary: Cancel a reindex job
+      tags:
+      - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
       description: Checks if the contentlet specified by its inode or identifier can
@@ -25034,6 +25118,31 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkRefreshForm:
+      type: object
+      properties:
+        contentletIds:
+          type: array
+          items:
+            type: string
+          maxItems: 2147483647
+          minItems: 1
+        includeDependencies:
+          type: boolean
+        includeItemResults:
+          type: boolean
+      required:
+      - contentletIds
+    BulkRefreshSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     BulkResultView:
       type: object
       properties:
@@ -32293,6 +32402,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/BulkActionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBulkRefreshSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkRefreshSubmitResponse"
         errors:
           type: array
           items:
