@@ -13,7 +13,7 @@ import {
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
-import * as Utilities from '../../../shared/dot-experiment.utils';
+import * as Utilities from '../../dot-experiment-results.utils';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.reports.chart.empty.title': 'x axis label',
