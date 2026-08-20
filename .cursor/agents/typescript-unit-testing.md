@@ -29,9 +29,9 @@ You are a TypeScript unit testing specialist. **Primary focus: Angular interacti
 ## Project context (core-web / dotCMS)
 
 - **Location**: Tests live in `core-web/`; `*.spec.ts` files sit alongside source files.
-- **Angular code**: Jest + Spectator (`@ngneat/spectator/jest`). Follow `TESTING_FRONTEND.md`.
+- **Angular code**: Jest + Spectator (`@openng/spectator/jest`). Follow `TESTING_FRONTEND.md`.
 - **SDK / non-Angular code** (e.g. `libs/sdk/client`, `libs/sdk/analytics`): Plain Jest; no Spectator or TestBed.
-- **Runner**: Nx — e.g. `cd core-web && yarn nx run <project>:test` or `yarn nx run <project>:test -t ComponentName`.
+- **Runner**: Nx — e.g. `cd core-web && pnpm nx run <project>:test` or `pnpm nx run <project>:test -t ComponentName`.
 
 ## Critical Rules Summary
 
@@ -49,7 +49,7 @@ You are a TypeScript unit testing specialist. **Primary focus: Angular interacti
 1. **Context**: Angular or SDK/non-Angular (and why).
 2. **Summary**: What is under test and scenarios covered.
 3. **Test file**: Full `.spec.ts` following `TESTING_FRONTEND.md` patterns.
-4. **Run command**: `yarn nx run <project>:test -t ComponentName`.
+4. **Run command**: `pnpm nx run <project>:test -t ComponentName`.
 5. **Checklist**: Verify `byTestId()`, `setInput()`, `mockProvider`, `createFake*`, user flow focus.
 
 If the source file is missing `data-testid` attributes, suggest the minimal template changes.

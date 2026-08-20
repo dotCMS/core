@@ -123,6 +123,7 @@ import {
     deleteContentletFromContainer,
     getTargetUrl,
     insertContentletInContainer,
+    isAssetPath,
     isSamePageNavigation,
     measureCanvasAvailableSize,
     shouldNavigate
@@ -791,6 +792,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
+        // Files (PDFs, images, docs…) are not pages: the Page API cannot resolve
+        // them and the editor would show "Page not found". Open them in a new tab
+        // so the author can verify the link without leaving the editor.
+        if (isAssetPath(url.pathname)) {
+            // Cancel before opening, so the page under edit stays put whatever the
+            // open does. `url` is the origin-resolved form of `href`, which can
+            // still be a raw relative attribute when the click lands on a child of
+            // the anchor.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
+
+            return;
+        }
+
         // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
         if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
             return;
@@ -798,6 +813,45 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Opens a URL in a new tab with the opener severed.
+     *
+     * Deliberately not `window.open(url, '_blank', 'noopener')`. A windowFeatures
+     * string makes Firefox classify the call as a popup request, and the iframe
+     * raising the gesture is sandboxed without `allow-popups`, so Firefox throws
+     * "DOMException: The operation is insecure". A `rel="noopener"` anchor is an
+     * ordinary tab navigation, which the sandbox permits, and carries the same
+     * opener guarantee, including for cross-origin targets where assigning
+     * `opener = null` on the returned window would not be allowed.
+     *
+     * @param {string} href - Absolute URL to open
+     * @memberof EditEmaEditorComponent
+     */
+    #openInNewTab(href: string): void {
+        let link: HTMLAnchorElement | null = null;
+
+        try {
+            const doc = this.window.document;
+
+            link = doc.createElement('a');
+            link.href = href;
+            link.target = '_blank';
+            link.rel = 'noopener';
+
+            doc.body.appendChild(link);
+            link.click();
+        } catch {
+            // Swallow. This runs inside the RxJS subscriber that feeds the iframe
+            // click handler, so an escaping throw would complete the subscription
+            // and kill link handling for the rest of the session.
+        } finally {
+            // `click()` is the call that throws when the open is refused, so
+            // cleanup has to be unconditional or every failed attempt strands an
+            // anchor in the admin document.
+            link?.remove();
+        }
     }
 
     /**

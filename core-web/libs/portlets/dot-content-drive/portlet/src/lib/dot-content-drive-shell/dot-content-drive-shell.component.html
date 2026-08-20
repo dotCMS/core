@@ -29,9 +29,11 @@
         (moveItems)="onMoveItems($event)" />
 </div>
 
-<dot-content-drive-dropzone
+<dot-upload-dropzone
     data-testid="dropzone"
+    [targetFolder]="$selectedFolder()"
     (uploadFiles)="onRequestUpload($event)"
+    (dragEnter)="onDropzoneDragEnter()"
     class="col-start-2 row-start-3 overflow-auto">
     <dot-folder-list-view
         [items]="$items()"
@@ -49,23 +51,10 @@
         (drop)="onTableDrop($event)"
         (scroll)="onTableScroll()"
         #listView />
-</dot-content-drive-dropzone>
+</dot-upload-dropzone>
 <dot-folder-list-context-menu />
 
-<p-toast position="top-center" data-testId="content-drive-toast">
-    <ng-template let-message pTemplate="message">
-        <span
-            class="p-toast-message-icon"
-            [attr.aria-hidden]="true"
-            [attr.data-pc-section]="'icon'">
-            <dot-severity-icon [severity]="message.severity" />
-        </span>
-        <div class="p-toast-message-text">
-            <span class="p-toast-summary" innerHtml="{{ message.summary }}"></span>
-            <span class="p-toast-detail" innerHtml="{{ message.detail }}"></span>
-        </div>
-    </ng-template>
-</p-toast>
+<dot-toast position="top-center" />
 
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
@@ -149,7 +138,7 @@
      into whichever presentation is active: a popover for the Upload button, a modal for drag-drop. -->
 <ng-template #uploadSelectorTpl>
     @if ($uploadSelectorPayload(); as payload) {
-        <dot-content-drive-dialog-upload-selector
+        <dot-upload-type-selector
             class="block"
             data-testId="dialog-upload-selector"
             [targetFolder]="payload.targetFolder"

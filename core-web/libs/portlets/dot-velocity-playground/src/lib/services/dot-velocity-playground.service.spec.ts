@@ -78,4 +78,38 @@ describe('DotVelocityPlaygroundService', () => {
         expect(received?.contentType).toBe('plaintext');
         expect(received?.body).toBe('raw output');
     });
+
+    it('parses warnings from the X-Dot-Velocity-Warnings header', () => {
+        const warnings = [
+            { type: 'UNDEFINED_REFERENCE', message: "Undefined reference '$x'", reference: '$x' }
+        ];
+        let received: DotVelocityPlaygroundResponse | undefined;
+        spectator.service.runScript({ velocity: '$x' }).subscribe((res) => {
+            received = res;
+        });
+
+        const req = spectator.expectOne('/api/vtl/dynamic/', HttpMethod.POST);
+        req.flush('output', {
+            headers: {
+                'Content-Type': 'text/plain',
+                'X-Dot-Velocity-Warnings': JSON.stringify(warnings)
+            },
+            status: 200,
+            statusText: 'OK'
+        });
+
+        expect(received?.warnings).toEqual(warnings);
+    });
+
+    it('returns an empty warnings array when the header is absent', () => {
+        let received: DotVelocityPlaygroundResponse | undefined;
+        spectator.service.runScript({ velocity: 'x' }).subscribe((res) => {
+            received = res;
+        });
+
+        const req = spectator.expectOne('/api/vtl/dynamic/', HttpMethod.POST);
+        req.flush('output', { status: 200, statusText: 'OK' });
+
+        expect(received?.warnings).toEqual([]);
+    });
 });

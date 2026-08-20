@@ -19,7 +19,12 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 
-String testIndex = (request.getParameter("testIndex") == null) ? info.getSiteSearch() : request.getParameter("testIndex");
+// Phase-aware default (issue #36983): from Phase 3 on, activateIndex fans out to OpenSearch alone, so
+// the legacy IndiciesInfo pointer freezes at the Elasticsearch-era default and would preselect a stale
+// index here. Resolved once and reused below for the "(Default)" marker.
+String defaultSiteSearchIndex = null;
+try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (Exception e) { Logger.warn(this.getClass(), "Could not resolve the default site-search index: " + e.getMessage()); }
+String testIndex = (request.getParameter("testIndex") == null) ? defaultSiteSearchIndex : request.getParameter("testIndex");
 String testQuery = request.getParameter("testQuery");
 
 
@@ -56,7 +61,16 @@ try {
 
 
 List<String> indices=ssapi.listIndices();
-Map<String,String> alias=esapi.getIndexAlias(indices);
+// Site-search alias resolution for the index selector (issue #36983): the content-index router
+// (esapi) queries OpenSearch without the .os tag, so it resolves nothing in Phases 2/3 and the
+// dropdown showed raw internal index names instead of the aliases operators know. Resolve through
+// the site-search API, over the same provider set listIndices() uses — the list is a union of both
+// engines, so a read-provider-only map would still blank the label of any index living on the other
+// engine. Only the LABEL uses the alias; the option value stays the index name the search needs.
+Map<String,String> alias=new HashMap<String,String>();
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
+	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
+}
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
@@ -108,7 +122,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 				
 				<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(defaultSiteSearchIndex)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 				</select>
 				

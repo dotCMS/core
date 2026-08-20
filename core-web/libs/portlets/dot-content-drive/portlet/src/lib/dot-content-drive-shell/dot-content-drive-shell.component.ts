@@ -21,11 +21,12 @@ import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
 
 import { catchError } from 'rxjs/operators';
 
 import {
+    AddToBundleService,
+    DotCurrentUserService,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -38,29 +39,33 @@ import {
     DotCMSContentTypeField,
     DotCMSDataTypes,
     DotCMSFieldTypes,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
-    DotFolderListViewComponent,
-    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotContentDriveUploadFiles,
-    DotFolderListViewColumn,
     DotFolderTreeNodeData,
     DotFolderTreeNodeContentData,
     DotContentDriveMoveItems,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
+import {
+    DotAddToBundleComponent,
+    DotFolderListViewComponent,
+    DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
+    DotFolderListViewColumn,
+    DotMessagePipe,
+    DotToastComponent,
+    DotUploadDropzoneComponent,
+    DotUploadTypeSelectorComponent
+} from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
-import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
-import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
@@ -97,17 +102,16 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
         DotContentDriveSidebarComponent,
-        ToastModule,
         DialogModule,
         PopoverModule,
         NgTemplateOutlet,
         DotContentDriveDialogFolderComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
-        DotContentDriveDialogUploadSelectorComponent,
+        DotUploadTypeSelectorComponent,
         MessageModule,
         DotMessagePipe,
-        DotContentDriveDropzoneComponent,
-        DotSeverityIconComponent,
+        DotUploadDropzoneComponent,
+        DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent
@@ -119,7 +123,12 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DotContentDriveNavigationService,
         DotWorkflowsActionsService,
         MessageService,
-        DotFolderService
+        DotFolderService,
+        // Injected by the store's `withActionExecution` to fire Add to Bundle. Neither is
+        // `providedIn: 'root'`, and the bundle service resolves the current user to reach their
+        // bundles. `DotAddToBundleComponent` (single item, from the context menu) provides its own pair.
+        AddToBundleService,
+        DotCurrentUserService
     ],
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -152,6 +161,12 @@ export class DotContentDriveShellComponent {
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
     #editPanelUrlWasSet = false;
+    /**
+     * The folder path the URL was last written with, so a genuine folder navigation can be told apart
+     * from a filter-only write. `undefined` until the first write, which is what keeps the very first
+     * URL from pushing an entry on top of the one the user arrived on.
+     */
+    #lastWrittenPath: string | undefined = undefined;
 
     /**
      * The rendered side panel, so browser Back can route its close through the panel's guard.
@@ -171,6 +186,12 @@ export class DotContentDriveShellComponent {
      * `isTreeVisuallyExpanded` on the store for why these are kept separate.
      */
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Folder a dropped file lands in. The shared dropzone is presentational, so the target comes
+     * from here rather than the dropzone reaching into the store itself.
+     */
+    readonly $selectedFolder = computed(() => this.#store.selectedNode()?.data);
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -209,7 +230,7 @@ export class DotContentDriveShellComponent {
         const dialog = this.$activeDialog();
 
         return dialog?.type === DIALOG_TYPE.FOLDER
-            ? (dialog.payload as DotContentDriveFolder)
+            ? (dialog.payload as DotContentDriveActionableFolder)
             : undefined;
     });
 
@@ -332,7 +353,14 @@ export class DotContentDriveShellComponent {
         // are resolved.
         const editContent = this.#route.snapshot.queryParams['editContent'];
         if (editContent && editContent !== NEW_CONTENT_MARKER) {
-            this.#navigationService.openEditByIdentifier(editContent);
+            // `editContentLang` names the exact version to reopen: an identifier has one version per
+            // language, so without it the resolver can only guess. Absent on a link written before it
+            // was recorded, which the resolver still handles.
+            const languageId = Number(this.#route.snapshot.queryParams['editContentLang']);
+            this.#navigationService.openEditByIdentifier(
+                editContent,
+                Number.isFinite(languageId) && languageId > 0 ? languageId : undefined
+            );
         }
 
         // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
@@ -449,6 +477,79 @@ export class DotContentDriveShellComponent {
             : limit * (currentPage - 1) + items.length;
     });
 
+    /**
+     * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
+     * is still open.
+     *
+     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
+     * user may close it mid-flight and the result still has to be reported. The shell owns
+     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
+     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
+     *
+     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
+     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
+     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
+     * whole post-run refresh.
+     *
+     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
+     * unqualified success would be the one thing the user cannot recover from — the grid has already
+     * reloaded and the selection is gone.
+     */
+    readonly actionExecutionResultEffect = effect(() => {
+        const result = this.#store.actionExecutionResult();
+
+        if (!result) {
+            return;
+        }
+
+        const { actionName, successCount, skippedCount, failCount } = result;
+
+        // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
+        // can skip items whose scheme does not own the action *and* be refused on items that are
+        // locked. The ladder this replaces reported whichever it checked first, so a mixed result
+        // showed the failure copy alone and blamed permissions or locks for the entire shortfall —
+        // sending the user off to unlock content that was never the problem.
+        //
+        // So anything short of a clean run reports all three numbers, each next to its own cause.
+        // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
+        // cause and its number is what keeps the message honest.
+        const isPartial = failCount > 0 || skippedCount > 0;
+
+        const detail = isPartial
+            ? this.#dotMessageService.get(
+                  'content-drive.action-center.toast.executed-partial',
+                  actionName,
+                  String(successCount),
+                  String(failCount),
+                  String(skippedCount)
+              )
+            : this.#dotMessageService.get(
+                  'content-drive.action-center.toast.executed-detail',
+                  actionName,
+                  String(successCount)
+              );
+
+        this.#messageService.add({
+            // A skip is a shortfall too — those items did not get the action — so it warns rather
+            // than reporting green, which is what it used to do.
+            severity: isPartial ? 'warn' : 'success',
+            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
+            detail,
+            life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+        });
+
+        untracked(() => {
+            // Contentlets have moved step, so the grid is stale; `loadItems` also drops the selection
+            // the run consumed.
+            this.#store.loadItems();
+            // A no-op when the user already closed the dialog, which is the common path now that
+            // firing hands off to the toolbar.
+            this.#store.closeDialog();
+            this.#store.clearActionExecutionResult();
+        });
+    });
+
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
         const path = this.#store.path();
@@ -481,6 +582,12 @@ export class DotContentDriveShellComponent {
                 : NEW_CONTENT_MARKER
             : null;
         queryParams['editContent'] = editContent;
+        // Written alongside so the link reopens the very version that is open, not just the content.
+        // `null` removes it, so it never lingers once the panel is closed or a `new` panel is open.
+        queryParams['editContentLang'] =
+            editRequest?.mode === 'edit' && editRequest.languageId
+                ? String(editRequest.languageId)
+                : null;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
@@ -488,15 +595,30 @@ export class DotContentDriveShellComponent {
         });
 
         // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
-        // moved the URL). Push when opening the panel so Back can pop it (AC8); replace when closing
-        // it, so no phantom history entry is left whose Back would resurrect the removed param.
+        // moved the URL).
         const newUrl = urlTree.toString();
         if (newUrl !== this.#location.path(true)) {
-            if (editContent === null && this.#editPanelUrlWasSet) {
-                this.#location.replaceState(newUrl);
-            } else {
+            // Push only for the two transitions a user would expect Back to undo: opening the panel
+            // (AC8) and navigating to a different folder. Everything else replaces.
+            //
+            // Filter writes must never push, because the default seed is a filter write and is not a
+            // user action at all: it lands on a cold load and again when the default language
+            // resolves. Pushing those buried the entry the user arrived on, so Back took two or three
+            // presses to leave the portlet. Folder navigation still pushes, so Back walks back up the
+            // tree as it did before.
+            //
+            // The first write never pushes: `#lastWrittenPath` is undefined until then, so the URL the
+            // portlet opens with replaces rather than stacking on top of the referring page.
+            const isOpeningPanel = editContent !== null && !this.#editPanelUrlWasSet;
+            const isFolderNavigation =
+                this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
+
+            if (isOpeningPanel || isFolderNavigation) {
                 this.#location.go(newUrl);
+            } else {
+                this.#location.replaceState(newUrl);
             }
+            this.#lastWrittenPath = path;
         }
         this.#editPanelUrlWasSet = editContent !== null;
     });
@@ -1059,6 +1181,14 @@ export class DotContentDriveShellComponent {
     }
 
     protected onTableScroll() {
+        this.#store.resetContextMenu();
+    }
+
+    /**
+     * A file drag entering the list dismisses the context menu, which would otherwise float over
+     * the drop overlay. The dropzone reports the drag; deciding what it means stays here.
+     */
+    protected onDropzoneDragEnter() {
         this.#store.resetContextMenu();
     }
 }

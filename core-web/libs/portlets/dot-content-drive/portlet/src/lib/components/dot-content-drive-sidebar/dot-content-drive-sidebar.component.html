@@ -1,17 +1,11 @@
-<div class="flex h-17.5 items-center gap-2 px-3 pt-7 pb-4">
-    <dot-content-drive-tree-toggler data-testid="tree-toggler" />
-    <h3 class="m-0 text-base font-semibold" data-testid="current-site-hostname">
-        {{ $currentSite()?.hostname }}
-    </h3>
-</div>
 <dot-tree-folder
     #treeFolder
     [folders]="$folders()"
     [loading]="$loading()"
-    [selectedNode]="$selectedNode()"
+    [selectedNode]="$selectedNode() ?? null"
     (onNodeSelect)="onNodeSelect($event)"
     (onNodeExpand)="onNodeExpand($event)"
-    (onNodeCollapse)="onNodeCollapse($event)"
     (loadMore)="onLoadMore($event)"
+    (rightClick)="onNodeRightClick($event)"
     (uploadFiles)="uploadFiles.emit($event)"
     (moveItems)="moveItems.emit($event)" />

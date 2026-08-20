@@ -29,6 +29,7 @@
         },
         "build": {
             "executor": "nx:run-commands",
+            "outputs": ["{workspaceRoot}/dist/libs/dotcms-webcomponents"],
             "options": {
                 "command": "pnpm exec stencil build --config libs/dotcms-webcomponents/stencil.config.ts --prod"
             }

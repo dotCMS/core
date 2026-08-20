@@ -1,60 +1,31 @@
 import { Routes } from '@angular/router';
 
-import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
-import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
+import { DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
-import { DotExperimentsAnalyticAppMisconfigurationComponent } from './dot-experiments-analytic-app-misconfiguration/dot-experiments-analytic-app-misconfiguration.component';
-import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration/dot-experiments-configuration.component';
-import { DotExperimentsListComponent } from './dot-experiments-list/dot-experiments-list.component';
-import { DotExperimentsReportsComponent } from './dot-experiments-reports/dot-experiments-reports.component';
-import { DotExperimentsShellComponent } from './dot-experiments-shell/dot-experiments-shell.component';
-import { AnalyticsAppGuard } from './shared/guards/dot-experiments-analytic-app.guard';
-
-export const dotExperimentsRoutes: Routes = [
+/**
+ * Routes for the Experiments portlet (registered under `/experiments`).
+ *
+ * This is the portlet that replaces the per-page UVE experiments screens, which live on
+ * under `./old/` and keep serving `dotExperimentsRoutes` unchanged until they are retired.
+ *
+ * Only the list route is wired today. The `new`, `:id/configuration` and `:id/results`
+ * screens are delivered by follow-up issues (#36990+) and are intentionally absent so
+ * the router surfaces an honest 404 instead of falling back to the legacy UVE screens.
+ */
+export const dotExperimentsPortletRoutes: Routes = [
     {
-        path: 'analytic-app-misconfiguration',
-        component: DotExperimentsAnalyticAppMisconfigurationComponent,
-        title: 'experiments.container.no-analytic-app-configured.title'
-    },
-    {
-        path: ':pageId',
-        component: DotExperimentsShellComponent,
+        path: '',
+        title: 'experiment.container.list.title',
+        // `DotPushPublishEnvironmentsResolver` is `@Injectable()` without `providedIn: 'root'`,
+        // so referencing it in `resolve` is not enough — it has to be provided on the route or
+        // the router throws NG0201 on activation.
+        providers: [DotPushPublishEnvironmentsResolver],
         resolve: {
-            isEnterprise: DotEnterpriseLicenseResolver,
             pushPublishEnvironments: DotPushPublishEnvironmentsResolver
         },
-        canActivateChild: [AnalyticsAppGuard],
-        children: [
-            {
-                path: '',
-                title: 'experiment.container.list.title',
-                component: DotExperimentsListComponent
-            },
-            {
-                path: ':experimentId/configuration',
-                title: 'experiment.container.configuration.title',
-                resolve: {
-                    config: DotExperimentsConfigResolver
-                },
-                data: {
-                    experimentsConfigProps: [
-                        ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
-                        ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
-                    ]
-                },
-                component: DotExperimentsConfigurationComponent
-            },
-            {
-                path: ':experimentId/reports',
-                title: 'experiment.container.report.title',
-                component: DotExperimentsReportsComponent
-            }
-        ]
-    },
-    {
-        path: '**',
-        redirectTo: 'analytic-app-misconfiguration',
-        pathMatch: 'full'
+        loadComponent: () =>
+            import('./dot-experiments-list/dot-experiments-list.component').then(
+                (m) => m.DotExperimentsListComponent
+            )
     }
 ];

@@ -240,10 +240,10 @@ When working on Angular frontend code:
 3. **Build Commands**:
    ```bash
    # Development server
-   cd core-web && nx run dotcms-ui:serve
+   cd core-web && pnpm nx run dotcms-ui:serve
    
    # Run tests
-   cd core-web && nx run dotcms-ui:test
+   cd core-web && pnpm nx run dotcms-ui:test
    ```
 
 ### Cross-Domain Changes
@@ -372,7 +372,7 @@ git push origin issue-12345-short-description
 ./mvnw install -pl :dotcms-core -DskipTests
 
 # Frontend development
-cd core-web && nx run dotcms-ui:serve
+cd core-web && pnpm nx run dotcms-ui:serve
 
 # Full build with tests
 ./mvnw clean install

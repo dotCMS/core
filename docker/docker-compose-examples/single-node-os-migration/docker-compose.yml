@@ -2,7 +2,7 @@
 #
 # Runs BOTH search backends side-by-side for the OS 1.x → OS 3.x migration:
 #   - OpenSearch 1.3.x  + OS Dashboards 1.3.x → http://localhost:5601
-#   - OpenSearch 3.4.0  + OS Dashboards 3.0.0  → http://localhost:5602
+#   - OpenSearch 3.8.0  + OS Dashboards 3.0.0  → http://localhost:5602
 #
 # dotCMS is configured to write to OpenSearch 1.x (primary) while OpenSearch 3.x
 # shadows the traffic. Flip DOT_ES_ENDPOINTS to the opensearch3 service URL
@@ -90,11 +90,11 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # OpenSearch 3.4.0  (shadow/target)
+  # OpenSearch 3.8.0  (shadow/target)
   # REST API → http://localhost:9201
   # ---------------------------------------------------------------------------
   opensearch3:
-    image: opensearchproject/opensearch:3.4.0
+    image: opensearchproject/opensearch:3.8.0
     environment:
       cluster.name: "opensearch3-cluster"
       discovery.type: "single-node"

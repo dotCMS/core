@@ -24,6 +24,18 @@
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>../../</e2e.frontend.dir>
         <e2e.playwright.args></e2e.playwright.args>
+        <!--
+            NODE_OPTIONS for the process that runs Playwright, raised from the default because the CI
+            shard was dying mid-run. Override per invocation while tuning, with
+            -De2e.node.options=... (note: XML comments cannot contain a double hyphen, so the flag
+            name is spelled without its leading dashes below).
+
+            This lifts V8's old-space ceiling and nothing else. It does NOT address a SIGSEGV or an
+            OOM-killed container: a JS heap exhaustion aborts with "Reached heap limit" and exit 134,
+            so for any other crash signature look at the memory the container has, not at this value.
+            max-old-space-size is the flag being set.
+        -->
+        <e2e.node.options>--max-old-space-size=4096</e2e.node.options>
         <e2e.test.cmd>nx run dotcms-ui-e2e:e2e --configuration=${e2e.test.env} -- ${e2e.playwright.args}</e2e.test.cmd>
         <e2e.post.test.cmd>exec sh -c "mkdir -p apps/dotcms-ui-e2e/target/playwright-reports &amp;&amp; cp apps/dotcms-ui-e2e/test-results/junit.xml apps/dotcms-ui-e2e/target/playwright-reports/junit.xml"</e2e.post.test.cmd>
         <tomcat.port>8080</tomcat.port>
@@ -90,6 +102,7 @@
                             <environmentVariables>
                                 <CI>true</CI>
                                 <CURRENT_ENV>${e2e.test.env}</CURRENT_ENV>
+                                <NODE_OPTIONS>${e2e.node.options}</NODE_OPTIONS>
                                 <PATH>${node.install.dir}:${env.PATH}</PATH>
                             </environmentVariables>
                         </configuration>

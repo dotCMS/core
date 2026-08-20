@@ -15,8 +15,8 @@ import { MessageService } from 'primeng/api';
 
 import {
     DotCategoriesService,
-    DotContentletService,
     DotContentTypeService,
+    DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
@@ -24,12 +24,13 @@ import {
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { createFakeTextField, MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveActionExecution } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
@@ -57,6 +58,7 @@ describe('DotContentDriveToolbarComponent', () => {
     const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
         undefined
     );
+    const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -67,6 +69,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 // signal keeps these tests driving one value, since they don't need to distinguish
                 // the real preference from a panel-forced override.
                 isTreeVisuallyExpanded: isTreeExpandedSignal,
+                // The toggler disables itself while the side panel holds the tree collapsed.
+                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -80,7 +84,12 @@ describe('DotContentDriveToolbarComponent', () => {
                 userSearchableActive: signal<string[]>([]),
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn()
+                clearUserSearchableFilters: jest.fn(),
+                actionExecution: actionExecutionSignal,
+                // Read by the Locale chip this toolbar renders: the store resolves the languages
+                // once and seeds the environment default into the `languageId` filter.
+                languages: signal(mockLocales),
+                defaultLanguageId: jest.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -96,8 +105,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
+            // The shared DotLanguageFilterComponent fetches the language list on init, so without
+            // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
+            // NetworkError rather than on anything it is testing.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
+                get: jest.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.
@@ -140,6 +152,7 @@ describe('DotContentDriveToolbarComponent', () => {
         filtersSignal.set({});
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
+        actionExecutionSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -188,21 +201,48 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should hide the tree toggler with styles when tree is expanded', () => {
+        it('should keep the tree toggler in place when the tree is expanded', () => {
+            // The toggler used to collapse to nothing once the tree opened, handing over to a
+            // second copy inside the sidebar. It now stays beside the search input in both states,
+            // which is how UVE keeps its palette and quick-edit toggles in the toolbar.
             isTreeExpandedSignal.set(true);
             spectator.detectChanges();
 
             const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
+
             expect(toggler).toBeTruthy();
-            expect(toggler.style.opacity).toBe('0');
-            expect(toggler.style.visibility).toBe('hidden');
-            expect(toggler.style.width).toBe('0px');
+            expect(toggler.style.visibility).not.toBe('hidden');
+            expect(toggler.style.opacity).not.toBe('0');
+            expect(toggler.style.width).not.toBe('0px');
         });
     });
 
     describe('Clear all button', () => {
         it('should not render when no filters are applied', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should not render when only the seeded defaults are set', () => {
+            // The default language and the shared-assets toggle are always present, so counting
+            // filter keys would leave this button on screen permanently.
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should render once shared assets are turned off', () => {
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'false' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
+        });
+
+        it('should render once a non-default language is picked', () => {
+            filtersSignal.set({ languageId: ['2'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
         });
 
         it('should render when at least one filter is applied', () => {
@@ -465,6 +505,127 @@ describe('DotContentDriveToolbarComponent', () => {
                 type: DIALOG_TYPE.ACTION_CENTER,
                 header: 'content-drive.action-center.header'
             });
+        });
+
+        it('should be disabled while an action is running', async () => {
+            // Reopening mid-run gives a dialog with every row greyed out that then closes itself
+            // when the run settles. Refusing to open it is the honest version of that state.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should explain why it is disabled while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
+        it('should carry no tooltip when nothing is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe('');
+        });
+
+        it('should not open the dialog while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            // Guards the handler too: a disabled attribute alone would leave the store reachable.
+            spectator.component['onOpenActionCenter']();
+
+            expect(store.setDialog).not.toHaveBeenCalled();
+        });
+
+        it('should become available again once the run settles', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(false);
+        });
+    });
+
+    describe('running-action indicator', () => {
+        it('should stay hidden when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        it('should report the action and the number of items once a run starts', () => {
+            // The toolbar is the only place still reporting the run after the Action Center dialog is
+            // closed, which is the whole reason the indicator lives out here.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            expect(indicator).toBeTruthy();
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying'
+            );
+        });
+
+        it('should not render markup carried by the action name', () => {
+            // Workflow action names come from the backend verbatim (`$selectedAction()?.name`), and
+            // the label is placed in the DOM as HTML so the message's own `<b>` renders. A name
+            // carrying markup must not become live DOM — an event-handler attribute least of all.
+            //
+            // The shared mock returns the bare key, which would make this pass without rendering
+            // anything; the real message has to be in play for the assertion to mean something.
+            const messageService = spectator.inject(DotMessageService);
+
+            jest.spyOn(messageService, 'get').mockImplementation(
+                (key: string, ...args: string[]) =>
+                    key === 'content-drive.action-center.applying'
+                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                        : key
+            );
+
+            actionExecutionSignal.set({
+                actionName: '<img src=x onerror="window.__xss = true">',
+                total: 3
+            });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            // Asserted structurally rather than by searching the markup for "onerror": once the name
+            // is escaped it renders as visible text that legitimately still contains that word.
+            expect(indicator?.querySelector('img')).toBeNull();
+            expect(indicator?.querySelector('[onerror]')).toBeNull();
+            // …and the name is still shown to the user, just as text.
+            expect(indicator?.textContent).toContain('<img src=x');
+        });
+
+        it('should disappear again once the run settles', () => {
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
         });
     });
 
