@@ -16,16 +16,23 @@
     }
 
     <div class="flex justify-end gap-2 px-6">
-        <button
-            pButton
-            type="button"
-            severity="danger"
-            [outlined]="true"
-            [disabled]="!$canBulkRemove() || !store.canGrantUsers()"
-            (click)="onRemoveSelected()"
-            data-testid="bulk-remove-btn">
-            {{ 'roles.users.remove' | dm }}
-        </button>
+        <!--
+            Remove is a bulk-only destructive action — hidden until the
+            admin has actually selected direct-grant rows in the table.
+            No selection → nothing to remove → don't crowd the toolbar.
+        -->
+        @if ($canBulkRemove()) {
+            <button
+                pButton
+                type="button"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="!store.canGrantUsers()"
+                (click)="onRemoveSelected()"
+                data-testid="bulk-remove-btn">
+                {{ 'roles.users.remove' | dm }}
+            </button>
+        }
 
         <button
             pButton
