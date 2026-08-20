@@ -128,6 +128,8 @@ export const CONFIGURATION_SEGMENT = 'configuration';
 
 /** Hides a `p-panel`'s footer band while its footer slot has nothing to show (see the theme). */
 export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
+/** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
+export const RESULTS_SEGMENT = 'results';
 
 /**
  * Multiplier applied to the page-lookup limit.
@@ -279,3 +281,12 @@ export const VARIANT_COLORS: readonly string[] = [
  * store's is what turns it into a scroll target (AC28) — and the card reads both.
  */
 export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';
+
+/**
+ * Key of the Results screen's `p-confirmDialog`, which the Stop confirmation is raised on.
+ *
+ * Its own key rather than the Configure screen's `CONFIGURATION_CONFIRM_DIALOG_KEY`: the two
+ * screens never share a dialog instance, and the summary table mounts a second dialog of its own
+ * for Promote — a key shared between two mounted dialogs opens both at once.
+ */
+export const RESULTS_CONFIRM_DIALOG_KEY = 'resultsConfirmDialog';
