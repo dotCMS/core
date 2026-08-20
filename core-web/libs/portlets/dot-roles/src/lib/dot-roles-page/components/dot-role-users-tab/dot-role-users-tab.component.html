@@ -44,10 +44,33 @@
         </button>
     </div>
 
-    @if (store.membersStatus() === 'loading') {
-        <p class="text-color-secondary m-0 px-6 text-sm" data-testid="members-loading">
-            {{ 'loading' | dm }}
-        </p>
+    @if (store.membersStatus() === 'loading' || store.selectedRoleStatus() === 'loading') {
+        <!--
+            Skeleton table — matches the real column layout (checkbox +
+            Name + Email + Granted From) so the panel stays stable while
+            members load. Five rows is enough visual density without
+            being noisy for small member lists. Also shown while the role
+            detail itself is loading, since we can't fetch members until
+            the role resolves.
+        -->
+        <p-table [value]="[0, 1, 2, 3, 4]" data-testid="members-loading-skeleton">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="w-12"></th>
+                    <th>{{ 'roles.users.column.name' | dm }}</th>
+                    <th>{{ 'roles.users.column.email' | dm }}</th>
+                    <th>{{ 'roles.users.column.granted-from' | dm }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body">
+                <tr>
+                    <td><p-skeleton height="1.25rem" width="1.25rem" /></td>
+                    <td><p-skeleton height="1rem" width="60%" /></td>
+                    <td><p-skeleton height="1rem" width="70%" /></td>
+                    <td><p-skeleton height="1.25rem" width="40%" /></td>
+                </tr>
+            </ng-template>
+        </p-table>
     } @else if (store.membersStatus() === 'error') {
         <p class="m-0 px-6 text-sm text-red-700" data-testid="members-error">
             {{ 'error.load-failed' | dm }}
@@ -122,6 +145,7 @@
             [showToggleAll]="false"
             [listStyle]="{ 'max-height': '360px' }"
             (onChange)="onGrantUser($event.value, grantPanel)"
+            (onFilter)="onGrantSearch($event)"
             data-testid="grant-user-list">
             <ng-template let-user pTemplate="item">
                 <div class="flex items-center gap-3">

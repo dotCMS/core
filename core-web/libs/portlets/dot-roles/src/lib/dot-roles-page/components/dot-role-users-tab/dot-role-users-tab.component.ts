@@ -1,20 +1,22 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ListboxModule } from 'primeng/listbox';
+import { ListboxFilterEvent, ListboxModule } from 'primeng/listbox';
 import { Popover, PopoverModule } from 'primeng/popover';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { map } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSResponse } from '@dotcms/dotcms-models';
@@ -43,6 +45,7 @@ interface UserFilterResult {
         PopoverModule,
         TooltipModule,
         ConfirmDialogModule,
+        SkeletonModule,
         DotMessagePipe
     ],
     providers: [ConfirmationService],
@@ -54,8 +57,19 @@ export class DotRoleUsersTabComponent {
     readonly #http = inject(HttpClient);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #messageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
 
     protected readonly $userSuggestions = signal<UserFilterResult[]>([]);
+
+    /**
+     * Debounced pipe that hits `/api/v1/users/filter?query=X` as the admin
+     * types in the Grant popover's search input. Client-side filtering
+     * (`p-listbox [filter]`) only narrows the FIRST page the server sent
+     * — with hundreds of users the target may never land in that page —
+     * so we refetch on every keystroke after a 300ms debounce and
+     * `switchMap` cancels in-flight requests as new keys land.
+     */
+    readonly #userSearchInput$ = new Subject<string>();
 
     protected readonly $canBulkRemove = computed(() => this.store.selectedMembers().length > 0);
 
@@ -76,17 +90,37 @@ export class DotRoleUsersTabComponent {
                 })
             );
         });
+
+        // Wire the debounced user search — see `#userSearchInput$` doc.
+        this.#userSearchInput$
+            .pipe(
+                debounceTime(300),
+                distinctUntilChanged(),
+                switchMap((query) => this.#getUserSuggestions(query)),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((users) => this.$userSuggestions.set(users));
     }
 
     /**
-     * Popover open hook — pre-populates the user list so the panel shows a
-     * browsable list immediately (matching the design), no keystroke needed.
-     * `p-listbox`'s internal `filter` handles narrowing from there.
+     * Popover open hook — seeds the listbox with the first page of users
+     * (no query) so the admin sees a browsable list immediately, before
+     * typing. Subsequent keystrokes flow through `onGrantSearch` which
+     * refetches server-side.
      */
     protected onGrantPanelShow(): void {
-        this.#getUserSuggestions('').subscribe((users) => {
-            this.$userSuggestions.set(users);
-        });
+        this.#userSearchInput$.next('');
+    }
+
+    /**
+     * Bound to `p-listbox`'s `(onFilter)` — fires as the admin types in
+     * the popover's search input. Forwards the query to the debounced
+     * server-search pipe. The listbox's internal client-side filter
+     * still runs on top of what the server returns, which is harmless
+     * (server results already match the query).
+     */
+    protected onGrantSearch(event: ListboxFilterEvent): void {
+        this.#userSearchInput$.next(event.filter ?? '');
     }
 
     /**

@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -11,7 +12,7 @@ import { DotRolesStore } from '../../store/dot-roles.store';
 @Component({
     selector: 'dot-roles-detail-header',
     standalone: true,
-    imports: [ButtonModule, DynamicDialogModule, DotMessagePipe],
+    imports: [ButtonModule, DynamicDialogModule, SkeletonModule, DotMessagePipe],
     providers: [DialogService],
     templateUrl: './dot-roles-detail-header.component.html',
     host: { class: 'block' }
