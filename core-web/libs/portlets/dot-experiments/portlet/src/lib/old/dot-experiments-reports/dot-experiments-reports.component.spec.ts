@@ -28,7 +28,6 @@ import {
 
 import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
-import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import { DotExperimentsReportsComponent } from './dot-experiments-reports.component';
 import {
@@ -36,6 +35,7 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
+import { DotExperimentsReportsChartComponent } from '../../shared/ui/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 const ActivatedRouteMock = {

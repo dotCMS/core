@@ -10,7 +10,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentVariantDetail, Variant } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
+import { DotExperimentsDetailsTableComponent } from '../../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
 @Component({

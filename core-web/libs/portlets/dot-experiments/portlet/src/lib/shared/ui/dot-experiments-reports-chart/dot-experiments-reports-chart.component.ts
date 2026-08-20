@@ -10,7 +10,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { generateDotExperimentLineChartJsOptions } from './chartjs/options/dotExperiments-chartjs.options';
 import { htmlLegendPlugin } from './chartjs/plugins/dotHtmlLegend-chartjs.plugin';
 
-import { getRandomUUID } from '../../../shared/dot-experiment.utils';
+import { getRandomUUID } from '../../dot-experiment-results.utils';
 
 @Component({
     selector: 'dot-experiments-reports-chart',
