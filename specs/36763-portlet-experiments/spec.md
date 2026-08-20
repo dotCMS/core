@@ -4,13 +4,11 @@
 
 **Created**: 2026-08-20
 
-**Status**: Descriptive baseline (Screens 1–3 built; Screens 4–6 pending)
+**Status**: Draft
 
 **Type**: New Feature
 
-**Epic**: [#36763](https://github.com/dotCMS/core/issues/36763) — Experiments: A/B Testing v2
-
-**Work item**: [#36987](https://github.com/dotCMS/core/issues/36987) — Experiments v2, Part 2: Build the new Experiments UI (the epic's child that owns this portlet)
+**GitHub Issue**: [dotCMS/core#36987](https://github.com/dotCMS/core/issues/36987) — Experiments v2, Part 2: Build the new Experiments UI (parent epic: [#36763](https://github.com/dotCMS/core/issues/36763) — Experiments: A/B Testing v2, which this directory is named after)
 
 **Input**: User description: "Experiments Portlet — the standalone portlet that replaces the per-page UVE experiments screens. Write the spec for the FEATURE AS A WHOLE, across all its screens, not for one screen."
 
@@ -255,29 +253,6 @@ misconfiguration state. Configure is unaffected.
 
 ---
 
-### User Story 5 - Retire the legacy screens without breaking them first (Priority: P3)
-
-**[BUILT]** for the coexistence guarantees; **[PENDING]** for the deletion itself.
-
-A developer needs to delete the legacy per-page experiments tree in one commit, with confidence
-that nothing in the new portlet falls over.
-
-**Why this priority**: It is a developer-facing guarantee rather than a user journey, but it is the
-constraint that makes the whole incremental migration safe, and it is the one thing that is
-expensive to retrofit if it is allowed to lapse.
-
-**Independent Test**: Delete the legacy subtree locally. Nothing in the new tree fails to compile.
-
-**Acceptance Scenarios**:
-
-1. **Given** the new portlet code, **Then** it imports nothing from the legacy subtree.
-2. **Given** a piece of logic both trees need, **Then** it lives in the shared area and the legacy
-   tree points at it there — never duplicated, and never the other way round.
-3. **Given** the legacy screens, **Then** their routes, their nav entry and their tests are
-   unchanged by any work in this feature, and their tests pass unmodified.
-
----
-
 ### Edge Cases
 
 - **An experiment whose page cannot be resolved.** The site filter fails closed: the experiment is
@@ -321,7 +296,11 @@ expensive to retrofit if it is allowed to lapse.
 - **FR-005** **[BUILT]** Every destructive or irreversible action MUST be confirmed before it is
   sent, and MUST report its outcome.
 - **FR-006** **[BUILT]** The set of actions offered for an experiment MUST be derived from its
-  status by the single shared status→actions map, never hard-coded per screen.
+  status by the single shared status→actions map, never hard-coded per screen. Exactly two
+  departures are permitted, and each is a requirement rather than an oversight: *View Results*
+  (FR-022) and *Restore* (FR-021a). A screen MUST NOT add a third without amending this
+  requirement, and MUST NOT edit the shared map to obtain one — the legacy list reads the same map
+  (FR-076).
 - **FR-007** **[BUILT]** A URL that names the same destination from two places MUST be built by one
   shared helper, so the two cannot drift apart.
 - **FR-008** **[BUILT]** The portlet MUST NOT be registered for customers while its screens are
@@ -358,11 +337,22 @@ expensive to retrofit if it is allowed to lapse.
   preserving search, sort and status selection.
 - **FR-020** **[BUILT]** An experiment whose page cannot be attributed to a site MUST be excluded
   rather than shown, so no experiment can leak across sites.
-- **FR-021** **[BUILT]** The list MUST offer, per row and gated by status: Configure, View Results,
-  archive/restore, cancel schedule, end, abort, delete, push-publish and add-to-bundle.
+- **FR-021** **[BUILT]** The list MUST offer, per row: Configure, View Results, archive, restore,
+  cancel schedule, end, abort, delete, push-publish and add-to-bundle. Every one of them except
+  View Results and Restore is gated by the shared map (FR-006).
+- **FR-021a** **[BUILT]** *Restore* MUST be rendered for an ARCHIVED experiment and MUST stay
+  **permanently disabled** until the restore transition lands with
+  [#36988](https://github.com/dotCMS/core/issues/36988). Its visibility is an inline status check,
+  not a map lookup, because the shared map has no `restore` key and adding one would change what
+  the legacy list reads. The entry exists so the action is discoverable and its absence is not read
+  as a parity loss — it is inert today, and MUST NOT be counted as an offered action until the
+  transition exists.
 - **FR-022** **[BUILT]** *View Results* MUST be offered on **every** status, unlike the
   status-gated actions, because the report renders its own waiting state for an experiment that has
-  measured nothing.
+  measured nothing. The mechanism MUST be that the new list does not consult the map for this
+  action at all: the map's `results` key stays exactly as it is — RUNNING and ENDED — serving the
+  legacy list alone. Widening that key to satisfy this requirement is forbidden, because it would
+  change legacy behavior (FR-076).
 - **FR-023** **[BUILT]** Placeholder rows MUST be drawn while the first page loads, and the loaded
   empty state MUST be reachable — a list that resolves to nothing must never leave the placeholder
   in place.
@@ -469,6 +459,10 @@ expensive to retrofit if it is allowed to lapse.
 - **FR-062** **[BUILT]** Below a minimum of ten sessions **across the whole experiment**, the
   summary table MUST be replaced by a single empty state. Above it, every row shows its full data
   regardless of its own session count. No per-row filtering is applied above the threshold.
+  The threshold is deliberately **one** constant shared with the daily chart, not two that can
+  drift. That constant is named `MINIMUM_SESSIONS_TO_SHOW_CHART`, which now under-describes what it
+  gates; the name MUST be widened so this requirement does not read as accidental coupling to the
+  chart. Renaming it is a **[PENDING]** follow-up — the value is settled, the name is not.
 - **FR-063** **[BUILT]** Each row MUST show lift against the control as signed percentage points,
   toned as gain or loss, and as a dash on the control row and wherever there is nothing to compare.
   The baseline MUST be resolved by key and by name — never by row position — so the order rows
@@ -505,10 +499,20 @@ expensive to retrofit if it is allowed to lapse.
 - **FR-074** **[BUILT]** No code in the new tree may import from the legacy subtree. The dependency
   direction is legacy → shared, one way, so the legacy subtree stays deletable in one commit.
 - **FR-075** **[BUILT]** Logic both trees need MUST be relocated to the shared area and the legacy
-  tree repointed at it — never duplicated, never inverted. Only import lines may change under the
-  legacy subtree, and its tests MUST pass unmodified.
-- **FR-076** **[BUILT]** The legacy routes, the legacy nav entry and the legacy tests MUST be
-  unchanged by this feature.
+  tree repointed at it, never inverted. Relocation MAY move a component, a helper or a chart option
+  set **out** of the legacy subtree together with its own spec file — that is the intended outcome,
+  not a violation, and the subtree is expected to shrink as it happens. What is forbidden is
+  duplicating shared logic (FR-075a) and importing from the legacy subtree (FR-074). For the legacy
+  files that remain, the only permitted change is an import line, and their specs MUST pass
+  unmodified.
+- **FR-075a** **[BUILT]** Duplication is permitted **only** where importing would require touching
+  legacy code, and every instance MUST be declared at its definition site with the reason. One
+  instance exists today: the status→severity map is copied from the legacy UVE header so a status
+  looks identical in both places, rather than exporting it from a legacy component that is meant to
+  be left alone.
+- **FR-076** **[BUILT]** The legacy routes, the legacy nav entry and the shared status→actions map
+  MUST be unchanged by this feature, and the legacy specs still in the subtree MUST pass unmodified.
+  This constrains legacy *behavior*, not the subtree's file count — which FR-075 expects to fall.
 - **FR-077** **[PENDING]** The legacy subtree MUST NOT be deleted before every ported behavior is
   verified on a development or QA instance and the end-to-end suite is green.
 
@@ -552,9 +556,13 @@ expensive to retrofit if it is allowed to lapse.
   re-creation on this subtree.
 - **AI-8 — Resolvers run in the route injector.** Services a resolver injects must be provided on
   the route, not on the component, or activation fails before the component exists.
-- **AI-9 — Two mounted dialogs must never share a key.** The Configure screen, the Results shell
-  and the Results summary table each own their own confirmation dialog key; a shared key opens both
-  at once.
+- **AI-9 — Two *simultaneously mounted* dialogs must never share a key**, because a shared key
+  opens both at once. Two keys exist, not three: the Results shell owns
+  `RESULTS_CONFIRM_DIALOG_KEY`, while the Configure screen and the list share
+  `CONFIGURATION_CONFIRM_DIALOG_KEY` — safe precisely because they are never mounted together. The
+  Results summary table has no key of its own; it raises on the Results shell's dialog. The
+  invariant is about co-mounting, so sharing is the default and it is the *second* key that needs
+  the justification.
 - **AI-10 — The list's server-side operations are a documented interim.** Paging, sorting,
   filtering and counts are computed client-side against an endpoint that returns everything. This
   is acceptable only while the portlet is unregistered for customers, and is replaced by #36823's
@@ -610,8 +618,9 @@ expensive to retrofit if it is allowed to lapse.
   statistically suggested winner, the screen says so.
 - **SC-008** No user can end a running experiment by promoting a variant without having been told,
   in the confirmation, that promoting will end it.
-- **SC-009** Every one of the twelve behaviors identified as existing in the legacy screens is
-  present in the portlet. None is dropped silently.
+- **SC-009** No behavior the legacy screens offer is dropped without an explicit entry in
+  **Out of Scope** naming it and saying why. Verified by walking the legacy screens' own specs:
+  every behavior they assert is either carried by a requirement here or listed as out of scope.
 - **SC-010** The legacy per-page screens behave exactly as they did before this feature, at every
   point of its development.
 - **SC-011** The legacy subtree can be deleted in a single commit without any change to the new
@@ -649,8 +658,12 @@ Listed explicitly so they are not invited back in:
 - **Existing behavior touched**: The per-page experiments experience inside the page editor —
   its nav entry, its per-page list, its creation drawer, its configuration screen and its reports
   screen. That surface is the older product surface and is **frozen**: it keeps serving unchanged
-  until a dedicated migration retires it. The new portlet is additive; the one place the two
-  overlap, the page-editor entry point, is switched by a feature flag that is off by default.
+  until a dedicated migration retires it. The new portlet is additive. The one place the two
+  overlap is the page-editor entry point, and today it is **not** gated: the `experiments` route
+  under `edit-ema` mounts unconditionally, and the flag intended for it
+  (`LOAD_FRONTEND_EXPERIMENTS` = `FEATURE_FLAG_EXPERIMENTS`) is declared but read nowhere. Putting
+  that entry point behind the flag, off by default, is Screen 4 work and is **[PENDING]**
+  ([#37005](https://github.com/dotCMS/core/issues/37005)).
 
 - **Backward-compatibility expectations**: The legacy screens must behave identically to today at
   every point of this feature's development — routes, nav entry and specs unchanged, specs passing
@@ -688,9 +701,22 @@ Listed explicitly so they are not invited back in:
   state in this spec comes from the legacy screens' behavior or from review, not from the
   prototype.
 - **The status→actions map is authoritative.** Where a screen departs from it, that departure is
-  itself a requirement (FR-022) rather than an oversight.
+  itself a requirement rather than an oversight, and there are exactly two: *View Results* (FR-022)
+  and *Restore* (FR-021a). Both are resolved in favour of leaving the map alone, because the legacy
+  list reads it too (FR-076).
 - **The minimum session threshold is ten**, applied experiment-wide, matching the threshold the
   daily chart has always used.
+
+---
+
+## Open Questions
+
+- **The legacy parity list behind SC-009 is not enumerated here.** SC-009 is stated as a rule the
+  walk must satisfy, not as a count. Producing the list means reading the legacy screens' own specs
+  and mapping each asserted behavior to a requirement here or to an **Out of Scope** entry — that is
+  plan work, deferred deliberately, and it is what closes SC-009.
+- **`MINIMUM_SESSIONS_TO_SHOW_CHART` needs a wider name** now that it also gates the summary table
+  (FR-062). The value is settled at ten; only the name is open.
 
 ---
 
