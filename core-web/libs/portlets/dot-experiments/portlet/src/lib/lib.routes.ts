@@ -1,10 +1,11 @@
 import { Routes, UrlMatchResult, UrlSegment } from '@angular/router';
 
+import { DotExperimentsService } from '@dotcms/data-access';
 import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
+import { dotAnalyticsHealthCheckResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
-import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from './shared/constants';
+import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT, RESULTS_SEGMENT } from './shared/constants';
 
 /**
  * Matches the two URLs the Configure screen answers on: `new` and `:experimentId/configuration`.
@@ -22,7 +23,7 @@ import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from './shared/constant
  *
  * @param segments - Segments left to match under `/experiments`
  * @returns The consumed segments (plus `experimentId` when present), or `null` to let the list
- * route and any future sibling — `:experimentId/reports` — match instead
+ * route and its sibling — `:experimentId/results` — match instead
  */
 export function experimentsConfigureMatcher(segments: UrlSegment[]): UrlMatchResult | null {
     if (segments.length === 1 && segments[0].path === NEW_EXPERIMENT_SEGMENT) {
@@ -42,9 +43,8 @@ export function experimentsConfigureMatcher(segments: UrlSegment[]): UrlMatchRes
  * This is the portlet that replaces the per-page UVE experiments screens, which live on
  * under `./old/` and keep serving `dotExperimentsRoutes` unchanged until they are retired.
  *
- * The list and the Configure screen are wired. `:id/results` is delivered by a follow-up issue
- * and is intentionally absent so the router surfaces an honest 404 instead of falling back to
- * the legacy UVE screens.
+ * The list, the Configure screen and the Results screen are wired here; nothing falls back to the
+ * legacy UVE screens.
  */
 export const dotExperimentsPortletRoutes: Routes = [
     {
@@ -87,6 +87,26 @@ export const dotExperimentsPortletRoutes: Routes = [
         loadComponent: () =>
             import('./dot-experiments-configure/dot-experiments-configure.component').then(
                 (m) => m.DotExperimentsConfigureComponent
+            )
+    },
+    {
+        path: `:experimentId/${RESULTS_SEGMENT}`,
+        title: 'experiment.container.report.title',
+        // `dotAnalyticsHealthCheckResolver` is a standalone `ResolveFn`, so it needs no provider of
+        // its own — but it injects `DotExperimentsService`, which is `@Injectable()` without
+        // `providedIn: 'root'`. Resolvers run in the route's injector, not the component's, so
+        // providing it on the screen alone would still throw NG0201 before the screen exists.
+        providers: [DotExperimentsService],
+        resolve: {
+            // Deliberately a plain resolve rather than a guard: it does not redirect, it reports.
+            // The screen reads `healthStatus` off the route and renders the analytics
+            // misconfiguration state in place of the results when it is not `OK`, so a broken
+            // analytics app takes out this screen only — the list stays reachable (AC22).
+            healthStatus: dotAnalyticsHealthCheckResolver
+        },
+        loadComponent: () =>
+            import('./dot-experiments-results/dot-experiments-results.component').then(
+                (m) => m.DotExperimentsResultsComponent
             )
     }
 ];
