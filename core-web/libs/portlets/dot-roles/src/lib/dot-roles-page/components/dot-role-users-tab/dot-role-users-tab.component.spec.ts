@@ -48,6 +48,7 @@ describe('DotRoleUsersTabComponent', () => {
                     editUsers: true
                 }),
                 selectedRoleId: jest.fn().mockReturnValue('r-eco'),
+                selectedRoleStatus: jest.fn().mockReturnValue('loaded'),
                 canGrantUsers: jest.fn().mockReturnValue(true),
                 setSelectedMembers: jest.fn(),
                 loadMembers: jest.fn(),

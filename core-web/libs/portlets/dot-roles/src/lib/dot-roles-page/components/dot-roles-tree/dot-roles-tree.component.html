@@ -17,7 +17,7 @@
 <div class="w-full">
     <p-iconfield>
         <p-inputicon>
-            <span class="material-symbols-outlined">search</span>
+            <span class="material-symbols-outlined text-base! leading-none!">search</span>
         </p-inputicon>
         <input
             pInputText
@@ -81,8 +81,16 @@
             </ng-template>
         </dot-folder-tree>
     } @else {
-        <div class="text-color-secondary text-sm" data-testid="tree-empty">
-            <p>{{ 'roles.tree.empty' | dm }}</p>
+        <!--
+            Empty state — centered stack with icon + title + hint, matching
+            the pattern used in `dot-tags-list`. `pt-8` gives the search
+            result some breathing room from the filter input above.
+        -->
+        <div
+            class="text-color-secondary flex flex-col items-center gap-2 pt-8 text-center"
+            data-testid="tree-empty">
+            <span class="material-symbols-outlined text-3xl opacity-40">search_off</span>
+            <p class="m-0 text-sm">{{ 'roles.tree.empty' | dm }}</p>
         </div>
     }
 }

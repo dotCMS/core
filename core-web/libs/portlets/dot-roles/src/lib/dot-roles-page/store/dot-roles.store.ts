@@ -31,12 +31,23 @@ export interface DotRolesState {
      * the user expands them (see `loadRoleChildren`).
      */
     roles: DotRoleNode[];
-    /** Client-side filter typed into the `Filter roles` input. */
+    /** Free-text filter typed into the `Filter roles` input. */
     filter: string;
+    /**
+     * Server-side role search results (from
+     * `/api/role/loadbyname/name/{q}/`). `null` = no active search →
+     * the tree shows the normal `roles` cache. Non-null (including
+     * `[]`) = a search is running/done → the tree shows this list.
+     * Populated by `searchRoles` when the filter has 3+ chars.
+     */
+    searchResults: DotRoleNode[] | null;
+    searchStatus: DotRolesStatus;
     /** Currently selected role id (drives the right-hand detail area). */
     selectedRoleId: string | null;
     /** Detail of the currently selected role (name/desc/can-grant flags/parent). */
     selectedRole: DotRoleDetail | null;
+    /** Load status for the selected role's detail — drives header skeleton. */
+    selectedRoleStatus: DotRolesStatus;
     /** Active tab on the right-hand detail area. */
     activeTab: DotRoleTab;
     /** Members of the selected role. */
@@ -51,8 +62,11 @@ export interface DotRolesState {
 const initialState: DotRolesState = {
     roles: [],
     filter: '',
+    searchResults: null,
+    searchStatus: 'init',
     selectedRoleId: null,
     selectedRole: null,
+    selectedRoleStatus: 'init',
     activeTab: 'users',
     members: [],
     selectedMembers: [],
@@ -64,23 +78,25 @@ const initialState: DotRolesState = {
 export const DotRolesStore = signalStore(
     withState<DotRolesState>(initialState),
 
-    withComputed(({ roles, filter, selectedRoleId, selectedRole, members }) => ({
+    withComputed(({ roles, searchResults, selectedRoleId, selectedRole, members }) => ({
         /** Alias for `roles` — the tree comes nested from the wire response. */
         roleTree: computed(() => roles()),
 
         /**
-         * Nested tree filtered by the free-text `Filter roles` input. A
-         * parent whose name doesn't match is still kept if any of its
-         * descendants match; a leaf is dropped when it doesn't match.
+         * Tree rendered by the tree component. When a server-side search
+         * is active (`searchResults` non-null) the tree switches to the
+         * search results — which include the full ancestor path of every
+         * matching role, so grandchildren that were never lazy-loaded
+         * still surface. Otherwise the normal `roles` cache is used.
          */
         filteredRoles: computed(() => {
-            const q = filter().trim().toLowerCase();
-            if (!q) {
-                return roles();
-            }
+            const results = searchResults();
 
-            return filterTree(roles(), q);
+            return results !== null ? results : roles();
         }),
+
+        /** True while the tree is showing search results (filter length >= 3). */
+        isSearching: computed(() => searchResults() !== null),
 
         /** Total users granted this role. */
         memberCount: computed(() => members().length),
@@ -123,16 +139,58 @@ export const DotRolesStore = signalStore(
 
         const loadRoleDetail = rxMethod<string>(
             pipe(
+                tap(() => patchState(store, { selectedRoleStatus: 'loading' })),
                 switchMap((roleId) =>
                     service.loadRoleById(roleId, true).pipe(
-                        tap((selectedRole) => patchState(store, { selectedRole })),
+                        tap((selectedRole) =>
+                            patchState(store, { selectedRole, selectedRoleStatus: 'loaded' })
+                        ),
                         catchError((error) => {
                             httpErrorManager.handle(error);
+                            patchState(store, { selectedRoleStatus: 'error' });
 
                             return EMPTY;
                         })
                     )
                 )
+            )
+        );
+
+        /**
+         * Server-side role search backing the tree filter input.
+         *
+         * `switchMap` cancels prior in-flight searches when the user keeps
+         * typing (or hits Backspace), matching the canonical Dojo portlet's
+         * `filterRolesHandle` timeout gate. Queries under 3 characters
+         * clear the results — the tree falls back to the normal `roles`
+         * cache — matching legacy behavior (`view_roles_js_inc.jsp:311`).
+         */
+        const runSearch = rxMethod<string>(
+            pipe(
+                switchMap((filter) => {
+                    const q = filter.trim();
+                    if (q.length < 3) {
+                        patchState(store, { searchResults: null, searchStatus: 'init' });
+
+                        return EMPTY;
+                    }
+                    patchState(store, { searchStatus: 'loading' });
+
+                    return service.searchRoles(q).pipe(
+                        tap((results) => {
+                            patchState(store, {
+                                searchResults: results,
+                                searchStatus: 'loaded'
+                            });
+                        }),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { searchStatus: 'error' });
+
+                            return EMPTY;
+                        })
+                    );
+                })
             )
         );
 
@@ -202,15 +260,26 @@ export const DotRolesStore = signalStore(
             loadRootRoles,
             loadRoleDetail,
 
-            /** Update the free-text filter applied to the tree. */
+            /**
+             * Update the free-text filter and (for queries with 3+ chars)
+             * kick off the server-side search via `runSearch`. The component
+             * already debounces user input, so we forward the value as-is.
+             */
             setFilter(filter: string): void {
                 patchState(store, { filter });
+                runSearch(filter);
             },
 
             /** Select a role and load its detail + members. */
             selectRole(roleId: string | null): void {
                 patchState(store, {
                     selectedRoleId: roleId,
+                    // Clear the previous role's detail so the header can
+                    // render its skeleton on `selectedRoleStatus === 'loading'`
+                    // instead of showing stale data while the new fetch is
+                    // in flight.
+                    selectedRole: null,
+                    selectedRoleStatus: roleId ? 'loading' : 'init',
                     selectedMembers: [],
                     members: [],
                     membersStatus: 'init'
@@ -520,22 +589,6 @@ export const DotRolesStore = signalStore(
         };
     })
 );
-
-function filterTree(nodes: DotRoleNode[], query: string): DotRoleNode[] {
-    return nodes.reduce<DotRoleNode[]>((acc, node) => {
-        const matches = node.name.toLowerCase().includes(query);
-        const filteredChildren = node.roleChildren ? filterTree(node.roleChildren, query) : [];
-
-        if (matches || filteredChildren.length > 0) {
-            acc.push({
-                ...node,
-                roleChildren: filteredChildren.length > 0 ? filteredChildren : node.roleChildren
-            });
-        }
-
-        return acc;
-    }, []);
-}
 
 /**
  * Immutably splice `newChildren` into the tree under the node with `id`.

@@ -81,7 +81,8 @@ describe('DotRolesStore', () => {
                 loadRoleById: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
                 loadRoleMembersByKey: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
                 loadRoleMembersById: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
-                createRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL))
+                createRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                searchRoles: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -284,30 +285,55 @@ describe('DotRolesStore', () => {
         it('should return the full tree when the filter is empty', () => {
             const filtered = store.filteredRoles();
             expect(filtered.map((n) => n.id)).toEqual(['r-categories', 'r-system']);
+            expect(store.isSearching()).toBe(false);
         });
 
-        it('should keep parent nodes whose children match the filter', () => {
+        it('should NOT trigger server search for queries under 3 chars', () => {
+            const searchSpy = jest.spyOn(service, 'searchRoles');
+            store.setFilter('ec');
+
+            expect(searchSpy).not.toHaveBeenCalled();
+            expect(store.isSearching()).toBe(false);
+            // falls back to the full `roles` cache
+            expect(store.filteredRoles().map((n) => n.id)).toEqual(['r-categories', 'r-system']);
+        });
+
+        it('should trigger server search and replace filteredRoles for 3+ chars', () => {
+            const matchedTree: DotRoleNode[] = [
+                {
+                    id: 'r-categories',
+                    name: 'Categories',
+                    roleChildren: [{ id: 'r-eco', name: 'Eco Role', roleChildren: [] }]
+                }
+            ];
+            (service.searchRoles as jest.Mock).mockReturnValueOnce(of(matchedTree));
+
             store.setFilter('eco');
 
-            const filtered = store.filteredRoles();
-            expect(filtered).toHaveLength(1);
-            expect(filtered[0].id).toBe('r-categories');
-            expect(filtered[0].roleChildren).toHaveLength(1);
-            expect(filtered[0].roleChildren?.[0].id).toBe('r-eco');
+            expect(service.searchRoles).toHaveBeenCalledWith('eco');
+            expect(store.isSearching()).toBe(true);
+            expect(store.filteredRoles()).toEqual(matchedTree);
+            expect(store.searchStatus()).toBe('loaded');
         });
 
-        it('should keep leaf nodes matching the filter directly', () => {
-            store.setFilter('system');
+        it('should return an empty result when the search returns nothing', () => {
+            (service.searchRoles as jest.Mock).mockReturnValueOnce(of([]));
 
-            const filtered = store.filteredRoles();
-            expect(filtered).toHaveLength(1);
-            expect(filtered[0].id).toBe('r-system');
-        });
-
-        it('should return no nodes when nothing matches', () => {
             store.setFilter('nomatch');
 
             expect(store.filteredRoles()).toEqual([]);
+            expect(store.isSearching()).toBe(true);
+        });
+
+        it('should reset to the full tree when the filter is cleared', () => {
+            (service.searchRoles as jest.Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
+            store.setFilter('anything');
+            expect(store.isSearching()).toBe(true);
+
+            store.setFilter('');
+
+            expect(store.isSearching()).toBe(false);
+            expect(store.filteredRoles().map((n) => n.id)).toEqual(['r-categories', 'r-system']);
         });
     });
 

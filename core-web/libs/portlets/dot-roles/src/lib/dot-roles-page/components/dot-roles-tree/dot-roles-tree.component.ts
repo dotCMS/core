@@ -53,7 +53,6 @@ interface DotRolePrimeTreeNode extends TreeNode {
     ],
     providers: [DialogService, ConfirmationService],
     templateUrl: './dot-roles-tree.component.html',
-    styleUrl: './dot-roles-tree.component.scss',
     host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' }
 })
 export class DotRolesTreeComponent {
@@ -114,18 +113,34 @@ export class DotRolesTreeComponent {
     readonly #openNodeIds = signal(new Set<string>());
 
     /**
-     * PassThrough config for the shared `DotFolderTreeComponent` — matches
-     * the compact chrome used by Content Drive so row heights stay tight.
+     * PassThrough config for the shared `DotFolderTreeComponent`.
+     *
+     * `[--p-tree-padding:0]` — PrimeNG's `.p-tree` selector applies
+     * `padding: var(--p-tree-padding)` which wins over a plain `p-0`
+     * class by load order. Setting the CSS variable directly via a
+     * Tailwind arbitrary property is a clean way to strip the padding
+     * without `!important` or a component stylesheet, and it stays
+     * within the PrimeNG token system.
+     *
+     * `nodeLabel` truncates long role names with an ellipsis.
      */
     protected readonly treePt = {
-        root: { class: 'w-full h-full border-none overflow-y-auto' },
+        root: {
+            class: 'w-full h-full border-none overflow-y-auto [--p-tree-padding:0]'
+        },
         nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap flex-1' }
     };
 
     protected readonly $filterInput = computed(() => this.store.filter());
 
+    /**
+     * Auto-expand every branch when the store is showing search results
+     * so the match at the leaf level is visible without the admin
+     * clicking through ancestors. When no search is active the `expanded`
+     * state falls back to `#openNodeIds` (user's own open/close history).
+     */
     protected readonly $treeNodes = computed<DotRolePrimeTreeNode[]>(() =>
-        this.#toTreeNodes(this.store.filteredRoles())
+        this.#toTreeNodes(this.store.filteredRoles(), this.store.isSearching())
     );
 
     protected readonly $selectedNode = computed<DotRolePrimeTreeNode | null>(() => {
@@ -246,9 +261,9 @@ export class DotRolesTreeComponent {
         });
     }
 
-    #toTreeNodes(nodes: DotRoleNode[]): DotRolePrimeTreeNode[] {
+    #toTreeNodes(nodes: DotRoleNode[], expandAll = false): DotRolePrimeTreeNode[] {
         return nodes.map((node) => {
-            const children = this.#toTreeNodes(node.roleChildren ?? []);
+            const children = this.#toTreeNodes(node.roleChildren ?? [], expandAll);
             const hasChildren = children.length > 0;
             // A node is a confirmed leaf when it's a user-role, OR we've
             // fetched its children and got none back. Otherwise we keep
@@ -262,7 +277,7 @@ export class DotRolesTreeComponent {
                 data: node,
                 children,
                 leaf: confirmedLeaf,
-                expanded: this.#openNodeIds().has(node.id)
+                expanded: expandAll || this.#openNodeIds().has(node.id)
             };
         });
     }
