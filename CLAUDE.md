@@ -89,9 +89,11 @@ When editing ANY code, improve incrementally:
 ## Spec-Driven Development (Spec-Kit)
 
 This repo uses [GitHub Spec-Kit](https://github.com/github/spec-kit) for spec-driven work,
-customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
+customized for dotCMS. How to run it: [Spec-Kit Quick Start](docs/core/SPEC_KIT_QUICK_START.md).
+How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
 
-- **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
+- **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → **PR 1 (spec) approved** → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → PR 2 (implementation).
+- **Two PRs, gated on approval — not merge**: PR 1 carries `spec.md` **alone** and another dev must **approve** it before `/speckit-plan` runs. Do **not** wait for PR 1 to merge — branch off the spec branch (the spec isn't on `main` yet) and open PR 2 with the implementation. If the spec changes after sign-off, get it re-approved. See [Quick Start §3](docs/core/SPEC_KIT_QUICK_START.md).
 - **Constitution**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — legacy-awareness + Critical Rules; loaded by every skill.
 - **TDD (Principle V, non-negotiable)**: no implementation code before tests are written, **dev-approved**, and confirmed **failing (Red)**. If a test type can't be done, the dev must say so and why. Enforced in the constitution + `tasks-template` `[GATE]` tasks + plan Test Strategy.
 - **ADRs**: live only in the private repo `dotCMS/platform-adrs`. `/speckit-plan` **always consults** relevant ADRs (auto `before_plan` hook → `/speckit-adr-context`, read-only via `gh`). Spec-Kit **never creates ADRs** — it only *proposes* them; ADRs are authored in `platform-adrs` via its `new-adr.sh`.
