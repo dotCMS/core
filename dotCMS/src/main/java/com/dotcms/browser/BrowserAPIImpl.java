@@ -2681,44 +2681,34 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Retrieves the menu Links directly under the browser query's parent, honouring
      * {@code showWorking} and {@code showArchived}.
      *
-     * <p>The {@code working} flag handed to {@link FolderAPI} is always {@code true}, never
-     * {@code browserQuery.showWorking}. {@code FolderFactoryImpl.getChildrenClass} adds the version
-     * table to the {@code FROM} list without a join predicate of its own, so the only correlation
-     * it ever produces is the incidental one from {@code working_inode = links_1_.inode}. Asking
-     * for {@code working=false} flips that to {@code <>}, which correlates nothing and turns the
-     * query into a cross product against every link version in the installation — duplicates, an
-     * archived filter that silently stops applying, and non-deterministic truncation at the
-     * factory's 1000-row ceiling.</p>
+     * <p>{@link FolderAPI} owns the working/live distinction: the live case delegates to
+     * {@code getLiveLinks}, never to {@code getLinks(parent, false, ...)}. The {@code working=false}
+     * form does not mean "live" — it asks for versions that are not the working one — and the
+     * version-table predicate it emits does not correlate on the link, so it returns duplicates.
      *
-     * <p>"Live" is therefore resolved here instead: fetch the working links and keep the ones that
-     * carry a published version.</p>
+     * <p>{@code getLiveLinks} pins {@code deleted=false}, which is all this path needs:
+     * {@link BrowserQuery} ORs {@code showArchived} into {@code showWorking}, so the live branch is
+     * only ever reached with {@code archived=false}.</p>
      *
      * @param browserQuery the query holding the parent and the version flags
      * @return the links under the parent, already filtered by READ permission by {@link FolderAPI}
      */
     private List<Link> getLinks(final BrowserQuery browserQuery) throws DotDataException, DotSecurityException {
-        final List<Link> links;
         if (browserQuery.directParent instanceof Host) {
-            links = folderAPI.getLinks((Host) browserQuery.directParent,
-                    true, browserQuery.showArchived, browserQuery.user,
-                    false);
-        } else if (browserQuery.directParent instanceof Folder) {
-            links = folderAPI
-                    .getLinks((Folder) browserQuery.directParent, true, browserQuery.showArchived,
-                            browserQuery.user,
-                            false);
-        } else {
-            return Collections.emptyList();
+            final Host host = (Host) browserQuery.directParent;
+            return browserQuery.showWorking
+                    ? folderAPI.getLinks(host, true, browserQuery.showArchived, browserQuery.user, false)
+                    : folderAPI.getLiveLinks(host, browserQuery.user, false);
         }
 
-        if (browserQuery.showWorking) {
-            return links;
+        if (browserQuery.directParent instanceof Folder) {
+            final Folder folder = (Folder) browserQuery.directParent;
+            return browserQuery.showWorking
+                    ? folderAPI.getLinks(folder, true, browserQuery.showArchived, browserQuery.user, false)
+                    : folderAPI.getLiveLinks(folder, browserQuery.user, false);
         }
 
-        return links.stream()
-                .filter(link -> Try.of(() -> APILocator.getVersionableAPI().hasLiveVersion(link))
-                        .getOrElse(false))
-                .collect(Collectors.toList());
+        return Collections.emptyList();
     }
 
 
