@@ -1,7 +1,10 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { EMPTY } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
+import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -47,7 +50,15 @@ describe('DotRoleUsersTabComponent', () => {
                 selectedRoleId: jest.fn().mockReturnValue('r-eco'),
                 canGrantUsers: jest.fn().mockReturnValue(true),
                 setSelectedMembers: jest.fn(),
-                loadMembers: jest.fn()
+                loadMembers: jest.fn(),
+                grantUserToRole: jest.fn().mockResolvedValue(null),
+                removeUsersFromRole: jest.fn().mockResolvedValue(null)
+            }),
+            mockProvider(ConfirmationService, {
+                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
+                requireConfirmation$: EMPTY,
+                accept: EMPTY,
+                reject: EMPTY
             })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]

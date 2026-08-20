@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
@@ -27,6 +27,41 @@ interface RoleHierarchyEntry {
     readonly name?: string;
     readonly roleKey?: string;
     readonly user?: boolean;
+}
+
+/** Wire response for DELETE /v1/roles/{roleId} — matches `RoleDeletionView`. */
+export interface DotRoleDeletionResult {
+    readonly deleted: boolean;
+    readonly roleId: string;
+    /** How many users had the role at the moment of the (cascading) deletion. */
+    readonly usersAffected: number;
+}
+
+/** Minimal user payload returned by grant / member endpoints. */
+export interface DotRoleMemberUser {
+    readonly userId: string;
+    readonly email?: string;
+    readonly fullName?: string;
+}
+
+/** Wire response for POST /v1/roles/{roleId}/users/{userId} — `RoleUserGrantView`. */
+export interface DotRoleUserGrantResult {
+    readonly granted: boolean;
+    readonly roleId: string;
+    readonly user: DotRoleMemberUser;
+}
+
+/** Per-user skip entry from the bulk-removal response. */
+export interface DotRoleUsersRemovalSkip {
+    readonly userId: string;
+    /** `not_found` | `inherited` | `error` — mirrors `SkippedUserView` constants. */
+    readonly reason: 'not_found' | 'inherited' | 'error';
+}
+
+/** Wire response for DELETE /v1/roles/{roleId}/users — `RoleUsersRemovalView`. */
+export interface DotRoleUsersRemovalResult {
+    readonly removedUserIds: string[];
+    readonly skipped: DotRoleUsersRemovalSkip[];
 }
 
 /**
@@ -149,60 +184,112 @@ export class DotRolesPortletService {
     }
 
     /**
-     * TODO: replace with `PUT /v1/roles/{roleId}` once #36936 ships.
+     * PUT /v1/roles/{roleId} — update an existing role (Edit Role dialog).
      *
-     * The Edit Role dialog (name / key / description / can-grant / parent)
-     * and drag-to-reparent both depend on this endpoint. Until it exists,
-     * the Angular portlet cannot mutate an existing role. Consumers should
-     * handle the rejected promise / thrown error and surface the message.
-     */
-    updateRole(_roleId: string, _form: DotRoleFormValue): Observable<never> {
-        throw new Error(
-            'updateRole is not wired yet — waiting on PUT /v1/roles/{roleId} (issue #36936)'
-        );
-    }
-
-    /**
-     * TODO: replace with `DELETE /v1/roles/{roleId}` once #36939 ships.
+     * Same body shape as `POST /v1/roles`; response mirrors `GET /v1/roles/{roleId}`
+     * (a hydrated `RoleView`). Payload sanitization is shared with `createRole` so
+     * empty `roleKey` / `description` don't hit the DB UNIQUE constraint on
+     * `role_key`. `parentRoleId = null` reparents to root (BE sets
+     * `role.setParent(role.getId())`).
      *
-     * The Delete Role destructive action in the Edit dialog depends on this.
-     * Structured 409 errors (`has_children`, `has_users`, `has_layouts`) will
-     * surface once the endpoint exists so the FE can localize the message.
+     * Backend error semantics — surfaced by the caller via `httpErrorManager`:
+     *   400 → cycle in hierarchy (reparent under a descendant)
+     *   403 → system/locked role, or admin gate
+     *   404 → role or parent role not found
+     *   409 → duplicate `roleKey` or duplicate `roleName` under same parent
      */
-    deleteRole(_roleId: string): Observable<never> {
-        throw new Error(
-            'deleteRole is not wired yet — waiting on DELETE /v1/roles/{roleId} (issue #36939)'
-        );
+    updateRole(roleId: string, form: DotRoleFormValue): Observable<DotRoleDetail> {
+        return this.#http
+            .put<
+                DotCMSResponse<DotRoleDetail>
+            >(`/api/v1/roles/${encodeURIComponent(roleId)}`, this.#sanitizeRoleForm(form))
+            .pipe(map((response) => response.entity));
     }
 
     /**
-     * TODO: replace with `POST /v1/roles/{roleId}/users/{userId}` once
-     * #36937 ships. Used by the Grant to User popover on the Users tab.
+     * DELETE /v1/roles/{roleId} — delete a role (#36939).
+     *
+     * Cascading deletion: the response's `usersAffected` reports how many users
+     * had the role at the moment of deletion (their assignments were dropped).
+     * Permissions granted to the role and layout / tool-group assignments are
+     * also removed. Deletion is rejected by the backend for:
+     *   403 → system or locked roles
+     *   404 → role not found
+     *   409 → role has children, or a workflow action references it
+     *
+     * Backend errors surface through `httpErrorManager`; the store just
+     * returns `null` on failure.
      */
-    grantUserToRole(_roleId: string, _userId: string): Observable<never> {
-        throw new Error(
-            'grantUserToRole is not wired yet — waiting on POST /v1/roles/{roleId}/users/{userId} (issue #36937)'
-        );
+    deleteRole(roleId: string): Observable<DotRoleDeletionResult> {
+        return this.#http
+            .delete<
+                DotCMSResponse<DotRoleDeletionResult>
+            >(`/api/v1/roles/${encodeURIComponent(roleId)}`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
-     * TODO: replace with `DELETE /v1/roles/{roleId}/users` once #36938 ships.
-     * Used by per-row Remove and bulk-remove on the Users tab.
+     * POST /v1/roles/{roleId}/users/{userId} — grant a role to a user (#36937).
+     *
+     * Idempotent by design: the BE returns `granted: true` even when the user
+     * already held the role (directly or via inheritance) — retries are safe.
+     * The user payload in the response is deliberately slim (id / email /
+     * fullName); consumers needing more must call the users API.
+     *
+     * Error semantics:
+     *   403 → role's `editUsers` flag is false (workflow / system roles)
+     *   404 → role or user not found
      */
-    removeUsersFromRole(_roleId: string, _userIds: string[]): Observable<never> {
-        throw new Error(
-            'removeUsersFromRole is not wired yet — waiting on DELETE /v1/roles/{roleId}/users (issue #36938)'
-        );
+    grantUserToRole(roleId: string, userId: string): Observable<DotRoleUserGrantResult> {
+        const url = `/api/v1/roles/${encodeURIComponent(roleId)}/users/${encodeURIComponent(
+            userId
+        )}`;
+
+        return this.#http
+            .post<DotCMSResponse<DotRoleUserGrantResult>>(url, null)
+            .pipe(map((response) => response.entity));
     }
 
     /**
-     * TODO: reparent a role. Blocked on #36936. Drag-and-drop in the roles
-     * tree triggers this action, which today has no v1 endpoint (only DWR
-     * RoleAjax#updateRole supports it).
+     * DELETE /v1/roles/{roleId}/users — bulk-remove members (#36938).
+     *
+     * Partial-success semantics: the BE returns `removedUserIds` for the
+     * users whose direct membership was removed, and a `skipped` list per
+     * user for the rest (reason: `not_found` / `inherited` / `error`). The
+     * batch never fails as a whole once the role resolves, so consumers
+     * should ALWAYS act on both arrays — a 200 does not imply "all removed".
+     *
+     * Angular's `HttpClient.delete` needs the body under `options.body`; the
+     * body wraps `userIds` under `RoleUsersForm` on the BE.
      */
-    reparentRole(_roleId: string, _newParentId: string | null): Observable<never> {
-        throw new Error(
-            'reparentRole is not wired yet — waiting on PUT /v1/roles/{roleId} (issue #36936)'
+    removeUsersFromRole(roleId: string, userIds: string[]): Observable<DotRoleUsersRemovalResult> {
+        return this.#http
+            .delete<
+                DotCMSResponse<DotRoleUsersRemovalResult>
+            >(`/api/v1/roles/${encodeURIComponent(roleId)}/users`, { body: { userIds } })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Reparent a role via `PUT /v1/roles/{roleId}`. Drag-and-drop in the tree
+     * calls this — it loads the role first (to preserve unrelated fields the
+     * form isn't collecting) and PUTs a form that only changes `parentRoleId`.
+     * Pass `null` to move to root. Round-trips the loaded detail so the store
+     * can splice the updated shape into its tree.
+     */
+    reparentRole(roleId: string, newParentId: string | null): Observable<DotRoleDetail> {
+        return this.loadRoleById(roleId, false).pipe(
+            switchMap((role) =>
+                this.updateRole(roleId, {
+                    roleName: role.name,
+                    roleKey: role.roleKey,
+                    parentRoleId: newParentId,
+                    canEditUsers: role.editUsers ?? true,
+                    canEditPermissions: role.editPermissions ?? true,
+                    canEditLayouts: role.editLayouts ?? true,
+                    description: role.description
+                })
+            )
         );
     }
 }

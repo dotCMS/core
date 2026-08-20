@@ -1,0 +1,14 @@
+/*
+ * Strip PrimeNG's default `1rem` padding off the tree. The sidebar itself
+ * already contributes horizontal padding (`p-4` on the component host),
+ * and the tree needs to reach the edges of the panel so the selected-node
+ * highlight and hover state span the whole row.
+ *
+ * `!important` mirrors the strategy in `dot-roles-page.component.scss`:
+ * Tailwind's `!` suffix through PrimeNG's `pt` API isn't reliably picked
+ * up by the JIT at dev-server time — plain CSS with `!important` sidesteps
+ * that entirely and stays winning against PrimeNG's `.p-tree` default.
+ */
+:host ::ng-deep p-tree.p-tree {
+    padding: 0 !important;
+}
