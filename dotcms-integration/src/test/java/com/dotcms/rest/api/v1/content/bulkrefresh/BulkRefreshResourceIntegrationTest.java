@@ -10,8 +10,10 @@ import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.util.JobUtil;
@@ -23,6 +25,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -70,6 +73,9 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     @Inject
     BulkRefreshHelper bulkRefreshHelper;
 
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI;
+
     @BeforeAll
     static void setUp() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -81,15 +87,23 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
         indexAPI = APILocator.getContentletIndexAPI();
         response = new MockHttpResponse();
 
-        powerUser = TestUserUtils.getUser(
-                APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER),
+        powerUser = TestUserUtils.getUser(getOrCreatePowerUserRole(),
                 "bulkrefresh.power@dotcms.com", "Bulk", "Power", "bulkrefreshpower");
         plainBackendUser = TestUserUtils.getBackendUser(defaultSite);
     }
 
     @BeforeEach
-    void prepare() {
+    void prepare() throws Exception {
         resource = new BulkRefreshResource(bulkRefreshHelper);
+
+        // Without this the queue accepts jobs and never runs them: every job stays PENDING and each
+        // wait below times out. ContentImportResourceIntegrationTest never noticed because it only
+        // asserts job *creation* — 24 tests in under nine seconds — so this suite had no test that
+        // actually needed a processor to execute until now.
+        if (!jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.start();
+            jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
+        }
     }
 
     /**
@@ -388,6 +402,22 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     // ---------------------------------------------------------------------------------------------
     // helpers
     // ---------------------------------------------------------------------------------------------
+
+    /**
+     * The CMS Power User role, created if this database does not have it.
+     *
+     * {@code loadRoleByKey} answers null for a missing role rather than throwing, and
+     * {@code doesUserHaveRole(user, null)} is then silently false — so passing the lookup straight
+     * through produced a "power user" with no such role and a permission check that could only ever
+     * fail. Mirrors {@code TestUserUtils.getOrCreateAdminRole}.
+     */
+    private static Role getOrCreatePowerUserRole() throws DotDataException {
+        final Role existing = APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER);
+
+        return null != existing
+                ? existing
+                : new RoleDataGen().key(Role.CMS_POWER_USER).nextPersisted();
+    }
 
     private Contentlet newContentlet() {
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
