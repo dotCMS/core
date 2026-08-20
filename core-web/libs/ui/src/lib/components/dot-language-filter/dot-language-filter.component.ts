@@ -66,6 +66,17 @@ export class DotLanguageFilterComponent implements OnInit {
      */
     readonly $title = input('content-drive.language-selector.placeholder', { alias: 'title' });
 
+    /**
+     * Whether the chip offers its "remove" X.
+     *
+     * Owned by the host because only the host knows whether the current selection is meaningful to
+     * clear: Content Drive seeds the environment's default language, and removing that selection
+     * simply re-seeds the same value, so the X would do nothing visible. This component has no
+     * concept of a default, so it does not try to infer it.
+     * @alias removable
+     */
+    readonly $removable = input<boolean>(true, { alias: 'removable' });
+
     /** Emits the full selection on every change. An empty array means "no locale filter". */
     readonly selectionChange = output<number[]>();
 

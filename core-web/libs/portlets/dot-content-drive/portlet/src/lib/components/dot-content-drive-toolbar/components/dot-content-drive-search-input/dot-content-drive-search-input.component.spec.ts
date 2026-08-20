@@ -3,7 +3,7 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ope
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ALL_FOLDER, DotSearchInputComponent } from '@dotcms/ui';
+import { DotSearchInputComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
@@ -20,7 +20,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 setGlobalSearch: jest.fn(),
-                setSelectedNode: jest.fn()
+                selectRootNode: jest.fn()
             }),
             {
                 provide: DotMessageService,
@@ -67,7 +67,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         spectator.triggerEventHandler(searchInput(), 'search', 'blog');
 
         expect(store.setGlobalSearch).toHaveBeenCalledWith('blog');
-        expect(store.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+        expect(store.selectRootNode).toHaveBeenCalled();
     });
 
     it('should clear the search in the store when an empty term is emitted', () => {
@@ -77,6 +77,6 @@ describe('DotContentDriveSearchInputComponent', () => {
         spectator.triggerEventHandler(searchInput(), 'search', '');
 
         expect(store.setGlobalSearch).toHaveBeenCalledWith('');
-        expect(store.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
+        expect(store.selectRootNode).toHaveBeenCalled();
     });
 });
