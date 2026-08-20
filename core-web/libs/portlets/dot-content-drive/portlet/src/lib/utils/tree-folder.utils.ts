@@ -1,7 +1,35 @@
-import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolder, DotSite } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { BuildTreeFolderNodesParams } from '../shared/models';
+
+/**
+ * Builds the tree's root node for a site.
+ *
+ * The row is the site: it is named by the hostname, marked with a globe, and selecting it browses the
+ * site root. The site's folders hang off it as children, so its chevron collapses the site.
+ *
+ * Its empty `path` is what distinguishes it from a folder, since every folder node carries one. That
+ * is also why it offers no folder actions: this node describes a site, and the site root folder's
+ * permissions are not part of what the tree loaded.
+ *
+ * @param {DotSite} site - The site the drive is browsing
+ * @returns {DotFolderTreeNodeItem} The root node for that site
+ */
+export const createSiteNode = (site: DotSite): DotFolderTreeNodeItem => ({
+    key: site.identifier,
+    label: site.hostname,
+    loading: false,
+    icon: 'pi pi-globe',
+    leaf: false,
+    expanded: true,
+    data: {
+        type: 'folder',
+        path: '',
+        hostname: site.hostname,
+        id: site.identifier
+    }
+});
 
 /**
  * Generates all parent paths from a target path

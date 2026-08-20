@@ -19,6 +19,7 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         component: DotContentDriveLanguageFieldComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
+                defaultLanguageId: jest.fn().mockReturnValue(1),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn()
@@ -74,6 +75,50 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         spectator.triggerEventHandler(languageFilter(), 'selectionChange', [1, 2]);
 
         expect(store.patchFilters).toHaveBeenCalledWith({ languageId: ['1', '2'] });
+    });
+
+    describe('removable', () => {
+        // The shared filter's spec pins that the input suppresses the chip's X. These pin the wiring:
+        // that this adapter computes it from the store's default and passes it down. Bug 5's
+        // affordance was lost once already, when the component this logic lived in was deleted by a
+        // refactor upstream, so both halves are guarded separately.
+        it('should not offer removal while the only selection is the environment default', () => {
+            // Clearing it would re-seed the very same value, so the X would do nothing visible.
+            store.getFilterValue.mockReturnValue(['1']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(false);
+        });
+
+        it('should offer removal once a non-default language is selected', () => {
+            store.getFilterValue.mockReturnValue(['2']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(true);
+        });
+
+        it('should offer removal when the default is selected alongside another', () => {
+            // Two selections means clearing genuinely changes what is filtered.
+            store.getFilterValue.mockReturnValue(['1', '2']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(true);
+        });
+
+        it('should offer removal when nothing is selected yet', () => {
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(true);
+        });
+
+        it('should track the environment default rather than hardcoding an id', () => {
+            // A different default must move the behaviour with it.
+            store.defaultLanguageId.mockReturnValue(2);
+            store.getFilterValue.mockReturnValue(['2']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(false);
+        });
     });
 
     it('should remove the filter when an empty selection is emitted', () => {

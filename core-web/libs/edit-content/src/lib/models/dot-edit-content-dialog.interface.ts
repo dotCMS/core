@@ -26,6 +26,15 @@ export interface EditContentDialogData {
     identifier?: string;
 
     /**
+     * For edit content: the language the opened version belongs to.
+     *
+     * An identifier has one version -- and one inode -- per language, so the identifier alone does not
+     * say which one is open. Callers that already know it (any row click does) pass it so a shareable
+     * URL can carry it and reopen the very same version, instead of the consumer having to guess.
+     */
+    languageId?: number;
+
+    /**
      * Depth for loading existing content (defaults to TWO)
      */
     depth?: number;

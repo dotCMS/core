@@ -30,6 +30,7 @@ import { DotContentDriveFieldFilterComponent } from './components/dot-content-dr
 import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
+import { DotContentDriveSharedAssetsFilterComponent } from './components/dot-content-drive-shared-assets-filter/dot-content-drive-shared-assets-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
@@ -37,6 +38,7 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { excludeFolders } from '../../utils/action-center';
+import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -138,6 +140,7 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowFilterComponent,
         DotContentDriveFieldFilterComponent,
         DotContentDriveFieldFilterMenuComponent,
+        DotContentDriveSharedAssetsFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
@@ -256,7 +259,15 @@ export class DotContentDriveToolbarComponent {
     }
 
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
-    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+    /**
+     * Drives the "Clear all" button. Counting filter keys would keep it on screen permanently: the
+     * default language and the shared-assets toggle are always seeded, so there is always something
+     * in the bag. What matters is whether anything differs from its default and is therefore worth
+     * clearing.
+     */
+    readonly $hasFilters = computed(() =>
+        hasNonDefaultFilters(this.#store.filters(), this.#store.defaultLanguageId())
+    );
 
     /**
      * The action currently being applied, surfaced here because the run outlives the Action Center
