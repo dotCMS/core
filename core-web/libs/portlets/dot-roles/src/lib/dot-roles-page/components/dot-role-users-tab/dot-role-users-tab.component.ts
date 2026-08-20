@@ -4,8 +4,11 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { ConfirmationService } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ListboxModule } from 'primeng/listbox';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -13,6 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { map } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -31,20 +35,25 @@ interface UserFilterResult {
     standalone: true,
     imports: [
         FormsModule,
+        AvatarModule,
         ButtonModule,
         TableModule,
         TagModule,
-        AutoCompleteModule,
+        ListboxModule,
         PopoverModule,
         TooltipModule,
+        ConfirmDialogModule,
         DotMessagePipe
     ],
+    providers: [ConfirmationService],
     templateUrl: './dot-role-users-tab.component.html',
     host: { class: 'block py-4' }
 })
 export class DotRoleUsersTabComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #http = inject(HttpClient);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #messageService = inject(DotMessageService);
 
     protected readonly $userSuggestions = signal<UserFilterResult[]>([]);
 
@@ -69,34 +78,66 @@ export class DotRoleUsersTabComponent {
         });
     }
 
-    protected searchUsers(event: AutoCompleteCompleteEvent): void {
-        const query = event.query?.trim();
-        this.#getUserSuggestions(query ?? '').subscribe((users) => {
+    /**
+     * Popover open hook — pre-populates the user list so the panel shows a
+     * browsable list immediately (matching the design), no keystroke needed.
+     * `p-listbox`'s internal `filter` handles narrowing from there.
+     */
+    protected onGrantPanelShow(): void {
+        this.#getUserSuggestions('').subscribe((users) => {
             this.$userSuggestions.set(users);
         });
     }
 
     /**
-     * TODO: wire to POST /v1/roles/{roleId}/users/{userId} once #36937 lands.
-     * The dedicated grant endpoint does not exist yet; the popover UI is
-     * shown so the flow is testable but the confirm button surfaces the gap.
+     * Grant the picked user to the currently-selected role via
+     * `POST /v1/roles/{roleId}/users/{userId}` (issue #36937). The BE is
+     * idempotent — re-granting a role the user already holds is a no-op — so
+     * we don't have to gate on client-side dedup. On success the store
+     * refreshes the members list so the new row lands in the table with the
+     * correct `grantedFromRoleId` labelling.
      */
-    protected onGrantUser(_user: UserFilterResult, panel: Popover): void {
-        console.warn(
-            '[dot-roles] grant user placeholder — waiting on #36937 (POST /v1/roles/{roleId}/users/{userId})'
-        );
+    protected onGrantUser(user: UserFilterResult, panel: Popover): void {
         panel.hide();
+        this.store.grantUserToRole(user.userId);
     }
 
     /**
-     * TODO: wire to DELETE /v1/roles/{roleId}/users once #36938 lands.
-     * Bulk remove is intentionally disabled here so QA cannot accidentally
-     * exercise the not-yet-implemented flow against real data.
+     * Bulk-remove the currently-selected direct members from the role
+     * (DELETE /v1/roles/{roleId}/users — issue #36938).
+     *
+     * The store already filters `selectedMembers` to direct grants only, so
+     * we pass their ids straight through. On partial-success (some users
+     * skipped because they are inherited or the id didn't match), the store
+     * still prunes the removed rows and refetches — future UX may surface
+     * the `skipped` list explicitly, but for now the refetch keeps the
+     * table honest.
      */
     protected onRemoveSelected(): void {
-        console.warn(
-            '[dot-roles] bulk remove placeholder — waiting on #36938 (DELETE /v1/roles/{roleId}/users)'
-        );
+        const selected = this.store.selectedMembers();
+        if (selected.length === 0) {
+            return;
+        }
+
+        this.#confirmationService.confirm({
+            message: this.#messageService.get(
+                'roles.users.confirm.remove.message',
+                `${selected.length}`
+            ),
+            header: this.#messageService.get('roles.users.confirm.remove.header'),
+            acceptLabel: this.#messageService.get('roles.users.remove'),
+            rejectLabel: this.#messageService.get('roles.action.cancel'),
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-text',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            position: 'center',
+            accept: () => {
+                const userIds = selected.map((m) => m.userId);
+                this.store.removeUsersFromRole(userIds);
+            }
+        });
     }
 
     /**
@@ -107,6 +148,28 @@ export class DotRoleUsersTabComponent {
      */
     protected isDirectGrant(member: DotRoleMember): boolean {
         return member.grantedFromRoleId === this.store.selectedRoleId();
+    }
+
+    /**
+     * Compact initials for `<p-avatar label>` when no photo URL is
+     * available (the users API doesn't return one today). Falls back to
+     * the email's first letter, then `?` so we never render an empty avatar.
+     */
+    protected initialsFor(user: {
+        firstName?: string;
+        lastName?: string;
+        emailAddress?: string;
+    }): string {
+        const first = user.firstName?.trim()?.[0] ?? '';
+        const last = user.lastName?.trim()?.[0] ?? '';
+        const initials = `${first}${last}`.toUpperCase();
+        if (initials) {
+            return initials;
+        }
+
+        const emailInitial = user.emailAddress?.trim()?.[0]?.toUpperCase() ?? '';
+
+        return emailInitial || '?';
     }
 
     protected onSelectionChange(members: DotRoleMember[]): void {

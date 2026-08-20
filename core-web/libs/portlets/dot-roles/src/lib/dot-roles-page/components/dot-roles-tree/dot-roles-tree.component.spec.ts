@@ -1,7 +1,9 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { EMPTY } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -36,9 +38,16 @@ describe('DotRolesTreeComponent', () => {
                 selectedRoleId: jest.fn().mockReturnValue(null),
                 status: jest.fn().mockReturnValue('loaded'),
                 setFilter: jest.fn(),
-                selectRole: jest.fn()
+                selectRole: jest.fn(),
+                deleteRole: jest.fn().mockResolvedValue(null)
             }),
-            mockProvider(DialogService, { open: jest.fn() })
+            mockProvider(DialogService, { open: jest.fn() }),
+            mockProvider(ConfirmationService, {
+                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
+                requireConfirmation$: EMPTY,
+                accept: EMPTY,
+                reject: EMPTY
+            })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
     });

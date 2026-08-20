@@ -4,24 +4,29 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { TreeNode } from 'primeng/api';
+import { ConfirmationService, MenuItem, TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import {
     TreeNodeCollapseEvent,
+    TreeNodeContextMenuSelectEvent,
     TreeNodeExpandEvent,
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotFolderTreeComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.component';
-import { DotRoleNode } from '../../../models/dot-roles.models';
+import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
+import { DotRoleDetail, DotRoleNode } from '../../../models/dot-roles.models';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 interface DotRolePrimeTreeNode extends TreeNode {
@@ -41,18 +46,55 @@ interface DotRolePrimeTreeNode extends TreeNode {
         IconFieldModule,
         InputIconModule,
         DynamicDialogModule,
+        ContextMenuModule,
+        ConfirmDialogModule,
         DotFolderTreeComponent,
         DotMessagePipe
     ],
-    providers: [DialogService],
+    providers: [DialogService, ConfirmationService],
     templateUrl: './dot-roles-tree.component.html',
+    styleUrl: './dot-roles-tree.component.scss',
     host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' }
 })
 export class DotRolesTreeComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #messageService = inject(DotMessageService);
     readonly #filterInput$ = new Subject<string>();
+
+    /**
+     * Node targeted by the most recent right-click. Kept in a signal so the
+     * context-menu commands can act on it — PrimeNG's `MenuItem.command`
+     * fires without an event argument, so it needs a shared reference.
+     */
+    readonly #contextNode = signal<DotRolePrimeTreeNode | null>(null);
+
+    /**
+     * Tree context menu: Edit + separator + Delete, no icons, per design.
+     * `command` reads from `#contextNode` set by `onNodeContextMenuSelect`.
+     * System / locked roles get a disabled menu — backend rejects them
+     * anyway (403), so we surface the constraint at click time.
+     */
+    protected readonly $contextMenuItems = computed<MenuItem[]>(() => {
+        const node = this.#contextNode()?.data;
+        const isReadOnly = node?.system === true || node?.locked === true;
+
+        return [
+            {
+                label: this.#messageService.get('roles.action.edit'),
+                disabled: isReadOnly,
+                command: () => this.#editContextNode()
+            },
+            { separator: true },
+            {
+                label: this.#messageService.get('roles.action.delete'),
+                disabled: isReadOnly,
+                command: () => this.#deleteContextNode()
+            }
+        ];
+    });
 
     /**
      * Nodes that have been opened at least once — used for lazy-load
@@ -151,6 +193,56 @@ export class DotRolesTreeComponent {
             closable: true,
             closeOnEscape: true,
             data: { parentRoleId: parentRoleId ?? null }
+        });
+    }
+
+    /**
+     * Bound to `<dot-folder-tree>`'s `onNodeContextMenuSelect`. Selects
+     * the node in the store (so the detail area follows the right-click
+     * target) and stashes the tree-node reference for the menu commands.
+     */
+    protected onNodeContextMenu(event: TreeNodeContextMenuSelectEvent): void {
+        const node = event.node as DotRolePrimeTreeNode;
+        this.#contextNode.set(node);
+        this.store.selectRole(node.data.id);
+    }
+
+    #editContextNode(): void {
+        const node = this.#contextNode();
+        if (!node) {
+            return;
+        }
+
+        // The Edit dialog expects a full `DotRoleDetail`. The tree node
+        // carries the `DotRoleNode` shape, which is a subset — the dialog
+        // hydrates missing fields (description) from its own state.
+        this.#dialogService.open(DotRolesEditComponent, {
+            width: '700px',
+            closable: true,
+            closeOnEscape: true,
+            data: { role: node.data as DotRoleDetail }
+        });
+    }
+
+    #deleteContextNode(): void {
+        const node = this.#contextNode();
+        if (!node) {
+            return;
+        }
+
+        this.#confirmationService.confirm({
+            message: this.#messageService.get('roles.confirm.delete.message', node.data.name),
+            header: this.#messageService.get('roles.confirm.delete.header'),
+            acceptLabel: this.#messageService.get('Delete'),
+            rejectLabel: this.#messageService.get('roles.action.cancel'),
+            rejectButtonStyleClass: 'p-button-text',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            position: 'center',
+            accept: () => {
+                this.store.deleteRole(node.data.id);
+            }
         });
     }
 
