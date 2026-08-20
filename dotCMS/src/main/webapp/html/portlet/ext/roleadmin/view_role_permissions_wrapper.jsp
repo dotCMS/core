@@ -42,6 +42,15 @@
      select) — see the include file's header for the full rationale. --%>
 <%@ include file="/html/portlet/ext/roleadmin/view_role_iframe_stubs_inc.jsp" %>
 
+<%-- The permissions wrapper does NOT ship a `<select id="portletList">`
+     (that markup lives in `view_role_tools_inc.jsp`), but the shared
+     `initializePortletInfoList` boot-time addOnLoad still tries to
+     upgrade one via `dijit.form.FilteringSelect`. Provide a hidden
+     stub here so the parser has an element to bind to. Do NOT move
+     this into the shared stubs file — the tools wrapper needs its
+     REAL select to be the first (and only) match for `#portletList`. --%>
+<select id="portletList" style="display:none" aria-hidden="true"></select>
+
 <%--
     Match the CSS load-set of the canonical `view_roles.jsp` portlet:
     ONLY `view_roles.css`, NOT `view_role_permissions.css`. The latter

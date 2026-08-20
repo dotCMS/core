@@ -52,6 +52,17 @@
     body { background: #fff; margin: 0; padding: 8px; }
     #roleToolsWrapper { padding: 0; }
 
+    /* `.toolTable` styling lives INLINE in `view_roles.jsp` (lines 60-70),
+       not in `view_roles.css`, so the New Layout dialog form fields
+       collapse without any cell spacing in this iframe. Mirror the same
+       rules here so the dialog matches the canonical portlet. */
+    .toolTable { margin: 0 auto; }
+    .toolTable td {
+        padding: 10px 8px;
+        vertical-align: middle;
+        position: relative;
+    }
+
     /*
      * dojox.grid.DataGrid's default layout uses `position: absolute` on
      * `.dojoxGridHeader` (line 49 of Grid.css) with an inline height set
