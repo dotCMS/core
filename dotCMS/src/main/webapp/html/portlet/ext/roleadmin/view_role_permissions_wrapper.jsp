@@ -46,10 +46,21 @@
      (that markup lives in `view_role_tools_inc.jsp`), but the shared
      `initializePortletInfoList` boot-time addOnLoad still tries to
      upgrade one via `dijit.form.FilteringSelect`. Provide a hidden
-     stub here so the parser has an element to bind to. Do NOT move
-     this into the shared stubs file — the tools wrapper needs its
-     REAL select to be the first (and only) match for `#portletList`. --%>
-<select id="portletList" style="display:none" aria-hidden="true"></select>
+     stub here so the parser has an element to bind to.
+
+     WRAPPED in a `display:none` container: `display:none` on the
+     `<select>` itself doesn't help because dijit creates a NEW widget
+     DOM element (`#widget_portletList`) as a sibling of the original
+     — it takes its own dimensions from CSS, not from the source select
+     — and would render as a visible 241px combobox at the top of the
+     iframe. Putting it inside a hidden div hides the whole subtree.
+
+     Do NOT move this into the shared stubs file — the tools wrapper
+     needs its REAL select to be the first (and only) match for
+     `#portletList`. --%>
+<div style="display:none" aria-hidden="true">
+    <select id="portletList"></select>
+</div>
 
 <%--
     Match the CSS load-set of the canonical `view_roles.jsp` portlet:

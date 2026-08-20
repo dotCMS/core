@@ -93,12 +93,27 @@ describe('DotRoleUsersTabComponent', () => {
         expect(spectator.query(byTestId('member-row-u-1'))).toBeTruthy();
     });
 
-    it('should disable the bulk-remove button when nothing is selected', () => {
+    it('should hide the bulk-remove button when nothing is selected', () => {
         spectator.detectChanges();
 
-        const btn = spectator.query(byTestId('bulk-remove-btn')) as HTMLButtonElement;
+        expect(spectator.query(byTestId('bulk-remove-btn'))).toBeNull();
+    });
 
-        expect(btn.disabled).toBe(true);
+    it('should show the bulk-remove button when direct-grant members are selected', () => {
+        const store = spectator.inject(DotRolesStore, true);
+        (store.selectedMembers as jest.Mock).mockReturnValue([
+            {
+                userId: 'u-1',
+                firstName: 'Alan',
+                lastName: 'Cruz',
+                emailAddress: 'alan.cruz@dotcms.com',
+                grantedFromRoleId: 'r-eco',
+                grantedFromRoleName: 'Eco Role'
+            }
+        ]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('bulk-remove-btn'))).toBeTruthy();
     });
 
     it('should render the Grant to User button', () => {
