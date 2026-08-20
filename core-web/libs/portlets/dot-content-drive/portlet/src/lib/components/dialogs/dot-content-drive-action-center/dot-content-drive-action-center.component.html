@@ -32,15 +32,15 @@
             <div
                 class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
                 data-testid="action-center">
-                @if ($ignoredFolderCount() > 0) {
+                @if ($selectedFolderCount() > 0) {
                     <!-- `no-enter-motion` renders this notice statically; see the component's `styles`. -->
                     <p-message
                         severity="info"
                         styleClass="no-enter-motion"
                         data-testid="folders-ignored-message">
                         {{
-                            'content-drive.action-center.folders-ignored'
-                                | dm: [$ignoredFolderCount().toString()]
+                            'content-drive.action-center.folders-limited'
+                                | dm: [$selectedFolderCount().toString()]
                         }}
                     </p-message>
                 }

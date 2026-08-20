@@ -91,7 +91,6 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { excludeFolders } from '../utils/action-center';
 import { encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
@@ -306,12 +305,13 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Contentlets in the current selection, for the Action Center's header sub-line. Folders are
-     * excluded because every bulk endpoint ignores them.
+     * Items in the current selection, for the Action Center's header sub-line.
+     *
+     * Counts folders as well as contentlets: Add to Bundle and Push Publish both act on a folder, so
+     * excluding them would under-report what the dialog is about to operate on. Which individual
+     * actions apply to which rows is the action list's job to say, not the header's.
      */
-    readonly $actionCenterSelectionCount = computed(
-        () => excludeFolders(this.#store.selectedItems()).length
-    );
+    readonly $actionCenterSelectionCount = computed(() => this.#store.selectedItems().length);
 
     /**
      * Action Center title. Swaps to the drilled-into screen's title (the selected workflow action)

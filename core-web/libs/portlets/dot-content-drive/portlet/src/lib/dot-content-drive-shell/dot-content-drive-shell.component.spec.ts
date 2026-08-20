@@ -716,16 +716,16 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
-        it('should exclude folders from the sub-header count', () => {
+        it('should count folders in the sub-header, since actions now take them', () => {
             store.selectedItems.mockReturnValue([
                 MOCK_ITEMS[0],
-                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.flushEffects();
             spectator.detectChanges();
 
-            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
         it('should retitle the header to the drilled-into action', () => {

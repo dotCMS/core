@@ -37,7 +37,6 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { excludeFolders } from '../../utils/action-center';
 import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
@@ -344,11 +343,12 @@ export class DotContentDriveToolbarComponent {
      * actions; the dialog adds what they cannot express — per-action eligibility counts and the
      * workflow actions grouped by scheme — and that is just as useful for one item as for many.
      *
-     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
-     * folders, so a folder-only selection offers no Action Center.
+     * Folders count: Add to Bundle and Push Publish both take a folder identifier, so a folder-only
+     * selection still has something to act on. The actions that do not apply drop themselves out of
+     * the list rather than the dialog refusing to open.
      */
     readonly $displayActionCenter = computed(
-        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
+        () => this.$displayActions() && this.#store.selectedItems().length > 0
     );
 
     /**

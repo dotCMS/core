@@ -485,11 +485,19 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
         });
 
-        it('should not offer it for a folder-only selection', async () => {
-            // Every bulk endpoint ignores folders, so there would be nothing to act on.
+        it('should offer it for a folder-only selection', async () => {
+            // Add to Bundle and Push Publish both take a folder identifier, so a folder-only
+            // selection has something to act on even though the rest of the actions do not apply.
             selectedItemsSignal.set([
-                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should not offer it for an empty selection', async () => {
+            selectedItemsSignal.set([]);
             await settleToolbarAnimation(spectator);
 
             expect(spectator.query(byTestId('action-center-button'))).toBeNull();

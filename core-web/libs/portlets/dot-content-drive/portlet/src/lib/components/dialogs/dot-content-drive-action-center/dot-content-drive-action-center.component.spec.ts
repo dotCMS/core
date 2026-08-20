@@ -459,7 +459,7 @@ describe('DotContentDriveActionCenterComponent', () => {
     });
 
     describe('folders in the selection', () => {
-        it('should warn that folders are ignored', () => {
+        it('should say which actions the folders are limited to', () => {
             mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
 
             spectator.detectChanges();
@@ -467,10 +467,28 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeTruthy();
         });
 
-        it('should not warn when the selection has no folders', () => {
+        it('should not show the notice when the selection has no folders', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeFalsy();
+        });
+
+        it('should send folders and contentlets in one Add to Bundle call', () => {
+            // Folder identifiers resolve server-side to PusheableAsset.FOLDER, so a mixed selection
+            // is one call rather than a contentlet call plus a folder call.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                { type: 'folder', identifier: 'folder-1' } as unknown as DotContentDriveItem
+            ]);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$includedItems']().map((item) => item.identifier)).toEqual([
+                'id-1',
+                'folder-1'
+            ]);
         });
 
         it('should render the notice statically, with no entrance animation', () => {
