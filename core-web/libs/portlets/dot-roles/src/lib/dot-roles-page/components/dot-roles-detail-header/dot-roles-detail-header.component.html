@@ -1,5 +1,25 @@
 @let role = store.selectedRole();
-@if (role) {
+
+@if (store.selectedRoleStatus() === 'loading' && !role) {
+    <!--
+        Skeleton mirrors the real header layout: icon + two-line text
+        block on the left, Edit Role button on the right. Same heights
+        and paddings as the loaded state so the panel doesn't jump when
+        the fetch resolves.
+    -->
+    <header
+        class="flex items-center justify-between gap-4 border-b border-surface-200 px-6 py-4"
+        data-testid="role-detail-header-skeleton">
+        <div class="flex items-center gap-3">
+            <p-skeleton shape="circle" size="2rem" />
+            <div class="flex flex-col gap-1.5">
+                <p-skeleton height="1.25rem" width="10rem" />
+                <p-skeleton height="0.875rem" width="14rem" />
+            </div>
+        </div>
+        <p-skeleton height="2rem" width="6rem" />
+    </header>
+} @else if (role) {
     <header class="flex items-center justify-between gap-4 border-b border-surface-200 px-6 py-4">
         <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-color-secondary text-3xl">

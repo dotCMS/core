@@ -65,6 +65,43 @@ export interface DotRoleUsersRemovalResult {
 }
 
 /**
+ * Legacy Dojo `ItemFileReadStore`-shaped response of the deprecated
+ * `GET /api/role/loadbyname/name/{query}/` search endpoint. See
+ * `searchRoles` for the full rationale + the shape's quirks.
+ */
+interface LegacyRoleSearchNode {
+    readonly id: string;
+    readonly name: string;
+    readonly locked?: boolean;
+    readonly children?: LegacyRoleSearchNode[];
+}
+interface LegacyRoleSearchResponse {
+    readonly identifier?: string;
+    readonly label?: string;
+    readonly items?: Array<{
+        readonly id?: string;
+        readonly name?: string;
+        readonly top?: boolean;
+        readonly children?: LegacyRoleSearchNode[];
+    }>;
+}
+
+/**
+ * Adapt a `LegacyRoleSearchNode` into the modern `DotRoleNode` shape.
+ * The legacy payload underscores dashes in the id (Dojo tree DnD
+ * artifact — `r.getId().replace('-', '_')` in `RoleResource.buildFilteredJsonTree`);
+ * reverse that so consumers keep receiving proper UUIDs.
+ */
+function unwrapLegacySearchNode(node: LegacyRoleSearchNode): DotRoleNode {
+    return {
+        id: node.id.replace(/_/g, '-'),
+        name: node.name,
+        locked: node.locked,
+        roleChildren: (node.children ?? []).map(unwrapLegacySearchNode)
+    };
+}
+
+/**
  * Portlet-scoped data access for the Roles and Tools Angular Beta.
  *
  * Blocked write flows (Edit / Delete role, Grant / Remove user) are called
@@ -97,6 +134,47 @@ export class DotRolesPortletService {
                 DotCMSResponse<DotRoleDetail>
             >(`/api/v1/roles/${roleId}?loadChildrenRoles=${loadChildren}`)
             .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * GET /api/role/loadbyname/name/{query}/ — server-side role search
+     * used by the tree filter. Returns the ancestor path of every role
+     * whose name matches (case-insensitive substring) so the tree can
+     * render the matches with their branches expanded — client-side
+     * filtering can only see roles already in memory, which misses
+     * unloaded grandchildren.
+     *
+     * The endpoint is under `/api/role/*` (pre-v1) and marked
+     * `deprecated=true` on `RoleResource.loadByName`; it is the only
+     * REST surface today that performs the deep-tree search, and the
+     * canonical Dojo portlet has always used it. Migrating this to a
+     * v1 endpoint (`GET /v1/roles?search=X`) is a BE follow-up outside
+     * the Beta scope. Kept isolated behind this service method so the
+     * eventual swap is one file.
+     *
+     * Response shape (Dojo `ItemFileReadStore` legacy format):
+     * ```
+     * { identifier: "id", label: "name", items: [{ id: "root", top: true, children: [...] }] }
+     * ```
+     * Each nested node carries `{ id, name, locked, children }` — with
+     * dashes in `id` replaced by underscores (a Dojo tree DnD-drop
+     * artifact). We reverse that mapping and drop the synthetic
+     * "Roles" wrapper node before handing the tree back to the store.
+     */
+    searchRoles(query: string): Observable<DotRoleNode[]> {
+        const url = `/api/role/loadbyname/name/${encodeURIComponent(query)}/`;
+
+        return this.#http.get<LegacyRoleSearchResponse>(url).pipe(
+            map((response) => {
+                const items = response?.items ?? [];
+                if (items.length === 0) {
+                    return [];
+                }
+                const root = items[0];
+
+                return (root?.children ?? []).map(unwrapLegacySearchNode);
+            })
+        );
     }
 
     /**
