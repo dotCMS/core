@@ -20,22 +20,23 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     AddToBundleService,
-    PushPublishService,
+    DotAlertConfirmService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFolderService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService,
     DotSiteService,
     DotSystemConfigService,
+    DotUploadFileService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    DotRouterService,
-    DotLanguagesService,
-    DotFolderService,
-    DotUploadFileService,
-    DotMessageService,
-    DotPropertiesService
+    PushPublishService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -126,6 +127,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -2861,6 +2864,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))

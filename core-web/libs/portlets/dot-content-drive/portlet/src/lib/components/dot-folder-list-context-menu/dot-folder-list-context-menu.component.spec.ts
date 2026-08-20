@@ -25,6 +25,7 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
     AddToBundleService,
+    DotAlertConfirmService,
     PushPublishService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
@@ -114,6 +115,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 getEnvironments: jest.fn(() => of(pushPublishEnvironments))
             }),
             mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn()
             }),
@@ -341,12 +343,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 showAddToBundle: false
             };
 
-            it('should build menu items for folder with only edit folder action', async () => {
+            it('should build the EDIT-gated items for a folder with only EDIT', async () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
-                const items = component.$items();
-                expect(items).toHaveLength(1);
-                expect(items[0].label).toBe('content-drive.context-menu.edit-folder');
+                // Both entries behind EDIT: Folder Settings, and Delete last.
+                expect(component.$items().map((item) => item.label)).toEqual([
+                    'content-drive.context-menu.edit-folder',
+                    'content-drive.context-menu.delete-folder'
+                ]);
             });
 
             it('should not call workflowsActionsService for folders', async () => {
@@ -392,7 +396,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
-                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(1);
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(2);
             });
 
             it('should use memoized folder menu items on second call', async () => {
@@ -411,7 +415,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-                expect(component.$items()).toHaveLength(1);
+                expect(component.$items()).toHaveLength(2);
             });
 
             it('should build empty menu when folder has no permissions', async () => {
@@ -715,6 +719,121 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
             });
 
+            describe('delete', () => {
+                const folderWithEdit: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.EDIT]
+                };
+
+                const folderContextMenuWithEdit: DotContentDriveContextMenu = {
+                    triggeredEvent: mockEvent,
+                    contentlet: folderWithEdit,
+                    showAddToBundle: false
+                };
+
+                let alertConfirmService: SpyObject<DotAlertConfirmService>;
+                let folderService: SpyObject<DotFolderService>;
+
+                const deleteItem = () =>
+                    component
+                        .$items()
+                        .find((item) => item.label === 'content-drive.context-menu.delete-folder');
+
+                beforeEach(() => {
+                    alertConfirmService = spectator.inject(DotAlertConfirmService);
+                    folderService = spectator.inject(DotFolderService);
+                    folderService.deleteFolder = jest.fn().mockReturnValue(of(true));
+                    // The delete path is built from the browsed site, so it has to be a real one
+                    // rather than the store's SYSTEM_HOST default.
+                    store.initContentDrive({
+                        currentSite: { hostname: 'demo.dotcms.com' } as never,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: true
+                    });
+                    component.$memoizedMenuItems.set({});
+                });
+
+                // EDIT, because that is what FolderAPIImpl.delete enforces (`:438`).
+                it('should show Delete when the folder has EDIT permission', async () => {
+                    await component.getMenuItems(folderContextMenuWithEdit);
+
+                    expect(deleteItem()).toBeDefined();
+                });
+
+                it('should not show Delete when the folder lacks EDIT permission', async () => {
+                    await component.getMenuItems({
+                        triggeredEvent: mockEvent,
+                        contentlet: { ...mockFolder, permissions: [PERMISSIONS_TYPE.READ] },
+                        showAddToBundle: false
+                    });
+
+                    expect(deleteItem()).toBeUndefined();
+                });
+
+                // Recursive and irreversible on the server, so it must never fire straight from a click.
+                it('should ask for confirmation rather than deleting immediately', async () => {
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(alertConfirmService.confirm).toHaveBeenCalled();
+                    expect(folderService.deleteFolder).not.toHaveBeenCalled();
+                });
+
+                // The sidebar tree listed the folder too, and `reloadContentDrive` only reloads the
+                // grid, so the tree keeps showing a folder that no longer exists without this.
+                it('should refetch the folder tree once the delete succeeds', async () => {
+                    jest.spyOn(store, 'loadFolders');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(store.loadFolders).toHaveBeenCalled();
+                });
+
+                it('should not refetch the folder tree when the delete fails', async () => {
+                    folderService.deleteFolder = jest
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
+                    jest.spyOn(store, 'loadFolders');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(store.loadFolders).not.toHaveBeenCalled();
+                });
+
+                it('should delete by path once confirmed, and reload the drive', async () => {
+                    jest.spyOn(store, 'reloadContentDrive');
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    // Run whatever the confirm was armed with, as accepting the dialog would.
+                    const confirmArgs = (alertConfirmService.confirm as jest.Mock).mock.lastCall[0];
+                    confirmArgs.accept();
+
+                    expect(folderService.deleteFolder).toHaveBeenCalledWith(
+                        `//demo.dotcms.com${folderWithEdit.path}`
+                    );
+                    expect(store.reloadContentDrive).toHaveBeenCalled();
+                });
+
+                it('should not reload the drive when the delete fails', async () => {
+                    folderService.deleteFolder = jest
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
+                    jest.spyOn(store, 'reloadContentDrive');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(store.reloadContentDrive).not.toHaveBeenCalled();
+                });
+            });
+
             describe('item order', () => {
                 it('should order settings, permissions, then the push group', async () => {
                     pushPublishEnvironments = [{ id: 'env-1', name: 'Production' }];
@@ -739,7 +858,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         'Edit-Permissions',
                         'contenttypes.content.push_publish',
                         'contenttypes.content.add_to_bundle',
-                        'content-drive.context-menu.push-history'
+                        'content-drive.context-menu.push-history',
+                        'content-drive.context-menu.delete-folder'
                     ]);
                 });
             });

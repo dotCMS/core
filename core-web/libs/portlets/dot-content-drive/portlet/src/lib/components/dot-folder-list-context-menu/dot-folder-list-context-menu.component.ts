@@ -1,5 +1,6 @@
 import { lastValueFrom } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,7 +17,10 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { take } from 'rxjs/operators';
 
 import {
+    DotAlertConfirmService,
     DotContentletService,
+    DotFolderService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
     DotWizardService,
@@ -29,6 +33,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSWorkflowAction,
+    DotContentDriveActionableFolder,
     DotContentletCanLock,
     DotProcessedWorkflowPayload,
     DotWorkflowPayload,
@@ -73,6 +78,9 @@ export class DotFolderListViewContextMenuComponent {
     #dotContentletService = inject(DotContentletService);
     #dialogService = inject(DialogService);
     #dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    #dotAlertConfirmService = inject(DotAlertConfirmService);
+    #dotFolderService = inject(DotFolderService);
+    #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
@@ -198,6 +206,15 @@ export class DotFolderListViewContextMenuComponent {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('content-drive.context-menu.push-history'),
                     command: () => this.#openPushHistoryDialog(contentlet.identifier)
+                });
+            }
+
+            // Last, and gated on EDIT because that is what `FolderAPIImpl.delete` enforces. Ordered
+            // after everything else because it is the one entry here that destroys something.
+            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT)) {
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
+                    command: () => this.#confirmDeleteFolder(contentlet)
                 });
             }
 
@@ -503,6 +520,65 @@ export class DotFolderListViewContextMenuComponent {
             assetIdentifier: identifier,
             title: this.#dotMessageService.get('contenttypes.content.push_publish')
         });
+    }
+
+    /**
+     * Asks before deleting, because the server delete is recursive and irreversible.
+     *
+     * The message names the folder and says its contents go with it: `FolderAPI.delete` removes the
+     * whole subtree, and a confirmation that only says "delete this folder" would understate that.
+     */
+    #confirmDeleteFolder(folder: DotContentDriveActionableFolder): void {
+        this.#dotAlertConfirmService.confirm({
+            header: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
+            message: this.#dotMessageService.get(
+                'content-drive.dialog.delete-folder.message',
+                folder.name
+            ),
+            accept: () => this.#deleteFolder(folder)
+        });
+    }
+
+    /**
+     * Deletes the folder by path, which is what the endpoint takes.
+     *
+     * Built from the browsed site's hostname rather than the folder's `hostId`: the drive search is
+     * scoped to `//<hostname><path>`, so every folder listed is on the site being browsed. Without a
+     * resolved site there is no path to send, so the call is skipped rather than posting `//undefined`.
+     */
+    #deleteFolder(folder: DotContentDriveActionableFolder): void {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            return;
+        }
+
+        this.#dotFolderService
+            .deleteFolder(`//${hostname}${folder.path}`)
+            .pipe(take(1))
+            .subscribe({
+                next: () => {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.context-menu.delete-folder'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.dialog.delete-folder.success',
+                            folder.name
+                        ),
+                        life: ERROR_MESSAGE_LIFE
+                    });
+                    // Both listed the folder, and they reload separately: `reloadContentDrive`
+                    // refreshes the grid only, so without `loadFolders` the sidebar tree keeps
+                    // showing a folder that no longer exists until the next navigation.
+                    this.#store.reloadContentDrive();
+                    this.#store.loadFolders();
+                },
+                error: (error: HttpErrorResponse) => {
+                    this.#httpErrorManagerService.handle(error);
+                }
+            });
     }
 
     #buildPushHistoryUrl(identifier: string): string {
