@@ -490,7 +490,7 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        const { actionName, successCount, skippedCount, failCount } = result;
+        const { actionName, successCount, skippedCount, failCount, partialDetailKey } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
         // can skip items whose scheme does not own the action *and* be refused on items that are
@@ -505,7 +505,9 @@ export class DotContentDriveShellComponent {
 
         const detail = isPartial
             ? this.#dotMessageService.get(
-                  'content-drive.action-center.toast.executed-partial',
+                  // Actions whose failures and skips mean something other than permissions, locks and
+                  // workflow steps say so themselves — see `partialDetailKey`.
+                  partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
                   actionName,
                   String(successCount),
                   String(failCount),

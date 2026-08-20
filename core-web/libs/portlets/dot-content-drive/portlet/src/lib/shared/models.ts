@@ -156,6 +156,16 @@ export interface DotContentDriveActionExecutionResult {
     successCount: number;
     skippedCount: number;
     failCount: number;
+    /**
+     * i18n key for the partial-outcome copy, when the default does not fit.
+     *
+     * The default names workflow-specific causes next to each number — permissions and locks for
+     * failures, "not on their workflow step" for skips. Those are the right causes for a bulk fire and
+     * the wrong ones for anything else, and a shortfall explained by the wrong cause sends the user off
+     * to fix something that was never the problem. An action whose failures and skips mean something
+     * different supplies its own copy rather than borrowing that one.
+     */
+    partialDetailKey?: string;
 }
 
 /**

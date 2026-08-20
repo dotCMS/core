@@ -192,7 +192,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executeQuickAction: jest.fn(),
                 executeWorkflowAction: jest.fn(),
                 executeAddToBundle: jest.fn(),
-                executePushPublish: jest.fn()
+                executePushPublish: jest.fn(),
+                executeRefresh: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
@@ -535,7 +536,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             }
         });
 
-        it('should render Refresh as a disabled placeholder', () => {
+        it('should render Refresh as a selectable action', () => {
             spectator.detectChanges();
 
             const row = spectator.query(
@@ -543,10 +544,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             ) as HTMLButtonElement;
 
             expect(row).toBeTruthy();
-            expect(row.disabled).toBe(true);
-            expect(
-                spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')
-            ).toBeTruthy();
+            expect(row.disabled).toBe(false);
+            expect(spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')).toBeNull();
         });
 
         it('should disable Push Publish without the coming-soon badge when no environment exists', () => {
@@ -568,18 +567,49 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             // Disabled, so a real click cannot land — called directly to prove the guard holds if
-            // one ever does. Both blocked states are covered: Refresh is a placeholder, Push
-            // Publish has nowhere to send to.
-            for (const id of ['REFRESH', 'PUSH_PUBLISH']) {
-                spectator.component['onSelectQuickAction'](
-                    spectator.component['$quickActions']().find((action) => action.id === id)!
-                );
-            }
+            // one ever does. Push Publish has nowhere to send to; Refresh is no longer blocked.
+            spectator.component['onSelectQuickAction'](
+                spectator.component['$quickActions']().find(
+                    (action) => action.id === 'PUSH_PUBLISH'
+                )!
+            );
 
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        it('should execute Refresh through its own store method, not the workflow fire', () => {
+            // Refresh speaks inodes like Lock and Unlock but goes to a job-backed endpoint of its
+            // own, so routing it through `executeQuickAction` would fire a system action that does
+            // not exist.
+            executeQuickAction('REFRESH');
+
+            expect(store.executeRefresh).toHaveBeenCalledWith(expect.any(String), [
+                'inode-1',
+                'inode-2'
+            ]);
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        it('should send only the rows left checked in the Refresh preview', () => {
+            openQuickActionPreview('REFRESH');
+            toggleRow(0);
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            const [, inodes] = (store.executeRefresh as unknown as jest.Mock).mock.calls[0];
+
+            expect(inodes).toEqual(['inode-2']);
+        });
+
+        it('should not ask for configuration before refreshing', () => {
+            // Nothing to collect: a reindex takes no assignee, no destination and no environments,
+            // so it goes straight to the preview like Lock and Unlock do.
+            openQuickActionPreview('REFRESH');
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
         });
 
         it('should keep Add to Bundle selectable', () => {

@@ -8,6 +8,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
+    DotBulkRefreshService,
     DotHttpErrorManagerService,
     DotWorkflowActionsFireService,
     PushPublishService
@@ -64,7 +65,8 @@ export function withActionExecution() {
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
                 httpErrorManagerService = inject(DotHttpErrorManagerService),
                 addToBundleService = inject(AddToBundleService),
-                pushPublishService = inject(PushPublishService)
+                pushPublishService = inject(PushPublishService),
+                bulkRefreshService = inject(DotBulkRefreshService)
             ) => {
                 /**
                  * Settles a finished run by publishing its result for the shell to present.
@@ -229,6 +231,71 @@ export function withActionExecution() {
                                     successCount: summary.successCount,
                                     skippedCount: 0,
                                     failCount: summary.failCount
+                                });
+                            });
+                    },
+
+                    /**
+                     * Reindexes the given contentlet inodes.
+                     *
+                     * Unlike the other quick actions this one is job-backed: the endpoint answers `202`
+                     * with a job id and the service polls until it settles, so the run can outlast the
+                     * dialog and still be reported. That is the same property the other actions get from
+                     * living in the store, reached a different way.
+                     *
+                     * No live counters. The status endpoint reports a progress float but nothing
+                     * item-wise while the job runs, so the toolbar shows the run as in flight and the
+                     * outcome lands once, at the end — which is all the toast needs.
+                     *
+                     * Reported through the same {@link onSettled} path as everything else, with its own
+                     * partial-outcome copy: a failure here is content that could not be read or indexed
+                     * and a skip is a cancelled run, neither of which is what the default copy blames.
+                     */
+                    executeRefresh: (actionName: string, inodes: string[]): void => {
+                        if (!inodes.length || store.actionExecution()) {
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecution: { actionName, total: inodes.length },
+                            actionExecutionResult: undefined
+                        });
+
+                        bulkRefreshService
+                            .refresh(inodes)
+                            .pipe(
+                                take(1),
+                                catchError((error) => {
+                                    patchState(store, { actionExecution: undefined });
+                                    httpErrorManagerService.handle(error);
+
+                                    return EMPTY;
+                                })
+                            )
+                            .subscribe((counts) => {
+                                // A finished job with no counters leaves nothing honest to report:
+                                // `inodes.length` would claim every item was reindexed and `0` would
+                                // claim none were, and the first errs in the reassuring direction.
+                                if (!counts) {
+                                    patchState(store, { actionExecution: undefined });
+                                    httpErrorManagerService.handle(
+                                        new HttpErrorResponse({
+                                            status: 500,
+                                            statusText:
+                                                'The reindex job finished without reporting counts'
+                                        })
+                                    );
+
+                                    return;
+                                }
+
+                                onSettled({
+                                    actionName,
+                                    successCount: counts.successCount,
+                                    skippedCount: counts.skippedCount,
+                                    failCount: counts.failedCount,
+                                    partialDetailKey:
+                                        'content-drive.action-center.toast.refreshed-partial'
                                 });
                             });
                     },

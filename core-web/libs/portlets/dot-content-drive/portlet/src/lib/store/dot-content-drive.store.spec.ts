@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
+    DotBulkRefreshService,
     PushPublishService,
     DotContentDriveService,
     DotCurrentUserService,
@@ -77,6 +78,7 @@ describe('DotContentDriveStore', () => {
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
             mockProvider(PushPublishService),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -801,6 +803,7 @@ describe('DotContentDriveStore - onInit', () => {
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
             mockProvider(PushPublishService),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -860,6 +863,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
             mockProvider(PushPublishService),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -959,6 +963,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
             mockProvider(PushPublishService),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1222,6 +1227,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
     let store: InstanceType<typeof DotContentDriveStore>;
     let fireService: jest.Mocked<DotWorkflowActionsFireService>;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let bulkRefreshService: jest.Mocked<DotBulkRefreshService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1247,6 +1253,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
             mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
             mockProvider(PushPublishService, { pushPublishAssets: jest.fn() }),
+            // Refresh is the one quick action that is job-backed: the service submits and polls, so
+            // the store only ever sees a single-emission observable.
+            mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
@@ -1278,6 +1287,143 @@ describe('DotContentDriveStore - withActionExecution', () => {
             of({ results: [], summary: { affected: 2, successCount: 2, failCount: 0, time: 1 } })
         );
         fireService.bulkFire.mockReturnValue(of({ successCount: 2, skippedCount: 0, fails: [] }));
+
+        bulkRefreshService = spectator.inject(
+            DotBulkRefreshService
+        ) as jest.Mocked<DotBulkRefreshService>;
+        bulkRefreshService.refresh.mockReturnValue(
+            of({
+                total: 2,
+                successCount: 2,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 3
+            })
+        );
+    });
+
+    describe('executeRefresh', () => {
+        it('should publish the running action so the toolbar can report it', () => {
+            // Never settles, so the in-flight state stays observable. This window is longer for
+            // Refresh than for the other quick actions, because the job is polled to completion.
+            bulkRefreshService.refresh.mockReturnValue(NEVER);
+
+            store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecution()).toEqual({ actionName: 'Refresh', total: 2 });
+        });
+
+        it('should send the inodes to the bulk refresh service', () => {
+            store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledWith(['inode-1', 'inode-2']);
+        });
+
+        it('should report the counts the job returned, not the number of inodes sent', () => {
+            // The server collapses inodes by identifier, so three selected language rows of one
+            // contentlet are a single reindex — reporting the inode count would overstate the work.
+            bulkRefreshService.refresh.mockReturnValue(
+                of({
+                    total: 1,
+                    successCount: 1,
+                    failedCount: 0,
+                    skippedCount: 0,
+                    versionsIndexed: 3
+                })
+            );
+
+            store.executeRefresh('Refresh', ['inode-en', 'inode-es', 'inode-fr']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+        });
+
+        it('should carry failures and skips through to the result', () => {
+            bulkRefreshService.refresh.mockReturnValue(
+                of({
+                    total: 4,
+                    successCount: 1,
+                    failedCount: 2,
+                    skippedCount: 1,
+                    versionsIndexed: 1
+                })
+            );
+
+            store.executeRefresh('Refresh', ['a', 'b', 'c', 'd']);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 1,
+                failCount: 2,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+        });
+
+        it('should name its own partial copy rather than borrowing the workflow wording', () => {
+            // The default copy blames permissions and locks for failures, and workflow steps for
+            // skips. Neither is why a reindex falls short, and naming the wrong cause sends the user
+            // off to fix something that was never the problem.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(store.actionExecutionResult()?.partialDetailKey).toBe(
+                'content-drive.action-center.toast.refreshed-partial'
+            );
+        });
+
+        it('should clear the running action once settled', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toBeDefined();
+        });
+
+        it('should report an error instead of inventing counts when the job returns none', () => {
+            // Substituting the inode count would claim every item was reindexed; substituting zero
+            // would claim none were. Both invent a number the server never sent.
+            bulkRefreshService.refresh.mockReturnValue(of(null));
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should route a transport failure to the error handler', () => {
+            // A plain backend user gets 403 here: the endpoint is gated on CMS Power User or Admin,
+            // and the client deliberately does not pre-empt that check.
+            bulkRefreshService.refresh.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 403 }))
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not fire when there are no inodes', () => {
+            store.executeRefresh('Refresh', []);
+
+            expect(bulkRefreshService.refresh).not.toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should refuse to start a second run while one is in flight', () => {
+            bulkRefreshService.refresh.mockReturnValue(NEVER);
+
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeRefresh('Refresh', ['inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('executeQuickAction', () => {

@@ -304,3 +304,60 @@ export interface DotContentDriveSearchResponse {
     nextContentCursor: number;
     nextFolderCursor: number;
 }
+
+/**
+ * The `202 Accepted` body of `POST /api/v1/content/_bulkrefresh`.
+ *
+ * Reindexing a selection is job-backed: the submit call only accepts the work, so this carries the
+ * handle to follow it rather than any outcome.
+ */
+export interface DotBulkRefreshSubmitResponse {
+    /** The job's id — the handle for the status and cancel calls. */
+    jobId: string;
+    /** Absolute URL of the status snapshot. Poll it until the job reaches a terminal state. */
+    statusUrl: string;
+    /**
+     * Inodes accepted, before the server collapses them by identifier. The de-duplicated `total`
+     * arrives with the result and is often smaller, so this is not a count of reindexed items.
+     */
+    submitted: number;
+}
+
+/** Terminal states of a bulk refresh job. Anything else means it is still going. */
+export const DOT_BULK_REFRESH_TERMINAL_STATES = [
+    'SUCCESS',
+    'CANCELED',
+    'FAILED_PERMANENTLY',
+    'ABANDONED_PERMANENTLY'
+] as const;
+
+export type DotBulkRefreshJobState = (typeof DOT_BULK_REFRESH_TERMINAL_STATES)[number] | string;
+
+/**
+ * Counters a finished bulk refresh reports.
+ *
+ * `successCount + failedCount + skippedCount === total` in every terminal state, which is what lets a
+ * caller know it can stop waiting and settle every row it asked about.
+ */
+export interface DotBulkRefreshCounts {
+    /** Unique identifiers reindexed, after de-duplication — not the submitted inode count. */
+    total: number;
+    successCount: number;
+    failedCount: number;
+    /** Never attempted, because the run was cancelled before reaching them. */
+    skippedCount: number;
+    /** Index writes across the whole run; higher than `total` when content has several versions. */
+    versionsIndexed: number;
+}
+
+/** `GET /api/v1/content/_bulkrefresh/{jobId}` — the job as the status endpoint reports it. */
+export interface DotBulkRefreshJob {
+    id: string;
+    state: DotBulkRefreshJobState;
+    /** 0.0–1.0. The only progress signal available while the job runs. */
+    progress: number;
+    /** Present once the job is terminal; `metadata` carries the counters. */
+    result?: {
+        metadata?: DotBulkRefreshCounts;
+    };
+}

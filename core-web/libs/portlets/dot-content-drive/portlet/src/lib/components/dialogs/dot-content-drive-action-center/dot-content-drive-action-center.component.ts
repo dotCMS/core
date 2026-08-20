@@ -51,6 +51,7 @@ import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
     PUSH_PUBLISH_ACTION_ID,
+    REFRESH_ACTION_ID,
     DotActionInputKind,
     eligibleContentlets,
     excludeFolders,
@@ -79,9 +80,10 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  * Two sections:
  *
  * 1. **Quick Actions** — the bulk operations the old search toolbar offered outside its workflow
- *    dropdown: Lock, Unlock, Add to Bundle, and placeholders for Push Publish and Refresh. Lock and
+ *    dropdown: Lock, Unlock, Add to Bundle, Refresh, and a placeholder for Push Publish. Lock and
  *    Unlock fire over the whole eligible selection in one request via
- *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Counts are derived client-side
+ *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`; Refresh goes to its own job-backed
+ *    `POST /api/v1/content/_bulkrefresh` and is polled to completion. Counts are derived client-side
  *    from row state (see `getQuickActions`).
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
  *    `POST /api/v1/workflow/contentlet/actions/bulk`, queried **once per content type** in the
@@ -706,6 +708,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
         if (quickAction.id === PUSH_PUBLISH_ACTION_ID) {
             this.firePushPublish(quickAction);
+
+            return;
+        }
+
+        // Refresh speaks inodes like the workflow quick actions, but goes to its own job-backed
+        // endpoint rather than the system-action fire, so it branches here rather than falling through.
+        if (quickAction.id === REFRESH_ACTION_ID) {
+            this.#store.executeRefresh(this.#dotMessageService.get(quickAction.name), inodes);
+            this.handOffToToolbar();
 
             return;
         }

@@ -432,6 +432,64 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should use an action-specific partial copy when the result names one', () => {
+            // A reindex falls short for different reasons than a workflow fire — content that could
+            // not be read or indexed, and a cancelled run. Borrowing the default copy would blame
+            // permissions, locks and workflow steps, none of which apply, and send the user off to
+            // fix something that was never the problem.
+            settle({
+                actionName: 'Refresh',
+                successCount: 2,
+                skippedCount: 1,
+                failCount: 1,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.refreshed-partial',
+                'Refresh',
+                '2',
+                '1',
+                '1'
+            );
+        });
+
+        it('should keep the default partial copy for results that name none', () => {
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.executed-partial',
+                'Publish',
+                '1',
+                '1',
+                '0'
+            );
+        });
+
+        it('should ignore the action-specific copy on a clean run', () => {
+            // Nothing fell short, so there is no cause to name — the plain success copy is right
+            // whatever the action would have said about a shortfall.
+            settle({
+                actionName: 'Refresh',
+                successCount: 3,
+                skippedCount: 0,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    detail: 'content-drive.action-center.toast.executed-detail'
+                })
+            );
+        });
+
         it('should refresh the grid, close the dialog and consume the result', () => {
             settle({
                 actionName: 'Publish',
