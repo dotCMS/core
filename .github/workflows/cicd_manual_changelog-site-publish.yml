@@ -1,0 +1,104 @@
+#
+# Changelog Site Publish — Manual Trigger
+#
+# Standalone workflow for (re-)publishing a release's changelog to dev.dotcms.com.
+# Calls the same reusable component used by the release pipeline, so the credentials
+# (DOTCMS_DEVSITE_URL / _RELEASENOTES_TOKEN / _RELEASENOTES_ACCOUNT) stay in repo
+# vars+secrets — an operator needs only the release tag.
+#
+# Use cases:
+# - A release whose site publish never ran (deployment failed, so the phase was skipped)
+# - Re-syncing the site after hand-editing a GitHub release body
+# - Overriding human-edit protection (`force`) after a skip names a human editor
+#
+# Prerequisite: the GitHub release body must already hold the changelog. Generate it
+# first with cicd_ai-release-notes-backfill.yml — this workflow only copies, never writes.
+#
+
+name: 'Changelog Site Publish (Manual)'
+run-name: "Changelog Site: ${{ inputs.release_tag }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to publish (e.g., v26.08.19-04)'
+        required: true
+        type: string
+      force:
+        description: 'Override human-edit protection — only after a dry run names a human editor'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: changelog-site-publish-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  # The release pipeline gets release_version and docker_tags from upstream jobs. A manual
+  # run has neither, so derive both from the tag rather than making an operator hunt for a sha.
+  resolve:
+    name: Resolve Version and Image
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      release_version: ${{ steps.r.outputs.release_version }}
+      docker_tags: ${{ steps.r.outputs.docker_tags }}
+      released_date: ${{ steps.r.outputs.released_date }}
+    steps:
+      - name: Resolve
+        id: r
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          echo "release_version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+          # Backfilling an older release must stamp that release's date, not today's.
+          PUBLISHED=$(gh release view "$RELEASE_TAG" --repo "$REPO" --json publishedAt --jq '.publishedAt[0:10]')
+          echo "released_date=${PUBLISHED}" >> "$GITHUB_OUTPUT"
+
+          # Prefer the sha-tagged image (e.g. 26.08.19-04_a0181f9) so a manual entry matches
+          # what the pipeline would have written. Hub is public; no auth needed.
+          TAG=$(curl -fsSL \
+            "https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/?name=${VERSION}_&page_size=100" \
+            | jq -r --arg v "$VERSION" \
+                '[.results[].name | select(test("^" + $v + "_[0-9a-f]+$"))] | first // empty')
+          # ponytail: sha-less fallback keeps a publish possible if Hub paging ever changes shape.
+          echo "docker_tags=dotcms/dotcms:${TAG:-$VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Resolved ${VERSION} -> dotcms/dotcms:${TAG:-$VERSION}"
+
+  # This writes to the public docs site with a service-account token, and workflow_dispatch
+  # is open to every account with write access on this repo (45 today). Reviewer approval
+  # is the access control — same pattern as cicd_evergreen-tracks-promote.yml's apply gate.
+  # The environment must carry required_reviewers; GitHub auto-creates it UNPROTECTED on
+  # first use if it is missing, which would silently remove this gate.
+  gate:
+    name: Approve Site Publish
+    needs: resolve
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: changelog-site-publish
+    steps:
+      - run: |
+          echo "Approved: publish ${{ inputs.release_tag }} to the changelog site"
+          echo "Image: ${{ needs.resolve.outputs.docker_tags }}"
+          echo "Date:  ${{ needs.resolve.outputs.released_date }}"
+          echo "Force: ${{ inputs.force }}"
+
+  publish:
+    name: Publish Site Changelog
+    needs: [resolve, gate]
+    uses: ./.github/workflows/cicd_comp_changelog-site-publish-phase.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
+      release_version: ${{ needs.resolve.outputs.release_version }}
+      docker_tags: ${{ needs.resolve.outputs.docker_tags }}
+      released_date: ${{ needs.resolve.outputs.released_date }}
+      force: ${{ inputs.force }}
+    secrets:
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
