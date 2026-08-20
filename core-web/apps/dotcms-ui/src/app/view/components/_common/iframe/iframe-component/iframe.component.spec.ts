@@ -219,7 +219,7 @@ describe('IframeComponent', () => {
             };
         });
 
-        it('should remove and add listener on load', () => {
+        it('should remove and add listener on load using the same stable function references', () => {
             iframeEl.triggerEventHandler('load', {
                 target: {
                     contentDocument: {
@@ -228,19 +228,26 @@ describe('IframeComponent', () => {
                 }
             });
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const keyDownRef = (comp as any).boundEmitKeyDown;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const customEventRef = (comp as any).boundEmitCustomEvent;
+
+            // remove must receive the exact same reference as add so the browser
+            // can actually deregister the handler instead of silently failing
             expect(
                 comp.iframeElement.nativeElement.contentWindow.removeEventListener
-            ).toHaveBeenCalledWith('keydown', expect.any(Function));
+            ).toHaveBeenCalledWith('keydown', keyDownRef);
             expect(
                 comp.iframeElement.nativeElement.contentWindow.document.removeEventListener
-            ).toHaveBeenCalledWith('ng-event', expect.any(Function));
+            ).toHaveBeenCalledWith('ng-event', customEventRef);
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.addEventListener
-            ).toHaveBeenCalledWith('keydown', expect.any(Function));
+            ).toHaveBeenCalledWith('keydown', keyDownRef);
             expect(
                 comp.iframeElement.nativeElement.contentWindow.document.addEventListener
-            ).toHaveBeenCalledWith('ng-event', expect.any(Function));
+            ).toHaveBeenCalledWith('ng-event', customEventRef);
         });
 
         it('should set the colors to the jsp on load', () => {
