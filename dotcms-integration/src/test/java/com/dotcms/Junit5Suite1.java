@@ -5,6 +5,7 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIIntegrationTest;
 import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessorIntegrationTest;
 import com.dotcms.jobs.business.queue.PostgresJobQueueIntegrationTest;
+import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
 import org.junit.platform.suite.api.SelectClasses;
@@ -18,6 +19,7 @@ import org.junit.platform.suite.api.Suite;
         JobQueueHelperIntegrationTest.class,
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
+        BulkRefreshResourceIntegrationTest.class,
         JobProcessorDiscoveryTest.class
 })
 public class Junit5Suite1 {
