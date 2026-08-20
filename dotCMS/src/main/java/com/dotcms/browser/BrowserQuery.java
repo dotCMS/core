@@ -45,6 +45,7 @@ public class BrowserQuery {
     final boolean respectFrontEndRoles;
     final int contentCursor;
     final int folderCursor;
+    final int linkCursor;
     final User user;
     final String  filter;
     final String fileName;
@@ -116,6 +117,7 @@ public class BrowserQuery {
     public String toString() {
         return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
                 ", contentCursor=" + contentCursor + ", folderCursor=" + folderCursor +
+                ", linkCursor=" + linkCursor +
                 " ,site:" + site + ", folder:" + folder + ", filter:"
                 + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
@@ -126,6 +128,7 @@ public class BrowserQuery {
                 + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties
                 + ", luceneQuery:" + luceneQuery
                 + ", languageIds:" + StringUtils.join(languageIds)
+                + ", mimeTypes:" + StringUtils.join(mimeTypes)
                 + ", baseTypes:" + StringUtils.join(baseTypes)
                 + ", contentTypes:" + StringUtils.join(contentTypeIds)
                 + ", fieldCriteria:" + StringUtils.join(fieldCriteria)
@@ -136,6 +139,7 @@ public class BrowserQuery {
         this.respectFrontEndRoles = builder.respectFrontEndRoles;
         this.contentCursor = builder.contentCursor;
         this.folderCursor = builder.folderCursor;
+        this.linkCursor = builder.linkCursor;
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
@@ -259,6 +263,7 @@ public class BrowserQuery {
         private boolean respectFrontEndRoles = true;
         private int contentCursor = 0;
         private int folderCursor = 0;
+        private int linkCursor = 0;
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
@@ -297,6 +302,7 @@ public class BrowserQuery {
         private Builder(BrowserQuery browserQuery) {
             this.contentCursor = browserQuery.contentCursor;
             this.folderCursor = browserQuery.folderCursor;
+            this.linkCursor = browserQuery.linkCursor;
             this.user = browserQuery.user;
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
@@ -337,13 +343,37 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * Cursors are designed to be echoed back verbatim from a previous response, so a client
+         * replaying a corrupted value is plausible. All three are clamped at zero: the folder and
+         * link slices index a list directly, so a negative cursor would reach
+         * {@code List.subList} and surface as a 500 rather than an empty page.
+         *
+         * @param contentCursor DB row to resume the content scan from; negatives are treated as 0
+         * @return this builder
+         */
         public Builder contentCursor(int contentCursor) {
-            this.contentCursor = contentCursor;
+            this.contentCursor = Math.max(0, contentCursor);
             return this;
         }
 
+        /**
+         * @param folderCursor index into the folder list to start from; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
         public Builder folderCursor(int folderCursor) {
-            this.folderCursor = folderCursor;
+            this.folderCursor = Math.max(0, folderCursor);
+            return this;
+        }
+
+        /**
+         * @param linkCursor index into the link list to start from; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
+        public Builder linkCursor(int linkCursor) {
+            this.linkCursor = Math.max(0, linkCursor);
             return this;
         }
 
@@ -452,8 +482,13 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * @param offset row offset for the content query; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
         public Builder offset(@Nonnull int offset) {
-            this.offset = offset;
+            this.offset = Math.max(0, offset);
             return this;
         }
 

@@ -1327,6 +1327,24 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 	@CloseDBIfOpened
+	@Override
+	public List<Link> getLiveLinks(final Host host, final User user,
+								   final boolean respectFrontEndPermissions)
+								   throws DotDataException, DotSecurityException {
+
+		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Host " + host.getHostname());
+		}
+
+		final ChildrenCondition cond = new ChildrenCondition();
+        cond.live=true;
+        cond.deleted=false;
+		final List list = folderFactory.getChildrenClass(host, Link.class, cond);
+
+		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
+	}
+
+	@CloseDBIfOpened
 	public List<Contentlet> getWorkingContent(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + parent.getPath());
