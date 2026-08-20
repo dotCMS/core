@@ -1,4 +1,3 @@
-import { SpectatorOverrides } from '@openng/spectator';
 import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownComponent } from 'ngx-markdown';
@@ -18,6 +17,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
+import { aliasedProps } from '../../../../../../test/spectator-aliased-props';
 import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
 
 const headingSecret = {
@@ -150,14 +150,9 @@ const formState = {
     generatedString: secrets[5].value
 };
 
-/**
- * Spectator keys `props` by the class *property* name (`$formFields`), while the
- * `ComponentRef.setInput` it calls underneath needs the public *alias* (`formFields`). An aliased
- * signal input cannot satisfy both, which is what the `as unknown` cast at each call site was
- * working around. Stated once here, and still applied before the first change-detection pass.
- */
-const formFieldsProp = (formFields: DotAppsSecret[]) =>
-    ({ formFields }) as unknown as SpectatorOverrides<DotAppsConfigurationDetailFormComponent>['props'];
+/** `formFields` is the alias of `$formFields` — see {@link aliasedProps}. */
+const aliasedFormFields = (formFields: DotAppsSecret[]) =>
+    aliasedProps<DotAppsConfigurationDetailFormComponent>({ formFields });
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
@@ -183,7 +178,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     describe('Without warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
-                props: formFieldsProp(secrets)
+                props: aliasedFormFields(secrets)
             });
             spectator.detectChanges();
         });
@@ -201,7 +196,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should focus the first form field when form fields are available', async () => {
             // Create component with formFields
             const spectatorWithFields = createComponent({
-                props: formFieldsProp(secrets)
+                props: aliasedFormFields(secrets)
             });
             spectatorWithFields.detectChanges();
             await spectatorWithFields.fixture.whenStable();
@@ -352,7 +347,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should render HEADING field as section header with label text', () => {
             const spectatorWithHeading = createComponent({
-                props: formFieldsProp([headingSecret, ...secrets])
+                props: aliasedFormFields([headingSecret, ...secrets])
             });
             spectatorWithHeading.detectChanges();
 
@@ -364,7 +359,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should render INFO field as info box with hint text', () => {
             const spectatorWithInfo = createComponent({
-                props: formFieldsProp([infoSecret, ...secrets])
+                props: aliasedFormFields([infoSecret, ...secrets])
             });
             spectatorWithInfo.detectChanges();
 
@@ -376,7 +371,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should not add HEADING or INFO fields to the form group', () => {
             const spectatorWithExtra = createComponent({
-                props: formFieldsProp([headingSecret, infoSecret, ...secrets])
+                props: aliasedFormFields([headingSecret, infoSecret, ...secrets])
             });
             spectatorWithExtra.detectChanges();
 
@@ -396,10 +391,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     describe('With warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
-                props: formFieldsProp(
-                    secrets.map((item, i) =>
-                        i < 3 ? { ...item, warnings: [`error ${i}`] } : item
-                    )
+                props: aliasedFormFields(
+                    secrets.map((item, i) => (i < 3 ? { ...item, warnings: [`error ${i}`] } : item))
                 )
             });
             spectator.detectChanges();

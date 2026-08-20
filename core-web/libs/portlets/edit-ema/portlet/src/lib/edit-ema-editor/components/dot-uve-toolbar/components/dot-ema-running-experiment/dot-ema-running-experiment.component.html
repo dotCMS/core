@@ -10,7 +10,7 @@
         ' ' +
         ('dot.common.until' | dm) +
         ' ' +
-        (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
+        (runningExperiment.scheduling?.endDate | date: runningUntilDateFormat)
     "
     class="p-tag-success sm cursor-pointer"
     data-testId="runningExperimentTag"

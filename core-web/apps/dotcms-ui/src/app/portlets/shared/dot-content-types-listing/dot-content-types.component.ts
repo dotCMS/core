@@ -421,7 +421,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             baseType: item.baseType as DotCMSBaseTypesContentTypes,
             data: {
                 icon: item.icon ?? '',
-                host: item.host
+                host: item.host ?? ''
             }
         });
 

@@ -4,6 +4,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotStyleEditorFieldFormComponent } from './dot-style-editor-field-form.component';
 
+import { aliasedProps } from '../../../../../../../test/spectator-aliased-props';
 import { BuilderField } from '../../models';
 
 const MOCK_MESSAGES: Record<string, string> = {
@@ -78,13 +79,13 @@ describe('DotStyleEditorFieldFormComponent', () => {
         isDuplicateIdentifier = false
     ): void {
         spectator = createComponent({
-            props: {
+            props: aliasedProps<DotStyleEditorFieldFormComponent>({
                 field,
                 isFirst: false,
                 isLast: false,
                 showErrors,
                 isDuplicateIdentifier
-            } as unknown
+            })
         });
     }
 

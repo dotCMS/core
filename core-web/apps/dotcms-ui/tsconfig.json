@@ -19,6 +19,12 @@
         "esModuleInterop": true,
         "moduleResolution": "bundler",
         "resolvePackageJsonExports": true,
-        "module": "preserve"
+        "module": "preserve",
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
     }
 }

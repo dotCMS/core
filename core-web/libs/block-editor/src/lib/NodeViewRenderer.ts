@@ -52,7 +52,12 @@ class AngularNodeView extends NodeView<
 > {
     renderer!: AngularRenderer<AngularNodeViewComponent, NodeViewProps>;
     contentDOMElement!: HTMLElement | null;
-    override decorations!: readonly DecorationWithType[];
+    // `declare` (and so no `override`, which TypeScript forbids alongside it): this only
+    // restates the base class's property for the type-checker and emits nothing. `libs/block-editor`
+    // targets es2015, where a plain field is an assignment — but `apps/dotcms-ui` targets ES2022,
+    // where `useDefineForClassFields` is on by default and the same field would emit a
+    // `defineProperty` that shadows the base value with `undefined` (TS2612).
+    declare decorations: readonly DecorationWithType[];
 
     override mount() {
         const injector = this.options.injector as Injector;

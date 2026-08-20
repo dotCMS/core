@@ -382,7 +382,7 @@ describe('ContainerListComponent', () => {
                 menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
-            expect(comp.setContainerActions(unpublishedContainer)).toEqual(actions);
+            expect(comp.setContainerActions(unpublishedContainer!)).toEqual(actions);
         });
 
         it('should set actions to archived template', () => {

@@ -61,7 +61,7 @@ const messageServiceMock = new MockDotMessageService({
     standalone: false
 })
 class TestHostComponent {
-    @Input() data: DotPushPublishDialogData | null = null;
+    @Input() data?: DotPushPublishDialogData;
     valid!: boolean;
     value: any;
 }
@@ -207,7 +207,7 @@ xdescribe('DotPushPublishFormComponent', () => {
             By.css('.push-publish-dialog__timezone-label span')
         ).nativeElement;
         expect(timezoneDropDownContainer.attributes['hidden']).toBeDefined();
-        expect(timezoneDropDown.options.length).toEqual(mockDotTimeZones.length);
+        expect(timezoneDropDown.options!.length).toEqual(mockDotTimeZones.length);
         expect(timeZoneLabel.outerText).toEqual(
             pushPublishForm.timeZoneOptions.find(({ value }) => value === localTZ)!.label
         );
@@ -290,7 +290,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         });
 
         it('should disable publish expired on removeOnly data ', () => {
-            hostComponent.data = null;
+            hostComponent.data = undefined;
             fixture.detectChanges();
             hostComponent.data = { removeOnly: true, ...mockPublishFormData };
             fixture.detectChanges();
@@ -301,7 +301,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         });
 
         it('should disable remove and publish expired on restricted data ', () => {
-            hostComponent.data = null;
+            hostComponent.data = undefined;
             fixture.detectChanges();
             hostComponent.data = { restricted: true, ...mockPublishFormData };
             fixture.detectChanges();
@@ -313,7 +313,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         });
 
         it('should disable remove and publish expired on cats data ', () => {
-            hostComponent.data = null;
+            hostComponent.data = undefined;
             fixture.detectChanges();
             hostComponent.data = { cats: true, ...mockPublishFormData };
             fixture.detectChanges();
@@ -332,7 +332,7 @@ xdescribe('DotPushPublishFormComponent', () => {
             customCode: '<h1>Code</h1>',
             ...mockPublishFormData
         };
-        hostComponent.data = null;
+        hostComponent.data = undefined;
         fixture.detectChanges();
         hostComponent.data = mockCustomCode;
         fixture.detectChanges();

@@ -258,11 +258,11 @@ describe('DotNavHeaderComponent', () => {
             expect(spectator.query(byTestId('whitelabel-logo'))).toBeFalsy();
         });
 
-        it('should handle undefined logo from service', () => {
-            dotNavLogoService.navBarLogo$.next(undefined);
+        it('should handle a logo the service could not resolve', () => {
+            dotNavLogoService.navBarLogo$.next(null);
             spectator.detectChanges();
 
-            // Undefined should show default logo
+            // No logo should show the default one
             expect(spectator.query(byTestId('default-logo'))).toBeTruthy();
             expect(spectator.query(byTestId('whitelabel-logo'))).toBeFalsy();
         });

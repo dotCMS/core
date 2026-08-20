@@ -391,7 +391,7 @@ describe('DotNavigationComponent expanded', () => {
 
             spectator.component.onMenuClick({
                 originalEvent: {} as unknown as MouseEvent,
-                data: mockMenu
+                data: mockMenu!
             });
 
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();

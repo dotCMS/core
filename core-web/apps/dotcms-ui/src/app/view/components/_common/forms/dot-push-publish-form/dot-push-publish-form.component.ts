@@ -86,7 +86,7 @@ export class DotPushPublishFormComponent
     showTimezonePicker = false;
     changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
-    @Input() data: DotPushPublishDialogData | null = null;
+    @Input() data?: DotPushPublishDialogData;
 
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();

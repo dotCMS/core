@@ -46,7 +46,9 @@ export class DotPortletToolbarComponent {
      */
     onPrimaryClick($event: Event): void {
         try {
-            this.actions.primary[0].command?.({ originalEvent: $event });
+            // Only reachable from the primary button, which the template renders behind
+            // `@if (actions?.primary?.length)`.
+            this.actions.primary?.[0].command?.({ originalEvent: $event });
         } catch (error) {
             console.error(error);
         }

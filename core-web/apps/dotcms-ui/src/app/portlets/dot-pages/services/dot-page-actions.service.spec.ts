@@ -607,10 +607,12 @@ describe('DotPageActionsService', () => {
 
     describe('Edge Cases', () => {
         it('should handle contentlet without baseType', (done) => {
+            // The model declares `baseType` required; this test drives the guard for a
+            // contentlet that reaches the UI without one.
             const contentletWithoutBaseType = {
                 ...MOCK_HTMLPAGE_CONTENTLET,
                 baseType: undefined
-            } as DotCMSContentlet;
+            } as unknown as DotCMSContentlet;
 
             spectator.service.getItems(contentletWithoutBaseType).subscribe((items) => {
                 const editAction = items.find((item) => item.label === 'Edit');

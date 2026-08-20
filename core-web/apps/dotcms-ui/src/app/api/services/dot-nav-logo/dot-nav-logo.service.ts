@@ -18,7 +18,7 @@ export class DotNavLogoService {
      * @return {*}  {void}
      * @memberof DotNavLogoService
      */
-    setLogo(navLogo: string): void {
+    setLogo(navLogo: string | null): void {
         if (navLogo?.startsWith('/dA')) {
             this.navBarLogo$.next(this.setUrlProperty(navLogo));
         } else {

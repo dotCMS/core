@@ -224,7 +224,11 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
+                // The dialog reads the result as `!result?.errors`, so a null response is a path it
+                // handles even though the service declares one non-null.
+                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    of(null as unknown as DotAjaxActionResponseView)
+                );
             });
 
             xit('should submit on accept and hide dialog', () => {

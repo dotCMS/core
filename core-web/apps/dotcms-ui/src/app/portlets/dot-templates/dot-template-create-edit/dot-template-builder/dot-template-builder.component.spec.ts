@@ -75,7 +75,7 @@ describe('DotTemplateBuilderComponent', () => {
             layout: { body: { rows: [] } },
             containers: {},
             ...overrides
-        } as DotTemplateItemDesign;
+        } as unknown as DotTemplateItemDesign;
     };
 
     const createAdvancedItem = (overrides: Partial<any> = {}): DotTemplateItem => {

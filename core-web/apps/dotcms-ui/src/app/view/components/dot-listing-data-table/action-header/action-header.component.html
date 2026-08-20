@@ -18,7 +18,7 @@
             ">
             <ng-content />
         </div>
-        @if ((options() && options().secondary) || selectedItems().length) {
+        @if (options()?.secondary || selectedItems().length) {
             <div
                 class="flex items-center bg-primary text-white transition-all duration-200 ease-in-out"
                 [class]="

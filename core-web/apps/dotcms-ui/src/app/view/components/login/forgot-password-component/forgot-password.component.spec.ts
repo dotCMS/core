@@ -78,7 +78,7 @@ describe('ForgotPasswordComponent', () => {
         control.markAsDirty();
         spectator.detectChanges();
 
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(''));
         jest.spyOn(window, 'confirm').mockReturnValue(true);
         spectator.detectChanges();
 
@@ -140,7 +140,7 @@ describe('ForgotPasswordComponent', () => {
         spectator.detectChanges();
 
         jest.spyOn(window, 'confirm').mockReturnValue(true);
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(''));
         spectator.component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         spectator.detectChanges();
         spectator.click('[data-testid="submitButton"]');

@@ -84,7 +84,7 @@ class MockPaginatorService {
     setExtraParams(): void {}
 
     public getWithOffset(): Observable<any[]> {
-        return null;
+        return of([]);
     }
 }
 
