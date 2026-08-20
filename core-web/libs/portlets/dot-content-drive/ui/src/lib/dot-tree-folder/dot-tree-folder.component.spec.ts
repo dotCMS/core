@@ -104,8 +104,7 @@ describe('DotTreeFolderComponent', () => {
                 useValue: new MockDotMessageService({
                     'content.drive.loading.folders.title': 'Loading folders...',
                     'content-drive.tree.load-more': 'Load more',
-                    'dot.file.field.host.folder.action.load.more': 'Load more',
-                    'content-drive.all-folder.label': 'All folders'
+                    'dot.file.field.host.folder.action.load.more': 'Load more'
                 })
             }
         ],

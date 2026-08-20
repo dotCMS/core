@@ -31,15 +31,6 @@ export class DotContentDriveLanguageFieldComponent {
      * environment default, because removing it re-selects that same default — the X would do nothing
      * visible. Computed here rather than in the shared filter, which has no notion of a default.
      */
-    /**
-     * Whether the chip should offer its "remove" X. Hidden while the selection is exactly the
-     * environment default, because removing it re-selects that same default — the X would do nothing
-     * visible. Computed here rather than in the shared filter, which has no notion of a default.
-     */
-    /**
-     * Every configured language, resolved once by the store — which needs the list anyway to find the
-     * default one to seed. Passed down so the shared filter does not fetch it a second time.
-     */
     protected readonly $removable = computed(() => {
         const selected = this.$selectedLanguageIds();
 
