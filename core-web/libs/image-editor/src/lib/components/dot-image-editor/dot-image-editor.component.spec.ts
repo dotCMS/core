@@ -27,7 +27,7 @@ import {
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorCanvasComponent } from '../dot-image-editor-canvas/dot-image-editor-canvas.component';
 import { DotImageEditorFooterComponent } from '../dot-image-editor-footer/dot-image-editor-footer.component';
-import { DotImageEditorHeaderComponent } from '../dot-image-editor-header/dot-image-editor-header.component';
+import { DotImageEditorFullscreenToggleComponent } from '../dot-image-editor-fullscreen-toggle/dot-image-editor-fullscreen-toggle.component';
 import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-image-editor-panels.component';
 
 /** Builds the suite for a given set of open params, asserting the shared shell behavior. */
@@ -69,14 +69,16 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
                     saveError
                 })
             ],
-            // Isolate the shell from the children's own store/dispatch wiring.
+            // Isolate the editor from the children's own store/dispatch wiring. The shared
+            // `DotDialog*` shell is deliberately left real: the close button lives in it, and
+            // stubbing it would drop everything projected into its slots.
             overrideComponents: [
                 [
                     DotImageEditorComponent,
                     {
                         remove: {
                             imports: [
-                                DotImageEditorHeaderComponent,
+                                DotImageEditorFullscreenToggleComponent,
                                 DotImageEditorCanvasComponent,
                                 DotImageEditorPanelsComponent,
                                 DotImageEditorFooterComponent
@@ -84,7 +86,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
                         },
                         add: {
                             imports: [
-                                MockComponent(DotImageEditorHeaderComponent),
+                                MockComponent(DotImageEditorFullscreenToggleComponent),
                                 MockComponent(DotImageEditorCanvasComponent),
                                 MockComponent(DotImageEditorPanelsComponent),
                                 MockComponent(DotImageEditorFooterComponent)
@@ -94,6 +96,15 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
                 ]
             ]
         });
+
+        /**
+         * The ✕ now belongs to the shared shell rather than to an editor-owned header component,
+         * so the close path is driven through the rendered button instead of an output.
+         */
+        const clickHeaderClose = () => {
+            const button = spectator.query(byTestId('dialog-close-btn'))?.querySelector('button');
+            spectator.click(button as HTMLElement);
+        };
 
         beforeEach(() => {
             // The DynamicDialogRef `close` mock is shared across tests in this
@@ -128,7 +139,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
         it('should render the root and the four child components', () => {
             expect(spectator.query(byTestId('image-editor-root'))).toExist();
-            expect(spectator.query('dot-image-editor-header')).toExist();
+            expect(spectator.query('dot-image-editor-fullscreen-toggle')).toExist();
             expect(spectator.query('dot-image-editor-canvas')).toExist();
             expect(spectator.query('dot-image-editor-panels')).toExist();
             expect(spectator.query('dot-image-editor-footer')).toExist();
@@ -142,8 +153,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         });
 
         it('should close with null when the header close is triggered and not dirty', () => {
-            const header = spectator.query(DotImageEditorHeaderComponent)!;
-            header.$close.emit();
+            clickHeaderClose();
 
             expect(dialogRef.close).toHaveBeenCalledWith(null);
             expect(confirmationService.confirm).not.toHaveBeenCalled();
@@ -160,7 +170,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         it('should confirm before closing when there are unsaved edits', () => {
             isDirty.set(true);
 
-            spectator.query(DotImageEditorHeaderComponent)!.$close.emit();
+            clickHeaderClose();
 
             expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
             expect(dialogRef.close).not.toHaveBeenCalled();
