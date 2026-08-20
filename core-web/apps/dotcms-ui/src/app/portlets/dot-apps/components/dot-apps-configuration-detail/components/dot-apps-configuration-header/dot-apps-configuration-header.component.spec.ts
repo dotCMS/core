@@ -126,8 +126,8 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         expect(
             de.query(By.css('.dot-apps-configuration__configurations')).nativeElement.textContent
         ).toContain(`${appData.configurationsCount} ${messages['apps.configurations']}`);
-        const description = component.app.description!
-            .replace(/\n/gi, '')
+        const description = component.app
+            .description!.replace(/\n/gi, '')
             .replace(/\r/gi, '')
             .replace(/ {3}/gi, '');
         expect(

@@ -1,5 +1,5 @@
 <template>
-  <blockquote>
-    <slot />
-  </blockquote>
+    <blockquote>
+        <slot />
+    </blockquote>
 </template>

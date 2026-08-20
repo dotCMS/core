@@ -37,17 +37,10 @@ const attrs = computed(() => currentMark.value?.attrs ?? {});
 </script>
 
 <template>
-  <component
-    :is="tag"
-    v-if="tag"
-    v-bind="attrs"
-  >
-    <TextBlock
-      :text="text"
-      :marks="remainingMarks"
-    />
-  </component>
-  <template v-else>
-    {{ text }}
-  </template>
+    <component :is="tag" v-if="tag" v-bind="attrs">
+        <TextBlock :text="text" :marks="remainingMarks" />
+    </component>
+    <template v-else>
+        {{ text }}
+    </template>
 </template>

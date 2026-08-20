@@ -19,11 +19,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="isDevMode"
-    data-testid="container-not-found"
-    :style="EMPTY_CONTAINER_STYLE_REACT"
-  >
-    This container with identifier {{ identifier }} was not found.
-  </div>
+    <div v-if="isDevMode" data-testid="container-not-found" :style="EMPTY_CONTAINER_STYLE_REACT">
+        This container with identifier {{ identifier }} was not found.
+    </div>
 </template>

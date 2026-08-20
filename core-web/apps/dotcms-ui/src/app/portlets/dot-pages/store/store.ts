@@ -175,11 +175,13 @@ const withPagesBase = () =>
                 onInit: () => {
                     // `| null` matches `globalStore.siteDetails`, which is `Signal<DotSite | null>`
                     // — and the guard below was already written for it.
-                    const handleSwitchSite = signalMethod<DotSite | null>((site: DotSite | null) => {
-                        if (!site) return;
-                        const host = site.identifier;
-                        store.getPages({ ...initialFilters, host });
-                    });
+                    const handleSwitchSite = signalMethod<DotSite | null>(
+                        (site: DotSite | null) => {
+                            if (!site) return;
+                            const host = site.identifier;
+                            store.getPages({ ...initialFilters, host });
+                        }
+                    );
                     handleSwitchSite(globalStore.siteDetails);
                 }
             };
