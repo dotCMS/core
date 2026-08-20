@@ -27,6 +27,7 @@ import {
     AddToBundleService,
     PushPublishService
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSBaseTypesContentTypes,
     DotContentDriveFolder,
@@ -50,6 +51,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let spectator: Spectator<DotFolderListViewContextMenuComponent>;
     let component: DotFolderListViewContextMenuComponent;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
+    /** What the reachable-environments lookup answers; see the `mockProvider` below. */
+    let pushPublishEnvironments: { id: string; name: string }[] = [];
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let dotWizardService: SpyObject<DotWizardService>;
@@ -105,8 +108,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
             mockProvider(PushPublishService, {
-                getEnvironments: jest.fn().mockReturnValue(of([]))
+                // Reads the mutable on every call rather than being re-programmed per test:
+                // `mockProvider` builds this `jest.fn` once for the whole file, and the `afterEach`
+                // `clearAllMocks` drops any `mockReturnValue` set on it.
+                getEnvironments: jest.fn(() => of(pushPublishEnvironments))
             }),
+            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn()
             }),
@@ -137,6 +144,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
     });
 
     beforeEach(() => {
+        pushPublishEnvironments = [];
         spectator = createComponent();
         component = spectator.component;
         store = spectator.inject(DotContentDriveStore, true);
@@ -206,7 +214,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 mockContentlet.inode,
                 DotRenderMode.LISTING
             );
-            expect(component.$items()).toHaveLength(6); // Edit + Lock/Unlock + 3 workflow actions + Add to Bundle
+            // Edit + Lock/Unlock + 3 workflow actions + Push Publish + Add to Bundle
+            expect(component.$items()).toHaveLength(7);
         });
 
         it('should fetch canLock data when building menu items', async () => {
@@ -224,7 +233,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(items[2].label).toBe('Assign Workflow');
             expect(items[3].label).toBe('Save');
             expect(items[4].label).toBe('Save / Publish');
-            expect(items[5].label).toBe('contenttypes.content.add_to_bundle');
+            expect(items[5].label).toBe('contenttypes.content.push_publish');
+            expect(items[6].label).toBe('contenttypes.content.add_to_bundle');
         });
 
         it('should build correct menu items for Pages contentlet', async () => {
@@ -252,8 +262,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
         it('should call setShowAddToBundle when add to bundle is triggered', async () => {
             await component.getMenuItems(mockContextMenuData);
 
-            const items = component.$items();
-            items[5].command?.({} as unknown as MenuItemCommandEvent);
+            // Found by label rather than index: the push group grew, and an index here would
+            // silently point at Push Publish instead.
+            component
+                .$items()
+                .find((item) => item.label === 'contenttypes.content.add_to_bundle')
+                ?.command?.({} as unknown as MenuItemCommandEvent);
 
             expect(store.contextMenu().showAddToBundle).toBe(true);
         });
@@ -283,7 +297,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-            expect(component.$items()).toHaveLength(6);
+            expect(component.$items()).toHaveLength(7);
         });
 
         it('should not include move to folder workflow action', async () => {
@@ -566,6 +580,169 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     );
                 });
             });
+
+            describe('push publish', () => {
+                const ENVIRONMENT = { id: 'env-1', name: 'Production' };
+
+                const folderWithPublish: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.EDIT, PERMISSIONS_TYPE.PUBLISH]
+                };
+
+                const folderContextMenuWithPublish: DotContentDriveContextMenu = {
+                    triggeredEvent: mockEvent,
+                    contentlet: folderWithPublish,
+                    showAddToBundle: false
+                };
+
+                let pushPublishDialogService: SpyObject<DotPushPublishDialogService>;
+
+                /** Re-runs the real store lookup so the gate settles on "reachable". */
+                const withEnvironments = (): void => {
+                    pushPublishEnvironments = [ENVIRONMENT];
+                    store.loadPushPublishEnvironments();
+                };
+
+                const pushPublishItem = () =>
+                    component
+                        .$items()
+                        .find((item) => item.label === 'contenttypes.content.push_publish');
+
+                beforeEach(() => {
+                    pushPublishDialogService = spectator.inject(DotPushPublishDialogService);
+                    component.$memoizedMenuItems.set({});
+                });
+
+                it('should show Push Publish when the folder has PUBLISH permission', async () => {
+                    withEnvironments();
+
+                    await component.getMenuItems(folderContextMenuWithPublish);
+
+                    expect(pushPublishItem()).toBeDefined();
+                });
+
+                it('should not show Push Publish when the folder lacks PUBLISH permission', async () => {
+                    withEnvironments();
+
+                    await component.getMenuItems(mockFolderContextMenuData);
+
+                    expect(pushPublishItem()).toBeUndefined();
+                });
+
+                it('should open the push publish dialog with the folder identifier', async () => {
+                    withEnvironments();
+
+                    await component.getMenuItems(folderContextMenuWithPublish);
+                    pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(pushPublishDialogService.open).toHaveBeenCalledWith({
+                        assetIdentifier: folderWithPublish.identifier,
+                        title: 'contenttypes.content.push_publish'
+                    });
+                });
+
+                it('should enable the item once an environment is reachable', async () => {
+                    withEnvironments();
+
+                    await component.getMenuItems(folderContextMenuWithPublish);
+
+                    expect(pushPublishItem()?.disabled).toBe(false);
+                    expect(pushPublishItem()?.tooltip).toBeUndefined();
+                });
+
+                // Offered but disabled rather than hidden: nothing is missing from dotCMS, something
+                // is missing from the configuration, and the fix is an administrator's. The tooltip
+                // is what says so.
+                it('should disable the item with a tooltip when no environment is reachable', async () => {
+                    await component.getMenuItems(folderContextMenuWithPublish);
+
+                    expect(pushPublishItem()?.disabled).toBe(true);
+                    expect(pushPublishItem()?.tooltip).toBe(
+                        'content-drive.action-center.no-environments'
+                    );
+                });
+
+                it('should not open the dialog while the item is disabled', async () => {
+                    await component.getMenuItems(folderContextMenuWithPublish);
+                    pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(pushPublishDialogService.open).not.toHaveBeenCalled();
+                });
+            });
+
+            describe('add to bundle', () => {
+                const folderWithPublish: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.EDIT, PERMISSIONS_TYPE.PUBLISH]
+                };
+
+                const folderContextMenuWithPublish: DotContentDriveContextMenu = {
+                    triggeredEvent: mockEvent,
+                    contentlet: folderWithPublish,
+                    showAddToBundle: false
+                };
+
+                const addToBundleItem = () =>
+                    component
+                        .$items()
+                        .find((item) => item.label === 'contenttypes.content.add_to_bundle');
+
+                beforeEach(() => {
+                    component.$memoizedMenuItems.set({});
+                });
+
+                it('should show Add to Bundle when the folder has PUBLISH permission', async () => {
+                    await component.getMenuItems(folderContextMenuWithPublish);
+
+                    expect(addToBundleItem()).toBeDefined();
+                });
+
+                it('should not show Add to Bundle when the folder lacks PUBLISH permission', async () => {
+                    await component.getMenuItems(mockFolderContextMenuData);
+
+                    expect(addToBundleItem()).toBeUndefined();
+                });
+
+                // The shell renders the bundle dialog off the context menu's own target, keyed on
+                // identifier, which is the one id a folder from the sidebar tree always carries.
+                it('should flag the shell to show the bundle dialog', async () => {
+                    jest.spyOn(store, 'setShowAddToBundle');
+
+                    await component.getMenuItems(folderContextMenuWithPublish);
+                    addToBundleItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(store.setShowAddToBundle).toHaveBeenCalledWith(true);
+                });
+            });
+
+            describe('item order', () => {
+                it('should order settings, permissions, then the push group', async () => {
+                    pushPublishEnvironments = [{ id: 'env-1', name: 'Production' }];
+                    store.loadPushPublishEnvironments();
+                    component.$memoizedMenuItems.set({});
+
+                    await component.getMenuItems({
+                        triggeredEvent: mockEvent,
+                        contentlet: {
+                            ...mockFolder,
+                            permissions: [
+                                PERMISSIONS_TYPE.EDIT,
+                                PERMISSIONS_TYPE.EDIT_PERMISSIONS,
+                                PERMISSIONS_TYPE.PUBLISH
+                            ]
+                        },
+                        showAddToBundle: false
+                    });
+
+                    expect(component.$items().map((item) => item.label)).toEqual([
+                        'content-drive.context-menu.edit-folder',
+                        'Edit-Permissions',
+                        'contenttypes.content.push_publish',
+                        'contenttypes.content.add_to_bundle',
+                        'content-drive.context-menu.push-history'
+                    ]);
+                });
+            });
         });
 
         describe('lock/unlock functionality', () => {
@@ -622,7 +799,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 );
 
                 expect(lockItem).toBeUndefined();
-                expect(items).toHaveLength(5); // Edit + 3 workflow actions + Add to Bundle (no lock/unlock)
+                // Edit + 3 workflow actions + Push Publish + Add to Bundle (no lock/unlock)
+                expect(items).toHaveLength(6);
             });
 
             it('should call lockContent when lock action is triggered on unlocked content', async () => {
@@ -723,6 +901,48 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 jest.useRealTimers();
+            });
+        });
+
+        describe('push publish for contentlets', () => {
+            let pushPublishDialogService: SpyObject<DotPushPublishDialogService>;
+
+            const pushPublishItem = () =>
+                component
+                    .$items()
+                    .find((item) => item.label === 'contenttypes.content.push_publish');
+
+            beforeEach(() => {
+                pushPublishDialogService = spectator.inject(DotPushPublishDialogService);
+                component.$memoizedMenuItems.set({});
+            });
+
+            it('should offer Push Publish for a contentlet', async () => {
+                await component.getMenuItems(mockContextMenuData);
+
+                expect(pushPublishItem()).toBeDefined();
+            });
+
+            it('should open the push publish dialog with the contentlet identifier', async () => {
+                pushPublishEnvironments = [{ id: 'env-1', name: 'Production' }];
+                store.loadPushPublishEnvironments();
+
+                await component.getMenuItems(mockContextMenuData);
+                pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                expect(pushPublishDialogService.open).toHaveBeenCalledWith({
+                    assetIdentifier: mockContentlet.identifier,
+                    title: 'contenttypes.content.push_publish'
+                });
+            });
+
+            it('should disable the item with a tooltip when no environment is reachable', async () => {
+                await component.getMenuItems(mockContextMenuData);
+
+                expect(pushPublishItem()?.disabled).toBe(true);
+                expect(pushPublishItem()?.tooltip).toBe(
+                    'content-drive.action-center.no-environments'
+                );
             });
         });
     });

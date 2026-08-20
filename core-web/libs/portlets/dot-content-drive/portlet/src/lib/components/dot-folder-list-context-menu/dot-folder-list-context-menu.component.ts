@@ -24,6 +24,7 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -71,6 +72,7 @@ export class DotFolderListViewContextMenuComponent {
     #dotWizardService = inject(DotWizardService);
     #dotContentletService = inject(DotContentletService);
     #dialogService = inject(DialogService);
+    #dotPushPublishDialogService = inject(DotPushPublishDialogService);
 
     /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
@@ -166,14 +168,33 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
-            // Permissions and Push History share one gate, matching the legacy folder editor,
-            // where both tabs sit behind the same EDIT_PERMISSIONS check.
-            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)) {
+            const canEditPermissions = contentlet.permissions?.includes(
+                PERMISSIONS_TYPE.EDIT_PERMISSIONS
+            );
+
+            if (canEditPermissions) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('Edit-Permissions'),
                     command: () => this.#openPermissionsDialog(contentlet.identifier)
                 });
+            }
 
+            // Both push actions resolve the folder server-side and enforce PUBLISH there
+            // (`PublisherAPIImpl`), reporting a denial as a per-asset error rather than throwing.
+            // Gating here keeps the menu honest rather than offering an action that will be refused.
+            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.PUBLISH)) {
+                folderMenuItems.push(this.#buildPushPublishItem(contentlet.identifier));
+
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
+                    command: () => this.#store.setShowAddToBundle(true)
+                });
+            }
+
+            // Gated on EDIT_PERMISSIONS like the Permissions item, matching the legacy folder editor
+            // where both tabs sat behind the same check, but ordered after the push group rather than
+            // beside Permissions: it is read-only audit data, so it reads last.
+            if (canEditPermissions) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('content-drive.context-menu.push-history'),
                     command: () => this.#openPushHistoryDialog(contentlet.identifier)
@@ -237,6 +258,11 @@ export class DotFolderListViewContextMenuComponent {
 
                 actionsMenu.push(menuItem);
             });
+
+        // The push group, ordered the same way as on a folder: Push Publish then Add to Bundle.
+        // Push Publish is what the old content search offered outside its workflow dropdown, so it
+        // belongs here rather than among the workflow actions above, which are scheme-driven.
+        actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
 
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
@@ -437,6 +463,45 @@ export class DotFolderListViewContextMenuComponent {
             draggable: false,
             resizable: false,
             position: 'center'
+        });
+    }
+
+    /**
+     * The Push Publish item, shared by the folder and contentlet branches.
+     *
+     * Offered but **disabled** when no environment is reachable, rather than hidden: nothing is
+     * missing from dotCMS, something is missing from the configuration, and the fix is an
+     * administrator's. The tooltip is what says so. An unresolved lookup reads as disabled too, so
+     * the item never enables and then retracts.
+     */
+    #buildPushPublishItem(identifier: string): MenuItem {
+        const hasEnvironments = this.#store.hasPushPublishEnvironments();
+
+        return {
+            label: this.#dotMessageService.get('contenttypes.content.push_publish'),
+            disabled: !hasEnvironments,
+            tooltip: hasEnvironments
+                ? undefined
+                : this.#dotMessageService.get('content-drive.action-center.no-environments'),
+            command: () => this.#openPushPublishDialog(identifier)
+        };
+    }
+
+    /**
+     * Spawns the app-wide push publish dialog for a single asset.
+     *
+     * The guard is not redundant with `disabled`: PrimeNG suppresses the click, but the command is
+     * still reachable programmatically, and a push with nowhere to go fails at the servlet with a
+     * message the user cannot act on.
+     */
+    #openPushPublishDialog(identifier: string): void {
+        if (!this.#store.hasPushPublishEnvironments()) {
+            return;
+        }
+
+        this.#dotPushPublishDialogService.open({
+            assetIdentifier: identifier,
+            title: this.#dotMessageService.get('contenttypes.content.push_publish')
         });
     }
 
