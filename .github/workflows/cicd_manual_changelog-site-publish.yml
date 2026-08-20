@@ -71,9 +71,26 @@ jobs:
           echo "docker_tags=dotcms/dotcms:${TAG:-$VERSION}" >> "$GITHUB_OUTPUT"
           echo "Resolved ${VERSION} -> dotcms/dotcms:${TAG:-$VERSION}"
 
+  # This writes to the public docs site with a service-account token, and workflow_dispatch
+  # is open to every account with write access on this repo (45 today). Reviewer approval
+  # is the access control — same pattern as cicd_evergreen-tracks-promote.yml's apply gate.
+  # The environment must carry required_reviewers; GitHub auto-creates it UNPROTECTED on
+  # first use if it is missing, which would silently remove this gate.
+  gate:
+    name: Approve Site Publish
+    needs: resolve
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: changelog-site-publish
+    steps:
+      - run: |
+          echo "Approved: publish ${{ inputs.release_tag }} to the changelog site"
+          echo "Image: ${{ needs.resolve.outputs.docker_tags }}"
+          echo "Date:  ${{ needs.resolve.outputs.released_date }}"
+          echo "Force: ${{ inputs.force }}"
+
   publish:
     name: Publish Site Changelog
-    needs: resolve
+    needs: [resolve, gate]
     uses: ./.github/workflows/cicd_comp_changelog-site-publish-phase.yml
     with:
       release_tag: ${{ inputs.release_tag }}
