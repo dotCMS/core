@@ -59,11 +59,9 @@ export class DotContentletEditorService {
         );
     }
 
-    get createUrl$(): Observable<string> {
+    get createUrl$(): Observable<string | undefined> {
         return this.data.pipe(
-            filter(
-                (action): action is DotEditorAction => !!action && this.isCreateUrl(action)
-            ),
+            filter((action): action is DotEditorAction => !!action && this.isCreateUrl(action)),
             map((action: DotEditorAction) => this.getCreateUrl(action))
         );
     }
@@ -191,7 +189,7 @@ export class DotContentletEditorService {
             : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data['container']}&add=${action.data['baseTypes']}`;
     }
 
-    private getCreateUrl(action: DotEditorAction): string {
+    private getCreateUrl(action: DotEditorAction): string | undefined {
         return action === null ? '' : action.data['url'];
     }
 

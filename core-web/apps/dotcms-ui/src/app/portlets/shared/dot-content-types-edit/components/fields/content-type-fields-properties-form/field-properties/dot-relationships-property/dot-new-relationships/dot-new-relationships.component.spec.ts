@@ -150,7 +150,11 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should handle null contentType from service', () => {
-            contentTypeService.getContentType.mockReturnValue(of(null));
+            // `getContentType` declares a non-null content type; the component guards anyway,
+            // and this test is what drives that guard.
+            contentTypeService.getContentType.mockReturnValue(
+                of(null as unknown as DotCMSContentType)
+            );
 
             spectator.setInput('velocityVar', 'NonExistent');
             spectator.detectChanges();

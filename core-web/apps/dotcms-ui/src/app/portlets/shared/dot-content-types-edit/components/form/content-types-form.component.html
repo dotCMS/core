@@ -74,7 +74,7 @@
             [workflows]="workflowsSelected$ | async"
             formControlName="NEW" />
     </div>
-    @if (form.get('workflows').disabled) {
+    @if (form.get('workflows')?.disabled) {
         <span class="p-field-hint form-workflow-community-message" id="field-workflow-hint">
             {{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}
         </span>

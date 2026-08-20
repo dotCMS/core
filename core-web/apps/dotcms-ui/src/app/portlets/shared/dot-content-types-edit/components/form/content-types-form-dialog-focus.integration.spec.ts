@@ -69,7 +69,7 @@ const NEW_EDIT_CONTENT_CHECKBOX_SELECTOR = '#newEditContentLabel';
  */
 describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => {
     let fixture: ComponentFixture<DialogFocusHostComponent>;
-    let originalOffsetParent: PropertyDescriptor;
+    let originalOffsetParent: PropertyDescriptor | undefined;
 
     const queryElement = (selector: string): HTMLElement =>
         fixture.debugElement.query(By.css(selector))?.nativeElement ?? null;
@@ -92,7 +92,7 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
         focusOnShow,
         newContentEditorEnabled,
         baseType = DotCMSBaseTypesContentTypes.CONTENT,
-        id = null
+        id = undefined
     }: {
         focusOnShow: boolean;
         newContentEditorEnabled: boolean;
@@ -129,7 +129,8 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
         fixture.componentInstance.contentType = {
             ...dotcmsContentTypeBasicMock,
             baseType,
-            id
+            // Empty when the dialog opens for a content type that has not been saved.
+            id: id ?? ''
         };
         fixture.detectChanges();
         // The form focuses the Name input from afterNextRender, and those hooks run on the
@@ -159,7 +160,7 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     });
 
     afterAll(() => {
-        Object.defineProperty(HTMLElement.prototype, 'offsetParent', originalOffsetParent);
+        Object.defineProperty(HTMLElement.prototype, 'offsetParent', originalOffsetParent!);
     });
 
     beforeEach(() => {

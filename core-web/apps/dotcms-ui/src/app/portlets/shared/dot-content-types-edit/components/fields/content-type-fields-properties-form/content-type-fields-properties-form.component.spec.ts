@@ -71,7 +71,7 @@ class TestFieldPropertiesService {
     }
 
     getValue(field: DotCMSContentTypeField, propertyName: string): any {
-        return field[propertyName];
+        return field[propertyName as keyof DotCMSContentTypeField];
     }
 
     getDefaultValue(propertyName: string): any {
@@ -334,7 +334,9 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             });
 
             it('should create fieldVariables array with newRenderMode when fieldVariables is undefined', () => {
-                comp.formFieldData.fieldVariables = undefined;
+                // The model declares `fieldVariables` required, but `transformFormValue`'s
+                // `|| []` exists for the case where it is absent — which is this test.
+                (comp.formFieldData as Partial<DotCMSContentTypeField>).fieldVariables = undefined;
                 const formValue = { newRenderMode: 'editable', name: 'customField' };
                 const result = comp.transformFormValue(formValue);
 

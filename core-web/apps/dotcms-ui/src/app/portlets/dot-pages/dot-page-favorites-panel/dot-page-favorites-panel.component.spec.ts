@@ -318,9 +318,9 @@ describe('DotPageFavoritesPanelComponent', () => {
 
     describe('Output Events', () => {
         it('should emit openMenu event with correct data', () => {
-            let emittedEvent: DotActionsMenuEventParams | null = null;
+            const emitted: { event?: DotActionsMenuEventParams } = {};
             spectator.output('openMenu').subscribe((event) => {
-                emittedEvent = event;
+                emitted.event = event;
             });
 
             spectator.setInput('favoritePages', MOCK_FAVORITE_PAGES);
@@ -331,9 +331,9 @@ describe('DotPageFavoritesPanelComponent', () => {
             // Emit from the first card; panel template binds (openMenu)="handleOpenMenu($event, favoritePage)"
             spectator.triggerEventHandler('dot-pages-card', 'openMenu', mockEvent);
 
-            expect(emittedEvent).toBeTruthy();
-            expect(emittedEvent?.originalEvent).toBe(mockEvent);
-            expect(emittedEvent?.data).toBe(MOCK_FAVORITE_PAGES[0]);
+            expect(emitted.event).toBeTruthy();
+            expect(emitted.event?.originalEvent).toBe(mockEvent);
+            expect(emitted.event?.data).toBe(MOCK_FAVORITE_PAGES[0]);
         });
 
         it('should stop event propagation when opening menu', () => {
@@ -374,15 +374,15 @@ describe('DotPageFavoritesPanelComponent', () => {
             expect(cards).toHaveLength(3);
 
             // Step 5: User opens menu on a card
-            let emittedEvent: DotActionsMenuEventParams | null = null;
+            const emitted: { event?: DotActionsMenuEventParams } = {};
             spectator.output('openMenu').subscribe((event) => {
-                emittedEvent = event;
+                emitted.event = event;
             });
 
             const mockEvent = new MouseEvent('click');
             spectator.triggerEventHandler('dot-pages-card', 'openMenu', mockEvent);
 
-            expect(emittedEvent?.data).toBe(MOCK_FAVORITE_PAGES[0]);
+            expect(emitted.event?.data).toBe(MOCK_FAVORITE_PAGES[0]);
 
             // Step 6: User collapses panel again
             spectator.triggerEventHandler('p-panel', 'collapsedChange', true);

@@ -60,7 +60,7 @@ export class DotContentletWrapperComponent {
     header = '';
 
     @Input()
-    url!: string;
+    url: string | null = null;
 
     @Output()
     shutdown: EventEmitter<unknown> = new EventEmitter();

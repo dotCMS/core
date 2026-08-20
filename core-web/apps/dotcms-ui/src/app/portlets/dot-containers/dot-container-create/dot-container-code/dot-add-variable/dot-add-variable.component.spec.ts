@@ -291,11 +291,11 @@ describe('DotAddVariableComponent', () => {
         });
 
         it('should contain 6 fields with the text label as "Image"', () => {
-            const fieldTypes = Array.from(fixture.nativeElement.querySelectorAll('small')).filter(
-                (fieldElement: HTMLElement) => {
-                    return fieldElement.textContent.trim() === 'Image';
-                }
-            );
+            const fieldTypes = (
+                Array.from(fixture.nativeElement.querySelectorAll('small')) as HTMLElement[]
+            ).filter((fieldElement) => {
+                return fieldElement.textContent?.trim() === 'Image';
+            });
 
             expect(fieldTypes.length).toEqual(6);
         });

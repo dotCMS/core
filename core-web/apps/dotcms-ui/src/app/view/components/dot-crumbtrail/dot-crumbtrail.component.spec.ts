@@ -52,7 +52,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        patchState(unprotected(store), { breadcrumbs: crumbs });
+        patchState(unprotected(store), { breadcrumbs: crumbs as MenuItem[] });
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
@@ -79,7 +79,7 @@ describe('DotCrumbtrailComponent', () => {
     it('should display empty collapsed breadcrumbs when only one item is provided', () => {
         const crumbs = [{ label: 'Single Item', url: '/single' }];
 
-        patchState(unprotected(store), { breadcrumbs: crumbs });
+        patchState(unprotected(store), { breadcrumbs: crumbs as MenuItem[] });
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
@@ -109,7 +109,7 @@ describe('DotCrumbtrailComponent', () => {
     it('should display empty collapsed breadcrumbs when no items are provided', () => {
         const crumbs: MenuItem[] = [];
 
-        patchState(unprotected(store), { breadcrumbs: crumbs });
+        patchState(unprotected(store), { breadcrumbs: crumbs as MenuItem[] });
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
@@ -123,7 +123,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        patchState(unprotected(store), { breadcrumbs: crumbs });
+        patchState(unprotected(store), { breadcrumbs: crumbs as MenuItem[] });
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
@@ -174,7 +174,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        patchState(unprotected(store), { breadcrumbs: crumbs });
+        patchState(unprotected(store), { breadcrumbs: crumbs as MenuItem[] });
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;
@@ -194,7 +194,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Last', url: '/last' }
         ];
 
-        patchState(unprotected(store), { breadcrumbs: crumbs });
+        patchState(unprotected(store), { breadcrumbs: crumbs as MenuItem[] });
         spectator.detectChanges();
 
         const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent)!;

@@ -135,8 +135,8 @@ describe('DotCustomEventHandlerService', () => {
         router = TestBed.inject(Router);
     };
 
-    const metadata = {};
-    const metadata2 = {};
+    const metadata: Record<string, boolean> = {};
+    const metadata2: Record<string, boolean> = {};
     metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
     metadata2[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 

@@ -78,7 +78,7 @@ export class SearchableDropdownComponent
     @Input()
     data!: Record<string, unknown>[];
 
-    @Input() action!: (event: Event) => void;
+    @Input() action?: (event: Event) => void;
 
     @Input()
     labelPropertyName!: string | string[];

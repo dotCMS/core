@@ -251,7 +251,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
             const announcements = spectator.component.$announcements();
 
             announcements.forEach((item) => {
-                const icon = icons[item.type] || icons.important;
+                const icon = icons[item.type] || icons['important'];
                 expect(icon).toBeTruthy();
             });
         });

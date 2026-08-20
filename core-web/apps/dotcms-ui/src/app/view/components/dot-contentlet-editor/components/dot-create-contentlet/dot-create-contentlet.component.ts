@@ -48,11 +48,7 @@ export class DotCreateContentletComponent implements OnInit {
         this.url$ = merge(
             this.dotContentletEditorService.createUrl$,
             this.route.data.pipe(map((x) => x?.['url']))
-        ).pipe(
-            filter((url: string) => {
-                return url !== undefined;
-            })
-        );
+        ).pipe(filter((url): url is string => url !== undefined));
     }
 
     /**

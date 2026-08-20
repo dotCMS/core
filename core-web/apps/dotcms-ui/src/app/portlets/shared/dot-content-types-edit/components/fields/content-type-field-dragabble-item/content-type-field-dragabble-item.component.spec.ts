@@ -49,7 +49,11 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         });
     }));
 
-    function createComponent(field: DotCMSContentTypeField, isSmall = false) {
+    /** Nullable per field: two tests build one whose `variable` is missing or null. */
+    function createComponent(
+        field: Partial<{ [K in keyof DotCMSContentTypeField]: DotCMSContentTypeField[K] | null }>,
+        isSmall = false
+    ) {
         fixture = TestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
         fixture.componentRef.setInput('field', field);
         fixture.componentRef.setInput('isSmall', isSmall);

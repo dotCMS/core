@@ -4,6 +4,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
 
+import { aliasedProps } from '../../../../../../../test/spectator-aliased-props';
 import { BuilderField, BuilderSection } from '../../models';
 
 const MOCK_MESSAGES: Record<string, string> = {
@@ -79,7 +80,12 @@ describe('DotStyleEditorSectionComponent', () => {
 
     function setup(section: BuilderSection = MOCK_SECTION, isFirst = false, isLast = false): void {
         spectator = createComponent({
-            props: { section, isFirst, isLast, showErrors: false } as unknown
+            props: aliasedProps<DotStyleEditorSectionComponent>({
+                section,
+                isFirst,
+                isLast,
+                showErrors: false
+            })
         });
     }
 

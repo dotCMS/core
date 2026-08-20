@@ -299,7 +299,7 @@ describe('DotContentEditorComponent', () => {
                 );
                 expect(
                     (hostComponent.form.get('containerStructures') as FormArray).controls[0]
-                        .get('code')
+                        .get('code')!
                         .hasValidator(Validators.required)
                 ).toEqual(false);
                 expect(hostComponent.form.valid).toEqual(true);
@@ -355,7 +355,7 @@ describe('DotContentEditorComponent', () => {
         it('shoud not have required code field on default content type', () => {
             expect(
                 (hostComponent.form.get('containerStructures') as FormArray).controls[0]
-                    .get('code')
+                    .get('code')!
                     .hasValidator(Validators.required)
             ).toEqual(false);
             expect(hostComponent.form.valid).toEqual(true);

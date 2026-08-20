@@ -20,6 +20,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBinarySettingsComponent } from './dot-binary-settings.component';
 
+import { aliasedProps } from '../../../../../test/spectator-aliased-props';
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 const messageServiceMock = new MockDotMessageService({
@@ -37,7 +38,7 @@ const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField'
-} as unknown;
+};
 
 describe('DotBinarySettingsComponent', () => {
     let spectator: Spectator<DotBinarySettingsComponent>;
@@ -96,12 +97,7 @@ describe('DotBinarySettingsComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                props: {
-                    field: MOCK_FIELD
-                    // Note: Using `as unknown` because Spectator doesn't properly handle signal inputs
-                    // with the `$` prefix (e.g., `$field`). The type assertion bypasses TypeScript's
-                    // type checking for the props object.
-                } as unknown
+                props: aliasedProps<DotBinarySettingsComponent>({ field: MOCK_FIELD })
             });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
@@ -200,12 +196,7 @@ describe('DotBinarySettingsComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                props: {
-                    field: MOCK_FIELD
-                    // Note: Using `as unknown` because Spectator doesn't properly handle signal inputs
-                    // with the `$` prefix (e.g., `$field`). The type assertion bypasses TypeScript's
-                    // type checking for the props object.
-                } as unknown
+                props: aliasedProps<DotBinarySettingsComponent>({ field: MOCK_FIELD })
             });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
