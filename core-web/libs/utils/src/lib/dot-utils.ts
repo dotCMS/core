@@ -219,3 +219,19 @@ export function mapParamsFromEditContentlet(cdParams: URLSearchParams): Record<s
             {} as Record<string, string>
         );
 }
+
+/** A dotCMS identifier is a 36-character UUID. */
+const IDENTIFIER_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether a value is shaped like a dotCMS identifier.
+ *
+ * Meant for values that reach a Lucene query: the search endpoints take a query *string*, so an
+ * identifier that arrives from a URL or any other caller-supplied source is concatenated into it.
+ * A value carrying spaces or Lucene operators would widen the query rather than match an id, so
+ * callers check the shape first and treat anything else as "no such identifier" — which is the
+ * honest answer, since nothing outside this shape can be one.
+ */
+export function isDotIdentifier(value: string | null | undefined): boolean {
+    return !!value && IDENTIFIER_PATTERN.test(value.trim());
+}

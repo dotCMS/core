@@ -1,0 +1,79 @@
+@if ($hasError()) {
+    <div
+        class="flex min-h-0 flex-1 items-center justify-center p-6"
+        data-testid="experiments-configure-error">
+        <dot-empty-container
+            [configuration]="errorConfiguration"
+            [hideContactUsLink]="true"
+            [buttonLabel]="'experiments.configure.action.back-to-list' | dm"
+            [secondaryButton]="true"
+            (buttonAction)="onBackToList()" />
+    </div>
+} @else if ($isLoading()) {
+    <div
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
+        data-testid="experiments-configure-loading">
+        <div class="flex flex-none items-center gap-4 border-b border-surface-200 px-8 py-4">
+            <p-skeleton shape="circle" size="2.125rem" />
+            <div class="flex flex-col gap-2">
+                <p-skeleton height="1.5rem" width="18rem" />
+                <p-skeleton height="1rem" width="12rem" />
+            </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col items-center overflow-hidden px-8 pt-6">
+            <div class="flex w-full max-w-[1040px] flex-col gap-5">
+                @for (card of SKELETON_CARDS; track card) {
+                    <p-skeleton height="11rem" width="100%" borderRadius="0.5rem" />
+                }
+            </div>
+        </div>
+    </div>
+} @else {
+    <dot-experiments-configure-header />
+
+    @if ($showProgressBar()) {
+        <div class="progress-bar-wrapper">
+            <p-progressBar
+                [style]="{ height: '3px' }"
+                mode="indeterminate"
+                data-testid="experiments-configure-progress-bar" />
+        </div>
+    }
+
+    @if (store.$lockedBannerKey(); as lockedBannerKey) {
+        <div
+            class="flex flex-none items-center gap-2 border-b border-green-200 bg-green-50 px-8 py-3 text-sm text-green-800"
+            data-testid="experiments-configure-locked-banner">
+            <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                lock
+            </span>
+            <span>{{ lockedBannerKey | dm }}</span>
+        </div>
+    }
+
+    <div
+        #configureBody
+        class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-8 pt-6 pb-8"
+        data-testid="experiments-configure-body">
+        <div class="flex w-full max-w-[1040px] flex-col gap-5">
+            <dot-experiments-configure-details
+                [nameField]="formTree.name"
+                [descriptionField]="formTree.description" />
+            <dot-experiments-configure-goal [field]="formTree.goal" />
+            <dot-experiments-configure-page [field]="formTree.trafficAllocation" />
+            <dot-experiments-configure-variants [field]="formTree.variantWeights" />
+            <dot-experiments-configure-scheduling
+                [field]="formTree.scheduling"
+                [bounds]="$schedulingBounds()" />
+        </div>
+    </div>
+
+    <dot-experiments-configure-footer />
+
+    <p-confirmDialog
+        [key]="CONFIRM_KEY"
+        [draggable]="false"
+        [position]="'center'"
+        [style]="{ width: '500px' }" />
+}

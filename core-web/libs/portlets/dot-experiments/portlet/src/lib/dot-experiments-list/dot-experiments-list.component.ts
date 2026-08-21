@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -26,7 +27,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
-import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotExperimentsService,
@@ -55,7 +55,10 @@ import {
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
 import {
+    CONFIGURATION_SEGMENT,
+    EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
+    NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
@@ -82,6 +85,16 @@ import {
     variantsCount
 } from '../util/dot-experiments-list.util';
 
+/** Where the New Experiment button goes: the Configure screen with nothing created yet. */
+const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
+
+/** Configure URL of an experiment that already exists. */
+const configureCommandsOf = (experimentId: string): string[] => [
+    EXPERIMENTS_URL,
+    experimentId,
+    CONFIGURATION_SEGMENT
+];
+
 @Component({
     selector: 'dot-experiments-list',
     imports: [
@@ -97,7 +110,6 @@ import {
         TableModule,
         TagModule,
         ToolbarModule,
-        TooltipModule,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
@@ -117,6 +129,20 @@ export class DotExperimentsListComponent {
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
     readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
     readonly ROWS_PER_PAGE_OPTIONS = ROWS_PER_PAGE_OPTIONS;
+
+    /**
+     * Page sizes to offer, or `null` for none.
+     *
+     * A list that fits in the smallest of them has nothing to page: every option would render the
+     * same single page, so the select is dropped rather than left there doing nothing. PrimeNG only
+     * renders it when this is set, and it already disables the page arrows on a single page — so the
+     * whole bar goes inert together.
+     */
+    readonly $rowsPerPageOptions = computed<number[] | null>(() =>
+        this.store.totalRecords() > Math.min(...ROWS_PER_PAGE_OPTIONS)
+            ? ROWS_PER_PAGE_OPTIONS
+            : null
+    );
     readonly SKELETON_COLUMNS = SKELETON_COLUMNS;
 
     /** Rows currently rendered by the table, already resolved for display. */
@@ -201,6 +227,7 @@ export class DotExperimentsListComponent {
     // are listened to (never dispatched) here — see `#listenForActionSuccess`.
     readonly #dispatch = injectDispatch(dotExperimentsListPageEvents);
     readonly #events = inject(Events);
+    readonly #router = inject(Router);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
@@ -393,6 +420,16 @@ export class DotExperimentsListComponent {
         this.$rowMenuItems.set(this.#buildRowMenuItems(experiment));
     }
 
+    /** Opens the Configure screen with nothing created yet: the draft is POSTed from there. */
+    onNewExperiment(): void {
+        this.#router.navigate(NEW_EXPERIMENT_COMMANDS);
+    }
+
+    /** Opens the Configure screen of an existing experiment. */
+    onConfigure(experiment: DotExperiment): void {
+        this.#router.navigate(configureCommandsOf(experiment.id));
+    }
+
     confirmArchive(experiment: DotExperiment): void {
         this.#confirm({
             headerKey: 'experiments.action.archive',
@@ -406,6 +443,14 @@ export class DotExperimentsListComponent {
         const { status } = experiment;
 
         return [
+            {
+                // The primary action of the row: it leads the menu, and is the only entry every
+                // status allows.
+                id: 'experiments-configure',
+                label: this.#dotMessageService.get('experiments.list.action.configure'),
+                visible: isAllowed('configuration', status),
+                command: () => this.onConfigure(experiment)
+            },
             {
                 id: 'experiments-archive',
                 label: this.#dotMessageService.get('experiments.action.archive'),

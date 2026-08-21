@@ -99,6 +99,15 @@ export const LISTBOX_SCROLL_HEIGHT = '320px';
 /** Idle time before a search term is applied, in ms. */
 export const SEARCH_DEBOUNCE_MS = 300;
 
+/** Mount point of the portlet. Absolute, since the list is always at the root of it. */
+export const EXPERIMENTS_URL = '/experiments';
+
+/** Segment the Configure screen is reached at while the experiment does not exist yet. */
+export const NEW_EXPERIMENT_SEGMENT = 'new';
+
+/** Trailing segment of the Configure URL of an experiment that already exists. */
+export const CONFIGURATION_SEGMENT = 'configuration';
+
 /**
  * Multiplier applied to the page-lookup limit.
  *
@@ -112,3 +121,127 @@ export const SEARCH_DEBOUNCE_MS = 300;
  * count rather than tuned; the shortfall check in the store is what catches it being wrong.
  */
 export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;
+
+/**
+ * Idle time before the accumulated field changes are flushed as a PATCH, in ms.
+ *
+ * One timer for the whole screen: every edit inside the window is merged into one multi-key body,
+ * whichever card it came from, and reaches the server as a single call.
+ */
+export const AUTOSAVE_DEBOUNCE_MS = 500;
+
+/**
+ * Shortest time the saving bar stays on screen once it has appeared, in ms.
+ *
+ * A PATCH against a local backend can answer in a handful of milliseconds, and a bar that appears
+ * and vanishes inside a frame or two reads as a glitch rather than as feedback — the eye catches
+ * that something blue flickered without ever resolving it into "saved". Holding it for a beat makes
+ * the affordance legible; a save still running past the window keeps it up for as long as it takes.
+ */
+export const MIN_PROGRESS_BAR_VISIBLE_MS = 400;
+
+/** Read-only banner copy while an experiment is running, which is not the generic one (AC35). */
+export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
+
+/** Read-only banner copy for every other non-DRAFT status. */
+export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
+
+/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
+export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
+
+/**
+ * Page card's inline error when the lookup itself failed. A rejected request says nothing about
+ * whether the page exists, so it must not read as "not found" — the error behind it is reported
+ * by `DotHttpErrorManagerService` like every other failed call on this screen.
+ */
+export const PAGE_PREFILL_LOOKUP_ERROR_KEY = 'experiments.configure.page.prefill.lookup-failed';
+
+/** Fallback header the old screen supplies when the backend rejects a start with no header of its own. */
+export const START_ERROR_HEADER_KEY =
+    'dot.common.http.error.400.experiment.run-scheduling-error.header';
+
+/**
+ * Share of the page's traffic the experiment takes when nothing has been chosen yet.
+ *
+ * Also what an experiment with no allocation of its own is diffed against, so a form that was never
+ * touched reports no change.
+ */
+export const DEFAULT_TRAFFIC_ALLOCATION = 100;
+
+/** A page cannot be excluded from its own experiment entirely, so the slider starts at 1%. */
+export const MIN_TRAFFIC_ALLOCATION = 1;
+
+export const MAX_TRAFFIC_ALLOCATION = 100;
+
+/** Total the variant weights must add up to, and the cap on any single one. */
+export const TOTAL_WEIGHT = 100;
+
+/** Weights are stored as percentages with two decimals, so compare at that resolution. */
+export const WEIGHT_PRECISION = 100;
+
+/**
+ * The variant cap and the condition option lists come from `@dotcms/dotcms-models` unchanged, and
+ * are re-exported here so the Configure screen has one place to look. Redeclaring them would let
+ * the new screen offer operators the backend does not validate — the lists are exactly what the old
+ * screen offers: CONTAINS/EQUALS for REACH_PAGE, plus EXISTS for URL_PARAMETER.
+ */
+export {
+    GoalsConditionsOperatorsListByType,
+    GoalsConditionsParametersListByType,
+    MAX_VARIANTS_ALLOWED
+} from '@dotcms/dotcms-models';
+
+/**
+ * Goal types the selector offers, in the order the old screen renders them. `CLICK_ON_ELEMENT`
+ * exists in `GOAL_TYPES` but has never been offered.
+ */
+export const CONFIGURE_GOAL_TYPES: readonly GOAL_TYPES[] = [
+    GOAL_TYPES.BOUNCE_RATE,
+    GOAL_TYPES.EXIT_RATE,
+    GOAL_TYPES.REACH_PAGE,
+    GOAL_TYPES.URL_PARAMETER
+];
+
+/**
+ * Goal types with a working condition sub-panel. The rest are offered but have no server-side
+ * conditions, so they render a "coming soon" placeholder instead — same as the old screen.
+ */
+export const GOAL_TYPES_WITH_CONDITIONS: readonly GOAL_TYPES[] = [
+    GOAL_TYPES.REACH_PAGE,
+    GOAL_TYPES.URL_PARAMETER
+];
+
+/** Same proportions the other consumers of the shared browser open it at. */
+export const SELECT_PAGE_DIALOG_WIDTH = '90%';
+export const SELECT_PAGE_DIALOG_MAX_WIDTH = '1040px';
+
+/**
+ * What the shared site browser is asked to list: pages, and only pages. An experiment runs on one, so
+ * links, files, assets and folders are noise — and with files and assets both off the browser drops
+ * its upload button, which would promise something a page picker cannot do.
+ *
+ * `showWorking` keeps unpublished pages in: an experiment can be configured against a draft, and the
+ * old screen listed them too.
+ */
+export const SELECT_PAGE_BROWSER_PARAMS = {
+    showPages: true,
+    showFolders: false,
+    showFiles: false,
+    showDotAssets: false,
+    showLinks: false,
+    showWorking: true,
+    showArchived: false,
+    sortByDesc: true
+} as const;
+
+/** Narrower than the 700px form default: the dialog holds a single optional name field. */
+export const ADD_VARIANT_DIALOG_WIDTH = '440px';
+
+/**
+ * Kind of the cross-field error the weights raise when they do not add up to 100.
+ *
+ * Deliberately the same string as the `weightsTotal` validation rule the store publishes on a Start
+ * press: the two say the same thing at two different moments — the form's is live (AC25), the
+ * store's is what turns it into a scroll target (AC28) — and the card reads both.
+ */
+export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';

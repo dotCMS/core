@@ -66,15 +66,11 @@
                 (selectionChange)="onGoalsChange($event)"
                 data-testid="experiments-goal-filter" />
 
-            <!-- Creation lands with the New Experiment screen (#36990+); the button is placed
-                 per the design but stays disabled so it cannot open anything yet. -->
             <p-button
                 class="ml-auto"
                 [label]="'experiments.list.action.new' | dm"
-                [disabled]="true"
-                [pTooltip]="'experiments.list.action.coming-soon' | dm"
-                tooltipPosition="bottom"
                 icon="pi pi-plus"
+                (onClick)="onNewExperiment()"
                 data-testid="experiments-new" />
         </div>
     </p-toolbar>
@@ -109,7 +105,7 @@
                 [totalRecords]="store.totalRecords()"
                 [first]="(store.page() - 1) * store.perPage()"
                 dataKey="experiment.id"
-                [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
+                [rowsPerPageOptions]="$rowsPerPageOptions()"
                 [rowHover]="true"
                 [scrollable]="true"
                 scrollHeight="flex"
@@ -207,9 +203,9 @@
                                 {{ row.experiment.modDate | date: 'MMM d, y' }}
                             </td>
                             <td>
-                                <!-- The design leads this cell with "View Results" / "Configure",
-                                 but both screens land with #36990+, so only the kebab is here
-                                 (AC10). -->
+                                <!-- The design leads this cell with "View Results" / "Configure";
+                                 Configure is the first entry of the kebab and View Results lands
+                                 with the reports screen. -->
                                 <div
                                     class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
                                     <p-button

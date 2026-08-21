@@ -172,7 +172,13 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'experiments',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: { reuseRoute: false },
+        // No `reuseRoute: false` here, same reasoning as `/content` above: the Configure screen
+        // REUSES its component across the `experiments/new → experiments/:id/configuration` swap
+        // that follows creation, so the in-flight autosaves and the just-created experiment
+        // survive it. `shouldReuseRoute` is evaluated per level and route `data` is inherited, so
+        // this flag on the parent would recreate the whole subtree regardless of what the child
+        // route asks for. Moving between the list and Configure is still not reused — they are
+        // different route configs.
         loadChildren: () =>
             import('@dotcms/portlets/dot-experiments/portlet').then(
                 (m) => m.dotExperimentsPortletRoutes

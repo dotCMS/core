@@ -8,6 +8,7 @@ import { catchError, map } from 'rxjs/operators';
 import {
     DotCMSResponse,
     DotExperiment,
+    DotExperimentPatchBody,
     DotExperimentResults,
     DotExperimentStatus,
     Goals,
@@ -260,6 +261,25 @@ export class DotExperimentsService {
             .put<
                 DotCMSResponseExperiment<DotExperiment>
             >(`/api/v1/experiments/${experimentId}/variants/${variantId}/_promote`, {})
+            .pipe(map((x) => x?.entity));
+    }
+
+    /**
+     * Apply several changes to an experiment in one call.
+     *
+     * The endpoint applies every key the body carries in a single atomic update, so an accumulated
+     * diff — a name and a goal edited within the same autosave window, say — reaches the server as
+     * one request instead of one per field. The single-key setters below are the same call with a
+     * fixed body, and are kept for the callers that only ever change one thing.
+     * @param {string} experimentId
+     * @param {DotExperimentPatchBody} body Only the keys that changed; never `pageId` or
+     * `targetingConditions`.
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    patch(experimentId: string, body: DotExperimentPatchBody): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, body)
             .pipe(map((x) => x?.entity));
     }
 

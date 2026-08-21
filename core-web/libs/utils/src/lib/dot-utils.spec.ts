@@ -11,6 +11,7 @@ import {
     ellipsizeText,
     getRunnableLink,
     hasValidValue,
+    isDotIdentifier,
     mapQueryParamsToCDParams,
     mapParamsFromEditContentlet
 } from './dot-utils';
@@ -578,6 +579,34 @@ describe('Dot Utils', () => {
             expect(snippet).toContain(`credentials: 'include'`);
             expect(snippet).toContain(`"query": "+live:true"`);
             expect(snippet).toContain(`"limit": 20`);
+        });
+    });
+
+    describe('isDotIdentifier', () => {
+        const VALID = '65e105ad-4338-45f4-a8ad-1a6a1e325e6e';
+
+        it('accepts a 36-character UUID, in either case', () => {
+            expect(isDotIdentifier(VALID)).toBe(true);
+            expect(isDotIdentifier(VALID.toUpperCase())).toBe(true);
+            expect(isDotIdentifier(`  ${VALID}  `)).toBe(true);
+        });
+
+        it('rejects an absent value', () => {
+            expect(isDotIdentifier(null)).toBe(false);
+            expect(isDotIdentifier(undefined)).toBe(false);
+            expect(isDotIdentifier('')).toBe(false);
+        });
+
+        /**
+         * The point of the check: these are what would widen a Lucene query instead of matching
+         * an identifier, which is how a crafted value reaches an unintended contentlet.
+         */
+        it('rejects anything carrying Lucene syntax or whitespace', () => {
+            expect(isDotIdentifier(`${VALID} OR +contentType:Host`)).toBe(false);
+            expect(isDotIdentifier('* ')).toBe(false);
+            expect(isDotIdentifier('+identifier:x')).toBe(false);
+            expect(isDotIdentifier(`${VALID}*`)).toBe(false);
+            expect(isDotIdentifier('not-a-uuid')).toBe(false);
         });
     });
 });

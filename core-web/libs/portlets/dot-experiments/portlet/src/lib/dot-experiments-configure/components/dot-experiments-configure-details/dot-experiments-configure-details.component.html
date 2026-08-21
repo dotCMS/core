@@ -1,0 +1,62 @@
+<p-card data-testid="experiments-configure-details-card">
+    <section class="flex flex-col gap-5">
+        <header class="flex flex-col gap-1">
+            <h2 class="text-lg font-bold text-surface-900" data-section="details">
+                {{ 'experiments.configure.details.title' | dm }}
+            </h2>
+            <span class="text-sm text-surface-500">
+                {{ 'experiments.configure.details.subtitle' | dm }}
+            </span>
+        </header>
+
+        <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-semibold text-surface-900" for="experiment-name">
+                    {{ 'experiments.create.form.name.label' | dm }}
+                    <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                    pInputText
+                    id="experiment-name"
+                    type="text"
+                    class="w-full"
+                    [formField]="$nameField()"
+                    [placeholder]="'experiments.create.form.name.placeholder' | dm"
+                    data-testid="details-name-input" />
+                @if ($showNameRequiredError()) {
+                    <small class="p-error" data-error="1" data-testid="details-name-required-error">
+                        {{ 'experiments.configure.details.name.required' | dm }}
+                    </small>
+                } @else {
+                    @for (error of $nameField()().errors(); track error.kind) {
+                        <small class="p-error" data-testid="details-name-error">
+                            {{ error.message }}
+                        </small>
+                    }
+                }
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-semibold text-surface-900" for="experiment-description">
+                    {{ 'experiments.create.form.description.label' | dm }}
+                </label>
+                <textarea
+                    pInputText
+                    id="experiment-description"
+                    rows="2"
+                    class="w-full resize-y"
+                    [formField]="$descriptionField()"
+                    [placeholder]="'experiments.create.form.description.placeholder' | dm"
+                    data-testid="details-description-textarea"></textarea>
+                @for (error of $descriptionField()().errors(); track error.kind) {
+                    <small class="p-error" data-testid="details-description-error">
+                        {{ error.message }}
+                    </small>
+                }
+                <small class="text-surface-500" data-testid="details-description-hint">
+                    {{ 'experiments.configure.details.description.hint' | dm }}
+                </small>
+            </div>
+        </div>
+    </section>
+</p-card>
