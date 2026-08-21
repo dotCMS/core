@@ -1,14 +1,20 @@
 import { Subject } from 'rxjs';
 
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    inject,
+    signal
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -26,7 +32,11 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotUsersFilterByComponent } from './components/dot-users-filter-by/dot-users-filter-by.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
-import { DotUsersCreateComponent } from '../dot-users-create/dot-users-create.component';
+import { DotUsersReplacementPickerComponent } from '../components/dot-users-replacement-picker/dot-users-replacement-picker.component';
+import {
+    DotUsersCreateComponent,
+    DotUsersDialogResult
+} from '../dot-users-create/dot-users-create.component';
 import { DotUserListItem } from '../services/dot-users.service';
 
 @Component({
@@ -38,18 +48,19 @@ import { DotUserListItem } from '../services/dot-users.service';
         TableModule,
         AvatarModule,
         ButtonModule,
+        DialogModule,
         InputTextModule,
         IconFieldModule,
         InputIconModule,
-        ConfirmDialogModule,
         SkeletonModule,
         TagModule,
         ToolbarModule,
         DotMessagePipe,
-        DotUsersFilterByComponent
+        DotUsersFilterByComponent,
+        DotUsersReplacementPickerComponent
     ],
     templateUrl: './dot-users-list.component.html',
-    providers: [DotUsersListStore, DialogService, ConfirmationService],
+    providers: [DotUsersListStore, DialogService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
@@ -57,11 +68,31 @@ export class DotUsersListComponent {
     readonly store = inject(DotUsersListStore);
 
     private readonly dialogService = inject(DialogService);
-    private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
 
     private readonly searchSubject = new Subject<string>();
+
+    protected readonly bulkDeleteVisible = signal(false);
+    protected readonly bulkReplacementUser = signal<DotUserListItem | null>(null);
+
+    /**
+     * The picker must never surface any user currently selected for
+     * deletion — same rule as the single-delete flow but generalized
+     * to the whole selection.
+     */
+    protected readonly bulkExcludedIds = computed(() =>
+        this.store.selectedUsers().map((user) => user.userId)
+    );
+
+    protected readonly canConfirmBulkDelete = computed(() => {
+        const replacement = this.bulkReplacementUser();
+        if (!replacement) {
+            return false;
+        }
+
+        return !this.bulkExcludedIds().includes(replacement.userId);
+    });
 
     constructor() {
         this.searchSubject
@@ -89,53 +120,72 @@ export class DotUsersListComponent {
     }
 
     openCreateDialog(): void {
-        const ref = this.dialogService.open(DotUsersCreateComponent, {
-            header: this.dotMessageService.get('users.create.header'),
-            width: '700px',
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            position: 'center'
-        });
-
-        ref?.onClose.pipe(take(1)).subscribe(() => {
-            // Create dialog is delivered by sibling ticket #36717 (Profile tab).
-            // Once wired, reload the list here on success.
-        });
+        this.openUserDialog();
     }
 
     openEditDialog(user: DotUserListItem): void {
+        this.openUserDialog(user);
+    }
+
+    /**
+     * The create/edit dialog hosts four tabs (Profile, Roles,
+     * Permissions, API Tokens) plus a legacy JSP iframe for
+     * Permissions, so it opens at the "Special" width bucket
+     * documented in `libs/portlets/CLAUDE.md` — much wider than the
+     * standard 700px form dialog.
+     */
+    private openUserDialog(user?: DotUserListItem): void {
         const ref = this.dialogService.open(DotUsersCreateComponent, {
-            header: this.dotMessageService.get('users.edit.header'),
-            width: '700px',
-            data: { user },
+            header: this.dotMessageService.get(user ? 'users.edit.header' : 'users.create.header'),
+            width: 'min(92vw, 75rem)',
+            height: 'min(90vh, 48rem)',
+            data: user ? { user } : undefined,
             closable: true,
             closeOnEscape: true,
             draggable: false,
-            position: 'center'
+            position: 'center',
+            contentStyle: { padding: '0', overflow: 'hidden' },
+            styleClass: 'p-dialog-content-flush'
         });
 
-        ref?.onClose.pipe(take(1)).subscribe(() => {
-            // Edit dialog delivered by sibling tickets.
+        ref?.onClose.pipe(take(1)).subscribe((result: DotUsersDialogResult | undefined) => {
+            if (!result) {
+                return;
+            }
+
+            if (result.action === 'save') {
+                if (result.mode === 'create') {
+                    this.store.createUser(result.payload);
+                } else {
+                    this.store.updateUser(result.payload);
+                }
+            } else if (result.action === 'delete') {
+                this.store.deleteSingleUser(result.userId, result.replacementUserId);
+            }
         });
     }
 
     confirmDelete(): void {
-        const count = this.store.selectedUsers().length;
+        this.bulkReplacementUser.set(null);
+        this.bulkDeleteVisible.set(true);
+    }
 
-        this.confirmationService.confirm({
-            message: this.dotMessageService.get('users.confirm.delete.message', `${count}`),
-            header: this.dotMessageService.get('users.confirm.delete.header'),
-            acceptLabel: this.dotMessageService.get('users.delete'),
-            rejectLabel: this.dotMessageService.get('users.cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
-            rejectButtonStyleClass: 'p-button-text',
-            defaultFocus: 'reject',
-            closable: true,
-            closeOnEscape: true,
-            position: 'center',
-            accept: () => this.store.deleteSelectedUsers()
-        });
+    closeBulkDelete(): void {
+        this.bulkDeleteVisible.set(false);
+    }
+
+    onBulkReplacementSelect(user: DotUserListItem | null): void {
+        this.bulkReplacementUser.set(user);
+    }
+
+    confirmBulkDelete(): void {
+        const replacement = this.bulkReplacementUser();
+        if (!this.canConfirmBulkDelete() || !replacement) {
+            return;
+        }
+
+        this.bulkDeleteVisible.set(false);
+        this.store.deleteSelectedUsers(replacement.userId);
     }
 
     initials(user: DotUserListItem): string {

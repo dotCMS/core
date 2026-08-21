@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { of } from 'rxjs';
 
-import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -9,7 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUsersListComponent } from './dot-users-list.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
-import { DotUserListItem } from '../services/dot-users.service';
+import { DotUserListItem, DotUsersService } from '../services/dot-users.service';
 
 const MOCK_USERS: DotUserListItem[] = [
     {
@@ -121,14 +121,25 @@ describe('DotUsersListComponent', () => {
                 open: jest
                     .fn()
                     .mockReturnValue({ onClose: { pipe: () => ({ subscribe: jest.fn() }) } })
-            }),
-            ConfirmationService
+            })
         ],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(MESSAGES)
-            }
+            },
+            mockProvider(DotUsersService, {
+                getUsersPaginated: jest.fn().mockReturnValue(
+                    of({
+                        entity: [],
+                        errors: [],
+                        messages: [],
+                        permissions: [],
+                        i18nMessagesMap: {},
+                        pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
+                    })
+                )
+            })
         ]
     });
 
@@ -190,5 +201,58 @@ describe('DotUsersListComponent', () => {
             expect.anything(),
             expect.objectContaining({ data: { user: MOCK_USERS[0] } })
         );
+    });
+
+    describe('bulk delete', () => {
+        const REPLACEMENT: DotUserListItem = {
+            ...MOCK_USERS[0],
+            userId: 'dotcms.org.42',
+            id: 'dotcms.org.42',
+            emailAddress: 'ops@dotcms.com'
+        };
+
+        it('confirmDelete should open the bulk delete dialog and reset the replacement', () => {
+            spectator.component['bulkReplacementUser'].set(REPLACEMENT);
+
+            spectator.component.confirmDelete();
+
+            expect(spectator.component['bulkDeleteVisible']()).toBe(true);
+            expect(spectator.component['bulkReplacementUser']()).toBeNull();
+        });
+
+        it('canConfirmBulkDelete should require a replacement not in the selection', () => {
+            const store = spectator.inject(DotUsersListStore, true);
+            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            spectator.detectChanges();
+
+            expect(spectator.component['canConfirmBulkDelete']()).toBe(false);
+
+            spectator.component.onBulkReplacementSelect(MOCK_USERS[0]);
+            expect(spectator.component['canConfirmBulkDelete']()).toBe(false);
+
+            spectator.component.onBulkReplacementSelect(REPLACEMENT);
+            expect(spectator.component['canConfirmBulkDelete']()).toBe(true);
+        });
+
+        it('confirmBulkDelete should forward the replacement id to the store and close', () => {
+            const store = spectator.inject(DotUsersListStore, true);
+            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            spectator.detectChanges();
+
+            spectator.component.onBulkReplacementSelect(REPLACEMENT);
+            spectator.component.confirmBulkDelete();
+
+            expect(store.deleteSelectedUsers).toHaveBeenCalledWith('dotcms.org.42');
+            expect(spectator.component['bulkDeleteVisible']()).toBe(false);
+        });
+
+        it('confirmBulkDelete should no-op when no replacement was picked', () => {
+            const store = spectator.inject(DotUsersListStore, true);
+            (store.deleteSelectedUsers as jest.Mock).mockClear();
+
+            spectator.component.confirmBulkDelete();
+
+            expect(store.deleteSelectedUsers).not.toHaveBeenCalled();
+        });
     });
 });
