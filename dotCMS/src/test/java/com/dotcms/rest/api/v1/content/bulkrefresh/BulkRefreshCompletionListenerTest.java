@@ -61,7 +61,7 @@ public class BulkRefreshCompletionListenerTest {
     }
 
     /**
-     * Method to test: {@link BulkRefreshCompletionListener#onJobCompleted}
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
      * <p>
      * Given scenario: A bulk refresh job finishes successfully.
      * <p>
@@ -71,7 +71,7 @@ public class BulkRefreshCompletionListenerTest {
      */
     @Test
     public void test_onJobCompleted_pushesTheCountersToTheSubmitter() throws Exception {
-        listener.onJobCompleted(event(JobState.SUCCESS, counters(3, 3, 0, 0, 5)));
+        listener.notify(event(JobState.SUCCESS, counters(3, 3, 0, 0, 5)));
 
         final ArgumentCaptor<Payload> payload = ArgumentCaptor.forClass(Payload.class);
         verify(systemEventsAPI)
@@ -89,7 +89,7 @@ public class BulkRefreshCompletionListenerTest {
     }
 
     /**
-     * Method to test: {@link BulkRefreshCompletionListener#onJobCompleted}
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
      * <p>
      * Given scenario: A job from a different queue finishes.
      * <p>
@@ -101,7 +101,7 @@ public class BulkRefreshCompletionListenerTest {
         final Job job = mock(Job.class);
         when(job.queueName()).thenReturn("importContentlets");
 
-        listener.onJobCompleted(new JobCompletedEvent(job, LocalDateTime.now()));
+        listener.notify(new JobCompletedEvent(job, LocalDateTime.now()));
 
         verify(systemEventsAPI, never()).pushAsync(any(), any());
         verify(notificationAPI, never()).generateNotification(
@@ -110,7 +110,7 @@ public class BulkRefreshCompletionListenerTest {
     }
 
     /**
-     * Method to test: {@link BulkRefreshCompletionListener#onJobCompleted}
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
      * <p>
      * Given scenario: A clean run, then a run with failures, then a permanently failed job.
      * <p>
@@ -120,22 +120,22 @@ public class BulkRefreshCompletionListenerTest {
      */
     @Test
     public void test_onJobCompleted_notificationLevelReflectsTheOutcome() throws Exception {
-        listener.onJobCompleted(event(JobState.SUCCESS, counters(2, 2, 0, 0, 2)));
+        listener.notify(event(JobState.SUCCESS, counters(2, 2, 0, 0, 2)));
         assertEquals(NotificationLevel.INFO, capturedLevel());
 
         setUpFresh();
-        listener.onJobCompleted(event(JobState.SUCCESS, counters(3, 2, 1, 0, 2)));
+        listener.notify(event(JobState.SUCCESS, counters(3, 2, 1, 0, 2)));
         assertEquals("A shortfall must not read as a clean run",
                 NotificationLevel.WARNING, capturedLevel());
 
         setUpFresh();
-        listener.onJobCompleted(event(JobState.FAILED_PERMANENTLY, counters(0, 0, 0, 0, 0)));
+        listener.notify(event(JobState.FAILED_PERMANENTLY, counters(0, 0, 0, 0, 0)));
         assertEquals("A dead job must not read as a success",
                 NotificationLevel.ERROR, capturedLevel());
     }
 
     /**
-     * Method to test: {@link BulkRefreshCompletionListener#onJobCompleted}
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
      * <p>
      * Given scenario: A job whose parameters carry no submitting user.
      * <p>
@@ -148,13 +148,13 @@ public class BulkRefreshCompletionListenerTest {
         when(job.queueName()).thenReturn(BulkRefreshHelper.BULK_REFRESH_QUEUE_NAME);
         when(job.parameters()).thenReturn(ImmutableMap.of());
 
-        listener.onJobCompleted(new JobCompletedEvent(job, LocalDateTime.now()));
+        listener.notify(new JobCompletedEvent(job, LocalDateTime.now()));
 
         verify(systemEventsAPI, never()).pushAsync(any(), any());
     }
 
     /**
-     * Method to test: {@link BulkRefreshCompletionListener#onJobCompleted}
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
      * <p>
      * Given scenario: A terminal job that carried no result metadata at all.
      * <p>
@@ -171,7 +171,7 @@ public class BulkRefreshCompletionListenerTest {
                 ImmutableMap.of(BulkRefreshContentletsProcessor.PARAM_USER_ID, USER_ID));
         when(job.result()).thenReturn(Optional.empty());
 
-        listener.onJobCompleted(new JobCompletedEvent(job, LocalDateTime.now()));
+        listener.notify(new JobCompletedEvent(job, LocalDateTime.now()));
 
         final ArgumentCaptor<Payload> payload = ArgumentCaptor.forClass(Payload.class);
         verify(systemEventsAPI).pushAsync(any(), payload.capture());

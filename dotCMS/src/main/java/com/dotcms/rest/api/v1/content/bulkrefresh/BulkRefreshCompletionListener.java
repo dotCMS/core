@@ -23,8 +23,6 @@ import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Tells the user who submitted a bulk refresh that it finished.
@@ -46,10 +44,15 @@ import javax.enterprise.context.ApplicationScoped;
  * pushing a purpose-built event also keeps the payload to plain counters, which crosses nodes safely,
  * rather than depending on the job event classes deserializing on another node.
  *
+ * <p><b>Registered at startup</b> by {@code LocalSystemEventSubscribersInitializer}, deliberately not as
+ * a CDI bean subscribing to itself in {@code @PostConstruct}. CDI beans are lazy: nothing injects this
+ * class, so it would never have been constructed, the subscription would never have happened, and a
+ * finished reindex would simply never have been reported — with every test still green, because the unit
+ * tests construct it directly and the integration tests assert the job's state rather than the event.
+ *
  * @author dotCMS
  */
-@ApplicationScoped
-public class BulkRefreshCompletionListener {
+public class BulkRefreshCompletionListener implements EventSubscriber<JobCompletedEvent> {
 
     static final String EVENT_TOTAL = "total";
     static final String EVENT_SUCCESS_COUNT = "successCount";
@@ -80,18 +83,11 @@ public class BulkRefreshCompletionListener {
         this.userAPI = userAPI;
     }
 
-    @PostConstruct
-    protected void init() {
-        APILocator.getLocalSystemEventsAPI().subscribe(
-                JobCompletedEvent.class,
-                (EventSubscriber<JobCompletedEvent>) this::onJobCompleted
-        );
-    }
-
     /**
      * Reports a finished bulk refresh, and ignores every other queue's jobs.
      */
-    void onJobCompleted(final JobCompletedEvent event) {
+    @Override
+    public void notify(final JobCompletedEvent event) {
 
         final Job job = null == event ? null : event.getJob();
         if (null == job

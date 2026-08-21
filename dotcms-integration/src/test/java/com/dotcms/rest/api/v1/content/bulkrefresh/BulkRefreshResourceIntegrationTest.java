@@ -332,6 +332,34 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
+     * Method to test: {@link com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshCompletionListener}
+     * <p>
+     * Given scenario: A reindex is submitted and allowed to finish.
+     * <p>
+     * Expected result: The submitter gains a notification, which is only possible if the completion
+     * listener was actually registered at startup and fired for this job.
+     * <p>
+     * This is the assertion the suite was missing. Completion is reported by push now, so every other
+     * test here can pass while the reporting path is entirely dead — and it was: the listener began life
+     * as a CDI bean nothing injected, so it was never constructed, never subscribed, and never told
+     * anyone anything, with all 12 tests green.
+     */
+    @Test
+    void test_bulkRefresh_completionNotifiesTheSubmitter() throws Exception {
+        final Contentlet contentlet = newContentlet();
+        final Long before = APILocator.getNotificationAPI()
+                .getNotificationsCount(adminUser.getUserId());
+
+        awaitTerminal(submit(adminUser, List.of(contentlet.getInode()), false, false));
+
+        // The notification is raised off the job-completed event, so it can land slightly after the job
+        // itself reaches a terminal state.
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS)
+                .until(() -> APILocator.getNotificationAPI()
+                        .getNotificationsCount(adminUser.getUserId()) > before);
+    }
+
+    /**
      * Method to test: {@link BulkRefreshHelper#getJob}
      * <p>
      * Given scenario: A job id that was never issued.
