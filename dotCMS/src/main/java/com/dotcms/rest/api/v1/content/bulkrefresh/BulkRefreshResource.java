@@ -19,7 +19,6 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -75,7 +74,8 @@ public class BulkRefreshResource {
     @Operation(operationId = "bulkRefreshContent", summary = "Reindex a selection of contentlets",
             description = "Clears the contentlet cache and reindexes every selected contentlet, all "
                     + "versions of each. Returns a job id plus the URLs to follow the run: this is "
-                    + "accepted work, not finished work. Not a full index rebuild.",
+                    + "accepted work, not finished work: completion is pushed to the submitting user over "
+                    + "the websocket. Not a full index rebuild.",
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "202", description = "Accepted - reindex job enqueued",
@@ -97,7 +97,7 @@ public class BulkRefreshResource {
                 user.getUserId(), form.getContentletIds().size()));
 
         final BulkRefreshSubmitResponse submitted =
-                this.bulkRefreshHelper.submit(form, user, request);
+                this.bulkRefreshHelper.submit(form, user);
 
         // 202, not 200: the work is accepted, not done. A client must not be able to read this as
         // "reindexed" - telling the user otherwise is exactly the misleading success this endpoint
@@ -148,9 +148,12 @@ public class BulkRefreshResource {
     /**
      * Requires a backend user who may reindex content.
      * <p>
-     * Applied to the status and cancel calls as well as the submit, so the role gate is not decorative:
-     * without it any backend user could cancel somebody else's in-flight reindex, or read a job back
-     * and recover the submitted inode list and the submitter's id from its parameters.
+     * Applied to cancel as well as submit, so the role gate is not decorative: without it any backend
+     * user could cancel somebody else's in-flight reindex.
+     * <p>
+     * Note this does not protect the job's contents. The generic {@code GET /api/v1/jobs/{jobId}/status}
+     * requires only a backend user and returns the whole job, parameters included — a pre-existing
+     * exposure this endpoint neither creates nor closes.
      */
     private User authorized(final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {

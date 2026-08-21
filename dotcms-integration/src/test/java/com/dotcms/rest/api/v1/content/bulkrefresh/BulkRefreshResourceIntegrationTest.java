@@ -51,8 +51,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for {@link BulkRefreshResource} — {@code POST /api/v1/content/_bulkrefresh} and
- * its status and cancel companions.
+ * Integration tests for {@link BulkRefreshResource} — {@code POST /api/v1/content/_bulkrefresh} and its
+ * cancel companion.
  * <p>
  * The tests that matter most here are the ones that hold the endpoint to its promise rather than to
  * its shape: that content genuinely absent from the index is findable once the job reports SUCCESS
@@ -408,8 +408,7 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
         final BulkRefreshSubmitResponse entity =
                 ((ResponseEntityBulkRefreshSubmitView) httpResponse.getEntity()).getEntity();
         assertNotNull(entity.jobId());
-        assertTrue(entity.statusUrl().endsWith("/api/v1/content/_bulkrefresh/" + entity.jobId()),
-                "The status URL must be usable as-is: " + entity.statusUrl());
+        assertEquals(1, entity.submitted(), "submitted is the raw inode count");
     }
 
     /**

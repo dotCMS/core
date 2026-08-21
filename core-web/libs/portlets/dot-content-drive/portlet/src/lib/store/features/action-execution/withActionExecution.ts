@@ -6,7 +6,7 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, Observable, timer } from 'rxjs';
+import { EMPTY, Observable, Subscription, timer } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
@@ -102,6 +102,19 @@ export function withActionExecution() {
                  * already sets `LOADING` and clears the selection itself. The shell reloads when it
                  * consumes the result, which is where the rest of the post-run UI work already lives.
                  */
+                /**
+                 * The live reindex timeout, so settling can cancel it rather than leaving it to fire
+                 * against whatever run happens to be in flight five minutes later.
+                 */
+                let refreshTimeout: Subscription | undefined;
+
+                /** Ends a reindex: drops the guard and the timer that protects it. */
+                const releaseRefresh = (): void => {
+                    refreshTimeout?.unsubscribe();
+                    refreshTimeout = undefined;
+                    patchState(store, { refreshInFlight: false });
+                };
+
                 const onSettled = (result: DotContentDriveActionExecutionResult): void => {
                     patchState(store, {
                         actionExecution: undefined,
@@ -262,14 +275,7 @@ export function withActionExecution() {
                     /**
                      * Reindexes the given contentlet inodes.
                      *
-                     * Unlike the other quick actions this one is job-backed: the endpoint answers `202`
-                     * with a job id and the service polls until it settles, so the run can outlast the
-                     * dialog and still be reported. That is the same property the other actions get from
-                     * living in the store, reached a different way.
                      *
-                     * No live counters. The status endpoint reports a progress float but nothing
-                     * item-wise while the job runs, so the toolbar shows the run as in flight and the
-                     * outcome lands once, at the end — which is all the toast needs.
                      *
                      * Reported through the same {@link onSettled} path as everything else, with its own
                      * partial-outcome copy: a failure here is content that could not be read or indexed
@@ -294,13 +300,14 @@ export function withActionExecution() {
                         // Push has no request whose failure surfaces, so a lost completion event would
                         // leave the flag set and the reindex permanently un-refireable. Scoped to this
                         // flag, so unlike the old version it cannot disturb another action's state.
-                        timer(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS)
+                        // Held so settling can cancel it. Without that, each run leaves a five-minute
+                        // timer behind: run 1's timer outlives run 1, sees run 2's flag set and clears
+                        // it with a bogus 504. The identity check this flag replaced happened to
+                        // prevent that; a bare boolean does not.
+                        refreshTimeout?.unsubscribe();
+                        refreshTimeout = timer(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS)
                             .pipe(takeUntilDestroyed(destroyRef))
                             .subscribe(() => {
-                                if (!store.refreshInFlight()) {
-                                    return;
-                                }
-
                                 patchState(store, { refreshInFlight: false });
                                 httpErrorManagerService.handle(
                                     new HttpErrorResponse({
@@ -320,7 +327,7 @@ export function withActionExecution() {
                                 take(1),
                                 catchError((error) => {
                                     // No job was created, so no event will ever release the flag.
-                                    patchState(store, { refreshInFlight: false });
+                                    releaseRefresh();
                                     httpErrorManagerService.handle(error);
 
                                     return EMPTY;
@@ -364,7 +371,7 @@ export function withActionExecution() {
                             // is still running - a reindex no longer locks the dialog, so that is now
                             // an ordinary situation rather than an impossible one, and clearing it here
                             // would un-gate that action early.
-                            patchState(store, { refreshInFlight: false });
+                            releaseRefresh();
                             httpErrorManagerService.handle(
                                 new HttpErrorResponse({
                                     status: 500,
@@ -376,7 +383,7 @@ export function withActionExecution() {
                         }
 
                         if (!closes) {
-                            patchState(store, { refreshInFlight: false });
+                            releaseRefresh();
                             httpErrorManagerService.handle(
                                 new HttpErrorResponse({
                                     status: 500,
@@ -388,7 +395,7 @@ export function withActionExecution() {
                             return;
                         }
 
-                        patchState(store, { refreshInFlight: false });
+                        releaseRefresh();
                         onSettled({
                             actionName,
                             successCount: event.successCount ?? 0,

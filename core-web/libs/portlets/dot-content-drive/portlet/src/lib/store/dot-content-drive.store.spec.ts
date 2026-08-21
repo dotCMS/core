@@ -1616,7 +1616,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
             mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
             mockProvider(PushPublishService, { pushPublishAssets: jest.fn() }),
-            // Refresh is the one quick action that is job-backed: the service submits and polls, so
+            // Refresh is the one quick action that is job-backed: the service submits and returns, so
             // the store only ever sees a single-emission observable.
             mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
             // The completion event is pushed, so the socket is the seam the run settles through.
@@ -1665,9 +1665,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         bulkRefreshService = spectator.inject(
             DotBulkRefreshService
         ) as jest.Mocked<DotBulkRefreshService>;
-        bulkRefreshService.refresh.mockReturnValue(
-            of({ jobId: 'job-1', statusUrl: 'x', submitted: 1 })
-        );
+        bulkRefreshService.refresh.mockReturnValue(of({ jobId: 'job-1', submitted: 1 }));
     });
 
     describe('executeRefresh', () => {
@@ -1749,6 +1747,37 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(store.actionExecutionResult()).toBeUndefined();
         }));
 
+        it("should not let a settled run's timer abort a later one", fakeAsync(() => {
+            // Regression: the identity check that used to prevent this went away with the switch to a
+            // boolean flag, and its test went with it. Each executeRefresh arms a five-minute timer that
+            // is never cancelled on completion, so run 1's timer fires long after run 1 finished, sees
+            // run 2's flag set, and clears it with a bogus 504.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            // Second run starts well after the first settled, but before the first timer's deadline.
+            tick(1000);
+            store.executeRefresh('Refresh', ['inode-2']);
+            expect(store.refreshInFlight()).toBe(true);
+            jest.clearAllMocks();
+
+            // Past run 1's deadline, not run 2's.
+            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS - 999);
+
+            expect(store.refreshInFlight()).toBe(true);
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+
+            // Drain run 2's own timer so fakeAsync has no pending work.
+            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
+        }));
+
         it('should not fire the timeout once the event has settled the run', fakeAsync(() => {
             store.executeRefresh('Refresh', ['inode-1']);
             store.reportRefreshCompleted('Refresh', {
@@ -1770,7 +1799,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
     describe('bulk refresh completion push', () => {
         it('should settle the run when the completion event arrives on the socket', () => {
             // Proves the wiring, not just the reporter: without the hook subscribing, a finished run
-            // would leave the toolbar showing work in flight forever and never toast.
+            // would leave the reindex marked in flight forever and never toast.
             store.executeRefresh('Refresh', ['inode-1']);
             expect(store.refreshInFlight()).toBe(true);
 

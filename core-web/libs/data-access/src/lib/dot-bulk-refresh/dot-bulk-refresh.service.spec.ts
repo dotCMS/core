@@ -33,7 +33,6 @@ describe('DotBulkRefreshService', () => {
 
         const entity: DotBulkRefreshSubmitResponse = {
             jobId: 'job-1',
-            statusUrl: 'http://localhost/api/v1/content/_bulkrefresh/job-1',
             submitted: 1
         };
         spectator.expectOne(SUBMIT_URL, HttpMethod.POST).flush({ entity });
@@ -48,22 +47,10 @@ describe('DotBulkRefreshService', () => {
         spectator.service.refresh(['inode-1']).subscribe({ complete: () => (completed = true) });
 
         spectator.expectOne(SUBMIT_URL, HttpMethod.POST).flush({
-            entity: { jobId: 'job-1', statusUrl: 'x', submitted: 1 }
+            entity: { jobId: 'job-1', submitted: 1 }
         });
 
         expect(completed).toBe(true);
-    });
-
-    it('should never call a status endpoint', () => {
-        spectator.service.refresh(['inode-1']).subscribe();
-
-        spectator.expectOne(SUBMIT_URL, HttpMethod.POST).flush({
-            entity: { jobId: 'job-1', statusUrl: 'x', submitted: 1 }
-        });
-
-        // Guards the regression this change exists to prevent: polling a job's status every 1.5s for
-        // up to five minutes, roughly 200 requests per run.
-        spectator.controller.expectNone(`${SUBMIT_URL}/job-1`);
     });
 
     it('should not call the endpoint at all for an empty selection', () => {

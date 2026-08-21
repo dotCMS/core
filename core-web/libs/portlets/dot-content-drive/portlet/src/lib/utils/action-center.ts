@@ -43,8 +43,8 @@ export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
  * rebuild: that is `POST /api/v1/esindex/reindex`, a different operation over the whole index.
  *
  * The only quick action that is job-backed rather than synchronous — the endpoint answers `202` with a
- * job id, and the store polls it to completion. So it does not share the `bulkFire` path the workflow
- * quick actions use, but it reports through the same result toast.
+ * job id, and completion is pushed back over the websocket. So it does not share the `bulkFire` path the
+ * workflow quick actions use, but it reports through the same result toast.
  *
  * Unlike the others, eligibility does not depend on row state: reindexing applies to live, archived and
  * locked content alike, because none of those affect whether the index copy is correct.
@@ -171,7 +171,7 @@ export const isLockedByAnotherUser = (
  * Publish and Refresh.
  *
  * Lock/Unlock fire through the system-action endpoint; Add to Bundle posts to the legacy bundle
- * servlet and collects a target first. Refresh is job-backed and polls to completion. Push Publish is
+ * servlet and collects a target first. Refresh is job-backed and reports completion by push. Push Publish is
  * still a placeholder — see {@link DotActionCenterQuickAction.comingSoon}.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [

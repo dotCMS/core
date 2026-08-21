@@ -87,9 +87,11 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
     private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
 
     /**
-     * Per-item records, in submission order, populated only when the job asked for them. Read back
-     * through {@link #getResultMetadata(Job)} once the run is terminal, which is what persists them
-     * with the job for the drill-down.
+     * Per-item records, in submission order, populated only when the job asked for them.
+     * <p>
+     * Nothing in this feature asks: the client sends {@code includeItemResults: false}, so in practice
+     * this stays empty. Kept because {@link #getResultMetadata(Job)} persists it with the job, which
+     * makes it readable through the generic job-status endpoint if a drill-down is ever built.
      */
     private final List<BulkRefreshItemResult> itemResults = new CopyOnWriteArrayList<>();
 

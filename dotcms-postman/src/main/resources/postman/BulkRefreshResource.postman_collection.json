@@ -180,12 +180,10 @@
                   "    pm.response.to.have.status(202);",
                   "});",
                   "",
-                  "pm.test('Hands back a job id and both follow-up URLs', function () {",
+                  "pm.test('Hands back the accepted job id', function () {",
                   "    const entity = pm.response.json().entity;",
                   "    pm.expect(entity.jobId).to.be.a('string').and.not.empty;",
                   "    pm.expect(entity.submitted).to.eql(1);",
-                  "    pm.expect(entity.statusUrl).to.include('/api/v1/content/_bulkrefresh/' + entity.jobId);",
-                  "    pm.collectionVariables.set('jobId', entity.jobId);",
                   "});"
                 ]
               }
@@ -402,14 +400,6 @@
   "variable": [
     {
       "key": "inode",
-      "value": ""
-    },
-    {
-      "key": "identifier",
-      "value": ""
-    },
-    {
-      "key": "jobId",
       "value": ""
     },
     {

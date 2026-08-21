@@ -12,8 +12,8 @@ import { DotBulkRefreshSubmitResponse } from '@dotcms/dotcms-models';
  *
  * Not a cancellation — the reindex continues server-side. This exists because the completion signal is
  * pushed rather than polled, so there is no request whose failure would surface: if the event never
- * arrives (system events disabled, the socket dropped, the job abandoned on a dead node), the run would
- * otherwise stay marked in-flight forever, and that marker gates every other quick action.
+ * arrives (system events disabled, the socket dropped, the job abandoned on a dead node), the reindex
+ * would otherwise stay marked in flight forever and could never be fired again.
  */
 export const DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -50,8 +50,9 @@ export class DotBulkRefreshService {
                 entity: DotBulkRefreshSubmitResponse;
             }>(BULK_REFRESH_URL, {
                 contentletIds: inodes,
-                // Counters are all the completion event needs, and the per-item records are no longer
-                // readable over REST now that the status endpoint is gone.
+                // Counters are all the completion event carries, and nothing in this feature reads the
+                // per-item records. They remain reachable through the generic job-status endpoint if a
+                // drill-down is ever built.
                 includeItemResults: false
             })
             .pipe(map((response) => response.entity));

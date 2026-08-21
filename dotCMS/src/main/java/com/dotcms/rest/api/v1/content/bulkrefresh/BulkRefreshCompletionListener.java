@@ -47,8 +47,10 @@ import java.util.Optional;
  * <p><b>Registered at startup</b> by {@code LocalSystemEventSubscribersInitializer}, deliberately not as
  * a CDI bean subscribing to itself in {@code @PostConstruct}. CDI beans are lazy: nothing injects this
  * class, so it would never have been constructed, the subscription would never have happened, and a
- * finished reindex would simply never have been reported — with every test still green, because the unit
- * tests construct it directly and the integration tests assert the job's state rather than the event.
+ * finished reindex would simply never have been reported — and every test stayed green, because the unit
+ * tests construct it directly. {@code test_bulkRefresh_completionNotifiesTheSubmitter} was added to close
+ * that gap: it requires the submitter's notification count to rise, which only happens if this listener
+ * really was registered and really did fire.
  *
  * @author dotCMS
  */

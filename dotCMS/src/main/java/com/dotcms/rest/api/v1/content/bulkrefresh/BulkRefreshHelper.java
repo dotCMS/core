@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.content.bulkrefresh;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.impl.BulkRefreshContentletsProcessor;
-import com.dotcms.rest.api.v1.job.JobResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -17,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Job creation, authorization and validation for bulk refresh.
@@ -38,7 +36,6 @@ public class BulkRefreshHelper {
 
     public static final int MAX_ITEMS_DEFAULT = 500;
 
-    private static final String STATUS_ENDPOINT = "/api/v1/content/_bulkrefresh/%s";
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
 
@@ -65,13 +62,12 @@ public class BulkRefreshHelper {
      *
      * @param form    the submitted selection and flags
      * @param user    the submitting backend user
-     * @param request used to build the absolute status URL
-     * @return the job handle plus the URLs a client needs to follow it
+     * @return the accepted job's handle. Completion is pushed, not fetched.
      * @throws DotSecurityException if the user is neither a CMS Power User nor a CMS Administrator
      * @throws IllegalArgumentException if the selection is empty or over the configured cap
      */
-    public BulkRefreshSubmitResponse submit(final BulkRefreshForm form, final User user,
-            final HttpServletRequest request) throws DotDataException, DotSecurityException {
+    public BulkRefreshSubmitResponse submit(final BulkRefreshForm form, final User user)
+            throws DotDataException, DotSecurityException {
 
         if (!canRefresh(user)) {
             throw new DotSecurityException(String.format(
@@ -103,13 +99,8 @@ public class BulkRefreshHelper {
                 "Bulk refresh job [%s] created by user [%s] for %d inode(s)",
                 jobId, user.getUserId(), submitted));
 
-        // Reuses the job status URL builder so the base URL is derived the same way everywhere.
-        final String statusUrl = JobResponseUtil
-                .buildJobStatusResponse(jobId, STATUS_ENDPOINT, request).statusUrl();
-
         return BulkRefreshSubmitResponse.builder()
                 .jobId(jobId)
-                .statusUrl(statusUrl)
                 .submitted(submitted)
                 .build();
     }
@@ -140,17 +131,16 @@ public class BulkRefreshHelper {
     }
 
     /**
-     * The job, for the status snapshot and the polling fallback.
+     * The job, resolved for cancellation and scoped to this queue.
      *
      * @throws com.dotmarketing.exception.DoesNotExistException if no such job exists
      */
     public Job getJob(final String jobId) throws DotDataException {
         final Job job = this.jobQueueManagerAPI.getJob(jobId);
 
-        // Keep the endpoint to its own queue. Without this, a reindex job id and an import job id are
-        // interchangeable here: the status call would return any job's view and the cancel call would
-        // cancel any job of any type. Answering "not found" for somebody else's job is both honest and
-        // the narrower contract.
+        // Keep the endpoint to its own queue. Without this a reindex job id and an import job id are
+        // interchangeable here, and the cancel call would cancel any job of any type. Answering
+        // "not found" for somebody else's job is both honest and the narrower contract.
         if (!BULK_REFRESH_QUEUE_NAME.equals(job.queueName())) {
             throw new DoesNotExistException(
                     String.format("No bulk refresh job found with id %s", jobId));

@@ -312,10 +312,8 @@ export interface DotContentDriveSearchResponse {
  * handle to follow it rather than any outcome.
  */
 export interface DotBulkRefreshSubmitResponse {
-    /** The job's id — the handle for the status and cancel calls. */
+    /** The job's id — the handle for the cancel call. */
     jobId: string;
-    /** Absolute URL of the status snapshot. Poll it until the job reaches a terminal state. */
-    statusUrl: string;
     /**
      * Inodes accepted, before the server collapses them by identifier. The de-duplicated `total`
      * arrives with the result and is often smaller, so this is not a count of reindexed items.
@@ -343,9 +341,10 @@ export interface DotBulkRefreshCounts {
 /**
  * The payload of a `BULK_REFRESH_COMPLETED` system event.
  *
- * Pushed over the websocket when a run settles, scoped to whoever submitted it. `counts` is absent when
- * the finished job carried none — a caller must treat that as a failure rather than as a clean run over
- * nothing, which is what all-zero counters would look like.
+ * Pushed over the websocket when a run settles, scoped to whoever submitted it. The counter fields are
+ * all optional: a job that finished without reporting any carries only `state`, and a caller must treat
+ * that as a failure rather than as a clean run over nothing, which is what all-zero counters would look
+ * like.
  */
 export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCounts> {
     state: string;

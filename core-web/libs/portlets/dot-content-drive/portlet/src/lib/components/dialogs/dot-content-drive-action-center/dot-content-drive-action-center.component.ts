@@ -84,7 +84,7 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  *    dropdown: Lock, Unlock, Add to Bundle, Refresh, and a placeholder for Push Publish. Lock and
  *    Unlock fire over the whole eligible selection in one request via
  *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`; Refresh goes to its own job-backed
- *    `POST /api/v1/content/_bulkrefresh` and is polled to completion. Counts are derived client-side
+ *    `POST /api/v1/content/_bulkrefresh`, and its completion is pushed over the websocket. Counts are derived client-side
  *    from row state (see `getQuickActions`).
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
  *    `POST /api/v1/workflow/contentlet/actions/bulk`, queried **once per content type** in the
@@ -721,6 +721,13 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // Refresh speaks inodes like the workflow quick actions, but goes to its own job-backed
         // endpoint rather than the system-action fire, so it branches here rather than falling through.
         if (quickAction.id === REFRESH_ACTION_ID) {
+            // Refused while one is already running. Toasting regardless would claim a reindex had
+            // started when nothing was submitted, and the hand-off below would take the user's
+            // selection with it - the misleading success this whole endpoint exists to remove.
+            if (this.#store.refreshInFlight()) {
+                return;
+            }
+
             const actionName = this.#dotMessageService.get(quickAction.name);
             this.#store.executeRefresh(actionName, inodes);
 
@@ -808,7 +815,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * it is modal, so it dims the toolbar that is reporting the run, and it blocks the grid while
      * work happens that no longer needs the dialog to be alive. Closing here is what makes the
      * toolbar indicator observable — otherwise the only window to see it is the milliseconds between
-     * the user manually closing the dialog and the request settling.
+     * the user manually closing the dialog and the request settling. Refresh is the exception: it shows
+     * no indicator at all, having already said by toast that it runs in the background.
      *
      * Counts are also stale from this point on: the contentlets are moving to a new step, so the
      * numbers this dialog is showing no longer hold.

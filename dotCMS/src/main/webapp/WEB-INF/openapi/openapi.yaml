@@ -6154,7 +6154,8 @@ paths:
     post:
       description: "Clears the contentlet cache and reindexes every selected contentlet,\
         \ all versions of each. Returns a job id plus the URLs to follow the run:\
-        \ this is accepted work, not finished work. Not a full index rebuild."
+        \ this is accepted work, not finished work: completion is pushed to the submitting\
+        \ user over the websocket. Not a full index rebuild."
       operationId: bulkRefreshContent
       requestBody:
         content:
@@ -25117,8 +25118,6 @@ components:
       type: object
       properties:
         jobId:
-          type: string
-        statusUrl:
           type: string
         submitted:
           type: integer

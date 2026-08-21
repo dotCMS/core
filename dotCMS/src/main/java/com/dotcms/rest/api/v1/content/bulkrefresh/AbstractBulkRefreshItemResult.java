@@ -11,7 +11,9 @@ import org.immutables.value.Value;
  * <p>
  * Results are reported per <b>identifier</b>, not per submitted inode: several language rows of the
  * same content collapse into a single record whose {@link #inodes()} lists every inode the caller
- * submitted for it. That list is what lets a client mark the right grid rows.
+ * submitted for it — which is what a client would need to mark the right grid rows, if one ever consumed
+ * these records. None does today; see {@code BulkRefreshContentletsProcessor}'s note on why they are
+ * still produced.
  *
  * @author dotCMS
  */
