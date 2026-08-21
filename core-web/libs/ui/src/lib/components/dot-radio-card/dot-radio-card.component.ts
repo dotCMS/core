@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { Field, FormField } from '@angular/forms/signals';
 
 import { Card } from 'primeng/card';
@@ -28,8 +28,7 @@ import { RadioButton, RadioButtonClickEvent } from 'primeng/radiobutton';
     selector: 'dot-radio-card',
     imports: [Card, RadioButton, FormField],
     templateUrl: './dot-radio-card.component.html',
-    styleUrl: './dot-radio-card.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrl: './dot-radio-card.component.scss'
 })
 export class DotRadioCardComponent<T> {
     /** The field every card of the group is bound to. The radio inside is its control. */
