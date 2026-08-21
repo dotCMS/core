@@ -165,7 +165,6 @@ describe('DotContentDriveActionCenterComponent', () => {
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
-    const mockRefreshInFlight = signal(false);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
@@ -182,7 +181,6 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 actionExecution: mockActionExecution,
-                refreshInFlight: mockRefreshInFlight,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
@@ -266,7 +264,6 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-2', live: true })
         ]);
         mockActionExecution.set(undefined);
-        mockRefreshInFlight.set(false);
         mockCurrentUserIsAdmin.set(false);
         pushPublishEnvironments = [];
         pushPublishEnvironmentsFail = false;
@@ -635,15 +632,19 @@ describe('DotContentDriveActionCenterComponent', () => {
             );
         });
 
-        it('should not claim a reindex started when the store refused it', () => {
-            // executeRefresh returns early while one is already in flight. Toasting anyway tells the
-            // user their reindex is running when nothing was submitted - and the hand-off clears their
-            // selection on the way out, so they lose the rows too.
+        it('should not claim a reindex started when nothing was submitted', () => {
+            // Toasting with nothing submitted tells the user their reindex is running when it is not,
+            // and the hand-off clears their selection on the way out, so they lose the rows too. With
+            // the in-flight guard gone, an emptied preview is the remaining way to reach that.
             const messageService = spectator.inject(MessageService);
-            mockRefreshInFlight.set(true);
 
-            executeQuickAction('REFRESH');
+            openQuickActionPreview('REFRESH');
+            toggleRow(0);
+            toggleRow(1);
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
 
+            expect(store.executeRefresh).not.toHaveBeenCalled();
             expect(messageService.add).not.toHaveBeenCalled();
             expect(store.setSelectedItems).not.toHaveBeenCalled();
         });

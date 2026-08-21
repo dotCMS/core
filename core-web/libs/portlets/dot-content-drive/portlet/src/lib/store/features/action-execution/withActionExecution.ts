@@ -6,7 +6,7 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, Observable, Subscription, timer } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
@@ -16,7 +16,6 @@ import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
-    DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS,
     DotBulkRefreshService,
     DotEventsSocket,
     DotHttpErrorManagerService,
@@ -47,15 +46,6 @@ interface WithActionExecutionState {
      * calls {@link clearActionExecutionResult}; the store never shows the toast itself.
      */
     actionExecutionResult?: DotContentDriveActionExecutionResult;
-    /**
-     * Whether a bulk reindex is running.
-     *
-     * Deliberately separate from {@link actionExecution}: that field drives the toolbar's "Applying …"
-     * indicator and locks the Action Center, neither of which suits a job that runs for minutes and
-     * reports itself by push. This flag exists only so a reindex cannot be fired twice over the same
-     * rows, without blocking anything else.
-     */
-    refreshInFlight: boolean;
 }
 
 /**
@@ -79,8 +69,7 @@ export function withActionExecution() {
         },
         withState<WithActionExecutionState>({
             actionExecution: undefined,
-            actionExecutionResult: undefined,
-            refreshInFlight: false
+            actionExecutionResult: undefined
         }),
         withMethods(
             (
@@ -102,19 +91,6 @@ export function withActionExecution() {
                  * already sets `LOADING` and clears the selection itself. The shell reloads when it
                  * consumes the result, which is where the rest of the post-run UI work already lives.
                  */
-                /**
-                 * The live reindex timeout, so settling can cancel it rather than leaving it to fire
-                 * against whatever run happens to be in flight five minutes later.
-                 */
-                let refreshTimeout: Subscription | undefined;
-
-                /** Ends a reindex: drops the guard and the timer that protects it. */
-                const releaseRefresh = (): void => {
-                    refreshTimeout?.unsubscribe();
-                    refreshTimeout = undefined;
-                    patchState(store, { refreshInFlight: false });
-                };
-
                 const onSettled = (result: DotContentDriveActionExecutionResult): void => {
                     patchState(store, {
                         actionExecution: undefined,
@@ -275,7 +251,10 @@ export function withActionExecution() {
                     /**
                      * Reindexes the given contentlet inodes.
                      *
-                     *
+                     * Submit-and-forget: the endpoint answers 202 and nothing here waits or guards. A
+                     * second reindex is allowed to be fired — firing clears the selection, so it takes a
+                     * deliberate re-selection, and reindexing the same rows again is wasteful rather
+                     * than wrong.
                      *
                      * Reported through the same {@link onSettled} path as everything else, with its own
                      * partial-outcome copy: a failure here is content that could not be read or indexed
@@ -287,7 +266,7 @@ export function withActionExecution() {
                      * toast - the exact misleading success this endpoint exists to remove.
                      */
                     executeRefresh: (actionName: string, inodes: string[]): void => {
-                        if (!inodes.length || store.refreshInFlight()) {
+                        if (!inodes.length) {
                             return;
                         }
 
@@ -295,28 +274,11 @@ export function withActionExecution() {
                         // indicator and locks the Action Center, and neither fits a job that runs for
                         // minutes and cannot report progress. The user is told at trigger that this is
                         // backgrounded, and told again when it finishes.
-                        patchState(store, { refreshInFlight: true });
-
-                        // Push has no request whose failure surfaces, so a lost completion event would
-                        // leave the flag set and the reindex permanently un-refireable. Scoped to this
-                        // flag, so unlike the old version it cannot disturb another action's state.
-                        // Held so settling can cancel it. Without that, each run leaves a five-minute
-                        // timer behind: run 1's timer outlives run 1, sees run 2's flag set and clears
-                        // it with a bogus 504. The identity check this flag replaced happened to
-                        // prevent that; a bare boolean does not.
-                        refreshTimeout?.unsubscribe();
-                        refreshTimeout = timer(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS)
-                            .pipe(takeUntilDestroyed(destroyRef))
-                            .subscribe(() => {
-                                patchState(store, { refreshInFlight: false });
-                                httpErrorManagerService.handle(
-                                    new HttpErrorResponse({
-                                        status: 504,
-                                        statusText:
-                                            'Stopped waiting for the reindex to report back; it may still be running'
-                                    })
-                                );
-                            });
+                        //
+                        // Note also what is not started: a completion deadline. Nothing on screen is
+                        // waiting, so there is nothing for one to unblock - and a client that gave up
+                        // after N minutes would be reporting a failure it has no evidence of, over a
+                        // run the server records in the notification bell either way.
 
                         // Submit and stop. The endpoint answers 202 and the reindex continues in the
                         // background; the outcome arrives on the socket subscription below rather than
@@ -326,8 +288,8 @@ export function withActionExecution() {
                             .pipe(
                                 take(1),
                                 catchError((error) => {
-                                    // No job was created, so no event will ever release the flag.
-                                    releaseRefresh();
+                                    // The only reindex failure a client sees directly: no job was
+                                    // created, so no completion event is coming for it either.
                                     httpErrorManagerService.handle(error);
 
                                     return EMPTY;
@@ -367,11 +329,10 @@ export function withActionExecution() {
                                 event.total;
 
                         if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
-                            // Only our own flag. actionExecution may belong to a different action that
-                            // is still running - a reindex no longer locks the dialog, so that is now
-                            // an ordinary situation rather than an impossible one, and clearing it here
-                            // would un-gate that action early.
-                            releaseRefresh();
+                            // Note what is not touched: actionExecution. It may belong to a different
+                            // action that is still running - a reindex no longer locks the dialog, so
+                            // that is an ordinary situation, and clearing it here would un-gate that
+                            // action early.
                             httpErrorManagerService.handle(
                                 new HttpErrorResponse({
                                     status: 500,
@@ -383,7 +344,6 @@ export function withActionExecution() {
                         }
 
                         if (!closes) {
-                            releaseRefresh();
                             httpErrorManagerService.handle(
                                 new HttpErrorResponse({
                                     status: 500,
@@ -395,7 +355,6 @@ export function withActionExecution() {
                             return;
                         }
 
-                        releaseRefresh();
                         onSettled({
                             actionName,
                             successCount: event.successCount ?? 0,

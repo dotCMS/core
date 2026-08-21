@@ -7,16 +7,6 @@ import { map } from 'rxjs/operators';
 
 import { DotBulkRefreshSubmitResponse } from '@dotcms/dotcms-models';
 
-/**
- * How long to wait for the completion event before giving up on hearing about a run.
- *
- * Not a cancellation — the reindex continues server-side. This exists because the completion signal is
- * pushed rather than polled, so there is no request whose failure would surface: if the event never
- * arrives (system events disabled, the socket dropped, the job abandoned on a dead node), the reindex
- * would otherwise stay marked in flight forever and could never be fired again.
- */
-export const DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS = 5 * 60 * 1000;
-
 const BULK_REFRESH_URL = '/api/v1/content/_bulkrefresh';
 
 /**

@@ -721,13 +721,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // Refresh speaks inodes like the workflow quick actions, but goes to its own job-backed
         // endpoint rather than the system-action fire, so it branches here rather than falling through.
         if (quickAction.id === REFRESH_ACTION_ID) {
-            // Refused while one is already running. Toasting regardless would claim a reindex had
-            // started when nothing was submitted, and the hand-off below would take the user's
-            // selection with it - the misleading success this whole endpoint exists to remove.
-            if (this.#store.refreshInFlight()) {
-                return;
-            }
-
             const actionName = this.#dotMessageService.get(quickAction.name);
             this.#store.executeRefresh(actionName, inodes);
 

@@ -14,7 +14,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
-    DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS,
     DotBulkRefreshService,
     DotEventsSocket,
     DotMessageService,
@@ -1678,14 +1677,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(store.actionExecution()).toBeUndefined();
         });
 
-        it('should mark the reindex in flight so it cannot be fired twice', () => {
+        it('should let a second reindex be fired', () => {
+            // No in-flight guard: the only thing it could protect against is a double-fire, and firing
+            // clears the selection, so a second run takes a deliberate re-selection. Guarding it needed
+            // a timeout to un-wedge the flag when a completion event went missing, and that timeout was
+            // the larger cost - a 504 minutes later, about a job that had most likely succeeded, with
+            // nothing on screen waiting for it.
             store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(store.refreshInFlight()).toBe(true);
-
             store.executeRefresh('Refresh', ['inode-2']);
 
-            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(1);
+            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(2);
         });
 
         it('should not block the other actions while a reindex runs', () => {
@@ -1718,11 +1719,11 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeRefresh('Refresh', []);
 
             expect(bulkRefreshService.refresh).not.toHaveBeenCalled();
-            expect(store.refreshInFlight()).toBe(false);
         });
 
-        it('should release the in-flight flag if the submit itself fails', () => {
-            // A rejected submit means no job, so no completion event will ever arrive to release it.
+        it('should report a submit that fails outright', () => {
+            // The one failure a client can see directly: no job was created, so no completion event is
+            // ever coming and the error toast is the only report the user gets.
             bulkRefreshService.refresh.mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 403 }))
             );
@@ -1730,69 +1731,19 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeRefresh('Refresh', ['inode-1']);
 
             expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.refreshInFlight()).toBe(false);
+            expect(store.actionExecutionResult()).toBeUndefined();
         });
 
-        it('should stop waiting if the completion event never arrives', fakeAsync(() => {
-            // Push has no request whose failure surfaces, so a lost event would otherwise leave the
-            // reindex permanently un-refireable.
+        it('should leave nothing waiting on a timer', fakeAsync(() => {
+            // There is no completion deadline. A reindex is reported by push, and by a notification the
+            // server writes whether or not the socket delivered - so a client-side deadline could only
+            // ever invent a failure for a run it has no information about.
             store.executeRefresh('Refresh', ['inode-1']);
-            expect(store.refreshInFlight()).toBe(true);
 
-            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
+            tick(60 * 60 * 1000);
 
-            expect(store.refreshInFlight()).toBe(false);
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            // Giving up is not an outcome; reporting one would invent counts.
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
             expect(store.actionExecutionResult()).toBeUndefined();
-        }));
-
-        it("should not let a settled run's timer abort a later one", fakeAsync(() => {
-            // Regression: the identity check that used to prevent this went away with the switch to a
-            // boolean flag, and its test went with it. Each executeRefresh arms a five-minute timer that
-            // is never cancelled on completion, so run 1's timer fires long after run 1 finished, sees
-            // run 2's flag set, and clears it with a bogus 504.
-            store.executeRefresh('Refresh', ['inode-1']);
-            store.reportRefreshCompleted('Refresh', {
-                state: 'SUCCESS',
-                total: 1,
-                successCount: 1,
-                failedCount: 0,
-                skippedCount: 0,
-                versionsIndexed: 1
-            });
-
-            // Second run starts well after the first settled, but before the first timer's deadline.
-            tick(1000);
-            store.executeRefresh('Refresh', ['inode-2']);
-            expect(store.refreshInFlight()).toBe(true);
-            jest.clearAllMocks();
-
-            // Past run 1's deadline, not run 2's.
-            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS - 999);
-
-            expect(store.refreshInFlight()).toBe(true);
-            expect(httpErrorManager.handle).not.toHaveBeenCalled();
-
-            // Drain run 2's own timer so fakeAsync has no pending work.
-            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
-        }));
-
-        it('should not fire the timeout once the event has settled the run', fakeAsync(() => {
-            store.executeRefresh('Refresh', ['inode-1']);
-            store.reportRefreshCompleted('Refresh', {
-                state: 'SUCCESS',
-                total: 1,
-                successCount: 1,
-                failedCount: 0,
-                skippedCount: 0,
-                versionsIndexed: 1
-            });
-            jest.clearAllMocks();
-
-            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
-
-            expect(httpErrorManager.handle).not.toHaveBeenCalled();
         }));
     });
 
@@ -1801,7 +1752,6 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // Proves the wiring, not just the reporter: without the hook subscribing, a finished run
             // would leave the reindex marked in flight forever and never toast.
             store.executeRefresh('Refresh', ['inode-1']);
-            expect(store.refreshInFlight()).toBe(true);
 
             bulkRefreshEvents$.next({
                 state: 'SUCCESS',
@@ -1812,7 +1762,6 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.refreshInFlight()).toBe(false);
             expect(store.actionExecutionResult()).toEqual({
                 actionName: 'Refresh',
                 successCount: 1,
@@ -1847,28 +1796,13 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(store.actionExecution()).toBe(lockInFlight);
         });
 
-        it('should release the in-flight flag so a later reindex can run', () => {
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            store.reportRefreshCompleted('Refresh', {
-                state: 'SUCCESS',
-                total: 1,
-                successCount: 1,
-                failedCount: 0,
-                skippedCount: 0,
-                versionsIndexed: 1
-            });
-
-            expect(store.refreshInFlight()).toBe(false);
-        });
-
-        it('should release the in-flight flag even on an unusable outcome', () => {
+        it('should report an unusable outcome rather than settling on it', () => {
             store.executeRefresh('Refresh', ['inode-1']);
 
             store.reportRefreshCompleted('Refresh', { state: 'SUCCESS' });
 
             expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.refreshInFlight()).toBe(false);
+            expect(store.actionExecutionResult()).toBeUndefined();
         });
 
         it('should settle with the pushed counters and its own partial copy', () => {
