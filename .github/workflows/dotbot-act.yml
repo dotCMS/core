@@ -13,6 +13,9 @@ concurrency:
 jobs:
   act:
     name: Act on /dotbot comments
+    # Authorization gate: only repo owners, org members, and collaborators may
+    # trigger the autonomous agent. Without this, any GitHub user could comment
+    # `/dotbot` on a PR and launch a write-privileged agent (privilege escalation).
     if: >-
       (
         (
@@ -24,19 +27,23 @@ jobs:
           startsWith(github.event.comment.body, '/dotbot')
         )
       ) &&
-      github.actor != 'dependabot[bot]'
+      github.actor != 'dependabot[bot]' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      workflows: write
       pull-requests: write
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      # Pinned to a full commit SHA: a mutable tag could be repointed to run
+      # attacker-controlled code with this job's write-scoped GITHUB_TOKEN.
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.2.0
         with:
           fetch-depth: 0
           # The action code must be loaded from the pinned release SHA, not this
           # checkout (untrusted PR head), so `uses:` points at a fixed commit.
+          # Note: the checkout is still the PR head by design (the agent edits it),
+          # which is why the authorization gate above is critical.
           ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.issue.number) }}
       - name: dotbot autonomous edits
         uses: wezell/openrouter-code-review-action@34ee169dd9f35bf20a6b358b902c6c76e5df3a14
