@@ -225,6 +225,16 @@ export class DotContentDriveShellComponent {
      */
     protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
+    /**
+     * The grid's checked rows, driven from the store.
+     *
+     * Passing this puts `dot-folder-list-view` in its controlled mode, which is what makes clearing the
+     * store actually uncheck the boxes. Left uncontrolled, the grid keeps its own selection and only
+     * drops it when the `items` reference changes — so a selection cleared on action hand-off stayed
+     * visibly ticked until the next search returned.
+     */
+    protected readonly $selectedItems = this.#store.selectedItems;
+
     /** Folder payload for the folder dialog (narrowed from the dialog payload union by type). */
     readonly $folderPayload = computed(() => {
         const dialog = this.$activeDialog();

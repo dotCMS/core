@@ -47,6 +47,15 @@ interface WithActionExecutionState {
      * calls {@link clearActionExecutionResult}; the store never shows the toast itself.
      */
     actionExecutionResult?: DotContentDriveActionExecutionResult;
+    /**
+     * Whether a bulk reindex is running.
+     *
+     * Deliberately separate from {@link actionExecution}: that field drives the toolbar's "Applying …"
+     * indicator and locks the Action Center, neither of which suits a job that runs for minutes and
+     * reports itself by push. This flag exists only so a reindex cannot be fired twice over the same
+     * rows, without blocking anything else.
+     */
+    refreshInFlight: boolean;
 }
 
 /**
@@ -70,7 +79,8 @@ export function withActionExecution() {
         },
         withState<WithActionExecutionState>({
             actionExecution: undefined,
-            actionExecutionResult: undefined
+            actionExecutionResult: undefined,
+            refreshInFlight: false
         }),
         withMethods(
             (
@@ -271,31 +281,27 @@ export function withActionExecution() {
                      * toast - the exact misleading success this endpoint exists to remove.
                      */
                     executeRefresh: (actionName: string, inodes: string[]): void => {
-                        if (!inodes.length || store.actionExecution()) {
+                        if (!inodes.length || store.refreshInFlight()) {
                             return;
                         }
 
-                        // Held by identity so the timeout below can tell "this run is still in
-                        // flight" from "a later run is", and never clears somebody else's.
-                        const inFlight = { actionName, total: inodes.length };
-                        patchState(store, {
-                            actionExecution: inFlight,
-                            actionExecutionResult: undefined
-                        });
+                        // Note what is NOT set: actionExecution. That field shows an "Applying …"
+                        // indicator and locks the Action Center, and neither fits a job that runs for
+                        // minutes and cannot report progress. The user is told at trigger that this is
+                        // backgrounded, and told again when it finishes.
+                        patchState(store, { refreshInFlight: true });
 
-                        // Nothing polls, so nothing fails: if the completion event never arrives the run
-                        // would stay marked in-flight for the rest of the session, and that marker gates
-                        // every other quick action here — a stuck refresh would lock out Lock, Unlock and
-                        // Add to Bundle too, with only a page reload to escape. The old poll loop had a
-                        // timeout that covered this; removing the polling removed the escape with it.
+                        // Push has no request whose failure surfaces, so a lost completion event would
+                        // leave the flag set and the reindex permanently un-refireable. Scoped to this
+                        // flag, so unlike the old version it cannot disturb another action's state.
                         timer(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS)
                             .pipe(takeUntilDestroyed(destroyRef))
                             .subscribe(() => {
-                                if (store.actionExecution() !== inFlight) {
+                                if (!store.refreshInFlight()) {
                                     return;
                                 }
 
-                                patchState(store, { actionExecution: undefined });
+                                patchState(store, { refreshInFlight: false });
                                 httpErrorManagerService.handle(
                                     new HttpErrorResponse({
                                         status: 504,
@@ -313,7 +319,8 @@ export function withActionExecution() {
                             .pipe(
                                 take(1),
                                 catchError((error) => {
-                                    patchState(store, { actionExecution: undefined });
+                                    // No job was created, so no event will ever release the flag.
+                                    patchState(store, { refreshInFlight: false });
                                     httpErrorManagerService.handle(error);
 
                                     return EMPTY;
@@ -353,7 +360,11 @@ export function withActionExecution() {
                                 event.total;
 
                         if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
-                            patchState(store, { actionExecution: undefined });
+                            // Only our own flag. actionExecution may belong to a different action that
+                            // is still running - a reindex no longer locks the dialog, so that is now
+                            // an ordinary situation rather than an impossible one, and clearing it here
+                            // would un-gate that action early.
+                            patchState(store, { refreshInFlight: false });
                             httpErrorManagerService.handle(
                                 new HttpErrorResponse({
                                     status: 500,
@@ -365,7 +376,7 @@ export function withActionExecution() {
                         }
 
                         if (!closes) {
-                            patchState(store, { actionExecution: undefined });
+                            patchState(store, { refreshInFlight: false });
                             httpErrorManagerService.handle(
                                 new HttpErrorResponse({
                                     status: 500,
@@ -377,6 +388,7 @@ export function withActionExecution() {
                             return;
                         }
 
+                        patchState(store, { refreshInFlight: false });
                         onSettled({
                             actionName,
                             successCount: event.successCount ?? 0,

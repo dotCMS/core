@@ -999,6 +999,26 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('grid selection binding', () => {
+        it('should drive the grid from the store so clearing it unchecks the rows', () => {
+            // The grid is in controlled mode purely so this holds. Left uncontrolled it keeps its own
+            // checked set and only drops it when the items reference changes, which meant a selection
+            // cleared on action hand-off stayed visibly ticked until the next search returned.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+
+            const listView = spectator.query(DotFolderListViewComponent);
+
+            expect(listView).toBeTruthy();
+            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+
+            // Not asserting the clear here: `selectedItems` is mocked as a plain jest.fn rather than a
+            // signal, so changing its return value cannot notify change detection. What matters is
+            // that the input is bound to store state at all — the propagation is Angular's, and the
+            // store's own spec covers that loadItems and hand-off empty that state.
+        });
+    });
+
     describe('onSelectItems', () => {
         it('should update selectedItems in store when selectionChange is emitted', () => {
             const folderListView = spectator.debugElement.query(

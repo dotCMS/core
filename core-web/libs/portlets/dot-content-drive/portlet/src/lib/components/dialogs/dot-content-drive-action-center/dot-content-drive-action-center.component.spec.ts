@@ -5,6 +5,8 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
     AddToBundleService,
     DotCurrentUserService,
@@ -195,6 +197,9 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executePushPublish: jest.fn(),
                 executeRefresh: jest.fn()
             }),
+            // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
+            // which in the app resolves to the shell's instance so the toast outlives this dialog.
+            mockProvider(MessageService, { add: jest.fn() }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
@@ -610,6 +615,55 @@ describe('DotContentDriveActionCenterComponent', () => {
             openQuickActionPreview('REFRESH');
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should toast at trigger that the reindex runs in the background', () => {
+            // The only feedback the user gets now: there is no "Applying ..." indicator for a reindex,
+            // because it runs for minutes and cannot report progress.
+            const messageService = spectator.inject(MessageService);
+
+            executeQuickAction('REFRESH');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'info',
+                    summary: 'content-drive.action-center.toast.reindex-started'
+                })
+            );
+        });
+
+        it('should not toast at trigger for the synchronous actions', () => {
+            // They settle in seconds and report through the toolbar indicator, so a "runs in the
+            // background" toast would be both wrong and noisy.
+            const messageService = spectator.inject(MessageService);
+
+            executeQuickAction('LOCK');
+
+            expect(messageService.add).not.toHaveBeenCalled();
+        });
+
+        it('should clear the grid selection when an action is handed off', () => {
+            // Once an action is fired the selection has served its purpose, and leaving the boxes
+            // ticked invited firing a second action over rows already being changed.
+            executeQuickAction('LOCK');
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+        });
+
+        it('should clear the grid selection when a reindex is handed off', () => {
+            // Matters most here: a reindex runs for minutes, so without this the rows stay ticked for
+            // the whole run.
+            executeQuickAction('REFRESH');
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+        });
+
+        it('should keep the selection when the dialog is merely dismissed', () => {
+            // Dismissing is not firing. Clearing here would lose a selection the user is still
+            // building.
+            openQuickActionPreview('LOCK');
+
+            expect(store.setSelectedItems).not.toHaveBeenCalled();
         });
 
         it('should keep Add to Bundle selectable', () => {

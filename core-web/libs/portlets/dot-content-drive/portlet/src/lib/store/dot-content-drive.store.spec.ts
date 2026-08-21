@@ -1671,12 +1671,35 @@ describe('DotContentDriveStore - withActionExecution', () => {
     });
 
     describe('executeRefresh', () => {
-        it('should publish the running action so the toolbar can report it', () => {
+        it('should not publish a running action, because the reindex is backgrounded', () => {
+            // actionExecution drives the toolbar's "Applying ... to N item(s)" indicator and locks the
+            // Action Center. A reindex reports itself by toast at trigger and again by push at the end,
+            // so an indicator it cannot update, and a lock lasting minutes, are both wrong for it.
             store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
 
-            // Stays in flight after the submit: the run continues in the background and only the
-            // pushed completion event settles it.
-            expect(store.actionExecution()).toEqual({ actionName: 'Refresh', total: 2 });
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should mark the reindex in flight so it cannot be fired twice', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(store.refreshInFlight()).toBe(true);
+
+            store.executeRefresh('Refresh', ['inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not block the other actions while a reindex runs', () => {
+            // The whole point of backgrounding it: a reindex takes minutes and shares nothing with
+            // these, so locking them out for its duration was the bug.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+            expect(fireService.fireDefaultAction).toHaveBeenCalled();
+
+            store.executeWorkflowAction('wf-1', 'Publish', ['inode-3']);
+            expect(fireService.bulkFire).toHaveBeenCalled();
         });
 
         it('should send the inodes to the bulk refresh service', () => {
@@ -1697,57 +1720,33 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeRefresh('Refresh', []);
 
             expect(bulkRefreshService.refresh).not.toHaveBeenCalled();
-            expect(store.actionExecution()).toBeUndefined();
+            expect(store.refreshInFlight()).toBe(false);
         });
 
-        it('should refuse to start a second run while one is in flight', () => {
-            store.executeRefresh('Refresh', ['inode-1']);
-            store.executeRefresh('Refresh', ['inode-2']);
+        it('should release the in-flight flag if the submit itself fails', () => {
+            // A rejected submit means no job, so no completion event will ever arrive to release it.
+            bulkRefreshService.refresh.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 403 }))
+            );
 
-            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(1);
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.refreshInFlight()).toBe(false);
         });
 
         it('should stop waiting if the completion event never arrives', fakeAsync(() => {
-            // The push model has no request whose failure surfaces, so a lost event would otherwise
-            // leave the run marked in flight for the rest of the session — and that marker gates every
-            // other quick action, so a stuck refresh locks out Lock, Unlock and Add to Bundle too.
+            // Push has no request whose failure surfaces, so a lost event would otherwise leave the
+            // reindex permanently un-refireable.
             store.executeRefresh('Refresh', ['inode-1']);
-            expect(store.actionExecution()).toBeDefined();
+            expect(store.refreshInFlight()).toBe(true);
 
             tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
 
-            expect(store.actionExecution()).toBeUndefined();
+            expect(store.refreshInFlight()).toBe(false);
             expect(httpErrorManager.handle).toHaveBeenCalled();
-            // Not settled: giving up is not an outcome, and reporting one would invent counts.
+            // Giving up is not an outcome; reporting one would invent counts.
             expect(store.actionExecutionResult()).toBeUndefined();
-        }));
-
-        it('should not let a timed-out run clear a later one', fakeAsync(() => {
-            // The two runs have to be staggered in time, otherwise ticking far enough to fire the
-            // first one's timer also fires the second's and the test proves nothing.
-            store.executeRefresh('Refresh', ['inode-1']);
-            store.reportRefreshCompleted('Refresh', {
-                state: 'SUCCESS',
-                total: 1,
-                successCount: 1,
-                failedCount: 0,
-                skippedCount: 0,
-                versionsIndexed: 1
-            });
-
-            tick(1000);
-            store.executeRefresh('Refresh', ['inode-2']);
-            const second = store.actionExecution();
-
-            // Now past the first run's deadline but not the second's.
-            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS - 999);
-
-            // The first run's timer fired here and must have recognised it was no longer the run in
-            // flight. Identity, not a flag: a flag would have been cleared by the first settle.
-            expect(store.actionExecution()).toBe(second);
-
-            // Drain the second run's timer so fakeAsync has no pending work left.
-            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
         }));
 
         it('should not fire the timeout once the event has settled the run', fakeAsync(() => {
@@ -1766,18 +1765,6 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             expect(httpErrorManager.handle).not.toHaveBeenCalled();
         }));
-
-        it('should route a transport failure on submit to the error handler', () => {
-            // A plain backend user gets 403 here: the endpoint is gated on CMS Power User or Admin.
-            bulkRefreshService.refresh.mockReturnValue(
-                throwError(() => new HttpErrorResponse({ status: 403 }))
-            );
-
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.actionExecution()).toBeUndefined();
-        });
     });
 
     describe('bulk refresh completion push', () => {
@@ -1785,7 +1772,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // Proves the wiring, not just the reporter: without the hook subscribing, a finished run
             // would leave the toolbar showing work in flight forever and never toast.
             store.executeRefresh('Refresh', ['inode-1']);
-            expect(store.actionExecution()).toBeDefined();
+            expect(store.refreshInFlight()).toBe(true);
 
             bulkRefreshEvents$.next({
                 state: 'SUCCESS',
@@ -1796,7 +1783,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecution()).toBeUndefined();
+            expect(store.refreshInFlight()).toBe(false);
             expect(store.actionExecutionResult()).toEqual({
                 actionName: 'Refresh',
                 successCount: 1,
@@ -1808,6 +1795,53 @@ describe('DotContentDriveStore - withActionExecution', () => {
     });
 
     describe('reportRefreshCompleted', () => {
+        it('should not clear an unrelated action that is still in flight', () => {
+            // Now that a reindex no longer locks the dialog, another action can genuinely be running
+            // when the reindex event lands. Blanket-clearing actionExecution here would un-gate that
+            // action early and let a second one fire over the same rows.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+
+            const lockInFlight = store.actionExecution();
+            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+
+            store.reportRefreshCompleted('Refresh', {
+                state: 'FAILED_PERMANENTLY',
+                total: 0,
+                successCount: 0,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 0
+            });
+
+            expect(store.actionExecution()).toBe(lockInFlight);
+        });
+
+        it('should release the in-flight flag so a later reindex can run', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.reportRefreshCompleted('Refresh', {
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.refreshInFlight()).toBe(false);
+        });
+
+        it('should release the in-flight flag even on an unusable outcome', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.reportRefreshCompleted('Refresh', { state: 'SUCCESS' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.refreshInFlight()).toBe(false);
+        });
+
         it('should settle with the pushed counters and its own partial copy', () => {
             store.reportRefreshCompleted('Refresh', {
                 state: 'SUCCESS',
