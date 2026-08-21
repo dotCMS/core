@@ -2,12 +2,13 @@ package com.dotcms.rest.api.v1.content.bulkrefresh;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
-import com.dotcms.jobs.business.job.JobView;
+import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.processor.impl.BulkRefreshContentletsProcessor;
 import com.dotcms.rest.api.v1.job.JobResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -42,8 +43,16 @@ public class BulkRefreshHelper {
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
 
+    /**
+     * Required for CDI proxying of this normal-scoped bean, and identical to the one on
+     * {@code ContentImportHelper} (:93) that this class follows.
+     * <p>
+     * It does hand out an instance whose API reference is null, which would NPE if anything called it
+     * directly — nothing does, and Weld builds client proxies without invoking a constructor. Kept
+     * rather than removed because dropping it risks an unproxyable-bean deployment failure for a
+     * cosmetic gain.
+     */
     public BulkRefreshHelper() {
-        // Default constructor required for CDI
         this.jobQueueManagerAPI = null;
     }
 
@@ -137,7 +146,18 @@ public class BulkRefreshHelper {
      * @throws com.dotmarketing.exception.DoesNotExistException if no such job exists
      */
     public Job getJob(final String jobId) throws DotDataException {
-        return this.jobQueueManagerAPI.getJob(jobId);
+        final Job job = this.jobQueueManagerAPI.getJob(jobId);
+
+        // Keep the endpoint to its own queue. Without this, a reindex job id and an import job id are
+        // interchangeable here: the status call would return any job's view and the cancel call would
+        // cancel any job of any type. Answering "not found" for somebody else's job is both honest and
+        // the narrower contract.
+        if (!BULK_REFRESH_QUEUE_NAME.equals(job.queueName())) {
+            throw new DoesNotExistException(
+                    String.format("No bulk refresh job found with id %s", jobId));
+        }
+
+        return job;
     }
 
     /**
@@ -145,14 +165,23 @@ public class BulkRefreshHelper {
      * indexed and the remainder are counted skipped, so no item is left reported as pending.
      */
     public void cancelJob(final String jobId) throws DotDataException {
-        this.jobQueueManagerAPI.cancelJob(jobId);
+        // Resolve through getJob so the queue check applies to cancellation too.
+        this.jobQueueManagerAPI.cancelJob(getJob(jobId).id());
     }
 
     /**
-     * Renders a job for the REST layer, carrying the processor's result metadata in
-     * {@code result.metadata} once the run is terminal.
+     * Renders a job for the REST layer.
+     * <p>
+     * Deliberately not {@code JobView}: that serializes the job's {@code parameters}, which here is the
+     * whole submitted inode list plus the submitter's id, on every one of the ~200 polls a run attracts.
+     * See {@link BulkRefreshStatusView}.
      */
-    public JobView view(final Job job) {
-        return JobView.builder().from(job).build();
+    public BulkRefreshStatusView view(final Job job) {
+        return BulkRefreshStatusView.builder()
+                .id(job.id())
+                .state(job.state())
+                .progress(job.progress())
+                .result(job.result().flatMap(JobResult::metadata))
+                .build();
     }
 }

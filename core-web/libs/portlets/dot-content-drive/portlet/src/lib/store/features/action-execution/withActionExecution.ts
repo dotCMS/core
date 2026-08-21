@@ -2,9 +2,11 @@ import { patchState, signalStoreFeature, type, withMethods, withState } from '@n
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { catchError, take } from 'rxjs/operators';
+
 
 import {
     AddToBundleService,
@@ -67,7 +69,8 @@ export function withActionExecution() {
                 httpErrorManagerService = inject(DotHttpErrorManagerService),
                 addToBundleService = inject(AddToBundleService),
                 pushPublishService = inject(PushPublishService),
-                bulkRefreshService = inject(DotBulkRefreshService)
+                bulkRefreshService = inject(DotBulkRefreshService),
+                destroyRef = inject(DestroyRef)
             ) => {
                 /**
                  * Settles a finished run by publishing its result for the shell to present.
@@ -276,7 +279,20 @@ export function withActionExecution() {
                                     httpErrorManagerService.handle(error);
 
                                     return EMPTY;
-                                })
+                                }),
+                                // The only action here that needs this. The others are a single
+                                // request, so `take(1)` completes them after one round trip. This one
+                                // wraps an infinite `timer(0, 1500)` inside the service, and `take(1)`
+                                // sits on the *outer* observable, which does not emit until the poll
+                                // loop has already finished — so it cannot stop the loop.
+                                //
+                                // This store is component-scoped (see the shell's `providers`), so it
+                                // dies when the user leaves the portlet. Without this the poll keeps
+                                // firing at a screen nobody is on, the global error handler can raise a
+                                // dialog minutes later about work the user can no longer see, and a
+                                // freshly constructed store reports nothing in flight while the orphan
+                                // is still running and will eventually patch a dead one.
+                                takeUntilDestroyed(destroyRef)
                             )
                             .subscribe((outcome) => {
                                 const counts = outcome?.counts;

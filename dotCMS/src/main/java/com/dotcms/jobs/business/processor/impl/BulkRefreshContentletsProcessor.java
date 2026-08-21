@@ -177,11 +177,25 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
             return;
         }
 
+        int indexed = 0;
         try {
-            // Cache first: a stale cache entry would otherwise be re-indexed as-is.
-            this.contentletCache.remove(workItem.identifier);
-
             final Identifier identifier = this.identifierAPI.find(workItem.identifier);
+
+            // The contentlet cache is keyed by INODE, not identifier: ContentletCacheImpl stores under
+            // add(inode, contentlet) and remove(Contentlet) delegates to remove(getInode()). Removing
+            // by identifier evicts nothing at all — and it matters here more than almost anywhere,
+            // because findAllVersions reads back *through* that cache
+            // (ESContentFactoryImpl.findContentlets serves hits straight from it). So an identifier-
+            // keyed eviction leaves a stale cached version to be written to the index, which is the
+            // precise failure this endpoint exists to repair.
+            //
+            // Hence: evict the inodes we know, read the versions to learn the rest, evict those too,
+            // then read again. The second read is the one whose result gets indexed, and it is cold,
+            // so what reaches the index came from the database rather than from the cache.
+            workItem.inodes.forEach(this.contentletCache::remove);
+            this.contentletAPI.findAllVersions(identifier, false, user, false)
+                    .forEach(this.contentletCache::remove);
+
             final List<Contentlet> versions =
                     this.contentletAPI.findAllVersions(identifier, false, user, false);
 
@@ -189,10 +203,12 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
                 // Without this the write is only enqueued, and "done" would be a lie.
                 version.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 this.contentletIndexAPI.addContentToIndex(version, includeDependencies);
+                // Counted per write rather than after the loop, so a failure partway still reports
+                // the versions that did land instead of silently discarding them.
+                indexed++;
+                this.versionsIndexed.incrementAndGet();
             }
 
-            final int indexed = null == versions ? 0 : versions.size();
-            this.versionsIndexed.addAndGet(indexed);
             this.successCount.incrementAndGet();
 
             if (recordItemResults) {

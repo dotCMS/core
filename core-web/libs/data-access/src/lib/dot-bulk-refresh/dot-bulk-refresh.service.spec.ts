@@ -249,6 +249,22 @@ describe('DotBulkRefreshService', () => {
         inflight.flush(job('SUCCESS', counts));
     }));
 
+    it('should not retry a status failure that asking again cannot fix', fakeAsync(() => {
+        // 401, 403 and 404 answer the same way however many times you ask. A 404 in particular means
+        // the job id is wrong, which the caller should hear at once rather than three seconds later.
+        let error: unknown;
+        spectator.service.refresh(['inode-1']).subscribe({ error: (e) => (error = e) });
+
+        flushSubmit();
+        spectator.expectOne(STATUS_URL, HttpMethod.GET).flush('nope', {
+            status: 404,
+            statusText: 'Not Found'
+        });
+
+        expect((error as { status?: number })?.status).toBe(404);
+        spectator.controller.expectNone(STATUS_URL);
+    }));
+
     it('should not call the endpoint at all for an empty selection', () => {
         let emitted: DotBulkRefreshOutcome | null | undefined;
         spectator.service.refresh([]).subscribe((result) => (emitted = result));

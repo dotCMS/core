@@ -30,6 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -43,6 +44,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.awaitility.Awaitility;
 import org.jboss.weld.junit5.EnableWeld;
+import io.vavr.control.Try;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +79,10 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     @Inject
     JobQueueManagerAPI jobQueueManagerAPI;
 
+    /** Static so {@link #stopQueueIfWeStartedIt()} can reach them; only this class writes them. */
+    private static boolean queueStartedHere;
+    private static JobQueueManagerAPI sharedJobQueueManagerAPI;
+
     @BeforeAll
     static void setUp() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -103,6 +110,25 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
         if (!jobQueueManagerAPI.isStarted()) {
             jobQueueManagerAPI.start();
             jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
+            queueStartedHere = true;
+        }
+        sharedJobQueueManagerAPI = jobQueueManagerAPI;
+    }
+
+    /**
+     * Hands the queue back in the state this class found it.
+     *
+     * Leaving it running would keep it draining jobs for the rest of the JVM, and this class shares a
+     * suite with tests that only assert job *creation* — they pass either way, so the difference would
+     * surface as confusing behaviour elsewhere rather than as a failure here. Declaration order
+     * happening to put this class last is luck, not isolation.
+     */
+    @AfterAll
+    static void stopQueueIfWeStartedIt() {
+        if (queueStartedHere && null != sharedJobQueueManagerAPI) {
+            Try.run(sharedJobQueueManagerAPI::close)
+                    .onFailure(e -> Logger.warn(BulkRefreshResourceIntegrationTest.class,
+                            "Unable to stop the job queue after the bulk refresh tests", e));
         }
     }
 
@@ -378,9 +404,13 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
         final String jobId = submit(adminUser, inodes, false, true);
         try {
             resource.cancelJob(requestFor(adminUser), response, jobId);
-        } catch (final Exception e) {
+        } catch (final IllegalStateException | DoesNotExistException e) {
             // The run may already be terminal by the time cancel lands; that is one of the two
-            // legitimate outcomes and the invariant below covers both.
+            // legitimate outcomes and the invariant below covers both. Narrowed deliberately: catching
+            // everything would let a genuine NullPointerException from cancelJob pass as "the race
+            // landed the other way".
+            Logger.info(BulkRefreshResourceIntegrationTest.class,
+                    "Cancel arrived after the run finished: " + e.getMessage());
         }
 
         final Job job = awaitTerminal(jobId);
@@ -414,9 +444,20 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     private static Role getOrCreatePowerUserRole() throws DotDataException {
         final Role existing = APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER);
 
-        return null != existing
-                ? existing
-                : new RoleDataGen().key(Role.CMS_POWER_USER).nextPersisted();
+        if (null != existing) {
+            return existing;
+        }
+
+        // Not a dead branch: this database really does lack the role. Before this helper existed the
+        // power-user test failed with "must be a CMS Power User or a CMS Administrator" precisely
+        // because loadRoleByKey answered null here, so failing loudly instead of creating it would
+        // just reinstate that failure. Logged rather than silent, because persisting a role into a
+        // shared test database is worth seeing in the output.
+        Logger.warn(BulkRefreshResourceIntegrationTest.class, String.format(
+                "Role [%s] not present; creating it for the bulk refresh permission tests",
+                Role.CMS_POWER_USER));
+
+        return new RoleDataGen().key(Role.CMS_POWER_USER).nextPersisted();
     }
 
     private Contentlet newContentlet() {

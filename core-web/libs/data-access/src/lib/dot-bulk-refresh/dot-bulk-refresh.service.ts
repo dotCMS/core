@@ -91,8 +91,15 @@ export class DotBulkRefreshService {
                 exhaustMap(() =>
                     this.#status(jobId).pipe(
                         // One blip over a five-minute run is ~200 requests' worth of exposure. The job
-                        // is unaffected by a failed poll, so retrying beats abandoning it.
-                        retry({ count: DOT_BULK_REFRESH_POLL_RETRIES, delay: () => timer(1000) })
+                        // is unaffected by a failed poll, so retrying beats abandoning it — but only
+                        // for failures that asking again can fix. A 401, 403 or 404 will answer the
+                        // same way three times over, and a 404 specifically means the job id is wrong,
+                        // which the caller should hear at once rather than three seconds late.
+                        retry({
+                            count: DOT_BULK_REFRESH_POLL_RETRIES,
+                            delay: (error) =>
+                                this.#isRetryable(error) ? timer(1000) : throwError(() => error)
+                        })
                     )
                 ),
                 takeWhile((job) => !this.#isTerminal(job.state), true),
@@ -138,6 +145,18 @@ export class DotBulkRefreshService {
         return this.#http
             .get<{ entity: DotBulkRefreshJob }>(`${BULK_REFRESH_URL}/${jobId}`)
             .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Whether a failed poll is worth repeating: server faults and transport failures only.
+     *
+     * Status 0 covers the network-level failures (DNS, connection reset, CORS) that HttpClient reports
+     * without a status code.
+     */
+    #isRetryable(error: unknown): boolean {
+        const status = (error as { status?: number })?.status;
+
+        return undefined === status || 0 === status || status >= 500;
     }
 
     /**

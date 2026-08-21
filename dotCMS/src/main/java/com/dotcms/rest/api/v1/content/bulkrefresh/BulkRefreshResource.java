@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.content.bulkrefresh;
 
-import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBulkRefreshStatusView;
 import com.dotcms.rest.ResponseEntityBulkRefreshSubmitView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
@@ -119,13 +119,15 @@ public class BulkRefreshResource {
                     + "per-item records.",
             tags = {"Content"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Job status retrieved"),
+                    @ApiResponse(responseCode = "200", description = "Job status retrieved",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityBulkRefreshStatusView.class))),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - no backend user session"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - not a CMS Power User or CMS Administrator"),
-                    @ApiResponse(responseCode = "404", description = "Not Found - unknown job id"),
+                    @ApiResponse(responseCode = "404", description = "Not Found - unknown job id, or a job belonging to another queue"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
-    public ResponseEntityView<JobView> getJobStatus(@Context final HttpServletRequest request,
+    public ResponseEntityView<BulkRefreshStatusView> getJobStatus(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("jobId")
             @Parameter(name = "jobId", in = ParameterIn.PATH, required = true,
@@ -153,10 +155,13 @@ public class BulkRefreshResource {
                     + "stay reindexed; the remainder are counted as skipped.",
             tags = {"Content"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Cancellation requested. A job that is already terminal is reported as accepted; the job queue ignores the request rather than rejecting it."),
+                    @ApiResponse(responseCode = "200",
+                            description = "Cancellation requested. A job that is already terminal is reported as accepted; the job queue ignores the request rather than rejecting it.",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityStringView.class))),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - no backend user session"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - not a CMS Power User or CMS Administrator"),
-                    @ApiResponse(responseCode = "404", description = "Not Found - unknown job id"),
+                    @ApiResponse(responseCode = "404", description = "Not Found - unknown job id, or a job belonging to another queue"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             })
     public ResponseEntityStringView cancelJob(@Context final HttpServletRequest request,

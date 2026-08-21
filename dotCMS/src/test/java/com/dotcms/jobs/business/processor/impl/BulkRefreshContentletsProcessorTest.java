@@ -12,7 +12,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -174,23 +176,53 @@ public class BulkRefreshContentletsProcessorTest {
      * <p>
      * Given scenario: A contentlet is reindexed.
      * <p>
-     * Expected result: Its index policy is WAIT_FOR before the index write, and the contentlet cache
-     * entry is cleared first. The default DEFER policy only enqueues into {@code dist_reindex_journal}
-     * and returns — that is precisely why the single-item endpoint can report success with nothing
-     * reindexed, and the whole point of this endpoint is that "done" means done.
+     * Expected result: Its index policy is WAIT_FOR before the index write. The default DEFER policy
+     * only enqueues into {@code dist_reindex_journal} and returns — that is precisely why the
+     * single-item endpoint can report success with nothing reindexed, and the whole point of this
+     * endpoint is that "done" means done.
      */
     @Test
-    public void test_process_indexesSynchronouslyAndClearsCache() throws Exception {
+    public void test_process_indexesSynchronously() throws Exception {
         stubIdentifier("ident-A", List.of("inode-en"), 1);
 
         processor.process(job(List.of("inode-en"), false, false));
-
-        verify(contentletCache).remove("ident-A");
 
         final ArgumentCaptor<Contentlet> captor = ArgumentCaptor.forClass(Contentlet.class);
         verify(contentletIndexAPI).addContentToIndex(captor.capture(), anyBoolean());
         assertEquals("Indexing must be synchronous, not deferred",
                 IndexPolicy.WAIT_FOR, captor.getValue().getIndexPolicy());
+    }
+
+    /**
+     * Method to test: {@link BulkRefreshContentletsProcessor#process(Job)}
+     * <p>
+     * Given scenario: An identifier whose versions may be sitting in the contentlet cache.
+     * <p>
+     * Expected result: Eviction happens by <b>inode</b>, never by identifier, and the versions that
+     * get indexed come from a read taken after that eviction.
+     * <p>
+     * This is the assertion that would have caught the original bug: the cache is keyed by inode, so
+     * {@code remove(identifier)} evicted nothing while {@code findAllVersions} kept reading back
+     * through that same cache — quietly writing a stale version to the index, which is the exact
+     * failure the endpoint exists to repair.
+     */
+    @Test
+    public void test_process_evictsTheCacheByInodeNotByIdentifier() throws Exception {
+        stubIdentifier("ident-A", List.of("inode-en"), 2);
+
+        processor.process(job(List.of("inode-en"), false, false));
+
+        // The submitted inode, evicted as a String key.
+        verify(contentletCache).remove("inode-en");
+        // Never the identifier: that key is never written, so removing it is a no-op.
+        verify(contentletCache, never()).remove("ident-A");
+        // Every version evicted through the Contentlet overload, which resolves to its inode and also
+        // invalidates the page, host and relationship caches derived from it.
+        verify(contentletCache, atLeast(2)).remove(any(Contentlet.class));
+        // Two reads: the first learns the version inodes, the second is taken cold and is what gets
+        // indexed.
+        verify(contentletAPI, times(2))
+                .findAllVersions(any(Identifier.class), anyBoolean(), any(User.class), anyBoolean());
     }
 
     /**
