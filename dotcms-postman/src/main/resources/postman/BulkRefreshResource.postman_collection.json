@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8f2c1a44-6b3d-4f01-9a5c-2e7d4b9c1f30",
     "name": "BulkRefreshResource",
-    "description": "Exercises POST /api/v1/content/_bulkrefresh and its cancel companion over HTTP.\n\nCompletion is reported by push \u2014 a BULK_REFRESH_COMPLETED system event over the admin UI's websocket \u2014 so there is no status endpoint to poll and no completion assertion possible here. That is covered by BulkRefreshResourceIntegrationTest instead.\n\nThis endpoint is NOT a full index rebuild. POST /api/v1/esindex/reindex is a different operation and is not touched here.",
+    "description": "Exercises POST /api/v1/content/_bulkrefresh over HTTP.\n\nCompletion is reported by push — a BULK_REFRESH_COMPLETED system event over the admin UI's websocket — so there is no status endpoint to poll and no completion assertion possible here. That is covered by BulkRefreshResourceIntegrationTest instead.\n\nThis endpoint is NOT a full index rebuild. POST /api/v1/esindex/reindex is a different operation and is not touched here.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -348,46 +348,6 @@
                 "exec": [
                   "pm.test('Rejected with 400', function () {",
                   "    pm.response.to.have.status(400);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Cancel Unknown Job Expect Not Found",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh/00000000-0000-0000-0000-000000000000/cancel",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "content",
-                "_bulkrefresh",
-                "00000000-0000-0000-0000-000000000000",
-                "cancel"
-              ]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Reported as 404', function () {",
-                  "    pm.response.to.have.status(404);",
                   "});"
                 ]
               }

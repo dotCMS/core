@@ -1,12 +1,10 @@
 package com.dotcms.rest.api.v1.content.bulkrefresh;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
-import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.impl.BulkRefreshContentletsProcessor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -112,6 +110,11 @@ public class BulkRefreshHelper {
      * Refresh button loses access, and nobody who could not gains it. "Always available" in the
      * ticket means <i>not gated by content state</i> — that still holds; this is a role gate, and
      * reindexing is expensive enough to want one.
+     * <p>
+     * This gates <i>submission</i> only. It does not protect a submitted job's contents: the
+     * generic {@code GET /api/v1/jobs/{jobId}/status} requires only a backend user and returns the
+     * whole job, parameters included — a pre-existing exposure this feature neither creates nor
+     * closes.
      *
      * @param user the user to check
      * @return true for a CMS Power User or a CMS Administrator
@@ -128,34 +131,6 @@ public class BulkRefreshHelper {
      */
     public int maxItems() {
         return Config.getIntProperty(MAX_ITEMS_CONFIG_PROPERTY, MAX_ITEMS_DEFAULT);
-    }
-
-    /**
-     * The job, resolved for cancellation and scoped to this queue.
-     *
-     * @throws com.dotmarketing.exception.DoesNotExistException if no such job exists
-     */
-    public Job getJob(final String jobId) throws DotDataException {
-        final Job job = this.jobQueueManagerAPI.getJob(jobId);
-
-        // Keep the endpoint to its own queue. Without this a reindex job id and an import job id are
-        // interchangeable here, and the cancel call would cancel any job of any type. Answering
-        // "not found" for somebody else's job is both honest and the narrower contract.
-        if (!BULK_REFRESH_QUEUE_NAME.equals(job.queueName())) {
-            throw new DoesNotExistException(
-                    String.format("No bulk refresh job found with id %s", jobId));
-        }
-
-        return job;
-    }
-
-    /**
-     * Requests cancellation. Stops at the next item boundary: already-indexed identifiers stay
-     * indexed and the remainder are counted skipped, so no item is left reported as pending.
-     */
-    public void cancelJob(final String jobId) throws DotDataException {
-        // Resolve through getJob so the queue check applies to cancellation too.
-        this.jobQueueManagerAPI.cancelJob(getJob(jobId).id());
     }
 
 }

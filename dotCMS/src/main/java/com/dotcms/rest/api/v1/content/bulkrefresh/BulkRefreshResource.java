@@ -2,15 +2,12 @@ package com.dotcms.rest.api.v1.content.bulkrefresh;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBulkRefreshSubmitView;
-import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -73,9 +69,9 @@ public class BulkRefreshResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "bulkRefreshContent", summary = "Reindex a selection of contentlets",
             description = "Clears the contentlet cache and reindexes every selected contentlet, all "
-                    + "versions of each. Returns a job id plus the URLs to follow the run: this is "
-                    + "accepted work, not finished work: completion is pushed to the submitting user over "
-                    + "the websocket. Not a full index rebuild.",
+                    + "versions of each. Returns a job id. This is accepted work, not finished work: "
+                    + "completion is pushed to the submitting user over the websocket. Not a full "
+                    + "index rebuild.",
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "202", description = "Accepted - reindex job enqueued",
@@ -105,67 +101,6 @@ public class BulkRefreshResource {
         return Response.status(Response.Status.ACCEPTED)
                 .entity(new ResponseEntityBulkRefreshSubmitView(submitted))
                 .build();
-    }
-
-    /**
-     * Requests cancellation of a reindex job.
-     */
-    @POST
-    @Path("/{jobId}/cancel")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "cancelBulkRefresh", summary = "Cancel a reindex job",
-            description = "Stops the run at the next item boundary. Identifiers already reindexed "
-                    + "stay reindexed; the remainder are counted as skipped.",
-            tags = {"Content"},
-            responses = {
-                    @ApiResponse(responseCode = "200",
-                            description = "Cancellation requested. A job that is already terminal is reported as accepted; the job queue ignores the request rather than rejecting it.",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - no backend user session"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - not a CMS Power User or CMS Administrator"),
-                    @ApiResponse(responseCode = "404", description = "Not Found - unknown job id, or a job belonging to another queue"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
-            })
-    public ResponseEntityStringView cancelJob(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("jobId")
-            @Parameter(name = "jobId", in = ParameterIn.PATH, required = true,
-                    description = "The reindex job's unique identifier.",
-                    schema = @Schema(type = "string", format = "uuid"))
-            final String jobId) throws DotDataException, DotSecurityException {
-
-        final User user = authorized(request, response);
-
-        Logger.debug(this, () -> String.format("User %s is cancelling reindex job %s",
-                user.getUserId(), jobId));
-
-        this.bulkRefreshHelper.cancelJob(jobId);
-        return new ResponseEntityStringView(
-                "Cancellation request successfully sent to job " + jobId);
-    }
-
-    /**
-     * Requires a backend user who may reindex content.
-     * <p>
-     * Applied to cancel as well as submit, so the role gate is not decorative: without it any backend
-     * user could cancel somebody else's in-flight reindex.
-     * <p>
-     * Note this does not protect the job's contents. The generic {@code GET /api/v1/jobs/{jobId}/status}
-     * requires only a backend user and returns the whole job, parameters included — a pre-existing
-     * exposure this endpoint neither creates nor closes.
-     */
-    private User authorized(final HttpServletRequest request, final HttpServletResponse response)
-            throws DotDataException, DotSecurityException {
-
-        final User user = init(request, response).getUser();
-        if (!this.bulkRefreshHelper.canRefresh(user)) {
-            throw new DotSecurityException(String.format(
-                    "User [%s] must be a CMS Power User or a CMS Administrator to reindex content",
-                    user.getUserId()));
-        }
-
-        return user;
     }
 
     /**

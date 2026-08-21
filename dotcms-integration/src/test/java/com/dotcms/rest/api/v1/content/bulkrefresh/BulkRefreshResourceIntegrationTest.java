@@ -16,6 +16,7 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.jobs.business.processor.impl.BulkRefreshContentletsProcessor;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityBulkRefreshSubmitView;
@@ -51,8 +52,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for {@link BulkRefreshResource} — {@code POST /api/v1/content/_bulkrefresh} and its
- * cancel companion.
+ * Integration tests for {@link BulkRefreshResource} — {@code POST /api/v1/content/_bulkrefresh}.
  * <p>
  * The tests that matter most here are the ones that hold the endpoint to its promise rather than to
  * its shape: that content genuinely absent from the index is findable once the job reports SUCCESS
@@ -360,33 +360,6 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Method to test: {@link BulkRefreshHelper#getJob}
-     * <p>
-     * Given scenario: A job id that was never issued.
-     * <p>
-     * Expected result: Reported as not found. Note this is reserved for unknown jobs — an inode that
-     * cannot be resolved is a per-item failure, not a 404, because the job itself did exist and ran.
-     */
-    @Test
-    void test_getJob_unknownJobIdIsNotFound() {
-        assertThrows(DoesNotExistException.class,
-                () -> bulkRefreshHelper.getJob(UUIDGenerator.generateUuid()));
-    }
-
-    /**
-     * Method to test: {@link BulkRefreshResource#cancelJob}
-     * <p>
-     * Given scenario: Cancellation is requested for a job id that was never issued.
-     * <p>
-     * Expected result: Reported as not found rather than silently accepted.
-     */
-    @Test
-    void test_cancelJob_unknownJobIdIsNotFound() {
-        assertThrows(DoesNotExistException.class, () -> resource.cancelJob(
-                requestFor(adminUser), response, UUIDGenerator.generateUuid()));
-    }
-
-    /**
      * Method to test: {@link BulkRefreshResource#bulkRefresh}
      * <p>
      * Given scenario: A submission is accepted.
@@ -412,9 +385,11 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Method to test: {@link BulkRefreshResource#cancelJob}
+     * Method to test: {@link BulkRefreshContentletsProcessor#cancel}
      * <p>
      * Given scenario: A larger selection is submitted and cancellation is requested straight away.
+     * There is no reindex-specific cancel endpoint — the UI never called one — so this goes through
+     * the generic job queue, which is the only way a run gets cancelled in production.
      * <p>
      * Expected result: However the race lands — cancellation reaching the run mid-flight, or the run
      * finishing first — the counters still close over {@code total}, and if the job did end up
@@ -423,7 +398,7 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
      * on timing here would be flaky rather than informative.
      */
     @Test
-    void test_cancelJob_leavesNoItemPending() throws Exception {
+    void test_cancelledRun_leavesNoItemPending() throws Exception {
         final List<String> inodes = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             inodes.add(newContentlet().getInode());
@@ -431,7 +406,7 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
 
         final String jobId = submit(adminUser, inodes, false, true);
         try {
-            resource.cancelJob(requestFor(adminUser), response, jobId);
+            jobQueueManagerAPI.cancelJob(jobId);
         } catch (final IllegalStateException | DoesNotExistException e) {
             // The run may already be terminal by the time cancel lands; that is one of the two
             // legitimate outcomes and the invariant below covers both. Narrowed deliberately: catching
@@ -524,7 +499,7 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     private Job awaitTerminal(final String jobId) {
         return Awaitility.await().atMost(120, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until(() -> bulkRefreshHelper.getJob(jobId), job -> isTerminal(job.state()));
+                .until(() -> jobQueueManagerAPI.getJob(jobId), job -> isTerminal(job.state()));
     }
 
     private static boolean isTerminal(final JobState state) {
