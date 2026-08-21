@@ -6,7 +6,7 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, timer } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
@@ -16,6 +16,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
+    DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS,
     DotBulkRefreshService,
     DotEventsSocket,
     DotHttpErrorManagerService,
@@ -274,10 +275,35 @@ export function withActionExecution() {
                             return;
                         }
 
+                        // Held by identity so the timeout below can tell "this run is still in
+                        // flight" from "a later run is", and never clears somebody else's.
+                        const inFlight = { actionName, total: inodes.length };
                         patchState(store, {
-                            actionExecution: { actionName, total: inodes.length },
+                            actionExecution: inFlight,
                             actionExecutionResult: undefined
                         });
+
+                        // Nothing polls, so nothing fails: if the completion event never arrives the run
+                        // would stay marked in-flight for the rest of the session, and that marker gates
+                        // every other quick action here — a stuck refresh would lock out Lock, Unlock and
+                        // Add to Bundle too, with only a page reload to escape. The old poll loop had a
+                        // timeout that covered this; removing the polling removed the escape with it.
+                        timer(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS)
+                            .pipe(takeUntilDestroyed(destroyRef))
+                            .subscribe(() => {
+                                if (store.actionExecution() !== inFlight) {
+                                    return;
+                                }
+
+                                patchState(store, { actionExecution: undefined });
+                                httpErrorManagerService.handle(
+                                    new HttpErrorResponse({
+                                        status: 504,
+                                        statusText:
+                                            'Stopped waiting for the reindex to report back; it may still be running'
+                                    })
+                                );
+                            });
 
                         // Submit and stop. The endpoint answers 202 and the reindex continues in the
                         // background; the outcome arrives on the socket subscription below rather than

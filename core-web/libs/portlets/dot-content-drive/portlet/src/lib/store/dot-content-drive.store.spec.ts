@@ -9,10 +9,12 @@ import { NEVER, of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
+    DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS,
     DotBulkRefreshService,
     DotEventsSocket,
     DotMessageService,
@@ -1704,6 +1706,66 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(1);
         });
+
+        it('should stop waiting if the completion event never arrives', fakeAsync(() => {
+            // The push model has no request whose failure surfaces, so a lost event would otherwise
+            // leave the run marked in flight for the rest of the session — and that marker gates every
+            // other quick action, so a stuck refresh locks out Lock, Unlock and Add to Bundle too.
+            store.executeRefresh('Refresh', ['inode-1']);
+            expect(store.actionExecution()).toBeDefined();
+
+            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
+
+            expect(store.actionExecution()).toBeUndefined();
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            // Not settled: giving up is not an outcome, and reporting one would invent counts.
+            expect(store.actionExecutionResult()).toBeUndefined();
+        }));
+
+        it('should not let a timed-out run clear a later one', fakeAsync(() => {
+            // The two runs have to be staggered in time, otherwise ticking far enough to fire the
+            // first one's timer also fires the second's and the test proves nothing.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            tick(1000);
+            store.executeRefresh('Refresh', ['inode-2']);
+            const second = store.actionExecution();
+
+            // Now past the first run's deadline but not the second's.
+            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS - 999);
+
+            // The first run's timer fired here and must have recognised it was no longer the run in
+            // flight. Identity, not a flag: a flag would have been cleared by the first settle.
+            expect(store.actionExecution()).toBe(second);
+
+            // Drain the second run's timer so fakeAsync has no pending work left.
+            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
+        }));
+
+        it('should not fire the timeout once the event has settled the run', fakeAsync(() => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+            jest.clearAllMocks();
+
+            tick(DOT_BULK_REFRESH_COMPLETION_TIMEOUT_MS);
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+        }));
 
         it('should route a transport failure on submit to the error handler', () => {
             // A plain backend user gets 403 here: the endpoint is gated on CMS Power User or Admin.
