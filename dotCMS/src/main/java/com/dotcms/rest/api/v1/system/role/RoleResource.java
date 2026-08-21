@@ -2,12 +2,18 @@ package com.dotcms.rest.api.v1.system.role;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
@@ -29,6 +35,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -46,6 +53,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -97,6 +105,7 @@ public class RoleResource implements Serializable {
 	private final RoleAPI roleAPI;
 	private final RoleHelper roleHelper = new RoleHelper();
 	private final UserAPI userAPI     = APILocator.getUserAPI();
+	private final PaginationUtil userPaginationUtil = new PaginationUtil(new UserPaginator());
 
 	/**
 	 * Default class constructor.
@@ -412,15 +421,9 @@ public class RoleResource implements Serializable {
 
 		final Role updatedRole = this.roleHelper.updateRole(roleId, roleForm, user);
 
-		// same response shape as GET /v1/roles/{roleid}
-		final List<RoleView> childrenRoles = new ArrayList<>();
-		final List<String> roleChildrenIdList = null != updatedRole.getRoleChildren()
-				? updatedRole.getRoleChildren() : new ArrayList<>();
-		for (final String childRoleId : roleChildrenIdList) {
-			childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId), new ArrayList<>()));
-		}
-
-		return new ResponseEntityRoleDetailView(new RoleView(updatedRole, childrenRoles));
+		// same response shape as GET /v1/roles/{roleid}, counts included
+		return new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(updatedRole), true, this.roleAPI).get(0));
 	}
 
 	/**
@@ -811,6 +814,110 @@ public class RoleResource implements Serializable {
 				roleList;
 	}
 
+	/**
+	 * Returns the paginated list of users directly granted the given role, using the standard
+	 * user serialization (email address included). Grants inherited through the role hierarchy
+	 * are not part of the response: clients that need the effective member list walk the
+	 * ancestor chain through the {@code parent} attribute of {@link RoleView} and call this
+	 * endpoint per role.
+	 *
+	 * @param request   {@link HttpServletRequest}
+	 * @param response  {@link HttpServletResponse}
+	 * @param roleId    id of the role to list users for
+	 * @param filter    optional search matching user id, first name, last name, email or full name
+	 * @param page      page number, 1-based
+	 * @param perPage   page size
+	 * @param orderBy   column to sort by
+	 * @param direction sorting direction, ASC or DESC
+	 * @return the paginated user list
+	 * @throws DotDataException if loading the role fails
+	 */
+	@Operation(
+		operationId = "loadUsersByRoleId",
+		summary = "Get the users directly granted a role",
+		description = "Returns the paginated list of users directly granted the given role, "
+				+ "using the standard user serialization (email address included). Grants "
+				+ "inherited through the role hierarchy are not included."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Users retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+		@ApiResponse(responseCode = "400",
+					description = "Bad request - invalid pagination or sorting parameters",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - roles portlet access required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@GET
+	@Path("/{roleid}/users")
+	@JSONP
+	@NoCache
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityPaginatedDataView loadUsersByRoleId(
+			@Parameter(hidden = true) @Context final HttpServletRequest request,
+			@Parameter(hidden = true) @Context final HttpServletResponse response,
+			@Parameter(description = "Id of the role to list users for", required = true)
+			@PathParam("roleid") final String roleId,
+			@Parameter(description = "Filter matching user id, first name, last name, email or full name")
+			@QueryParam("filter") final String filter,
+			@Parameter(description = "Page number for pagination")
+			@DefaultValue("1") @QueryParam(PaginationUtil.PAGE) final int page,
+			@Parameter(description = "Number of items per page")
+			@DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+			@Parameter(description = "Column name for sorting results")
+			@QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+			@Parameter(description = "Sorting direction: ASC or DESC")
+			@DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction)
+			throws DotDataException {
+
+		final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+				.requiredBackendUser(true).requiredFrontendUser(false)
+				.requiredPortlet("roles")
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		Logger.debug(this, () -> "Loading the users directly granted the role: " + roleId);
+
+		final Role role = this.roleAPI.loadRoleById(roleId);
+		if (null == role || !UtilMethods.isSet(role.getId())) {
+
+			throw new DoesNotExistException("The role: " + roleId + " does not exist");
+		}
+
+		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
+
+		// UserPaginator reads ordering from FilteringParams keys, not from the
+		// PaginationUtil orderBy/direction arguments, so pass them explicitly (the
+		// same wiring /v1/users/filter uses). The direction value is enum-gated and
+		// mapped to the SQLUtil constants FilteringParams expects (leading space).
+		final Map<String, Object> extraParams = new HashMap<>(
+				Map.of(UserPaginator.ROLES_PARAM, List.of(role),
+						UserAPI.FilteringParams.ORDER_DIRECTION_PARAM,
+						OrderDirection.DESC == orderDirection ? SQLUtil._DESC : SQLUtil._ASC));
+		if (UtilMethods.isSet(orderBy)) {
+			extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+		}
+
+		final PaginationUtilParams<Map<String, Object>, List<Map<String, Object>>> params =
+				new PaginationUtilParams.Builder<Map<String, Object>, List<Map<String, Object>>>()
+						.withRequest(request).withResponse(response)
+						.withUser(initData.getUser()).withFilter(filter)
+						.withPage(page).withPerPage(perPage)
+						.withOrderBy(orderBy).withDirection(orderDirection)
+						.withExtraParams(extraParams).build();
+
+		return this.userPaginationUtil.getPageView(params);
+	}
+
 
 	/**
 	 * Load role based on the role id.
@@ -867,15 +974,9 @@ public class RoleResource implements Serializable {
 			throw new DoesNotExistException("The role: " + roleId + " does not exists");
 		}
 
-		final List<RoleView> childrenRoles = new ArrayList<>();
-		if(loadChildrenRoles){
-			final List<String> roleChildrenIdList = null!=role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
-			for(final String childRoleId : roleChildrenIdList){
-				childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),new ArrayList<>()));
-			}
-		}
-
-		return Response.ok(new ResponseEntityRoleDetailView(new RoleView(role,childrenRoles))).build();
+		return Response.ok(new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(role), loadChildrenRoles, this.roleAPI)
+						.get(0))).build();
 
 	}
 
@@ -917,26 +1018,10 @@ public class RoleResource implements Serializable {
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
 
-		final List<RoleView> rootRolesView = new ArrayList<>();
 		final List<Role> rootRoles = this.roleAPI.findRootRoles();
 
-		if(loadChildrenRoles){
-			for(final Role role : rootRoles) {
-				final List<RoleView> childrenRoles = new ArrayList<>();
-				final List<String> roleChildrenIdList =
-						null != role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
-				for (final String childRoleId : roleChildrenIdList) {
-					childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),
-							new ArrayList<>()));
-				}
-				rootRolesView.add(new RoleView(role,childrenRoles));
-			}
-		} else {
-			rootRoles.stream()
-					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
-		}
-
-		return Response.ok(new ResponseEntityRoleViewListView(rootRolesView)).build();
+		return Response.ok(new ResponseEntityRoleViewListView(
+				this.roleHelper.toRoleViews(rootRoles, loadChildrenRoles, this.roleAPI))).build();
 	}
 
 	/**
@@ -1140,13 +1225,10 @@ public class RoleResource implements Serializable {
 				throw new com.dotmarketing.business.NoSuchUserException("No user found with id: " + userIdOrEmail);
 			}
 
-			final List<RoleView> userRolesView = new ArrayList<>();
 			final List<Role> userRoles = this.roleAPI.loadRolesForUser(userRecover.getUserId());
 
-			userRoles.stream()
-					.forEach(role -> userRolesView.add(new RoleView(role, new ArrayList<>())));
-
-			return new ResponseEntityRoleViewListView(userRolesView);
+			return new ResponseEntityRoleViewListView(
+					this.roleHelper.toRoleViews(userRoles, false, this.roleAPI));
 		}
 
 		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";

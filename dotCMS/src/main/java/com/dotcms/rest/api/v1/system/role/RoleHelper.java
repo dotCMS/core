@@ -34,6 +34,7 @@ import org.apache.commons.beanutils.BeanUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -495,5 +496,62 @@ public class RoleHelper {
         systemEventsAPI.pushAsync(SystemEventType.DELETE_PORTLET_LAYOUTS, new Payload(layoutsDeleted));
 
         return layoutsDeleted;
+    }
+
+    /**
+     * Builds the {@link RoleView}s for the given roles, resolving the {@code userCount} of every
+     * view (parents and, when requested, their hydrated children) with a single aggregated query
+     * instead of one query per role.
+     *
+     * @param roles             the roles to build views for, order is preserved
+     * @param loadChildrenRoles when true, each role's direct children are hydrated as child views
+     * @param roleAPI           the {@link RoleAPI} used to load children and resolve counts
+     * @return the views in the same order as the given roles
+     * @throws DotDataException if loading a child role or the count query fails
+     */
+    public List<RoleView> toRoleViews(final List<Role> roles, final boolean loadChildrenRoles,
+                                      final RoleAPI roleAPI) throws DotDataException {
+
+        final List<String> allRoleIds = new ArrayList<>();
+        final Map<String, List<Role>> childrenByParentId = new LinkedHashMap<>();
+
+        for (final Role role : roles) {
+
+            allRoleIds.add(role.getId());
+            if (loadChildrenRoles && null != role.getRoleChildren()) {
+
+                final List<Role> children = new ArrayList<>();
+                for (final String childRoleId : role.getRoleChildren()) {
+
+                    final Role child = roleAPI.loadRoleById(childRoleId);
+                    if (null == child || !UtilMethods.isSet(child.getId())) {
+
+                        Logger.warn(this, "Child role: " + childRoleId + " of role: "
+                                + role.getId() + " does not resolve, skipping it");
+                        continue;
+                    }
+                    children.add(child);
+                    allRoleIds.add(childRoleId);
+                }
+                childrenByParentId.put(role.getId(), children);
+            }
+        }
+
+        final Map<String, Integer> userCounts = roleAPI.countUsersByRoleIds(allRoleIds);
+
+        final List<RoleView> views = new ArrayList<>();
+        for (final Role role : roles) {
+
+            final List<RoleView> childViews = new ArrayList<>();
+            for (final Role child : childrenByParentId.getOrDefault(role.getId(), List.of())) {
+
+                childViews.add(new RoleView(child, new ArrayList<>(),
+                        userCounts.getOrDefault(child.getId(), 0)));
+            }
+            views.add(new RoleView(role, childViews,
+                    userCounts.getOrDefault(role.getId(), 0)));
+        }
+
+        return views;
     }
 }
