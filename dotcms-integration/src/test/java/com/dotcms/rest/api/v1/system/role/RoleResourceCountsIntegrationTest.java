@@ -251,6 +251,35 @@ public class RoleResourceCountsIntegrationTest {
     }
 
     /**
+     * Security: hostile SQL payloads passed as role ids are inert. The IN-list is built
+     * from constant "?" placeholders and every id is bound as a PreparedStatement
+     * parameter, so metacharacters, stacked statements, tautologies and UNIONs must be
+     * treated as data: the query returns nothing for them, throws nothing, and the
+     * tables remain intact for subsequent legitimate queries.
+     * Covers the Semgrep CUSTOM_INJECTION-2 findings on countUsersByRoleIds.
+     */
+    @Test
+    public void countUsersByRoleIds_hostileIdsAreInert() throws Exception {
+        final Role legit = new RoleDataGen().nextPersisted();
+        new UserDataGen().roles(legit).nextPersisted();
+
+        final Map<String, Integer> counts = roleAPI.countUsersByRoleIds(List.of(
+                "'; drop table users_cms_roles; --",
+                "x' OR '1'='1",
+                "?) union select userid, 1 from user_ --",
+                "1; update user_ set delete_in_progress = true; --",
+                legit.getId()));
+
+        assertEquals("hostile ids must match nothing, legit id must still count",
+                1, counts.size());
+        assertEquals(Integer.valueOf(1), counts.get(legit.getId()));
+
+        final Map<String, Integer> after = roleAPI.countUsersByRoleIds(List.of(legit.getId()));
+        assertEquals("tables must be intact after the hostile call",
+                Integer.valueOf(1), after.get(legit.getId()));
+    }
+
+    /**
      * The aggregate itself: one call resolves counts for many roles; ids without
      * grants are absent from the map; empty input returns an empty map.
      */
