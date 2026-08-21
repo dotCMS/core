@@ -233,7 +233,7 @@ public class OIDCProvider implements OAuthProvider {
         if (!UtilMethods.isSet(host)) {
             throw new DotRuntimeException("OIDC discovery " + fieldName + " is missing a host");
         }
-        if (!allowInsecure && OAuthSsrfGuard.isInternalHost(host)) {
+        if (!OAuthSsrfGuard.internalHostsAllowed() && OAuthSsrfGuard.isInternalHost(host)) {
             throw new DotRuntimeException("OIDC discovery " + fieldName
                     + " resolves to an internal/private address");
         }
@@ -242,6 +242,12 @@ public class OIDCProvider implements OAuthProvider {
 
 
     private static Map<String, Object> fetchDiscovery(final String discoveryUrl) {
+        // Re-validate immediately before the fetch to shrink the DNS-rebinding (TOCTOU)
+        // window — validation at config-save time alone is not sufficient.
+        final String rejection = OAuthSsrfGuard.validateUrl(discoveryUrl);
+        if (rejection != null) {
+            throw new DotRuntimeException("OIDC discovery fetch rejected (SSRF guard): " + rejection);
+        }
         try {
             final CircuitBreakerUrl.Response<String> resp = CircuitBreakerUrl.builder()
                     .setUrl(discoveryUrl)
@@ -362,6 +368,13 @@ public class OIDCProvider implements OAuthProvider {
             final SignedJWT jwt = SignedJWT.parse(idToken);
             final JWKSource<SecurityContext> keySource = JWKS_CACHE.computeIfAbsent(jwksUri, uri -> {
                 try {
+                    // Re-validate the JWKS URL before the first fetch (and before each
+                    // Nimbus-internal refresh while cached) to shrink the DNS-rebinding
+                    // (TOCTOU) window. Nimbus re-resolves the host on every fetch.
+                    final String rejection = OAuthSsrfGuard.validateUrl(uri);
+                    if (rejection != null) {
+                        throw new DotRuntimeException("OIDC jwks_uri rejected (SSRF guard): " + rejection);
+                    }
                     final long jwksTtl = Config.getIntProperty("OAUTH_JWKS_CACHE_TTL_SECONDS", 300);
                     final long jwksRefreshAhead = Config.getIntProperty("OAUTH_JWKS_REFRESH_AHEAD_SECONDS", 30);
                     return JWKSourceBuilder.create(new URL(uri))

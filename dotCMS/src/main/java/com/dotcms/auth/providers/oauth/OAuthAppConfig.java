@@ -346,7 +346,7 @@ public final class OAuthAppConfig implements Serializable {
             rejectUrl(fieldName, "URI is missing a host");
             return null;
         }
-        if (!allowInsecure && OAuthSsrfGuard.isInternalHost(host)) {
+        if (!OAuthSsrfGuard.internalHostsAllowed() && OAuthSsrfGuard.isInternalHost(host)) {
             rejectUrl(fieldName,
                     "host '" + host + "' resolves to an internal/private address (SSRF guard)");
             return null;

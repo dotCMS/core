@@ -25,12 +25,28 @@ import org.mockito.Mockito;
  */
 class OAuthSsrfGuardTest {
 
-    /** Stub OAUTH_ALLOW_INSECURE_URLS to a known value for the duration of a test. */
-    private static MockedStatic<Config> configWithInsecure(final boolean allowInsecure) {
+    /**
+     * Stub OAUTH_ALLOW_INSECURE_URLS / OAUTH_ALLOW_INTERNAL_HOSTS to known values
+     * for the duration of a test. Either may be {@code null} to leave that
+     * property unstubbed (mock returns {@code false}).
+     */
+    private static MockedStatic<Config> configWith(final Boolean allowInsecure,
+                                                   final Boolean allowInternal) {
         final MockedStatic<Config> config = Mockito.mockStatic(Config.class);
-        config.when(() -> Config.getBooleanProperty(eq("OAUTH_ALLOW_INSECURE_URLS"), anyBoolean()))
-                .thenReturn(allowInsecure);
+        if (allowInsecure != null) {
+            config.when(() -> Config.getBooleanProperty(eq("OAUTH_ALLOW_INSECURE_URLS"), anyBoolean()))
+                    .thenReturn(allowInsecure);
+        }
+        if (allowInternal != null) {
+            config.when(() -> Config.getBooleanProperty(eq("OAUTH_ALLOW_INTERNAL_HOSTS"), anyBoolean()))
+                    .thenReturn(allowInternal);
+        }
         return config;
+    }
+
+    /** Back-compat helper for tests that only care about the insecure flag. */
+    private static MockedStatic<Config> configWithInsecure(final boolean allowInsecure) {
+        return configWith(allowInsecure, null);
     }
 
     @Test
@@ -59,11 +75,27 @@ class OAuthSsrfGuardTest {
 
     @Test
     void validateUrl_httpAcceptedWhenInsecureEnabled() {
-        // With the toggle on, http is allowed AND the internal-host check is bypassed,
-        // so a public literal passes. (This conflation is itself a known low-sev finding;
-        // the test pins the current contract.)
-        try (MockedStatic<Config> ignored = configWithInsecure(true)) {
+        // http is allowed by the insecure toggle; the internal-host check is now
+        // governed by the separate OAUTH_ALLOW_INTERNAL_HOSTS flag (defaults to
+        // the insecure flag). A public literal passes here.
+        try (MockedStatic<Config> ignored = configWith(true, null)) {
             assertNull(OAuthSsrfGuard.validateUrl("http://8.8.8.8/.well-known"));
+        }
+    }
+
+    @Test
+    void validateUrl_httpAllowedButInternalStillRejectedWhenInternalFlagExplicitlyOff() {
+        // The two flags are decoupled: allowing http must not also open the door
+        // to internal addresses when OAUTH_ALLOW_INTERNAL_HOSTS=false.
+        try (MockedStatic<Config> ignored = configWith(true, false)) {
+            assertNotNull(OAuthSsrfGuard.validateUrl("http://10.0.0.1/jwks"));
+        }
+    }
+
+    @Test
+    void validateUrl_internalHostAcceptedWhenInternalFlagExplicitlyOn() {
+        try (MockedStatic<Config> ignored = configWith(false, true)) {
+            assertNull(OAuthSsrfGuard.validateUrl("https://10.0.0.1/jwks"));
         }
     }
 
@@ -98,5 +130,29 @@ class OAuthSsrfGuardTest {
         assertTrue(OAuthSsrfGuard.isInternalHost("10.0.0.1"), "RFC1918 site-local");
         assertTrue(OAuthSsrfGuard.isInternalHost("::1"), "IPv6 loopback");
         assertFalse(OAuthSsrfGuard.isInternalHost("8.8.8.8"), "public address");
+    }
+
+    @Test
+    void isInternalHost_detectsIpv6UniqueLocalAddresses() {
+        // fc00::/7 is NOT covered by InetAddress.isSiteLocalAddress() (which only
+        // matches the deprecated fec0::/10) — the guard must check it explicitly.
+        assertTrue(OAuthSsrfGuard.isInternalHost("fd12:3456:789a:1::1"), "fd00::/8 ULA");
+        assertTrue(OAuthSsrfGuard.isInternalHost("fc00::1"), "fc00::/8 ULA");
+        assertFalse(OAuthSsrfGuard.isInternalHost("2606:4700:4700::1111"), "public IPv6");
+    }
+
+    @Test
+    void isInternalHost_failsClosedOnUnresolvableHost() {
+        // A name that cannot be resolved at validation time may resolve to an
+        // internal address at fetch time (DNS rebinding) — treat it as internal.
+        assertTrue(OAuthSsrfGuard.isInternalHost("host.invalid.nonexistent-ssrf-probe.example"));
+    }
+
+    @Test
+    void validateUrl_rejectsUnresolvableHost() {
+        try (MockedStatic<Config> ignored = configWithInsecure(false)) {
+            assertNotNull(OAuthSsrfGuard.validateUrl(
+                    "https://host.invalid.nonexistent-ssrf-probe.example/.well-known"));
+        }
     }
 }
