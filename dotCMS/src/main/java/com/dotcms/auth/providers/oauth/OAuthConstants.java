@@ -40,7 +40,7 @@ public final class OAuthConstants {
     public static final String SESSION_ORIGINAL_REQUEST = "OAUTH_ORIGINAL_REQUEST";
 
     // Request params / cookies
-    public static final String PARAM_NATIVE   = "native";
+    public static final String PARAM_NATIVE   = DotAuthConstants.BYPASS_PARAM;
     public static final String PARAM_REFERRER = "referrer";
     public static final String PARAM_CODE     = "code";
     public static final String PARAM_STATE    = "state";

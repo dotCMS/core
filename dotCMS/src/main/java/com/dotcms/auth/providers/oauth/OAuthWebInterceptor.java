@@ -1,5 +1,7 @@
 package com.dotcms.auth.providers.oauth;
 
+import com.dotcms.auth.dotAuth.DotAuthConstants;
+
 import com.dotcms.auth.AuthAccessDeniedUtil;
 import com.dotcms.auth.providers.oauth.provider.GenericOAuth2Provider;
 import com.dotcms.auth.providers.oauth.provider.OAuthCrypto;
@@ -97,13 +99,15 @@ public class OAuthWebInterceptor implements WebInterceptor {
         // Only materialize a session when we have something real to store or read.
         final HttpSession existingSession = request.getSession(false);
 
+        final String nativeParam = request.getParameter(OAuthConstants.PARAM_NATIVE);
+
         // ?native=false clears the bypass — nothing to remove if no session exists yet.
-        if (Boolean.FALSE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))
-                && existingSession != null) {
+        if (Boolean.FALSE.toString().equalsIgnoreCase(nativeParam) && existingSession != null) {
             existingSession.removeAttribute(OAuthConstants.SESSION_NATIVE_LOGIN);
         }
-        // ?native=true sets the bypass for this session — explicit opt-in, create if needed.
-        if (Boolean.TRUE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))) {
+        // ?native=<bypass token> sets the bypass for this session — explicit opt-in, create if
+        // needed. The token is shared with SAML so hardening it covers every dotAuth protocol.
+        if (DotAuthConstants.getBypassValue().equalsIgnoreCase(nativeParam)) {
             request.getSession().setAttribute(OAuthConstants.SESSION_NATIVE_LOGIN, Boolean.TRUE);
             return Result.NEXT;
         }

@@ -1,9 +1,10 @@
 package com.dotcms.filters.interceptor.saml;
 
+import com.dotcms.auth.dotAuth.DotAuthConstants;
+
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -11,7 +12,6 @@ import com.dotmarketing.util.VelocityUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import io.vavr.Lazy;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,8 +42,7 @@ public class SamlWebUtils {
     private static final RelayStateStrategy DEFAULT_VELOCITY_RELAY_STATE_STRATEGY = SamlWebUtils::evalRelayState;
 
 
-    public static final String BY_PASS_KEY   = "native";
-    public static final Lazy<String> BY_PASS_VALUE = Lazy.of(()->Config.getStringProperty("SAML_BYPASS_VALUE","true"));
+    public static final String BY_PASS_KEY   = DotAuthConstants.BYPASS_PARAM;
     public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
 
     protected     final UserWebAPI userWebAPI;
@@ -86,7 +85,7 @@ public class SamlWebUtils {
             }
         }
 
-        return BY_PASS_VALUE.get().equalsIgnoreCase(byPass);
+        return DotAuthConstants.getBypassValue().equalsIgnoreCase(byPass);
     }
 
     /**
