@@ -312,7 +312,13 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 final Map<String, Object> idp = matched.get();
                 matchedIdp = idp;
                 effectiveIssuer    = String.valueOf(idp.getOrDefault("issuer", effectiveIssuer));
-                effectiveGroupsClaim = String.valueOf(idp.getOrDefault("claimGroups", effectiveGroupsClaim));
+                // Guard like the audience path below: a JSON null for claimGroups must fall
+                // back to the config value — String.valueOf(null) would store the literal
+                // string "null" and silently corrupt the groups claim.
+                final Object idpGroupsClaim = idp.get("claimGroups");
+                if (idpGroupsClaim != null && UtilMethods.isSet(String.valueOf(idpGroupsClaim))) {
+                    effectiveGroupsClaim = String.valueOf(idpGroupsClaim);
+                }
                 final String idpAudience = String.valueOf(idp.getOrDefault("audience", ""));
                 if (UtilMethods.isSet(idpAudience)) {
                     effectiveClientId = idpAudience;
@@ -369,8 +375,18 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 if (e.getMessage() != null
                         && (e.getMessage().contains("is not active")
                                 || e.getMessage().contains("Auto-provisioning is disabled"))) {
+                    // Fixed-string response — e.getMessage() embeds the user id/email, which
+                    // must not reach the wire. Detail goes to the security log instead.
+                    final boolean inactive = e.getMessage().contains("is not active");
+                    SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                            "OAuth exchange rejected (" + (inactive ? "user inactive" : "auto-provision disabled")
+                                    + "): " + sanitizeForLog(e.getMessage())
+                                    + " — request from " + request.getRemoteAddr());
                     return withCors(Response.status(Response.Status.FORBIDDEN), corsOrigin)
-                            .entity(new ResponseEntityView<>(e.getMessage())).build();
+                            .entity(new ResponseEntityView<>(inactive
+                                    ? "User account is not active"
+                                    : "User provisioning is not enabled for this site"))
+                            .build();
                 }
                 throw e;
             } catch (final DotDataException e) {

@@ -507,12 +507,15 @@ public class SAMLHelper {
 
     /**
      * Whether back-end (dotAdmin) SSO is enabled for this IdP configuration.
-     * Defaults to {@code true} when the flag is absent — historical SAML behavior
-     * was back-end SSO, so pre-existing configs keep working after upgrade.
+     * Defaults to {@code false} when the flag is absent — matching the pre-dotAuth
+     * behavior on main, where provisioning never granted {@code DOTCMS_BACK_END_USER}
+     * implicitly: back-end access came only from explicit role sources (IdP role
+     * mappings / optional roles). Set {@code enableBackend=true} to grant the back-end
+     * role to every provisioned SAML user.
      */
     public static boolean isBackEndEnabled(final IdentityProviderConfiguration identityProviderConfiguration) {
-        return !identityProviderConfiguration.containsOptionalProperty("enableBackend")
-                || BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableBackend")));
+        return identityProviderConfiguration.containsOptionalProperty("enableBackend")
+                && BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableBackend")));
     }
 
     /**

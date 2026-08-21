@@ -88,6 +88,23 @@ public class OAuthWebInterceptor implements WebInterceptor {
     private Result handleLoginRequired(final HttpServletRequest request,
                                        final HttpServletResponse response) throws IOException {
 
+        // Cheap path-based short-circuit BEFORE any config resolution. The interceptor
+        // delegate matches URL patterns by "contains", so unrelated pages (e.g.
+        // /blog/login-tips matching "/login") enter this handler too — and each entry
+        // would otherwise pay for OAuthAppConfig.config(request) (cache lookups +, on
+        // Community, a swallowed InvalidLicenseException from the Apps API). A request
+        // whose normalized URI is not one of the known login-path prefixes can never
+        // reach the redirect branch below, so bail out immediately.
+        final String normalizedUri = normalizePath(request.getRequestURI());
+        final boolean loginPathCandidate = isBackEndLoginUrl(normalizedUri) || isFrontEndLoginUrl(normalizedUri);
+        // ?native=<any value> must still reach the full handler below (bypass set/clear),
+        // whatever URL it appears on — only skip when the param is absent AND the URI is
+        // not a login-path prefix.
+        if (!loginPathCandidate
+                && request.getParameter(OAuthConstants.PARAM_NATIVE) == null) {
+            return Result.NEXT;
+        }
+
         final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
         if (cfgOpt.isEmpty()) {
             return Result.NEXT;
@@ -117,7 +134,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
         }
 
         // Normalize the URI once so path-matching can't be tricked with "/./" or "/../" segments.
-        final String uri = normalizePath(request.getRequestURI());
+        final String uri = normalizedUri;
         if (ALLOWED_URL_FRAGMENTS_LIST.stream().anyMatch(uri::contains)) {
             return Result.NEXT;
         }
@@ -534,6 +551,16 @@ public class OAuthWebInterceptor implements WebInterceptor {
             }
         }
         return false;
+    }
+
+    /** Path-prefix check (no config) — used by the cheap short-circuit at the top of handleLoginRequired. */
+    private static boolean isBackEndLoginUrl(final String uri) {
+        return BACK_END_URLS.stream().anyMatch(uri::startsWith);
+    }
+
+    /** Path-prefix check (no config) — used by the cheap short-circuit at the top of handleLoginRequired. */
+    private static boolean isFrontEndLoginUrl(final String uri) {
+        return FRONT_END_URLS.stream().anyMatch(uri::startsWith);
     }
 
 }
