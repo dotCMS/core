@@ -158,7 +158,10 @@ export const DotAuthConfigStore = signalStore(
                         take(1),
                         catchError((error) => {
                             httpErrorManager.handle(error);
-                            patchState(store, { status: 'loaded' });
+                            // 'error' (not 'loaded'): the pendingClearToast effect fires a
+                            // green "config cleared" toast on loaded — a failed DELETE must
+                            // not show it.
+                            patchState(store, { status: 'error' });
                             return EMPTY;
                         })
                     )

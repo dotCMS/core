@@ -368,16 +368,36 @@ public class OIDCProvider implements OAuthProvider {
             final SignedJWT jwt = SignedJWT.parse(idToken);
             final JWKSource<SecurityContext> keySource = JWKS_CACHE.computeIfAbsent(jwksUri, uri -> {
                 try {
-                    // Re-validate the JWKS URL before the first fetch (and before each
-                    // Nimbus-internal refresh while cached) to shrink the DNS-rebinding
-                    // (TOCTOU) window. Nimbus re-resolves the host on every fetch.
+                    // Validate before the first fetch AND before every Nimbus-internal
+                    // refresh (see the guarded retriever below) — Nimbus re-fetches the
+                    // JWKS after its TTL and re-resolves DNS, so a creation-time-only check
+                    // would re-open the DNS-rebinding (TOCTOU) window on each refresh.
                     final String rejection = OAuthSsrfGuard.validateUrl(uri);
                     if (rejection != null) {
                         throw new DotRuntimeException("OIDC jwks_uri rejected (SSRF guard): " + rejection);
                     }
                     final long jwksTtl = Config.getIntProperty("OAUTH_JWKS_CACHE_TTL_SECONDS", 300);
                     final long jwksRefreshAhead = Config.getIntProperty("OAUTH_JWKS_REFRESH_AHEAD_SECONDS", 30);
-                    return JWKSourceBuilder.create(new URL(uri))
+                    final int jwksTimeoutMs = (int) Config.getLongProperty("OAUTH_JWKS_TIMEOUT_MS", 5000);
+                    // The retriever intercepts EVERY HTTP fetch (first + refreshes) and
+                    // re-runs the SSRF guard immediately before connecting. Its explicit
+                    // timeouts and size cap also replace Nimbus's defaults so the JWKS
+                    // call honors MAX_IDP_RESPONSE_BYTES like every other IdP call site.
+                    final com.nimbusds.jose.util.DefaultResourceRetriever guardedRetriever =
+                            new com.nimbusds.jose.util.DefaultResourceRetriever(
+                                    jwksTimeoutMs, jwksTimeoutMs, MAX_IDP_RESPONSE_BYTES) {
+                                @Override
+                                public com.nimbusds.jose.util.Resource retrieveResource(final URL url)
+                                        throws java.io.IOException {
+                                    final String fetchRejection = OAuthSsrfGuard.validateUrl(url.toString());
+                                    if (fetchRejection != null) {
+                                        throw new java.io.IOException(
+                                                "OIDC jwks_uri fetch rejected (SSRF guard): " + fetchRejection);
+                                    }
+                                    return super.retrieveResource(url);
+                                }
+                            };
+                    return JWKSourceBuilder.create(new URL(uri), guardedRetriever)
                             .cache(jwksTtl * 1000L, jwksRefreshAhead * 1000L)
                             .rateLimited(false)
                             .retrying(true)

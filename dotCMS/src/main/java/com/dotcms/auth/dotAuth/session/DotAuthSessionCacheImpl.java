@@ -5,7 +5,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.UtilMethods;
 import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Optional;
 
 /**
@@ -22,10 +21,10 @@ import java.util.Optional;
  * must route headless API traffic with session affinity (sticky on the
  * {@code Authorization} header / source).
  *
- * <p>Session-refs are {@value #ENTROPY_BYTES}-byte random strings encoded
- * URL-safe-base64 with the {@link DotAuthSessionCache#SESSION_REF_PREFIX}
- * prefix. That gives ~256 bits of entropy — well above the bar for a bearer
- * credential — while still fitting in a single HTTP header comfortably.
+ * <p>Session-refs are {@value #ENTROPY_BYTES}-byte random values encoded as
+ * lowercase hex with the {@link DotAuthSessionCache#SESSION_REF_PREFIX} prefix —
+ * 256 bits of entropy in a form the cache administrator's key lowercasing cannot
+ * alter — while still fitting comfortably in a single HTTP header.
  */
 public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cachable {
 
@@ -39,7 +38,6 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
     private static final int ENTROPY_BYTES = 32;
 
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final Base64.Encoder B64  = Base64.getUrlEncoder().withoutPadding();
     private static final Object REPLAY_LOCK  = new Object();
 
     private static final class SingletonHolder {
@@ -56,7 +54,12 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
     public String create(final String userId, final long lifetimeMillis) {
         final long now       = System.currentTimeMillis();
         final long expiresAt = now + Math.max(0L, lifetimeMillis);
-        final String ref     = SESSION_REF_PREFIX + B64.encodeToString(randomBytes());
+        // The cache administrator lowercases every key (ChainableCacheAdministratorImpl
+        // put/get), so a mixed-case base64url ref would silently collapse to ~220 bits of
+        // effective entropy (case-distinct refs collide). Emit lowercase hex — the same
+        // canonical encoding the id_token replay fingerprint uses — so the generated key
+        // is unchanged by the cache's normalization and keeps its full entropy.
+        final String ref     = SESSION_REF_PREFIX + hex(randomBytes());
         cache().put(ref, new DotAuthSession(userId, now, expiresAt), CACHE_GROUP);
         return ref;
     }
@@ -137,5 +140,19 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
         final byte[] buf = new byte[ENTROPY_BYTES];
         RANDOM.nextBytes(buf);
         return buf;
+    }
+
+    /**
+     * Lowercase-hex encoding, matching the id_token replay fingerprint: hex survives the
+     * cache administrator's key lowercasing byte-for-byte, so the ref's full entropy is
+     * preserved as a cache key.
+     */
+    private static String hex(final byte[] bytes) {
+        final StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (final byte b : bytes) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16))
+              .append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
     }
 }

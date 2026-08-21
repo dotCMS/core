@@ -159,6 +159,26 @@ class OAuthWebInterceptorTest {
     }
 
     @Test
+    void sanitizeRedirect_rejectsTabBeforeProtocolRelativeUrl() {
+        // Browsers strip the tab when parsing the Location header, so "/\t//evil.com"
+        // would surface as a protocol-relative open redirect if allowed through.
+        assertEquals("/dotAdmin/",
+                OAuthWebInterceptor.sanitizeRedirect("/\t//evil.com", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_rejectsCarriageReturnAndLineFeed() {
+        assertEquals("/dotAdmin/",
+                OAuthWebInterceptor.sanitizeRedirect("/dotAdmin/\r\nSet-Cookie:x=1", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_rejectsDelAndOtherControlCharacters() {
+        assertEquals("/dotAdmin/", OAuthWebInterceptor.sanitizeRedirect("/path\u007f", "/dotAdmin/"));
+        assertEquals("/dotAdmin/", OAuthWebInterceptor.sanitizeRedirect("/pa th", "/dotAdmin/"));
+    }
+
+    @Test
     void sanitizeRedirect_allowsNormalRelativePath() {
         assertEquals("/dotAdmin/path?x=y",
                 OAuthWebInterceptor.sanitizeRedirect("/dotAdmin/path?x=y", "/dotAdmin/"));

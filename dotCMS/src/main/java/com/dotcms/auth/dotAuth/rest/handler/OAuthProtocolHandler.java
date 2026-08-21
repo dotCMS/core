@@ -34,6 +34,8 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_FIRST_NAME_CLAIM,
             OAuthAppConfig.KEY_LAST_NAME_CLAIM,
             OAuthAppConfig.KEY_GROUP_MAPPINGS,
+            OAuthAppConfig.KEY_ALLOW_UNMAPPED_GROUPS,
+            OAuthAppConfig.KEY_GROUP_FILTER_PATTERN,
             OAuthAppConfig.KEY_EXTRA_ROLES,
             OAuthAppConfig.KEY_BUILD_ROLES_STRATEGY,
             OAuthAppConfig.KEY_CALLBACK_URL,
@@ -48,7 +50,8 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_ENABLE_BACKEND,
             OAuthAppConfig.KEY_ENABLE_FRONTEND,
             OAuthAppConfig.KEY_HASH_USERID,
-            OAuthAppConfig.KEY_AUTO_PROVISION);
+            OAuthAppConfig.KEY_AUTO_PROVISION,
+            OAuthAppConfig.KEY_ALLOW_UNMAPPED_GROUPS);
 
     @Override public DotAuthProtocol protocol() { return DotAuthProtocol.OAUTH; }
     @Override public String appKey()            { return DotAuthConstants.APP_KEY; }

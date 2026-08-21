@@ -82,7 +82,7 @@ import javax.ws.rs.core.Response;
  * <pre>{@code
  * {
  *   "entity": {
- *     "sessionRef":     "dsr_<opaque, url-safe base64>",
+ *     "sessionRef":     "dsr_<opaque, lowercase hex>",
  *     "expiresAt":      "2026-04-30T14:22:11Z",
  *     "expirationDays": 7,
  *     "user": {

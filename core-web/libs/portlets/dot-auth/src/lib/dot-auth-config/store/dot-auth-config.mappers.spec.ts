@@ -479,6 +479,27 @@ describe('dot-auth-config.mappers', () => {
             expect(vals['extra']).toBe('val');
         });
 
+        it('a custom extraProperty named after a declared key cannot clobber the declared field', () => {
+            // SAML_ELEVATED_KEYS must exclude declared keys from the extraProperties
+            // spread — otherwise a stale custom entry shadows the built field on save.
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.ssoEnabled = true;
+            config.saml.entityId = 'https://cms.example';
+            config.saml.privateKey = '****';
+            config.saml.extraProperties = [
+                { key: 'privateKey', value: 'EVIL' },
+                { key: 'sPIssuerURL', value: 'https://evil.example' },
+                { key: 'legitCustom', value: 'ok' }
+            ];
+
+            const payload = toPayload(config, 'test-site-id');
+            const vals = payload.values as Record<string, unknown>;
+            expect(vals['privateKey']).toBe('****');
+            expect(vals['sPIssuerURL']).toBe('https://cms.example');
+            expect(vals['legitCustom']).toBe('ok');
+        });
+
         it('maps signature validation combinations correctly', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'saml';

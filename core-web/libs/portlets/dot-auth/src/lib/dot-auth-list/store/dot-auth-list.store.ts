@@ -58,7 +58,10 @@ export const DotAuthListStore = signalStore(
                 .filter((row) => !query || row.hostName.toLowerCase().includes(query))
                 .filter((row) => {
                     if (mode === 'overrides') {
-                        return row.ssoStatus === 'override' || row.headlessStatus === 'override';
+                        // Filter on the raw row status, not the derived sso/headless
+                        // capability statuses: a SITE_OVERRIDE that explicitly DISABLES SSO
+                        // maps to ssoStatus 'disabled' and would otherwise be hidden here.
+                        return row.status === 'SITE_OVERRIDE';
                     }
                     if (mode === 'sso-on') {
                         return (

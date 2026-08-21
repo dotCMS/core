@@ -730,9 +730,13 @@ public class DotAuthResource {
             final String xml = buildSpMetadataXml(
                     entityId, acsUrl, certBase64, wantAssertionsSigned, wantResponseSigned);
 
+            // Sanitize for the Content-Disposition header: hostname comes from the
+            // admin-stored sPEndpointHostname and is only scheme/slash-stripped — quotes
+            // or CR/LF in it would break out of the header value (response splitting).
+            final String safeHost = hostname.replaceAll("[^A-Za-z0-9.-]", "");
             return Response.ok(xml, MediaType.APPLICATION_XML_TYPE)
                     .header("Content-Disposition",
-                            "attachment; filename=\"saml-sp-metadata-" + hostname + ".xml\"")
+                            "attachment; filename=\"saml-sp-metadata-" + safeHost + ".xml\"")
                     .build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),

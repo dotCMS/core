@@ -208,6 +208,9 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
                 ...Object.fromEntries(
                     (config.saml.extraProperties ?? [])
                         .filter((p) => p.key && p.value)
+                        // A custom property sharing a declared key must never shadow the
+                        // correctly-built declared field above on save.
+                        .filter((p) => !SAML_ELEVATED_KEYS.has(p.key))
                         .map((p) => [p.key, p.value])
                 )
             }

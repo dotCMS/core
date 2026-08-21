@@ -274,10 +274,16 @@ public class OAuthWebInterceptor implements WebInterceptor {
             if (verifiedClaims != null) {
                 final Object idSub = verifiedClaims.get("sub");
                 final Object userInfoSub = userInfo == null ? null : userInfo.get("sub");
-                if (idSub != null && userInfoSub != null
-                        && !String.valueOf(idSub).equals(String.valueOf(userInfoSub))) {
+                // Fail when the userinfo subject is ABSENT as well as mismatched: skipping on
+                // a missing sub would let resolveOrProvisionUser fall back to other unsigned
+                // userinfo subject claims and pivot provisioning onto a different identity
+                // than the one the id_token cryptographically verified (OIDC Core §5.3.2).
+                if (idSub != null
+                        && (userInfoSub == null
+                                || !String.valueOf(idSub).equals(String.valueOf(userInfoSub)))) {
                     throw new com.dotmarketing.exception.DotRuntimeException(
-                            "OIDC userinfo subject does not match the verified id_token subject — refusing to authenticate");
+                            "OIDC userinfo subject missing or does not match the verified"
+                                    + " id_token subject — refusing to authenticate");
                 }
             }
 
@@ -508,6 +514,15 @@ public class OAuthWebInterceptor implements WebInterceptor {
                 || candidate.contains("\\")
                 || path.contains(":")) {
             return fallback;
+        }
+        // Control characters (tab, CR, LF, etc.) are stripped by browsers when parsing the
+        // Location header — a referrer like "/\t//evil.com" would pass the guards above and
+        // surface as a protocol-relative redirect after the browser removes the tab.
+        for (int i = 0; i < candidate.length(); i++) {
+            final char c = candidate.charAt(i);
+            if (c <= 0x20 || c == 0x7f) {
+                return fallback;
+            }
         }
         return candidate;
     }
