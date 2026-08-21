@@ -645,11 +645,13 @@
 }
 
 /* ─── Highlight (mark) ──────────────────────────────────── */
-/* The Highlight extension renders a plain <mark>. Styled here rather than through the
-   extension's inline HTMLAttributes (which is what the legacy editor does) so the colour
-   stays with the rest of the editor's theme. Stored JSON is unaffected either way. */
+/* The Highlight extension renders a plain <mark>. Same colour as the legacy editor for
+   feature parity, so migrated content looks unchanged to authors — the legacy editor sets it
+   inline via `Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } })`
+   (dot-block-editor.component.ts:737); here it lives with the rest of the editor's styles.
+   Either way it is editor chrome only: the stored JSON carries no colour attribute. */
 :host ::ng-deep .tiptap mark {
-    background-color: #fef08a;
+    background-color: #accef7;
     color: inherit;
     padding: 0.0625rem 0.125rem;
     border-radius: 0.125rem;
