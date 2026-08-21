@@ -66,6 +66,21 @@ export class DotExperimentsService {
     }
 
     /**
+     * Get every experiment, across all pages and sites
+     *
+     * Interim contract: the endpoint answers with the full set when no params are sent, so
+     * paging, sorting and filtering are computed client-side until #36823 lands the
+     * server-side contract. Keep this method as the single swap point for that change.
+     * @returns Observable<DotExperiment[]>
+     * @memberof DotExperimentsService
+     */
+    getAllUnfiltered(): Observable<DotExperiment[]> {
+        return this.http
+            .get<DotCMSResponseExperiment<DotExperiment[]>>(API_ENDPOINT)
+            .pipe(map((x) => x?.entity));
+    }
+
+    /**
      * Get an array of experiments of a pageId filter by status
      * @param {string} pageId
      * @param {DotExperimentStatus} status

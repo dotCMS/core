@@ -35,11 +35,13 @@ public class SerializationHelperTest {
             Logger.debug(SerializationHelperTest.class,"Loaded src/main/webapp/WEB-INF/portlet.xml:"+portletList.toString());
             Logger.info(SerializationHelperTest.class, "Loaded portlet.xml: found: " + portletList.getPortlets().size() + " portlets");
             assertNotNull("Deserialized PortletList should not be null", portletList);
-            assertEquals("PortletList should contain exactly 57 portlets", 57, portletList.getPortlets().size());
+            assertEquals("PortletList should contain exactly 58 portlets", 58, portletList.getPortlets().size());
 
             // Check for specific portlets
             assertTrue("PortletList should contain 'categories' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories")));
+            assertTrue("PortletList should contain 'experiments' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("experiments")));
             assertTrue("PortletList should contain 'categories-legacy' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories-legacy")));
             assertTrue("PortletList should contain 'es-search' portlet",

@@ -1,0 +1,27 @@
+/**
+ * Filtering, sorting and paging all swap the rows underneath the header. Without this the set
+ * changes in a single frame, which reads as a jolt; a short fade makes it register as a change
+ * rather than a flicker. Deliberately brief — this should be felt more than seen.
+ *
+ * Applied to the rows rather than the table so the header, toolbar and paginator stay put.
+ */
+:host ::ng-deep tbody > tr {
+    animation: dot-experiments-row-enter 140ms ease-out;
+}
+
+@keyframes dot-experiments-row-enter {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+// Motion is decoration here, so it is the first thing to drop for anyone who asked for less.
+@media (prefers-reduced-motion: reduce) {
+    :host ::ng-deep tbody > tr {
+        animation: none;
+    }
+}

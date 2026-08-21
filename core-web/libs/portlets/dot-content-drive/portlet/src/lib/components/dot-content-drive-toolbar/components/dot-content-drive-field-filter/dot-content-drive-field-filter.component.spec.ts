@@ -65,7 +65,11 @@ describe('DotContentDriveFieldFilterComponent', () => {
             }),
             {
                 provide: DotMessageService,
-                useValue: new MockDotMessageService({ true: 'True', false: 'False' })
+                useValue: new MockDotMessageService({
+                    true: 'True',
+                    false: 'False',
+                    'content-drive.field-filter.binary.exclude': 'Exclude "{0}"'
+                })
             }
         ],
         componentProviders: [mockProvider(DialogService, { open: jest.fn() })],
@@ -249,6 +253,59 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('chip-title'))?.textContent?.trim()).toBe('My Field');
+        });
+
+        it('should title a single-option checkbox chip with the field name, not the option', () => {
+            // A one-option checkbox used the option's own label as the chip title, so a field
+            // `active` whose only option is `yes` was labelled "yes" — the option value, not the
+            // field. The field name is the only thing that always identifies what is being filtered.
+            spectator.setInput(
+                'field',
+                field({ variable: 'active', name: 'Active', fieldType: 'Checkbox', values: 'yes' })
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-title'))?.textContent?.trim()).toBe('Active');
+        });
+
+        it('should label the binary options from the field instead of hardcoded true/false', () => {
+            // The words "true"/"false" say nothing about a user-authored option like `yes` or
+            // "Include in Site Map"; both labels derive from the field so nothing is hardcoded.
+            spectator.setInput(
+                'field',
+                field({ variable: 'active', name: 'Active', fieldType: 'Checkbox', values: 'yes' })
+            );
+            spectator.detectChanges();
+            openPopover();
+
+            const labels = spectator
+                .queryAll('[data-testid^="field-filter-binary-"]', { root: true })
+                .map((option) => option.parentElement?.textContent?.trim());
+
+            expect(labels).toEqual(['yes', 'Exclude "yes"']);
+        });
+
+        it('should fall back to the option value when the single option has no label', () => {
+            // The classic boolean checkbox is authored as `|true` — no label at all — so the labels
+            // come out generic rather than borrowing the field name, which the chip title already
+            // carries.
+            spectator.setInput(
+                'field',
+                field({
+                    variable: 'sitemap',
+                    name: 'Sitemap',
+                    fieldType: 'Checkbox',
+                    values: '|true'
+                })
+            );
+            spectator.detectChanges();
+            openPopover();
+
+            const labels = spectator
+                .queryAll('[data-testid^="field-filter-binary-"]', { root: true })
+                .map((option) => option.parentElement?.textContent?.trim());
+
+            expect(labels).toEqual(['true', 'Exclude "true"']);
         });
 
         it('should clear the value (keep the chip) when the chip is removed', () => {
@@ -630,6 +687,50 @@ describe('DotContentDriveFieldFilterComponent', () => {
             jest.advanceTimersByTime(DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'b' });
+        });
+
+        it('should offer two distinct options for a True/False Radio authored as True|1 / False|0', () => {
+            // Both options used to cast to `false`, so the listbox and both radio dots matched the
+            // model at once: picking either showed both as selected and only ever sent `false`.
+            spectator.setInput(
+                'field',
+                field({
+                    variable: 'boolRadio',
+                    fieldType: 'Radio',
+                    dataType: 'BOOL',
+                    values: 'True|1\r\nFalse|0'
+                })
+            );
+            spectator.detectChanges();
+            openPopover();
+
+            expect(
+                spectator.query(byTestId('field-filter-radio-true'), { root: true })
+            ).toBeTruthy();
+            expect(
+                spectator.query(byTestId('field-filter-radio-false'), { root: true })
+            ).toBeTruthy();
+        });
+
+        it('should send true when the True option of a True|1 Radio is picked', () => {
+            spectator.setInput(
+                'field',
+                field({
+                    variable: 'boolRadio',
+                    fieldType: 'Radio',
+                    dataType: 'BOOL',
+                    values: 'True|1\r\nFalse|0'
+                })
+            );
+            spectator.detectChanges();
+            openPopover();
+
+            emitOnControl('field-filter-radio', 'ngModelChange', 'true');
+            jest.advanceTimersByTime(DEBOUNCE_TIME);
+
+            // `true`, not `1`: the backend coerces a BOOL field's value on save, so the indexed value
+            // is a real boolean (verified against a running instance).
+            expect(store.patchFilters).toHaveBeenCalledWith({ 'us.boolRadio': 'true' });
         });
 
         it('should patch the serialized comma list for a Multi-Select field', () => {

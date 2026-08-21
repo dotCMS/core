@@ -17,19 +17,20 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotFolderTreeNodeContentData,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotUploadButtonComponent } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
 import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
 import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
+import { DotContentDriveSharedAssetsFilterComponent } from './components/dot-content-drive-shared-assets-filter/dot-content-drive-shared-assets-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
@@ -37,6 +38,7 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { excludeFolders } from '../../utils/action-center';
+import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -129,6 +131,7 @@ interface ToolbarAnimationState {
         ButtonModule,
         MenuModule,
         DotMessagePipe,
+        DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
         DotContentDriveContentTypeFilterComponent,
         DotContentDriveSearchInputComponent,
@@ -137,6 +140,7 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowFilterComponent,
         DotContentDriveFieldFilterComponent,
         DotContentDriveFieldFilterMenuComponent,
+        DotContentDriveSharedAssetsFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
@@ -205,23 +209,15 @@ export class DotContentDriveToolbarComponent {
     $upload = output<MouseEvent>({ alias: 'upload' });
 
     /**
-     * Upload button label, folder-aware: when the current folder pins uploads to a base type
-     * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
+     * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the
+     * folder-aware label ("Upload Asset" / "Upload File" / "Upload").
      */
-    protected readonly $uploadLabelKey = computed(() => {
+    protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;
-        const defaultBaseType =
-            data && data.type !== LOAD_MORE_NODE_TYPE
-                ? (data as DotFolderTreeNodeContentData).defaultBaseType
-                : undefined;
-        switch (defaultBaseType?.toUpperCase()) {
-            case DotCMSBaseTypesContentTypes.DOTASSET:
-                return 'content-drive.upload-asset';
-            case DotCMSBaseTypesContentTypes.FILEASSET:
-                return 'content-drive.upload-file';
-            default:
-                return 'content-drive.upload';
-        }
+
+        return data && data.type !== LOAD_MORE_NODE_TYPE
+            ? ((data as DotFolderTreeNodeContentData).defaultBaseType ?? null)
+            : null;
     });
 
     readonly $items = signal<MenuItem[]>([
@@ -262,10 +258,16 @@ export class DotContentDriveToolbarComponent {
         });
     }
 
-    /** The tree's VISUAL expanded state — see `isTreeVisuallyExpanded` on the store. */
-    readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
-    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+    /**
+     * Drives the "Clear all" button. Counting filter keys would keep it on screen permanently: the
+     * default language and the shared-assets toggle are always seeded, so there is always something
+     * in the bag. What matters is whether anything differs from its default and is therefore worth
+     * clearing.
+     */
+    readonly $hasFilters = computed(() =>
+        hasNonDefaultFilters(this.#store.filters(), this.#store.defaultLanguageId())
+    );
 
     /**
      * The action currently being applied, surfaced here because the run outlives the Action Center
@@ -377,14 +379,6 @@ export class DotContentDriveToolbarComponent {
     readonly $actionCenterTooltip = computed(() =>
         this.$actionExecution() ? 'content-drive.action-center.busy' : ''
     );
-
-    readonly $togglerStyles = computed(() => ({
-        opacity: this.$treeExpanded() ? '0' : '1',
-        visibility: this.$treeExpanded() ? 'hidden' : 'visible',
-        transition: 'all 0.3s ease-in-out',
-        width: this.$treeExpanded() ? '0' : undefined,
-        minWidth: this.$treeExpanded() ? '0' : undefined
-    }));
 
     /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
     #animationTimeout: ReturnType<typeof setTimeout> | undefined;

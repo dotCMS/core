@@ -176,6 +176,16 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-auth/portlet').then((m) => m.dotAuthRoutes)
     },
     {
+        path: 'experiments',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-experiments/portlet').then(
+                (m) => m.dotExperimentsPortletRoutes
+            )
+    },
+    {
         path: 'tags',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
@@ -191,6 +201,12 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-publishing-queue/portlet').then(
                 (m) => m.dotPublishingQueueRoutes
             )
+    },
+    {
+        path: 'agents',
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
     },
     {
         path: 'users',

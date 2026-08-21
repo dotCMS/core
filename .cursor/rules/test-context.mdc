@@ -9,7 +9,8 @@ alwaysApply: false
 ## Frontend (Spectator)
 - Selectors: `byTestId('id')` only; never CSS classes for behavior.
 - Inputs: `spectator.setInput('prop', value)`; never `spectator.component.prop = value`.
-- CSS: `expect(el).toHaveClass('pi', 'pi-update')` (separate strings); not object form.
+- CSS: `expect(el).toHaveClass('item-card', 'item-card--active')` (separate strings); not object form.
+- Icons: Material Symbols — assert `toHaveClass('material-symbols-outlined')` and the icon name via `toHaveText('check_circle')` (the name lives in the element's text content).
 - Test user flows: type, click, assert visible content; avoid testing internals or mock call counts.
 - **Mocks**: Use `@dotcms/utils-testing` createFake functions; never create manual mocks for domain objects.
 
@@ -25,8 +26,8 @@ alwaysApply: false
 ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
 
 # Frontend (Nx, from repo root)
-cd core-web && yarn nx run <project>:test
-cd core-web && yarn nx run <project>:test -t MyComponent
+cd core-web && pnpm nx run <project>:test
+cd core-web && pnpm nx run <project>:test -t MyComponent
 ```
 Replace `<project>` with the Nx project (e.g. `dotcms-ui`, `sdk-angular`, `edit-content`).
 

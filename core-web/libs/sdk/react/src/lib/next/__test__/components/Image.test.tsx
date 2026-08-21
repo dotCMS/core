@@ -63,4 +63,85 @@ describe('DotCMSImage', () => {
         const figure = container.querySelector('figure') as HTMLElement;
         expect(figure.getAttribute('style')).toBeFalsy();
     });
+
+    describe('image link', () => {
+        it('should wrap the img in an anchor when href is set', () => {
+            const { container } = render(
+                <DotCMSImage node={baseNode({ src: 'img.png', alt: 'alt', href: '/about-us' })} />
+            );
+            const anchor = container.querySelector('a') as HTMLAnchorElement;
+            expect(anchor).toBeInTheDocument();
+            expect(anchor).toHaveAttribute('href', '/about-us');
+            expect(anchor.querySelector('img')).toBeInTheDocument();
+        });
+
+        it('should keep the anchor inside the figure so wrapper styles still apply', () => {
+            const { container } = render(
+                <DotCMSImage
+                    node={baseNode({
+                        src: 'img.png',
+                        alt: 'alt',
+                        href: '/about-us',
+                        textWrap: 'left'
+                    })}
+                />
+            );
+            const figure = container.querySelector('figure') as HTMLElement;
+            expect(figure.style.float).toBe('left');
+            expect(figure.querySelector('a > img')).toBeInTheDocument();
+        });
+
+        it('should set target when the link opens in a new tab', () => {
+            const { container } = render(
+                <DotCMSImage
+                    node={baseNode({
+                        src: 'img.png',
+                        alt: 'alt',
+                        href: 'https://dotcms.com',
+                        target: '_blank'
+                    })}
+                />
+            );
+            expect(container.querySelector('a')).toHaveAttribute('target', '_blank');
+        });
+
+        it('should add rel noopener noreferrer when target is _blank', () => {
+            const { container } = render(
+                <DotCMSImage
+                    node={baseNode({
+                        src: 'img.png',
+                        alt: 'alt',
+                        href: 'https://dotcms.com',
+                        target: '_blank'
+                    })}
+                />
+            );
+            expect(container.querySelector('a')).toHaveAttribute('rel', 'noopener noreferrer');
+        });
+
+        it('should not add rel when the link opens in the same tab', () => {
+            const { container } = render(
+                <DotCMSImage node={baseNode({ src: 'img.png', alt: 'alt', href: '/about-us' })} />
+            );
+            const anchor = container.querySelector('a') as HTMLAnchorElement;
+            expect(anchor).not.toHaveAttribute('rel');
+            expect(anchor).not.toHaveAttribute('target');
+        });
+
+        it('should render a bare img when href is null', () => {
+            const { container } = render(
+                <DotCMSImage node={baseNode({ src: 'img.png', alt: 'alt', href: null })} />
+            );
+            expect(container.querySelector('a')).not.toBeInTheDocument();
+            expect(container.querySelector('figure > img')).toBeInTheDocument();
+        });
+
+        it('should render a bare img when href is an empty string', () => {
+            const { container } = render(
+                <DotCMSImage node={baseNode({ src: 'img.png', alt: 'alt', href: '' })} />
+            );
+            expect(container.querySelector('a')).not.toBeInTheDocument();
+            expect(container.querySelector('figure > img')).toBeInTheDocument();
+        });
+    });
 });

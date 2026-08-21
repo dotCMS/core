@@ -16,7 +16,9 @@ export class ContentDrivePage {
         this.toolbar = page.getByTestId('toolbar');
         this.treeSelector = page.getByTestId('tree-selector');
         this.sidebar = page.getByTestId('sidebar');
-        this.currentSiteHostname = page.getByTestId('current-site-hostname');
+        // The site is named by the tree's own root row rather than a header above it, so the
+        // hostname is that row's label, and that row is the first one.
+        this.currentSiteHostname = this.sidebar.getByTestId('tree-node-label').first();
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
     }
@@ -36,10 +38,12 @@ export class ContentDrivePage {
         await this.page.waitForLoadState('domcontentloaded');
         await expect(this.toolbar).toBeVisible({ timeout: 20000 });
         await expect(this.treeSelector).toBeVisible({ timeout: 20000 });
-        await expect(this.currentSiteHostname).toBeVisible({ timeout: 20000 });
         await folderSearch;
         // Wait for tree nodes via projected labels (more specific than the p-tree host test id).
         await expect(this.treeNodeLabels.first()).toBeVisible({ timeout: 20000 });
+        // Waited on after the tree, not before it: the hostname is the root node's label, so it only
+        // exists once the folder tree has rendered.
+        await expect(this.currentSiteHostname).toBeVisible({ timeout: 20000 });
     }
 
     async expectSiteHostname(hostname: string) {
@@ -50,17 +54,11 @@ export class ContentDrivePage {
     }
 
     /**
-     * Clicks the active tree toggler.
-     * Expanded → sidebar toggler (toolbar one is opacity/visibility hidden).
-     * Collapsed → toolbar toggler.
+     * Clicks the tree toggler, which lives in the toolbar in both states. The sidebar used to carry
+     * a second copy for the expanded state; it no longer does.
      */
     async toggleTree() {
-        const width = (await this.treeSelector.boundingBox())?.width ?? 0;
-        const toggler =
-            width > 100
-                ? this.sidebar.getByTestId('tree-toggler')
-                : this.toolbar.getByTestId('tree-toggler');
-        await toggler.click();
+        await this.toolbar.getByTestId('tree-toggler').click();
     }
 
     async expectTreeExpanded() {

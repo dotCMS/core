@@ -1,9 +1,14 @@
 import json
 import pathlib
+import pytest
 import responses
 from evergreen_tracks.registry import list_tags
 
+TAGS_URL = "https://hub.docker.com/v2/namespaces/dotcms/repositories/dotcms-test/tags"
+
+
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "hub_tags.json"
+
 
 @responses.activate
 def test_list_tags_paginates_and_returns_name_digest():
@@ -39,3 +44,47 @@ def test_list_tags_paginates_and_returns_name_digest():
     assert "26.03.12-01" in tag_names
     assert "26049-docker-build-and-publish" in tag_names
     assert all(isinstance(t.name, str) and t.digest.startswith("sha256:") for t in tags)
+
+
+@responses.activate
+def test_list_tags_authenticates_when_creds_present(monkeypatch):
+    """With creds set, every page request carries the Hub JWT — anonymous walks 403 past
+    offset 1000 on the real repos (#37025), so losing this header re-breaks promotion."""
+    monkeypatch.setenv("DOCKER_USERNAME", "bot")
+    monkeypatch.setenv("DOCKER_TOKEN", "pat")
+    responses.add(responses.POST, "https://hub.docker.com/v2/users/login",
+                  json={"token": "jwt-abc"}, status=200)
+    fixture_data = json.loads(FIXTURE.read_text())
+    responses.add(responses.GET, TAGS_URL,
+                  json={"count": 1, "next": None, "results": fixture_data["results"][:1]},
+                  status=200)
+
+    list_tags("dotcms/dotcms-test")
+
+    tag_calls = [c for c in responses.calls if c.request.url.startswith(TAGS_URL)]
+    assert tag_calls, "expected at least one tag-listing request"
+    assert all(c.request.headers.get("Authorization") == "JWT jwt-abc" for c in tag_calls)
+
+
+@responses.activate
+def test_list_tags_anonymous_403_explains_itself():
+    """A creds-less 403 must name the cause, not surface a bare HTTPError traceback.
+
+    It must quote Hub's OWN reason: the offset cap is the only 403 seen here today, so
+    hardcoding that cause would silently mislabel any future one.
+    """
+    responses.add(
+        responses.GET, TAGS_URL,
+        json={"message": "pagination offset too large for anonymous requests"}, status=403,
+    )
+    with pytest.raises(RuntimeError, match="DOCKER_USERNAME") as err:
+        list_tags("dotcms/dotcms-test")
+    assert "pagination offset too large for anonymous requests" in str(err.value)
+
+
+@responses.activate
+def test_list_tags_403_without_a_json_body_still_raises_cleanly():
+    """Hub 403s with an HTML/empty body must not turn into a JSON decode error."""
+    responses.add(responses.GET, TAGS_URL, body="<html>gateway</html>", status=403)
+    with pytest.raises(RuntimeError, match="HTTP 403"):
+        list_tags("dotcms/dotcms-test")

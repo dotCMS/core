@@ -15,8 +15,8 @@ import { MessageService } from 'primeng/api';
 
 import {
     DotCategoriesService,
-    DotContentletService,
     DotContentTypeService,
+    DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
@@ -24,7 +24,7 @@ import {
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { createFakeTextField, MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -69,6 +69,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 // signal keeps these tests driving one value, since they don't need to distinguish
                 // the real preference from a panel-forced override.
                 isTreeVisuallyExpanded: isTreeExpandedSignal,
+                // The toggler disables itself while the side panel holds the tree collapsed.
+                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -83,7 +85,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
-                actionExecution: actionExecutionSignal
+                actionExecution: actionExecutionSignal,
+                // Read by the Locale chip this toolbar renders: the store resolves the languages
+                // once and seeds the environment default into the `languageId` filter.
+                languages: signal(mockLocales),
+                defaultLanguageId: jest.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -99,8 +105,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
+            // The shared DotLanguageFilterComponent fetches the language list on init, so without
+            // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
+            // NetworkError rather than on anything it is testing.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
+                get: jest.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.
@@ -192,21 +201,48 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should hide the tree toggler with styles when tree is expanded', () => {
+        it('should keep the tree toggler in place when the tree is expanded', () => {
+            // The toggler used to collapse to nothing once the tree opened, handing over to a
+            // second copy inside the sidebar. It now stays beside the search input in both states,
+            // which is how UVE keeps its palette and quick-edit toggles in the toolbar.
             isTreeExpandedSignal.set(true);
             spectator.detectChanges();
 
             const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
+
             expect(toggler).toBeTruthy();
-            expect(toggler.style.opacity).toBe('0');
-            expect(toggler.style.visibility).toBe('hidden');
-            expect(toggler.style.width).toBe('0px');
+            expect(toggler.style.visibility).not.toBe('hidden');
+            expect(toggler.style.opacity).not.toBe('0');
+            expect(toggler.style.width).not.toBe('0px');
         });
     });
 
     describe('Clear all button', () => {
         it('should not render when no filters are applied', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should not render when only the seeded defaults are set', () => {
+            // The default language and the shared-assets toggle are always present, so counting
+            // filter keys would leave this button on screen permanently.
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should render once shared assets are turned off', () => {
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'false' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
+        });
+
+        it('should render once a non-default language is picked', () => {
+            filtersSignal.set({ languageId: ['2'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
         });
 
         it('should render when at least one filter is applied', () => {
