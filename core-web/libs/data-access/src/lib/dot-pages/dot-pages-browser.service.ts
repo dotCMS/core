@@ -95,14 +95,16 @@ export class DotPagesBrowserService {
      * @returns Observable of the page's lock state; unlocked when the page cannot be found
      */
     getPageLockState(pageId: string): Observable<DotPageLockInfo> {
-        if (!isDotIdentifier(pageId)) {
+        const identifier = pageId?.trim();
+
+        if (!isDotIdentifier(identifier)) {
             return of(this.#toLockInfo(undefined));
         }
 
         const body = {
             query: {
                 query_string: {
-                    query: `${PAGE_BASE_TYPE_QUERY} +identifier:${pageId}`
+                    query: `${PAGE_BASE_TYPE_QUERY} +identifier:${identifier}`
                 }
             },
             size: 1
