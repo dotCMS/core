@@ -535,6 +535,9 @@ export class DotFolderListViewContextMenuComponent {
                 'content-drive.dialog.delete-folder.message',
                 folder.name
             ),
+            // The service defaults this to "Accept", which says nothing about what is about to
+            // happen. The reject side already reads "Cancel", so only this one needs naming.
+            footerLabel: { accept: this.#dotMessageService.get('Delete') },
             accept: () => this.#deleteFolder(folder)
         });
     }

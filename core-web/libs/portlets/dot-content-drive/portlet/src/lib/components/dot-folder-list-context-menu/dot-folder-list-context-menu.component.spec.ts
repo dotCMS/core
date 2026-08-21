@@ -771,6 +771,18 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(deleteItem()).toBeUndefined();
                 });
 
+                // "Accept" is the service default and says nothing about what is about to happen.
+                it('should label the confirm button Delete rather than Accept', async () => {
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(alertConfirmService.confirm).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            footerLabel: expect.objectContaining({ accept: 'Delete' })
+                        })
+                    );
+                });
+
                 // Recursive and irreversible on the server, so it must never fire straight from a click.
                 it('should ask for confirmation rather than deleting immediately', async () => {
                     await component.getMenuItems(folderContextMenuWithEdit);
