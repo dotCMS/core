@@ -1,10 +1,8 @@
 package com.dotcms.rest.api.v1.content.bulkrefresh;
 
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityBulkRefreshStatusView;
 import com.dotcms.rest.ResponseEntityBulkRefreshSubmitView;
 import com.dotcms.rest.ResponseEntityStringView;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -37,9 +35,11 @@ import javax.ws.rs.core.Response;
  * <b>This is not a full index rebuild.</b> {@code POST /api/v1/esindex/reindex} rebuilds the entire
  * index and is a different operation; nothing here touches it.
  * <p>
- * Job-backed: the {@code POST} returns a {@code jobId} and a status URL, and the client polls that URL
- * until the job reaches a terminal state. A reload can reattach to a run in flight, since the job id is
- * all that is needed to follow it.
+ * Job-backed and push-reported: the {@code POST} returns a {@code jobId} and the work continues in the
+ * background. Completion is announced over the websocket the admin UI already holds open, as a
+ * {@code BULK_REFRESH_COMPLETED} system event carrying the run's counters, plus a notification so the
+ * outcome survives the user navigating away. There is deliberately no status endpoint to poll — a client
+ * asking every second or so for five minutes was the cost this replaced.
  * <p>
  * Reindexing is <i>not</i> modelled as a workflow action or a {@code SystemAction}: bulk fire resolves
  * its target set by searching the index, which is circular for an operation whose whole purpose is to
@@ -105,43 +105,6 @@ public class BulkRefreshResource {
         return Response.status(Response.Status.ACCEPTED)
                 .entity(new ResponseEntityBulkRefreshSubmitView(submitted))
                 .build();
-    }
-
-    /**
-     * Status snapshot of a reindex job. Poll this to follow a run and to read its final result.
-     */
-    @GET
-    @Path("/{jobId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getBulkRefreshStatus", summary = "Get the status of a reindex job",
-            description = "Returns the job's current state and progress while it runs, and once terminal "
-                    + "the full result including counters and — when requested at submit — the "
-                    + "per-item records.",
-            tags = {"Content"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Job status retrieved",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityBulkRefreshStatusView.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - no backend user session"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - not a CMS Power User or CMS Administrator"),
-                    @ApiResponse(responseCode = "404", description = "Not Found - unknown job id, or a job belonging to another queue"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
-            })
-    public ResponseEntityView<BulkRefreshStatusView> getJobStatus(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("jobId")
-            @Parameter(name = "jobId", in = ParameterIn.PATH, required = true,
-                    description = "The reindex job's unique identifier.",
-                    schema = @Schema(type = "string", format = "uuid"))
-            final String jobId) throws DotDataException, DotSecurityException {
-
-        final User user = authorized(request, response);
-
-        Logger.debug(this, () -> String.format("User %s is retrieving reindex job %s",
-                user.getUserId(), jobId));
-
-        return new ResponseEntityView<>(
-                this.bulkRefreshHelper.view(this.bulkRefreshHelper.getJob(jobId)));
     }
 
     /**

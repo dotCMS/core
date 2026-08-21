@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.content.bulkrefresh;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
-import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.processor.impl.BulkRefreshContentletsProcessor;
 import com.dotcms.rest.api.v1.job.JobResponseUtil;
 import com.dotmarketing.business.APILocator;
@@ -169,19 +168,4 @@ public class BulkRefreshHelper {
         this.jobQueueManagerAPI.cancelJob(getJob(jobId).id());
     }
 
-    /**
-     * Renders a job for the REST layer.
-     * <p>
-     * Deliberately not {@code JobView}: that serializes the job's {@code parameters}, which here is the
-     * whole submitted inode list plus the submitter's id, on every one of the ~200 polls a run attracts.
-     * See {@link BulkRefreshStatusView}.
-     */
-    public BulkRefreshStatusView view(final Job job) {
-        return BulkRefreshStatusView.builder()
-                .id(job.id())
-                .state(job.state())
-                .progress(job.progress())
-                .result(job.result().flatMap(JobResult::metadata))
-                .build();
-    }
 }

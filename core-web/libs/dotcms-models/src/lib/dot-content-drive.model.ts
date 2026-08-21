@@ -323,39 +323,6 @@ export interface DotBulkRefreshSubmitResponse {
     submitted: number;
 }
 
-/** Every state a job can report. Mirrors the backend `JobState` enum. */
-export const DOT_BULK_REFRESH_JOB_STATES = [
-    'PENDING',
-    'RUNNING',
-    'CANCEL_REQUESTED',
-    'CANCELLING',
-    'SUCCESS',
-    'CANCELED',
-    'FAILED',
-    'FAILED_PERMANENTLY',
-    'ABANDONED',
-    'ABANDONED_PERMANENTLY'
-] as const;
-
-export type DotBulkRefreshJobState = (typeof DOT_BULK_REFRESH_JOB_STATES)[number];
-
-/** States the job will not move on from. Anything else means it is still going. */
-export const DOT_BULK_REFRESH_TERMINAL_STATES = [
-    'SUCCESS',
-    'CANCELED',
-    'FAILED_PERMANENTLY',
-    'ABANDONED_PERMANENTLY'
-] as const;
-
-/**
- * Terminal states whose counters describe work that actually happened.
- *
- * `CANCELED` belongs here: the run stopped early but every item is still accounted for, so the
- * counters are reportable. `FAILED_PERMANENTLY` and `ABANDONED_PERMANENTLY` do not — the job died
- * mid-run, so its counters describe only how far it got and cannot be read as an outcome.
- */
-export const DOT_BULK_REFRESH_REPORTABLE_STATES = ['SUCCESS', 'CANCELED'] as const;
-
 /**
  * Counters a finished bulk refresh reports.
  *
@@ -373,34 +340,13 @@ export interface DotBulkRefreshCounts {
     versionsIndexed: number;
 }
 
-/** `GET /api/v1/content/_bulkrefresh/{jobId}` — the job as the status endpoint reports it. */
-export interface DotBulkRefreshJob {
-    id: string;
-    state: DotBulkRefreshJobState;
-    /** 0.0–1.0. The only progress signal available while the job runs. */
-    progress: number;
-    /**
-     * Present once the job is terminal.
-     *
-     * The counters sit **directly** on this object, not under a `metadata` key: the server's
-     * `OptionalJobResultSerializer` flattens the job's metadata map straight into `result`. The Java
-     * accessor really is `JobResult.metadata()`, which makes `result.metadata` a tempting but wrong
-     * path over HTTP — it is always `undefined`.
-     */
-    result?: DotBulkRefreshCounts & {
-        /** Written by the same serializer when the job carried an error detail. */
-        error?: { code: string; message: string }[];
-    };
-}
-
 /**
- * A settled bulk refresh: the state it settled in, plus its counters.
+ * The payload of a `BULK_REFRESH_COMPLETED` system event.
  *
- * State is carried alongside the counters rather than discarded, because counters alone cannot say
- * whether they describe a finished run or one that died partway — and an all-zero result from a
- * failed job is indistinguishable from a clean run over nothing.
+ * Pushed over the websocket when a run settles, scoped to whoever submitted it. `counts` is absent when
+ * the finished job carried none — a caller must treat that as a failure rather than as a clean run over
+ * nothing, which is what all-zero counters would look like.
  */
-export interface DotBulkRefreshOutcome {
-    state: DotBulkRefreshJobState;
-    counts: DotBulkRefreshCounts | null;
+export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCounts> {
+    state: string;
 }

@@ -332,7 +332,7 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Method to test: {@link BulkRefreshResource#getJobStatus}
+     * Method to test: {@link BulkRefreshHelper#getJob}
      * <p>
      * Given scenario: A job id that was never issued.
      * <p>
@@ -340,9 +340,9 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
      * cannot be resolved is a per-item failure, not a 404, because the job itself did exist and ran.
      */
     @Test
-    void test_getJobStatus_unknownJobIdIsNotFound() {
-        assertThrows(DoesNotExistException.class, () -> resource.getJobStatus(
-                requestFor(adminUser), response, UUIDGenerator.generateUuid()));
+    void test_getJob_unknownJobIdIsNotFound() {
+        assertThrows(DoesNotExistException.class,
+                () -> bulkRefreshHelper.getJob(UUIDGenerator.generateUuid()));
     }
 
     /**
@@ -363,12 +363,13 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
      * <p>
      * Given scenario: A submission is accepted.
      * <p>
-     * Expected result: HTTP 202 with the job id and the status URL to poll. 202 rather than 200
-     * because the work is accepted and not yet done — that distinction is the whole reason this
-     * endpoint is job-backed, and a client must not be able to read the response as "reindexed".
+     * Expected result: HTTP 202 with the job id. 202 rather than 200 because the work is accepted and
+     * not yet done — that distinction is the whole reason this endpoint is job-backed, and a client
+     * must not be able to read the response as "reindexed". Completion arrives by push, not by the
+     * client asking.
      */
     @Test
-    void test_bulkRefresh_respondsAcceptedWithAStatusUrlToPoll() throws Exception {
+    void test_bulkRefresh_respondsAcceptedWithAJobHandle() throws Exception {
         final Contentlet contentlet = newContentlet();
 
         final Response httpResponse = resource.bulkRefresh(requestFor(adminUser), response,

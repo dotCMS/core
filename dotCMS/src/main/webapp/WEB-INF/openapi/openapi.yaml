@@ -6181,39 +6181,6 @@ paths:
       summary: Reindex a selection of contentlets
       tags:
       - Content
-  /v1/content/_bulkrefresh/{jobId}:
-    get:
-      description: "Returns the job's current state and progress while it runs, and\
-        \ once terminal the full result including counters and — when requested at\
-        \ submit — the per-item records."
-      operationId: getBulkRefreshStatus
-      parameters:
-      - description: The reindex job's unique identifier.
-        in: path
-        name: jobId
-        required: true
-        schema:
-          type: string
-          format: uuid
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBulkRefreshStatusView"
-          description: Job status retrieved
-        "401":
-          description: Unauthorized - no backend user session
-        "403":
-          description: Forbidden - not a CMS Power User or CMS Administrator
-        "404":
-          description: "Not Found - unknown job id, or a job belonging to another\
-            \ queue"
-        "500":
-          description: Internal Server Error
-      summary: Get the status of a reindex job
-      tags:
-      - Content
   /v1/content/_bulkrefresh/{jobId}/cancel:
     post:
       description: Stops the run at the next item boundary. Identifiers already reindexed
@@ -25146,31 +25113,6 @@ components:
           type: boolean
       required:
       - contentletIds
-    BulkRefreshStatusView:
-      type: object
-      properties:
-        id:
-          type: string
-        progress:
-          type: number
-          format: float
-        result:
-          type: object
-          additionalProperties:
-            type: object
-        state:
-          type: string
-          enum:
-          - PENDING
-          - RUNNING
-          - SUCCESS
-          - FAILED
-          - FAILED_PERMANENTLY
-          - ABANDONED
-          - ABANDONED_PERMANENTLY
-          - CANCEL_REQUESTED
-          - CANCELLING
-          - CANCELED
     BulkRefreshSubmitResponse:
       type: object
       properties:
@@ -32458,29 +32400,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityBulkRefreshStatusView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/BulkRefreshStatusView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityBulkRefreshSubmitView:
       type: object
       properties:
@@ -35369,29 +35288,6 @@ components:
       properties:
         entity:
           type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewBulkRefreshStatusView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/BulkRefreshStatusView"
         errors:
           type: array
           items:

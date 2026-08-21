@@ -1,4 +1,11 @@
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,18 +14,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { catchError, take } from 'rxjs/operators';
 
-
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotEventsSocket,
     DotHttpErrorManagerService,
+    DotMessageService,
+    DotSystemEventType,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    DOT_BULK_REFRESH_REPORTABLE_STATES,
     DotActionBulkRequestOptions,
     DotAjaxActionResponseView,
+    DotBulkRefreshCompletedEvent,
     DotBundle,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
@@ -270,6 +279,9 @@ export function withActionExecution() {
                             actionExecutionResult: undefined
                         });
 
+                        // Submit and stop. The endpoint answers 202 and the reindex continues in the
+                        // background; the outcome arrives on the socket subscription below rather than
+                        // by asking for it. Nothing here waits.
                         bulkRefreshService
                             .refresh(inodes)
                             .pipe(
@@ -280,71 +292,72 @@ export function withActionExecution() {
 
                                     return EMPTY;
                                 }),
-                                // The only action here that needs this. The others are a single
-                                // request, so `take(1)` completes them after one round trip. This one
-                                // wraps an infinite `timer(0, 1500)` inside the service, and `take(1)`
-                                // sits on the *outer* observable, which does not emit until the poll
-                                // loop has already finished — so it cannot stop the loop.
-                                //
-                                // This store is component-scoped (see the shell's `providers`), so it
-                                // dies when the user leaves the portlet. Without this the poll keeps
-                                // firing at a screen nobody is on, the global error handler can raise a
-                                // dialog minutes later about work the user can no longer see, and a
-                                // freshly constructed store reports nothing in flight while the orphan
-                                // is still running and will eventually patch a dead one.
                                 takeUntilDestroyed(destroyRef)
                             )
-                            .subscribe((outcome) => {
-                                const counts = outcome?.counts;
+                            .subscribe();
+                    },
 
-                                // Three ways a run can end with nothing honest to report, all of
-                                // which would otherwise render as a green success toast:
-                                //
-                                // 1. No counters at all.
-                                // 2. A state whose counters describe only how far the job got before
-                                //    dying - a FAILED_PERMANENTLY job still carries its metadata, so
-                                //    an all-zero result is indistinguishable from a clean run over
-                                //    nothing unless the state is checked.
-                                // 3. Counters that do not close over `total`, which means the run did
-                                //    not account for every item and the shortfall is unexplained.
-                                //
-                                // Substituting a number in any of these cases - `inodes.length` or
-                                // `0` - invents one the server never sent, and the first errs in the
-                                // reassuring direction.
-                                const reportable =
-                                    !!counts &&
-                                    !!outcome &&
-                                    (
-                                        DOT_BULK_REFRESH_REPORTABLE_STATES as readonly string[]
-                                    ).includes(outcome.state) &&
-                                    counts.successCount +
-                                        counts.failedCount +
-                                        counts.skippedCount ===
-                                        counts.total;
+                    /**
+                     * Reports a finished bulk refresh, from the pushed completion event.
+                     *
+                     * Feeds the same {@link onSettled} path as every other action, so the toast copy,
+                     * severity, grid reload and selection clear all behave identically — with its own
+                     * partial-outcome wording, because a reindex falls short for different reasons than a
+                     * workflow fire.
+                     *
+                     * Three ways a run can arrive with nothing honest to report, all of which would
+                     * otherwise render as a green success toast:
+                     *
+                     * 1. No counters at all.
+                     * 2. A state whose counters describe only how far the job got before dying — a
+                     *    permanently failed job still carries the counters it had reached, so an all-zero
+                     *    result is indistinguishable from a clean run over nothing unless state is checked.
+                     * 3. Counters that do not close over `total`, meaning the run did not account for
+                     *    every item and the shortfall is unexplained.
+                     */
+                    reportRefreshCompleted: (
+                        actionName: string,
+                        event: DotBulkRefreshCompletedEvent
+                    ): void => {
+                        const closes =
+                            undefined !== event.total &&
+                            (event.successCount ?? 0) +
+                                (event.failedCount ?? 0) +
+                                (event.skippedCount ?? 0) ===
+                                event.total;
 
-                                if (!reportable) {
-                                    patchState(store, { actionExecution: undefined });
-                                    httpErrorManagerService.handle(
-                                        new HttpErrorResponse({
-                                            status: 500,
-                                            statusText: `The reindex job did not report a usable outcome (state: ${
-                                                outcome?.state ?? 'unknown'
-                                            })`
-                                        })
-                                    );
+                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                            patchState(store, { actionExecution: undefined });
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText: `The reindex did not report a usable outcome (state: ${event.state})`
+                                })
+                            );
 
-                                    return;
-                                }
+                            return;
+                        }
 
-                                onSettled({
-                                    actionName,
-                                    successCount: counts.successCount,
-                                    skippedCount: counts.skippedCount,
-                                    failCount: counts.failedCount,
-                                    partialDetailKey:
-                                        'content-drive.action-center.toast.refreshed-partial'
-                                });
-                            });
+                        if (!closes) {
+                            patchState(store, { actionExecution: undefined });
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText:
+                                        'The reindex counters did not account for every item'
+                                })
+                            );
+
+                            return;
+                        }
+
+                        onSettled({
+                            actionName,
+                            successCount: event.successCount ?? 0,
+                            skippedCount: event.skippedCount ?? 0,
+                            failCount: event.failedCount ?? 0,
+                            partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+                        });
                     },
 
                     /**
@@ -484,6 +497,25 @@ export function withActionExecution() {
                     }
                 };
             }
-        )
+        ),
+        withHooks({
+            onInit(store) {
+                const eventsSocket = inject(DotEventsSocket);
+                const dotMessageService = inject(DotMessageService);
+                const destroyRef = inject(DestroyRef);
+
+                // The socket is already open app-wide, so subscribing costs nothing. This is what
+                // replaced polling: the run reports itself when it settles instead of being asked.
+                eventsSocket
+                    .on<DotBulkRefreshCompletedEvent>(DotSystemEventType.BULK_REFRESH_COMPLETED)
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => {
+                        // Resolve the label here rather than server-side: the backend should not be
+                        // composing user-facing copy, and this keeps the wording with the rest of the
+                        // Action Center's i18n.
+                        store.reportRefreshCompleted(dotMessageService.get('Refresh'), event);
+                    });
+            }
+        })
     );
 }

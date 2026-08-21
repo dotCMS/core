@@ -14,6 +14,8 @@ import { ActivatedRoute } from '@angular/router';
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotEventsSocket,
+    DotMessageService,
     PushPublishService,
     DotContentDriveService,
     DotCurrentUserService,
@@ -24,6 +26,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotAjaxActionResponseView,
+    DotBulkRefreshCompletedEvent,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
@@ -1228,6 +1231,8 @@ describe('DotContentDriveStore - withActionExecution', () => {
     let fireService: jest.Mocked<DotWorkflowActionsFireService>;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
     let bulkRefreshService: jest.Mocked<DotBulkRefreshService>;
+    /** Declared outside the factory so a test can push into the hook's subscription. */
+    const bulkRefreshEvents$ = new Subject<DotBulkRefreshCompletedEvent>();
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1256,6 +1261,10 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // Refresh is the one quick action that is job-backed: the service submits and polls, so
             // the store only ever sees a single-emission observable.
             mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
+            // The completion event is pushed, so the socket is the seam the run settles through.
+            // A Subject lets the tests below emit one without a server.
+            mockProvider(DotEventsSocket, { on: jest.fn(() => bulkRefreshEvents$) }),
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
@@ -1292,27 +1301,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
             DotBulkRefreshService
         ) as jest.Mocked<DotBulkRefreshService>;
         bulkRefreshService.refresh.mockReturnValue(
-            of({
-                state: 'SUCCESS',
-                counts: {
-                    total: 2,
-                    successCount: 2,
-                    failedCount: 0,
-                    skippedCount: 0,
-                    versionsIndexed: 3
-                }
-            })
+            of({ jobId: 'job-1', statusUrl: 'x', submitted: 1 })
         );
     });
 
     describe('executeRefresh', () => {
         it('should publish the running action so the toolbar can report it', () => {
-            // Never settles, so the in-flight state stays observable. This window is longer for
-            // Refresh than for the other quick actions, because the job is polled to completion.
-            bulkRefreshService.refresh.mockReturnValue(NEVER);
-
             store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
 
+            // Stays in flight after the submit: the run continues in the background and only the
+            // pushed completion event settles it.
             expect(store.actionExecution()).toEqual({ actionName: 'Refresh', total: 2 });
         });
 
@@ -1322,175 +1320,12 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(bulkRefreshService.refresh).toHaveBeenCalledWith(['inode-1', 'inode-2']);
         });
 
-        it('should report the counts the job returned, not the number of inodes sent', () => {
-            // The server collapses inodes by identifier, so three selected language rows of one
-            // contentlet are a single reindex — reporting the inode count would overstate the work.
-            bulkRefreshService.refresh.mockReturnValue(
-                of({
-                    state: 'SUCCESS',
-                    counts: {
-                        total: 1,
-                        successCount: 1,
-                        failedCount: 0,
-                        skippedCount: 0,
-                        versionsIndexed: 3
-                    }
-                })
-            );
-
-            store.executeRefresh('Refresh', ['inode-en', 'inode-es', 'inode-fr']);
-
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
-            });
-        });
-
-        it('should carry failures and skips through to the result', () => {
-            bulkRefreshService.refresh.mockReturnValue(
-                of({
-                    state: 'SUCCESS',
-                    counts: {
-                        total: 4,
-                        successCount: 1,
-                        failedCount: 2,
-                        skippedCount: 1,
-                        versionsIndexed: 1
-                    }
-                })
-            );
-
-            store.executeRefresh('Refresh', ['a', 'b', 'c', 'd']);
-
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 1,
-                skippedCount: 1,
-                failCount: 2,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
-            });
-        });
-
-        it('should name its own partial copy rather than borrowing the workflow wording', () => {
-            // The default copy blames permissions and locks for failures, and workflow steps for
-            // skips. Neither is why a reindex falls short, and naming the wrong cause sends the user
-            // off to fix something that was never the problem.
+        it('should not settle on the submit response', () => {
+            // The 202 says accepted, not done. Settling here is what would produce the misleading
+            // success this endpoint exists to remove.
             store.executeRefresh('Refresh', ['inode-1']);
 
-            expect(store.actionExecutionResult()?.partialDetailKey).toBe(
-                'content-drive.action-center.toast.refreshed-partial'
-            );
-        });
-
-        it('should clear the running action once settled', () => {
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(store.actionExecution()).toBeUndefined();
-            expect(store.actionExecutionResult()).toBeDefined();
-        });
-
-        it('should report an error instead of inventing counts when the job returns none', () => {
-            // Substituting the inode count would claim every item was reindexed; substituting zero
-            // would claim none were. Both invent a number the server never sent.
-            bulkRefreshService.refresh.mockReturnValue(of({ state: 'SUCCESS', counts: null }));
-
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(httpErrorManager.handle).toHaveBeenCalled();
             expect(store.actionExecutionResult()).toBeUndefined();
-            expect(store.actionExecution()).toBeUndefined();
-        });
-
-        it('should route a transport failure to the error handler', () => {
-            // A plain backend user gets 403 here: the endpoint is gated on CMS Power User or Admin,
-            // and the client deliberately does not pre-empt that check.
-            bulkRefreshService.refresh.mockReturnValue(
-                throwError(() => new HttpErrorResponse({ status: 403 }))
-            );
-
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.actionExecution()).toBeUndefined();
-            expect(store.actionExecutionResult()).toBeUndefined();
-        });
-
-        it('should report an error, not a success toast, when the job failed', () => {
-            // A job that died mid-run still carries the counters it had reached, so an all-zero result
-            // from FAILED_PERMANENTLY is indistinguishable from a clean run over nothing unless the
-            // state is checked. Reporting it as settled is exactly the misleading success this
-            // endpoint exists to remove.
-            bulkRefreshService.refresh.mockReturnValue(
-                of({
-                    state: 'FAILED_PERMANENTLY',
-                    counts: {
-                        total: 0,
-                        successCount: 0,
-                        failedCount: 0,
-                        skippedCount: 0,
-                        versionsIndexed: 0
-                    }
-                })
-            );
-
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.actionExecutionResult()).toBeUndefined();
-            expect(store.actionExecution()).toBeUndefined();
-        });
-
-        it('should report an error when the counters do not account for every item', () => {
-            // A run that stopped after 3 of 10 reports successCount 3 with nothing failed or skipped.
-            // Settling on that would silently drop the 7 never attempted.
-            bulkRefreshService.refresh.mockReturnValue(
-                of({
-                    state: 'SUCCESS',
-                    counts: {
-                        total: 10,
-                        successCount: 3,
-                        failedCount: 0,
-                        skippedCount: 0,
-                        versionsIndexed: 3
-                    }
-                })
-            );
-
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(store.actionExecutionResult()).toBeUndefined();
-        });
-
-        it('should still report a cancelled run, whose counters do account for every item', () => {
-            // Cancelling is an outcome, not a failure: the run stopped early but every item is
-            // accounted for, so the user should see what did get reindexed.
-            bulkRefreshService.refresh.mockReturnValue(
-                of({
-                    state: 'CANCELED',
-                    counts: {
-                        total: 4,
-                        successCount: 1,
-                        failedCount: 0,
-                        skippedCount: 3,
-                        versionsIndexed: 1
-                    }
-                })
-            );
-
-            store.executeRefresh('Refresh', ['inode-1']);
-
-            expect(httpErrorManager.handle).not.toHaveBeenCalled();
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 1,
-                skippedCount: 3,
-                failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
-            });
         });
 
         it('should not fire when there are no inodes', () => {
@@ -1501,12 +1336,124 @@ describe('DotContentDriveStore - withActionExecution', () => {
         });
 
         it('should refuse to start a second run while one is in flight', () => {
-            bulkRefreshService.refresh.mockReturnValue(NEVER);
-
             store.executeRefresh('Refresh', ['inode-1']);
             store.executeRefresh('Refresh', ['inode-2']);
 
             expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(1);
+        });
+
+        it('should route a transport failure on submit to the error handler', () => {
+            // A plain backend user gets 403 here: the endpoint is gated on CMS Power User or Admin.
+            bulkRefreshService.refresh.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 403 }))
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('bulk refresh completion push', () => {
+        it('should settle the run when the completion event arrives on the socket', () => {
+            // Proves the wiring, not just the reporter: without the hook subscribing, a finished run
+            // would leave the toolbar showing work in flight forever and never toast.
+            store.executeRefresh('Refresh', ['inode-1']);
+            expect(store.actionExecution()).toBeDefined();
+
+            bulkRefreshEvents$.next({
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+        });
+    });
+
+    describe('reportRefreshCompleted', () => {
+        it('should settle with the pushed counters and its own partial copy', () => {
+            store.reportRefreshCompleted('Refresh', {
+                state: 'SUCCESS',
+                total: 4,
+                successCount: 2,
+                failedCount: 1,
+                skippedCount: 1,
+                versionsIndexed: 3
+            });
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 2,
+                skippedCount: 1,
+                failCount: 1,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+        });
+
+        it('should still report a cancelled run, whose counters do account for every item', () => {
+            store.reportRefreshCompleted('Refresh', {
+                state: 'CANCELED',
+                total: 4,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 3,
+                versionsIndexed: 1
+            });
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.actionExecutionResult()?.skippedCount).toBe(3);
+        });
+
+        it('should report an error, not a success toast, when the job failed', () => {
+            // A job that died mid-run still carries the counters it had reached, so an all-zero result
+            // from FAILED_PERMANENTLY is indistinguishable from a clean run over nothing unless the
+            // state is checked.
+            store.reportRefreshCompleted('Refresh', {
+                state: 'FAILED_PERMANENTLY',
+                total: 0,
+                successCount: 0,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 0
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error when the counters do not account for every item', () => {
+            // A run that stopped after 3 of 10 reports successCount 3 with nothing failed or skipped.
+            // Settling on that would silently drop the 7 never attempted.
+            store.reportRefreshCompleted('Refresh', {
+                state: 'SUCCESS',
+                total: 10,
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 3
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error when the event carried no counters at all', () => {
+            store.reportRefreshCompleted('Refresh', { state: 'SUCCESS' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
         });
     });
 
