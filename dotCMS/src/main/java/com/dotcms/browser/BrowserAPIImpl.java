@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -72,6 +73,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -1282,6 +1284,25 @@ public class BrowserAPIImpl implements BrowserAPI {
                 continue;
             }
 
+            // A Checkbox stores the OPTION VALUE it was ticked with -- "yes", "accept", "true" -- and
+            // stores nothing at all when it is not ticked. So a boolean filter on one cannot be
+            // matched literally: asking for the text "true" finds nothing unless the option's value
+            // happens to be that word, and "false" can never match, because an unticked box has no
+            // token to match against. Both halves are resolved from the field's own option value:
+            // ticked means "contains that value", unticked means the negation of the same clause.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.BOOLEAN
+                    && field instanceof CheckboxField) {
+                final Optional<String> optionValue = this.firstOptionValue(field);
+                if (optionValue.isPresent()) {
+                    final String clause = this.buildOptionValueClause(luceneFieldName,
+                            optionValue.get(), Boolean.TRUE.equals(criteria.getBooleanValue()));
+                    if (UtilMethods.isSet(clause)) {
+                        clauses.append(' ').append(clause);
+                    }
+                    continue;
+                }
+            }
+
             // Time fields index the main field as a full datetime with the value's own date, so a
             // range on it would compare the (meaningless) date component. Match time-of-day instead,
             // against the _dotraw keyword sub-field (indexed as HH:mm:ss), so the range works
@@ -1293,7 +1314,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
 
             final String luceneValue = fieldCriteriaLuceneValue(criteria);
-            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
+            // Passed as the field (not just its type) so a True/False Data Type routes to the exact-term
+            // boolean handler instead of the TEXT handler's wildcard, which a boolean-mapped ES field rejects.
+            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field);
             final FieldContext fieldContext = new FieldContext.Builder()
                     .withContentType(contentType)
                     .withUser(browserQuery.user)
@@ -1465,11 +1488,19 @@ public class BrowserAPIImpl implements BrowserAPI {
      * "in list" semantics match Tag/Category (both OR-in-list) rather than the AND the shared text
      * strategy would produce.
      *
+     * <p>Each value is escaped with {@link LuceneQueryUtils#escape(String)} before the wildcards are
+     * wrapped around it, exactly as {@code TextFieldStrategy} does. Option values routinely contain
+     * {@code query_string} syntax -- {@code Yes/No}, {@code N/A}, {@code Level:1} -- and because these
+     * queries are not lenient, one unescaped character fails the WHOLE query, which surfaces as an
+     * empty result set with no error rather than as a bad request. The {@code *} wildcards are added
+     * after escaping so they are not themselves escaped.</p>
+     *
      * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
      * @param values    The selected values.
      * @return A clause like {@code +(f:*a* f_dotraw:*a* f:*b* f_dotraw:*b*)}, or {@link #BLANK}.
      */
-    private String buildMultiValueOrClause(final String fieldName, final List<String> values) {
+    @VisibleForTesting
+    static String buildMultiValueOrClause(final String fieldName, final List<String> values) {
         final StringBuilder inner = new StringBuilder();
         for (final String value : values) {
             final String token = value.trim();
@@ -1479,10 +1510,59 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (inner.length() > 0) {
                 inner.append(' ');
             }
-            inner.append(fieldName).append(":*").append(token).append("* ")
-                    .append(fieldName).append("_dotraw:*").append(token).append('*');
+            final String escaped = LuceneQueryUtils.escape(token);
+            inner.append(fieldName).append(":*").append(escaped).append("* ")
+                    .append(fieldName).append("_dotraw:*").append(escaped).append('*');
         }
         return inner.length() == 0 ? BLANK : "+(" + inner + ")";
+    }
+
+    /**
+     * Returns the value of a selectable field's first option, i.e. the value a contentlet stores when
+     * that option is picked.
+     * <p>Options are authored one per line as {@code label|value}, where the label may be empty --
+     * {@code |true} is how the classic boolean Checkbox is defined -- or the pipe absent altogether,
+     * in which case the single token is both label and value ({@code yes}).</p>
+     *
+     * @param field The {@link Field} whose first option value will be read.
+     *
+     * @return The first option's value, or empty when the field declares no usable option.
+     */
+    private Optional<String> firstOptionValue(final Field field) {
+        if (!UtilMethods.isSet(field.values())) {
+            return Optional.empty();
+        }
+        return Arrays.stream(field.values().split("\\r\\n|\\n|\\r"))
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .map(line -> {
+                    final int pipeIndex = line.indexOf('|');
+                    return (pipeIndex >= 0 ? line.substring(pipeIndex + 1) : line).trim();
+                })
+                .filter(value -> !value.isEmpty())
+                .findFirst();
+    }
+
+    /**
+     * Builds the clause matching -- or deliberately NOT matching -- a single option value.
+     *
+     * @param fieldName The Lucene field name, i.e. {@code contentTypeVar.fieldVar}.
+     * @param value     The option value to match.
+     * @param matches   {@code true} for contentlets holding the value; {@code false} for the ones that
+     *                  do not, which is the only way to express "this box is not ticked" -- an unticked
+     *                  Checkbox stores nothing, so there is no value to match positively.
+     *
+     * @return The Lucene clause, or an empty String when no clause could be built.
+     */
+    private String buildOptionValueClause(final String fieldName, final String value,
+                                         final boolean matches) {
+        final String clause = buildMultiValueOrClause(fieldName, List.of(value));
+        if (!UtilMethods.isSet(clause)) {
+            return BLANK;
+        }
+        // buildMultiValueOrClause returns a required group, `+( … )`; the negative case is the same
+        // group as a must-not, `-( … )`.
+        return matches ? clause : "-" + clause.substring(1);
     }
 
     /**
