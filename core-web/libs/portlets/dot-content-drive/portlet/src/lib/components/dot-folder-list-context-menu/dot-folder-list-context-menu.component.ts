@@ -488,18 +488,27 @@ export class DotFolderListViewContextMenuComponent {
      *
      * Offered but **disabled** when no environment is reachable, rather than hidden: nothing is
      * missing from dotCMS, something is missing from the configuration, and the fix is an
-     * administrator's. The tooltip is what says so. An unresolved lookup reads as disabled too, so
-     * the item never enables and then retracts.
+     * administrator's. An unresolved lookup reads as disabled too, so the item never enables and
+     * then retracts.
+     *
+     * The reason sits in the **label**, not a tooltip. A disabled context menu item computes
+     * `pointer-events: none` (measured in the browser), so no hover ever reaches it and no tooltip
+     * can fire, whichever of PrimeNG's tooltip inputs it carries — and ContextMenu binds `pTooltip`
+     * from `tooltipOptions` alone, so a plain `tooltip` is ignored on top of that. A suffixed label
+     * needs neither hover nor click.
      */
     #buildPushPublishItem(identifier: string): MenuItem {
         const hasEnvironments = this.#store.hasPushPublishEnvironments();
+        const label = this.#dotMessageService.get('contenttypes.content.push_publish');
 
         return {
-            label: this.#dotMessageService.get('contenttypes.content.push_publish'),
+            label: hasEnvironments
+                ? label
+                : this.#dotMessageService.get(
+                      'content-drive.context-menu.push-publish.no-environment',
+                      label
+                  ),
             disabled: !hasEnvironments,
-            tooltip: hasEnvironments
-                ? undefined
-                : this.#dotMessageService.get('content-drive.action-center.no-environments'),
             command: () => this.#openPushPublishDialog(identifier)
         };
     }

@@ -235,7 +235,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(items[2].label).toBe('Assign Workflow');
             expect(items[3].label).toBe('Save');
             expect(items[4].label).toBe('Save / Publish');
-            expect(items[5].label).toBe('contenttypes.content.push_publish');
+            // Suffixed, because the default fixture has no reachable environment.
+            expect(items[5].label).toBe('content-drive.context-menu.push-publish.no-environment');
             expect(items[6].label).toBe('contenttypes.content.add_to_bundle');
         });
 
@@ -610,7 +611,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 const pushPublishItem = () =>
                     component
                         .$items()
-                        .find((item) => item.label === 'contenttypes.content.push_publish');
+                        .find(
+                            (item) =>
+                                item.label?.includes('push_publish') ||
+                                item.label?.includes('push-publish')
+                        );
 
                 beforeEach(() => {
                     pushPublishDialogService = spectator.inject(DotPushPublishDialogService);
@@ -645,24 +650,31 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     });
                 });
 
-                it('should enable the item once an environment is reachable', async () => {
+                it('should enable the item, plainly labelled, once an environment is reachable', async () => {
                     withEnvironments();
 
                     await component.getMenuItems(folderContextMenuWithPublish);
 
                     expect(pushPublishItem()?.disabled).toBe(false);
-                    expect(pushPublishItem()?.tooltip).toBeUndefined();
+                    expect(pushPublishItem()?.label).toBe('contenttypes.content.push_publish');
                 });
 
                 // Offered but disabled rather than hidden: nothing is missing from dotCMS, something
                 // is missing from the configuration, and the fix is an administrator's. The tooltip
                 // is what says so.
-                it('should disable the item with a tooltip when no environment is reachable', async () => {
+                // `tooltipOptions`, not `tooltip`: PrimeNG's ContextMenu template binds `pTooltip`
+                // with only `[tooltipOptions]`, so a plain `tooltip` on the item is silently ignored
+                // and the row explains nothing.
+                // Measured in the browser: a disabled context menu item computes
+                // `pointer-events: none`, so no hover reaches it and no tooltip can ever fire,
+                // whichever of PrimeNG's tooltip inputs it carries. The reason has to sit in the
+                // label, which needs neither hover nor click.
+                it('should say why in the label when no environment is reachable', async () => {
                     await component.getMenuItems(folderContextMenuWithPublish);
 
                     expect(pushPublishItem()?.disabled).toBe(true);
-                    expect(pushPublishItem()?.tooltip).toBe(
-                        'content-drive.action-center.no-environments'
+                    expect(pushPublishItem()?.label).toBe(
+                        'content-drive.context-menu.push-publish.no-environment'
                     );
                 });
 
@@ -1042,7 +1054,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const pushPublishItem = () =>
                 component
                     .$items()
-                    .find((item) => item.label === 'contenttypes.content.push_publish');
+                    .find(
+                        (item) =>
+                            item.label?.includes('push_publish') ||
+                            item.label?.includes('push-publish')
+                    );
 
             beforeEach(() => {
                 pushPublishDialogService = spectator.inject(DotPushPublishDialogService);
@@ -1072,8 +1088,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockContextMenuData);
 
                 expect(pushPublishItem()?.disabled).toBe(true);
-                expect(pushPublishItem()?.tooltip).toBe(
-                    'content-drive.action-center.no-environments'
+                expect(pushPublishItem()?.label).toBe(
+                    'content-drive.context-menu.push-publish.no-environment'
                 );
             });
         });
