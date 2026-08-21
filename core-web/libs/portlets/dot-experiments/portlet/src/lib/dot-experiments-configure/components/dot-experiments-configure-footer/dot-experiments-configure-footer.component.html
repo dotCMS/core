@@ -11,7 +11,6 @@
 
 <div class="flex flex-none items-center gap-2">
     <p-button
-        [rounded]="true"
         [outlined]="true"
         severity="secondary"
         [label]="'experiments.configure.action.back-to-list' | dm"
@@ -22,7 +21,6 @@
         <!-- Never disabled, not even while a start is in flight: pressing it on an incomplete
              form is the only thing that reveals the missing fields (AC28). -->
         <p-button
-            [rounded]="true"
             [label]="$startLabelKey() | dm"
             (onClick)="onStart()"
             data-testid="experiments-configure-start-btn">

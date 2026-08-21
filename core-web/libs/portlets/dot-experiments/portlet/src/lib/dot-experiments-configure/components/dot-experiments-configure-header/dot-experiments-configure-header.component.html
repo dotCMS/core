@@ -43,7 +43,6 @@
              renders inside the UVE shell (it needs the page context its guard resolves), so it
              cannot be linked from the portlet. -->
         <p-button
-            [rounded]="true"
             [outlined]="true"
             severity="secondary"
             [label]="'experiments.action.view.results' | dm"
@@ -59,7 +58,6 @@
 
     @if ($showStop()) {
         <p-button
-            [rounded]="true"
             [outlined]="true"
             severity="danger"
             [label]="'experiments.action.stop-experiment' | dm"
