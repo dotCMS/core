@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+import { patchState } from '@ngrx/signals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -678,6 +679,22 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     );
                 });
 
+                // The item's disabled state is computed when the menu is built, and the menu is
+                // memoized per folder. If the one-shot lookup lands after a menu was cached, that
+                // folder would keep saying "(no environment)" while the Action Center, which reads
+                // the signal reactively, already shows it enabled.
+                it('should drop the memo when the environments lookup settles', async () => {
+                    await component.getMenuItems(folderContextMenuWithPublish);
+                    expect(pushPublishItem()?.disabled).toBe(true);
+
+                    withEnvironments();
+                    spectator.flushEffects();
+
+                    await component.getMenuItems(folderContextMenuWithPublish);
+
+                    expect(pushPublishItem()?.disabled).toBe(false);
+                });
+
                 it('should not open the dialog while the item is disabled', async () => {
                     await component.getMenuItems(folderContextMenuWithPublish);
                     pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
@@ -814,6 +831,22 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
 
                     expect(store.loadFolders).toHaveBeenCalled();
+                });
+
+                // A confirmed destructive action that does nothing at all, with no message, is worse
+                // than an error. Narrow (there is normally a browsed site) but it must not be silent.
+                it('should report rather than silently skip when no site is resolved', async () => {
+                    patchState(store, { currentSite: undefined } as never);
+                    jest.spyOn(messageService, 'add');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(folderService.deleteFolder).not.toHaveBeenCalled();
+                    expect(messageService.add).toHaveBeenCalledWith(
+                        expect.objectContaining({ severity: 'error' })
+                    );
                 });
 
                 it('should not refetch the folder tree when the delete fails', async () => {

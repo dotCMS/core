@@ -777,6 +777,24 @@ describe('DotFolderListViewComponent', () => {
                 }
             });
 
+            // Same class of bug as the subset case: with the actions column hidden the shown
+            // percentages total 91%, not the 96% budget, so the leftover would land on the leading
+            // checkbox column again. Rescaling has to key off what is actually rendered, not off
+            // whether the caller asked for a subset.
+            it('should rescale the full set when the actions column is hidden', () => {
+                spectator.setInput('visibleColumns', []);
+                spectator.setInput('showActions', false);
+                spectator.detectChanges();
+
+                const total = headerCells()
+                    .map((cell) => cell.style.width)
+                    .filter((width) => width.endsWith('%'))
+                    .map(parseFloat)
+                    .reduce((sum, width) => sum + width, 0);
+
+                expect(total).toBeCloseTo(96, 0);
+            });
+
             it('should leave the full set at its authored widths', () => {
                 // Nothing to rescale: the authored percentages already total 96%.
                 spectator.setInput('visibleColumns', []);

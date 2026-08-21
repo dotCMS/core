@@ -119,6 +119,22 @@ export class DotFolderListViewContextMenuComponent {
         }
     });
 
+    /**
+     * Drops the memo when the push publish environments lookup settles.
+     *
+     * The Push Publish item's label and `disabled` are computed when the menu is *built*, and menus
+     * are memoized per folder. The lookup is one-shot at portlet init, so if it lands after a menu
+     * was cached that folder would keep saying "(no environment)" while the Action Center, which
+     * reads the signal reactively, already shows it enabled.
+     *
+     * The signal is read before anything else so it stays a dependency of this effect.
+     */
+    readonly pushPublishEnvironmentsEffect = effect(() => {
+        this.#store.hasPushPublishEnvironments();
+
+        this.$memoizedMenuItems.set({});
+    });
+
     readonly closeOnContextMenuReset = effect(() => {
         const data = this.#store.contextMenu();
 
@@ -562,6 +578,15 @@ export class DotFolderListViewContextMenuComponent {
         const hostname = this.#store.currentSite()?.hostname;
 
         if (!hostname) {
+            // The user already confirmed a destructive action, so this cannot just return: without
+            // a resolved site there is no path to delete by, and silence would read as "it worked".
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
+                detail: this.#dotMessageService.get('content-drive.dialog.delete-folder.no-site'),
+                life: ERROR_MESSAGE_LIFE
+            });
+
             return;
         }
 

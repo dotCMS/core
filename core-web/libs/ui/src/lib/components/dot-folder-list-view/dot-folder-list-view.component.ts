@@ -417,9 +417,9 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
      * list, so display order stays the table's.
      *
-     * A requested subset has its percentages rescaled to the total the full set carries; see
+     * Whatever is rendered has its percentages rescaled to the budget the full set carries; see
      * {@link rescaleToWidthBudget} for why the leftover cannot just be left unclaimed. The full set
-     * is handed back untouched, since its percentages already add up to that total.
+     * with actions passes through untouched, since its percentages already add up to that total.
      */
     protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
         const requested = this.$visibleColumns();
@@ -429,7 +429,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
                 : HEADER_COLUMNS
         ).filter((column) => this.$showActions() || column.field !== 'actions');
 
-        return requested.length ? rescaleToWidthBudget(shown) : shown;
+        // Keyed off what is actually rendered rather than off whether a subset was requested: the
+        // full set with the actions column hidden totals 91%, not the budget, and would hand the
+        // leftover to the checkbox column just like a subset does. `rescaleToWidthBudget` is a
+        // no-op when the total already matches, so the full set with actions passes through.
+        return rescaleToWidthBudget(shown);
     });
 
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
