@@ -4,23 +4,36 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
-concurrency:
-  group: dotbot-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
   review:
-    # Only run when the PR carries the "PR : dotbot review" label. The
-    # `labeled`/`unlabeled` event types make the review fire (or cancel via
-    # concurrency) the moment the label is added or removed.
+    # Only run when the PR carries the "PR : dotbot review" label.
     #
     # Fork PRs are skipped: GitHub forces GITHUB_TOKEN to read-only for
     # `pull_request` events from forks, so the action's write calls to post
     # the review would fail. Supporting forks would require pull_request_target,
     # which reintroduces untrusted-checkout risk.
+    #
+    # Label events (`labeled`/`unlabeled`) only proceed when the changed label
+    # IS "PR : dotbot review" — unrelated label churn must not re-run or
+    # restart the review. Note `github.event.pull_request.labels` reflects the
+    # post-event state, so removing the dotbot label fails the contains check
+    # and simply skips (an in-flight review is allowed to finish rather than
+    # being canceled — see concurrency note below).
     if: >-
       contains(github.event.pull_request.labels.*.name, 'PR : dotbot review') &&
-      github.event.pull_request.head.repo.fork == false
+      github.event.pull_request.head.repo.fork == false &&
+      (
+        (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+        github.event.label.name == 'PR : dotbot review'
+      )
+    # Concurrency lives at the JOB level (not workflow level) deliberately:
+    # skipped jobs never join the concurrency group, so a run triggered by
+    # unrelated label activity cannot cancel an in-flight review. Only runs
+    # whose `if` passes (real review work) claim the group and supersede
+    # the previous review via cancel-in-progress.
+    concurrency:
+      group: dotbot-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
       contents: read
