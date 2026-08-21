@@ -1,6 +1,7 @@
 import type { Injector } from '@angular/core';
 
-import { Extension, flattenExtensions } from '@tiptap/core';
+import { Extension, flattenExtensions, getSchema } from '@tiptap/core';
+import { Node as PMNode } from '@tiptap/pm/model';
 
 import type { DotMessageService } from '@dotcms/data-access';
 
@@ -15,6 +16,11 @@ import type { SlashMenuService } from '../components/slash-menu/slash-menu.servi
  * feature depends on (#36646): the editor must register exactly one `link` / `underline`
  * (StarterKit v3 bundles both) and must drop remote extensions whose names collide with a
  * built-in instead of double-registering them.
+ *
+ * They also pin the mark inventory against the legacy editor (#37145). A mark the legacy
+ * editor registered but this one does not makes TipTap abort `Node.fromJSON` for the WHOLE
+ * document and fall back to an empty doc — the field renders blank even though the stored
+ * JSON is intact.
  */
 describe('createEditorExtensions', () => {
     // `allowedBlocks: ['link']` keeps DotLink but excludes table/codeBlock/image/etc., so the
@@ -62,5 +68,42 @@ describe('createEditorExtensions', () => {
 
     it('always registers the unsupported-block catch-all node', () => {
         expect(build()).toContain(UNKNOWN_BLOCK_NODE_NAME);
+    });
+
+    /**
+     * #37145 — the legacy editor registers Highlight
+     * (`libs/block-editor/.../dot-block-editor.component.ts` lines 35, 737), so content
+     * authored there can carry `highlight` marks. Without the extension here, that content
+     * cannot be deserialized at all.
+     */
+    it('registers the "highlight" mark at parity with the legacy editor', () => {
+        const names = build();
+
+        expect(names.filter((name) => name === 'highlight')).toHaveLength(1);
+    });
+
+    it('deserializes a legacy document containing highlight marks instead of emptying it', () => {
+        const schema = getSchema(
+            createEditorExtensions(menuService, ['link'], injector, messageService)
+        );
+        const legacyDoc = {
+            type: 'doc',
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [
+                        {
+                            type: 'text',
+                            marks: [{ type: 'highlight' }, { type: 'bold' }],
+                            text: 'Good Credit History:'
+                        }
+                    ]
+                }
+            ]
+        };
+
+        const doc = PMNode.fromJSON(schema, legacyDoc);
+
+        expect(doc.textContent).toBe('Good Credit History:');
     });
 });

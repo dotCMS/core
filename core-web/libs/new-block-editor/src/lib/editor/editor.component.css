@@ -644,6 +644,17 @@
     border-radius: 0.25rem;
 }
 
+/* ─── Highlight (mark) ──────────────────────────────────── */
+/* The Highlight extension renders a plain <mark>. Styled here rather than through the
+   extension's inline HTMLAttributes (which is what the legacy editor does) so the colour
+   stays with the rest of the editor's theme. Stored JSON is unaffected either way. */
+:host ::ng-deep .tiptap mark {
+    background-color: #fef08a;
+    color: inherit;
+    padding: 0.0625rem 0.125rem;
+    border-radius: 0.125rem;
+}
+
 /* ─── Upload placeholder ─────────────────────────────── */
 :host ::ng-deep .upload-placeholder {
     display: flex;
