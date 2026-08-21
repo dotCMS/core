@@ -42,7 +42,9 @@ import {
     PROVIDER_DISPLAY_NAMES,
     PROVIDER_ORDER,
     isFieldAlwaysVisible,
-    requiredUnlessValidator
+    parseIfJson,
+    requiredUnlessValidator,
+    stringifyForField
 } from '../../dot-ai-config.constants';
 import {
     DotAiAdditionalPropertiesComponent,
@@ -184,6 +186,7 @@ export class DotAiCapabilityCardComponent implements OnInit {
         this.providerId.set(provider.provider);
         this.testResult.set(null);
         this.rebuildFieldsGroup(provider.provider, {});
+        this.additionalProperties.clear();
         this.changed.emit();
     }
 
@@ -229,8 +232,9 @@ export class DotAiCapabilityCardComponent implements OnInit {
 
     /**
      * Returns `null` when the capability is disabled (omitted from the saved payload so the
-     * backend treats it as unconfigured), otherwise the assembled section value — including any
-     * additional properties — regardless of what the currently selected provider's fields are.
+     * backend treats it as unconfigured), otherwise the assembled section value. Additional
+     * properties are merged in last but never override a real field of the current provider —
+     * an extra-property row sharing a real field's name is silently dropped.
      */
     buildPayloadSection(): DotAiCapabilitySectionValue | null {
         if (!this.enabled() || !this.providerId()) {
@@ -247,10 +251,11 @@ export class DotAiCapabilityCardComponent implements OnInit {
             }
         );
 
+        const knownNames = new Set(this.fieldsForCurrentProvider().map((f) => f.name));
         this.additionalProperties.controls.forEach((group) => {
             const key = group.value.key?.trim();
-            if (key) {
-                section[key] = group.value.value;
+            if (key && !knownNames.has(key)) {
+                section[key] = parseIfJson(group.value.value ?? '');
             }
         });
 
@@ -288,7 +293,7 @@ export class DotAiCapabilityCardComponent implements OnInit {
             this.additionalProperties.push(
                 new FormGroup({
                     key: new FormControl(key, { nonNullable: true }),
-                    value: new FormControl(value == null ? '' : String(value), {
+                    value: new FormControl(stringifyForField(value), {
                         nonNullable: true
                     })
                 })
@@ -316,9 +321,16 @@ export class DotAiCapabilityCardComponent implements OnInit {
         // `control.parent`) sees no parent yet and assumes the sibling is empty. Force one
         // recheck now that every control (and its parent link) exists, so a hydrated config
         // where only the sibling was saved doesn't render this field as falsely invalid on load.
-        requiredUnlessFields.forEach((field) => {
-            group.get(field.name)?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
-        });
+        // The onlySelf recheck above never bubbles to `group` itself, so its own `status` (and
+        // thus `isValid()`, which reads `fieldsGroup().valid`) would otherwise stay stale until
+        // something else happens to touch it — recompute the group explicitly rather than
+        // relying on an incidental re-render to do it.
+        if (requiredUnlessFields.length > 0) {
+            requiredUnlessFields.forEach((field) => {
+                group.get(field.name)?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+            });
+            group.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+        }
 
         // From here on, a field with `requiredUnless` must re-validate whenever that sibling
         // changes — not just when its own value changes.

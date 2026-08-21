@@ -45,6 +45,13 @@ public final class ProviderConnectionTester {
      */
     private static final int DEFAULT_TEST_TIMEOUT_SECONDS = 10;
 
+    /**
+     * Same purpose as {@link #DEFAULT_TEST_TIMEOUT_SECONDS}, but for {@link Capability#IMAGE}:
+     * real image generation routinely takes well past 10s, so the chat/embeddings default would
+     * fail a perfectly healthy provider before it ever finishes rendering.
+     */
+    private static final int DEFAULT_IMAGE_TEST_TIMEOUT_SECONDS = 60;
+
     private ProviderConnectionTester() {
     }
 
@@ -56,7 +63,7 @@ public final class ProviderConnectionTester {
      * @return a result carrying whether the call succeeded and a human-readable message
      */
     public static TestConnectionResult test(final Capability capability, final ProviderConfig config) {
-        final ProviderConfig effectiveConfig = withDefaultTimeoutIfUnset(config);
+        final ProviderConfig effectiveConfig = withDefaultTimeoutIfUnset(config, capability);
         try {
             final String detail = switch (capability) {
                 case CHAT -> testChat(effectiveConfig);
@@ -74,13 +81,20 @@ public final class ProviderConnectionTester {
 
     /**
      * Returns {@code config} unchanged when it already sets a {@code timeout}, otherwise a copy
-     * with {@link #DEFAULT_TEST_TIMEOUT_SECONDS} applied — scoped to this connection-test path
-     * only, so normal save/use of the configuration is unaffected.
+     * with a default applied — {@link #DEFAULT_IMAGE_TEST_TIMEOUT_SECONDS} for
+     * {@link Capability#IMAGE}, {@link #DEFAULT_TEST_TIMEOUT_SECONDS} for every other capability
+     * — scoped to this connection-test path only, so normal save/use of the configuration is
+     * unaffected.
      */
-    static ProviderConfig withDefaultTimeoutIfUnset(final ProviderConfig config) {
-        return config.timeout() != null
-                ? config
-                : ImmutableProviderConfig.copyOf(config).withTimeout(DEFAULT_TEST_TIMEOUT_SECONDS);
+    static ProviderConfig withDefaultTimeoutIfUnset(final ProviderConfig config, final Capability capability) {
+        if (config.timeout() != null) {
+            return config;
+        }
+
+        final int defaultSeconds = capability == Capability.IMAGE
+                ? DEFAULT_IMAGE_TEST_TIMEOUT_SECONDS
+                : DEFAULT_TEST_TIMEOUT_SECONDS;
+        return ImmutableProviderConfig.copyOf(config).withTimeout(defaultSeconds);
     }
 
     private static String testChat(final ProviderConfig config) {

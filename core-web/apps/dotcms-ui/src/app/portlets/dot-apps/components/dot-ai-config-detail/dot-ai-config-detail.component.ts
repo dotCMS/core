@@ -5,6 +5,7 @@ import {
     Component,
     DestroyRef,
     OnInit,
+    computed,
     effect,
     inject,
     signal,
@@ -64,6 +65,7 @@ export class DotAiConfigDetailComponent implements OnInit {
 
     readonly app = signal<DotApp | null>(null);
     readonly loading = signal(true);
+    readonly loadFailed = signal(false);
     readonly saving = signal(false);
     readonly dirty = signal(false);
 
@@ -71,6 +73,10 @@ export class DotAiConfigDetailComponent implements OnInit {
     readonly initialSections = signal<Record<string, DotAiCapabilitySectionValue | null>>({});
     readonly initialSettings = signal<Record<string, unknown> | null>(null);
     readonly providers = signal<DotAiProviderMetadata[]>([]);
+
+    /** The site this configuration applies to — already resolved by the route (see the
+     *  `dotAiConfigDetailResolver`), just never surfaced in the redesigned page. */
+    readonly siteName = computed(() => this.app()?.sites?.[0]?.name ?? null);
 
     private readonly capabilityCards = viewChildren(DotAiCapabilityCardComponent);
     private readonly settingsCard = viewChild(DotAiSettingsCardComponent);
@@ -130,6 +136,7 @@ export class DotAiConfigDetailComponent implements OnInit {
                 },
                 error: (err) => {
                     this.loading.set(false);
+                    this.loadFailed.set(true);
                     this.showError(err, this.dotMessageService.get('apps.ai.error.load'));
                 }
             });
@@ -149,6 +156,10 @@ export class DotAiConfigDetailComponent implements OnInit {
     }
 
     save(): void {
+        if (this.loadFailed()) {
+            return;
+        }
+
         const cards = this.capabilityCards();
 
         const invalidCard = cards.find((card) => !card.isValid());

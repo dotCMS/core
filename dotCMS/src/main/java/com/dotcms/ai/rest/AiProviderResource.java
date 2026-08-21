@@ -39,6 +39,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -163,7 +164,7 @@ public class AiProviderResource {
 
         final Capability parsedCapability;
         try {
-            parsedCapability = Capability.valueOf(capability.toUpperCase());
+            parsedCapability = Capability.valueOf(capability.toUpperCase(Locale.ROOT));
         } catch (final IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of(AiKeys.ERROR, "Unknown capability: " + AiHostResolver.sanitize(capability)))
@@ -178,9 +179,18 @@ public class AiProviderResource {
 
         final String resolvedBody;
         try {
-            final Host host = AiHostResolver.resolveHost(siteId, request, user);
+            final Host host = AiHostResolver.resolveHostStrict(siteId, request, user);
+            if (host == null) {
+                final String msg = StringUtils.isNotBlank(siteId)
+                        ? "Site not found: " + AiHostResolver.sanitize(siteId)
+                        : "Could not resolve current site from request";
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of(AiKeys.ERROR, msg))
+                        .build();
+            }
             final AppConfig storedConfig = ConfigService.INSTANCE.config(host);
-            resolvedBody = resolveMaskedCredentials(body, storedConfig.getProviderConfig(), capability.toLowerCase());
+            resolvedBody = resolveMaskedCredentials(body, storedConfig.getProviderConfig(),
+                    capability.toLowerCase(Locale.ROOT));
         } catch (final DotSecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
                     .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + AiHostResolver.sanitize(siteId)))

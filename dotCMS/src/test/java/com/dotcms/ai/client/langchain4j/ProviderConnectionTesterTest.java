@@ -131,22 +131,38 @@ public class ProviderConnectionTesterTest {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("openai").apiKey("test-key").model("gpt-4o").build();
 
-        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config);
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config, Capability.CHAT);
 
         assertEquals(Integer.valueOf(10), result.timeout());
     }
 
     /**
+     * Given an IMAGE-capability config with no timeout set,
+     * When withDefaultTimeoutIfUnset is called,
+     * Then the longer image-specific default is applied instead of the chat/embeddings default —
+     * real image generation routinely takes well past 10s.
+     */
+    @Test
+    public void test_withDefaultTimeoutIfUnset_imageCapability_appliesLongerDefault() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("test-key").model("dall-e-3").build();
+
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config, Capability.IMAGE);
+
+        assertEquals(Integer.valueOf(60), result.timeout());
+    }
+
+    /**
      * Given a config that already sets a timeout,
      * When withDefaultTimeoutIfUnset is called,
-     * Then the caller's timeout is preserved unchanged.
+     * Then the caller's timeout is preserved unchanged — even for IMAGE.
      */
     @Test
     public void test_withDefaultTimeoutIfUnset_timeoutAlreadySet_preservesCallerValue() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("openai").apiKey("test-key").model("gpt-4o").timeout(45).build();
 
-        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config);
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config, Capability.IMAGE);
 
         assertEquals(Integer.valueOf(45), result.timeout());
     }
@@ -161,7 +177,7 @@ public class ProviderConnectionTesterTest {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("openai").apiKey("test-key").model("gpt-4o").temperature(0.5).build();
 
-        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config);
+        final ProviderConfig result = ProviderConnectionTester.withDefaultTimeoutIfUnset(config, Capability.CHAT);
 
         assertEquals("openai", result.provider());
         assertEquals("test-key", result.apiKey());

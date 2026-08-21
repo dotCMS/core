@@ -1,6 +1,7 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -103,6 +104,64 @@ describe('DotAiCapabilityCardComponent', () => {
 
             expect(spectator.component.fieldsGroup().value['apiKey']).toBe('sk-openai-secret');
         });
+
+        it('clears additional properties carried over from the previous provider', () => {
+            spectator.detectChanges();
+            spectator.component.onToggleEnabled(true);
+            spectator.component.selectProvider(openAiProvider);
+            spectator.component.additionalProperties.push(
+                new FormGroup({
+                    key: new FormControl('customFlag', { nonNullable: true }),
+                    value: new FormControl('true', { nonNullable: true })
+                })
+            );
+
+            spectator.component.selectProvider(googleAiProvider);
+
+            expect(spectator.component.additionalProperties.length).toBe(0);
+        });
+    });
+
+    describe('buildPayloadSection', () => {
+        it('drops an additional-property row whose key collides with a real field of the current provider', () => {
+            spectator.detectChanges();
+            spectator.component.onToggleEnabled(true);
+            spectator.component.selectProvider(openAiProvider);
+            spectator.component.fieldsGroup().patchValue({
+                apiKey: 'sk-openai-secret',
+                model: 'gpt-4o'
+            });
+            spectator.component.additionalProperties.push(
+                new FormGroup({
+                    key: new FormControl('model', { nonNullable: true }),
+                    value: new FormControl('stale-model-override', { nonNullable: true })
+                })
+            );
+
+            const section = spectator.component.buildPayloadSection();
+
+            expect(section?.['model']).toBe('gpt-4o');
+        });
+
+        it('still includes an additional-property row that does not collide with a real field', () => {
+            spectator.detectChanges();
+            spectator.component.onToggleEnabled(true);
+            spectator.component.selectProvider(openAiProvider);
+            spectator.component.fieldsGroup().patchValue({
+                apiKey: 'sk-openai-secret',
+                model: 'gpt-4o'
+            });
+            spectator.component.additionalProperties.push(
+                new FormGroup({
+                    key: new FormControl('customFlag', { nonNullable: true }),
+                    value: new FormControl('true', { nonNullable: true })
+                })
+            );
+
+            const section = spectator.component.buildPayloadSection();
+
+            expect(section?.['customFlag']).toBe('true');
+        });
     });
 
     describe('visibleFields / advancedFields', () => {
@@ -155,6 +214,52 @@ describe('DotAiCapabilityCardComponent', () => {
             expect(visibleNames).toContain('credentialsJson');
             expect(advancedNames).toContain('temperature');
             expect(advancedNames).not.toContain('credentialsJson');
+        });
+    });
+
+    describe('hydrateFields (additional properties round-trip)', () => {
+        it('hydrates a non-string saved value without corrupting it via String()', () => {
+            const hydrated = createComponent({
+                props: {
+                    meta: chatMeta,
+                    providers: [openAiProvider],
+                    initialValue: {
+                        provider: 'openai',
+                        apiKey: 'sk-openai-secret',
+                        model: 'gpt-4o',
+                        listenerIndexer: { enabled: true, batchSize: 10 }
+                    }
+                }
+            });
+            hydrated.detectChanges();
+
+            const propertyGroup = hydrated.component.additionalProperties.at(0);
+            expect(propertyGroup.value.key).toBe('listenerIndexer');
+            expect(propertyGroup.value.value).not.toBe('[object Object]');
+            expect(JSON.parse(propertyGroup.value.value)).toEqual({
+                enabled: true,
+                batchSize: 10
+            });
+        });
+
+        it('round-trips that hydrated object back out through buildPayloadSection', () => {
+            const hydrated = createComponent({
+                props: {
+                    meta: chatMeta,
+                    providers: [openAiProvider],
+                    initialValue: {
+                        provider: 'openai',
+                        apiKey: 'sk-openai-secret',
+                        model: 'gpt-4o',
+                        listenerIndexer: { enabled: true, batchSize: 10 }
+                    }
+                }
+            });
+            hydrated.detectChanges();
+
+            const section = hydrated.component.buildPayloadSection();
+
+            expect(section?.['listenerIndexer']).toEqual({ enabled: true, batchSize: 10 });
         });
     });
 

@@ -22,7 +22,9 @@ import { DotMessagePipe } from '@dotcms/ui';
 import {
     IMAGE_SIZE_OPTIONS,
     SETTINGS_ADVANCED_FIELDS,
-    SETTINGS_COMMON_FIELDS
+    SETTINGS_COMMON_FIELDS,
+    parseIfJson,
+    stringifyForField
 } from '../../dot-ai-config.constants';
 import {
     DotAiAdditionalPropertiesComponent,
@@ -95,10 +97,9 @@ export class DotAiSettingsCardComponent implements OnInit {
                 this.additionalProperties.push(
                     new FormGroup({
                         key: new FormControl(key, { nonNullable: true }),
-                        value: new FormControl(
-                            typeof value === 'string' ? value : JSON.stringify(value),
-                            { nonNullable: true }
-                        )
+                        value: new FormControl(stringifyForField(value), {
+                            nonNullable: true
+                        })
                     })
                 );
             });
@@ -140,22 +141,5 @@ export class DotAiSettingsCardComponent implements OnInit {
         });
 
         return section;
-    }
-}
-
-/**
- * Additional-property values round-trip through a plain text input, but some preserved settings
- * (e.g. `listenerIndexer`) are objects in the stored JSON. Parses back to an object when the
- * text looks like JSON, otherwise keeps the raw string.
- */
-function parseIfJson(value: string): unknown {
-    const trimmed = value.trim();
-    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-        return value;
-    }
-    try {
-        return JSON.parse(trimmed);
-    } catch {
-        return value;
     }
 }

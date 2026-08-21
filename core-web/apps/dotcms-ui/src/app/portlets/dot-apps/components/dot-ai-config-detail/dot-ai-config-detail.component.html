@@ -7,11 +7,20 @@
             <p class="mt-1 mb-0 text-sm text-gray-500">
                 {{ 'apps.ai.config.subtitle' | dm }}
             </p>
+            @if (siteName()) {
+                <p class="mt-1 mb-0 text-sm text-gray-500">
+                    {{ 'apps.ai.config.site' | dm: [siteName()] }}
+                </p>
+            }
         </div>
 
         @if (loading()) {
             <div class="flex items-center justify-center py-12 text-sm text-gray-400">
                 {{ 'apps.ai.loading' | dm }}
+            </div>
+        } @else if (loadFailed()) {
+            <div class="flex items-center justify-center py-12 text-sm text-red-500">
+                {{ 'apps.ai.error.load' | dm }}
             </div>
         } @else {
             @for (meta of capabilityMeta; track meta.capability) {
@@ -38,5 +47,9 @@
             severity="secondary"
             (onClick)="cancel()" />
     }
-    <p-button [label]="'apps.ai.button.save' | dm" [loading]="saving()" (onClick)="save()" />
+    <p-button
+        [label]="'apps.ai.button.save' | dm"
+        [loading]="saving()"
+        [disabled]="loadFailed()"
+        (onClick)="save()" />
 </div>

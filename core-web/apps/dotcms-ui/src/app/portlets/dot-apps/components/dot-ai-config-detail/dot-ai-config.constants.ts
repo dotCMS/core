@@ -128,6 +128,30 @@ function isEmptyValue(value: unknown): boolean {
     return value === null || value === undefined || value === '';
 }
 
+/**
+ * Additional-property values round-trip through a plain text input, but some preserved values
+ * (e.g. Vertex AI's `credentialsJson`, or `listenerIndexer`) are objects/arrays in the stored
+ * JSON. Parses back when the text looks like JSON, otherwise keeps the raw string.
+ */
+export function parseIfJson(value: string): unknown {
+    const trimmed = value.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+        return value;
+    }
+
+    try {
+        return JSON.parse(trimmed);
+    } catch {
+        return value;
+    }
+}
+
+/** Serializes a hydrated value into an additional-property text control without corrupting
+ *  non-string values (e.g. `String({a:1})` → `"[object Object]"`). Mirrors {@link parseIfJson}. */
+export function stringifyForField(value: unknown): string {
+    return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
 /** Message keys for the lowercase, mid-sentence capability word (e.g. "no {0} support"). */
 export const CAPABILITY_LABELS: Record<DotAiCapability, string> = {
     [DotAiCapability.CHAT]: 'apps.ai.capability.chat.label',
@@ -175,6 +199,16 @@ export const SETTINGS_COMMON_FIELDS: DotAiSettingsField[] = [
     {
         key: 'imagePrompt',
         label: 'apps.ai.settings.image-prompt.label',
+        type: 'text'
+    },
+    {
+        // Rendered by the fixed `<p-select>` in the template, not by this list — listed here only
+        // so `knownKeys` recognizes it and excludes it from "Additional properties". Without this,
+        // a saved `settings.imageSize` hydrates into both the dropdown AND a duplicate additional-
+        // property row, and since additional properties are applied last on save, that stale row
+        // silently overwrites whatever the user just picked in the dropdown.
+        key: 'imageSize',
+        label: 'apps.ai.settings.image-size.label',
         type: 'text'
     }
 ];
