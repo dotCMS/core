@@ -1,13 +1,167 @@
-<div class="flex flex-col gap-6 p-2" data-testid="users-create-stub">
-    <p class="text-color-secondary m-0">
-        {{ 'users.dialog.stub.message' | dm }}
-    </p>
-    <div class="flex justify-end">
-        <p-button
-            [label]="'users.close' | dm"
-            severity="secondary"
-            [outlined]="true"
-            (onClick)="close()"
-            data-testid="users-create-stub-close-btn" />
-    </div>
+<div
+    class="flex min-h-0 flex-1 flex-col border-t border-surface-200"
+    data-testid="users-dialog-body">
+    <p-tabs [(value)]="activeTab" class="flex min-h-0 flex-1 flex-col">
+        <div class="border-b border-surface-200 px-7 pt-6">
+            <p-tablist>
+                <p-tab [value]="0" data-testid="users-dialog-tab-profile">
+                    {{ 'users.dialog.tabs.profile' | dm }}
+                </p-tab>
+                <p-tab [value]="1" data-testid="users-dialog-tab-roles">
+                    {{ 'users.dialog.tabs.roles' | dm }}
+                </p-tab>
+                <p-tab [value]="2" data-testid="users-dialog-tab-permissions">
+                    {{ 'users.dialog.tabs.permissions' | dm }}
+                </p-tab>
+                <p-tab [value]="3" data-testid="users-dialog-tab-api-tokens">
+                    {{ 'users.dialog.tabs.api-tokens' | dm }}
+                </p-tab>
+            </p-tablist>
+        </div>
+
+        <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+            <p-tabpanel [value]="0" class="block min-h-0 flex-1 overflow-auto">
+                <div class="px-7 pt-[22px] pb-7">
+                    <header class="mb-6 flex items-center gap-5" data-testid="users-dialog-header">
+                        <p-avatar
+                            [label]="initials()"
+                            shape="circle"
+                            size="xlarge"
+                            styleClass="bg-primary-100 text-primary"
+                            data-testid="users-dialog-avatar" />
+                        <div class="flex min-w-0 flex-wrap items-center gap-3">
+                            <h2
+                                class="m-0 truncate text-xl font-semibold"
+                                data-testid="users-dialog-title">
+                                {{ displayName() }}
+                            </h2>
+                            @if (isEdit) {
+                                <p-tag
+                                    [value]="
+                                        (isActive()
+                                            ? 'users.dialog.status.active'
+                                            : 'users.dialog.status.inactive'
+                                        ) | dm
+                                    "
+                                    [severity]="isActive() ? 'success' : 'secondary'"
+                                    [rounded]="true"
+                                    data-testid="users-dialog-header-status" />
+                            } @else {
+                                <span
+                                    class="text-color-secondary text-sm"
+                                    data-testid="users-dialog-header-subtitle">
+                                    {{ 'users.dialog.create.subtitle' | dm }}
+                                </span>
+                            }
+                        </div>
+                    </header>
+
+                    <dot-users-profile-tab
+                        [form]="form"
+                        [isEdit]="isEdit"
+                        [user]="user"
+                        (deleteRequested)="openDeleteConfirm()"
+                        data-testid="users-dialog-profile-tab" />
+                </div>
+            </p-tabpanel>
+            <p-tabpanel [value]="1" class="block min-h-0 flex-1 overflow-auto">
+                <div class="px-7 pt-[22px] pb-7">
+                    <dot-users-roles-tab
+                        [initialGrantedKeys]="initialGrantedRoleKeys()"
+                        (grantedChange)="onGrantedRolesChange($event)"
+                        data-testid="users-dialog-roles-tab" />
+                </div>
+            </p-tabpanel>
+            <p-tabpanel [value]="2" class="block min-h-0 flex-1 overflow-auto">
+                <div
+                    class="text-color-secondary px-7 pt-[22px] pb-7 text-sm"
+                    data-testid="users-dialog-permissions-tab-placeholder">
+                    {{ 'users.dialog.tabs.coming-soon' | dm }}
+                </div>
+            </p-tabpanel>
+            <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
+                <div
+                    class="text-color-secondary px-7 pt-[22px] pb-7 text-sm"
+                    data-testid="users-dialog-api-tokens-tab-placeholder">
+                    {{ 'users.dialog.tabs.coming-soon' | dm }}
+                </div>
+            </p-tabpanel>
+        </p-tabpanels>
+    </p-tabs>
 </div>
+
+<footer
+    class="flex items-center justify-end gap-2 border-t border-surface-200 px-6 py-4"
+    data-testid="users-dialog-footer">
+    <p-button
+        [label]="'users.cancel' | dm"
+        severity="secondary"
+        [text]="true"
+        (onClick)="close()"
+        data-testid="users-dialog-cancel-btn" />
+    <p-button
+        [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
+        (onClick)="save()"
+        data-testid="users-dialog-save-btn" />
+</footer>
+
+<p-dialog
+    [visible]="deleteConfirmVisible()"
+    (visibleChange)="deleteConfirmVisible.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    [header]="'users.dialog.delete-confirm.header' | dm"
+    data-testid="users-delete-confirm-dialog">
+    <div class="flex flex-col gap-4">
+        <p class="m-0 text-color">
+            {{ 'users.dialog.delete-confirm.message' | dm }}
+        </p>
+        <div class="field flex flex-col gap-2">
+            <label for="users-delete-replacement-picker">
+                {{ 'users.dialog.delete-confirm.replacement-label' | dm }}
+                <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <dot-users-replacement-picker
+                inputId="users-delete-replacement-picker"
+                [value]="replacementUser()"
+                [excludedUserIds]="excludedReplacementIds"
+                (selectionChange)="onReplacementSelect($event)"
+                data-testid="users-delete-replacement-picker" />
+            <small class="text-color-secondary">
+                {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+            </small>
+        </div>
+        <div class="field flex flex-col gap-2">
+            <label for="users-delete-confirm-input">
+                {{ 'users.dialog.delete-confirm.confirm-label' | dm }}
+                @if (user?.emailAddress) {
+                    <span class="font-mono text-sm">&mdash; {{ user?.emailAddress }}</span>
+                }
+            </label>
+            <input
+                pInputText
+                id="users-delete-confirm-input"
+                [ngModel]="deleteConfirmationInput()"
+                (ngModelChange)="onDeleteInputChange($event)"
+                [placeholder]="'users.dialog.delete-confirm.confirm-placeholder' | dm"
+                data-testid="users-delete-confirm-input" />
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'users.cancel' | dm"
+            severity="secondary"
+            [text]="true"
+            (onClick)="closeDeleteConfirm()"
+            data-testid="users-delete-confirm-cancel-btn" />
+        <p-button
+            [label]="'users.dialog.delete.button' | dm"
+            severity="danger"
+            [disabled]="!canConfirmDelete()"
+            (onClick)="confirmDelete()"
+            data-testid="users-delete-confirm-btn" />
+    </ng-template>
+</p-dialog>

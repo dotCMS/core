@@ -1,0 +1,320 @@
+@if (isEdit() && user(); as u) {
+    <div
+        class="grid grid-cols-3 gap-4 rounded-lg border border-surface-200 bg-surface-50 p-4"
+        data-testid="users-profile-metadata">
+        <div class="flex flex-col gap-1">
+            <span class="text-color-secondary text-xs tracking-wide uppercase">
+                {{ 'users.dialog.metadata.user-id' | dm }}
+            </span>
+            <span class="font-mono text-sm" data-testid="users-profile-metadata-id">
+                {{ u.userId }}
+            </span>
+        </div>
+        <div class="flex flex-col gap-1">
+            <span class="text-color-secondary text-xs tracking-wide uppercase">
+                {{ 'users.dialog.metadata.last-login' | dm }}
+            </span>
+            <span class="text-sm" data-testid="users-profile-metadata-last-login">
+                @if (u.lastLoginDate) {
+                    {{ u.lastLoginDate | date: 'MM/dd/yyyy HH:mm' }}
+                    @if (u.lastLoginIP) {
+                        <span class="text-color-secondary">&middot; {{ u.lastLoginIP }}</span>
+                    }
+                } @else {
+                    {{ 'users.dialog.metadata.never' | dm }}
+                }
+            </span>
+        </div>
+        <div class="flex flex-col gap-1">
+            <span class="text-color-secondary text-xs tracking-wide uppercase">
+                {{ 'users.dialog.metadata.failed-logins' | dm }}
+            </span>
+            <span class="text-sm" data-testid="users-profile-metadata-failed-logins">
+                {{ u.failedLoginAttempts ?? 0 }}
+            </span>
+        </div>
+    </div>
+}
+
+<form [formGroup]="form()" class="form flex flex-col gap-6">
+    <section
+        [formGroup]="accountGroup()"
+        class="flex flex-col gap-4 rounded-lg border border-surface-200 p-6"
+        data-testid="users-profile-account-section">
+        <header class="flex flex-col gap-1">
+            <h3 class="m-0 text-base font-semibold">
+                {{ 'users.dialog.section.account' | dm }}
+            </h3>
+            <p class="text-color-secondary m-0 text-sm">
+                {{ 'users.dialog.section.account.description' | dm }}
+            </p>
+        </header>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="field flex flex-col gap-2">
+                <label for="users-profile-first-name" dotFieldRequired>
+                    {{ 'users.dialog.field.first-name' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="users-profile-first-name"
+                    formControlName="firstName"
+                    [placeholder]="'users.dialog.field.first-name.placeholder' | dm"
+                    data-testid="users-profile-first-name" />
+            </div>
+            <div class="field flex flex-col gap-2">
+                <label for="users-profile-last-name" dotFieldRequired>
+                    {{ 'users.dialog.field.last-name' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="users-profile-last-name"
+                    formControlName="lastName"
+                    [placeholder]="'users.dialog.field.last-name.placeholder' | dm"
+                    data-testid="users-profile-last-name" />
+            </div>
+            <div class="field col-span-2 flex flex-col gap-2">
+                <label for="users-profile-email" dotFieldRequired>
+                    {{ 'users.dialog.field.email' | dm }}
+                </label>
+                <p-iconField iconPosition="left" class="w-full">
+                    <p-inputIcon>
+                        <span
+                            class="material-symbols-rounded text-lg! leading-none"
+                            aria-hidden="true">
+                            mail
+                        </span>
+                    </p-inputIcon>
+                    <input
+                        pInputText
+                        id="users-profile-email"
+                        type="email"
+                        formControlName="email"
+                        class="w-full"
+                        [placeholder]="'users.dialog.field.email.placeholder' | dm"
+                        data-testid="users-profile-email" />
+                </p-iconField>
+                @if (
+                    accountGroup().get('email')?.touched &&
+                    accountGroup().get('email')?.errors?.['email']
+                ) {
+                    <small class="text-red-600" data-testid="users-profile-email-error">
+                        {{ 'users.dialog.error.email' | dm }}
+                    </small>
+                }
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="field flex flex-col gap-2">
+                <label
+                    for="users-profile-password"
+                    dotFieldRequired
+                    [checkIsRequiredControl]="'password'">
+                    {{ 'users.dialog.field.password' | dm }}
+                </label>
+                <p-password
+                    inputId="users-profile-password"
+                    formControlName="password"
+                    [toggleMask]="true"
+                    [feedback]="!isEdit()"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                    data-testid="users-profile-password" />
+                @if (isEdit()) {
+                    <small class="text-color-secondary">
+                        {{ 'users.dialog.field.password.help' | dm }}
+                    </small>
+                }
+            </div>
+            <div class="field flex flex-col gap-2">
+                <label
+                    for="users-profile-confirm-password"
+                    dotFieldRequired
+                    [checkIsRequiredControl]="'confirmPassword'">
+                    {{ 'users.dialog.field.confirm-password' | dm }}
+                </label>
+                <p-password
+                    inputId="users-profile-confirm-password"
+                    formControlName="confirmPassword"
+                    [toggleMask]="true"
+                    [feedback]="false"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                    data-testid="users-profile-confirm-password" />
+                @if (accountGroup().errors?.['passwordMismatch']) {
+                    <small class="text-red-600" data-testid="users-profile-password-mismatch-error">
+                        {{ 'users.dialog.error.password-mismatch' | dm }}
+                    </small>
+                }
+            </div>
+        </div>
+
+        <div>
+            <p-button
+                [text]="true"
+                size="small"
+                (onClick)="onGeneratePassword()"
+                data-testid="users-profile-generate-password">
+                <span class="material-symbols-rounded text-base!" aria-hidden="true">
+                    autorenew
+                </span>
+                <span class="ml-1">{{ 'users.dialog.field.generate-password' | dm }}</span>
+            </p-button>
+        </div>
+
+        <div
+            class="flex items-center justify-between gap-4 border-t border-surface-200 pt-4"
+            data-testid="users-profile-active-row">
+            <div class="flex flex-col gap-1">
+                <span class="font-medium">
+                    {{ 'users.dialog.toggle.active.title' | dm }}
+                </span>
+                <span class="text-color-secondary text-sm">
+                    {{ 'users.dialog.toggle.active.description' | dm }}
+                </span>
+            </div>
+            <p-toggleswitch formControlName="active" data-testid="users-profile-active-toggle" />
+        </div>
+    </section>
+
+    <section
+        [formGroup]="additionalInfoGroup()"
+        class="flex flex-col gap-4 rounded-lg border border-surface-200 p-6"
+        data-testid="users-profile-additional-info-section">
+        <header class="flex flex-col gap-1">
+            <h3 class="m-0 text-base font-semibold">
+                {{ 'users.dialog.section.additional-info' | dm }}
+            </h3>
+            <p class="text-color-secondary m-0 text-sm">
+                {{ 'users.dialog.section.additional-info.description' | dm }}
+            </p>
+        </header>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="field flex flex-col gap-2">
+                <label for="users-profile-prefix">
+                    {{ 'users.dialog.field.prefix' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="users-profile-prefix"
+                    formControlName="prefix"
+                    [placeholder]="'users.dialog.field.prefix.placeholder' | dm"
+                    data-testid="users-profile-prefix" />
+            </div>
+            <div class="field flex flex-col gap-2">
+                <label for="users-profile-suffix">
+                    {{ 'users.dialog.field.suffix' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="users-profile-suffix"
+                    formControlName="suffix"
+                    [placeholder]="'users.dialog.field.suffix.placeholder' | dm"
+                    data-testid="users-profile-suffix" />
+            </div>
+            <div class="field flex flex-col gap-2">
+                <label for="users-profile-title">
+                    {{ 'users.dialog.field.title' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="users-profile-title"
+                    formControlName="title"
+                    [placeholder]="'users.dialog.field.title.placeholder' | dm"
+                    data-testid="users-profile-title" />
+            </div>
+            <div class="field flex flex-col gap-2">
+                <label for="users-profile-company">
+                    {{ 'users.dialog.field.company' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="users-profile-company"
+                    formControlName="company"
+                    [placeholder]="'users.dialog.field.company.placeholder' | dm"
+                    data-testid="users-profile-company" />
+            </div>
+            <div class="field col-span-2 flex flex-col gap-2">
+                <label for="users-profile-website">
+                    {{ 'users.dialog.field.website' | dm }}
+                </label>
+                <p-iconField iconPosition="left" class="w-full">
+                    <p-inputIcon>
+                        <span
+                            class="material-symbols-rounded text-lg! leading-none"
+                            aria-hidden="true">
+                            public
+                        </span>
+                    </p-inputIcon>
+                    <input
+                        pInputText
+                        id="users-profile-website"
+                        formControlName="website"
+                        class="w-full"
+                        [placeholder]="'users.dialog.field.website.placeholder' | dm"
+                        data-testid="users-profile-website" />
+                </p-iconField>
+            </div>
+        </div>
+    </section>
+
+    <section
+        [formGroup]="accessGroup()"
+        class="flex flex-col gap-2 rounded-lg border border-surface-200 p-6"
+        data-testid="users-profile-access-section">
+        <header class="mb-2 flex flex-col gap-1">
+            <h3 class="m-0 text-base font-semibold">
+                {{ 'users.dialog.section.access' | dm }}
+            </h3>
+            <p class="text-color-secondary m-0 text-sm">
+                {{ 'users.dialog.section.access.description' | dm }}
+            </p>
+        </header>
+
+        @for (row of accessRows; track row.key) {
+            <div
+                class="flex items-center justify-between gap-4 border-b border-surface-100 py-3 last:border-b-0"
+                [attr.data-testid]="'users-profile-access-row-' + row.key">
+                <div class="flex flex-col gap-1">
+                    <span class="font-medium">{{ row.titleKey | dm }}</span>
+                    <span class="text-color-secondary text-sm">
+                        {{ row.descriptionKey | dm }}
+                    </span>
+                </div>
+                <p-toggleswitch
+                    [formControlName]="row.key"
+                    [attr.data-testid]="'users-profile-access-toggle-' + row.key" />
+            </div>
+        }
+    </section>
+
+    @if (isEdit()) {
+        <section
+            class="flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50/40 p-6"
+            data-testid="users-profile-delete-section">
+            <div class="flex flex-col gap-1">
+                <span class="font-medium text-red-600">
+                    {{ 'users.dialog.delete.title' | dm }}
+                </span>
+                <span class="text-color-secondary text-sm">
+                    {{ 'users.dialog.delete.description' | dm }}
+                </span>
+            </div>
+            <p-button
+                [label]="'users.dialog.delete.button' | dm"
+                severity="danger"
+                [outlined]="true"
+                size="small"
+                (onClick)="onDeleteClick()"
+                data-testid="users-profile-delete-btn">
+                <ng-template pTemplate="icon">
+                    <span class="material-symbols-rounded text-base!" aria-hidden="true">
+                        delete
+                    </span>
+                </ng-template>
+            </p-button>
+        </section>
+    }
+</form>
