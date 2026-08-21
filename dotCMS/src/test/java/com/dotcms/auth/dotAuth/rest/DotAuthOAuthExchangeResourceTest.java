@@ -1,6 +1,7 @@
 package com.dotcms.auth.dotAuth.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -133,6 +134,58 @@ class DotAuthOAuthExchangeResourceTest {
                     req, mock(HttpServletResponse.class),
                     new OAuthExchangeForm("token", "nonce", 7));
             assertEquals(Response.Status.FORBIDDEN.getStatusCode(), resp.getStatus());
+        }
+    }
+
+    @Test
+    void allowedOriginOnErrorResponse_carriesCorsHeaders() throws Exception {
+        // A browser that passed the preflight must also be able to read the actual POST's
+        // error responses — ACAO/credentials belong on the POST response itself, not only
+        // on the preflight. Non-OIDC provider short-circuits with 400 after the origin check.
+        final OAuthAppConfig config = headlessConfig(Map.of(
+                "enabled", "true",
+                "providerType", "GENERIC",
+                "allowedOrigins", "[\"https://trusted.example.com\"]"));
+        try (MockedStatic<OAuthAppConfig> appCfg = Mockito.mockStatic(OAuthAppConfig.class)) {
+            appCfg.when(() -> OAuthAppConfig.exchangeConfig(any(HttpServletRequest.class)))
+                    .thenReturn(Optional.of(config));
+
+            final HttpServletRequest req = mock(HttpServletRequest.class);
+            when(req.getHeader("Origin")).thenReturn("https://trusted.example.com");
+            when(req.getRemoteAddr()).thenReturn("127.0.0.1");
+
+            final Response resp = resource.exchange(
+                    req, mock(HttpServletResponse.class),
+                    new OAuthExchangeForm("token", "nonce", 7));
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
+            assertEquals("https://trusted.example.com",
+                    resp.getHeaderString("Access-Control-Allow-Origin"));
+            assertEquals("true", resp.getHeaderString("Access-Control-Allow-Credentials"));
+            assertEquals("Origin", resp.getHeaderString("Vary"));
+        }
+    }
+
+    @Test
+    void noOriginHeader_noCorsHeadersOnResponse() throws Exception {
+        // Non-browser callers (server-to-server) carry no Origin header — the response
+        // must not claim a cross-origin policy it does not need.
+        final OAuthAppConfig config = headlessConfig(Map.of(
+                "enabled", "true",
+                "providerType", "GENERIC",
+                "allowedOrigins", "[\"https://trusted.example.com\"]"));
+        try (MockedStatic<OAuthAppConfig> appCfg = Mockito.mockStatic(OAuthAppConfig.class)) {
+            appCfg.when(() -> OAuthAppConfig.exchangeConfig(any(HttpServletRequest.class)))
+                    .thenReturn(Optional.of(config));
+
+            final HttpServletRequest req = mock(HttpServletRequest.class);
+            when(req.getRemoteAddr()).thenReturn("127.0.0.1");
+
+            final Response resp = resource.exchange(
+                    req, mock(HttpServletResponse.class),
+                    new OAuthExchangeForm("token", "nonce", 7));
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
+            assertNull(resp.getHeaderString("Access-Control-Allow-Origin"));
+            assertNull(resp.getHeaderString("Access-Control-Allow-Credentials"));
         }
     }
 

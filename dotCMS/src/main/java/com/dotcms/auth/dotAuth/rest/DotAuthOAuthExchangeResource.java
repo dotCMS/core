@@ -173,6 +173,9 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Max-Age", "86400");
+            // Never let a caching intermediary serve this origin-specific preflight
+            // response to a different origin.
+            response.setHeader("Vary", "Origin");
         }
         return Response.status(Response.Status.NO_CONTENT).build();
     }
@@ -201,6 +204,11 @@ public class DotAuthOAuthExchangeResource implements Serializable {
     public Response exchange(@Context final HttpServletRequest request,
                              @Context final HttpServletResponse response,
                              final OAuthExchangeForm form) {
+        // Validated browser origin for the CORS response headers. Null for non-browser
+        // callers (no Origin header) and until the origin check below has passed. Lives
+        // outside the try so the terminal catch can also emit CORS headers — a browser
+        // must be able to read a 500, not just the happy path.
+        String corsOrigin = null;
         try {
             if (form == null
                     || !UtilMethods.isSet(form.getIdToken())
@@ -247,6 +255,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 }
                 response.setHeader("Access-Control-Allow-Origin", origin);
                 response.setHeader("Access-Control-Allow-Credentials", "true");
+                corsOrigin = origin;
             }
 
             if (!config.isOidc()) {
@@ -255,7 +264,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                         "Refused OAuth exchange: site is configured for non-OIDC provider '"
                                 + config.providerType + "' from " + request.getRemoteAddr());
-                return Response.status(Response.Status.BAD_REQUEST)
+                return withCors(Response.status(Response.Status.BAD_REQUEST), corsOrigin)
                         .entity(new ResponseEntityView<>(
                                 "OIDC is required for token exchange. Site is configured for "
                                         + "'" + config.providerType + "'. Only providers that issue "
@@ -277,7 +286,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             if (!trustedIdps.isEmpty()) {
                 final String tokenIssuer = extractUnverifiedIssuer(form.getIdToken());
                 if (tokenIssuer == null) {
-                    return Response.status(Response.Status.BAD_REQUEST)
+                    return withCors(Response.status(Response.Status.BAD_REQUEST), corsOrigin)
                             .entity(new ResponseEntityView<>("Could not decode iss claim from id_token"))
                             .build();
                 }
@@ -290,7 +299,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                     SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                             "OAuth exchange rejected: issuer '" + sanitizeForLog(tokenIssuer)
                                     + "' not in trusted IdP list from " + request.getRemoteAddr());
-                    return Response.status(Response.Status.UNAUTHORIZED)
+                    return withCors(Response.status(Response.Status.UNAUTHORIZED), corsOrigin)
                             .entity(new ResponseEntityView<>("Untrusted token issuer"))
                             .build();
                 }
@@ -311,7 +320,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                         "OAuth exchange rejected: issuer URL failed validation from "
                                 + request.getRemoteAddr());
-                return Response.status(Response.Status.BAD_REQUEST)
+                return withCors(Response.status(Response.Status.BAD_REQUEST), corsOrigin)
                         .entity(new ResponseEntityView<>("Issuer URL failed security validation"))
                         .build();
             }
@@ -328,7 +337,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                         "OAuth id_token validation failed from " + request.getRemoteAddr()
                                 + ": " + sanitizeForLog(e.getMessage()));
-                return Response.status(Response.Status.UNAUTHORIZED)
+                return withCors(Response.status(Response.Status.UNAUTHORIZED), corsOrigin)
                         .entity(new ResponseEntityView<>("id_token validation failed"))
                         .build();
             }
@@ -354,7 +363,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 if (e.getMessage() != null
                         && (e.getMessage().contains("is not active")
                                 || e.getMessage().contains("Auto-provisioning is disabled"))) {
-                    return Response.status(Response.Status.FORBIDDEN)
+                    return withCors(Response.status(Response.Status.FORBIDDEN), corsOrigin)
                             .entity(new ResponseEntityView<>(e.getMessage())).build();
                 }
                 throw e;
@@ -365,7 +374,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 // with the throwable so ops gets the full stack, return a fixed-string 500.
                 Logger.error(DotAuthOAuthExchangeResource.class,
                         "OAuth exchange user provisioning failed for request from " + request.getRemoteAddr(), e);
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                return withCors(Response.status(Response.Status.INTERNAL_SERVER_ERROR), corsOrigin)
                         .entity(new ResponseEntityView<>("User provisioning failed"))
                         .build();
             }
@@ -388,7 +397,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                         "OAuth exchange rejected: id_token already consumed (replay) from "
                                 + request.getRemoteAddr());
-                return Response.status(Response.Status.UNAUTHORIZED)
+                return withCors(Response.status(Response.Status.UNAUTHORIZED), corsOrigin)
                         .entity(new ResponseEntityView<>("id_token has already been exchanged"))
                         .build();
             }
@@ -430,7 +439,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                     user.getFullName(),
                     loadRoleKeys(user));
 
-            return Response.ok(new ResponseEntityOAuthExchangeView(
+            return withCors(Response.ok(), corsOrigin).entity(new ResponseEntityOAuthExchangeView(
                     new OAuthExchangeView(sessionRef, expiresAt, expirationDays, summary))).build();
         } catch (final Exception e) {
             // Fixed-string 500 on the wire — the exception's message can include
@@ -440,7 +449,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             // silently dropped it.
             Logger.error(DotAuthOAuthExchangeResource.class,
                     "OAuth exchange failed for request from " + request.getRemoteAddr(), e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            return withCors(Response.status(Response.Status.INTERNAL_SERVER_ERROR), corsOrigin)
                     .entity(new ResponseEntityView<>("Token exchange failed"))
                     .build();
         }
@@ -451,6 +460,36 @@ public class DotAuthOAuthExchangeResource implements Serializable {
      * without a second round-trip. Returns an empty list if role resolution fails —
      * the SPA can still proceed, it just won't have role-aware UI hints.
      */
+
+    /**
+     * Apply the CORS response headers for a validated browser origin to a JAX-RS
+     * {@link Response} builder. The headers ride on the returned {@code Response}
+     * (guaranteed to reach the wire through the Jersey response pipeline — the same
+     * route {@code HeaderFilter} uses) rather than relying solely on headers set
+     * directly on the injected {@link HttpServletResponse}, which Jersey is not
+     * required to propagate when the resource method returns a {@code Response}.
+     *
+     * <p>Applied to every return path <em>after</em> the origin allowlist check,
+     * including error responses: a browser that completed a successful preflight
+     * must also be able to read the error body (401/403/400/500) of the actual
+     * POST, otherwise the SPA just sees an opaque network failure.</p>
+     *
+     * @param corsOrigin the validated {@code Origin} header value, or {@code null}
+     *                   for non-browser callers — no headers are added then.
+     */
+    private static Response.ResponseBuilder withCors(final Response.ResponseBuilder builder,
+                                                     final String corsOrigin) {
+        if (corsOrigin == null) {
+            return builder;
+        }
+        return builder
+                .header("Access-Control-Allow-Origin", corsOrigin)
+                .header("Access-Control-Allow-Credentials", "true")
+                // Guard against cache poisoning: an intermediary must never serve this
+                // origin-specific response to a different origin.
+                .header("Vary", "Origin");
+    }
+
     private List<String> loadRoleKeys(final User user) {
         return Try.of(() -> APILocator.getRoleAPI().loadRolesForUser(user.getUserId()))
                 .getOrElse(Collections.emptyList())
