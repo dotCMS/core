@@ -50,10 +50,14 @@ public interface DotAuthSessionCache {
      * after which the token is invalid anyway, so retaining the guard entry past that point
      * is unnecessary.
      *
-     * <p>This is a best-effort check-then-set (the underlying cache offers no atomic
-     * compare-and-set), so two requests racing within the same instant could both observe
-     * "first use". That window is irrelevant to the threat this defends against — replay of
-     * a <em>leaked</em> token minutes/hours later — which it closes.
+     * <p>Atomic within a single JVM: the check-then-set is a critical section, so of
+     * two concurrent exchanges of the same token on one node exactly one observes
+     * "first use". Across a cluster, atomicity depends on the cache provider — the
+     * default provider is node-local, so the guard is enforced per node and the
+     * same token is replayable once per node unless a network-aware replicated
+     * cache provider (e.g. RedisCache) backs the replay cache group. Even in that
+     * per-node window, this guard still closes the threat it exists for — replay
+     * of a <em>leaked</em> token minutes/hours later.</p>
      */
     boolean registerExchangeTokenUse(String tokenFingerprint, long expiresAtMillis);
 }

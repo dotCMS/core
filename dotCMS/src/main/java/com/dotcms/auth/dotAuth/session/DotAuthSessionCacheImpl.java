@@ -12,13 +12,15 @@ import java.util.Optional;
  * Default {@link DotAuthSessionCache} implementation, backed by the dotCMS
  * cache administrator.
  *
- * <p><strong>Cluster scope:</strong> the default cache transport broadcasts
- * invalidations only — values are never replicated between nodes. A session-ref
- * minted on one node is therefore NOT visible on its peers, and the replay
- * guard is enforced per node. Clustered deployments must either route headless
- * API traffic with session affinity (sticky on the {@code Authorization}
- * header / source) or configure a distributed cache provider (e.g. Redis) for
- * {@link #CACHE_GROUP} and {@link #REPLAY_CACHE_GROUP}.
+ * <p><strong>Cluster scope:</strong> with the default cache provider, values are
+ * node-local — the default cache transport broadcasts invalidations only, never
+ * values. A session-ref minted on one node is therefore NOT visible on its peers,
+ * and the replay guard is enforced per node. Values ARE replicated when a
+ * network-aware replicated cache provider (e.g. RedisCache) is configured for
+ * {@link #CACHE_GROUP} and {@link #REPLAY_CACHE_GROUP} — that is a supported,
+ * non-default deployment. Clustered deployments running the default provider
+ * must route headless API traffic with session affinity (sticky on the
+ * {@code Authorization} header / source).
  *
  * <p>Session-refs are {@value #ENTROPY_BYTES}-byte random strings encoded
  * URL-safe-base64 with the {@link DotAuthSessionCache#SESSION_REF_PREFIX}

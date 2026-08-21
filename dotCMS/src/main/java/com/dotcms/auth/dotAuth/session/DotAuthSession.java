@@ -15,8 +15,10 @@ import java.io.Serializable;
  * re-auth contract the SAML browser flow has today.
  *
  * <p>No fields are persisted to the database. This object is Serializable so
- * that Hazelcast-backed cache providers can replicate it across nodes in a
- * cluster; nothing more.
+ * that network-aware replicated cache providers (e.g. RedisCache) can
+ * replicate it across nodes in a cluster; the default cache provider keeps
+ * values node-local and broadcasts invalidations only. See
+ * {@link DotAuthSessionCacheImpl} for the cluster-scope contract.</p>
  */
 public final class DotAuthSession implements Serializable {
 

@@ -130,10 +130,16 @@ import javax.ws.rs.core.Response;
  *       {@code providerType = OIDC}. Plain OAuth2 providers do not issue an
  *       {@code id_token} that can be validated downstream and are rejected with
  *       400.</li>
- *   <li>Session-refs live only in the in-memory dotCMS cache (cluster-replicated
- *       via Hazelcast where configured). Loss of the cache entry — node restart,
- *       eviction, explicit logout — forces the SPA through Okta again. No row
- *       is ever written to the database for the session itself.</li>
+ *   <li>Session-refs live in the dotCMS cache and are never written to the
+ *       database. With the default cache provider the values are local to the
+ *       node (the default transport broadcasts invalidations only), so a
+ *       cluster must either route headless traffic with session affinity
+ *       (sticky on the {@code Authorization} header / source) or configure a
+ *       network-aware replicated cache provider (e.g. RedisCache) for the
+ *       {@code DotAuthSessionCache} / {@code DotAuthTokenReplayCache} groups —
+ *       see {@code DotAuthSessionCacheImpl}'s cluster-scope notes. Loss of the cache entry — node
+ *       restart, eviction, explicit logout — forces the SPA through the IdP
+ *       again.</li>
  * </ul>
  */
 @Path("/v1/dotauth/oauth")
@@ -386,8 +392,10 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             // we fingerprint each consumed token and keep it until its own exp, rejecting any
             // re-presentation in that window. Registered only AFTER provisioning succeeds:
             // a transient failure above must not burn the token and lock the client out of
-            // its natural retry. registerExchangeTokenUse is an atomic check-and-set, so of
-            // two concurrent exchanges of the same token exactly one reaches session creation.
+            // its natural retry. registerExchangeTokenUse is an atomic check-and-set per
+            // node, so of two concurrent exchanges of the same token on one node exactly
+            // one reaches session creation. (Cluster-wide atomicity requires a replicated
+            // cache provider — see DotAuthSessionCacheImpl's cluster-scope notes.)
             final long replayGuardExpiry = idpExpMillis != null
                     ? idpExpMillis
                     : System.currentTimeMillis()
