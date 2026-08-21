@@ -1,7 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.languagevariable.business.ImmutableMigrationSummary;
@@ -18,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import org.junit.BeforeClass;
@@ -118,33 +116,25 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         }
     }
 
-    /**
-     * Given scenario: We simulate the case where the language variable content type is dropped
-     * Expected result: the upgrade task should run without errors and recreate the language variable content type when missing. We run a basic check to verify the task ran successfully
-     * @throws DotDataException   if an error occurs
-     * @throws DotSecurityException if a security violation occurs
+    /*
+     * testDropThenRecreateLanguageVariableContentType used to live here. It deleted the
+     * Language Variable content type through ContentTypeAPI and asserted that
+     * checkContentType() recreated it.
+     *
+     * Removed because that delete should not be possible. The Language Variable content
+     * type underpins all i18n, and deleting it breaks language resolution site-wide -
+     * see #36958, which marks it `system` so ContentTypeFactoryImpl.dbDelete refuses.
+     * Once that lands this test cannot work as written, and in the meantime it is a test
+     * deliberately exercising a destructive path we are trying to close off.
+     *
+     * Its remaining assertions (executeUpgrade succeeds, summary present, no failures)
+     * duplicate testExecuteUpgrade, so nothing else is lost by deleting it outright.
+     *
+     * What IS lost is coverage of checkContentType() recreating the type when it is
+     * genuinely absent - a real situation for legacy installs, which is why the upgrade
+     * task performs that check at all. #36958 tracks re-covering it by seeding the
+     * missing state directly rather than by calling the delete API.
      */
-    @Test
-    public void testDropThenRecreateLanguageVariableContentType() throws DotDataException, DotSecurityException {
-        final Task240306MigrateLegacyLanguageVariables dataTask = new Task240306MigrateLegacyLanguageVariables();
-        assertTrue("This Data Task must always run", dataTask.forceRun());
-        try {
-          removeLanguageVariableContentType();
-          final Optional<String> optional = dataTask.checkContentType();
-          assertTrue("The Language Variable Content Type must always be present", optional.isPresent());
-          assertTrue("The migration summary object should not exist before running the task",
-                  dataTask.getMigrationSummary().isEmpty());
-          dataTask.executeUpgrade();
-          assertTrue("There must be a migration summary after the task execution",
-                  dataTask.getMigrationSummary().isPresent());
-          final ImmutableMigrationSummary summary = dataTask.getMigrationSummary().get();
-          assertTrue("There must be at least 5 successfully processed Locales", summary.success().size() >= 5);
-          assertEquals("There must be no errors", 0, summary.fails().size());
-        } finally {
-          final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
-          migrationSummary.ifPresent(this::cleanup);
-      }
-    }
 
     /**
      * <ul>
@@ -449,23 +439,6 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
     }
 
     /**
-     * Given scenario: We simulate the case where the language variable content type is dropped
-     * @throws DotSecurityException if a security violation occurs
-     * @throws DotDataException if an error occurs
-     */
-    private void removeLanguageVariableContentType() throws DotSecurityException, DotDataException {
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(
-                APILocator.systemUser());
-        final ContentType languageVariableCt = contentTypeAPI.find(
-                LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
-        final boolean asyncDelete = Config.getBooleanProperty(
-                ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, true);
-        Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, false);
-        contentTypeAPI.delete(languageVariableCt);
-        Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, asyncDelete);
-    }
-
-    /**
      * Backs up existing files in the messages directory before modifying them.
      * @return Map of filename to file contents for restoration
      * @throws IOException if an error occurs reading files
@@ -625,12 +598,21 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
                         "+contentType:" + languageVariableContentType.variable(),
                         0, 0, null, APILocator.systemUser(), false);
 
-                for (Contentlet contentlet : existingVariables) {
+                if (!existingVariables.isEmpty()) {
+                    // Batched for the same reason as cleanup() - see destroyQuietly.
                     try {
-                        contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
-                    } catch (Exception e) {
-                        Logger.warn(this, "Failed to delete existing language variable: " +
-                                contentlet.getIdentifier(), e);
+                        contentletAPI.destroy(existingVariables, APILocator.systemUser(), false);
+                    } catch (Exception batchFailure) {
+                        Logger.debug(this, "Batch destroy failed, falling back to one at a time: "
+                                + batchFailure.getMessage(), batchFailure);
+                        for (final Contentlet contentlet : existingVariables) {
+                            try {
+                                contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                            } catch (Exception e) {
+                                Logger.warn(this, "Failed to delete existing language variable: " +
+                                        contentlet.getIdentifier(), e);
+                            }
+                        }
                     }
                 }
 
@@ -681,9 +663,41 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      * @param summary the migration summary
      */
     private void cleanup(final ImmutableMigrationSummary summary) {
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         //Clean up required to avoid side effects
-        summary.success().forEach((language, inodes) -> {
+        final List<String> inodes = summary.success().values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        destroyQuietly(inodes);
+    }
+
+    /**
+     * Destroys the given contentlets by inode, batching the work.
+     * <p>
+     * A migration run produces well over a hundred Language Variables, and both
+     * {@code find} and {@code destroy} are per-contentlet round trips -
+     * {@code destroy} is {@code @WrapInTransaction}, so destroying one at a time
+     * costs one transaction (plus an ES delete and cache invalidation) each. The
+     * batch overloads collapse that into a single query and a single transaction.
+     * <p>
+     * Teardown must never leave content behind for the next test, so if the batch
+     * fails for any reason this falls back to the original per-contentlet loop,
+     * which tolerates individual failures.
+     *
+     * @param inodes inodes of the contentlets to destroy
+     */
+    private void destroyQuietly(final List<String> inodes) {
+        if (inodes.isEmpty()) {
+            return;
+        }
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        try {
+            final List<Contentlet> contentlets = contentletAPI.findContentlets(inodes);
+            if (!contentlets.isEmpty()) {
+                contentletAPI.destroy(contentlets, APILocator.systemUser(), false);
+            }
+        } catch (Exception batchFailure) {
+            Logger.debug(this, "Batch destroy failed, falling back to one at a time: "
+                    + batchFailure.getMessage(), batchFailure);
             inodes.forEach(inode -> {
                 try {
                     final Contentlet contentlet = contentletAPI.find(inode, APILocator.systemUser(), false);
@@ -692,7 +706,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
                     Logger.debug(this, e.getMessage(), e);
                 }
             });
-        });
+        }
     }
 
     /**

@@ -20,6 +20,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import java.io.IOException;
 import java.io.StringReader;
@@ -111,8 +112,18 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
             SystemMessage systemMessage = systemMessageBuilder.setMessage("Unable to verify S3 Endpoint. Please check your configuration:" + e.getMessage()).setType(MessageType.SIMPLE_MESSAGE)
                             .setSeverity(MessageSeverity.WARNING).setLife(100000).create();
-            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(PortalUtil.getUser().getUserId()));
 
+            // PortalUtil.getUser() returns null whenever no request is bound to the
+            // thread - scheduled jobs, background tasks, tests. Dereferencing it here
+            // threw a NullPointerException out of this catch block, which replaced the
+            // S3 error we are trying to report with a confusing NPE and defeated the
+            // point of catching at all. The message is a UI notification, so when
+            // there is no user to notify, the logged warning above is the whole story.
+            final User currentUser = PortalUtil.getUser();
+            if (currentUser != null) {
+                SystemMessageEventUtil.getInstance().pushMessage(systemMessage,
+                        ImmutableList.of(currentUser.getUserId()));
+            }
         }
 
     } //validatePublishingEndPoint.
