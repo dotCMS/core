@@ -7,6 +7,7 @@ import {
     type TrafficProportion
 } from '@dotcms/dotcms-models';
 
+import { CONFIGURATION_SEGMENT, EXPERIMENTS_URL } from '../shared/constants';
 import { DotExperimentPageInfo, ExperimentListAction } from '../shared/models';
 
 /** Day-level format shared by every schedule cell of the experiments list (e.g. `Jun 25, 2026`). */
@@ -101,4 +102,17 @@ function toDisplayDate(epochMillis: number | null | undefined, locale?: string):
 /** Whether an action is offered for a status, per the shared `AllowedActionsByExperimentStatus`. */
 export function isAllowed(action: ExperimentListAction, status: DotExperimentStatus): boolean {
     return AllowedActionsByExperimentStatus[action].includes(status);
+}
+
+/**
+ * Router commands for the Configure screen of an experiment that already exists.
+ *
+ * Shared rather than repeated: the list's row action and the Results header's Configuration button
+ * are two ways to the same URL, and a URL spelled out twice is a URL that can drift.
+ *
+ * @param experimentId - Identifier of the experiment to configure
+ * @returns Absolute router commands, since Configure always hangs off the portlet root
+ */
+export function configureCommandsOf(experimentId: string): string[] {
+    return [EXPERIMENTS_URL, experimentId, CONFIGURATION_SEGMENT];
 }

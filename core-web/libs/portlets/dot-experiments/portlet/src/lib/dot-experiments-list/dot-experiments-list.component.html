@@ -203,11 +203,15 @@
                                 {{ row.experiment.modDate | date: 'MMM d, y' }}
                             </td>
                             <td>
-                                <!-- The design leads this cell with "View Results" / "Configure";
-                                 Configure is the first entry of the kebab and View Results lands
-                                 with the reports screen. -->
                                 <div
                                     class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                                    <p-button
+                                        [text]="true"
+                                        [rounded]="true"
+                                        size="small"
+                                        [label]="'experiments.list.actions.view-results' | dm"
+                                        (onClick)="onViewResults(row.experiment)"
+                                        data-testid="experiment-view-results-btn" />
                                     <p-button
                                         [text]="true"
                                         [rounded]="true"

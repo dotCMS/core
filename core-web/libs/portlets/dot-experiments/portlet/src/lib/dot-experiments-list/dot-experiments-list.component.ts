@@ -55,11 +55,11 @@ import {
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
 import {
-    CONFIGURATION_SEGMENT,
     EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
     NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
+    RESULTS_SEGMENT,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
     SKELETON_COLUMNS,
@@ -77,6 +77,7 @@ import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 import {
+    configureCommandsOf,
     ExperimentScheduleLabels,
     formatSchedule,
     goalTypeOf,
@@ -88,11 +89,11 @@ import {
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
 
-/** Configure URL of an experiment that already exists. */
-const configureCommandsOf = (experimentId: string): string[] => [
+/** Results URL of an experiment. */
+const resultsCommandsOf = (experimentId: string): string[] => [
     EXPERIMENTS_URL,
     experimentId,
-    CONFIGURATION_SEGMENT
+    RESULTS_SEGMENT
 ];
 
 @Component({
@@ -430,6 +431,17 @@ export class DotExperimentsListComponent {
         this.#router.navigate(configureCommandsOf(experiment.id));
     }
 
+    /**
+     * Opens the Results screen of an experiment.
+     *
+     * Ungated on purpose, unlike every kebab entry: `AllowedActionsByExperimentStatus.results`
+     * clears RUNNING and ENDED only, but the screen renders a waiting state of its own for an
+     * experiment with nothing to count yet, so the row leads with it whatever the status (AC6).
+     */
+    onViewResults(experiment: DotExperiment): void {
+        this.#router.navigate(resultsCommandsOf(experiment.id));
+    }
+
     confirmArchive(experiment: DotExperiment): void {
         this.#confirm({
             headerKey: 'experiments.action.archive',
@@ -444,8 +456,8 @@ export class DotExperimentsListComponent {
 
         return [
             {
-                // The primary action of the row: it leads the menu, and is the only entry every
-                // status allows.
+                // Leads the menu, behind the row's own View Results control: it is the only
+                // entry every status allows.
                 id: 'experiments-configure',
                 label: this.#dotMessageService.get('experiments.list.action.configure'),
                 visible: isAllowed('configuration', status),

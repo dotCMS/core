@@ -118,6 +118,14 @@ export interface DotExperimentVariantDetail {
     probabilityToBeBest: string;
     isWinner: boolean;
     isPromoted: boolean;
+    /**
+     * Difference against the control's conversion rate, ready to render: signed percentage points
+     * with one decimal, or an em dash on the control row and when the control converted nothing.
+     *
+     * Optional because the backend does not send it and the legacy reports screen does not compute
+     * it — only the results screen does.
+     */
+    liftVsOriginal?: string;
 }
 
 export interface Variant {
