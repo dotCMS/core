@@ -158,6 +158,60 @@ describe('DotLanguageFilterComponent', () => {
             ]);
         });
 
+        describe('removable', () => {
+            // These live here, in the SHARED component's spec, on purpose. Content Drive needs the
+            // chip's remove control suppressed while the only selection is the environment default,
+            // because clearing it re-seeds the same value. A guard in the portlet's spec would not
+            // protect that: whoever refactors this component runs `nx test ui`, not the portlet suite,
+            // so the capability has to be pinned where the change happens. The portlet spec separately
+            // pins that it passes the input.
+            it('should offer the remove control by default', () => {
+                spectator.setInput('selectedLanguageIds', [1, 2]);
+                spectator.detectChanges();
+
+                const chip = spectator.query(byTestId('language-chip'));
+
+                expect(chip?.querySelector('[data-testid="chip-remove"]')).toBeTruthy();
+            });
+
+            it('should suppress the remove control when the host says it is not removable', () => {
+                spectator.setInput('selectedLanguageIds', [1]);
+                spectator.setInput('removable', false);
+                spectator.detectChanges();
+
+                const chip = spectator.query(byTestId('language-chip'));
+
+                expect(chip?.querySelector('[data-testid="chip-remove"]')).toBeFalsy();
+            });
+
+            it('should keep showing the selection while it is not removable', () => {
+                // Suppressing the X must not hide what is selected — the chip still has to read as
+                // "English (en-US)", it just cannot be cleared from here.
+                spectator.setInput('selectedLanguageIds', [1]);
+                spectator.setInput('removable', false);
+                spectator.detectChanges();
+
+                const chip = spectator.query(byTestId('language-chip'));
+
+                expect(chip?.querySelector('[data-testid="chip-values"]')?.textContent).toContain(
+                    'English (en-US)'
+                );
+            });
+
+            it('should pass the input straight through to the chip', () => {
+                spectator.setInput('removable', false);
+                spectator.detectChanges();
+
+                const chipDe = spectator.fixture.debugElement.query(
+                    By.directive(DotChipFilterComponent)
+                );
+
+                expect((chipDe.componentInstance as DotChipFilterComponent).removable()).toBe(
+                    false
+                );
+            });
+        });
+
         it('should toggle popover when the chip is clicked', () => {
             spectator.detectChanges();
 

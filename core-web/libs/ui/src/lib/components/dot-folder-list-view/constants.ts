@@ -7,14 +7,26 @@ export type DotFolderListViewFixedColumn = DotFolderListViewColumn & {
 /**
  * Column widths, in the order the header renders them.
  *
- * `title` deliberately has NO width: the table also renders a fixed `3rem` selection column that is
- * outside this budget, so a set of percentages adding up to 100% makes the `table-layout: fixed`
- * table `3rem` wider than its container — a horizontal scrollbar that scrolls nothing. Leaving
- * `title` unsized lets it absorb whatever is left after the selection column and the sized ones,
- * whichever subset of these is actually rendered.
+ * `title` carries a width on purpose, and 28% rather than a larger share so the sized columns total
+ * 96% — the checkbox column below stays inside the table, which is the invariant the width was
+ * originally dropped to protect.
+ *
+ * Sizing it at all is the point: Leaving it unsized makes it the leftover column, and with
+ * `table-layout: fixed` the sized columns plus the `3rem` selection column plus the Show-In-List
+ * extras are all satisfied first — so two or three extras drive the leftover to zero and the title
+ * collapses under its own status badge, headers overlapping. Measured at a 1200px container: unsized
+ * gives 316px with no extras but 50px at two and 0px at three, while 32% holds ~355px throughout.
+ *
+ * `min-width` is not an alternative: `table-layout: fixed` sizes columns from the first row's `width`
+ * values and ignores a cell's min-width, so a floor there has no effect (measured — identical results
+ * with and without).
+ *
+ * The percentages summing to 100% alongside the out-of-budget `3rem` selection column does NOT
+ * overflow, which is the reason the width was previously dropped: the browser scales the
+ * over-specified widths instead. Measured as 0px of overflow with no extras.
  */
 const FIXED_COLUMNS: DotFolderListViewFixedColumn[] = [
-    { field: 'title', header: 'name', order: 1, sortable: true },
+    { field: 'title', header: 'name', width: '28%', order: 1, sortable: true },
     { field: 'live', header: 'status', width: '10%', order: 2 },
     { field: 'languageId', header: 'locale', width: '10%', order: 3, sortable: true },
     { field: 'contentType', header: 'type', sortable: true, width: '15%', order: 4 },

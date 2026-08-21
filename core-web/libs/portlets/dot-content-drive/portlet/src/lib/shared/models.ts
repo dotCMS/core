@@ -4,6 +4,7 @@ import {
     DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
+    DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
@@ -232,6 +233,34 @@ export interface DotContentDriveState extends DotContentDriveInit {
      */
     isTreeForceCollapsed: boolean;
     /**
+     * Every language configured in the environment, from `DotLanguagesService.get()`.
+     *
+     * Held here rather than fetched per consumer so the Locale filter and the default-language seed
+     * share one request instead of issuing the same call twice.
+     */
+    languages: DotLanguage[];
+    /**
+     * Id of the environment's default language — the language flagged `defaultLanguage`, which is
+     * NOT necessarily id 1 nor the first entry returned.
+     *
+     * Seeds the `languageId` filter whenever no language is selected: a cold load, a URL without a
+     * language, a clear-all, or a Back/Forward restore. "No language" is not a neutral state — the
+     * backend omits the language term entirely, so every language version of a contentlet comes
+     * back as its own row (see `withDefaultLanguage`).
+     *
+     * `undefined` while the request is in flight, and if it fails or the environment declares no
+     * default — see {@link defaultLanguageLoaded}.
+     */
+    defaultLanguageId?: number;
+    /**
+     * Whether the languages request has settled — to a default id, to no default, or to a failure.
+     * Distinguishes "not fetched yet" from "fetched, nothing to seed", which lets the first search
+     * wait for the seed instead of firing once without a language (a flash of duplicated rows) and
+     * again with it. Always ends up `true`, so a failure degrades to the pre-seeding behaviour
+     * rather than hanging the portlet in `LOADING`.
+     */
+    defaultLanguageLoaded: boolean;
+    /**
      * Whether the logged-in user holds the CMS Administrator role, from
      * `DotCurrentUserService.getCurrentUser()`.
      *
@@ -259,6 +288,11 @@ export type DotKnownContentDriveFilters = {
     languageId: string[];
     // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
     workflow: string[];
+    // `'false'` hides SYSTEM_HOST (shared) assets, `'true'` shows them. Always present: the filter is
+    // seeded to `'true'` on a cold load, on "Clear all", and on a Back/Forward restore (see
+    // `withFilterDefaults`), so the value is explicit in the URL rather than implied by the key's
+    // absence.
+    sharedAssets: string;
 };
 
 /**

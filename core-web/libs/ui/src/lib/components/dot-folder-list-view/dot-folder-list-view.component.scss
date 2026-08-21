@@ -4,6 +4,18 @@
 @use "../../../../../dotcms-scss/shared/spacing";
 
 @use "variables" as *;
+
+// The sort indicator's spacing nominally belongs to `dotcms-theme/components/_datatable.scss`, but a
+// rule there is inert: the theme is not in the build at all, because
+// `dotcms-scss/angular/styles.scss` has its `@import "dotcms-theme/theme"` commented out. It also
+// still targets the pre-PrimeNG-21 `.p-sortable-column-icon` rather than `.p-datatable-sort-icon`.
+// PrimeNG 21 already centres the glyph itself with `vertical-align: middle`, so only the gap is
+// missing, and it is missing because this header renders the label and the icon directly into the
+// `th` instead of inside PrimeNG's own header-content wrapper, which is what would carry the gap.
+:host ::ng-deep .p-datatable-sort-icon {
+    margin-left: spacing.$spacing-2;
+}
+
 // Drag image styles (dynamically created, appended to body)
 ::ng-deep {
     .drag-image-container {

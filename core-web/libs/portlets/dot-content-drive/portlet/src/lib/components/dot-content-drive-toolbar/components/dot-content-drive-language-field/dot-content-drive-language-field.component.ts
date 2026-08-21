@@ -13,6 +13,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     template: `
         <dot-language-filter
             [selectedLanguageIds]="$selectedLanguageIds()"
+            [removable]="$removable()"
             (selectionChange)="onSelectionChange($event)" />
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +25,17 @@ export class DotContentDriveLanguageFieldComponent {
     protected readonly $selectedLanguageIds = computed(() =>
         ((this.#store.getFilterValue('languageId') as string[]) ?? []).map(Number)
     );
+
+    /**
+     * Whether the chip should offer its "remove" X. Hidden while the selection is exactly the
+     * environment default, because removing it re-selects that same default — the X would do nothing
+     * visible. Computed here rather than in the shared filter, which has no notion of a default.
+     */
+    protected readonly $removable = computed(() => {
+        const selected = this.$selectedLanguageIds();
+
+        return !(selected.length === 1 && selected[0] === this.#store.defaultLanguageId());
+    });
 
     protected onSelectionChange(languageIds: number[]): void {
         if (languageIds.length) {

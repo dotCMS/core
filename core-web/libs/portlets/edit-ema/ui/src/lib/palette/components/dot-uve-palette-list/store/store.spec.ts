@@ -550,6 +550,16 @@ describe('DotPaletteListStore', () => {
                 );
             });
 
+            it('should NOT change system-type behaviour for the UVE WIDGET list type', () => {
+                // Excluding system types was asked for in the Content Drive picker only; UVE's own
+                // palette tab must keep the behaviour it has today.
+                store.getContentTypes({ listType: DotUVEPaletteListTypes.WIDGET });
+
+                expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                    expect.not.objectContaining({ system: expect.anything() })
+                );
+            });
+
             it('should fetch favorites for FAVORITES list type', () => {
                 store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
 
@@ -706,6 +716,20 @@ describe('DotPaletteListStore', () => {
                                 types,
                                 per_page: 30
                             })
+                        );
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should exclude system content types for $listType',
+                    ({ listType }) => {
+                        // System types (Host, Forms, Favorite Page) are not things a user creates
+                        // from these pickers. The backend defaults to including them, so the flag
+                        // has to be sent explicitly.
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                            expect.objectContaining({ system: false })
                         );
                     }
                 );
