@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.maintenance;
 
 import com.dotcms.business.SystemTable;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.util.ObfuscationUtil;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
@@ -37,14 +38,13 @@ import java.util.regex.Pattern;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    private static final String DEFAULT_OBFUSCATE_PATTERN = "passw|pass|passwd|secret|key|token";
+    /** @deprecated use {@link ObfuscationUtil#BASE_PATTERN} */
+    @Deprecated
+    public static final Pattern obfuscateBasePattern = ObfuscationUtil.BASE_PATTERN;
 
-    public static final Pattern obfuscateBasePattern = Pattern.compile(DEFAULT_OBFUSCATE_PATTERN,
-            Pattern.CASE_INSENSITIVE);
-
-    public static final Pattern obfuscatePattern = Pattern.compile(
-            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", DEFAULT_OBFUSCATE_PATTERN),
-            Pattern.CASE_INSENSITIVE);
+    /** @deprecated use {@link ObfuscationUtil#CUSTOM_PATTERN} */
+    @Deprecated
+    public static final Pattern obfuscatePattern = ObfuscationUtil.CUSTOM_PATTERN;
 
     @Path("/")
     @GET
@@ -116,10 +116,8 @@ public class JVMInfoResource implements Serializable {
 
         SystemTable systemTable =APILocator.getSystemAPI().getSystemTable();
 
-        resultMap.putAll(systemTable.all());
-
-
-
+        systemTable.all().forEach((key, value) ->
+                resultMap.put(key, ObfuscationUtil.obfuscateIfNeeded(key, value)));
 
         return resultMap;
     }
@@ -155,7 +153,7 @@ public class JVMInfoResource implements Serializable {
         Properties props = System.getProperties();
         for(Object keyObject : props.keySet()) {
             final String key = (String) keyObject;
-            resultMap.put(key, obfuscateIfNeeded(key,props.getProperty(key)));
+            resultMap.put(key, ObfuscationUtil.obfuscateIfNeeded(key, props.getProperty(key)));
         }
         
         return resultMap;
@@ -168,7 +166,7 @@ public class JVMInfoResource implements Serializable {
         final Map<String,Object> resultMap=new LinkedHashMap<>();
         Map<String,String> vars = System.getenv();
         for(String key : vars.keySet()) {
-            resultMap.put(key, obfuscateIfNeeded(key,vars.get(key)));
+            resultMap.put(key, ObfuscationUtil.obfuscateIfNeeded(key, vars.get(key)));
         }
         
         return resultMap;
@@ -191,18 +189,10 @@ public class JVMInfoResource implements Serializable {
     
     
     
+    /** @deprecated use {@link ObfuscationUtil#obfuscateIfNeeded(String, Object)} */
+    @Deprecated
     public static String obfuscateIfNeeded(final String key, final Object valueObject) {
-        final String value = (String) valueObject;
-        if(UtilMethods.isEmpty(value)) return "";
-        return obfuscateBasePattern.matcher(key).find() || obfuscatePattern.matcher(key).find()
-                ? obfuscate(value)
-                : value;
-    }
-    
-    private static String obfuscate(final String value) {
-        return value.charAt(0)
-                + "*********"
-                + value.charAt(value.length() - 1);
+        return ObfuscationUtil.obfuscateIfNeeded(key, valueObject);
     }
     
 
