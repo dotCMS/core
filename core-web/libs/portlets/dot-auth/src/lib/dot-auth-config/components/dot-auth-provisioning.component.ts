@@ -48,6 +48,9 @@ export class DotAuthProvisioningComponent {
     readonly syncKey = input<string>('syncOnLogin');
     // ponytail: OIDC has no backend key for sync-on-login yet; hide the toggle there
     readonly showSync = input<boolean>(true);
+    // Group-security controls (allowUnmappedGroups / groupFilterPattern) are OIDC-only —
+    // the SAML handler does not read those keys.
+    readonly showGroupSecurity = input<boolean>(false);
 
     readonly fieldChange = output<ProvisioningChange>();
 

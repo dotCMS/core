@@ -56,6 +56,8 @@ export interface DotAuthConfigValues {
     firstNameClaim?: string;
     lastNameClaim?: string;
     groupMappings?: string;
+    allowUnmappedGroups?: boolean;
+    groupFilterPattern?: string;
     extraRoles?: string;
     buildRolesStrategy?: string;
     callbackUrl?: string;
@@ -179,6 +181,18 @@ export interface DotAuthProvisioningConfig {
     defaultRoles: string[];
     roleBehavior: DotAuthRoleBehavior;
     groupMappings: DotAuthGroupMapping[];
+    /**
+     * OIDC only. Pass unmapped IdP group names through as dotCMS role keys.
+     * Default false (closed): only groups with an explicit groupMappings entry
+     * resolve to roles. An IdP group named after a privileged role key
+     * ("CMS Administrator", "DOTCMS_BACK_END_USER") must not grant that role.
+     */
+    allowUnmappedGroups?: boolean;
+    /**
+     * OIDC only. Optional regex allow-list applied to the final dotCMS role key
+     * after mapping (SAML rolePatterns semantics — substring match).
+     */
+    groupFilterPattern?: string;
 }
 
 export interface DotAuthOidcConfig extends DotAuthProvisioningConfig {

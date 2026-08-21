@@ -223,6 +223,27 @@ describe('dot-auth-config.mappers', () => {
             ]);
         });
 
+        it('maps OIDC group-security fields', () => {
+            const view: DotAuthConfigView = {
+                ...OIDC_VIEW,
+                values: {
+                    ...OIDC_VIEW.values,
+                    allowUnmappedGroups: true,
+                    groupFilterPattern: '^(dotcms|CMS) '
+                }
+            };
+            const config = fromView(view);
+            expect(config.oidc.allowUnmappedGroups).toBe(true);
+            expect(config.oidc.groupFilterPattern).toBe('^(dotcms|CMS) ');
+        });
+
+        it('defaults allowUnmappedGroups to false (default-closed role resolution)', () => {
+            // OIDC_VIEW carries neither key — the backend skips unmapped groups by default.
+            const config = fromView(OIDC_VIEW);
+            expect(config.oidc.allowUnmappedGroups).toBe(false);
+            expect(config.oidc.groupFilterPattern).toBe('');
+        });
+
         it('maps top-level login behavior fields', () => {
             const config = fromView(OIDC_VIEW);
             expect(config.enableBackend).toBe(true);
@@ -411,6 +432,26 @@ describe('dot-auth-config.mappers', () => {
             const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBeUndefined();
             expect(payload.values.groupsUrl).toBeUndefined();
+        });
+
+        it('serializes group-security fields (allowUnmappedGroups / groupFilterPattern)', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+            config.oidc.allowUnmappedGroups = true;
+            config.oidc.groupFilterPattern = '^(dotcms|CMS) ';
+
+            const payload = toPayload(config, 'test-site-id');
+            expect(payload.values.allowUnmappedGroups).toBe(true);
+            expect(payload.values.groupFilterPattern).toBe('^(dotcms|CMS) ');
+        });
+
+        it('defaults allowUnmappedGroups to false and omits an empty filter pattern', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+
+            const payload = toPayload(config, 'test-site-id');
+            expect(payload.values.allowUnmappedGroups).toBe(false);
+            expect(payload.values.groupFilterPattern).toBeUndefined();
         });
     });
 

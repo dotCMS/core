@@ -73,6 +73,50 @@
         </div>
     </div>
 
+    <!-- Group security (OIDC only): default-closed role resolution -->
+    @if (showGroupSecurity()) {
+        <div class="provisioning-group">
+            <div class="provisioning-group-header">
+                <div class="provisioning-group-title">
+                    {{ 'dotauth.field.groupSecurity' | dm }}
+                </div>
+                <div class="provisioning-group-description">
+                    {{ 'dotauth.field.groupSecurity.detail' | dm }}
+                </div>
+            </div>
+            <div class="field-grid provisioning-field-grid">
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.allowUnmappedGroups' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.allowUnmappedGroups' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <div class="toggle-row flex items-center gap-2.5">
+                        <p-toggleswitch
+                            [ngModel]="config().allowUnmappedGroups ?? false"
+                            (ngModelChange)="onChange('allowUnmappedGroups', $event)" />
+                    </div>
+                </div>
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.groupFilterPattern' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.groupFilterPattern' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <input
+                        pInputText
+                        [ngModel]="config().groupFilterPattern ?? ''"
+                        (ngModelChange)="onChange('groupFilterPattern', $event)"
+                        placeholder="^(dotcms|CMS) " />
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Group mappings -->
     <div class="provisioning-group">
         <div class="provisioning-group-toolbar">

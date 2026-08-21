@@ -48,6 +48,8 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_FIRST_NAME_CLAIM    = "firstNameClaim";
     public static final String KEY_LAST_NAME_CLAIM     = "lastNameClaim";
     public static final String KEY_GROUP_MAPPINGS      = "groupMappings";
+    public static final String KEY_ALLOW_UNMAPPED_GROUPS = "allowUnmappedGroups";
+    public static final String KEY_GROUP_FILTER_PATTERN  = "groupFilterPattern";
     public static final String KEY_ENABLE_BACKEND      = "enableBackend";
     public static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
     public static final String KEY_EXTRA_ROLES         = "extraRoles";
@@ -78,6 +80,8 @@ public final class OAuthAppConfig implements Serializable {
     public final String   firstNameClaim;
     public final String   lastNameClaim;
     public final String   groupMappingsJson;
+    public final boolean  allowUnmappedGroups;
+    public final String   groupFilterPattern;
     public final String[] extraRoles;
     public final String   buildRolesStrategy;
     public final String   callbackUrl;
@@ -113,6 +117,15 @@ public final class OAuthAppConfig implements Serializable {
         this.firstNameClaim   = str (secrets, KEY_FIRST_NAME_CLAIM, null);
         this.lastNameClaim    = str (secrets, KEY_LAST_NAME_CLAIM,  null);
         this.groupMappingsJson = str(secrets, KEY_GROUP_MAPPINGS,   null);
+        // Default CLOSED: only IdP groups with an explicit groupMappings entry resolve to
+        // dotCMS roles. Passing unmapped group names straight through as role keys trusts
+        // the IdP's group namespace as the dotCMS role namespace — an IdP group named
+        // "CMS Administrator" (the admin role key) would grant that role. Operators who
+        // want passthrough must opt in explicitly.
+        this.allowUnmappedGroups = bool(secrets, KEY_ALLOW_UNMAPPED_GROUPS, false);
+        // Optional regex allow-list (SAML rolePatterns semantics: "contains"/find, not
+        // full match) applied to the final dotCMS role key AFTER mapping.
+        this.groupFilterPattern  = str (secrets, KEY_GROUP_FILTER_PATTERN, null);
         this.extraRoles       = split(str(secrets, KEY_EXTRA_ROLES, null));
         this.buildRolesStrategy = str(secrets, KEY_BUILD_ROLES_STRATEGY,
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
@@ -150,6 +163,8 @@ public final class OAuthAppConfig implements Serializable {
         this.firstNameClaim   = str (headlessSecrets, "firstNameClaim", null);
         this.lastNameClaim    = str (headlessSecrets, "lastNameClaim", null);
         this.groupMappingsJson = str(headlessSecrets, "groupMappings", null);
+        this.allowUnmappedGroups = bool(headlessSecrets, "allowUnmappedGroups", false);
+        this.groupFilterPattern  = str (headlessSecrets, "groupFilterPattern", null);
         this.extraRoles       = split(str(headlessSecrets, "extraRoles", null));
         this.buildRolesStrategy = str(headlessSecrets, "buildRolesStrategy",
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
@@ -288,6 +303,8 @@ public final class OAuthAppConfig implements Serializable {
         this.firstNameClaim     = idpStr(idpOverrides, "claimFirstName", base.firstNameClaim);
         this.lastNameClaim      = idpStr(idpOverrides, "claimLastName",  base.lastNameClaim);
         this.groupMappingsJson  = idpStr(idpOverrides, "groupMappings",  base.groupMappingsJson);
+        this.allowUnmappedGroups = idpBool(idpOverrides, "allowUnmappedGroups", base.allowUnmappedGroups);
+        this.groupFilterPattern  = idpStr(idpOverrides, "groupFilterPattern",  base.groupFilterPattern);
         this.buildRolesStrategy = idpStr(idpOverrides, "roleBehavior",   base.buildRolesStrategy);
         this.autoProvision      = idpBool(idpOverrides, "autoProvision", base.autoProvision);
         final String defaultRolesStr = idpStr(idpOverrides, "defaultRoles", null);

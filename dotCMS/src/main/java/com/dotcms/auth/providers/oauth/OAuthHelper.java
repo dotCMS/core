@@ -539,6 +539,22 @@ public class OAuthHelper {
         }
     }
 
+    /**
+     * Resolve IdP groups to dotCMS roles under a default-closed security model:
+     * <ol>
+     *   <li>An IdP group with an explicit {@code groupMappings} entry resolves to the
+     *       mapped dotCMS role key.</li>
+     *   <li>Unmapped groups are used directly as dotCMS role keys ONLY when
+     *       {@code allowUnmappedGroups=true}. Default is {@code false}: the IdP's group
+     *       namespace is not implicitly trusted as the dotCMS role namespace, because role
+     *       keys like {@code CMS Administrator} or {@code DOTCMS_BACK_END_USER} carry real
+     *       privilege — an IdP group named after one of them must not grant it.</li>
+     *   <li>The optional {@code groupFilterPattern} regex allow-list (SAML
+     *       {@code rolePatterns} semantics — substring {@code find()}, not full match) is
+     *       applied to the FINAL dotCMS role key, i.e. after mapping. A bad pattern fails
+     *       closed: no provider groups resolve to roles until the pattern is fixed.</li>
+     * </ol>
+     */
     private void applyProviderGroups(final User user,
                                      final Collection<String> groups,
                                      final OAuthAppConfig config) {
@@ -549,8 +565,41 @@ public class OAuthHelper {
         }
         Logger.info(this, "OAuth provider returned groups for " + user.getEmailAddress() + ": " + groups);
         final Map<String, String> mappings = parseGroupMappings(config);
+
+        java.util.regex.Pattern filter = null;
+        boolean filterFailClosed = false;
+        if (config != null && UtilMethods.isSet(config.groupFilterPattern)) {
+            try {
+                filter = java.util.regex.Pattern.compile(config.groupFilterPattern);
+            } catch (final java.util.regex.PatternSyntaxException e) {
+                // Fail closed: an unparseable allow-list must not degrade into "allow all".
+                filterFailClosed = true;
+                Logger.error(this, "OAuth groupFilterPattern '" + config.groupFilterPattern
+                        + "' is not a valid regex — no provider groups will resolve to roles"
+                        + " for " + user.getEmailAddress() + " until the pattern is fixed: " + e.getMessage());
+            }
+        }
+
         for (final String group : groups) {
-            final String roleKey = mappings.getOrDefault(group, group);
+            final String roleKey;
+            if (mappings.containsKey(group)) {
+                roleKey = mappings.get(group);
+            } else if (config != null && config.allowUnmappedGroups) {
+                // Explicit opt-in to passthrough of unmapped group names as role keys.
+                roleKey = group;
+            } else {
+                Logger.info(this, "OAuth group '" + group + "' for " + user.getEmailAddress()
+                        + " has no explicit groupMappings entry and allowUnmappedGroups=false — skipped."
+                        + " Add a groupMappings entry or set allowUnmappedGroups=true to honor it.");
+                continue;
+            }
+            if (filterFailClosed || (filter != null && !filter.matcher(roleKey).find())) {
+                Logger.info(this, "OAuth role key '" + roleKey + "' for " + user.getEmailAddress()
+                        + " does not match groupFilterPattern"
+                        + (filterFailClosed ? " (pattern invalid — failing closed)" : "")
+                        + " — skipped");
+                continue;
+            }
             addRoleByKey(user, roleKey);
         }
     }

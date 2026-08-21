@@ -40,6 +40,8 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         defaultRoles: [],
         roleBehavior: 'sync-all',
         groupMappings: [],
+        allowUnmappedGroups: false,
+        groupFilterPattern: '',
         sessionTtlMinutes: 60,
         idleTimeoutMinutes: 30,
         postLogoutRedirect: ''
@@ -153,7 +155,12 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         syncOnLogin: true,
         defaultRoles: splitList(values.extraRoles),
         roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy),
-        groupMappings: parseJson(values['groupMappings'], config.oidc.groupMappings)
+        groupMappings: parseJson(values['groupMappings'], config.oidc.groupMappings),
+        allowUnmappedGroups: booleanValue(
+            values['allowUnmappedGroups'],
+            config.oidc.allowUnmappedGroups
+        ),
+        groupFilterPattern: String(values['groupFilterPattern'] ?? config.oidc.groupFilterPattern)
     };
     config.headless = fromHeadlessValues(view, config.headless);
     return config;
@@ -233,7 +240,9 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
             autoProvision: config.oidc.autoProvision,
             groupMappings: JSON.stringify(config.oidc.groupMappings),
             extraRoles: config.oidc.defaultRoles.join(','),
-            buildRolesStrategy: toBuildRoles(config.oidc.roleBehavior)
+            buildRolesStrategy: toBuildRoles(config.oidc.roleBehavior),
+            allowUnmappedGroups: config.oidc.allowUnmappedGroups,
+            groupFilterPattern: config.oidc.groupFilterPattern || undefined
         }
     };
 }
