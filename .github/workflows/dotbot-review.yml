@@ -1,0 +1,34 @@
+name: dotbot code review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+concurrency:
+  group: dotbot-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Only run when the PR carries the "PR : dotbot review" label. The
+    # `labeled`/`unlabeled` event types make the review fire (or cancel via
+    # concurrency) the moment the label is added or removed.
+    if: "contains(github.event.pull_request.labels.*.name, 'PR : dotbot review')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: dotbot autonomous review
+        uses: wezell/openrouter-code-review-action@34ee169dd9f35bf20a6b358b902c6c76e5df3a14
+        with:
+          mode: review
+          openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          review_models: ${{ vars.DOTBOT_REVIEW_MODELS }}
+          reasoning_effort: medium
+          web_search_mode: cached
+          debug_level: 1
