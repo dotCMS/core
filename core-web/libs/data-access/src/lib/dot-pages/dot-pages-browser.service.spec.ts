@@ -242,6 +242,22 @@ describe('DotPagesBrowserService', () => {
             expect(lockInfo).toEqual({ locked: false });
         });
 
+        /**
+         * The identifier shape is checked against the trimmed value, so a padded one is a page —
+         * but the padding cannot reach the Lucene string, where it would stop being a single term.
+         */
+        it('should query with the trimmed identifier when the value carries whitespace', () => {
+            spectator.service.getPageLockState(`  ${PAGE_ID}  `).subscribe();
+
+            const request = spectator.expectOne(ES_SEARCH_URL, HttpMethod.POST);
+            const body = request.request.body as {
+                query: { query_string: { query: string } };
+            };
+
+            expect(body.query.query_string.query).toBe(`+basetype:5 +identifier:${PAGE_ID}`);
+            request.flush({ contentlets: [] });
+        });
+
         it('should report an unlocked page when the lock holder is absent', () => {
             expect(lockStateOf([contentlet({ locked: false })])).toEqual({ locked: false });
         });
