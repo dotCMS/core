@@ -10,6 +10,7 @@
             <dot-roles-detail-header data-testid="role-detail-header" />
 
             <p-tabs
+                [pt]="tabsPt"
                 [value]="store.activeTab()"
                 (valueChange)="onTabChange($event)"
                 data-testid="role-detail-tabs">

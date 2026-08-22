@@ -16,11 +16,12 @@ import { DotRolesStore } from '../../store/dot-roles.store';
 const MESSAGES = {
     'roles.users.grant': 'Grant to User',
     'roles.users.remove': 'Remove',
-    'roles.users.remove.blocked': 'blocked',
+    'roles.users.confirm.remove.header': 'Remove user',
+    'roles.users.confirm.remove.message': 'Remove {0}?',
+    'roles.action.cancel': 'Cancel',
     'roles.users.empty.title': 'No users',
     'roles.users.empty.copy': 'Grant a user',
     'roles.users.search.placeholder': 'Search',
-    'roles.users.grant.blocked': 'grant blocked',
     'roles.users.column.name': 'Name',
     'roles.users.column.email': 'Email',
     'roles.users.column.granted-from': 'Granted From',
@@ -40,7 +41,6 @@ describe('DotRoleUsersTabComponent', () => {
             mockProvider(DotRolesStore, {
                 members: jest.fn().mockReturnValue([]),
                 membersStatus: jest.fn().mockReturnValue('loaded'),
-                selectedMembers: jest.fn().mockReturnValue([]),
                 selectedRole: jest.fn().mockReturnValue({
                     id: 'r-eco',
                     name: 'Eco Role',
@@ -50,7 +50,6 @@ describe('DotRoleUsersTabComponent', () => {
                 selectedRoleId: jest.fn().mockReturnValue('r-eco'),
                 selectedRoleStatus: jest.fn().mockReturnValue('loaded'),
                 canGrantUsers: jest.fn().mockReturnValue(true),
-                setSelectedMembers: jest.fn(),
                 loadMembers: jest.fn(),
                 grantUserToRole: jest.fn().mockResolvedValue(null),
                 removeUsersFromRole: jest.fn().mockResolvedValue(null)
@@ -94,15 +93,9 @@ describe('DotRoleUsersTabComponent', () => {
         expect(spectator.query(byTestId('member-row-u-1'))).toBeTruthy();
     });
 
-    it('should hide the bulk-remove button when nothing is selected', () => {
-        spectator.detectChanges();
-
-        expect(spectator.query(byTestId('bulk-remove-btn'))).toBeNull();
-    });
-
-    it('should show the bulk-remove button when direct-grant members are selected', () => {
+    it('should render a per-row Remove button ONLY for direct-grant members', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedMembers as jest.Mock).mockReturnValue([
+        (store.members as jest.Mock).mockReturnValue([
             {
                 userId: 'u-1',
                 firstName: 'Alan',
@@ -110,11 +103,49 @@ describe('DotRoleUsersTabComponent', () => {
                 emailAddress: 'alan.cruz@dotcms.com',
                 grantedFromRoleId: 'r-eco',
                 grantedFromRoleName: 'Eco Role'
+            },
+            {
+                userId: 'u-2',
+                firstName: 'Elena',
+                lastName: 'Petrov',
+                emailAddress: 'elena.p@dotcms.com',
+                grantedFromRoleId: 'r-ancestor',
+                grantedFromRoleName: 'Ancestor'
             }
         ]);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('bulk-remove-btn'))).toBeTruthy();
+        expect(spectator.query(byTestId('member-remove-u-1'))).toBeTruthy();
+        expect(spectator.query(byTestId('member-remove-u-2'))).toBeNull();
+    });
+
+    it('should confirm + call removeUsersFromRole with the row user id', async () => {
+        const store = spectator.inject(DotRolesStore, true);
+        const member = {
+            userId: 'u-1',
+            firstName: 'Alan',
+            lastName: 'Cruz',
+            emailAddress: 'alan.cruz@dotcms.com',
+            grantedFromRoleId: 'r-eco',
+            grantedFromRoleName: 'Eco Role'
+        };
+        (store.members as jest.Mock).mockReturnValue([member]);
+        spectator.detectChanges();
+
+        (
+            spectator.component as unknown as {
+                onRemoveMember: (m: typeof member) => void;
+            }
+        ).onRemoveMember(member);
+        await Promise.resolve();
+
+        expect(store.removeUsersFromRole).toHaveBeenCalledWith(['u-1']);
+    });
+
+    it('should NOT render the bulk-remove button (removed with design update)', () => {
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('bulk-remove-btn'))).toBeNull();
     });
 
     it('should render the Grant to User button', () => {

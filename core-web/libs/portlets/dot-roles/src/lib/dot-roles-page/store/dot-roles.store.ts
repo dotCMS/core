@@ -52,8 +52,6 @@ export interface DotRolesState {
     activeTab: DotRoleTab;
     /** Members of the selected role. */
     members: DotRoleMember[];
-    /** Users selected for bulk-remove on the members table. */
-    selectedMembers: DotRoleMember[];
     status: DotRolesStatus;
     membersStatus: DotRolesStatus;
     error: string | null;
@@ -69,7 +67,6 @@ const initialState: DotRolesState = {
     selectedRoleStatus: 'init',
     activeTab: 'users',
     members: [],
-    selectedMembers: [],
     status: 'init',
     membersStatus: 'init',
     error: null
@@ -280,7 +277,6 @@ export const DotRolesStore = signalStore(
                     // in flight.
                     selectedRole: null,
                     selectedRoleStatus: roleId ? 'loading' : 'init',
-                    selectedMembers: [],
                     members: [],
                     membersStatus: 'init'
                 });
@@ -336,10 +332,6 @@ export const DotRolesStore = signalStore(
 
             setActiveTab(activeTab: DotRoleTab): void {
                 patchState(store, { activeTab });
-            },
-
-            setSelectedMembers(selectedMembers: DotRoleMember[]): void {
-                patchState(store, { selectedMembers });
             },
 
             /**
@@ -483,7 +475,6 @@ export const DotRolesStore = signalStore(
                             selectedRoleId: null,
                             selectedRole: null,
                             members: [],
-                            selectedMembers: [],
                             membersStatus: 'init'
                         });
                     }
@@ -567,10 +558,7 @@ export const DotRolesStore = signalStore(
                     if (result.removedUserIds.length > 0) {
                         const removed = new Set(result.removedUserIds);
                         patchState(store, {
-                            members: store.members().filter((m) => !removed.has(m.userId)),
-                            selectedMembers: store
-                                .selectedMembers()
-                                .filter((m) => !removed.has(m.userId))
+                            members: store.members().filter((m) => !removed.has(m.userId))
                         });
                     }
 
