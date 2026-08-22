@@ -437,6 +437,64 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should use an action-specific partial copy when the result names one', () => {
+            // A reindex falls short for different reasons than a workflow fire — content that could
+            // not be read or indexed, and a cancelled run. Borrowing the default copy would blame
+            // permissions, locks and workflow steps, none of which apply, and send the user off to
+            // fix something that was never the problem.
+            settle({
+                actionName: 'Refresh',
+                successCount: 2,
+                skippedCount: 1,
+                failCount: 1,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.refreshed-partial',
+                'Refresh',
+                '2',
+                '1',
+                '1'
+            );
+        });
+
+        it('should keep the default partial copy for results that name none', () => {
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.executed-partial',
+                'Publish',
+                '1',
+                '1',
+                '0'
+            );
+        });
+
+        it('should ignore the action-specific copy on a clean run', () => {
+            // Nothing fell short, so there is no cause to name — the plain success copy is right
+            // whatever the action would have said about a shortfall.
+            settle({
+                actionName: 'Refresh',
+                successCount: 3,
+                skippedCount: 0,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    detail: 'content-drive.action-center.toast.executed-detail'
+                })
+            );
+        });
+
         it('should refresh the grid, close the dialog and consume the result', () => {
             settle({
                 actionName: 'Publish',
@@ -938,6 +996,26 @@ describe('DotContentDriveShellComponent', () => {
                 field: 'modDate',
                 order: DotContentDriveSortOrder.ASC
             });
+        });
+    });
+
+    describe('grid selection binding', () => {
+        it('should drive the grid from the store so clearing it unchecks the rows', () => {
+            // The grid is in controlled mode purely so this holds. Left uncontrolled it keeps its own
+            // checked set and only drops it when the items reference changes, which meant a selection
+            // cleared on action hand-off stayed visibly ticked until the next search returned.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+
+            const listView = spectator.query(DotFolderListViewComponent);
+
+            expect(listView).toBeTruthy();
+            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+
+            // Not asserting the clear here: `selectedItems` is mocked as a plain jest.fn rather than a
+            // signal, so changing its return value cannot notify change detection. What matters is
+            // that the input is bound to store state at all — the propagation is Angular's, and the
+            // store's own spec covers that loadItems and hand-off empty that state.
         });
     });
 

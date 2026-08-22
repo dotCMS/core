@@ -1,20 +1,33 @@
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
+    DotBulkRefreshService,
+    DotEventsSocket,
     DotHttpErrorManagerService,
+    DotMessageService,
+    DotSystemEventType,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
     DotActionBulkRequestOptions,
     DotAjaxActionResponseView,
+    DotBulkRefreshCompletedEvent,
     DotBundle,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
@@ -64,7 +77,9 @@ export function withActionExecution() {
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
                 httpErrorManagerService = inject(DotHttpErrorManagerService),
                 addToBundleService = inject(AddToBundleService),
-                pushPublishService = inject(PushPublishService)
+                pushPublishService = inject(PushPublishService),
+                bulkRefreshService = inject(DotBulkRefreshService),
+                destroyRef = inject(DestroyRef)
             ) => {
                 /**
                  * Settles a finished run by publishing its result for the shell to present.
@@ -234,6 +249,122 @@ export function withActionExecution() {
                     },
 
                     /**
+                     * Reindexes the given contentlet inodes.
+                     *
+                     * Submit-and-forget: the endpoint answers 202 and nothing here waits or guards. A
+                     * second reindex is allowed to be fired — firing clears the selection, so it takes a
+                     * deliberate re-selection, and reindexing the same rows again is wasteful rather
+                     * than wrong.
+                     *
+                     * Reported through the same {@link onSettled} path as everything else, with its own
+                     * partial-outcome copy: a failure here is content that could not be read or indexed
+                     * and a skip is a cancelled run, neither of which is what the default copy blames.
+                     *
+                     * Only SUCCESS and CANCELED are reported as outcomes, and only when the counters
+                     * close over `total`. A job that died mid-run still carries counters describing how
+                     * far it got, and reporting those as a result would turn a failure into a green
+                     * toast - the exact misleading success this endpoint exists to remove.
+                     */
+                    executeRefresh: (actionName: string, inodes: string[]): void => {
+                        if (!inodes.length) {
+                            return;
+                        }
+
+                        // Note what is NOT set: actionExecution. That field shows an "Applying …"
+                        // indicator and locks the Action Center, and neither fits a job that runs for
+                        // minutes and cannot report progress. The user is told at trigger that this is
+                        // backgrounded, and told again when it finishes.
+                        //
+                        // Note also what is not started: a completion deadline. Nothing on screen is
+                        // waiting, so there is nothing for one to unblock - and a client that gave up
+                        // after N minutes would be reporting a failure it has no evidence of, over a
+                        // run the server records in the notification bell either way.
+
+                        // Submit and stop. The endpoint answers 202 and the reindex continues in the
+                        // background; the outcome arrives on the socket subscription below rather than
+                        // by asking for it. Nothing here waits.
+                        bulkRefreshService
+                            .refresh(inodes)
+                            .pipe(
+                                take(1),
+                                catchError((error) => {
+                                    // The only reindex failure a client sees directly: no job was
+                                    // created, so no completion event is coming for it either.
+                                    httpErrorManagerService.handle(error);
+
+                                    return EMPTY;
+                                }),
+                                takeUntilDestroyed(destroyRef)
+                            )
+                            .subscribe();
+                    },
+
+                    /**
+                     * Reports a finished bulk refresh, from the pushed completion event.
+                     *
+                     * Feeds the same {@link onSettled} path as every other action, so the toast copy,
+                     * severity, grid reload and selection clear all behave identically — with its own
+                     * partial-outcome wording, because a reindex falls short for different reasons than a
+                     * workflow fire.
+                     *
+                     * Three ways a run can arrive with nothing honest to report, all of which would
+                     * otherwise render as a green success toast:
+                     *
+                     * 1. No counters at all.
+                     * 2. A state whose counters describe only how far the job got before dying — a
+                     *    permanently failed job still carries the counters it had reached, so an all-zero
+                     *    result is indistinguishable from a clean run over nothing unless state is checked.
+                     * 3. Counters that do not close over `total`, meaning the run did not account for
+                     *    every item and the shortfall is unexplained.
+                     */
+                    reportRefreshCompleted: (
+                        actionName: string,
+                        event: DotBulkRefreshCompletedEvent
+                    ): void => {
+                        const closes =
+                            undefined !== event.total &&
+                            (event.successCount ?? 0) +
+                                (event.failedCount ?? 0) +
+                                (event.skippedCount ?? 0) ===
+                                event.total;
+
+                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                            // Note what is not touched: actionExecution. It may belong to a different
+                            // action that is still running - a reindex no longer locks the dialog, so
+                            // that is an ordinary situation, and clearing it here would un-gate that
+                            // action early.
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText: `The reindex did not report a usable outcome (state: ${event.state})`
+                                })
+                            );
+
+                            return;
+                        }
+
+                        if (!closes) {
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText:
+                                        'The reindex counters did not account for every item'
+                                })
+                            );
+
+                            return;
+                        }
+
+                        onSettled({
+                            actionName,
+                            successCount: event.successCount ?? 0,
+                            skippedCount: event.skippedCount ?? 0,
+                            failCount: event.failedCount ?? 0,
+                            partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+                        });
+                    },
+
+                    /**
                      * Fires the selected workflow action over the given contentlet inodes.
                      *
                      * Contentlets whose scheme does not own the action are skipped server-side and
@@ -370,6 +501,25 @@ export function withActionExecution() {
                     }
                 };
             }
-        )
+        ),
+        withHooks({
+            onInit(store) {
+                const eventsSocket = inject(DotEventsSocket);
+                const dotMessageService = inject(DotMessageService);
+                const destroyRef = inject(DestroyRef);
+
+                // The socket is already open app-wide, so subscribing costs nothing. This is what
+                // replaced polling: the run reports itself when it settles instead of being asked.
+                eventsSocket
+                    .on<DotBulkRefreshCompletedEvent>(DotSystemEventType.BULK_REFRESH_COMPLETED)
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => {
+                        // Resolve the label here rather than server-side: the backend should not be
+                        // composing user-facing copy, and this keeps the wording with the rest of the
+                        // Action Center's i18n.
+                        store.reportRefreshCompleted(dotMessageService.get('Refresh'), event);
+                    });
+            }
+        })
     );
 }

@@ -225,6 +225,16 @@ export class DotContentDriveShellComponent {
      */
     protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
+    /**
+     * The grid's checked rows, driven from the store.
+     *
+     * Passing this puts `dot-folder-list-view` in its controlled mode, which is what makes clearing the
+     * store actually uncheck the boxes. Left uncontrolled, the grid keeps its own selection and only
+     * drops it when the `items` reference changes — so a selection cleared on action hand-off stayed
+     * visibly ticked until the next search returned.
+     */
+    protected readonly $selectedItems = this.#store.selectedItems;
+
     /** Folder payload for the folder dialog (narrowed from the dialog payload union by type). */
     readonly $folderPayload = computed(() => {
         const dialog = this.$activeDialog();
@@ -503,7 +513,7 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        const { actionName, successCount, skippedCount, failCount } = result;
+        const { actionName, successCount, skippedCount, failCount, partialDetailKey } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
         // can skip items whose scheme does not own the action *and* be refused on items that are
@@ -518,7 +528,9 @@ export class DotContentDriveShellComponent {
 
         const detail = isPartial
             ? this.#dotMessageService.get(
-                  'content-drive.action-center.toast.executed-partial',
+                  // Actions whose failures and skips mean something other than permissions, locks and
+                  // workflow steps say so themselves — see `partialDetailKey`.
+                  partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
                   actionName,
                   String(successCount),
                   String(failCount),
