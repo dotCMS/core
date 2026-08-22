@@ -14,8 +14,11 @@ import { DotUsersListStore } from './dot-users-list.store';
 import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
 
 const MESSAGES = {
-    'users.delete.success': 'Deleted {0} user(s).',
-    'users.delete.partial-success': 'Deleted {0} of {1} users. {2} failed.'
+    'users.delete.success.one': 'User deleted.',
+    'users.delete.success.many': 'Deleted {0} users.',
+    'users.delete.partial-success': 'Deleted {0} of {1} users. {2} failed.',
+    'users.create.success': 'User created.',
+    'users.update.success': 'User updated.'
 };
 
 const MOCK_USERS: DotUserListItem[] = [
@@ -76,7 +79,10 @@ describe('DotUsersListStore', () => {
         providers: [
             mockProvider(DotUsersService, {
                 getUsersPaginated: jest.fn().mockReturnValue(of(MOCK_RESPONSE)),
-                deleteUser: jest.fn().mockReturnValue(of({}))
+                getUserRoles: jest.fn().mockReturnValue(of([])),
+                deleteUser: jest.fn().mockReturnValue(of({})),
+                createUser: jest.fn().mockReturnValue(of(MOCK_USERS[0])),
+                updateUser: jest.fn().mockReturnValue(of(MOCK_USERS[0]))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
@@ -92,7 +98,10 @@ describe('DotUsersListStore', () => {
         // Implementations set via mockReturnValue are preserved.
         jest.clearAllMocks();
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
+        usersService.getUserRoles.mockReturnValue(of([]));
         usersService.deleteUser.mockReturnValue(of({}));
+        usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
+        usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));
     });
 
     it('loadUsers passes the current state as query params', () => {
@@ -188,15 +197,29 @@ describe('DotUsersListStore', () => {
 
         store.deleteSelectedUsers();
 
-        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.1');
-        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.2');
+        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.1', undefined);
+        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.2', undefined);
         expect(store.selectedUsers()).toEqual([]);
         expect(usersService.getUsersPaginated).toHaveBeenCalled();
         expect(messageDisplay.push).toHaveBeenCalledWith(
             expect.objectContaining({
                 severity: DotMessageSeverity.SUCCESS,
                 type: DotMessageType.SIMPLE_MESSAGE,
-                message: 'Deleted 2 user(s).'
+                message: 'Deleted 2 users.'
+            })
+        );
+    });
+
+    it('deleteSelectedUsers should push the singular success toast when only one is deleted', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
+        store.setSelectedUsers([MOCK_USERS[0]]);
+
+        store.deleteSelectedUsers();
+
+        expect(messageDisplay.push).toHaveBeenCalledWith(
+            expect.objectContaining({
+                severity: DotMessageSeverity.SUCCESS,
+                message: 'User deleted.'
             })
         );
     });
@@ -261,5 +284,89 @@ describe('DotUsersListStore', () => {
 
         expect(store.status()).toBe('error');
         expect(errorManager.handle).toHaveBeenCalled();
+    });
+
+    it('createUser should call the service, push a success toast, and reload the list', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
+        usersService.getUsersPaginated.mockClear();
+
+        store.createUser({
+            firstName: 'Ada',
+            lastName: 'Lovelace',
+            email: 'ada@dotcms.com',
+            active: true,
+            password: 'Xy7#abcdef'
+        });
+
+        expect(usersService.createUser).toHaveBeenCalledWith(
+            expect.objectContaining({ firstName: 'Ada', email: 'ada@dotcms.com' })
+        );
+        expect(messageDisplay.push).toHaveBeenCalledWith(
+            expect.objectContaining({
+                severity: DotMessageSeverity.SUCCESS,
+                message: 'User created.'
+            })
+        );
+        expect(usersService.getUsersPaginated).toHaveBeenCalled();
+    });
+
+    it('createUser should surface HTTP errors and keep the list in `loaded`', () => {
+        const errorManager = spectator.inject(DotHttpErrorManagerService);
+        usersService.createUser.mockReturnValueOnce(throwError(() => new Error('boom')));
+
+        store.createUser({
+            firstName: 'Ada',
+            lastName: 'Lovelace',
+            email: 'ada@dotcms.com',
+            active: true
+        });
+
+        expect(errorManager.handle).toHaveBeenCalled();
+        expect(store.status()).toBe('loaded');
+    });
+
+    it('updateUser should call the service, push a success toast, and reload the list', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
+        usersService.getUsersPaginated.mockClear();
+
+        store.updateUser({
+            userId: 'dotcms.org.1',
+            firstName: 'Admin',
+            lastName: 'User',
+            email: 'admin@dotcms.com',
+            active: true
+        });
+
+        expect(usersService.updateUser).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: 'dotcms.org.1' })
+        );
+        expect(messageDisplay.push).toHaveBeenCalledWith(
+            expect.objectContaining({
+                severity: DotMessageSeverity.SUCCESS,
+                message: 'User updated.'
+            })
+        );
+        expect(usersService.getUsersPaginated).toHaveBeenCalled();
+    });
+
+    it('deleteSingleUser should forward the replacementUserId when provided', () => {
+        const messageDisplay = spectator.inject(DotMessageDisplayService);
+        usersService.getUsersPaginated.mockClear();
+
+        store.deleteSingleUser('dotcms.org.1', 'dotcms.org.42');
+
+        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.1', 'dotcms.org.42');
+        expect(messageDisplay.push).toHaveBeenCalled();
+        expect(usersService.getUsersPaginated).toHaveBeenCalled();
+    });
+
+    it('deleteSelectedUsers should forward the replacementUserId to every delete call', () => {
+        store.setSelectedUsers([MOCK_USERS[0], MOCK_USERS[1]]);
+        usersService.deleteUser.mockClear();
+
+        store.deleteSelectedUsers('dotcms.org.42');
+
+        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.1', 'dotcms.org.42');
+        expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.2', 'dotcms.org.42');
     });
 });
