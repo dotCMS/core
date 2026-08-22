@@ -189,14 +189,11 @@ describe('DotRolesStore', () => {
             expect(service.loadRoleById).not.toHaveBeenCalled();
         });
 
-        it('should clear members and selectedMembers when switching roles', () => {
+        it('should clear members when switching roles', () => {
             store.loadMembers(ROLE_BY_KEY);
-            store.setSelectedMembers([{ userId: 'u-1' } as never]);
-            expect(store.selectedMembers()).toHaveLength(1);
 
             store.selectRole('r-snow');
 
-            expect(store.selectedMembers()).toEqual([]);
             expect(store.members()).toEqual([]);
         });
     });

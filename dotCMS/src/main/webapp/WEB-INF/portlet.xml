@@ -538,9 +538,9 @@
 
     <portlet>
         <portlet-name>roles-beta</portlet-name>
-        <display-name>Roles and Tools (Beta)</display-name>
+        <display-name>Roles (Beta)</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-        <portlet-url>/roles</portlet-url>
+        <portlet-url>/roles-beta</portlet-url>
     </portlet>
 
 </portlet-app>
