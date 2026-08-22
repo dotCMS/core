@@ -33,7 +33,12 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 
-import { DOT_DRAG_ITEM, DotFolderListViewFixedColumn, HEADER_COLUMNS } from './constants';
+import {
+    DOT_DRAG_ITEM,
+    DotFolderListViewFixedColumn,
+    HEADER_COLUMNS,
+    rescaleToWidthBudget
+} from './constants';
 import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
@@ -412,16 +417,23 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
      * list, so display order stays the table's.
      *
-     * No width bookkeeping is needed when a column drops out: `title` is unsized (see
-     * `HEADER_COLUMNS`) and soaks up whatever the remaining sized columns leave over.
+     * Whatever is rendered has its percentages rescaled to the budget the full set carries; see
+     * {@link rescaleToWidthBudget} for why the leftover cannot just be left unclaimed. The full set
+     * with actions passes through untouched, since its percentages already add up to that total.
      */
     protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
         const requested = this.$visibleColumns();
-        const fixed = requested.length
-            ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
-            : HEADER_COLUMNS;
+        const shown = (
+            requested.length
+                ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
+                : HEADER_COLUMNS
+        ).filter((column) => this.$showActions() || column.field !== 'actions');
 
-        return this.$showActions() ? fixed : fixed.filter((column) => column.field !== 'actions');
+        // Keyed off what is actually rendered rather than off whether a subset was requested: the
+        // full set with the actions column hidden totals 91%, not the budget, and would hand the
+        // leftover to the checkbox column just like a subset does. `rescaleToWidthBudget` is a
+        // no-op when the total already matches, so the full set with actions passes through.
+        return rescaleToWidthBudget(shown);
     });
 
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {

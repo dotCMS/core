@@ -31,6 +31,7 @@ import { withActionExecution } from './features/action-execution/withActionExecu
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
+import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 
 import {
@@ -629,5 +630,6 @@ export const DotContentDriveStore = signalStore(
     withDialog(),
     withSidebar(),
     withDragging(),
-    withActionExecution()
+    withActionExecution(),
+    withPushPublishEnvironments()
 );

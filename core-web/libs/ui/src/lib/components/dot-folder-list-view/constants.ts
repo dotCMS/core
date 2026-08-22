@@ -40,6 +40,49 @@ export const HEADER_COLUMNS: DotFolderListViewFixedColumn[] = [...FIXED_COLUMNS]
 );
 
 /**
+ * The total the authored percentages add up to, and therefore the share a rendered subset should
+ * still fill. Derived from the columns rather than written down so the two cannot drift apart.
+ */
+const PERCENTAGE_WIDTH_BUDGET = FIXED_COLUMNS.reduce(
+    (total, column) => total + (column.width?.endsWith('%') ? parseFloat(column.width) : 0),
+    0
+);
+
+/**
+ * Rescales a subset's percentage widths so they still fill {@link PERCENTAGE_WIDTH_BUDGET}.
+ *
+ * Necessary because `table-layout: fixed` has to put unclaimed width *somewhere*, and Chrome gives
+ * it to the leading column — which here is the `3rem` checkbox one. Measured in the Action Center
+ * preview, which renders `title, live, contentType` in a 586px table: the authored 28/10/15 total
+ * 53%, and the 47% left over went to the checkbox column, rendering it 275px instead of 48. That
+ * pushed the name far right of its heading and squeezed Status to 59px, so its badge overflowed into
+ * Type. Rescaling put the checkbox column back to 42px and Status to 103px.
+ *
+ * Proportions between the columns shown are preserved, so a subset reads like the full table does.
+ * Non-percentage widths are passed through: only the percentage columns share this budget.
+ */
+export const rescaleToWidthBudget = (
+    columns: DotFolderListViewFixedColumn[]
+): DotFolderListViewFixedColumn[] => {
+    const total = columns.reduce(
+        (sum, column) => sum + (column.width?.endsWith('%') ? parseFloat(column.width) : 0),
+        0
+    );
+
+    if (!total || total === PERCENTAGE_WIDTH_BUDGET) {
+        return columns;
+    }
+
+    const factor = PERCENTAGE_WIDTH_BUDGET / total;
+
+    return columns.map((column) =>
+        column.width?.endsWith('%')
+            ? { ...column, width: `${(parseFloat(column.width) * factor).toFixed(2)}%` }
+            : column
+    );
+};
+
+/**
  * MIME type used to mark internal Content Drive / AssetPicker row drags.
  */
 export const DOT_DRAG_ITEM = 'dotcms/item';

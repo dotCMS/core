@@ -7,24 +7,24 @@ import { isSameOriginRelativeUrl } from '@dotcms/utils';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
-export interface DotPermissionsIframeDialogData {
+export interface DotPushHistoryIframeDialogData {
     url: string;
     minHeight?: string;
 }
 
 /**
- * Generic dialog component that displays any permissions page in an iframe.
+ * Dialog component that displays an asset's push publish history in an iframe.
  * Callers are responsible for building the URL before opening the dialog.
  * Only same-origin relative paths (starting with `/`) are accepted.
  *
  * Usage:
- *   dialogService.open(DotPermissionsIframeDialogComponent, {
- *     header: 'Permissions',
- *     data: { url: '/html/portlet/ext/categories/permissions.jsp?categoryInode=...' }
+ *   dialogService.open(DotPushHistoryIframeDialogComponent, {
+ *     header: 'Push History',
+ *     data: { url: '/html/portlet/ext/folders/push_history.jsp?folderIdentifier=...&popup=true' }
  *   });
  */
 @Component({
-    selector: 'dot-permissions-iframe-dialog',
+    selector: 'dot-push-history-iframe-dialog',
     imports: [DotMessagePipe],
     template: `
         @let src = $iframeSrc();
@@ -34,18 +34,18 @@ export interface DotPermissionsIframeDialogData {
                 [src]="src"
                 class="block w-full border-none"
                 [style.min-height]="$minHeight()"
-                title="Permissions"
-                data-testid="permissions-iframe"></iframe>
+                [attr.title]="'publisher_push_history' | dm"
+                data-testid="push-history-iframe"></iframe>
         } @else {
-            <p class="text-500 m-0 p-3" data-testid="permissions-empty">
-                {{ 'dot.permissions.iframe.dialog.no-asset' | dm }}
+            <p class="text-500 m-0 p-3" data-testid="push-history-empty">
+                {{ 'dot.push-history.iframe.dialog.no-asset' | dm }}
             </p>
         }
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotPermissionsIframeDialogComponent {
-    readonly #config = inject(DynamicDialogConfig<DotPermissionsIframeDialogData>);
+export class DotPushHistoryIframeDialogComponent {
+    readonly #config = inject(DynamicDialogConfig<DotPushHistoryIframeDialogData>);
     readonly #sanitizer = inject(DomSanitizer);
 
     readonly $iframeSrc = computed<SafeResourceUrl | null>(() => {

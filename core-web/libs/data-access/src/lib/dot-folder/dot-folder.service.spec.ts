@@ -376,4 +376,22 @@ describe('DotFolderService', () => {
             req.flush({ entity: savedFolder });
         });
     });
+
+    describe('deleteFolder', () => {
+        it('should delete the folder at the given path', () => {
+            let result: boolean | undefined;
+
+            spectator.service.deleteFolder('//demo.dotcms.com/old-projects/').subscribe((r) => {
+                result = r;
+            });
+
+            const req = spectator.expectOne('/api/v1/assets/folders/_delete', HttpMethod.POST);
+
+            // The endpoint keys on the path, not the id, and the trailing slash is required.
+            expect(req.request.body).toEqual({ assetPath: '//demo.dotcms.com/old-projects/' });
+            req.flush({ entity: true });
+
+            expect(result).toBe(true);
+        });
+    });
 });

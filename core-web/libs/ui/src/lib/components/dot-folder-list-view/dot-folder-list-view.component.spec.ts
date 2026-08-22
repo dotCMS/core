@@ -717,9 +717,93 @@ describe('DotFolderListViewComponent', () => {
 
             const [title, status, type] = headerCells();
 
-            expect(title.style.width).toBe('28%');
-            expect(status.style.width).toBe('10%');
-            expect(type.style.width).toBe('15%');
+            // Rescaled, not authored: see the subset test below for why.
+            expect(parseFloat(title.style.width)).toBeGreaterThan(28);
+            expect(parseFloat(status.style.width)).toBeGreaterThan(10);
+            expect(parseFloat(type.style.width)).toBeGreaterThan(15);
+        });
+
+        describe('a subset of columns', () => {
+            /**
+             * Measured in Chrome before this rescale, rendering `title, live, contentType` in the
+             * Action Center preview (a 586px table): the authored 28/10/15 sum to 53%, and the 47%
+             * left over went entirely to the **leading 3rem checkbox column**, which rendered 275px
+             * instead of 48. That pushed Name far right of its heading and squeezed Status to 59px,
+             * so its "Published" badge overflowed into Type. Rescaling to the same 96% the full set
+             * totals put the checkbox column back to 42px and Status to 103px.
+             *
+             * The leftover does NOT land on the title column, which is what the previous comment
+             * here assumed.
+             */
+            const subsetWidths = () =>
+                headerCells()
+                    .map((cell) => cell.style.width)
+                    .filter((width) => width.endsWith('%'))
+                    .map(parseFloat);
+
+            it('should rescale the percentages to the total the full set carries', () => {
+                spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+                spectator.detectChanges();
+
+                const total = subsetWidths().reduce((sum, width) => sum + width, 0);
+
+                expect(total).toBeCloseTo(96, 0);
+            });
+
+            it('should keep the authored proportions between the columns it does show', () => {
+                spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+                spectator.detectChanges();
+
+                const [title, status, type] = subsetWidths();
+
+                // 28 : 10 : 15 preserved.
+                expect(title / status).toBeCloseTo(2.8, 1);
+                expect(type / status).toBeCloseTo(1.5, 1);
+            });
+
+            it('should stay under 100% so the checkbox column still fits inside the table', () => {
+                for (const columns of [
+                    ['title'],
+                    ['title', 'live'],
+                    ['title', 'live', 'contentType'],
+                    ['title', 'modUser', 'modDate']
+                ]) {
+                    spectator.setInput('visibleColumns', columns);
+                    spectator.detectChanges();
+
+                    const total = subsetWidths().reduce((sum, width) => sum + width, 0);
+
+                    expect(total).toBeLessThan(100);
+                }
+            });
+
+            // Same class of bug as the subset case: with the actions column hidden the shown
+            // percentages total 91%, not the 96% budget, so the leftover would land on the leading
+            // checkbox column again. Rescaling has to key off what is actually rendered, not off
+            // whether the caller asked for a subset.
+            it('should rescale the full set when the actions column is hidden', () => {
+                spectator.setInput('visibleColumns', []);
+                spectator.setInput('showActions', false);
+                spectator.detectChanges();
+
+                const total = headerCells()
+                    .map((cell) => cell.style.width)
+                    .filter((width) => width.endsWith('%'))
+                    .map(parseFloat)
+                    .reduce((sum, width) => sum + width, 0);
+
+                expect(total).toBeCloseTo(96, 0);
+            });
+
+            it('should leave the full set at its authored widths', () => {
+                // Nothing to rescale: the authored percentages already total 96%.
+                spectator.setInput('visibleColumns', []);
+                spectator.detectChanges();
+
+                expect(headerCells().map((cell) => cell.style.width)).toEqual(
+                    HEADER_COLUMNS.map((column) => column.width ?? '')
+                );
+            });
         });
 
         it('should keep the sized columns at their authored widths whatever is hidden', () => {

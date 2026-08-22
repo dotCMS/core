@@ -20,16 +20,13 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize, map, take } from 'rxjs/operators';
 
-import {
-    DotMessageService,
-    DotWorkflowsActionsService,
-    PushPublishService
-} from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
     DotBundle,
-    DotCMSContentlet
+    DotCMSContentlet,
+    DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
     DotMessagePipe,
@@ -55,6 +52,7 @@ import {
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
+    supportsFolders,
     groupByContentType,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
@@ -170,7 +168,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
-    readonly #pushPublishService = inject(PushPublishService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -246,11 +243,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /**
      * Whether any push publish environment is reachable by this user's role.
      *
-     * `undefined` until the lookup lands, which keeps the Push Publish row disabled in the meantime
-     * rather than enabling it and then retracting. A failed lookup settles on `false` for the same
-     * reason: offering a push with nowhere to send it is worse than one disabled row.
+     * Read from the store, resolved once on portlet init, for the same reason the admin flag is: the
+     * folder context menu gates on this too, and two independent lookups would mean two copies of
+     * the three-state handling to keep in step.
+     *
+     * `undefined` means the lookup has not landed and reads as "disabled", so the row never enables
+     * and then retracts. A failed lookup settles on `false` for the same reason: offering a push
+     * with nowhere to send it is worse than one disabled row.
      */
-    protected readonly $hasPushPublishEnvironments = signal<boolean | undefined>(undefined);
+    protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -457,7 +458,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Separate from the grid selection on purpose: unchecking a row here must not deselect it in the
      * grid behind the dialog.
      */
-    protected readonly $includedItems = signal<DotCMSContentlet[]>([]);
+    protected readonly $includedItems = signal<DotContentDriveItem[]>([]);
     /**
      * The quick action drilled into, or `null` when the preview belongs to a workflow action.
      *
@@ -469,19 +470,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /** Contentlets in the selection — folders are ignored by every bulk endpoint. */
     protected readonly $contentlets = computed(() => excludeFolders(this.$selectedItems()));
     protected readonly $contentletCount = computed(() => this.$contentlets().length);
-    /** Number of folders silently excluded, surfaced as a hint so the count is not confusing. */
-    protected readonly $ignoredFolderCount = computed(
+    /**
+     * Folders in the selection, surfaced as a hint so the per-action counts are not confusing.
+     *
+     * They are no longer excluded outright: Add to Bundle and Push Publish take a folder identifier,
+     * and the rest of the actions drop themselves from the list instead. The notice says which,
+     * rather than claiming folders are ignored.
+     */
+    protected readonly $selectedFolderCount = computed(
         () => this.$selectedItems().length - this.$contentletCount()
     );
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
-        // Fed the already-filtered contentlets rather than the raw selection, so folder exclusion is
-        // derived once here instead of again inside the util.
+        // Fed the whole selection: folder exclusion is per action now, and `getQuickActions` owns
+        // that decision from the registry. Pre-filtering here would hide folders from the two
+        // actions that accept them.
         //
         // The admin flag comes from the store, resolved once on portlet init, rather than being
         // fetched when this dialog opens: reopening the Action Center is cheap and common, and a
         // per-open request would leave the first render of every open warning as a non-admin until
         // it answered. Read as a signal so a late resolution still recomputes the rows.
-        getQuickActions(this.$contentlets(), {
+        getQuickActions(this.$selectedItems(), {
             isAdmin: this.#store.currentUserIsAdmin(),
             hasPushPublishEnvironments: this.$hasPushPublishEnvironments()
         })
@@ -527,7 +535,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     });
 
     /**
-     * The contentlets the selected action can run on — the preview's rows.
+     * The items the selected action can run on — the preview's rows.
      *
      * Narrowed by content type so an action from one scheme never lists contentlets of a type that
      * scheme is not assigned to.
@@ -538,9 +546,17 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         if (quickAction) {
             // Filtered against the action's own `eligibleInodes` rather than re-deriving the
             // predicate, so the rows shown are exactly the set the row's count was built from.
+            // That key is identifiers for the folder-capable actions and inodes for the rest, so the
+            // row's own id has to be read the same way — matching a folder on `inode` would drop it
+            // from the preview of the very action it is about to be fired on.
             const eligible = new Set(quickAction.eligibleInodes);
+            const pool = supportsFolders(quickAction.id)
+                ? this.$selectedItems()
+                : this.$contentlets();
 
-            return this.$contentlets().filter((item) => eligible.has(item.inode));
+            return pool.filter((item) =>
+                eligible.has(supportsFolders(quickAction.id) ? item.identifier : item.inode)
+            );
         }
 
         return eligibleContentlets(this.$selectedAction(), this.$contentlets());
@@ -562,36 +578,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $lockedByOthers = computed(() => {
         const context = { isAdmin: this.#store.currentUserIsAdmin() };
 
-        return this.$previewItems()
+        // Narrowed first: a folder carries no lock state, and the predicate reads it.
+        return excludeFolders(this.$previewItems())
             .filter((item) => isLockedByAnotherUser(item, context))
             .map((item) => item.inode);
     });
 
     ngOnInit(): void {
         this.loadWorkflowActions();
-        this.loadPushPublishEnvironments();
-    }
-
-    /**
-     * Resolves whether Push Publish has anywhere to send to.
-     *
-     * Runs beside the workflow lookup rather than after it: the two answer different questions and
-     * neither needs the other, so chaining them would only delay the quick actions behind a request
-     * they do not depend on.
-     *
-     * A failure settles on "none", which disables the row. The alternative — treating an unreachable
-     * lookup as "probably fine" — offers a push that has nowhere to go and fails at the servlet with
-     * a message the user cannot act on.
-     */
-    private loadPushPublishEnvironments(): void {
-        this.#pushPublishService
-            .getEnvironments()
-            .pipe(take(1))
-            .subscribe({
-                next: (environments) =>
-                    this.$hasPushPublishEnvironments.set(environments.length > 0),
-                error: () => this.$hasPushPublishEnvironments.set(false)
-            });
     }
 
     /**

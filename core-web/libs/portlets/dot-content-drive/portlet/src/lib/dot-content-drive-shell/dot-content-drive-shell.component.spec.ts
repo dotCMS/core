@@ -20,22 +20,23 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     AddToBundleService,
-    PushPublishService,
+    DotAlertConfirmService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFolderService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService,
     DotSiteService,
     DotSystemConfigService,
+    DotUploadFileService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    DotRouterService,
-    DotLanguagesService,
-    DotFolderService,
-    DotUploadFileService,
-    DotMessageService,
-    DotPropertiesService
+    PushPublishService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -126,6 +127,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -161,8 +164,9 @@ describe('DotContentDriveShellComponent', () => {
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
-                // The Action Center gates its Push Publish row on this; an empty answer disables it,
-                // which is all the shell's own tests need.
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
@@ -225,6 +229,9 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedItems: jest.fn(),
                     // Read by the Action Center, which the shell renders for real inside the dialog.
                     currentUserIsAdmin: jest.fn().mockReturnValue(false),
+                    // Resolved on portlet init; `false` disables Push Publish everywhere it
+                    // is gated, which is all the shell's own tests need.
+                    hasPushPublishEnvironments: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
@@ -712,16 +719,16 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
-        it('should exclude folders from the sub-header count', () => {
+        it('should count folders in the sub-header, since actions now take them', () => {
             store.selectedItems.mockReturnValue([
                 MOCK_ITEMS[0],
-                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.flushEffects();
             spectator.detectChanges();
 
-            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
         it('should retitle the header to the drilled-into action', () => {
@@ -2857,6 +2864,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -2888,8 +2897,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
-                // The Action Center gates its Push Publish row on this; an empty answer disables it,
-                // which is all the shell's own tests need.
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
