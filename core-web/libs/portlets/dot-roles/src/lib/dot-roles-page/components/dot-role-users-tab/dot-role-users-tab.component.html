@@ -1,39 +1,24 @@
 @let role = store.selectedRole();
 
 <!--
-    Host has `py-4` but no horizontal padding — the members table needs to
-    reach the edges of its tab so it lines up with the panel divider.
-    Non-table elements (banner, actions row, status messages) inset
-    themselves with `px-6`.
+    Users tab layout — a full-height flex column so the members table can own
+    its own scroll region and the paginator stays pinned at the bottom of the
+    tab (mirrors publishing-queue-beta). The banner and Grant button sit above
+    the table at their natural heights; the table zone claims the remaining
+    space with `flex-1 min-h-0 overflow-hidden`, and the `p-table`'s own
+    `[scrollable]/scrollHeight="flex"` places the scroll on the tbody so the
+    header and pagination footer stay pinned.
 -->
-<div class="flex flex-col gap-4">
+<div class="flex h-full flex-col gap-4 py-4">
     @if (role && !store.canGrantUsers()) {
         <div
-            class="mx-6 rounded-md bg-amber-100 px-4 py-3 text-sm text-amber-800"
+            class="bg-amber-100 px-6 py-3 text-sm text-amber-800"
             data-testid="cannot-grant-notice">
             {{ 'roles.users.cannot-grant' | dm }}
         </div>
     }
 
     <div class="flex justify-end gap-2 px-6">
-        <!--
-            Remove is a bulk-only destructive action — hidden until the
-            admin has actually selected direct-grant rows in the table.
-            No selection → nothing to remove → don't crowd the toolbar.
-        -->
-        @if ($canBulkRemove()) {
-            <button
-                pButton
-                type="button"
-                severity="danger"
-                [outlined]="true"
-                [disabled]="!store.canGrantUsers()"
-                (click)="onRemoveSelected()"
-                data-testid="bulk-remove-btn">
-                {{ 'roles.users.remove' | dm }}
-            </button>
-        }
-
         <button
             pButton
             type="button"
@@ -44,100 +29,160 @@
         </button>
     </div>
 
-    @if (store.membersStatus() === 'loading' || store.selectedRoleStatus() === 'loading') {
-        <!--
-            Skeleton table — matches the real column layout (checkbox +
-            Name + Email + Granted From) so the panel stays stable while
-            members load. Five rows is enough visual density without
-            being noisy for small member lists. Also shown while the role
-            detail itself is loading, since we can't fetch members until
-            the role resolves.
-        -->
-        <p-table [value]="[0, 1, 2, 3, 4]" data-testid="members-loading-skeleton">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th class="w-12"></th>
-                    <th>{{ 'roles.users.column.name' | dm }}</th>
-                    <th>{{ 'roles.users.column.email' | dm }}</th>
-                    <th>{{ 'roles.users.column.granted-from' | dm }}</th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body">
-                <tr>
-                    <td><p-skeleton height="1.25rem" width="1.25rem" /></td>
-                    <td><p-skeleton height="1rem" width="60%" /></td>
-                    <td><p-skeleton height="1rem" width="70%" /></td>
-                    <td><p-skeleton height="1.25rem" width="40%" /></td>
-                </tr>
-            </ng-template>
-        </p-table>
-    } @else if (store.membersStatus() === 'error') {
-        <p class="m-0 px-6 text-sm text-red-700" data-testid="members-error">
-            {{ 'error.load-failed' | dm }}
-        </p>
-    } @else if (store.members().length === 0) {
-        <div
-            class="text-color-secondary mx-6 rounded-lg border border-dashed border-surface-200 p-8 text-center"
-            data-testid="members-empty">
-            <p class="m-0 mb-1 font-semibold">
-                {{ 'roles.users.empty.title' | dm }}
+    <!--
+        Table zone: `flex-1 min-h-0 overflow-hidden` bounds the p-table so its
+        scrollable body and pinned pagination can compute against a finite
+        height. Non-table branches (loading skeleton, error, empty) share the
+        same container so switching between them doesn't shift the paginator
+        or resize the tab.
+    -->
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        @if (store.membersStatus() === 'loading' || store.selectedRoleStatus() === 'loading') {
+            <!--
+                Skeleton table — matches the real column layout (Name + Email
+                + Granted From + row action). Five rows is enough visual
+                density without being noisy for small member lists. Also
+                shown while the role detail itself is loading, since we can't
+                fetch members until the role resolves.
+            -->
+            <p-table
+                [value]="[0, 1, 2, 3, 4]"
+                [scrollable]="true"
+                scrollHeight="flex"
+                data-testid="members-loading-skeleton">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>{{ 'roles.users.column.name' | dm }}</th>
+                        <th>{{ 'roles.users.column.email' | dm }}</th>
+                        <th>{{ 'roles.users.column.granted-from' | dm }}</th>
+                        <th class="w-12"></th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body">
+                    <tr>
+                        <td><p-skeleton height="1rem" width="60%" /></td>
+                        <td><p-skeleton height="1rem" width="70%" /></td>
+                        <td><p-skeleton height="1.25rem" width="40%" /></td>
+                        <td></td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        } @else if (store.membersStatus() === 'error') {
+            <p class="m-0 px-6 text-sm text-red-700" data-testid="members-error">
+                {{ 'error.load-failed' | dm }}
             </p>
-            <p class="m-0 text-sm">
-                {{ 'roles.users.empty.copy' | dm }}
-            </p>
-        </div>
-    } @else {
-        <p-table
-            [value]="store.members()"
-            dataKey="userId"
-            [selection]="store.selectedMembers()"
-            (selectionChange)="onSelectionChange($event)"
-            data-testid="members-table">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th class="w-12">
-                        <p-tableHeaderCheckbox />
-                    </th>
-                    <th>{{ 'roles.users.column.name' | dm }}</th>
-                    <th>{{ 'roles.users.column.email' | dm }}</th>
-                    <th>{{ 'roles.users.column.granted-from' | dm }}</th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-member>
-                @let direct = isDirectGrant(member);
-                <tr [attr.data-testid]="'member-row-' + member.userId">
-                    <td>
-                        <!--
-                            Inherited rows are read-only from this tab —
-                            to remove such a user, the admin must edit the
-                            ancestor role that granted them. Disabling the
-                            per-row checkbox is the cheapest way to
-                            communicate that.
-                        -->
-                        <p-tableCheckbox [value]="member" [disabled]="!direct" />
-                    </td>
-                    <td>{{ member.firstName }} {{ member.lastName }}</td>
-                    <td>{{ member.emailAddress || '—' }}</td>
-                    <td>
-                        <p-tag
-                            [value]="member.grantedFromRoleName"
-                            [severity]="direct ? 'info' : 'secondary'" />
-                    </td>
-                </tr>
-            </ng-template>
-        </p-table>
-    }
+        } @else if (store.members().length === 0) {
+            <div
+                class="text-color-secondary mx-6 rounded-lg border border-dashed border-surface-200 p-8 text-center"
+                data-testid="members-empty">
+                <p class="m-0 mb-1 font-semibold">
+                    {{ 'roles.users.empty.title' | dm }}
+                </p>
+                <p class="m-0 text-sm">
+                    {{ 'roles.users.empty.copy' | dm }}
+                </p>
+            </div>
+        } @else {
+            <!--
+                Client-side pagination — the current members endpoints return
+                the full list in one response, so `[value]` is the whole array
+                and p-table handles paging internally. Bottom paginator +
+                rows-per-page dropdown matches publishing-queue-beta.
+                `[showFirstLastIcon]="false"` + `[showPageLinks]="false"` keep
+                the control to prev / current-page / next / dropdown, which is
+                enough for admin-scale member lists. When #37070 ships server
+                paging we can switch to `[lazy]="true"` + `[totalRecords]`.
+            -->
+            <p-table
+                [value]="store.members()"
+                dataKey="userId"
+                [scrollable]="true"
+                scrollHeight="flex"
+                [paginator]="true"
+                [rows]="defaultRowsPerPage"
+                [rowsPerPageOptions]="rowsPerPageOptions"
+                [showFirstLastIcon]="false"
+                [showPageLinks]="false"
+                [showCurrentPageReport]="true"
+                [currentPageReportTemplate]="('Page' | dm) + ' {currentPage}'"
+                data-testid="members-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>{{ 'roles.users.column.name' | dm }}</th>
+                        <th>{{ 'roles.users.column.email' | dm }}</th>
+                        <th>{{ 'roles.users.column.granted-from' | dm }}</th>
+                        <th class="w-12"></th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-member>
+                    @let direct = isDirectGrant(member);
+                    @let highlighted = member.userId === $highlightUserId();
+                    <!--
+                        `just-granted` highlight: the row that was added via
+                        Grant to User gets a soft primary background for the
+                        duration of `GRANT_HIGHLIGHT_DURATION_MS` so the admin
+                        can find it in a long list. `ease-in-out` on the color
+                        transition softens both edges of the fade; `!` beats
+                        the PrimeNG row hover CSS.
+                    -->
+                    <tr
+                        class="group transition-colors duration-700 ease-in-out"
+                        [class.bg-primary-50!]="highlighted"
+                        [attr.data-testid]="'member-row-' + member.userId">
+                        <td>{{ member.firstName }} {{ member.lastName }}</td>
+                        <td>{{ member.emailAddress || '—' }}</td>
+                        <td>
+                            <p-tag
+                                [value]="member.grantedFromRoleName"
+                                [severity]="direct ? 'info' : 'secondary'" />
+                        </td>
+                        <td class="w-12 pr-5 text-right" (click)="$event.stopPropagation()">
+                            <!--
+                                Row-level Remove: shown only for direct grants
+                                (inherited rows can only be revoked from the
+                                ancestor role that granted them), and only on
+                                row hover to keep the table clean. Chrome
+                                matches `pq-select-bundle-asset-delete` in the
+                                Publishing Queue's bundle picker so the
+                                destructive row action is consistent across
+                                portlets.
+                            -->
+                            @if (direct && store.canGrantUsers()) {
+                                <p-button
+                                    [text]="true"
+                                    [rounded]="true"
+                                    size="small"
+                                    severity="danger"
+                                    styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-8! w-8! min-w-0! p-0!"
+                                    [pTooltip]="'roles.users.remove.tooltip' | dm"
+                                    tooltipPosition="left"
+                                    (onClick)="onRemoveMember(member)"
+                                    [attr.aria-label]="'roles.users.remove.tooltip' | dm"
+                                    [attr.data-testid]="'member-remove-' + member.userId">
+                                    <span
+                                        class="material-symbols-rounded text-lg! leading-none!"
+                                        aria-hidden="true">
+                                        delete
+                                    </span>
+                                </p-button>
+                            }
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
 </div>
 
 <!--
-    Overlay helpers live OUTSIDE the `flex flex-col gap-4` above so their
-    (visually empty) host elements don't contribute extra `gap-4` slots
-    between the actions row and the members table.
+    Overlay helpers live OUTSIDE the flex column above so their (visually
+    empty) host elements don't contribute extra `gap-4` slots between the
+    actions row and the members table.
 -->
 <p-popover #grantPanel styleClass="w-96" (onShow)="onGrantPanelShow()">
     <ng-template pTemplate="content">
         <p-listbox
-            [options]="$userSuggestions()"
+            [options]="$filteredSuggestions()"
             [filter]="true"
             filterBy="firstName,lastName,emailAddress"
             [filterPlaceHolder]="'roles.users.search.placeholder' | dm"
@@ -161,9 +206,38 @@
                 </div>
             </ng-template>
             <ng-template pTemplate="empty">
-                <p class="text-color-secondary m-0 px-3 py-2 text-sm">
-                    {{ 'roles.users.search.empty' | dm }}
-                </p>
+                @if ($suggestionsLoading()) {
+                    <!--
+                        Loading skeleton — five rows mirroring the real
+                        item layout (avatar circle + name + email) so the
+                        popover doesn't feel empty during the initial
+                        fetch or a search re-query.
+                    -->
+                    @for (i of [0, 1, 2, 3, 4]; track i) {
+                        <div class="flex items-center gap-3 px-3 py-2">
+                            <p-skeleton shape="circle" size="2rem" />
+                            <div class="flex flex-1 flex-col gap-1.5">
+                                <p-skeleton height="0.875rem" width="55%" />
+                                <p-skeleton height="0.75rem" width="80%" />
+                            </div>
+                        </div>
+                    }
+                } @else {
+                    <!-- Friendly empty state — icon + title + hint copy. -->
+                    <div
+                        class="text-color-secondary flex flex-col items-center gap-2 px-3 py-6 text-center"
+                        data-testid="grant-user-empty">
+                        <span class="material-symbols-outlined text-3xl! leading-none! opacity-40">
+                            search_off
+                        </span>
+                        <p class="m-0 text-sm font-medium text-color">
+                            {{ 'roles.users.search.empty.title' | dm }}
+                        </p>
+                        <p class="text-color-secondary m-0 text-xs">
+                            {{ 'roles.users.search.empty.copy' | dm }}
+                        </p>
+                    </div>
+                }
             </ng-template>
         </p-listbox>
     </ng-template>

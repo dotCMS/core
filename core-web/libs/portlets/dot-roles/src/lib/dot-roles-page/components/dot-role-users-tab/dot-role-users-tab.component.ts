@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
@@ -16,7 +16,14 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    switchMap,
+    tap
+} from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSResponse } from '@dotcms/dotcms-models';
@@ -31,6 +38,28 @@ interface UserFilterResult {
     lastName?: string;
     emailAddress?: string;
 }
+
+/**
+ * How long the "just granted" row highlight stays before it fades back
+ * to the default row background. Long enough to catch the admin's eye
+ * in a scrolled list, short enough not to linger through the next
+ * interaction.
+ */
+const GRANT_HIGHLIGHT_DURATION_MS = 3000;
+
+/**
+ * Page-size dropdown for the members table. The current members endpoints
+ * (`/api/v1/users/filter?roleKey=…` and the legacy
+ * `/v1/roles/{id}/rolehierarchyanduserroles` fallback) return the entire
+ * member list in a single response, so this pagination is client-side —
+ * p-table slices `store.members()` itself. When #37070 ships a server-paged
+ * `GET /v1/roles/{roleId}/users` we can switch to `[lazy]="true"` and drive
+ * it from the store; the visual pattern (bottom paginator + rows-per-page)
+ * matches publishing-queue-beta so users see the same control across
+ * portlets.
+ */
+const MEMBERS_ROWS_PER_PAGE_OPTIONS = [20, 40, 60] as const;
+const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
 
 @Component({
     selector: 'dot-role-users-tab',
@@ -50,7 +79,7 @@ interface UserFilterResult {
     ],
     providers: [ConfirmationService],
     templateUrl: './dot-role-users-tab.component.html',
-    host: { class: 'block py-4' }
+    host: { class: 'block h-full' }
 })
 export class DotRoleUsersTabComponent {
     protected readonly store = inject(DotRolesStore);
@@ -59,7 +88,36 @@ export class DotRoleUsersTabComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
 
+    /** Static config exposed to the template — see `MEMBERS_ROWS_PER_PAGE_OPTIONS`. */
+    protected readonly rowsPerPageOptions = MEMBERS_ROWS_PER_PAGE_OPTIONS;
+    protected readonly defaultRowsPerPage = MEMBERS_DEFAULT_ROWS_PER_PAGE;
+
     protected readonly $userSuggestions = signal<UserFilterResult[]>([]);
+    /** True while `/api/v1/users/filter` is in flight — drives the popover's skeleton state. */
+    protected readonly $suggestionsLoading = signal(false);
+
+    /**
+     * Suggestions shown in the Grant popover, minus users who already
+     * belong to the current role — whether directly granted or inherited
+     * from an ancestor. Direct grants would be a duplicate; inherited
+     * grants would be a silent no-op on the BE (see
+     * `POST /v1/roles/{roleId}/users/{userId}` behavior notes), so
+     * hiding both keeps the picker honest.
+     */
+    protected readonly $filteredSuggestions = computed<UserFilterResult[]>(() => {
+        const alreadyGranted = new Set(this.store.members().map((m) => m.userId));
+
+        return this.$userSuggestions().filter((u) => !alreadyGranted.has(u.userId));
+    });
+
+    /**
+     * User id whose row should render with the "just granted" highlight
+     * (a fading background so the admin can spot the row they just added
+     * even if the list is long). Set by `onGrantUser` when the store
+     * promise resolves, cleared by a 4s timer.
+     */
+    protected readonly $highlightUserId = signal<string | null>(null);
+    #highlightTimeout: ReturnType<typeof setTimeout> | null = null;
 
     /**
      * Debounced pipe that hits `/api/v1/users/filter?query=X` as the admin
@@ -70,8 +128,6 @@ export class DotRoleUsersTabComponent {
      * `switchMap` cancels in-flight requests as new keys land.
      */
     readonly #userSearchInput$ = new Subject<string>();
-
-    protected readonly $canBulkRemove = computed(() => this.store.selectedMembers().length > 0);
 
     constructor() {
         // Load members when the selected role changes. Users are shown even
@@ -92,14 +148,32 @@ export class DotRoleUsersTabComponent {
         });
 
         // Wire the debounced user search — see `#userSearchInput$` doc.
+        // `tap` before `switchMap` flips loading ON so the popover shows
+        // its skeleton state; the inner `tap` flips it OFF once the
+        // response (or error fallback) resolves. `catchError → of([])`
+        // keeps the outer subscription alive after a failed request.
         this.#userSearchInput$
             .pipe(
                 debounceTime(300),
                 distinctUntilChanged(),
-                switchMap((query) => this.#getUserSuggestions(query)),
+                tap(() => this.$suggestionsLoading.set(true)),
+                switchMap((query) =>
+                    this.#getUserSuggestions(query).pipe(
+                        catchError(() => of<UserFilterResult[]>([])),
+                        tap(() => this.$suggestionsLoading.set(false))
+                    )
+                ),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((users) => this.$userSuggestions.set(users));
+
+        // Clear the highlight timer if the component is torn down before
+        // the 4s window elapses (route away, role switch, etc.).
+        this.#destroyRef.onDestroy(() => {
+            if (this.#highlightTimeout !== null) {
+                clearTimeout(this.#highlightTimeout);
+            }
+        });
     }
 
     /**
@@ -130,46 +204,51 @@ export class DotRoleUsersTabComponent {
      * we don't have to gate on client-side dedup. On success the store
      * refreshes the members list so the new row lands in the table with the
      * correct `grantedFromRoleId` labelling.
+     *
+     * The new row is highlighted for 4 seconds so the admin can spot it in
+     * a long list without hunting. `#highlightTimeout` is tracked so back-
+     * to-back grants restart the timer instead of stacking (last grant wins).
      */
     protected onGrantUser(user: UserFilterResult, panel: Popover): void {
         panel.hide();
-        this.store.grantUserToRole(user.userId);
+        this.store.grantUserToRole(user.userId).then((result) => {
+            if (!result?.granted) {
+                return;
+            }
+            this.$highlightUserId.set(user.userId);
+            if (this.#highlightTimeout !== null) {
+                clearTimeout(this.#highlightTimeout);
+            }
+            this.#highlightTimeout = setTimeout(() => {
+                this.$highlightUserId.set(null);
+                this.#highlightTimeout = null;
+            }, GRANT_HIGHLIGHT_DURATION_MS);
+        });
     }
 
     /**
-     * Bulk-remove the currently-selected direct members from the role
-     * (DELETE /v1/roles/{roleId}/users — issue #36938).
-     *
-     * The store already filters `selectedMembers` to direct grants only, so
-     * we pass their ids straight through. On partial-success (some users
-     * skipped because they are inherited or the id didn't match), the store
-     * still prunes the removed rows and refetches — future UX may surface
-     * the `skipped` list explicitly, but for now the refetch keeps the
-     * table honest.
+     * Row-level remove: revoke a single member's direct grant from the
+     * current role (DELETE /v1/roles/{roleId}/users — issue #36938,
+     * called with a one-item `userIds` array). Only wired for direct
+     * grants; inherited rows never render this button. Confirms first
+     * so the destructive action isn't a hover-hit-away from firing.
      */
-    protected onRemoveSelected(): void {
-        const selected = this.store.selectedMembers();
-        if (selected.length === 0) {
-            return;
-        }
-
+    protected onRemoveMember(member: DotRoleMember): void {
         this.#confirmationService.confirm({
             message: this.#messageService.get(
                 'roles.users.confirm.remove.message',
-                `${selected.length}`
+                `${member.firstName} ${member.lastName}`.trim() || member.emailAddress
             ),
             header: this.#messageService.get('roles.users.confirm.remove.header'),
             acceptLabel: this.#messageService.get('roles.users.remove'),
             rejectLabel: this.#messageService.get('roles.action.cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
             position: 'center',
             accept: () => {
-                const userIds = selected.map((m) => m.userId);
-                this.store.removeUsersFromRole(userIds);
+                this.store.removeUsersFromRole([member.userId]);
             }
         });
     }
@@ -204,13 +283,6 @@ export class DotRoleUsersTabComponent {
         const emailInitial = user.emailAddress?.trim()?.[0]?.toUpperCase() ?? '';
 
         return emailInitial || '?';
-    }
-
-    protected onSelectionChange(members: DotRoleMember[]): void {
-        // Filter out inherited rows in case a user managed to check one
-        // (e.g., via header checkbox). Only direct grants can be removed.
-        const direct = members.filter((m) => this.isDirectGrant(m));
-        this.store.setSelectedMembers(direct);
     }
 
     #getUserSuggestions(query: string): Observable<UserFilterResult[]> {
