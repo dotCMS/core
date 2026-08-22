@@ -169,8 +169,18 @@ runs:
         # jobs consume. Same reasoning for docker-maven-plugin: a hit on
         # dotcms-core would otherwise skip the execution that writes
         # dotCMS/target/docker-build.tar, which the next step uploads.
+        # flatten-maven-plugin is the one that makes install CORRECT rather than
+        # merely present. parent/pom.xml uses Maven CI-friendly versions
+        # (<revision>) with flatten's updatePomFile=true, so flatten rewrites the
+        # project POM to the resolved version and install publishes that. On a
+        # cache hit flatten:flatten is skipped, install then publishes the RAW
+        # pom, and every consumer fails with:
+        #   Could not find artifact ...:pom:${revision}${sha1}${changelist}
+        # Measured: 19 restored modules, 19 skipped flatten executions, whole
+        # integration suite unable to resolve dotcms-core's dependencies.
+        #
         # (Named goals, not globs — FINAL_ARGS is expanded unquoted in maven-job.)
-        ALWAYS_RUN="maven-install-plugin:install,docker-maven-plugin:build"
+        ALWAYS_RUN="flatten-maven-plugin:flatten,maven-install-plugin:install,docker-maven-plugin:build"
 
         # remote.save.final: never let a later build overwrite an existing entry.
         ARGS="-Dmaven.build.cache.remote.enabled=true"
